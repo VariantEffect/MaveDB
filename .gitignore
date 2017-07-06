@@ -1,11 +1,9 @@
 db.sqlite3
 geckodriver.log
-__pycache__
 *.pyc
 
-
 # vscode
-
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
