@@ -10,7 +10,7 @@ body {
     padding-top: 6em;
     padding-bottom: 4em;
     font-family: "Arial";
-    color: #000
+    color: black
 }
 
 /* ------------------------------------------------------------------------- */
@@ -18,7 +18,7 @@ body {
 /* ------------------------------------------------------------------------- */
 #headerRow {
     font-family: "Courier";
-    color: #000
+    color: black
 }
 
 #navHeader {
@@ -41,12 +41,12 @@ body {
 .dropdown-menu>li>a:hover,
 .dropdown-menu>li>a:focus,
 .dropdown-menu>li>a:focus:hover {
-    color: #000 !important;
+    color: black !important;
     background: none !important
 }
 
 .dropdown-toggle:active {
-    background: #000 !important;
+    background: black !important;
 }
 
 .dropdown-menu>li>a {
@@ -91,8 +91,8 @@ body {
     border-style: none none solid;
     border-bottom-color: rgb(220, 224, 224)
 
-    background-color: #fff !important;
-    background: #fff !important;
+    background-color: white !important;
+    background: white !important;
 }
 
 #footer-logo {
@@ -106,7 +106,7 @@ body {
 }
 
 .footer {
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 2px;
     background: white;
     border-top-width: 1px;
 
@@ -135,7 +135,7 @@ a:visited {
 
 /* mouse over link */
 a:hover {
-    color: #000;
+    color: black;
     text-decoration: none;
 }
 
