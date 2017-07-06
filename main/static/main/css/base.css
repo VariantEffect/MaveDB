@@ -1,0 +1,146 @@
+/* ------------------------------------------------------------------------- */
+/*                                  Body
+/* ------------------------------------------------------------------------- */
+
+body {
+    background: #fafafa;
+}
+
+#bodyContainer {
+    padding-top: 6em;
+    padding-bottom: 4em;
+    font-family: "Arial";
+    color: #000
+}
+
+/* ------------------------------------------------------------------------- */
+/*                                  Navbar and Header
+/* ------------------------------------------------------------------------- */
+#headerRow {
+    font-family: "Courier";
+    color: #000
+}
+
+#navHeader {
+    color: #777;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
+    border-bottom-width: 1px;
+    border-style: none none solid;
+    border-bottom-color: rgb(220, 224, 224)
+
+}
+
+.navbar-default {
+    background: #fff !important;
+}
+
+.navbar-nav>li>a:focus,
+.navbar-nav>li>a:hover,
+.navbar-header>a:focus,
+.navbar-header>a:hover,
+.dropdown-menu>li>a:hover,
+.dropdown-menu>li>a:focus,
+.dropdown-menu>li>a:focus:hover {
+    color: #000 !important;
+    background: none !important
+}
+
+.dropdown-toggle:active {
+    background: #000 !important;
+}
+
+.dropdown-menu>li>a {
+    color: #777 !important;
+    background: none !important
+}
+
+.dropdown {
+    margin-top: 2px !important;
+    box-shadow: rgba(0, 0, 0, 0.1) 1px 1px 5px;
+}
+
+.navbar-nav>.active>a,
+.navbar-nav>.open>a {
+    background-image:-webkit-linear-gradient(top, #ffffff 0, #ffffff 100%);
+    background-image:-o-linear-gradient(top, #ffffff 0, #ffffff 100%);
+    background-image:-webkit-gradient(
+        linear,left top,left bottom, from(#ffffff), to(#ffffff));
+    background-image:linear-gradient(to bottom, #ffffff 0, #ffffff 100%);
+    filter:progid:DXImageTransform.Microsoft.gradient(
+        startColorstr='#ffffff', endColorstr='#ffffff', GradientType=0);
+    background-repeat:repeat-x;
+    -webkit-box-shadow:inset 0 3px 9px rgba(0,0,0,.075);
+    box-shadow:inset 0 3px 9px rgba(0,0,0,.075);
+}
+
+
+/* ------------------------------------------------------------------------- */
+/*                                  Footer
+/* ------------------------------------------------------------------------- */
+#footerRow {
+    font-family: "Courier";
+    color: #777
+}
+
+.footer-inner {
+    text-align: center;
+    color: #777;
+
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 5px;
+    border-bottom-width: 1px;
+    border-style: none none solid;
+    border-bottom-color: rgb(220, 224, 224)
+
+    background-color: #fff !important;
+    background: #fff !important;
+}
+
+#footer-logo {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#footer-link-container {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.footer {
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px;
+    background: white;
+    border-top-width: 1px;
+
+    width: 100%;
+    height: 20%;
+    bottom: 0;
+    left: 0;
+}
+
+
+/* ------------------------------------------------------------------------- */
+/*                                  Hyperlinks
+/* ------------------------------------------------------------------------- */
+
+/* unvisited link */
+a:link {
+    color: #777;
+    text-decoration: none;
+}
+
+/* visited link */
+a:visited {
+    color: #777;
+    text-decoration: none;
+}
+
+/* mouse over link */
+a:hover {
+    color: #000;
+    text-decoration: none;
+}
+
+/* selected link */
+a:active {
+    color: #777;
+    text-decoration: none;
+}
