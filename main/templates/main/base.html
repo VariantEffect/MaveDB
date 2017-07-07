@@ -8,86 +8,79 @@
     <link href="/static/main/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/main/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
     <link href="/static/main/css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
   </head>
 
   <body>
-    <div class="container-fluid">
-      <div id="headerRow" class="row">
-        <nav id="navHeader" class="navbar navbar-default navbar-fixed-top">
-          <div class="container">
-            <div class="navbar-header">
-              <button type="button" class="navbar-toggle collapsed"
-                      data-toggle="collapse" data-target="#navbar"
-                      aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-              </button>
-              <a id="brand" class="navbar-brand" href="{% url 'home' %}">MaveDB</a>
-            </div>
-
-            <div id="navbar" class="collapse navbar-collapse">
-              <ul class="nav navbar-nav navbar-right">
-                <li><a href="#">Search</a></li>
-                <li><a href="#">Upload</a></li>
-                <li>
-                  <a href="#" class="dropdown-toggle"
-                     data-toggle="dropdown"
-                     aria-haspopup="true" aria-expanded="false">
-                    Help
-                    <span class="caret"></span>
-                  </a>
-                  <ul class="dropdown-menu">
-                    <li><a href="#">User Guide</a></li>
-                    <li><a href="#">Documentation</a></li>
-                    <li><a href="#">API</a></li>
-                  </ul>
-                </li>
-                <li><a href="#">Login</a></li>
-                <li><a href="#">Register</a></li>
-              </ul>
-            </div><!--/.nav-collapse -->
+    <div id="headerRow"> 
+      <nav id="navHeader" class="navbar navbar-default">
+        
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a id="brand" class="navbar-brand" href="{% url 'home' %}">MaveDB</a>
           </div>
-        </nav>
+
+          <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav navbar-right">
+              <li><a href="#">Search</a></li>
+              <li><a href="#">Download</a></li>
+              <li><a href="#">Upload</a></li>
+              <li>
+                <a href="#" class="dropdown-toggle"
+                    data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                  Help
+                  <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a href="#">User Guide</a></li>
+                  <li><a href="#">Documentation</a></li>
+                  <li><a href="#">API</a></li>
+                </ul>
+              </li>
+              <li><a href="#">Login</a></li>
+              <li><a href="#">Register</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+        
+      </nav>
+    </div>
+
+    <div id="bodyBlock" class="container-fluid">  
+      {% block body %}{% endblock %}
+    </div> 
+
+    <footer id="navFooter" class="container">
+      <div id="footer-logo" class="col-xs-6 col-md-6">
+        <div class="text-center">
+            <span>MaveDB Logo Goes Here</span>
+        </div>
       </div>
 
-      <div id="bodyContainer" class="row">
-        {% block body %}{% endblock %}
-      </div> <!-- End of Body Container! -->
+      <div id="footer-link-container" class="col-xs-6 col-md-6">
+        <div  class="text-center">
+            <a href="/about/">Help</a> |
+            <a href="/about/">Contact</a> |
+            <a href="/about/">Privacy</a> |
+            <a href="/about/">Terms</a>
+        </div>
 
-      <div id="footerRow" class="row">
-        <footer class="footer">
-          <div id="footer-inner" class="container">
-
-            <div id="footer-logo"
-                 class="col-xs-offset-1 col-xs-10 col-md-offset-0 col-md-5">
-              <div class="text-center">
-                  <span>MaveDB Logo Goes Here</span>
-              </div>
-            </div>
-
-            <div id="footer-link-container"
-                 class="col-xs-offset-1 col-xs-10 col-md-offset-0 col-md-5">
-              <div  class="text-center">
-                  <a href="/about/">Help</a> |
-                  <a href="/about/">Contact</a> |
-                  <a href="/about/">Privacy</a> |
-                  <a href="/about/">Terms</a>
-              </div>
-
-              <div id="disclaimer" class="text-center">
-                <p>Copyright 2017, University Of Washington Genome Science,
-                  All rights reserved.</p>
-              </div>
-            </div>
-
-          </div>
-        </footer>
+        <div id="disclaimer" class="text-center">
+          <p>Copyright 2017, University Of Washington Genome Science,
+            All rights reserved.</p>
+        </div>
       </div>
-
-  </div>
-
+    </footer>
+    
     <!-- Load ALL the Javascripts! -->
     <script src="/static/main/js/base.js"></script>
     <script src="/static/main/js/jquery-3.2.1.min.js"></script>
