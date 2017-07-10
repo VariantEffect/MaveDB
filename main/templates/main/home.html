@@ -1,4 +1,5 @@
 {% extends "main/base.html" %}
+{% load markup_tags %}
 
 {% block body %}
 
@@ -23,24 +24,28 @@
     <div id="leftPane" class="col-sm-8 col-md-8">
       <div class="centeredDiv">
         <h1>About</h1>
-        {{ about_text }}
-        <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec orci leo. Nunc aliquet in enim vitae vehicula. Sed at orci tempor, iaculis est vel, rhoncus sem. Maecenas feugiat mauris eu enim imperdiet pulvinar. Sed sollicitudin ante ligula, non varius tellus aliquam in. Vivamus vitae ante lacinia, laoreet augue eu, pharetra ante. Proin dignissim hendrerit ex quis placerat. Fusce id dui id purus volutpat volutpat eu a eros. Aliquam ultrices arcu vitae tellus aliquam, et consectetur urna varius. Nunc nec iaculis tortor. Pellentesque aliquam malesuada lacus eget tincidunt.
-
-        Fusce in tristique dolor, auctor vulputate erat. Vivamus quis malesuada sem, nec vehicula enim. Aliquam viverra eros ac sagittis rhoncus. Phasellus imperdiet est quis urna sagittis facilisis. Nam sollicitudin, justo in luctus molestie, neque enim consequat felis, sit amet vulputate neque neque id erat. Nam faucibus maximus massa eget imperdiet. Curabitur id velit fringilla, egestas erat vitae, dapibus dui. Aenean ligula magna, tempus eu nisi eu, convallis vehicula mauris. Morbi aliquet lacus a rhoncus vestibulum. Maecenas aliquam tortor sed urna molestie, at consequat tellus tempus. 
-
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec orci leo. Nunc aliquet in enim vitae vehicula. Sed at orci tempor, iaculis est vel, rhoncus sem. Maecenas feugiat mauris eu enim imperdiet pulvinar. Sed sollicitudin ante ligula, non varius tellus aliquam in. Vivamus vitae ante lacinia, laoreet augue eu, pharetra ante. Proin dignissim hendrerit ex quis placerat. Fusce id dui id purus volutpat volutpat eu a eros. Aliquam ultrices arcu vitae tellus aliquam, et consectetur urna varius. Nunc nec iaculis tortor. Pellentesque aliquam malesuada lacus eget tincidunt.
-        </p>
+        {% if site_information %}
+          <div id="about"> 
+            {{ site_information.about|apply_markup:"restructuredtext" }} 
+          </div>
+        {% endif %}
       </div>
     </div>
 
     <div id="rightPane" class="col-sm-4 col-md-4">
       <div class="centeredDiv">
         <h1>Announcements</h1>
-        {{ news }}
-        <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec orci leo. Nunc aliquet in enim vitae vehicula. Sed at orci tempor, iaculis est vel, rhoncus sem. Maecenas feugiat mauris eu enim imperdiet pulvinar. Sed sollicitudin ante ligula, non varius tellus aliquam in. Vivamus vitae ante lacinia, laoreet augue eu, pharetra ante. Proin dignissim hendrerit ex quis placerat. Fusce id dui id purus volutpat volutpat eu a eros. Aliquam ultrices arcu vitae tellus aliquam, et consectetur urna varius. Nunc nec iaculis tortor. Pellentesque aliquam malesuada lacus eget tincidunt.
-        </p>
+        <div class="alert alert-info" style="height: 100%">
+          {% if not news_items %}
+            <div id="no-news"> No announcements at this time. </div>
+          {% else %}
+            {% for item in news_items %}
+            <div id="news-item-{{forloop.counter}}"> 
+              {{ item.message|apply_markup:"restructuredtext" }} 
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
@@ -48,12 +53,11 @@
   <div class="row">
     <div class="centeredDiv">
       <h1>Citation</h1>
-      {{ citation }}
-      <p>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec orci leo. Nunc aliquet in enim vitae vehicula. Sed at orci tempor, iaculis est vel, rhoncus sem. Maecenas feugiat mauris eu enim imperdiet pulvinar. Sed sollicitudin ante ligula, non varius tellus aliquam in. Vivamus vitae ante lacinia, laoreet augue eu, pharetra ante. Proin dignissim hendrerit ex quis placerat. Fusce id dui id purus volutpat volutpat eu a eros. Aliquam ultrices arcu vitae tellus aliquam, et consectetur urna varius. Nunc nec iaculis tortor. Pellentesque aliquam malesuada lacus eget tincidunt.
-
-      Fusce in tristique dolor, auctor vulputate erat. Vivamus quis malesuada sem, nec vehicula enim. Aliquam viverra eros ac sagittis rhoncus. Phasellus imperdiet est quis urna sagittis facilisis. Nam sollicitudin, justo in luctus molestie, neque enim consequat felis, sit amet vulputate neque neque id erat. Nam faucibus maximus massa eget imperdiet. Curabitur id velit fringilla, egestas erat vitae, dapibus dui. Aenean ligula magna, tempus eu nisi eu, convallis vehicula mauris. Morbi aliquet lacus a rhoncus vestibulum. Maecenas aliquam tortor sed urna molestie, at consequat tellus tempus.
-      </p>
+     {% if site_information %}
+      <div id="citation"> 
+        {{ site_information.citation|apply_markup:"restructuredtext" }} 
+      </div>
+     {% endif %}
     </div>
   </div>
 </div>

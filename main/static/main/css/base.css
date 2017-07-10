@@ -16,7 +16,7 @@ body {
 /*                           Navbar and Header
 /* ------------------------------------------------------------------------- */
 #headerRow {
-    font-family: "Courier";
+    font-family: "Arial";
     color: black;
     width: 100%;
 }
@@ -74,7 +74,7 @@ body {
 }
 
 footer {
-    font-family: "Courier";
+    font-family: "Arial";
     color: #777;
     text-align: center;
 

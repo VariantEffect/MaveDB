@@ -8,7 +8,6 @@
     <link href="/static/main/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/main/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
     <link href="/static/main/css/base.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
   </head>
 
   <body>
@@ -24,12 +23,12 @@
               <span class="icon-bar"></span>
               <span class="icon-bar"></span>
             </button>
-            <a id="brand" class="navbar-brand" href="{% url 'home' %}">MaveDB</a>
+            <a id="brand" class="navbar-brand" href="{% url 'main:home' %}">MaveDB</a>
           </div>
 
           <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav navbar-right">
-              <li><a href="#">Search</a></li>
+              <li><a href="{% url 'main:search' %}">Search</a></li>
               <li><a href="#">Download</a></li>
               <li><a href="#">Upload</a></li>
               <li>

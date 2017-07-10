@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'main'
+    'main',
+    'django_markup',
+    'markdownx'
 ]
 
 MIDDLEWARE = [
@@ -120,3 +122,12 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static'))
+
+MARKUP_SETTINGS = {
+   'restructuredtext': {
+      'settings_overrides': {
+         'raw_enabled': True,
+         'file_insertion_enabled': True,
+      }
+   }
+}
