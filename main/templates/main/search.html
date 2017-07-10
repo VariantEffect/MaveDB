@@ -1,0 +1,127 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+
+<div id="advancedSearchForm" class="container">
+  <form action="" method="post">
+    {% csrf_token %}
+    {{ form }}
+		<div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
+			<div class="input-group stylish-input-group">
+				<input type="text" class="form-control"  
+								placeholder="Example: EXP0010HSA; BRCA1; Kinase; Least Squares...">
+				<span class="input-group-addon">
+					<button type="submit">
+							<span class="glyphicon glyphicon-search"></span>
+					</button>  
+				</span>
+			</div>
+		</div>
+    <div class="col-sm-2 col-sm-2 col-md-2 col-lg-2">
+      <button type="button" class="btn btn-primary" 
+							data-toggle="collapse" data-target="#advanced-search">
+				Advanced
+				<span class="glyphicon glyphicon-cog"</span>
+      </button>
+    </div>
+  </form>
+
+	<br><br><br>
+  <div id="advanced-search" class="collapse">
+		<p> Hello world </p>
+  </div>
+</div>
+
+<div id="results-table" class="container" style="margin-top: 5em;">
+	<table class="table table-hover table-bordered">
+		<thead>
+			<tr>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group" >
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>
+				<th>Column 1 
+					<div class="input-group">
+						<input type="text" class="form-control">
+					</div>
+				</th>		
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+			</tr>
+			<tr>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+			</tr>
+			<tr>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+			</tr>
+			<tr>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+				<td>Cell One</td>
+			</tr>
+		</tbody>
+	</table>
+	
+</div>
+
+{% endblock %}
