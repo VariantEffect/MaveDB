@@ -71,3 +71,4 @@ class SearchPageTest(TestCase):
 
     def test_table_renders_sorted_by_date_upon_page_load(self):
         self.fail("Write this test!")
+

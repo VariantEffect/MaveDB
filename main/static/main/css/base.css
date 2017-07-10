@@ -8,7 +8,7 @@ body {
 #bodyBlock {
     padding-top: 3em;
     padding-bottom: 6em;
-    font-family: "Arial";
+    font-family: Verdana, Helvetica, Arial, sans-serif;
     color: black;
 }
 
@@ -16,7 +16,8 @@ body {
 /*                           Navbar and Header
 /* ------------------------------------------------------------------------- */
 #headerRow {
-    font-family: "Arial";
+    /*font-family: Verdana, Helvetica, Arial, sans-serif;*/
+    font-family: Courier New, Courier, monospace;
     color: black;
     width: 100%;
 }
@@ -74,7 +75,7 @@ body {
 }
 
 footer {
-    font-family: "Arial";
+    font-family: Courier New, Courier, monospace;
     color: #777;
     text-align: center;
 
@@ -155,4 +156,42 @@ a:active {
     margin-top: 10px;
     width: 100%;
     height: 100%;
+}
+
+
+/* ------------------------------------------------------------------------- */
+/*                               Column Input
+/* ------------------------------------------------------------------------- */
+.table-hover .input-group .form-control,
+.table {
+    color: black;
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    height: auto;
+    
+    border: 1px solid #224488;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+th {
+	background: #AFC8FA;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+.table-bordered > tbody > tr > td, 
+.table-bordered > tbody > tr > th, 
+.table-bordered > tfoot > tr > td, 
+.table-bordered > tfoot > tr > th, 
+.table-bordered > thead > tr > td, 
+.table-bordered > thead > tr > th,
+.table-bordered,
+.table {
+	border: 1px solid gray;
 }
