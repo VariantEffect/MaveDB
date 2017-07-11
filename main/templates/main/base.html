@@ -16,11 +16,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MaveDB</title>
-    <link href="/static/main/css/base.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" 
+			href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css"/>
+    <link href="/static/main/css/base.css" rel="stylesheet" />
   </head>
 
   <body>
-    <div id="header-row"> 
+    <div id="header"> 
       <nav id="nav-header" class="navbar navbar-default">
         <div class="container">
           <div class="navbar-header">
@@ -32,7 +34,8 @@
               <span class="icon-bar"></span>
               <span class="icon-bar"></span>
             </button>
-            <a id="brand" class="navbar-brand" href="{% url 'main:home' %}">MaveDB</a>
+            <a id="brand" class="navbar-brand" 
+                href="{% url 'main:home' %}">MaveDB</a>
           </div>
 
           <div id="navbar" class="collapse navbar-collapse">
@@ -61,37 +64,44 @@
       </nav>
     </div>
     
-    <div id="body-block" class="container-fluid" style="height: auto;">  
+    <div id="body" class="container-fluid">  
       {% block body %}{% endblock %}
     </div> 
 
-    <footer class="footer">
-      <div class="container">
-        <div class="row">
-          <div id="footer-logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-            <div class="text-center">
-                <span>MaveDB Logo Goes Here</span>
-            </div>
+    <div id="footer" class="footer">
+      <div class="row">
+        <div id="footer-logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+          <div class="text-center">
+              <span>MaveDB Logo Goes Here</span>
           </div>
+        </div>
 
-          <div id="footer-link-container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-            <div  class="text-center">
-                <a href="/about/">Help</a> |
-                <a href="/about/">Contact</a> |
-                <a href="/about/">Privacy</a> |
-                <a href="/about/">Terms</a>
-            </div>
-            <div id="disclaimer" class="text-center">
-              <p>Copyright 2017, University Of Washington Genome Science,
-                All rights reserved.</p>
-            </div>
+        <div id="footer-link-container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+          <div  class="text-center">
+              <a href="#">Help</a> |
+              <a href="#">Contact</a> |
+              <a href="#">Privacy</a> |
+              <a href="#">Terms</a>
+          </div>
+          <div id="disclaimer" class="text-center">
+            <p>Copyright 2017, University Of Washington Genome Science,
+              All rights reserved.</p>
           </div>
         </div>
       </div>
-    </footer>
-    
+    </div>
+
     <!-- Load ALL the Javascripts! -->
     <script src="/static/main/bootstrap/js/npm.js"></script>
     <script src="/static/main/js/base.js"></script>
+    <script>
+        $(document).ready( function () {
+            $('#table_id').DataTable();
+        } );
+    </script>
+    <script type="text/javascript" 
+            src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" 
+            src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
   </body>
 </html>

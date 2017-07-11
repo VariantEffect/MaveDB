@@ -9,5 +9,5 @@ from .views import home_view, search_view
 
 urlpatterns = [
     url(r'^$', home_view, name='home'),
-    url(r'search/?$', search_view, name='search')
+    url(r'search/?$', search_view, name='search'),
 ]

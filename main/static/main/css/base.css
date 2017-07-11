@@ -21,9 +21,6 @@
     text-align: left;
     align-content: left;
     margin-top: 2em;
-
-
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -37,7 +34,7 @@
     font-weight: normal;
     height: auto;
     
-    border: 1px solid #224488;
+    border: 1px solid #18bc9c;
     margin-top: 1px;
     margin-bottom: 1px;
     padding-left: 2px;
@@ -64,12 +61,11 @@ th {
 }
 
 /* ------------------------------------------------------------------------- */
-/*                                 Footer
+/*                                 Footer Fix
 /* ------------------------------------------------------------------------- */
 .footer {
+    width: 100%;
     margin-top: 2em;
     padding: 1em;
-	width: 100%;
-	height: auto;
-	background-color: #f5f5f5;
+    background-color: #f5f5f5;
 }

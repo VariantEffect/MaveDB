@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
-from .models import News, SiteInformation
+from .models import News, SiteInformation, Experiment
 
 
 def home_view(request):
@@ -15,4 +15,5 @@ def home_view(request):
 
 
 def search_view(request):
-    return render(request, 'main/search.html')
+    experiments = Experiment.objects.all()[0: 1000]
+    return render(request, 'main/search.html', {'experiments': experiments})
