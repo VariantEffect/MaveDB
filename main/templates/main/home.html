@@ -7,7 +7,7 @@
   <form action="{% block home_search %}{% endblock %}" method="post">
     {% csrf_token %}
     {{ form }}
-    <div class="input-group stylish-input-group">
+    <div class="input-group">
       <input type="text" class="form-control"  
              placeholder="Example: EXP0010HSA; BRCA1; Kinase; Least Squares...">
       <span class="input-group-addon">
@@ -19,7 +19,7 @@
   </form>
 </div>
 
-<div id="basicInfo" class="container" style="margin-top: 50px">
+<div id="basic-info" class="container" style="margin-top: 50px">
   <div class="row">
     <div id="leftPane" class="col-sm-8 col-md-8">
       <div class="centeredDiv">
@@ -32,10 +32,10 @@
       </div>
     </div>
 
-    <div id="rightPane" class="col-sm-4 col-md-4">
-      <div class="centeredDiv">
+    <div id="right-pane" class="col-sm-4 col-md-4">
+      <div>
         <h1>Announcements</h1>
-        <div class="alert alert-info" style="height: 100%">
+        <div class="alert alert-info">
           {% if not news_items %}
             <div id="no-news"> No announcements at this time. </div>
           {% else %}
@@ -51,7 +51,7 @@
   </div>
 
   <div class="row">
-    <div class="centeredDiv">
+    <div>
       <h1>Citation</h1>
      {% if site_information %}
       <div id="citation"> 

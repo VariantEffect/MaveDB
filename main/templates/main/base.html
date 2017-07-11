@@ -1,3 +1,14 @@
+{% load static %}
+
+{% load bootstrap3 %}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{% load bootstrap_themes %}
+{% bootstrap_styles theme='flatly' type='min.css' %}
+{% bootstrap_script use_min=True %}
+
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -5,14 +16,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MaveDB</title>
-    <link href="/static/main/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/main/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
     <link href="/static/main/css/base.css" rel="stylesheet">
   </head>
 
   <body>
-    <div id="headerRow"> 
-      <nav id="navHeader" class="navbar navbar-default">
+    <div id="header-row"> 
+      <nav id="nav-header" class="navbar navbar-default">
         <div class="container">
           <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed"
@@ -51,37 +60,38 @@
         </div>
       </nav>
     </div>
-
-    <div id="bodyBlock" class="container-fluid">  
+    
+    <div id="body-block" class="container-fluid" style="height: auto;">  
       {% block body %}{% endblock %}
     </div> 
 
-    <footer id="navFooter" class="container">
-      <div id="footer-logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-        <div class="text-center">
-            <span>MaveDB Logo Goes Here</span>
-        </div>
-      </div>
+    <footer class="footer">
+      <div class="container">
+        <div class="row">
+          <div id="footer-logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            <div class="text-center">
+                <span>MaveDB Logo Goes Here</span>
+            </div>
+          </div>
 
-      <div id="footer-link-container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-        <div  class="text-center">
-            <a href="/about/">Help</a> |
-            <a href="/about/">Contact</a> |
-            <a href="/about/">Privacy</a> |
-            <a href="/about/">Terms</a>
-        </div>
-
-        <div id="disclaimer" class="text-center">
-          <p>Copyright 2017, University Of Washington Genome Science,
-            All rights reserved.</p>
+          <div id="footer-link-container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            <div  class="text-center">
+                <a href="/about/">Help</a> |
+                <a href="/about/">Contact</a> |
+                <a href="/about/">Privacy</a> |
+                <a href="/about/">Terms</a>
+            </div>
+            <div id="disclaimer" class="text-center">
+              <p>Copyright 2017, University Of Washington Genome Science,
+                All rights reserved.</p>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
     
     <!-- Load ALL the Javascripts! -->
-    <script src="/static/main/js/base.js"></script>
-    <script src="/static/main/js/jquery-3.2.1.min.js"></script>
-    <script src="/static/main/bootstrap/js/bootstrap.min.js"></script>
     <script src="/static/main/bootstrap/js/npm.js"></script>
+    <script src="/static/main/js/base.js"></script>
   </body>
 </html>
