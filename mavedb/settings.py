@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'main',
     'django_markup',
     'markdownx',
-    'django_tables2',
+    'crispy_forms',
     'bootstrap3',
     'bootstrap_themes',
     'django.contrib.admin',
@@ -127,6 +127,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static'))
 
+# Markdown settings
+
 MARKUP_SETTINGS = {
    'restructuredtext': {
       'settings_overrides': {
@@ -136,7 +138,8 @@ MARKUP_SETTINGS = {
    }
 }
 
-# Default settings
+# Django-Bootstrap3 settings
+
 BOOTSTRAP3 = {
 
     # The URL to the jQuery JavaScript file
@@ -202,3 +205,8 @@ BOOTSTRAP3 = {
         'inline': 'bootstrap3.renderers.InlineFieldRenderer',
     },
 }
+
+# Crispy form settings
+
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
+CRISPY_FAIL_SILENTLY = DEBUG

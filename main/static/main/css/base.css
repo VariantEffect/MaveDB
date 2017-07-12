@@ -1,26 +1,35 @@
 /* ------------------------------------------------------------------------- */
 /*                                 Search Box
 /* ------------------------------------------------------------------------- */
-#keywordSearchForm {
+#basic_search_form {
     width: 60%;
     text-align: center;
     align-content: center;
-    margin-top: 2em;
+    margin-top: 3em;
 }
 
 @media only screen and (max-width: 500px) {
-    #keywordSearchForm {
+    #basic_search_form {
         width: 100%;
         text-align: center;
         align-content: center;
-        margin-top: 2em;
+        margin-top: 3em;
     }
 }
 
-#advancedSearchForm {
+#advanced_search_form {
     text-align: left;
     align-content: left;
     margin-top: 2em;
+}
+
+.panel-body {
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
+.form-group {
+    width: auto;
 }
 
 /* ------------------------------------------------------------------------- */

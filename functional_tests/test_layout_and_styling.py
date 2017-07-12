@@ -28,8 +28,8 @@ class LayoutAndStylingTest(FunctionalTest):
 
         # The first thing he notices are the lovely navigation bars at the top
         # and bottom of the page.
-        header = self.browser.find_element_by_id('navHeader')
-        footer = self.browser.find_element_by_id('navFooter')
+        header = self.browser.find_element_by_id('header')
+        footer = self.browser.find_element_by_id('footer')
 
         # Farva, briefly stuck in a moment of awe caused by the unparalleled
         # beauty of the navigation bar, finally falls back to the realm of
@@ -47,11 +47,11 @@ class LayoutAndStylingTest(FunctionalTest):
         # Farva loves a good footer. Naturally, he scrolls down to the footer
         # and sees a clean footer bar with two columns: one for the logo on the
         # left and the other for site navigation.
-        footer_logo = footer.find_element_by_id("footer-logo")
+        footer_logo = footer.find_element_by_id("footer_logo")
         self.assertLessEqual(
             footer_logo.location['x'] - footer_logo.size['width'], 512)
 
-        footer_links = footer.find_element_by_id("footer-link-container")
+        footer_links = footer.find_element_by_id("footer_link_container")
         self.assertGreaterEqual(
             footer_links.location['x'] + footer_links.size['width'], 512)
 
@@ -62,7 +62,7 @@ class LayoutAndStylingTest(FunctionalTest):
         # at the top of the page, centered under the navigation bar.
         self.browser.get(self.live_server_url)
         self.browser.set_window_size(1024, 768)
-        self.browser.find_element_by_id("keywordSearchForm")
+        self.browser.find_element_by_id("basic_search_form")
 
         # Conincidentally, while Bertha visits the site, the site admin
         # concurrently posts two new announcements.
@@ -71,8 +71,8 @@ class LayoutAndStylingTest(FunctionalTest):
 
         # On the left side of the screen Bertha sees the two announcements.
         self.browser.refresh()
-        result_item_1 = self.browser.find_element_by_id("news-item-1")
-        result_item_2 = self.browser.find_element_by_id("news-item-2")
+        result_item_1 = self.browser.find_element_by_id("news_item_1")
+        result_item_2 = self.browser.find_element_by_id("news_item_2")
 
         self.assertIn(news_item_1.message, result_item_1.text)
         self.assertIn(news_item_2.message, result_item_2.text)
@@ -85,8 +85,8 @@ class LayoutAndStylingTest(FunctionalTest):
         # Bertha decides to refresh the page for story convenience reasons.
         # Good Bertha.
         self.browser.refresh()
-        result_item_1 = self.browser.find_element_by_id("news-item-1")
-        result_item_2 = self.browser.find_element_by_id("news-item-2")
+        result_item_1 = self.browser.find_element_by_id("news_item_1")
+        result_item_2 = self.browser.find_element_by_id("news_item_2")
 
         self.assertIn(news_item_2.message, result_item_1.text)
         self.assertIn(news_item_1.message, result_item_2.text)

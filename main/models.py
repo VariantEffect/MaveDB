@@ -1,6 +1,7 @@
 
 import datetime
 from django.db import models
+from django.core.validators import MinValueValidator
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 
@@ -22,7 +23,7 @@ class News(models.Model):
             raise ValueError("A null message is not allowed.")
         elif not self.text.strip():
             raise ValueError("A blank message is not allowed.")
-        
+
         if self.date is None:
             raise ValueError("A null date is not allowed.")
         try:
@@ -55,7 +56,7 @@ class SiteInformation(models.Model):
             return True
         else:
             return existing[0].pk == self.pk
-        
+
     def save(self, *args, **kwargs):
         if self.about is None:
             raise ValueError("A null about is not allowed.")
@@ -65,25 +66,33 @@ class SiteInformation(models.Model):
             raise ValueError("A null citation is not allowed.")
         elif not self.citation.strip():
             raise ValueError("A blank citation is not allowed.")
-        
+
         if not self.can_save():
             raise ValueError("This is a singleton table. Cannot add entry.")
         else:
             super().save(*args, **kwargs)
 
 
+# -------------------------------------------------------------------------- #
+#
+#                           DEBUG/TESTING GROUNDS
+#
+# -------------------------------------------------------------------------- #
 class Experiment(models.Model):
-    accession = models.TextField(default="", blank=False)
-    target = models.TextField(default="", blank=False)
     date = models.DateField(blank=False, default=datetime.date.today)
-    author = models.TextField(default="", blank=False)
-    reference = models.TextField(default="", blank=False)
-    alt_reference = models.TextField(default="", blank=False)
-    scoring_method = models.TextField(default="", blank=False)
-    read_depth = models.IntegerField(default=0, blank=False)
-    base_coverage = models.IntegerField(default=0, blank=False)
-    num_variants = models.IntegerField(default=0, blank=False)
-    keywords = models.TextField(default="", blank=False)
+    accession = models.CharField(default="", blank=False, max_length=1024)
+    target = models.CharField(default="", blank=False, max_length=1024)
+    author = models.CharField(default="", blank=False, max_length=1024)
+    reference = models.CharField(default="", blank=False, max_length=1024)
+    alt_reference = models.CharField(default="", blank=False, max_length=1024)
+    scoring_method = models.CharField(default="", blank=False, max_length=1024)
+    keywords = models.CharField(default="", blank=False, max_length=1024)
+    read_depth = models.IntegerField(
+        default=1, blank=False, validators=[MinValueValidator(1)])
+    base_coverage = models.PositiveIntegerField(
+        default=1, blank=False, validators=[MinValueValidator(1)])
+    num_variants = models.PositiveIntegerField(
+        default=1, blank=False, validators=[MinValueValidator(1)])
 
     def __str__(self):
         return "Experiment(\n\t" + \
@@ -133,7 +142,7 @@ def make_random_experiment():
 
     num = rand.randint(0, 1000)
     org_code = rand.choice(list(references.keys()))
-    
+
     accession = 'EXP' + '0'*(4-len(str(num))) + str(num) + org_code
     target = rand.choice(targets)
     author = ', '.join(
@@ -143,10 +152,11 @@ def make_random_experiment():
     method = rand.choice(methods)
     read_depth = rand.randint(10, 50)
     base_coverage = rand.randint(10, 100)
-    num_variants = rand.randint(50, 1000) 
+    num_variants = rand.randint(50, 1000)
     keywords = ', '.join(
         [rand.choice(keywords) for _ in range(0, rand.randint(1, 4))])
-    date = datetime.date.today() - datetime.timedelta(days=rand.randint(0, 500))
+    date = datetime.date.today() - \
+        datetime.timedelta(days=rand.randint(0, 500))
 
     exp = Experiment.objects.create(
         accession=accession,

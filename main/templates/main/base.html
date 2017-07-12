@@ -17,7 +17,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MaveDB</title>
     <link rel="stylesheet" type="text/css" 
-			href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css"/>
+			    href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css"/>
+    <link rel="Stylesheet" type="text/css"
+          href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.css"/>
     <link href="/static/main/css/base.css" rel="stylesheet" />
   </head>
 
@@ -25,7 +27,7 @@
     <div id="header"> 
       <nav id="nav-header" class="navbar navbar-default">
         <div class="container">
-          <div class="navbar-header">
+          <div id="navbar_logo" class="navbar-header">
             <button type="button" class="navbar-toggle collapsed"
                     data-toggle="collapse" data-target="#navbar"
                     aria-expanded="false" aria-controls="navbar">
@@ -38,7 +40,7 @@
                 href="{% url 'main:home' %}">MaveDB</a>
           </div>
 
-          <div id="navbar" class="collapse navbar-collapse">
+          <div id="navbar_links" class="collapse navbar-collapse">
             <ul class="nav navbar-nav navbar-right">
               <li><a href="{% url 'main:search' %}">Search</a></li>
               <li><a href="#">Download</a></li>
@@ -70,13 +72,13 @@
 
     <div id="footer" class="footer">
       <div class="row">
-        <div id="footer-logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+        <div id="footer_logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
           <div class="text-center">
               <span>MaveDB Logo Goes Here</span>
           </div>
         </div>
 
-        <div id="footer-link-container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+        <div id="footer_link_container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
           <div  class="text-center">
               <a href="#">Help</a> |
               <a href="#">Contact</a> |
@@ -94,14 +96,16 @@
     <!-- Load ALL the Javascripts! -->
     <script src="/static/main/bootstrap/js/npm.js"></script>
     <script src="/static/main/js/base.js"></script>
+    <script type="text/javascript" 
+            src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" 
+            src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
+    <script type="text/javascript"
+            src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script>
         $(document).ready( function () {
             $('#table_id').DataTable();
         } );
     </script>
-    <script type="text/javascript" 
-            src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" 
-            src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
   </body>
 </html>

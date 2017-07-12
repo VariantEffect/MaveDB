@@ -18,10 +18,6 @@ class HomePageTest(TestCase):
         response = self.client.get('/')
         self.assertTemplateUsed(response, 'main/home.html')
 
-    def test_home_page_uses_base_template(self):
-        response = self.client.get('/')
-        self.assertContains(response, "bodyBlock")
-
     def test_news_items_display(self):
         News.objects.create(text="Hello World!")
         News.objects.create(text="Greetings Space Ranger!")
@@ -71,4 +67,3 @@ class SearchPageTest(TestCase):
 
     def test_table_renders_sorted_by_date_upon_page_load(self):
         self.fail("Write this test!")
-

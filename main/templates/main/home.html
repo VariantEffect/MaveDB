@@ -3,7 +3,7 @@
 
 {% block body %}
 
-<div id="keywordSearchForm" class="container">
+<div id="basic_search_form" class="container">
   <form action="{% block home_search %}{% endblock %}" method="post">
     {% csrf_token %}
     {{ form }}
@@ -19,33 +19,29 @@
   </form>
 </div>
 
-<div id="basic-info" class="container" style="margin-top: 50px">
+<div id="basic_info" class="container" style="margin-top: 50px">
   <div class="row">
-    <div id="leftPane" class="col-sm-8 col-md-8">
-      <div class="centeredDiv">
-        <h1>About</h1>
-        {% if site_information %}
-          <div id="about"> 
-            {{ site_information.about|apply_markup:"restructuredtext" }} 
-          </div>
-        {% endif %}
-      </div>
+    <div id="left_pane" class="col-sm-8 col-md-8">
+      <h1>About</h1>
+      {% if site_information %}
+        <div id="about"> 
+          {{ site_information.about|apply_markup:"restructuredtext" }} 
+        </div>
+      {% endif %}
     </div>
 
-    <div id="right-pane" class="col-sm-4 col-md-4">
-      <div>
-        <h1>Announcements</h1>
-        <div class="alert alert-info">
-          {% if not news_items %}
-            <div id="no-news"> No announcements at this time. </div>
-          {% else %}
-            {% for item in news_items %}
-            <div id="news-item-{{forloop.counter}}"> 
-              {{ item.message|apply_markup:"restructuredtext" }} 
-            </div>
-            {% endfor %}
-          {% endif %}
-        </div>
+    <div id="right_pane" class="col-sm-4 col-md-4">
+      <h1>Announcements</h1>
+      <div class="alert alert-info">
+        {% if not news_items %}
+          <div id="no_news"> No announcements at this time. </div>
+        {% else %}
+          {% for item in news_items %}
+          <div id="news_item_{{forloop.counter}}"> 
+            {{ item.message|apply_markup:"restructuredtext" }} 
+          </div>
+          {% endfor %}
+        {% endif %}
       </div>
     </div>
   </div>
@@ -53,11 +49,11 @@
   <div class="row">
     <div>
       <h1>Citation</h1>
-     {% if site_information %}
+      {% if site_information %}
       <div id="citation"> 
         {{ site_information.citation|apply_markup:"restructuredtext" }} 
       </div>
-     {% endif %}
+      {% endif %}
     </div>
   </div>
 </div>

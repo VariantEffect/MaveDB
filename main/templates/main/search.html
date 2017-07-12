@@ -1,36 +1,30 @@
 {% extends "main/base.html" %}
+{% load crispy_forms_tags %}
 
 {% block body %}
 
-<div id="advancedSearchForm" class="container">
-  <form action="" method="post">
-    {% csrf_token %}
-    {{ form }}
-		
-		<div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
-			<div class="input-group">
-				<input type="text" class="form-control"  
-								placeholder="Example: EXP0010HSA; BRCA1; Kinase; Least Squares...">
-				<span class="input-group-addon">
-					<button type="submit">
-							<span class="glyphicon glyphicon-search"></span>
-					</button>  
-				</span>
-			</div>
-		</div>
-    <div class="col-sm-2 col-sm-2 col-md-2 col-lg-2">
-      <button type="button" class="btn btn-primary" 
-							data-toggle="collapse" data-target="#advanced-search">
-				Advanced
-				<span class="glyphicon glyphicon-cog"</span>
-      </button>
-    </div>
-  </form>
+<div id="basic_search_form" class="container">
+	<div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
+		{% crispy basic_search_form %}
+	</div>
+	<div class="col-sm-2 col-sm-2 col-md-2 col-lg-2">
+		<button type="button" class="btn btn-primary" 
+						data-toggle="collapse" data-target="#advanced_search_form">
+			Advanced
+			<span class="glyphicon glyphicon-cog"</span>
+		</button>
+	</div>
+</div>
 
-	<br><br><br>
-  <div id="advanced-search" class="collapse">
-		<p> Hello world </p>
-  </div>
+
+<div id="advanced_search_form" class="container collapse">
+	<div class="panel panel-default">
+		<!-- Default panel contents -->
+		<div class="panel-heading">Advanced Search Options</div>
+			<div class="panel-body">
+				{% crispy advanced_search_form %}
+			</div>
+	</div>
 </div>
 
 <div id="results-table" class="container-fluid" style="margin-top: 2em; width: 90%;">
@@ -45,9 +39,9 @@
 					<th>Alt. Reference</th>
 					<th>Scoring Method</th>
 					<th>Keywords</th>
-					<th>Avg Depth</th>
-					<th>Avg Coverage</th>
-					<th>Num Variants</th>
+					<th>Depth</th>
+					<th>Coverage</th>
+					<th>Variant Count</th>
 				</tr>
 		</thead>
 		<tbody>
