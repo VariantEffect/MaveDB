@@ -147,6 +147,13 @@ class Experiment(models.Model):
             str(self.base_coverage) + '\n\t' + \
             str(self.num_variants)
 
+    @property
+    def short_date(self):
+        year = self.date.year
+        month = self.date.month
+        day = self.date.day
+        return '{}/{}/{}'.format(year, month, day)
+
 
 def make_random_experiment():
     import names

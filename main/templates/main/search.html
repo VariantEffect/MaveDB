@@ -31,53 +31,54 @@
 	</div>
 </div>
 
-<br><br>
 <div id="results-table" class="container-fluid">
 	<table id="table_id" class="table table-striped table-hover">
 		<thead>
 			<tr>
-				<th>Accesion</th>
-				<th>Target</th>
-				<th>Date</th>
+				<th class="small_col">Accesion</th>
+				<th class="small_col">Target</th>
+				<th class="small_col">Date</th>
 				<th>Author</th>
 				<th>Reference</th>
 				<th>Alt. Reference</th>
 				<th>Scoring Method</th>
 				<th>Keywords</th>
-				<th>Depth</th>
-				<th>Coverage</th>
-				<th>Variant Count</th>
+				<th class="small_col">Depth</th>
+				<th class="small_col">Coverage</th>
+				<th class="small_col">Variant Count</th>
 			</tr>
 		</thead>
 		<thead class="filters">
 			<tr>
-				<th>Accesion</th>
-				<th>Target</th>
-				<th>Date</th>
+				<th class="small_col">Accesion</th>
+				<th class="small_col">Target</th>
+				<th class="small_col">Date</th>
 				<th>Author</th>
 				<th>Reference</th>
 				<th>Alt. Reference</th>
 				<th>Scoring Method</th>
 				<th>Keywords</th>
-				<th>Depth</th>
-				<th>Coverage</th>
-				<th>Variant Count</th>
+				<th class="small_col">Depth</th>
+				<th class="small_col">Coverage</th>
+				<th class="small_col">Variant Count</th>
 			</tr>
 		</thead>
 		<tbody>
 			{% for exp in experiments  %}
 				<tr>
-					<td>{{ exp.accession }}</td>
-					<td>{{ exp.target }}</td>
-					<td>{{ exp.date }}</td>
-					<td>{{ exp.authors }}</td>
+					<td class="small_col">
+						<a href='#'>{{ exp.accession }}</a>
+					</td>
+					<td class="small_col">{{ exp.target }}</td>
+					<td class="small_col">{{ exp.short_date }}</td>
+					<td >{{ exp.authors }}</td>
 					<td><i>{{ exp.reference }}</i></td>
 					<td><i>{{ exp.alt_reference }}</i></td>
 					<td>{{ exp.scoring_method }}</td>
 					<td>{{ exp.keywords }}</td>
-					<td>{{ exp.read_depth }}</td>
-					<td>{{ exp.base_coverage }}</td>
-					<td>{{ exp.num_variants }}</td>
+					<td id="min" class="small_col">{{ exp.read_depth }}</td>
+					<td id="min" class="small_col">{{ exp.base_coverage }}</td>
+					<td id="min" class="small_col">{{ exp.num_variants }}</td>
 				</tr>
 			{% endfor %}
 		</tbody>

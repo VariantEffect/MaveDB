@@ -102,37 +102,7 @@
             src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
     <script type="text/javascript"
             src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script>
-      $(document).ready(function() {
-          $('#table_id').DataTable({
-              /* No ordering applied by DataTables during initialisation */
-              "order": [],
-              "pageLength": 25,
-              "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]]
-          });
-
-          // Setup - add a text input to each footer cell
-          $('#table_id tfoot th').each( function () {
-              var title = $(this).text();
-              $(this).html(
-                '<input type="text" class="textinput textInput form-control" />');
-          } );
-
-          $('#table_id_filter').hide()
-    
-          // DataTable
-          var table = $('#table_id').DataTable();
-    
-          // Apply the search
-          table.columns().every( function () {
-              var that = this;
-              $( 'input', this.footer() ).on( 'keyup change', function () {
-                  if ( that.search() !== this.value ) {
-                      that.search( this.value ).draw();
-                  }
-              });
-          });
-      });
-    </script>
+    <script type="text/javascript"
+            scr="//cdn.datatables.net/plug-ins/1.10.15/filtering/row-based/range_numbers.js"></script>
   </body>
 </html>

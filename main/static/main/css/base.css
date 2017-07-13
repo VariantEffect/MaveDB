@@ -42,7 +42,7 @@
     font-weight: normal;
     height: auto;
     
-    border: 1px solid #18bc9c;
+    border: 1px solid black;
     margin-top: 1px;
     margin-bottom: 1px;
     padding-left: 2px;
@@ -57,8 +57,9 @@
     font-size: 12px;
     font-weight: normal;
     height: auto;
+    max-width: 80%;
     
-    border: 1px solid #18bc9c;
+    border: 1px solid black;
     margin-top: 1px;
     margin-bottom: 1px;
     padding-left: 2px;
@@ -66,6 +67,17 @@
     padding-top: 1px;
     padding-bottom: 1px;
 }
+
+td, th, tr {
+    word-wrap: break-word;
+    max-width: 150px;
+}
+
+table {
+    table-layout: fixed;
+    width: 100%;
+}
+
 
 th {
 	background: #AFC8FA;
@@ -82,7 +94,16 @@ th {
 .table-bordered,
 .table {
     border: 1px solid gray;
+    padding: 2px;
+}
+
+.small_col {
     word-wrap: break-word;
+    max-width: 50px; 
+}
+
+#results-table {
+    margin-top: 2px;
 }
 
 /* ------------------------------------------------------------------------- */
