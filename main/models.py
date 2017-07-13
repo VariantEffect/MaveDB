@@ -1,5 +1,7 @@
 
 import datetime
+import numpy as np
+
 from django.db import models
 from django.core.validators import MinValueValidator
 from markdownx.models import MarkdownxField
@@ -79,20 +81,57 @@ class SiteInformation(models.Model):
 #
 # -------------------------------------------------------------------------- #
 class Experiment(models.Model):
-    date = models.DateField(blank=False, default=datetime.date.today)
-    accession = models.CharField(default="", blank=False, max_length=1024)
-    target = models.CharField(default="", blank=False, max_length=1024)
-    author = models.CharField(default="", blank=False, max_length=1024)
-    reference = models.CharField(default="", blank=False, max_length=1024)
-    alt_reference = models.CharField(default="", blank=False, max_length=1024)
-    scoring_method = models.CharField(default="", blank=False, max_length=1024)
-    keywords = models.CharField(default="", blank=False, max_length=1024)
+    date = models.DateField(
+        blank=False, default=datetime.date.today,
+        verbose_name="Publication date")
+    accession = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Accession")
+    target = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Target")
+    author = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Author")
+    reference = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Primary reference")
+    alt_reference = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Seconary reference")
+    scoring_method = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Scoring method")
+    keywords = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Keywords")
     read_depth = models.IntegerField(
-        default=1, blank=False, validators=[MinValueValidator(1)])
+        default=1, blank=False,
+        verbose_name="Average read depth",
+        validators=[MinValueValidator(1)])
     base_coverage = models.PositiveIntegerField(
-        default=1, blank=False, validators=[MinValueValidator(1)])
+        default=1, blank=False,
+        verbose_name="Average base coverage",
+        validators=[MinValueValidator(1)])
     num_variants = models.PositiveIntegerField(
-        default=1, blank=False, validators=[MinValueValidator(1)])
+        default=1, blank=False,
+        verbose_name="Variant count",
+        validators=[MinValueValidator(1)])
+
+    @property
+    def author_count(self):
+        return len(self.author.split(','))
+
+    @property
+    def authors(self):
+        if self.author_count > 1:
+            first = self.author.split(',')[0].split(' ')[0]
+            last = self.author.split(',')[0].split(' ')[1]
+            return "{} et al.".format(last)
+        else:
+            first = self.author.split(',')[0].split(' ')[0]
+            last = self.author.split(',')[0].split(' ')[1]
+            return '{}, {}'.format(last, first)
 
     def __str__(self):
         return "Experiment(\n\t" + \
@@ -114,16 +153,11 @@ def make_random_experiment():
     import random as rand
 
     references = {
-        "BOVIN": "Bovine", "CHICK": "Chicken",
-        "ECOLI": "Escherichia coli", "HORSE": "Horse",
-        "HUMAN": "Homo sapiens", "MAIZE": "Maize (Zea mays)",
-        "MOUSE": "Mouse", "PEA": "Garden pea (Pisum sativum)",
-        "PIG": "Pig", "RABIT": "Rabbit",
-        "RAT": "Rat", "SHEEP": "Sheep",
-        "SOYBN": "Soybean (Glycine max)",
-        "TOBAC": "Common tobacco (Nicotina tabacum)",
-        "WHEAT": "Wheat (Triticum aestivum)",
-        "YEAST": "Baker’s yeast (Saccharomyces cerevisiae)"
+        "BVN": "Bovine",
+        "ECO": "Escherichia coli",
+        "HSA": "Homo sapiens",
+        "MUS": "Mus musculus",
+        "YST": "Saccharomyces cerevisiae"
     }
     targets = [
         "A2M", "ABL1", "APEX1", "APOC3", "APOE", "BDNF", "BLM", "BRCA1",
@@ -147,14 +181,21 @@ def make_random_experiment():
     target = rand.choice(targets)
     author = ', '.join(
         [names.get_full_name() for _ in range(0, rand.randint(1, 4))])
+
     primary_ref = references[org_code]
     secondary_ref = references[rand.choice(list(references.keys()))]
+
+    if primary_ref == secondary_ref:
+        secondary_ref = 'None'
     method = rand.choice(methods)
+
     read_depth = rand.randint(10, 50)
     base_coverage = rand.randint(10, 100)
     num_variants = rand.randint(50, 1000)
-    keywords = ', '.join(
-        [rand.choice(keywords) for _ in range(0, rand.randint(1, 4))])
+
+    size = rand.randint(1, 5)
+    keywords = ', '.join(np.random.choice(keywords, replace=False, size=size))
+
     date = datetime.date.today() - \
         datetime.timedelta(days=rand.randint(0, 500))
 

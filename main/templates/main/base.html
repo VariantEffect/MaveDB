@@ -103,9 +103,12 @@
     <script type="text/javascript"
             src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script>
-        $(document).ready( function () {
-            $('#table_id').DataTable();
-        } );
+      $(document).ready( function() {
+          $('#table_id').DataTable({
+              /* No ordering applied by DataTables during initialisation */
+              "order": []
+          });
+      })
     </script>
   </body>
 </html>

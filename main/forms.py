@@ -1,4 +1,7 @@
 from django import forms
+from django.db import models
+from django.core.exceptions import ValidationError
+
 from crispy_forms.helper import FormHelper
 from crispy_forms import layout
 from crispy_forms.layout import Layout, Div, Field, Submit
@@ -24,121 +27,104 @@ class BasicSearchForm(forms.Form):
         self.helper.form_show_labels = False
 
 
-class AdvancedSearchForm(forms.Form):
-    accessions = forms.CharField(
-        label="Accession:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput(attrs={'style': 'width:100%;'})
-    )
-    targets = forms.CharField(
-        label="Targets:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput(attrs={'style': 'width:100%;'})
-    )
-    keywords = forms.CharField(
-        label="Keywords:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput(attrs={'style': 'width:100%;'})
-    )
-    
-    authors = forms.CharField(
-        label="Authors:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput(attrs={'style': 'width:100%;'})
-    )
+class AdvancedSearchForm(forms.ModelForm):
+    class Meta:
+        model = Experiment
+        exclude = ("date", )
+
     date_from = forms.DateField(
         label="Date from:",
         required=False,
-        widget=forms.DateInput()
+        widget=forms.DateInput(attrs={"placeholder": "yyyy-mm-dd"})
     )
     date_to = forms.DateField(
         label="Date to:",
         required=False,
-        widget=forms.DateInput()
+        widget=forms.DateInput(attrs={"placeholder": "yyyy-mm-dd"})
     )
 
-    primary_references = forms.CharField(
-        label="References:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput(attrs={'style': 'width:100%;'})
-    )   
-    secondary_references = forms.CharField(
-        label="Secondary references:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput(attrs={'style': 'width:100%;'})
-    )
+    def clean(self):
+        date_from = self.cleaned_data['date_from']
+        date_to = self.cleaned_data['date_to']
 
-    scoring_methods = forms.CharField(
-        label="Scoring methods:",
-        max_length=None,
-        strip=True,
-        required=False,
-        widget=forms.TextInput()
-    )
+        if date_to is not None and date_from is not None:
+            if date_to < date_from:
+                msg = "Must be on or before the from date."
+                self._errors["date_to"] = self.error_class([msg])
 
-    min_avg_read_depth = forms.IntegerField(
-        label="Average read depth from:",
-        min_value=1,
-        required=False,
-        widget=forms.NumberInput(attrs={'value': 1})
-    )
-    min_avg_base_coverage = forms.IntegerField(
-        label="Average coverage from:",
-        min_value=1,
-        required=False,
-        widget=forms.NumberInput(attrs={'value': 1})
-    )
-    min_variant_count = forms.IntegerField(
-        label="Variant count from:",
-        min_value=1,
-        required=False,
-        widget=forms.NumberInput(attrs={'value': 1})
-    )
+        def clean_str(field, sep=','):
+            return [x.strip() for x in self.cleaned_data[field].split(sep) if x]
+
+        try:
+            self.cleaned_data["keywords"] = clean_str("keywords")
+            self.cleaned_data["target"] = clean_str("target")
+            self.cleaned_data["accession"] = clean_str("accession")
+            self.cleaned_data["author"] = clean_str("author")
+            self.cleaned_data["reference"] = clean_str("reference")
+            self.cleaned_data["alt_reference"] = clean_str("alt_reference")
+            self.cleaned_data["scoring_method"] = clean_str("scoring_method")
+        except Exception as e:
+            raise ValidationError(e)
+        return self.cleaned_data
 
     def __init__(self, *args, **kwargs):
-        forms.Form.__init__(self, *args, **kwargs)
+        forms.ModelForm.__init__(self, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "POST"
         self.helper.form_id = 'crispy_advanced_search'
+        for key in self.fields:
+            self.fields[key].required = False
 
         self.helper.layout = Layout(
             Div(
-                Div(Field('accessions'), css_class="col-sm-3 col-md-3 col-lg-3"),
-                Div(Field('targets'), css_class="col-sm-3 col-md-3 col-lg-3"),
-                Div(Field('keywords'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(
+                    Field('accession'),
+                    css_class="col-sm-3 col-md-3 col-lg-3"),
+                Div(
+                    Field('target'),
+                    css_class="col-sm-3 col-md-3 col-lg-3"),
+                Div(
+                    Field('keywords'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
             Div(
-                Div(Field('authors'), css_class="col-sm-6 col-md-6 col-lg-6"),
-                Div(Field('date_from'), css_class="col-sm-2 col-md-2 col-lg-2"),
-                Div(Field('date_to'), css_class="col-sm-2 col-md-2 col-lg-2"),
+                Div(
+                    Field('author'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(
+                    Field('date_from'),
+                    css_class="col-sm-2 col-md-2 col-lg-2"),
+                Div(
+                    Field('date_to'),
+                    css_class="col-sm-2 col-md-2 col-lg-2"),
                 css_class="row"
             ),
             Div(
-                Div(Field('primary_references'), css_class="col-sm-6 col-md-6 col-lg-6"),
-                Div(Field('secondary_references'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(
+                    Field('reference'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(
+                    Field('alt_reference'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
             Div(
-                Div(Field('scoring_methods'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(
+                    Field('scoring_method'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
             Div(
-                Div(Field('min_avg_read_depth'), css_class="col-sm-3 col-md-3 col-lg-3"),
-                Div(Field('min_avg_base_coverage'), css_class="col-sm-3 col-md-3 col-lg-3"),
-                Div(Field('min_variant_count'), css_class="col-sm-3 col-md-3 col-lg-3"),
+                Div(
+                    Field('read_depth'),
+                    css_class="col-sm-3 col-md-3 col-lg-3"),
+                Div(
+                    Field('base_coverage'),
+                    css_class="col-sm-3 col-md-3 col-lg-3"),
+                Div(
+                    Field('num_variants'),
+                    css_class="col-sm-3 col-md-3 col-lg-3"),
                 css_class="row"
             ),
             Div(
@@ -146,3 +132,81 @@ class AdvancedSearchForm(forms.Form):
                 css_class="row pull-right"
             ),
         )
+
+    def query_experiments(self):
+        experiments = Experiment.objects.all()
+
+        accesions = self.cleaned_data["accession"]
+        if accesions:
+            entries = Experiment.objects.none()
+            for accession in accesions:
+                entries |= Experiment.objects.all().filter(
+                    accession__iexact=accession)
+            experiments &= entries
+
+        targets = self.cleaned_data["target"]
+        if targets:
+            entries = Experiment.objects.none()
+            for target in targets:
+                entries |= Experiment.objects.all().filter(
+                    target__iexact=target)
+            experiments &= entries
+
+        authors = self.cleaned_data["author"]
+        if authors:
+            entries = Experiment.objects.none()
+            for author in authors:
+                entries |= Experiment.objects.all().filter(
+                    author__icontains=author)
+            experiments &= entries
+
+        references = self.cleaned_data["reference"]
+        if references:
+            entries = Experiment.objects.none()
+            for reference in references:
+                entries |= Experiment.objects.all().filter(
+                    reference__icontains=reference)
+            experiments &= entries
+
+        alt_references = self.cleaned_data["alt_reference"]
+        if alt_references:
+            entries = Experiment.objects.none()
+            for alt_reference in alt_references:
+                entries |= Experiment.objects.all().filter(
+                    alt_reference__icontains=alt_reference)
+            experiments &= entries
+
+        scoring_methods = self.cleaned_data["scoring_method"]
+        if scoring_methods:
+            entries = Experiment.objects.none()
+            for scoring_method in scoring_methods:
+                entries |= Experiment.objects.all().filter(
+                    scoring_method__icontains=scoring_method)
+            experiments &= entries
+
+        keywords = self.cleaned_data["keywords"]
+        if keywords:
+            entries = Experiment.objects.none()
+            for keyword in keywords:
+                entries |= Experiment.objects.all().filter(
+                    keywords__icontains=keyword)
+            experiments &= entries
+
+        num_variants = self.cleaned_data["num_variants"]
+        experiments = experiments.filter(num_variants__gte=num_variants)
+
+        base_coverage = self.cleaned_data["base_coverage"]
+        experiments = experiments.filter(base_coverage__gte=base_coverage)
+
+        read_depth = self.cleaned_data["read_depth"]
+        experiments = experiments.filter(read_depth__gte=read_depth)
+
+        date_from = self.cleaned_data["date_from"]
+        if date_from:
+            experiments = experiments.filter(date__gte=date_from)
+
+        date_to = self.cleaned_data["date_to"]
+        if date_to:
+            experiments = experiments.filter(date__lte=date_to)
+
+        return experiments

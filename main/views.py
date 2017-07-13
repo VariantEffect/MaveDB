@@ -18,18 +18,18 @@ def home_view(request):
 def search_view(request):
     basic_search_form = BasicSearchForm()
     advanced_search_form = AdvancedSearchForm()
-    experiments = Experiment.objects.all()[0: 1000]
-    
+    experiments = Experiment.objects.all()
+
     if request.method == "POST":
-        form = AdvancedSearchForm(request.POST)
-        scoring_methods = [x.strip() for x in form.data['scoring_methods'].split(",")]
-        experiments = Experiment.objects.filter(scoring_method__in=scoring_methods)
-        
+        advanced_search_form = AdvancedSearchForm(request.POST)
+        if advanced_search_form.is_valid():
+            experiments = advanced_search_form.query_experiments()
+
     return render(
         request=request,
         template_name='main/search.html',
         context={
-            'experiments': experiments,
+            'experiments': experiments.order_by('?'),
             'basic_search_form': basic_search_form,
             'advanced_search_form': advanced_search_form
         }
