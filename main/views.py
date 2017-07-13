@@ -10,13 +10,18 @@ def home_view(request):
     if SiteInformation.objects.count() == 1:
         site_information = SiteInformation.objects.all()[0]
         return render(request, 'main/home.html', {
-            "news_items": news_items, "site_information": site_information})
+            "news_items": news_items,
+            "basic_search_form": BasicSearchForm(),
+            "site_information": site_information
+        })
     else:
-        return render(request, 'main/home.html', {"news_items": news_items})
+        return render(request, 'main/home.html', {
+            "news_items": news_items,
+            "basic_search_form": BasicSearchForm()
+        })
 
 
-def search_view(request):
-    basic_search_form = BasicSearchForm()
+def advanced_search_view(request):
     advanced_search_form = AdvancedSearchForm()
     experiments = Experiment.objects.all()
 
@@ -29,8 +34,42 @@ def search_view(request):
         request=request,
         template_name='main/search.html',
         context={
-            'experiments': experiments.order_by('?'),
-            'basic_search_form': basic_search_form,
+            'experiments': experiments,
+            'basic_search_form': BasicSearchForm(),
             'advanced_search_form': advanced_search_form
+        }
+    )
+
+
+def basic_search_view(request):
+    basic_search_form = BasicSearchForm()
+    experiments = Experiment.objects.all()
+
+    if request.method == "POST":
+        print(request.POST)
+        basic_search_form = BasicSearchForm(request.POST)
+        if basic_search_form.is_valid():
+            experiments = basic_search_form.query_experiments()
+
+    return render(
+        request=request,
+        template_name='main/search.html',
+        context={
+            'experiments': experiments,
+            'basic_search_form': basic_search_form,
+            'advanced_search_form': AdvancedSearchForm()
+        }
+    )
+
+
+def search_view(request):
+    experiments = Experiment.objects.all()
+    return render(
+        request=request,
+        template_name='main/search.html',
+        context={
+            'experiments': experiments,
+            'basic_search_form': BasicSearchForm(),
+            'advanced_search_form': AdvancedSearchForm()
         }
     )

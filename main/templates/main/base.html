@@ -106,7 +106,9 @@
       $(document).ready( function() {
           $('#table_id').DataTable({
               /* No ordering applied by DataTables during initialisation */
-              "order": []
+              "order": [],
+              "pageLength": 25,
+              "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]]
           });
       })
     </script>

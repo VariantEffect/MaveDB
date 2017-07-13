@@ -1,22 +1,11 @@
 {% extends "main/base.html" %}
 {% load markup_tags %}
+{% load crispy_forms_tags %}
 
 {% block body %}
 
 <div id="basic_search_form" class="container">
-  <form action="{% block home_search %}{% endblock %}" method="post">
-    {% csrf_token %}
-    {{ form }}
-    <div class="input-group">
-      <input type="text" class="form-control"  
-             placeholder="Example: EXP0010HSA; BRCA1; Kinase; Least Squares...">
-      <span class="input-group-addon">
-          <button type="submit">
-              <span class="glyphicon glyphicon-search"></span>
-          </button>  
-      </span>
-    </div>
-  </form>
+  {% crispy basic_search_form %}
 </div>
 
 <div id="basic_info" class="container" style="margin-top: 50px">

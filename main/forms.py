@@ -1,6 +1,10 @@
+
+import re
+
 from django import forms
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 
 from crispy_forms.helper import FormHelper
 from crispy_forms import layout
@@ -25,6 +29,16 @@ class BasicSearchForm(forms.Form):
         self.helper = FormHelper()
         self.helper.form_id = 'crispy_basic_search'
         self.helper.form_show_labels = False
+        self.helper.form_method = "POST"
+        self.helper.form_action = reverse("main:basic_search")
+
+    def clean(self):
+        quoted_queries = re.findall(r'"(.*?)"', self.data['column_search'])
+        self.cleaned_data['column_search'] = queries
+        return self.cleaned_data
+
+    def query_experiments(self):
+        pass
 
 
 class AdvancedSearchForm(forms.ModelForm):
@@ -43,34 +57,11 @@ class AdvancedSearchForm(forms.ModelForm):
         widget=forms.DateInput(attrs={"placeholder": "yyyy-mm-dd"})
     )
 
-    def clean(self):
-        date_from = self.cleaned_data['date_from']
-        date_to = self.cleaned_data['date_to']
-
-        if date_to is not None and date_from is not None:
-            if date_to < date_from:
-                msg = "Must be on or before the from date."
-                self._errors["date_to"] = self.error_class([msg])
-
-        def clean_str(field, sep=','):
-            return [x.strip() for x in self.cleaned_data[field].split(sep) if x]
-
-        try:
-            self.cleaned_data["keywords"] = clean_str("keywords")
-            self.cleaned_data["target"] = clean_str("target")
-            self.cleaned_data["accession"] = clean_str("accession")
-            self.cleaned_data["author"] = clean_str("author")
-            self.cleaned_data["reference"] = clean_str("reference")
-            self.cleaned_data["alt_reference"] = clean_str("alt_reference")
-            self.cleaned_data["scoring_method"] = clean_str("scoring_method")
-        except Exception as e:
-            raise ValidationError(e)
-        return self.cleaned_data
-
     def __init__(self, *args, **kwargs):
         forms.ModelForm.__init__(self, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "POST"
+        self.helper.form_action = reverse("main:advanced_search")
         self.helper.form_id = 'crispy_advanced_search'
         for key in self.fields:
             self.fields[key].required = False
@@ -132,6 +123,30 @@ class AdvancedSearchForm(forms.ModelForm):
                 css_class="row pull-right"
             ),
         )
+
+    def clean(self):
+        date_from = self.cleaned_data['date_from']
+        date_to = self.cleaned_data['date_to']
+
+        if date_to is not None and date_from is not None:
+            if date_to < date_from:
+                msg = "Must be on or before the from date."
+                self._errors["date_to"] = self.error_class([msg])
+
+        def clean_str(field, sep=','):
+            return [x.strip() for x in self.cleaned_data[field].split(sep) if x]
+
+        try:
+            self.cleaned_data["keywords"] = clean_str("keywords")
+            self.cleaned_data["target"] = clean_str("target")
+            self.cleaned_data["accession"] = clean_str("accession")
+            self.cleaned_data["author"] = clean_str("author")
+            self.cleaned_data["reference"] = clean_str("reference")
+            self.cleaned_data["alt_reference"] = clean_str("alt_reference")
+            self.cleaned_data["scoring_method"] = clean_str("scoring_method")
+        except Exception as e:
+            raise ValidationError(e)
+        return self.cleaned_data
 
     def query_experiments(self):
         experiments = Experiment.objects.all()
