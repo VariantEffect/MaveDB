@@ -32,22 +32,37 @@
 </div>
 
 <br><br>
-<div id="results-table" class="container-fluid" style="width: 90%;">
+<div id="results-table" class="container-fluid">
 	<table id="table_id" class="table table-striped table-hover">
 		<thead>
-				<tr>
-					<th>Accesion</th>
-					<th>Target</th>
-					<th>Date</th>
-					<th>Author</th>
-					<th>Reference</th>
-					<th>Alt. Reference</th>
-					<th>Scoring Method</th>
-					<th>Keywords</th>
-					<th>Depth</th>
-					<th>Coverage</th>
-					<th>Variant Count</th>
-				</tr>
+			<tr>
+				<th>Accesion</th>
+				<th>Target</th>
+				<th>Date</th>
+				<th>Author</th>
+				<th>Reference</th>
+				<th>Alt. Reference</th>
+				<th>Scoring Method</th>
+				<th>Keywords</th>
+				<th>Depth</th>
+				<th>Coverage</th>
+				<th>Variant Count</th>
+			</tr>
+		</thead>
+		<thead class="filters">
+			<tr>
+				<th>Accesion</th>
+				<th>Target</th>
+				<th>Date</th>
+				<th>Author</th>
+				<th>Reference</th>
+				<th>Alt. Reference</th>
+				<th>Scoring Method</th>
+				<th>Keywords</th>
+				<th>Depth</th>
+				<th>Coverage</th>
+				<th>Variant Count</th>
+			</tr>
 		</thead>
 		<tbody>
 			{% for exp in experiments  %}

@@ -103,14 +103,36 @@
     <script type="text/javascript"
             src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script>
-      $(document).ready( function() {
+      $(document).ready(function() {
           $('#table_id').DataTable({
               /* No ordering applied by DataTables during initialisation */
               "order": [],
               "pageLength": 25,
               "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]]
           });
-      })
+
+          // Setup - add a text input to each footer cell
+          $('#table_id tfoot th').each( function () {
+              var title = $(this).text();
+              $(this).html(
+                '<input type="text" class="textinput textInput form-control" />');
+          } );
+
+          $('#table_id_filter').hide()
+    
+          // DataTable
+          var table = $('#table_id').DataTable();
+    
+          // Apply the search
+          table.columns().every( function () {
+              var that = this;
+              $( 'input', this.footer() ).on( 'keyup change', function () {
+                  if ( that.search() !== this.value ) {
+                      that.search( this.value ).draw();
+                  }
+              });
+          });
+      });
     </script>
   </body>
 </html>

@@ -51,6 +51,22 @@
     padding-bottom: 1px;
 }
 
+#table_id .filters th .textinput.textInput.form-control {
+    color: black;
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    height: auto;
+    
+    border: 1px solid #18bc9c;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
 th {
 	background: #AFC8FA;
 	padding-left: 4px;
@@ -65,7 +81,8 @@ th {
 .table-bordered > thead > tr > th,
 .table-bordered,
 .table {
-	border: 1px solid gray;
+    border: 1px solid gray;
+    word-wrap: break-word;
 }
 
 /* ------------------------------------------------------------------------- */
