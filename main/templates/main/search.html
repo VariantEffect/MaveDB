@@ -31,8 +31,8 @@
 	</div>
 </div>
 
-<div id="results-table" class="container-fluid">
-	<table id="table_id" class="table table-striped table-hover">
+<div id="results_table" class="container-fluid">
+	<table id="experiment_table" class="table table-striped table-hover">
 		<thead>
 			<tr>
 				<th class="small_col">Accesion</th>
@@ -67,7 +67,10 @@
 			{% for exp in experiments  %}
 				<tr>
 					<td class="small_col">
-						<a href='#'>{{ exp.accession }}</a>
+						<a 
+							href="{% url 'main:experiment_detail_view' exp.accession %}">
+							{{ exp.accession }}
+						</a>
 					</td>
 					<td class="small_col">{{ exp.target }}</td>
 					<td class="small_col">{{ exp.short_date }}</td>

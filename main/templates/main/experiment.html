@@ -1,0 +1,52 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="panel panel-default">
+	<!-- Default panel contents -->
+	<div class="panel-heading">Information for {{ experiment.accession }}</div>
+		<div class="panel-body">
+			{% if not experiment %}
+				<p>This experiment no longer exists.</p>
+			{% else %}
+				<p>{{ experiment.description }}</p>
+				
+				<hr>
+				<h3> Basic Information </h3>
+				<div class="inline_content">
+					<label class="inline_label">Target gene: </label>
+					<div class="inline_attribute">{{ experiment.target }}</div>
+				</div>
+				<div class="inline_content">
+					<label class="inline_label">Primary reference organism: </label>
+					<div class="inline_attribute"><i>{{ experiment.reference }}</i></div>
+				</div>
+				<div class="inline_content">
+					<label class="inline_label">Alternative reference organisms: </label>
+					<div class="inline_attribute"><i>{{ experiment.alt_reference }}</i></div>
+				</div>
+				<div class="inline_content">
+					<label class="inline_label">Keywords: </label>
+					<div class="inline_attribute">{{ experiment.keywords }}</div>
+				</div>
+				<div class="inline_content">
+					<label class="inline_label">Full author list: </label>
+					<div class="inline_attribute">{{ experiment.author }}</div>
+				</div>
+				<div class="inline_content">
+					<label class="inline_label">Date published: </label>
+					<div class="inline_attribute">{{ experiment.short_date }}</div>
+				</div>
+
+				<hr>
+				<h3> Associated scoring methods </h3>
+				<div class="inline_content">
+					<a class="inline_label" href="{% url 'main:dataset_detail' experiment.accessionç %}">{{ experiment.scoring_method }}:</a>
+					<div class="inline_attribute"> With variant count {{ experiment.num_variants }}</div>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+
+{% endblock %}

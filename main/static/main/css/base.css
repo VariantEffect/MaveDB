@@ -34,7 +34,7 @@
 /* ------------------------------------------------------------------------- */
 /*                               Column Input
 /* ------------------------------------------------------------------------- */
-.table-hover .input-group .form-control,
+#experiment_table .input-group .form-control,
 .table {
     color: black;
     font-family: Verdana, Helvetica, Arial, sans-serif;
@@ -47,11 +47,11 @@
     margin-bottom: 1px;
     padding-left: 2px;
     padding-right: 2px;
-    padding-top: 1px;
-    padding-bottom: 1px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
-#table_id .filters th .textinput.textInput.form-control {
+#experiment_table .filters th .textinput.textInput.form-control {
     color: black;
     font-family: Verdana, Helvetica, Arial, sans-serif;
     font-size: 12px;
@@ -68,33 +68,21 @@
     padding-bottom: 1px;
 }
 
-td, th, tr {
+#experiment_table td, th, tr {
     word-wrap: break-word;
     max-width: 150px;
 }
 
-table {
+#experiment_table {
     table-layout: fixed;
     width: 100%;
 }
 
 
-th {
+#experiment_table th {
 	background: #AFC8FA;
 	padding-left: 4px;
 	padding-right: 4px;
-}
-
-.table-bordered > tbody > tr > td, 
-.table-bordered > tbody > tr > th, 
-.table-bordered > tfoot > tr > td, 
-.table-bordered > tfoot > tr > th, 
-.table-bordered > thead > tr > td, 
-.table-bordered > thead > tr > th,
-.table-bordered,
-.table {
-    border: 1px solid gray;
-    padding: 2px;
 }
 
 .small_col {
@@ -102,16 +90,26 @@ th {
     max-width: 50px; 
 }
 
-#results-table {
+#results_table {
     margin-top: 2px;
 }
 
 /* ------------------------------------------------------------------------- */
-/*                                 Footer Fix
+/*                            Footer Fix
 /* ------------------------------------------------------------------------- */
 .footer {
     width: 100%;
     margin-top: 2em;
     padding: 1em;
     background-color: #f5f5f5;
+}
+
+/* ------------------------------------------------------------------------- */
+/*                         Experiment view   
+/* ------------------------------------------------------------------------- */
+.inline_label {
+    font-size: 18px;
+}
+.inline_attribute {
+    display: inline-block;
 }

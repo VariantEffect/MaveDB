@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 
 from .models import News, SiteInformation, Experiment
@@ -19,6 +19,38 @@ def home_view(request):
             "news_items": news_items,
             "basic_search_form": BasicSearchForm()
         })
+
+
+def download_view(request):
+    return render(request, 'main/download.html', {})
+
+
+def upload_view(request):
+    return render(request, 'main/upload.html', {})
+
+
+def login_register_view(request):
+    return render(request, 'main/login_register.html', {})
+
+
+def usage_guide_view(request):
+    return render(request, 'main/usage_guide.html', {})
+
+
+def documentation_view(request):
+    return render(request, 'main/documentation.html', {})
+
+
+def help_contact_view(request):
+    return render(request, 'main/help_contact.html', {})
+
+
+def terms_privacy_view(request):
+    return render(request, 'main/terms_privacy.html', {})
+
+
+def dataset_detail_view(request, accession):
+    return render(request, 'main/scoring_method.html', {})
 
 
 def advanced_search_view(request):
@@ -71,5 +103,21 @@ def search_view(request):
             'experiments': experiments,
             'basic_search_form': BasicSearchForm(),
             'advanced_search_form': AdvancedSearchForm()
+        }
+    )
+
+
+def experiment_detail_view(request, accession):
+    experiment = Experiment.objects.all().filter(
+        accession__exact=accession.upper())
+    try:
+        experiment = experiment[0]
+    except IndexError:
+        experiment = None
+    return render(
+        request=request,
+        template_name='main/experiment.html',
+        context={
+            'experiment': experiment
         }
     )

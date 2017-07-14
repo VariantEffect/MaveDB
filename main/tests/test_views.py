@@ -60,8 +60,6 @@ class SearchPageTest(TestCase):
         TestCase.setUp(self)
 
     def test_uses_search_template(self):
-        response = self.client.get('/search')
-        self.assertTemplateUsed(response, 'main/search.html')
         response = self.client.get('/search/')
         self.assertTemplateUsed(response, 'main/search.html')
 

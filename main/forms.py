@@ -1,5 +1,6 @@
 
 import re
+import shlex
 
 from django import forms
 from django.db import models
@@ -33,18 +34,55 @@ class BasicSearchForm(forms.Form):
         self.helper.form_action = reverse("main:basic_search")
 
     def clean(self):
-        quoted_queries = re.findall(r'"(.*?)"', self.data['column_search'])
+        queries = [
+            x.strip()
+            for x in shlex.split(self.data['column_search'])
+            if x.strip()
+        ]
         self.cleaned_data['column_search'] = queries
         return self.cleaned_data
 
     def query_experiments(self):
-        pass
+        queries = self.cleaned_data['column_search']
+        entries = Experiment.objects.none()
+
+        for accession in queries:
+            entries |= Experiment.objects.all().filter(
+                accession__iexact=accession)
+
+        for target in queries:
+            entries |= Experiment.objects.all().filter(
+                target__iexact=target)
+
+        for author in queries:
+            entries |= Experiment.objects.all().filter(
+                author__icontains=author)
+
+        for reference in queries:
+            entries |= Experiment.objects.all().filter(
+                reference__icontains=reference)
+
+        for alt_reference in queries:
+            entries |= Experiment.objects.all().filter(
+                alt_reference__icontains=alt_reference)
+
+        for scoring_method in queries:
+            entries |= Experiment.objects.all().filter(
+                scoring_method__icontains=scoring_method)
+
+        for keyword in queries:
+            entries |= Experiment.objects.all().filter(
+                keywords__icontains=keyword)
+            entries |= Experiment.objects.all().filter(
+                description__icontains=keyword)
+
+        return entries
 
 
 class AdvancedSearchForm(forms.ModelForm):
     class Meta:
         model = Experiment
-        exclude = ("date", )
+        exclude = ("date", "description")
 
     date_from = forms.DateField(
         label="Date from:",
@@ -65,6 +103,23 @@ class AdvancedSearchForm(forms.ModelForm):
         self.helper.form_id = 'crispy_advanced_search'
         for key in self.fields:
             self.fields[key].required = False
+
+        self.fields['accession'].widget = \
+            forms.TextInput(attrs={'placeholder': "EXP0001HSA"})
+        self.fields['target'].widget = \
+            forms.TextInput(attrs={'placeholder': "BRCA1"})
+        self.fields['author'].widget = \
+            forms.TextInput(
+                attrs={'placeholder': "'Aurhor 1', 'Author 2', ..."})
+        self.fields['reference'].widget = \
+            forms.TextInput(
+                attrs={'placeholder': "'Homo sapiens', 'Mus musculus', ..."})
+        self.fields['alt_reference'].widget = \
+            forms.TextInput(attrs={'placeholder': "'Homo sapiens'"})
+        self.fields['scoring_method'].widget = \
+            forms.TextInput(attrs={'placeholder': "'Homo sapiens'"})
+        self.fields['keywords'].widget = \
+            forms.TextInput(attrs={'placeholder': "Kinase, 'DNA Repair', ..."})
 
         self.helper.layout = Layout(
             Div(
@@ -134,7 +189,11 @@ class AdvancedSearchForm(forms.ModelForm):
                 self._errors["date_to"] = self.error_class([msg])
 
         def clean_str(field, sep=','):
-            return [x.strip() for x in self.cleaned_data[field].split(sep) if x]
+            return [
+                x.strip()
+                for x in shlex.split(self.cleaned_data[field])
+                if x.strip()
+            ]
 
         try:
             self.cleaned_data["keywords"] = clean_str("keywords")
@@ -205,6 +264,8 @@ class AdvancedSearchForm(forms.ModelForm):
             for keyword in keywords:
                 entries |= Experiment.objects.all().filter(
                     keywords__icontains=keyword)
+                entries |= Experiment.objects.all().filter(
+                    description__icontains=keyword)
             experiments &= entries
 
         num_variants = self.cleaned_data["num_variants"]

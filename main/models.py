@@ -84,6 +84,9 @@ class Experiment(models.Model):
     date = models.DateField(
         blank=False, default=datetime.date.today,
         verbose_name="Publication date")
+    description = models.TextField(
+        blank=False, default="",
+        verbose_name="Descripton")
     accession = models.CharField(
         default="", blank=False, max_length=1024,
         verbose_name="Accession")
@@ -154,10 +157,16 @@ class Experiment(models.Model):
         day = self.date.day
         return '{}/{}/{}'.format(year, month, day)
 
+    @property
+    def fields(self):
+        return
+
 
 def make_random_experiment():
     import names
     import random as rand
+    from faker import Faker
+    fake = Faker()
 
     references = {
         "BVN": "Bovine",
@@ -210,6 +219,7 @@ def make_random_experiment():
         accession=accession,
         target=target,
         author=author,
+        description='. '.join([fake.text() for _ in range(rand.randint(1, 15))]),
         reference=primary_ref,
         alt_reference=secondary_ref,
         scoring_method=method,
