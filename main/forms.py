@@ -13,6 +13,7 @@ from crispy_forms.layout import Layout, Div, Field, Submit
 
 
 from .models import Experiment
+from .utils.query_parsing import parse_query
 
 
 class BasicSearchForm(forms.Form):
@@ -21,7 +22,8 @@ class BasicSearchForm(forms.Form):
         max_length=None,
         required=False,
         widget=forms.TextInput(attrs={
-            "placeholder": "Examples: BRCA1; Kinase; EXP0001HSA..."
+            "placeholder": "Examples: BRCA1; Kinase; " \
+                "EXP0001HSA, 'quoted single-string query', ..."
         })
     )
 
@@ -34,11 +36,7 @@ class BasicSearchForm(forms.Form):
         self.helper.form_action = reverse("main:basic_search")
 
     def clean(self):
-        queries = [
-            x.strip()
-            for x in shlex.split(self.data['column_search'])
-            if x.strip()
-        ]
+        queries = parse_query(self.data['column_search'])
         self.cleaned_data['column_search'] = queries
         return self.cleaned_data
 
@@ -110,16 +108,16 @@ class AdvancedSearchForm(forms.ModelForm):
             forms.TextInput(attrs={'placeholder': "BRCA1"})
         self.fields['author'].widget = \
             forms.TextInput(
-                attrs={'placeholder': "'Aurhor 1', 'Author 2', ..."})
+                attrs={'placeholder': "Aurhor 1, Author 2, ..."})
         self.fields['reference'].widget = \
             forms.TextInput(
-                attrs={'placeholder': "'Homo sapiens', 'Mus musculus', ..."})
+                attrs={'placeholder': "Homo sapiens, Mus musculus, ..."})
         self.fields['alt_reference'].widget = \
-            forms.TextInput(attrs={'placeholder': "'Homo sapiens'"})
+            forms.TextInput(attrs={'placeholder': "Homo sapiens"})
         self.fields['scoring_method'].widget = \
-            forms.TextInput(attrs={'placeholder': "'Homo sapiens'"})
+            forms.TextInput(attrs={'placeholder': "OLS regression, Log ratios, ..."})
         self.fields['keywords'].widget = \
-            forms.TextInput(attrs={'placeholder': "Kinase, 'DNA Repair', ..."})
+            forms.TextInput(attrs={'placeholder': "Kinase, DNA Repair, ..."})
 
         self.helper.layout = Layout(
             Div(
@@ -189,12 +187,8 @@ class AdvancedSearchForm(forms.ModelForm):
                 self._errors["date_to"] = self.error_class([msg])
 
         def clean_str(field, sep=','):
-            return [
-                x.strip()
-                for x in shlex.split(self.cleaned_data[field])
-                if x.strip()
-            ]
-
+            return parse_query(self.cleaned_data[field], sep)
+        
         try:
             self.cleaned_data["keywords"] = clean_str("keywords")
             self.cleaned_data["target"] = clean_str("target")
@@ -208,6 +202,7 @@ class AdvancedSearchForm(forms.ModelForm):
         return self.cleaned_data
 
     def query_experiments(self):
+        print(self.cleaned_data)
         experiments = Experiment.objects.all()
 
         accesions = self.cleaned_data["accession"]
@@ -254,9 +249,12 @@ class AdvancedSearchForm(forms.ModelForm):
         if scoring_methods:
             entries = Experiment.objects.none()
             for scoring_method in scoring_methods:
+                print(scoring_method)
                 entries |= Experiment.objects.all().filter(
                     scoring_method__icontains=scoring_method)
+                print(entries.count())
             experiments &= entries
+        print(experiments.count())
 
         keywords = self.cleaned_data["keywords"]
         if keywords:
@@ -267,6 +265,7 @@ class AdvancedSearchForm(forms.ModelForm):
                 entries |= Experiment.objects.all().filter(
                     description__icontains=keyword)
             experiments &= entries
+        print(experiments.count())
 
         num_variants = self.cleaned_data["num_variants"]
         experiments = experiments.filter(num_variants__gte=num_variants)

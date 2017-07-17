@@ -47,6 +47,11 @@ class News(models.Model):
 class SiteInformation(models.Model):
     about = models.TextField(default="", blank=False)
     citation = models.TextField(default="", blank=False)
+    # usage_guide
+    # documentation
+    # help
+    # terms
+    # privacy
 
     class Meta:
         verbose_name_plural = "Site Information"

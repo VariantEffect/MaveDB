@@ -3,9 +3,9 @@ $(document).ready(function() {
     $('#experiment_table .filters th').each(function() {
         var title = $('#experiment_table thead th').eq($(this).index()).text();
         $(this).html([
-            '<input type="text"',
-            'class="textinput textInput form-control"',
-            'placeholder="..." />'].join(' '));
+        '<input type="text"',
+        'class="textinput textInput form-control"',
+        'placeholder="..." />'].join(' '));
     });
 
     // DataTable
