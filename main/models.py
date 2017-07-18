@@ -1,11 +1,7 @@
 
 import datetime
-import numpy as np
-
 from django.db import models
 from django.core.validators import MinValueValidator
-from markdownx.models import MarkdownxField
-from markdownx.utils import markdownify
 
 
 class News(models.Model):
@@ -226,7 +222,8 @@ def make_random_experiment():
     num_variants = rand.randint(50, 1000)
 
     size = rand.randint(1, 5)
-    keywords = ', '.join(np.random.choice(keywords, replace=False, size=size))
+    keywords = [rand.choice(keywords) for _ in range(size)]
+    keywords = ', '.join(keywords)
 
     date = datetime.date.today() - \
         datetime.timedelta(days=rand.randint(0, 500))
