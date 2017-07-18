@@ -8,7 +8,13 @@ Running the site requires the following django apps:
 - django-bootstrap3 (pip install django-bootstrap3)
 - django-bootstrap-themes (pip install django-bootstrap-themes)
 - django-crispy-forms (pip install django-crispy-forms)
+
+## For Unit/Functional testing
 - selenium (pip install selenium)
+
+## For random experiment generation
+- names (pip install names)
+- faker (pip install faker)
 
 You may need to install [geckodriver](https://github.com/mozilla/geckodriver/releases) for running the functional test suite.
 
