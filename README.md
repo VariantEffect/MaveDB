@@ -14,6 +14,6 @@ Running the site requires the following django apps:
 Run python manage.py collectstatic to collect static files.
 
 # Database
-Currently set as the the django default (SQLite3). This can be changed in mavedb/settings.py. The data in the current version is mock data and safely deleted. To generate additional experiment data, open a shell session and import 'make_random_experiment' from 'main.models'. This function will generate a single Experiment database entry.
+Currently set as the the django default (SQLite3). This can be changed in mavedb/settings.py. The data in the current version is mock data and can be safely deleted. To generate additional experiment data, open a shell session and import 'make_random_experiment' from 'main.models'. This function will generate a single Experiment database entry.
 
 You may need to install [geckodriver](https://github.com/mozilla/geckodriver/releases) for running the functional test suite.
