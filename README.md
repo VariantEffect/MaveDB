@@ -13,7 +13,6 @@ Running the site requires the following django apps:
 - selenium (pip install selenium)
 
 ### For random experiment generation
-- numpy (pip install numpy)
 - names (pip install names)
 - faker (pip install faker)
 
