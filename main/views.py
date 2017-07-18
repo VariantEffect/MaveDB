@@ -50,7 +50,7 @@ def terms_privacy_view(request):
 
 
 def dataset_detail_view(request, accession):
-    return render(request, 'main/scoring_method.html', {})
+    return render(request, 'main/score_set.html', {})
 
 
 def advanced_search_view(request):

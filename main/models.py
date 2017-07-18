@@ -47,6 +47,7 @@ class News(models.Model):
 class SiteInformation(models.Model):
     about = models.TextField(default="", blank=False)
     citation = models.TextField(default="", blank=False)
+    # TODO: Create these fields:
     # usage_guide
     # documentation
     # help

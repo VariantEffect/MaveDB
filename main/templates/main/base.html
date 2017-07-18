@@ -17,10 +17,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MaveDB</title>
     <link rel="stylesheet" type="text/css" 
-			    href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css"/>
+			    href="{% static 'main/DataTables/css/dataTables.bootstrap.min.css' %}"/>
     <link rel="Stylesheet" type="text/css"
-          href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.css"/>
-    <link href="/static/main/css/base.css" rel="stylesheet" />
+          href="{% static 'main/css/jquery-ui.css' %}"/>
+    <link href="{% static 'main/css/base.css' %}" rel="stylesheet" />
   </head>
 
   <body>
@@ -93,15 +93,12 @@
     </div>
 
     <!-- Load ALL the Javascripts! -->
-    <script src="/static/main/bootstrap/js/npm.js"></script>
     <script type="text/javascript" 
-            src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
+            src="{% static 'main/DataTables/js/jquery.dataTables.min.js' %}"></script>
     <script type="text/javascript" 
-            src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
+            src="{% static 'main/DataTables/js/dataTables.bootstrap.min.js' %}"></script>
     <script type="text/javascript"
-            src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script type="text/javascript"
-            scr="//cdn.datatables.net/plug-ins/1.10.15/filtering/row-based/range_numbers.js"></script>
-    <script src="/static/main/js/base.js"></script>
+            src="{% static 'main/js/jquery-ui.min.js' %}"></script>
+    <script src="{% static 'main/js/base.js' %}"></script>
   </body>
 </html>
