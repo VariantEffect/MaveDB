@@ -99,21 +99,18 @@ class Experiment(models.Model):
     target = models.CharField(
         default="", blank=False, max_length=1024,
         verbose_name="Target")
-    author = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Author")
+    author = models.TextField(
+        default="", blank=False, verbose_name="Author")
     reference = models.CharField(
         default="", blank=False, max_length=1024,
         verbose_name="Primary reference")
     alt_reference = models.CharField(
         default="", blank=False, max_length=1024,
         verbose_name="Seconary reference")
-    scoring_method = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Scoring method")
-    keywords = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Keywords")
+    scoring_method = models.TextField(
+        default="", blank=False, verbose_name="Scoring method")
+    keywords = models.TextField(
+        default="", blank=False, verbose_name="Keywords")
     read_depth = models.IntegerField(
         default=1, blank=False,
         verbose_name="Average read depth",
@@ -126,21 +123,6 @@ class Experiment(models.Model):
         default=1, blank=False,
         verbose_name="Variant count",
         validators=[MinValueValidator(1)])
-
-    @property
-    def author_count(self):
-        return len(self.author.split(','))
-
-    @property
-    def authors(self):
-        if self.author_count > 1:
-            first = self.author.split(',')[0].split(' ')[0]
-            last = self.author.split(',')[0].split(' ')[1]
-            return "{} et al.".format(last)
-        else:
-            first = self.author.split(',')[0].split(' ')[0]
-            last = self.author.split(',')[0].split(' ')[1]
-            return '{}, {}'.format(last, first)
 
     def __str__(self):
         return "Experiment(\n\t" + \
@@ -157,15 +139,43 @@ class Experiment(models.Model):
             str(self.num_variants)
 
     @property
+    def author_count(self):
+        return len(self.author.split(','))
+
+    @property
+    def authors(self):
+        if self.author_count > 1:
+            first = self.author.split(',')[0].split(' ')[0]
+            last = self.author.split(',')[0].split(' ')[1]
+            return "{} et al.".format(last)
+        else:
+            first = self.author.split(',')[0].split(' ')[0]
+            last = self.author.split(',')[0].split(' ')[1]
+            return '{}, {}'.format(last, first)
+
+    @property
     def short_date(self):
         year = self.date.year
         month = self.date.month
         day = self.date.day
         return '{}/{}/{}'.format(year, month, day)
 
-    @property
-    def fields(self):
-        return
+
+class ScoreSet(models.Model):
+    accession = models.CharField(
+        default="", blank=False, max_length=1024,
+        verbose_name="Accession")
+    experiment = models.ForeignKey(
+        'Experiment', on_delete=models.CASCADE)
+    description = models.TextField(default='', blank=False)
+    theory = models.TextField(default='', blank=False)
+
+    def __str__(self):
+        return "ScoreSet({}, {})".format(self.accession, self.experiment)
+
+
+def make_random_scoreset():
+    pass
 
 
 def make_random_experiment():
@@ -225,7 +235,8 @@ def make_random_experiment():
         accession=accession,
         target=target,
         author=author,
-        description='. '.join([fake.text() for _ in range(rand.randint(1, 15))]),
+        description='. '.join(
+            [fake.text() for _ in range(rand.randint(1, 15))]),
         reference=primary_ref,
         alt_reference=secondary_ref,
         scoring_method=method,

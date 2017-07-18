@@ -7,6 +7,7 @@ from .forms import BasicSearchForm, AdvancedSearchForm
 
 def home_view(request):
     news_items = News.recent_news()
+    # There should never be more than one due to the model validation
     if SiteInformation.objects.count() == 1:
         site_information = SiteInformation.objects.all()[0]
         return render(request, 'main/home.html', {
@@ -53,6 +54,11 @@ def dataset_detail_view(request, accession):
     return render(request, 'main/score_set.html', {})
 
 
+# -------------------------------------------------------------------------- #
+#
+#                           DEBUG/TESTING GROUNDS
+#
+# -------------------------------------------------------------------------- #
 def advanced_search_view(request):
     advanced_search_form = AdvancedSearchForm()
     experiments = Experiment.objects.all()
