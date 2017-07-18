@@ -43,8 +43,6 @@
 				<th>Alt. Reference</th>
 				<th>Scoring Method</th>
 				<th>Keywords</th>
-				<th class="small_col">Depth</th>
-				<th class="small_col">Coverage</th>
 				<th class="small_col">Variant Count</th>
 			</tr>
 		</thead>
@@ -58,8 +56,6 @@
 				<th class="string">Alt. Reference</th>
 				<th class="string">Scoring Method</th>
 				<th class="string">Keywords</th>
-				<th class="small_col">Depth</th>
-				<th class="small_col">Coverage</th>
 				<th class="small_col">Variant Count</th>
 			</tr>
 		</thead>
@@ -79,8 +75,6 @@
 					<td><i>{{ exp.alt_reference }}</i></td>
 					<td>{{ exp.scoring_method }}</td>
 					<td>{{ exp.keywords }}</td>
-					<td id="min" class="small_col">{{ exp.read_depth }}</td>
-					<td id="min" class="small_col">{{ exp.base_coverage }}</td>
 					<td id="min" class="small_col">{{ exp.num_variants }}</td>
 				</tr>
 			{% endfor %}

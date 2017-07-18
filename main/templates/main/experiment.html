@@ -38,10 +38,22 @@
 				</div>
 
 				<hr>
-				<h3> Associated scoring methods </h3>
+				<h3> Associated Score Sets </h3>
 				<div class="inline_content">
-					<a class="inline_label" href="{% url 'main:dataset_detail' experiment.accession %}">{{ experiment.scoring_method }}:</a>
-					<div class="inline_attribute"> With variant count {{ experiment.num_variants }}</div>
+					{% if not experiment.score_sets %}
+					<p>No score sets have been uploaded for this experiment</p>
+					{% else %}
+					<ul>
+						{% for scoreset in experiment.score_sets %}
+						<li>
+							<a class="inline_label" 
+								href="{% url 'main:dataset_detail' scoreset.accession %}">
+								{{ scoreset.accession }}
+							</a>
+						</li>
+						{% endfor %}
+					</ul>
+					{% endif %}
 				</div>
 			{% endif %}
 		</div>

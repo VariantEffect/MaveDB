@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 
-from .models import News, SiteInformation, Experiment
+from .models import News, SiteInformation, Experiment, ScoreSet
 from .forms import BasicSearchForm, AdvancedSearchForm
 
 
@@ -48,10 +48,6 @@ def help_contact_view(request):
 
 def terms_privacy_view(request):
     return render(request, 'main/terms_privacy.html', {})
-
-
-def dataset_detail_view(request, accession):
-    return render(request, 'main/score_set.html', {})
 
 
 # -------------------------------------------------------------------------- #
@@ -125,5 +121,21 @@ def experiment_detail_view(request, accession):
         template_name='main/experiment.html',
         context={
             'experiment': experiment
+        }
+    )
+
+
+def dataset_detail_view(request, accession):
+    scoreset = ScoreSet.objects.all().filter(
+        accession__exact=accession.upper())
+    try:
+        scoreset = scoreset[0]
+    except IndexError:
+        scoreset = None
+    return render(
+        request=request,
+        template_name='main/scoreset.html',
+        context={
+            'scoreset': scoreset
         }
     )

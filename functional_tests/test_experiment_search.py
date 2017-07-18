@@ -27,8 +27,6 @@ class SearchFunctionalityTest(FunctionalTest):
             alt_reference="Rabit",
             scoring_method="OLS Regression",
             keywords="Kinase, DNA Repair",
-            read_depth=50,
-            base_coverage=25,
             num_variants=125
         )
         self.exp_item_2 = Experiment.objects.create(
@@ -41,8 +39,6 @@ class SearchFunctionalityTest(FunctionalTest):
             alt_reference="Human",
             scoring_method="Log Ratios",
             keywords="Kinase, Energy Production",
-            read_depth=50,
-            base_coverage=30,
             num_variants=100
         )
         self.exp_item_3 = Experiment.objects.create(
@@ -55,8 +51,6 @@ class SearchFunctionalityTest(FunctionalTest):
             alt_reference="Rabit",
             scoring_method="WLS Regression",
             keywords="Disease, DNA Repair",
-            read_depth=51,
-            base_coverage=29,
             num_variants=98
         )
 

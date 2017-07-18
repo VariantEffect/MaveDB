@@ -26,12 +26,9 @@ urlpatterns = [
     url(r'help/$', help_contact_view, name='help'),
     url(r'terms/$', terms_privacy_view, name='terms'),
     url(r'privacy/$', terms_privacy_view, name='privacy'),
-
-    url(r'experiment/(?P<accession>\w+)/scored_dataset/$', 
-        dataset_detail_view, name='dataset_detail'),
     url(r'search/$', search_view, name='search'),
     url(r'search/basic/$', basic_search_view, name='basic_search'),
     url(r'search/advanced/$', advanced_search_view, name='advanced_search'),
-    url(r'experiment/(?P<accession>\w+)/$', experiment_detail_view,
-        name='experiment_detail_view')
+    url(r'scoreset/(?P<accession>\w+.\d+)/$', dataset_detail_view, name='dataset_detail'),
+    url(r'experiment/(?P<accession>\w+)/$', experiment_detail_view, name='experiment_detail_view')
 ]

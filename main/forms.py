@@ -115,7 +115,8 @@ class AdvancedSearchForm(forms.ModelForm):
         self.fields['alt_reference'].widget = \
             forms.TextInput(attrs={'placeholder': "Homo sapiens"})
         self.fields['scoring_method'].widget = \
-            forms.TextInput(attrs={'placeholder': "OLS regression, Log ratios, ..."})
+            forms.TextInput(
+                attrs={'placeholder': "OLS regression, Log ratios, ..."})
         self.fields['keywords'].widget = \
             forms.TextInput(attrs={'placeholder': "Kinase, DNA Repair, ..."})
 
@@ -161,12 +162,6 @@ class AdvancedSearchForm(forms.ModelForm):
             ),
             Div(
                 Div(
-                    Field('read_depth'),
-                    css_class="col-sm-3 col-md-3 col-lg-3"),
-                Div(
-                    Field('base_coverage'),
-                    css_class="col-sm-3 col-md-3 col-lg-3"),
-                Div(
                     Field('num_variants'),
                     css_class="col-sm-3 col-md-3 col-lg-3"),
                 css_class="row"
@@ -202,7 +197,6 @@ class AdvancedSearchForm(forms.ModelForm):
         return self.cleaned_data
 
     def query_experiments(self):
-        print(self.cleaned_data)
         experiments = Experiment.objects.all()
 
         accesions = self.cleaned_data["accession"]
@@ -249,12 +243,9 @@ class AdvancedSearchForm(forms.ModelForm):
         if scoring_methods:
             entries = Experiment.objects.none()
             for scoring_method in scoring_methods:
-                print(scoring_method)
                 entries |= Experiment.objects.all().filter(
                     scoring_method__icontains=scoring_method)
-                print(entries.count())
             experiments &= entries
-        print(experiments.count())
 
         keywords = self.cleaned_data["keywords"]
         if keywords:
@@ -265,16 +256,9 @@ class AdvancedSearchForm(forms.ModelForm):
                 entries |= Experiment.objects.all().filter(
                     description__icontains=keyword)
             experiments &= entries
-        print(experiments.count())
 
         num_variants = self.cleaned_data["num_variants"]
         experiments = experiments.filter(num_variants__gte=num_variants)
-
-        base_coverage = self.cleaned_data["base_coverage"]
-        experiments = experiments.filter(base_coverage__gte=base_coverage)
-
-        read_depth = self.cleaned_data["read_depth"]
-        experiments = experiments.filter(read_depth__gte=read_depth)
 
         date_from = self.cleaned_data["date_from"]
         if date_from:

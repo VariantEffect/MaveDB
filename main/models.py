@@ -107,14 +107,6 @@ class Experiment(models.Model):
         default="", blank=False, verbose_name="Scoring method")
     keywords = models.TextField(
         default="", blank=False, verbose_name="Keywords")
-    read_depth = models.IntegerField(
-        default=1, blank=False,
-        verbose_name="Average read depth",
-        validators=[MinValueValidator(1)])
-    base_coverage = models.PositiveIntegerField(
-        default=1, blank=False,
-        verbose_name="Average base coverage",
-        validators=[MinValueValidator(1)])
     num_variants = models.PositiveIntegerField(
         default=1, blank=False,
         verbose_name="Variant count",
@@ -130,8 +122,6 @@ class Experiment(models.Model):
             str(self.alt_reference) + '\n\t' + \
             str(self.scoring_method) + '\n\t' + \
             str(self.keywords) + '\n\t' + \
-            str(self.read_depth) + '\n\t' + \
-            str(self.base_coverage) + '\n\t' + \
             str(self.num_variants)
 
     @property
@@ -156,6 +146,10 @@ class Experiment(models.Model):
         day = self.date.day
         return '{}/{}/{}'.format(year, month, day)
 
+    @property
+    def score_sets(self):
+        return self.scoreset_set.all()
+
 
 class ScoreSet(models.Model):
     accession = models.CharField(
@@ -170,8 +164,32 @@ class ScoreSet(models.Model):
         return "ScoreSet({}, {})".format(self.accession, self.experiment)
 
 
+# -------------------------------------------------------------------------- #
+#                        DATABASE POPULATION
+# -------------------------------------------------------------------------- #
 def make_random_scoreset():
-    pass
+    import random as rand
+    from faker import Faker
+
+    fake = Faker()
+    possible_experiments = [e for e in Experiment.objects.all()]
+    experiment = rand.choice(possible_experiments)
+    description = '. '.join(
+        [fake.text() for _ in range(rand.randint(1, 15))])
+    theory = '. '.join(
+        [fake.text() for _ in range(rand.randint(1, 15))])
+
+    score_set_count = experiment.scoreset_set.count()
+    exp_accession = experiment.accession
+    accession = exp_accession.replace(
+        "EXP", "SCS") + '.{}'.format(score_set_count + 1)
+
+    return ScoreSet.objects.create(
+        accession=accession,
+        description=description,
+        theory=theory,
+        experiment=experiment
+    )
 
 
 def make_random_experiment():
@@ -216,9 +234,6 @@ def make_random_experiment():
     if primary_ref == secondary_ref:
         secondary_ref = 'None'
     method = rand.choice(methods)
-
-    read_depth = rand.randint(10, 50)
-    base_coverage = rand.randint(10, 100)
     num_variants = rand.randint(50, 1000)
 
     size = rand.randint(1, 5)
@@ -237,8 +252,6 @@ def make_random_experiment():
         reference=primary_ref,
         alt_reference=secondary_ref,
         scoring_method=method,
-        read_depth=read_depth,
-        base_coverage=base_coverage,
         num_variants=num_variants,
         keywords=keywords,
         date=date
