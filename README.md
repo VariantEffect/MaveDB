@@ -9,10 +9,11 @@ Running the site requires the following django apps:
 - django-bootstrap-themes (pip install django-bootstrap-themes)
 - django-crispy-forms (pip install django-crispy-forms)
 
-## For Unit/Functional testing
+### For Unit/Functional testing
 - selenium (pip install selenium)
 
-## For random experiment generation
+### For random experiment generation
+- numpy (pip install numpy)
 - names (pip install names)
 - faker (pip install faker)
 
