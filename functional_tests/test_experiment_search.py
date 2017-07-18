@@ -20,6 +20,7 @@ class SearchFunctionalityTest(FunctionalTest):
         self.exp_item_1 = Experiment.objects.create(
             accession="EXP0000HSA",
             target="BRCA1",
+            description="Farva's first experiment.",
             date=datetime.date(2017, 7, 1),
             author="Farva Steelbeard",
             reference="Human",
@@ -35,6 +36,7 @@ class SearchFunctionalityTest(FunctionalTest):
             target="EGFR",
             date=datetime.date(2017, 7, 5),
             author="Farva Steelbeard",
+            description="Farva's second experiment.",
             reference="Mouse",
             alt_reference="Human",
             scoring_method="Log Ratios",
@@ -47,6 +49,7 @@ class SearchFunctionalityTest(FunctionalTest):
             accession="EXP0003HSA",
             target="BRCA2",
             date=datetime.date(2017, 7, 2),
+            description="Bertha's first experiment.",
             author="Bertha Agustus",
             reference="Bovine",
             alt_reference="Rabit",
@@ -64,12 +67,6 @@ class SearchFunctionalityTest(FunctionalTest):
         # if today is one of those basic search days or advanced search days.
         self.browser.get(self.live_server_url)
         self.browser.set_window_size(1024, 768)
-
-        basic_search = self.browser.find_element_by_id('crispy_basic_search')
-        self.assertContains(basic_search, "crispy_basic_search")
-
-        adv_search = self.browser.find_element_by_id('crispy_advanced_search')
-        self.assertContains(adv_search, "crispy_advanced_search")
 
     def test_basic_search_functions_as_expected(self):
         pass
