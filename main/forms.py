@@ -269,3 +269,35 @@ class AdvancedSearchForm(forms.ModelForm):
             experiments = experiments.filter(date__lte=date_to)
 
         return experiments
+
+
+class ExperimentCreationForm(forms.Form):
+    """
+    Prototype form for creating a new experiment.
+    """
+    # --------------------Model/Field Declaration --------------------------- #
+
+    # -------------------------- Methods ------------------------------------ #
+    def __init__(self, *args, **kwargs):
+        forms.Form.__init__(self, *args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'crispy_experiment_form'
+        self.helper.form_show_labels = True
+        self.helper.form_method = "POST"
+        self.helper.form_action = reverse("main:new_experiment")
+
+
+class ScoresetCreationForm(forms.Form):
+    """
+    Prototype form for creating a new experiment.
+    """
+    # --------------------Model/Field Declaration --------------------------- #
+
+    # -------------------------- Methods ------------------------------------ #
+    def __init__(self, *args, **kwargs):
+        forms.Form.__init__(self, *args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'crispy_scoreset_form'
+        self.helper.form_show_labels = True
+        self.helper.form_method = "POST"
+        self.helper.form_action = reverse("main:new_scoreset")
