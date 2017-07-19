@@ -34,7 +34,7 @@ urlpatterns = [
     url(r'search/basic/$', basic_search_view, name='basic_search'),
     url(r'search/advanced/$', advanced_search_view, name='advanced_search'),
 
-    url(r'scoreset/(?P<accession>(SCS|scs)\w+.\d+)/$',
+    url(r'experiment/((EXP|exp)\d+\w+)/(?P<accession>(SCS|scs)\w+.\d+)/$',
         scoreset_detail_view, name='scoreset_detail'),
     url(r'scoreset/new/$', new_scoreset_view, name="new_scoreset"),
 

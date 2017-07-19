@@ -2,5 +2,25 @@
 {% load crispy_forms_tags %}
 
 {% block body %}
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    {% if for_experiment %}
+      <h3 class="panel-title">Create new {{ type }} for {{ for_experiment }} </h3>
+    {% else %}
+      <h3 class="panel-title">Create new {{ type }}</h3>
+    {% endif %}
+  </div>
+  <div class="panel-body">
+    <p>
+      Successful submissions will be subject to an approval process,
+      which may take up to three working days.
+    </p>
+    <p>Note: Fields marked with * are required.</p>
+
     {% crispy new_model_form %}
+
+  </div>
+</div>
+
 {% endblock %}

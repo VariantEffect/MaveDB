@@ -47,7 +47,7 @@
 						{% for scoreset in experiment.score_sets %}
 						<li>
 							<a class="inline_label" 
-								href="{% url 'main:scoreset_detail' scoreset.accession %}">
+								href="{% url 'main:scoreset_detail' experiment.accession scoreset.accession %}">
 								{{ scoreset.accession }}
 							</a>
 						</li>

@@ -1,8 +1,10 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 
 from .models import News, SiteInformation, Experiment, ScoreSet
+
 from .forms import BasicSearchForm, AdvancedSearchForm
+from .forms import ExperimentCreationForm, ScoresetCreationForm
 
 
 def home_view(request):
@@ -126,7 +128,28 @@ def experiment_detail_view(request, accession):
 
 
 def new_experiment_view(request):
-    return HttpResponse("This is the new experiment view.")
+    create_exp_form = ExperimentCreationForm()
+    if request.method == 'POST':
+        # Attemt to create a new experiment from cleaned data.
+        for_experiment = "EXP0001"
+        create_scs_form = ScoresetCreationForm(for_experiment)
+        return render(
+            request=request,
+            template_name='main/new_model.html',
+            context={
+                'new_model_form': create_scs_form,
+                'type': 'score set',
+                'for_experiment': for_experiment
+            }
+        )
+    return render(
+        request=request,
+        template_name='main/new_model.html',
+        context={
+            'new_model_form': create_exp_form,
+            'type': 'experiment'
+        }
+    )
 
 
 def scoreset_detail_view(request, accession):
@@ -145,5 +168,17 @@ def scoreset_detail_view(request, accession):
     )
 
 
-def new_scoreset_view(request):
-    return HttpResponse("This is the new scoreset view.")
+def new_scoreset_view(request, exp_accession=None):
+    create_scs_form = ScoresetCreationForm(exp_accession)
+
+    if request.method == 'POST':
+        pass
+
+    return render(
+        request=request,
+        template_name='main/new_model.html',
+        context={
+            'new_model_form': create_scs_form,
+            'type': 'score set'
+        }
+    )

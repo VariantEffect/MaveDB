@@ -1,15 +1,10 @@
-
-import re
-import shlex
-
 from django import forms
-from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 
-from crispy_forms.helper import FormHelper
 from crispy_forms import layout
-from crispy_forms.layout import Layout, Div, Field, Submit
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Div, Field, Submit, Fieldset, HTML
 
 
 from .models import Experiment
@@ -22,8 +17,8 @@ class BasicSearchForm(forms.Form):
         max_length=None,
         required=False,
         widget=forms.TextInput(attrs={
-            "placeholder": "Examples: BRCA1; Kinase; " \
-                "EXP0001HSA, 'quoted single-string query', ..."
+            "placeholder": "Examples: BRCA1; Kinase; "
+                           "EXP0001HSA, 'quoted single-string query', ..."
         })
     )
 
@@ -276,6 +271,31 @@ class ExperimentCreationForm(forms.Form):
     Prototype form for creating a new experiment.
     """
     # --------------------Model/Field Declaration --------------------------- #
+    author = forms.CharField(
+        label="Author(s)", required=True,
+        widget=forms.TextInput(
+            attrs=dict(placeholder='Comma separated.')))
+    target = forms.CharField(label="Target", required=True)
+    wt_seq = forms.CharField(
+        label="Wild-type sequence", required=True,
+        widget=forms.Textarea(attrs=dict(rows=4)))
+    model = forms.CharField(label="Target organism", required=False)
+    keywords = forms.CharField(
+        label="Keywords", required=False,
+        widget=forms.TextInput(
+            attrs=dict(placeholder='Comma separated.')))
+    protein = forms.CharField(
+        label="Accessions", required=False,
+        widget=forms.TextInput(
+            attrs=dict(placeholder='UniProt, RefSeq, ...')))
+    abstract = forms.CharField(
+        label="Abstract", required=False,
+        widget=forms.Textarea(attrs=dict(placeholder='Markdown is supported')))
+    short_description = forms.CharField(
+        label="Short Description", required=False, max_length=512,
+        widget=forms.Textarea(attrs=dict(
+            placeholder='Markdown is supported', rows=2)))
+
 
     # -------------------------- Methods ------------------------------------ #
     def __init__(self, *args, **kwargs):
@@ -284,7 +304,24 @@ class ExperimentCreationForm(forms.Form):
         self.helper.form_id = 'crispy_experiment_form'
         self.helper.form_show_labels = True
         self.helper.form_method = "POST"
-        self.helper.form_action = reverse("main:new_experiment")
+        self.helper.form_action = reverse('main:new_experiment')
+        self.helper.layout = Layout(
+            Div(Field("author")),
+            Div(
+                Div(Field('target'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(Field('protein'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                css_class="row"
+            ),
+            Div(Field("wt_seq")),
+            Div(
+                Div(Field('model'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(Field('keywords'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                css_class="row"
+            ),
+            Div(Field("abstract")),
+            Div(Field("short_description")),
+            Div(Submit(name="submit", value='Next'), css_class="pull-right")
+        )
 
 
 class ScoresetCreationForm(forms.Form):
@@ -292,12 +329,53 @@ class ScoresetCreationForm(forms.Form):
     Prototype form for creating a new experiment.
     """
     # --------------------Model/Field Declaration --------------------------- #
+    exp_accession = forms.CharField(
+        label="Experiment accession", required=True,
+        widget=forms.TextInput(attrs=dict(value="")))
+    authors = forms.CharField(label="Author(s)", required=True)
+    name = forms.CharField(label="Score set name", required=False)
+    description = forms.CharField(
+        label="Description", required=False,
+        widget=forms.Textarea(
+            attrs=dict(placeholder='Markdown supported.', rows=3)))
+    theory = forms.CharField(
+        label="Method theory", required=False,
+        widget=forms.Textarea(
+            attrs=dict(placeholder='MathJax supported.', rows=3)))
+    keywords = forms.CharField(
+        label="Keywords", required=False,
+        widget=forms.TextInput(
+            attrs=dict(placeholder='Comma separated.')))
+    data = forms.CharField(
+        label="Dataset (header required)", required=True,
+        widget=forms.Textarea(attrs=dict(
+            placeholder='hgvs,score,SE, <optional additional columns>, ...',
+            rows=10)))
 
     # -------------------------- Methods ------------------------------------ #
-    def __init__(self, *args, **kwargs):
+    def __init__(self, accession=None, *args, **kwargs):
         forms.Form.__init__(self, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'crispy_scoreset_form'
         self.helper.form_show_labels = True
         self.helper.form_method = "POST"
         self.helper.form_action = reverse("main:new_scoreset")
+
+        if accession is not None:
+            field = self.fields['exp_accession']
+            field.widget.attrs['value'] = accession
+
+        self.helper.layout = Layout(
+            Div(Field("exp_accession")),
+            Div(Field("authors")),
+            Div(
+                Div(Field('name'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(Field('keywords'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                css_class="row"
+            ),
+            Div(Field("description")),
+            Div(Field("theory")),
+            Field("data"),
+            HTML("<p><b>Note:</b> Dataset must include a header line.</p>"),
+            Div(Submit(name="submit", value='Submit'), css_class="pull-right")
+        )

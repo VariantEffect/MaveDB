@@ -18,9 +18,11 @@
 
 <br><br>
 {% if advanced_search_form.errors %}
-	<div id="advanced_search_form" class="container active collapse in" aria-expanded="true">
+	<div id="advanced_search_form" 
+			 class="container active collapse in" aria-expanded="true">
 {% else %}
-	<div id="advanced_search_form" class="container collapse" aria-expanded="false">
+	<div id="advanced_search_form" 
+			 class="container collapse" aria-expanded="false">
 {% endif %}
 	<div class="panel panel-default">
 		<!-- Default panel contents -->
@@ -48,14 +50,14 @@
 		</thead>
 		<thead class="filters">
 			<tr>
-				<th class="small_col string">Accesion</th>
-				<th class="small_col string">Target</th>
-				<th class="small_col string">Date</th>
-				<th class="string">Author</th>
-				<th class="string">Reference</th>
-				<th class="string">Alt. Reference</th>
-				<th class="string">Scoring Method</th>
-				<th class="string">Keywords</th>
+				<th class="small_col">Accession</th>
+				<th class="small_col">Target</th>
+				<th class="small_col">Date</th>
+				<th>Author</th>
+				<th>Reference</th>
+				<th>Alt. Reference</th>
+				<th>Scoring Method</th>
+				<th>Keywords</th>
 				<th class="small_col">Variant Count</th>
 			</tr>
 		</thead>

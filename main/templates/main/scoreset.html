@@ -5,21 +5,25 @@
 	<!-- Default panel contents -->
 	<div class="panel-heading">Information for {{ scoreset.accession }}</div>
 		<div class="panel-body">
-				<p> {{ scoreset.description }} </p>
+			<p> {{ scoreset.description }} </p>
 
-				<hr>
-					<h3> Theory </h3>
-					<p> {{ scoreset.theory }} </p>
+			<hr></hr>
+			<h3> Theory </h3>
+			<p> {{ scoreset.theory }} </p>
 
-				<hr>
-				<h3> Statistics </h3>
-					<p>
-						Information regarding the scored dataset including simple statistics, 
-						some plots etc.
-					</p>
-		</div>
-		<div class="panel-footer">
-			<button type="button" class="btn btn-default">Download</button>
+			<hr></hr>
+			<h3> Statistics </h3>
+			<p>
+				Information regarding the scored dataset including simple statistics, 
+				some plots etc.
+			</p>
+			
+			<div class="row pull-right"> 
+				<button name="search" value="Download" class="btn btn-primary">
+					Download
+				</button>
+			</div>
+			
 		</div>
 	</div>
 </div>
