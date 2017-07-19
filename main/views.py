@@ -125,7 +125,11 @@ def experiment_detail_view(request, accession):
     )
 
 
-def dataset_detail_view(request, accession):
+def new_experiment_view(request):
+    return HttpResponse("This is the new experiment view.")
+
+
+def scoreset_detail_view(request, accession):
     scoreset = ScoreSet.objects.all().filter(
         accession__exact=accession.upper())
     try:
@@ -139,3 +143,7 @@ def dataset_detail_view(request, accession):
             'scoreset': scoreset
         }
     )
+
+
+def new_scoreset_view(request):
+    return HttpResponse("This is the new scoreset view.")
