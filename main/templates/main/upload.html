@@ -2,12 +2,27 @@
 
 {% block body %}
 
-<p> 
-    This is where a user can upload a new dataset to an existing experiment, create
-    a new experiment or create a new scoring method for an existing experiment. 
-    
-    If a user is not currently logged in then this page will redirect to 
-    the register/login page.
-</p>
+<div class="container">
+	<h4> 
+		This is where a user can create a new experiment or create a new scoring 
+		method for an existing experiment. If a user is not currently logged in 
+		then this page will redirect to the register/login page.
+	</h4>
+</div>
+
+<div class="container">
+	<div class="inline-btn-container" style="height: 100%">
+		<a href="{% url 'main:new_experiment' %}">
+			<div class="box-button">
+				<h3>Create a new experiment</h3>
+			</div>
+		</a>
+		<a href="{% url 'main:new_scoreset' %}">
+			<div class="box-button">
+				<h3>Add to an existing experiment</h3>
+			</div>
+		</a>
+	</div>
+</div>
 
 {% endblock %}

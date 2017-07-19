@@ -17,7 +17,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MaveDB</title>
     <link rel="stylesheet" type="text/css" 
-			    href="{% static 'main/DataTables/css/dataTables.bootstrap.min.css' %}"/>
+          href="{% static 'main/DataTables/css/dataTables.bootstrap.min.css' %}"/>
+    <link rel="stylesheet" type="text/css" 
+			    href="{% static 'main/DataTables/css/buttons.dataTables.min.css' %}"/>
     <link rel="Stylesheet" type="text/css"
           href="{% static 'main/css/jquery-ui.css' %}"/>
     <link href="{% static 'main/css/base.css' %}" rel="stylesheet" />
@@ -85,8 +87,7 @@
               <a href="{% url 'main:terms' %}">Terms</a>
           </div>
           <div id="disclaimer" class="text-center">
-            <p>Copyright 2017, University Of Washington Genome Science,
-              All rights reserved.</p>
+            <p>Copyright 2017, All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -94,11 +95,17 @@
 
     <!-- Load ALL the Javascripts! -->
     <script type="text/javascript" 
-            src="{% static 'main/DataTables/js/jquery.dataTables.min.js' %}"></script>
+            src="{% static 'main/DataTables/js/jquery.dataTables.min.js' %}">
+    </script>
     <script type="text/javascript" 
-            src="{% static 'main/DataTables/js/dataTables.bootstrap.min.js' %}"></script>
+            src="{% static 'main/DataTables/js/dataTables.bootstrap.min.js' %}">
+    </script>
+    <script type="text/javascript" 
+            src="{% static 'main/DataTables/js/dataTables.buttons.min.js' %}">
+    </script>
     <script type="text/javascript"
-            src="{% static 'main/js/jquery-ui.min.js' %}"></script>
+            src="{% static 'main/js/jquery-ui.min.js' %}">
+    </script>
     <script src="{% static 'main/js/base.js' %}"></script>
   </body>
 </html>
