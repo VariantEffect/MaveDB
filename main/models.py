@@ -43,10 +43,10 @@ class News(models.Model):
 class SiteInformation(models.Model):
     about = models.TextField(default="", blank=False)
     citation = models.TextField(default="", blank=False)
+
     # TODO: Create these fields:
     # usage_guide
     # documentation
-    # help
     # terms
     # privacy
 
@@ -78,9 +78,7 @@ class SiteInformation(models.Model):
 
 
 # -------------------------------------------------------------------------- #
-#
 #                           DEBUG/TESTING GROUNDS
-#
 # -------------------------------------------------------------------------- #
 class Experiment(models.Model):
     accession = models.CharField(
@@ -93,9 +91,9 @@ class Experiment(models.Model):
         default="", blank=False, verbose_name="Author(s)")
     wt_sequence = models.TextField(
         default="", blank=False, verbose_name='Wild type sequence')
+
     date = models.DateField(
-        default=datetime.date.today, blank=False,
-        verbose_name="Publication date")
+        default=datetime.date.today, verbose_name="Publication date")
 
     target_organism = models.TextField(
         blank=True, default="", verbose_name="Target organism")
@@ -111,7 +109,7 @@ class Experiment(models.Model):
         default="", blank=True, verbose_name="Accessions")
 
     placeholder_text = {
-        'accession': 'EXP0001HSA',
+        'accession': 'EXP0001',
         'target': 'BRCA1',
         'authors': 'Author 1, Author 2, ...',
         'wt_sequence': 'ATCG or atcg',
@@ -263,7 +261,7 @@ def make_random_experiment():
 
     num = rand.randint(0, 1000)
     org_code = rand.choice(list(references.keys()))
-    accession = 'EXP' + '0'*(4-len(str(num))) + str(num) + org_code
+    accession = 'EXP' + '0'*(4-len(str(num))) + str(num + 1)
     target = rand.choice(targets)
     authors = ', '.join(
         [names.get_full_name() for _ in range(0, rand.randint(1, 4))])

@@ -2,7 +2,7 @@
 import datetime
 
 from django import forms
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 
 from crispy_forms import layout
@@ -10,7 +10,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit, HTML
 
 
-from .models import Experiment
+from .models import Experiment, ScoreSet
 from .utils.query_parsing import parse_query
 
 
@@ -271,20 +271,21 @@ class ExperimentCreationForm(forms.Form):
     Prototype form for creating a new experiment.
     """
     # --------------------Model/Field Declaration --------------------------- #
-    author = forms.CharField(
+    authors = forms.CharField(
         label="Author(s)", required=True,
         widget=forms.TextInput(
             attrs=dict(placeholder='Comma separated.')))
     target = forms.CharField(label="Target", required=True)
-    wt_seq = forms.CharField(
+    wt_sequence = forms.CharField(
         label="Wild-type sequence", required=True,
-        widget=forms.Textarea(attrs=dict(rows=4)))
-    model = forms.CharField(label="Target organism", required=False)
+        widget=forms.Textarea(attrs=dict(rows=4))
+    )
+    target_organism = forms.CharField(label="Target organism", required=False)
     keywords = forms.CharField(
         label="Keywords", required=False,
         widget=forms.TextInput(
             attrs=dict(placeholder='Comma separated.')))
-    protein = forms.CharField(
+    alt_target_accessions = forms.CharField(
         label="Accessions", required=False,
         widget=forms.TextInput(
             attrs=dict(placeholder='UniProt, RefSeq, ...')))
@@ -292,7 +293,11 @@ class ExperimentCreationForm(forms.Form):
         label="Abstract", required=False,
         widget=forms.Textarea(attrs=dict(placeholder='Markdown is supported')))
     short_description = forms.CharField(
-        label="Short Description", required=False, max_length=512,
+        label="Short description", required=False,
+        widget=forms.Textarea(attrs=dict(
+            placeholder='Markdown is supported', rows=2)))
+    method_description = forms.CharField(
+        label="Method description", required=False,
         widget=forms.Textarea(attrs=dict(
             placeholder='Markdown is supported', rows=2)))
 
@@ -306,22 +311,58 @@ class ExperimentCreationForm(forms.Form):
         self.helper.form_method = "POST"
         self.helper.form_action = reverse('main:new_experiment')
         self.helper.layout = Layout(
-            Div(Field("author")),
+            Div(Field("authors")),
             Div(
                 Div(Field('target'), css_class="col-sm-6 col-md-6 col-lg-6"),
-                Div(Field('protein'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(Field('alt_target_accessions'), css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
-            Div(Field("wt_seq")),
+            Div(Field("wt_sequence")),
             Div(
-                Div(Field('model'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(Field('target_organism'), css_class="col-sm-6 col-md-6 col-lg-6"),
                 Div(Field('keywords'), css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
             Div(Field("abstract")),
             Div(Field("short_description")),
+            Div(Field("method_description")),
             Div(Submit(name="submit", value='Next'), css_class="pull-right")
         )
+
+    def clean(self):
+        forms.Form.clean(self)
+
+        target = self.cleaned_data['target']
+        wt_seq = self.cleaned_data['wt_sequence'].upper()
+        authors = ', '.join([x.strip() for
+                   x in self.cleaned_data['authors'].strip().split(',')
+                   if x.strip()])
+
+        model = ', '.join([x.strip() for
+                   x in self.cleaned_data['target_organism'].strip().split(',')
+                   if x.strip()])
+        keywords = ', '.join([x.strip() for
+                   x in self.cleaned_data['keywords'].strip().split(',')
+                   if x.strip()])
+        alt_accessions = ', '.join([x.strip() for
+                   x in self.cleaned_data['alt_target_accessions'].strip().split(',')
+                   if x.strip()])
+
+        self.cleaned_data['target'] = target
+        self.cleaned_data['wt_sequence'] = wt_seq
+        self.cleaned_data['authors'] = authors
+        self.cleaned_data['target_organism'] = model
+        self.cleaned_data['keywords'] = keywords
+        self.cleaned_data['alt_target_accessions'] = alt_accessions
+        return self.cleaned_data
+
+    def save(self):
+        num = Experiment.objects.count()
+        accession = 'EXP' + '0' * (4 - len(str(num))) + str(num + 1)
+        self.cleaned_data['accession'] = accession
+        exp = Experiment(**self.cleaned_data)
+        exp.save()
+        return exp
 
 
 class ScoresetCreationForm(forms.Form):
@@ -332,10 +373,16 @@ class ScoresetCreationForm(forms.Form):
     exp_accession = forms.CharField(
         label="Experiment accession", required=True,
         widget=forms.TextInput(attrs=dict(value="")))
+
     authors = forms.CharField(label="Author(s)", required=True)
-    name = forms.CharField(label="Score set name", required=False)
-    description = forms.CharField(
-        label="Description", required=False,
+    dataset = forms.CharField(
+        label="Dataset (header required)", required=True,
+        widget=forms.Textarea(attrs=dict(
+            placeholder='hgvs,score,SE, <optional additional columns>, ...',
+            rows=10)))
+
+    abstract = forms.CharField(
+        label="Abstract", required=False,
         widget=forms.Textarea(
             attrs=dict(placeholder='Markdown supported.', rows=3)))
     theory = forms.CharField(
@@ -346,11 +393,7 @@ class ScoresetCreationForm(forms.Form):
         label="Keywords", required=False,
         widget=forms.TextInput(
             attrs=dict(placeholder='Comma separated.')))
-    data = forms.CharField(
-        label="Dataset (header required)", required=True,
-        widget=forms.Textarea(attrs=dict(
-            placeholder='hgvs,score,SE, <optional additional columns>, ...',
-            rows=10)))
+    name = forms.CharField(label="Score set name", required=False)
 
     # -------------------------- Methods ------------------------------------ #
     def __init__(self, accession=None, *args, **kwargs):
@@ -373,9 +416,66 @@ class ScoresetCreationForm(forms.Form):
                 Div(Field('keywords'), css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
-            Div(Field("description")),
+            Div(Field("abstract")),
             Div(Field("theory")),
-            Field("data"),
+            Field("dataset"),
             HTML("<p><b>Note:</b> Dataset must include a header line.</p>"),
             Div(Submit(name="submit", value='Submit'), css_class="pull-right")
         )
+
+    def clean(self):
+        forms.Form.clean(self)
+        try:
+            accession = self.cleaned_data['exp_accession'].upper()
+            exp = Experiment.objects.get(accession=accession)
+        except ObjectDoesNotExist:
+            raise ValidationError("Enter a valid experiment accession")
+
+        authors = ', '.join([x.strip() for
+                   x in self.cleaned_data['authors'].strip().split(',')
+                   if x.strip()])
+        keywords = ', '.join([x.strip() for
+                   x in self.cleaned_data['keywords'].strip().split(',')
+                   if x.strip()])
+        self.cleaned_data['authors'] = authors
+        self.cleaned_data['keywords'] = keywords
+
+        dataset = self.cleaned_data['dataset']
+        parsed_data = ""
+
+        try:
+            header = dataset.strip().split('\n')[0].strip().split(',')[0:3]
+            header = ','.join(x.strip() for x in header)
+            if header != ScoreSet.HEADER:
+                raise ValueError("Bad Header.")
+        except (IndexError, ValueError):
+            raise ValidationError("Missing a valid header in dataset.")
+
+        for row in dataset.strip().split('\n'):
+            xs = row.strip().split(',')
+            xs = [elem.strip() for elem in xs]
+            parsed_data += ','.join(xs) + '\n'
+        self.cleaned_data['dataset'] = parsed_data
+
+        return self.cleaned_data
+
+    def save(self):
+        exp = Experiment.objects.get(accession=self.cleaned_data['exp_accession'])
+        score_set_count = exp.scoreset_set.count()
+        exp_accession = exp.accession
+        accession = exp_accession.replace(
+            "EXP", "SCS") + '.{}'.format(score_set_count + 1)
+
+        self.cleaned_data['accession'] = accession
+        scs = ScoreSet(
+            accession=accession,
+            abstract=self.cleaned_data['abstract'],
+            theory=self.cleaned_data['theory'],
+            experiment=exp,
+            authors=self.cleaned_data['authors'],
+            keywords=self.cleaned_data['keywords'],
+            name=self.cleaned_data['name'],
+            dataset=self.cleaned_data['dataset']
+        )
+        scs.save()
+        return scs
