@@ -143,7 +143,7 @@ MARKUP_SETTINGS = {
 BOOTSTRAP3 = {
 
     # The URL to the jQuery JavaScript file
-    'jquery_url': '/static/main/js/jquery-2.2.4.min.js',
+    'jquery_url': '/static/main/js/jquery-3.2.1.min.js',
 
     # The Bootstrap base URL
     'base_url': '/static/main/bootstrap/',

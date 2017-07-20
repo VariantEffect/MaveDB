@@ -85,28 +85,28 @@ class Experiment(models.Model):
         default="", blank=False, max_length=128, verbose_name="Accession")
 
     target = models.CharField(
-        default="", blank=False, max_length=128,
+        default="Not provided", blank=False, max_length=128,
         verbose_name="Target")
     authors = models.TextField(
-        default="", blank=False, verbose_name="Author(s)")
+        default="Not provided", blank=False, verbose_name="Author(s)")
     wt_sequence = models.TextField(
-        default="", blank=False, verbose_name='Wild type sequence')
+        default="Not provided", blank=False, verbose_name='Wild type sequence')
 
     date = models.DateField(
         default=datetime.date.today, verbose_name="Publication date")
 
     target_organism = models.TextField(
-        blank=True, default="", verbose_name="Target organism")
+        blank=True, default="Not provided", verbose_name="Target organism")
     abstract = models.TextField(
-        default="", blank=True, verbose_name="Abstract")
+        default="Not provided", blank=True, verbose_name="Abstract")
     short_description = models.TextField(
-        default="", blank=True, verbose_name="Short description")
+        default="Not provided", blank=True, verbose_name="Short description")
     method_description = models.TextField(
-        default="", blank=True, verbose_name="Method description")
+        default="Not provided", blank=True, verbose_name="Method description")
     keywords = models.TextField(
-        default="", blank=True, verbose_name="Keywords")
+        default="Not provided", blank=True, verbose_name="Keywords")
     alt_target_accessions = models.TextField(
-        default="", blank=True, verbose_name="Accessions")
+        default="Not provided", blank=True, verbose_name="Accessions")
 
     placeholder_text = {
         'accession': 'EXP0001',
@@ -157,20 +157,21 @@ class ScoreSet(models.Model):
         'Experiment', on_delete=models.CASCADE)
 
     accession = models.CharField(
-        default="", blank=False, max_length=128, verbose_name="Accession")
+        default="Not provided", blank=False,
+        max_length=128, verbose_name="Accession")
     authors = models.TextField(
-        default="", blank=False, verbose_name="Author(s)")
+        default="Not provided", blank=False, verbose_name="Author(s)")
     dataset = models.TextField(
         default=HEADER, blank=False, verbose_name="Dataset")
 
     abstract = models.TextField(
-        default="", blank=True, verbose_name="Abstract")
+        default="Not provided", blank=True, verbose_name="Abstract")
     theory = models.TextField(
-        default="", blank=True, verbose_name="Method theory")
+        default="Not provided", blank=True, verbose_name="Method theory")
     keywords = models.TextField(
-        default="", blank=True, verbose_name="Keywords")
+        default="Not provided", blank=True, verbose_name="Keywords")
     name = models.TextField(
-        default="", blank=True, verbose_name="Score set name")
+        default="Not provided", blank=True, verbose_name="Score set name")
 
 
     def __str__(self):
