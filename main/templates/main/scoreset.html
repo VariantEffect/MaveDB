@@ -1,32 +1,65 @@
 {% extends "main/base.html" %}
 
 {% block body %}
+
 <div class="panel panel-default">
 	<!-- Default panel contents -->
-	<div class="panel-heading">Information for {{ scoreset.accession }}</div>
-		<div class="panel-body">
-			<p> {{ scoreset.description }} </p>
+  <div class="panel-heading">Information for {{ scoreset.accession }}</div>
+  <div class="panel-body">
 
-			<hr></hr>
-			<h3> Theory </h3>
-			<p> {{ scoreset.theory }} </p>
+    <h3> Abstract </h3>
+    <div class="container"><p> {{ scoreset.abstract }} </p></div>
 
-			<hr></hr>
-			<h3> Statistics </h3>
-			<p>
-				Information regarding the scored dataset including simple statistics, 
-				some plots etc.
-			</p>
-			
-			<div class="row pull-right"> 
-				<button name="search" value="Download" class="btn btn-primary">
-					Download
-				</button>
-			</div>
-			
-		</div>
-	</div>
+    <hr> <!-- Separator -->
+    <h3> Method description </h3>
+    <div class="container"><p> {{ scoreset.theory }} </p></div>
+
+    <hr> <!-- Separator -->
+    <h3> Statistics </h3>
+    <div class="container"><p>
+      Information regarding the scored dataset including simple statistics,
+      some plots etc.
+    </p></div>
+
+    <hr> <!-- Separator -->
+    <h3> Scores </h3>
+    <div id="results_table" class="container">
+      <table id="searchable_table" class="table table-striped table-hover">
+        <thead>
+          <tr>
+            {% for item in scoreset.data_header %}
+              <th class="small_col">{{ item }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <thead class="filters">
+          <tr>
+            {% for item in scoreset.data_header %}
+              <th class="small_col">{{ item }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in scoreset.data_rows  %}
+            <tr>
+              {% for item in row %}
+                <td class="small_col">{{ item }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <hr> <!-- Separator -->
+    <div class="container">
+      <a href="{% url 'main:download_scoreset' scoreset.accession %}">
+        <button name="download" value="{{ scoreset.accession }}" class="btn btn-primary">
+          Download dataset
+        </button>
+      </a>
+    </div>
+  </div>
 </div>
-
 
 {% endblock %}

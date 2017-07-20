@@ -14,6 +14,7 @@ from .views import usage_guide_view, documentation_view
 from .views import terms_privacy_view, help_contact_view
 
 from .views import new_experiment_view, new_scoreset_view
+from .views import scoreset_dataset_download_view
 
 urlpatterns = [
     url(r'^$', home_view, name='home'),
@@ -34,9 +35,11 @@ urlpatterns = [
     url(r'search/basic/$', basic_search_view, name='basic_search'),
     url(r'search/advanced/$', advanced_search_view, name='advanced_search'),
 
-    url(r'experiment/((EXP|exp)\d+\w+)/(?P<accession>(SCS|scs)\w+.\d+)/$',
+    url(r'scoreset/(?P<accession>(SCS|scs)\w+.\d+)/$',
         scoreset_detail_view, name='scoreset_detail'),
     url(r'scoreset/new/$', new_scoreset_view, name="new_scoreset"),
+    url(r'scoreset/(?P<accession>(SCS|scs)\w+.\d+)/csv/$',
+        scoreset_dataset_download_view, name="download_scoreset"),
 
     url(r'experiment/(?P<accession>(EXP|exp)\d+\w+)/$',
         experiment_detail_view, name='experiment_detail'),

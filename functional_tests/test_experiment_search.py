@@ -15,43 +15,34 @@ class SearchFunctionalityTest(FunctionalTest):
     def setUp(self):
         # Setup some simple database entries
         FunctionalTest.setUp(self)
-        
+
         # Populate the databae
         self.exp_item_1 = Experiment.objects.create(
             accession="EXP0000HSA",
             target="BRCA1",
-            description="Farva's first experiment.",
+            abstract="Farva's first experiment.",
             date=datetime.date(2017, 7, 1),
-            author="Farva Steelbeard",
-            reference="Human",
-            alt_reference="Rabit",
-            scoring_method="OLS Regression",
+            authors="Farva Steelbeard",
+            target_organism="Human",
             keywords="Kinase, DNA Repair",
-            num_variants=125
         )
         self.exp_item_2 = Experiment.objects.create(
-            accession="EXP0001MUS",
+            accession="EXP0000MUS",
             target="EGFR",
+            abstract="Farva's second experiment.",
             date=datetime.date(2017, 7, 5),
-            author="Farva Steelbeard",
-            description="Farva's second experiment.",
-            reference="Mouse",
-            alt_reference="Human",
-            scoring_method="Log Ratios",
-            keywords="Kinase, Energy Production",
-            num_variants=100
+            authors="Farva Steelbeard",
+            target_organism="Mouse",
+            keywords="Kinase, DNA Repair",
         )
         self.exp_item_3 = Experiment.objects.create(
             accession="EXP0003HSA",
             target="BRCA2",
             date=datetime.date(2017, 7, 2),
-            description="Bertha's first experiment.",
-            author="Bertha Agustus",
-            reference="Bovine",
-            alt_reference="Rabit",
-            scoring_method="WLS Regression",
+            abstract="Bertha's first experiment.",
+            authors="Bertha Agustus",
+            target_organism="Bovine",
             keywords="Disease, DNA Repair",
-            num_variants=98
         )
 
     def test_crispy_forms_render(self):

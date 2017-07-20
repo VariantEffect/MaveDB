@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 
 from .models import News, SiteInformation, Experiment, ScoreSet
 
@@ -50,6 +50,17 @@ def help_contact_view(request):
 
 def terms_privacy_view(request):
     return render(request, 'main/terms_privacy.html', {})
+
+
+def scoreset_dataset_download_view(request, accession):
+    scoreset = ScoreSet.objects.get(accession=accession)
+    def gen_repsonse():
+        for row in scoreset.dataset.split('\n'):
+            xs = row.strip().split(',')
+            xs = [elem.strip() for elem in xs]
+            yield ','.join(xs) + '\n'
+    return StreamingHttpResponse(gen_repsonse(), content_type='text')
+
 
 
 # -------------------------------------------------------------------------- #
@@ -182,3 +193,4 @@ def new_scoreset_view(request, exp_accession=None):
             'type': 'score set'
         }
     )
+

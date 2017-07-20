@@ -24,9 +24,12 @@ def chain_until_next_quotes(items, sep=','):
     """
     i = 1
     string = items[0]
-    state = 'open'
 
     if not string.startswith('"') and not string.startswith("'"):
+        return string.strip(), i
+    elif string.startswith('"') and string.endswith('"'):
+        return string.strip(), i
+    elif string.startswith("'") and string.startswith("'"):
         return string.strip(), i
     else:
         while i < len(items):
@@ -35,7 +38,7 @@ def chain_until_next_quotes(items, sep=','):
             i += 1
             if string.startswith('"') and item.endswith('"'):
                 break
-            if string.startswith("'") and item.endswith("'"):
+            elif string.startswith("'") and item.endswith("'"):
                 break
         return string.strip()[1:-1], i
 

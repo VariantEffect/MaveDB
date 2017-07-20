@@ -34,7 +34,7 @@
 /* ------------------------------------------------------------------------- */
 /*                               Column Input
 /* ------------------------------------------------------------------------- */
-#experiment_table .input-group .form-control,
+#searchable_table .input-group .form-control,
 .table {
     color: black;
     font-family: Verdana, Helvetica, Arial, sans-serif;
@@ -51,7 +51,7 @@
     padding-bottom: 2px;
 }
 
-#experiment_table .filters th .textinput.textInput.form-control {
+#searchable_table .filters th .textinput.textInput.form-control {
     color: black;
     font-family: Verdana, Helvetica, Arial, sans-serif;
     font-size: 12px;
@@ -68,18 +68,18 @@
     padding-bottom: 1px;
 }
 
-#experiment_table td, th, tr {
+#searchable_table td, th, tr {
     word-wrap: break-word;
     max-width: 150px;
 }
 
-#experiment_table {
+#searchable_table {
     table-layout: fixed;
     width: 100%;
 }
 
 
-#experiment_table th {
+#searchable_table th {
 	background: #AFC8FA;
 	padding-left: 4px;
 	padding-right: 4px;

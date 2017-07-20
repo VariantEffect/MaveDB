@@ -83,60 +83,62 @@ class SiteInformation(models.Model):
 #
 # -------------------------------------------------------------------------- #
 class Experiment(models.Model):
-    date = models.DateField(
-        blank=False, default=datetime.date.today,
-        verbose_name="Publication date")
-    description = models.TextField(
-        blank=False, default="",
-        verbose_name="Descripton")
     accession = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Accession")
+        default="", blank=False, max_length=128, verbose_name="Accession")
+
     target = models.CharField(
-        default="", blank=False, max_length=1024,
+        default="", blank=False, max_length=128,
         verbose_name="Target")
-    author = models.TextField(
-        default="", blank=False, verbose_name="Author")
-    reference = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Primary reference")
-    alt_reference = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Seconary reference")
-    scoring_method = models.TextField(
-        default="", blank=False, verbose_name="Scoring method")
+    authors = models.TextField(
+        default="", blank=False, verbose_name="Author(s)")
+    wt_sequence = models.TextField(
+        default="", blank=False, verbose_name='Wild type sequence')
+    date = models.DateField(
+        default=datetime.date.today, blank=False,
+        verbose_name="Publication date")
+
+    target_organism = models.TextField(
+        blank=True, default="", verbose_name="Target organism")
+    abstract = models.TextField(
+        default="", blank=True, verbose_name="Abstract")
+    short_description = models.TextField(
+        default="", blank=True, verbose_name="Short description")
+    method_description = models.TextField(
+        default="", blank=True, verbose_name="Method description")
     keywords = models.TextField(
-        default="", blank=False, verbose_name="Keywords")
-    num_variants = models.PositiveIntegerField(
-        default=1, blank=False,
-        verbose_name="Variant count",
-        validators=[MinValueValidator(1)])
+        default="", blank=True, verbose_name="Keywords")
+    alt_target_accessions = models.TextField(
+        default="", blank=True, verbose_name="Accessions")
+
+    placeholder_text = {
+        'accession': 'EXP0001HSA',
+        'target': 'BRCA1',
+        'authors': 'Author 1, Author 2, ...',
+        'wt_sequence': 'ATCG or atcg',
+        'target_organism': 'Homo Sapiens',
+        'keywords': 'Kinase, DNA repair, ...',
+        'alt_target_accessions': 'UniProt, RefSeq'
+    }
 
     def __str__(self):
         return "Experiment(\n\t" + \
             str(self.accession) + '\n\t' + \
             str(self.target) + '\n\t' + \
-            str(self.date) + '\n\t' + \
-            str(self.author) + '\n\t' + \
-            str(self.reference) + '\n\t' + \
-            str(self.alt_reference) + '\n\t' + \
-            str(self.scoring_method) + '\n\t' + \
-            str(self.keywords) + '\n\t' + \
-            str(self.num_variants)
+            str(self.wt_sequence) + '\n\t' + \
+            str(self.date)
 
     @property
     def author_count(self):
-        return len(self.author.split(','))
+        return len(self.authors.split(','))
 
     @property
-    def authors(self):
+    def formatted_authors(self):
         if self.author_count > 1:
-            first = self.author.split(',')[0].split(' ')[0]
-            last = self.author.split(',')[0].split(' ')[1]
+            last = self.authors.split(',')[0].split(' ')[1]
             return "{} et al.".format(last)
         else:
-            first = self.author.split(',')[0].split(' ')[0]
-            last = self.author.split(',')[0].split(' ')[1]
+            first = self.authors.split(',')[0].split(' ')[0]
+            last = self.authors.split(',')[0].split(' ')[1]
             return '{}, {}'.format(last, first)
 
     @property
@@ -152,16 +154,38 @@ class Experiment(models.Model):
 
 
 class ScoreSet(models.Model):
-    accession = models.CharField(
-        default="", blank=False, max_length=1024,
-        verbose_name="Accession")
+    HEADER = 'hgvs,score,SE'
     experiment = models.ForeignKey(
         'Experiment', on_delete=models.CASCADE)
-    description = models.TextField(default='', blank=False)
-    theory = models.TextField(default='', blank=False)
+
+    accession = models.CharField(
+        default="", blank=False, max_length=128, verbose_name="Accession")
+    authors = models.TextField(
+        default="", blank=False, verbose_name="Author(s)")
+    dataset = models.TextField(
+        default=HEADER, blank=False, verbose_name="Dataset")
+
+    abstract = models.TextField(
+        default="", blank=True, verbose_name="Abstract")
+    theory = models.TextField(
+        default="", blank=True, verbose_name="Method theory")
+    keywords = models.TextField(
+        default="", blank=True, verbose_name="Keywords")
+    name = models.TextField(
+        default="", blank=True, verbose_name="Score set name")
+
 
     def __str__(self):
-        return "ScoreSet({}, {})".format(self.accession, self.experiment)
+        return "ScoreSet({}, {})".format(self.accession, self.experiment.pk)
+
+    def data_header(self):
+        return [x.strip() for x in
+                self.dataset.split('\n')[0].strip().split(',')]
+
+    def data_rows(self):
+        for row in self.dataset.split('\n')[1:]:
+            if row:
+                yield [x.strip() for x in row.strip().split(',')]
 
 
 # -------------------------------------------------------------------------- #
@@ -169,12 +193,13 @@ class ScoreSet(models.Model):
 # -------------------------------------------------------------------------- #
 def make_random_scoreset():
     import random as rand
+    import names
     from faker import Faker
 
     fake = Faker()
     possible_experiments = [e for e in Experiment.objects.all()]
     experiment = rand.choice(possible_experiments)
-    description = '. '.join(
+    abstract = '. '.join(
         [fake.text() for _ in range(rand.randint(1, 15))])
     theory = '. '.join(
         [fake.text() for _ in range(rand.randint(1, 15))])
@@ -183,12 +208,25 @@ def make_random_scoreset():
     exp_accession = experiment.accession
     accession = exp_accession.replace(
         "EXP", "SCS") + '.{}'.format(score_set_count + 1)
+    authors = ', '.join(
+        [names.get_full_name() for _ in range(0, rand.randint(1, 4))])
+    keywords = ['Regression', 'Log ratios', "Weighted", 'Ordinary']
+    name = rand.choice(keywords)
+    dataset=ScoreSet.HEADER + '\n'
+
+    for i in range(1, 256):
+        dataset += 'hgvs_str,{},{}\n'.format(*[rand.random() for i in range(2)])
+
 
     return ScoreSet.objects.create(
         accession=accession,
-        description=description,
+        abstract=abstract,
         theory=theory,
-        experiment=experiment
+        experiment=experiment,
+        authors=authors,
+        keywords=', '.join(rand.choice(keywords) for _ in range(0, 3)),
+        name=name,
+        dataset=dataset
     )
 
 
@@ -212,48 +250,46 @@ def make_random_experiment():
         "EMD", "UCHL1", "UCP1", "UCP2", "UCP3", "VCP", "VEGFA",
         "WRN", "XPA", "XRCC5", "XRCC6"
     ]
-
-    methods = ['WLS Regression', 'OLS Regression', 'Log Ratios']
     keywords = [
         'Kinase', 'Disease', 'Metastasis', 'Energy Production',
         'DNA Repair', 'Response to Cellular Damage', 'Cell Structure',
         'Methylase'
     ]
+    alts = [
+        'P11142', 'Q9H446', 'Q9UJM8',
+        'NG_055433.1', 'NR_148450.1', 'NR_148445.1',
+        'NP_001340125.1', 'NP_001340126.1', 'NP_001340004.1'
+    ]
 
     num = rand.randint(0, 1000)
     org_code = rand.choice(list(references.keys()))
-
     accession = 'EXP' + '0'*(4-len(str(num))) + str(num) + org_code
     target = rand.choice(targets)
-    author = ', '.join(
+    authors = ', '.join(
         [names.get_full_name() for _ in range(0, rand.randint(1, 4))])
-
-    primary_ref = references[org_code]
-    secondary_ref = references[rand.choice(list(references.keys()))]
-
-    if primary_ref == secondary_ref:
-        secondary_ref = 'None'
-    method = rand.choice(methods)
-    num_variants = rand.randint(50, 1000)
-
+    target_org = references[org_code]
     size = rand.randint(1, 5)
     keywords = [rand.choice(keywords) for _ in range(size)]
     keywords = ', '.join(keywords)
-
     date = datetime.date.today() - \
         datetime.timedelta(days=rand.randint(0, 500))
 
     exp = Experiment.objects.create(
         accession=accession,
+
         target=target,
-        author=author,
-        description='. '.join(
-            [fake.text() for _ in range(rand.randint(1, 15))]),
-        reference=primary_ref,
-        alt_reference=secondary_ref,
-        scoring_method=method,
-        num_variants=num_variants,
+        authors=authors,
+        date=date,
+        wt_sequence=''.join(rand.choice('ATCG') for _ in range(256, 512)),
+
+        short_description='. '.join(
+            [fake.text() for _ in range(rand.randint(1, 4))]),
+        abstract='. '.join(
+            [fake.text() for _ in range(rand.randint(8, 16))]),
+        target_organism=target_org,
+        alt_target_accessions=', '.join(rand.choice(alts) for _ in range(0, 3)),
         keywords=keywords,
-        date=date
+        method_description='. '.join(
+            [fake.text() for _ in range(rand.randint(1, 4))])
     )
     return exp

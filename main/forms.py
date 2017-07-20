@@ -1,10 +1,13 @@
+
+import datetime
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 
 from crispy_forms import layout
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, Submit, Fieldset, HTML
+from crispy_forms.layout import Layout, Div, Field, Submit, HTML
 
 
 from .models import Experiment
@@ -31,13 +34,16 @@ class BasicSearchForm(forms.Form):
         self.helper.form_action = reverse("main:basic_search")
 
     def clean(self):
+        forms.Form.clean(self)
         queries = parse_query(self.data['column_search'])
         self.cleaned_data['column_search'] = queries
         return self.cleaned_data
 
     def query_experiments(self):
-        queries = self.cleaned_data['column_search']
+        queries = self.cleaned_data.get('column_search', None)
         entries = Experiment.objects.none()
+        if not queries:
+            return entries
 
         for accession in queries:
             entries |= Experiment.objects.all().filter(
@@ -49,25 +55,29 @@ class BasicSearchForm(forms.Form):
 
         for author in queries:
             entries |= Experiment.objects.all().filter(
-                author__icontains=author)
+                authors__icontains=author)
 
-        for reference in queries:
+        for target_org in queries:
             entries |= Experiment.objects.all().filter(
-                reference__icontains=reference)
+                target_organism__icontains=target_org)
 
-        for alt_reference in queries:
+        for alt_accesion in queries:
             entries |= Experiment.objects.all().filter(
-                alt_reference__icontains=alt_reference)
+                alt_target_accessions__icontains=alt_accesion)
 
-        for scoring_method in queries:
+        for wt_sequence in queries:
             entries |= Experiment.objects.all().filter(
-                scoring_method__icontains=scoring_method)
+                wt_sequence__iexact=wt_sequence)
 
         for keyword in queries:
             entries |= Experiment.objects.all().filter(
                 keywords__icontains=keyword)
             entries |= Experiment.objects.all().filter(
-                description__icontains=keyword)
+                abstract__icontains=keyword)
+            entries |= Experiment.objects.all().filter(
+                short_description__icontains=keyword)
+            entries |= Experiment.objects.all().filter(
+                method_description__icontains=keyword)
 
         return entries
 
@@ -75,7 +85,10 @@ class BasicSearchForm(forms.Form):
 class AdvancedSearchForm(forms.ModelForm):
     class Meta:
         model = Experiment
-        exclude = ("date", "description")
+        exclude = (
+            "date", "abstract",
+            "short_description", "method_description"
+        )
 
     date_from = forms.DateField(
         label="Date from:",
@@ -94,26 +107,13 @@ class AdvancedSearchForm(forms.ModelForm):
         self.helper.form_method = "POST"
         self.helper.form_action = reverse("main:advanced_search")
         self.helper.form_id = 'crispy_advanced_search'
+
         for key in self.fields:
             self.fields[key].required = False
 
-        self.fields['accession'].widget = \
-            forms.TextInput(attrs={'placeholder': "EXP0001HSA"})
-        self.fields['target'].widget = \
-            forms.TextInput(attrs={'placeholder': "BRCA1"})
-        self.fields['author'].widget = \
-            forms.TextInput(
-                attrs={'placeholder': "Aurhor 1, Author 2, ..."})
-        self.fields['reference'].widget = \
-            forms.TextInput(
-                attrs={'placeholder': "Homo sapiens, Mus musculus, ..."})
-        self.fields['alt_reference'].widget = \
-            forms.TextInput(attrs={'placeholder': "Homo sapiens"})
-        self.fields['scoring_method'].widget = \
-            forms.TextInput(
-                attrs={'placeholder': "OLS regression, Log ratios, ..."})
-        self.fields['keywords'].widget = \
-            forms.TextInput(attrs={'placeholder': "Kinase, DNA Repair, ..."})
+        for key, text in Experiment.placeholder_text.items():
+            self.fields[key].widget = forms.TextInput(
+                attrs={'placeholder': text})
 
         self.helper.layout = Layout(
             Div(
@@ -130,35 +130,29 @@ class AdvancedSearchForm(forms.ModelForm):
             ),
             Div(
                 Div(
-                    Field('author'),
+                    Field('authors'),
                     css_class="col-sm-6 col-md-6 col-lg-6"),
                 Div(
                     Field('date_from'),
-                    css_class="col-sm-2 col-md-2 col-lg-2"),
+                    css_class="col-sm-3 col-md-3 col-lg-3"),
                 Div(
                     Field('date_to'),
-                    css_class="col-sm-2 col-md-2 col-lg-2"),
-                css_class="row"
-            ),
-            Div(
-                Div(
-                    Field('reference'),
-                    css_class="col-sm-6 col-md-6 col-lg-6"),
-                Div(
-                    Field('alt_reference'),
-                    css_class="col-sm-6 col-md-6 col-lg-6"),
-                css_class="row"
-            ),
-            Div(
-                Div(
-                    Field('scoring_method'),
-                    css_class="col-sm-6 col-md-6 col-lg-6"),
-                css_class="row"
-            ),
-            Div(
-                Div(
-                    Field('num_variants'),
                     css_class="col-sm-3 col-md-3 col-lg-3"),
+                css_class="row"
+            ),
+            Div(
+                Div(
+                    Field('target_organism'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(
+                    Field('alt_target_accessions'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
+                css_class="row"
+            ),
+            Div(
+                Div(
+                    Field('wt_sequence'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
             Div(
@@ -168,8 +162,12 @@ class AdvancedSearchForm(forms.ModelForm):
         )
 
     def clean(self):
-        date_from = self.cleaned_data['date_from']
-        date_to = self.cleaned_data['date_to']
+        forms.ModelForm.clean(self)
+        try:
+            date_from = self.cleaned_data['date_from']
+            date_to = self.cleaned_data['date_to']
+        except KeyError:
+            raise ValidationError("Enter a valid date.")
 
         if date_to is not None and date_from is not None:
             if date_to < date_from:
@@ -180,13 +178,13 @@ class AdvancedSearchForm(forms.ModelForm):
             return parse_query(self.cleaned_data[field], sep)
         
         try:
-            self.cleaned_data["keywords"] = clean_str("keywords")
-            self.cleaned_data["target"] = clean_str("target")
             self.cleaned_data["accession"] = clean_str("accession")
-            self.cleaned_data["author"] = clean_str("author")
-            self.cleaned_data["reference"] = clean_str("reference")
-            self.cleaned_data["alt_reference"] = clean_str("alt_reference")
-            self.cleaned_data["scoring_method"] = clean_str("scoring_method")
+            self.cleaned_data["target"] = clean_str("target")
+            self.cleaned_data["keywords"] = clean_str("keywords")
+            self.cleaned_data["authors"] = clean_str("authors")
+            self.cleaned_data["target_organism"] = clean_str("target_organism")
+            self.cleaned_data["alt_target_accessions"] = clean_str("alt_target_accessions")
+            self.cleaned_data["wt_sequence"] = clean_str("wt_sequence")
         except Exception as e:
             raise ValidationError(e)
         return self.cleaned_data
@@ -194,7 +192,7 @@ class AdvancedSearchForm(forms.ModelForm):
     def query_experiments(self):
         experiments = Experiment.objects.all()
 
-        accesions = self.cleaned_data["accession"]
+        accesions = self.cleaned_data.get("accession", None)
         if accesions:
             entries = Experiment.objects.none()
             for accession in accesions:
@@ -202,7 +200,7 @@ class AdvancedSearchForm(forms.ModelForm):
                     accession__iexact=accession)
             experiments &= entries
 
-        targets = self.cleaned_data["target"]
+        targets = self.cleaned_data.get("target", None)
         if targets:
             entries = Experiment.objects.none()
             for target in targets:
@@ -210,56 +208,58 @@ class AdvancedSearchForm(forms.ModelForm):
                     target__iexact=target)
             experiments &= entries
 
-        authors = self.cleaned_data["author"]
+        authors = self.cleaned_data.get("authors", None)
         if authors:
             entries = Experiment.objects.none()
             for author in authors:
                 entries |= Experiment.objects.all().filter(
-                    author__icontains=author)
+                    authors__icontains=author)
             experiments &= entries
 
-        references = self.cleaned_data["reference"]
-        if references:
+        target_organisms = self.cleaned_data.get("target_organism", None)
+        if target_organisms:
             entries = Experiment.objects.none()
-            for reference in references:
+            for org in target_organisms:
                 entries |= Experiment.objects.all().filter(
-                    reference__icontains=reference)
+                    target_organism__icontains=org)
             experiments &= entries
 
-        alt_references = self.cleaned_data["alt_reference"]
-        if alt_references:
+        alt_target_accessions = self.cleaned_data.get(
+            "alt_target_accessions", None)
+        if alt_target_accessions:
             entries = Experiment.objects.none()
-            for alt_reference in alt_references:
+            for alt in alt_target_accessions:
                 entries |= Experiment.objects.all().filter(
-                    alt_reference__icontains=alt_reference)
+                    alt_target_accessions__icontains=alt)
             experiments &= entries
 
-        scoring_methods = self.cleaned_data["scoring_method"]
-        if scoring_methods:
+        wt_sequences = self.cleaned_data.get("wt_sequence", None)
+        if wt_sequences:
             entries = Experiment.objects.none()
-            for scoring_method in scoring_methods:
+            for wt_sequence in wt_sequences:
                 entries |= Experiment.objects.all().filter(
-                    scoring_method__icontains=scoring_method)
+                    wt_sequence__iexact=wt_sequence)
             experiments &= entries
 
-        keywords = self.cleaned_data["keywords"]
+        keywords = self.cleaned_data.get("keywords", None)
         if keywords:
             entries = Experiment.objects.none()
             for keyword in keywords:
                 entries |= Experiment.objects.all().filter(
                     keywords__icontains=keyword)
                 entries |= Experiment.objects.all().filter(
-                    description__icontains=keyword)
+                    abstract__icontains=keyword)
+                entries |= Experiment.objects.all().filter(
+                    short_description__icontains=keyword)
+                entries |= Experiment.objects.all().filter(
+                    method_description__icontains=keyword)
             experiments &= entries
 
-        num_variants = self.cleaned_data["num_variants"]
-        experiments = experiments.filter(num_variants__gte=num_variants)
-
-        date_from = self.cleaned_data["date_from"]
+        date_from = self.cleaned_data.get("date_from", None)
         if date_from:
             experiments = experiments.filter(date__gte=date_from)
 
-        date_to = self.cleaned_data["date_to"]
+        date_to = self.cleaned_data.get("date_to", None)
         if date_to:
             experiments = experiments.filter(date__lte=date_to)
 

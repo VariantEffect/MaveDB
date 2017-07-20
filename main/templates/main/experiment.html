@@ -8,21 +8,37 @@
 			{% if not experiment %}
 				<p>This experiment no longer exists.</p>
 			{% else %}
-				<p>{{ experiment.description }}</p>
-				
-				<hr>
-				<h3> Basic Information </h3>
+				<p>{{ experiment.short_description }}</p>
+
+      <hr>
+				<h3> Abstract </h3>
+				<div class="inline_content">
+					<div class="inline_attribute">{{ experiment.abstract }}</div>
+				</div>
+
+      <hr>
+				<h3> Method </h3>
+				<div class="inline_content">
+					<div class="inline_attribute">{{ experiment.method_description }}</div>
+				</div>
+
+      <hr>
+				<h3> Information </h3>
+				<div class="inline_content">
+					<label class="inline_label">Wild type sequence: </label>
+          <div class="container"><p style="word-wrap: break-word;">{{ experiment.wt_sequence }}</p></div>
+				</div>
 				<div class="inline_content">
 					<label class="inline_label">Target gene: </label>
 					<div class="inline_attribute">{{ experiment.target }}</div>
 				</div>
 				<div class="inline_content">
-					<label class="inline_label">Primary reference organism: </label>
-					<div class="inline_attribute"><i>{{ experiment.reference }}</i></div>
+					<label class="inline_label">Target organism: </label>
+					<div class="inline_attribute"><i>{{ experiment.target_organism }}</i></div>
 				</div>
 				<div class="inline_content">
-					<label class="inline_label">Alternative reference organisms: </label>
-					<div class="inline_attribute"><i>{{ experiment.alt_reference }}</i></div>
+					<label class="inline_label">Related accessions: </label>
+					<div class="inline_attribute"><i>{{ experiment.alt_target_accessions }}</i></div>
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Keywords: </label>
@@ -30,7 +46,7 @@
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Full author list: </label>
-					<div class="inline_attribute">{{ experiment.author }}</div>
+					<div class="inline_attribute">{{ experiment.authors }}</div>
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Date published: </label>
@@ -47,7 +63,7 @@
 						{% for scoreset in experiment.score_sets %}
 						<li>
 							<a class="inline_label" 
-								href="{% url 'main:scoreset_detail' experiment.accession scoreset.accession %}">
+								href="{% url 'main:scoreset_detail' scoreset.accession %}">
 								{{ scoreset.accession }}
 							</a>
 						</li>

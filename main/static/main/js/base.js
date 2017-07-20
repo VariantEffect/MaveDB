@@ -1,7 +1,7 @@
 $(document).ready(function() {
     // Setup - add a text input to each footer cell
-    $('#experiment_table .filters th').each(function() {
-        var title = $('#experiment_table thead th').eq($(this).index()).text();
+    $('#searchable_table .filters th').each(function() {
+        var title = $('#searchable_table thead th').eq($(this).index()).text();
         $(this).html([
         '<input type="text"',
         'class="textinput textInput form-control"',
@@ -9,7 +9,7 @@ $(document).ready(function() {
     });
 
     // DataTable
-    var table = $('#experiment_table').DataTable({
+    var table = $('#searchable_table').DataTable({
         "order": [],
         "pageLength": 25,
         "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
