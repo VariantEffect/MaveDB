@@ -62,10 +62,10 @@
 					<ul>
 						{% for scoreset in experiment.score_sets %}
 						<li>
-              {% if scoreset.name != 'Not provided' %}
-              <label class="inline_label">{{ scoreset.name }}: </label>
-              {% else %}
+              {% if scoreset.name == 'Not provided' or not scoreset.name %}
               <label class="inline_label">Name not provided: </label>
+              {% else %}
+              <label class="inline_label">{{ scoreset.name }}: </label>
               {% endif %}
 							<a class="inline_label" 
 								href="{% url 'main:scoreset_detail' scoreset.accession %}">

@@ -351,9 +351,16 @@ class ExperimentCreationForm(forms.Form):
         self.cleaned_data['target'] = target
         self.cleaned_data['wt_sequence'] = wt_seq
         self.cleaned_data['authors'] = authors
-        self.cleaned_data['target_organism'] = model
-        self.cleaned_data['keywords'] = keywords
-        self.cleaned_data['alt_target_accessions'] = alt_accessions
+        self.cleaned_data['target_organism'] = model  or 'Not provided'
+        self.cleaned_data['keywords'] = keywords or 'Not provided'
+        self.cleaned_data['alt_target_accessions'] = \
+            alt_accessions or 'Not provided'
+        self.cleaned_data['short_description'] = \
+            self.cleaned_data['short_description'] or 'Not provided'
+        self.cleaned_data['abstract'] = \
+            self.cleaned_data['abstract'] or 'Not provided'
+        self.cleaned_data['method_description'] = \
+            self.cleaned_data['method_description'] or 'Not provided'
         return self.cleaned_data
 
     def save(self):
@@ -469,12 +476,12 @@ class ScoresetCreationForm(forms.Form):
         self.cleaned_data['accession'] = accession
         scs = ScoreSet(
             accession=accession,
-            abstract=self.cleaned_data['abstract'],
-            theory=self.cleaned_data['theory'],
+            abstract=self.cleaned_data['abstract'] or 'Not provided',
+            theory=self.cleaned_data['theory'] or 'Not provided',
             experiment=exp,
             authors=self.cleaned_data['authors'],
-            keywords=self.cleaned_data['keywords'],
-            name=self.cleaned_data['name'],
+            keywords=self.cleaned_data['keywords'] or 'Not provided',
+            name=self.cleaned_data['name'] or 'Not provided',
             dataset=self.cleaned_data['dataset']
         )
         scs.save()
