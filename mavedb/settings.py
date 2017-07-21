@@ -126,6 +126,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static'))
+DATA_UPLOAD_MAX_MEMORY_SIZE=26214400 #25MB
 
 # Markdown settings
 
