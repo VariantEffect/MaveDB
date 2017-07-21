@@ -54,8 +54,13 @@ class BasicSearchForm(forms.Form):
                 target__iexact=target)
 
         for author in queries:
-            entries |= Experiment.objects.all().filter(
-                authors__icontains=author)
+            try:
+                first, *_, last = author.split(' ')
+                regex = r"({}).*({})".format(first, last)
+                entries |= Experiment.objects.all().filter(
+                    authors__iregex=regex)
+            except ValueError:
+                pass
 
         for target_org in queries:
             entries |= Experiment.objects.all().filter(
@@ -113,7 +118,7 @@ class AdvancedSearchForm(forms.ModelForm):
 
         for key, text in Experiment.placeholder_text.items():
             self.fields[key].widget = forms.TextInput(
-                attrs={'placeholder': text})
+                attrs={'placeholder': text, 'initial': ''})
 
         self.helper.layout = Layout(
             Div(
@@ -212,8 +217,13 @@ class AdvancedSearchForm(forms.ModelForm):
         if authors:
             entries = Experiment.objects.none()
             for author in authors:
-                entries |= Experiment.objects.all().filter(
-                    authors__icontains=author)
+                try:
+                    first, *_, last = author.split(' ')
+                    regex = r"({}).*({})".format(first, last)
+                    entries |= Experiment.objects.all().filter(
+                        authors__iregex=regex)
+                except ValueError:
+                    entries = experiments
             experiments &= entries
 
         target_organisms = self.cleaned_data.get("target_organism", None)
@@ -281,6 +291,8 @@ class ExperimentCreationForm(forms.Form):
         widget=forms.Textarea(attrs=dict(rows=4))
     )
     target_organism = forms.CharField(label="Target organism", required=False)
+    doi = forms.CharField(label="DOI", required=False)
+    sra = forms.CharField(label="SRA", required=False)
     keywords = forms.CharField(
         label="Keywords", required=False,
         widget=forms.TextInput(
@@ -317,6 +329,12 @@ class ExperimentCreationForm(forms.Form):
                 Div(Field('alt_target_accessions'), css_class="col-sm-6 col-md-6 col-lg-6"),
                 css_class="row"
             ),
+            Div(
+                Div(Field('doi'),
+                    css_class="col-sm-6 col-md-6 col-lg-6"),
+                Div(Field('sra'), css_class="col-sm-6 col-md-6 col-lg-6"),
+                css_class="row"
+            ),
             Div(Field("wt_sequence")),
             Div(
                 Div(Field('target_organism'), css_class="col-sm-6 col-md-6 col-lg-6"),
@@ -334,33 +352,47 @@ class ExperimentCreationForm(forms.Form):
 
         target = self.cleaned_data['target']
         wt_seq = self.cleaned_data['wt_sequence'].upper()
-        authors = ', '.join([x.strip() for
-                   x in self.cleaned_data['authors'].strip().split(',')
-                   if x.strip()])
 
-        model = ', '.join([x.strip() for
-                   x in self.cleaned_data['target_organism'].strip().split(',')
-                   if x.strip()])
-        keywords = ', '.join([x.strip() for
-                   x in self.cleaned_data['keywords'].strip().split(',')
-                   if x.strip()])
-        alt_accessions = ', '.join([x.strip() for
-                   x in self.cleaned_data['alt_target_accessions'].strip().split(',')
-                   if x.strip()])
+        authors = [
+            x.strip() for
+            x in self.cleaned_data['authors'].strip().split(',')
+            if x.strip()
+        ]
+        all_have_last_name = all([
+            len(full_name.split(' ')) >= 2 for full_name in authors
+        ])
+        if not all_have_last_name:
+            raise ValidationError(
+                "Each author must have, at minimum, a first and last name.")
+
+        model = ', '.join([
+            x.strip() for
+            x in self.cleaned_data['target_organism'].strip().split(',')
+            if x.strip()
+        ])
+        keywords = ', '.join([
+            x.strip() for
+            x in self.cleaned_data['keywords'].strip().split(',')
+            if x.strip()
+        ])
+        alt_accessions = ', '.join([
+            x.strip() for
+            x in self.cleaned_data['alt_target_accessions'].strip().split(',')
+            if x.strip()
+        ])
 
         self.cleaned_data['target'] = target
         self.cleaned_data['wt_sequence'] = wt_seq
-        self.cleaned_data['authors'] = authors
-        self.cleaned_data['target_organism'] = model  or 'Not provided'
-        self.cleaned_data['keywords'] = keywords or 'Not provided'
-        self.cleaned_data['alt_target_accessions'] = \
-            alt_accessions or 'Not provided'
+        self.cleaned_data['authors'] = ', '.join(authors)
+        self.cleaned_data['target_organism'] = model
+        self.cleaned_data['keywords'] = keywords
+        self.cleaned_data['alt_target_accessions'] = alt_accessions
         self.cleaned_data['short_description'] = \
-            self.cleaned_data['short_description'] or 'Not provided'
+            self.cleaned_data['short_description']
         self.cleaned_data['abstract'] = \
-            self.cleaned_data['abstract'] or 'Not provided'
+            self.cleaned_data['abstract']
         self.cleaned_data['method_description'] = \
-            self.cleaned_data['method_description'] or 'Not provided'
+            self.cleaned_data['method_description']
         return self.cleaned_data
 
     def save(self):
@@ -382,6 +414,7 @@ class ScoresetCreationForm(forms.Form):
         widget=forms.TextInput(attrs=dict(value="")))
 
     authors = forms.CharField(label="Author(s)", required=True)
+    doi = forms.CharField(label="DOI", required=True)
     dataset = forms.CharField(
         label="Dataset (header required)", required=True,
         widget=forms.Textarea(attrs=dict(
@@ -418,6 +451,7 @@ class ScoresetCreationForm(forms.Form):
         self.helper.layout = Layout(
             Div(Field("exp_accession")),
             Div(Field("authors")),
+            Div(Field("doi")),
             Div(
                 Div(Field('name'), css_class="col-sm-6 col-md-6 col-lg-6"),
                 Div(Field('keywords'), css_class="col-sm-6 col-md-6 col-lg-6"),
@@ -438,18 +472,28 @@ class ScoresetCreationForm(forms.Form):
         except ObjectDoesNotExist:
             raise ValidationError("Enter a valid experiment accession")
 
-        authors = ', '.join([x.strip() for
-                   x in self.cleaned_data['authors'].strip().split(',')
-                   if x.strip()])
-        keywords = ', '.join([x.strip() for
-                   x in self.cleaned_data['keywords'].strip().split(',')
-                   if x.strip()])
-        self.cleaned_data['authors'] = authors
+        authors = [
+            x.strip() for
+            x in self.cleaned_data['authors'].strip().split(',')
+            if x.strip()
+        ]
+        all_have_last_name = all([
+            len(full_name.split(' ')) >= 2 for full_name in authors
+        ])
+        if not all_have_last_name:
+            raise ValidationError(
+                "Each author must have, at minimum, a first and last name.")
+
+        keywords = ', '.join([
+            x.strip() for
+            x in self.cleaned_data['keywords'].strip().split(',')
+            if x.strip()
+        ])
+        self.cleaned_data['authors'] = ', '.join(authors)
         self.cleaned_data['keywords'] = keywords
 
         dataset = self.cleaned_data['dataset']
         parsed_data = ""
-
         try:
             header = dataset.strip().split('\n')[0].strip().split(',')[0:3]
             header = ','.join(x.strip() for x in header)
@@ -482,7 +526,8 @@ class ScoresetCreationForm(forms.Form):
             authors=self.cleaned_data['authors'],
             keywords=self.cleaned_data['keywords'] or 'Not provided',
             name=self.cleaned_data['name'] or 'Not provided',
-            dataset=self.cleaned_data['dataset']
+            dataset=self.cleaned_data['dataset'],
+            doi=self.cleaned_data['doi']
         )
         scs.save()
         return scs

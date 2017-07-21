@@ -85,28 +85,31 @@ class Experiment(models.Model):
         default="", blank=False, max_length=128, verbose_name="Accession")
 
     target = models.CharField(
-        default="Not provided", blank=False, max_length=128,
+        default="", blank=False, max_length=128,
         verbose_name="Target")
     authors = models.TextField(
-        default="Not provided", blank=False, verbose_name="Author(s)")
+        default="", blank=False, verbose_name="Author(s)")
     wt_sequence = models.TextField(
-        default="Not provided", blank=False, verbose_name='Wild type sequence')
-
+        default="", blank=False, verbose_name='Wild type sequence')
     date = models.DateField(
         default=datetime.date.today, verbose_name="Publication date")
 
+    sra = models.TextField(
+        default="", blank=True, verbose_name="SRA")
+    doi = models.TextField(
+        default="", blank=True, verbose_name="DOI")
     target_organism = models.TextField(
-        blank=True, default="Not provided", verbose_name="Target organism")
+        blank=True, default="", verbose_name="Target organism")
     abstract = models.TextField(
-        default="Not provided", blank=True, verbose_name="Abstract")
+        default="", blank=True, verbose_name="Abstract")
     short_description = models.TextField(
-        default="Not provided", blank=True, verbose_name="Short description")
+        default="", blank=True, verbose_name="Short description")
     method_description = models.TextField(
-        default="Not provided", blank=True, verbose_name="Method description")
+        default="", blank=True, verbose_name="Method description")
     keywords = models.TextField(
-        default="Not provided", blank=True, verbose_name="Keywords")
+        default="", blank=True, verbose_name="Keywords")
     alt_target_accessions = models.TextField(
-        default="Not provided", blank=True, verbose_name="Accessions")
+        default="", blank=True, verbose_name="Accessions")
 
     placeholder_text = {
         'accession': 'EXP0001',
@@ -132,11 +135,11 @@ class Experiment(models.Model):
     @property
     def formatted_authors(self):
         if self.author_count > 1:
-            last = self.authors.split(',')[0].split(' ')[1]
+            last = self.authors.split(',')[0].split(' ')[-1]
             return "{} et al.".format(last)
         else:
             first = self.authors.split(',')[0].split(' ')[0]
-            last = self.authors.split(',')[0].split(' ')[1]
+            last = self.authors.split(',')[0].split(' ')[-1]
             return '{}, {}'.format(last, first)
 
     @property
@@ -157,34 +160,54 @@ class ScoreSet(models.Model):
         'Experiment', on_delete=models.CASCADE)
 
     accession = models.CharField(
-        default="Not provided", blank=False,
+        default="", blank=False,
         max_length=128, verbose_name="Accession")
     authors = models.TextField(
-        default="Not provided", blank=False, verbose_name="Author(s)")
+        default="", blank=False, verbose_name="Author(s)")
     dataset = models.TextField(
         default=HEADER, blank=False, verbose_name="Dataset")
 
+    doi = models.TextField(
+        default="", blank=True, verbose_name="DOI")
     abstract = models.TextField(
-        default="Not provided", blank=True, verbose_name="Abstract")
+        default="", blank=True, verbose_name="Abstract")
     theory = models.TextField(
-        default="Not provided", blank=True, verbose_name="Method theory")
+        default="", blank=True, verbose_name="Method theory")
     keywords = models.TextField(
-        default="Not provided", blank=True, verbose_name="Keywords")
+        default="", blank=True, verbose_name="Keywords")
     name = models.TextField(
-        default="Not provided", blank=True, verbose_name="Score set name")
+        default="", blank=True, verbose_name="Score set name")
 
 
     def __str__(self):
         return "ScoreSet({}, {})".format(self.accession, self.experiment.pk)
+
+    @property
+    def author_count(self):
+        return len(self.authors.split(','))
+
+    @property
+    def formatted_authors(self):
+        if self.author_count > 1:
+            last = self.authors.split(',')[0].split(' ')[-1]
+            print(last)
+            print(self.authors.split(','))
+            return "{} et al.".format(last)
+        else:
+            first = self.authors.split(',')[0].split(' ')[0]
+            last = self.authors.split(',')[0].split(' ')[-1]
+            return '{}, {}'.format(last, first)
 
     def data_header(self):
         return [x.strip() for x in
                 self.dataset.split('\n')[0].strip().split(',')]
 
     def data_rows(self):
-        for row in self.dataset.split('\n')[1:]:
+        rows = []
+        for row in self.dataset.split('\n')[1: 1001]:
             if row:
-                yield [x.strip() for x in row.strip().split(',')]
+                rows.append([x.strip() for x in row.strip().split(',')])
+        return rows
 
 
 # -------------------------------------------------------------------------- #
@@ -225,7 +248,8 @@ def make_random_scoreset():
         authors=authors,
         keywords=', '.join(rand.choice(keywords) for _ in range(0, 3)),
         name=name,
-        dataset=dataset
+        dataset=dataset,
+        doi='',
     )
 
 
@@ -275,7 +299,7 @@ def make_random_experiment():
 
     exp = Experiment.objects.create(
         accession=accession,
-
+        sra='', doi='',
         target=target,
         authors=authors,
         date=date,
