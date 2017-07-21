@@ -9,30 +9,31 @@
     {% if not scoreset %}
       <p>This scoreset no longer exists.</p>
     {% else %}
-      <h3> Information </h3>
-				<div class="inline_content">
-					<label class="inline_label">Method name: </label>
-					<div class="inline_attribute">
-            {{ scoreset.name|default:'No name provided.' }}
-          </div>
-				</div>
-				<div class="inline_content">
-					<label class="inline_label">Citation/DOI: </label>
-					<div class="inline_attribute">
-            {{ scoreset.doi|default:'No citation or doi number provided.' }}
-          </div>
-				</div>
-        <div class="inline_content">
-					<label class="inline_label">Full author list: </label>
-          <div class="inline_attribute"> {{ scoreset.authors }} </div>
-				</div>
-
       <h3> Abstract </h3>
         <div><p> {{ scoreset.abstract|default:'No abstract provided.' }} </p></div>
 
       <hr> <!-- Separator -->
         <h3> Method description </h3>
         <div><p> {{ scoreset.theory|default:'No method description provided.' }} </p></div>
+
+      <hr> <!-- Separator -->
+        <h3> Information </h3>
+        <div class="inline_content">
+          <label class="inline_label">Method name: </label>
+          <div class="inline_attribute">
+            {{ scoreset.name|default:'No name provided.' }}
+          </div>
+        </div>
+        <div class="inline_content">
+          <label class="inline_label">Citation/DOI: </label>
+          <div class="inline_attribute">
+            {{ scoreset.doi|default:'No citation or doi number provided.' }}
+          </div>
+        </div>
+        <div class="inline_content">
+          <label class="inline_label">Full author list: </label>
+          <div class="inline_attribute"> {{ scoreset.authors }} </div>
+        </div>
 
       <hr> <!-- Separator -->
         <h3> Statistics </h3>
@@ -44,7 +45,7 @@
           </p>
         </div>
 
-      <hr> <!-- Separator -->
+    <hr> <!-- Separator -->
         <h3> Scores </h3>
         <div>Showing the first {{ scoreset.data_rows|length }} entries.</div><br>
         <div id="results_table">

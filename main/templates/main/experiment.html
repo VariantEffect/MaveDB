@@ -18,19 +18,8 @@
           </div>
 				</div>
       
-        <h3> Citation/DOI </h3>
-        <div>
-          <p> {{ experiment.doi|default:'No citation or doi number provided.' }}</p>
-        </div>
-
-        <h3> Dataset SRA </h3>
-        <div>
-          <p> {{ experiment.sra|default:'No SRA number provided.' }}</p>
-        </div>
-
-
       <hr>
-				<h3> Method </h3>
+				<h3> Method description</h3>
 				<div class="inline_content">
 					<div class="inline_attribute">
             {{ experiment.method_description|default:'Method description not provided.' }}
@@ -69,10 +58,22 @@
 					<label class="inline_label">Full author list: </label>
 					<div class="inline_attribute">{{ experiment.authors }}</div>
 				</div>
-				<div class="inline_content">
-					<label class="inline_label">Date published: </label>
-					<div class="inline_attribute">{{ experiment.short_date }}</div>
-				</div>
+        <div class="inline_content">
+          <label class="inline_label">Citation/DOI: </label>
+          <div class="inline_attribute">
+            {{ experiment.doi|default:'No citation or doi number provided.' }}
+          </div>
+        </div>
+      <div class="inline_content">
+        <label class="inline_label">Dataset SRA: </label>
+        <div class="inline_attribute">
+          {{ experiment.sra|default:'No SRA number provided.' }}
+        </div>
+      </div>
+      <div class="inline_content">
+        <label class="inline_label">Date published: </label>
+        <div class="inline_attribute">{{ experiment.short_date }}</div>
+      </div>
 
 				<hr>
 				<h3> Associated Score Sets </h3>
