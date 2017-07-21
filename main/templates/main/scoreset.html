@@ -6,59 +6,84 @@
 	<!-- Default panel contents -->
   <div class="panel-heading">Information for {{ scoreset.accession }}</div>
   <div class="panel-body">
+    {% if not scoreset %}
+      <p>This scoreset no longer exists.</p>
+    {% else %}
+      <h3> Information </h3>
+				<div class="inline_content">
+					<label class="inline_label">Method name: </label>
+					<div class="inline_attribute">
+            {{ scoreset.name|default:'No name provided.' }}
+          </div>
+				</div>
+				<div class="inline_content">
+					<label class="inline_label">Citation/DOI: </label>
+					<div class="inline_attribute">
+            {{ scoreset.doi|default:'No citation or doi number provided.' }}
+          </div>
+				</div>
+        <div class="inline_content">
+					<label class="inline_label">Full author list: </label>
+          <div class="inline_attribute"> {{ scoreset.authors }} </div>
+				</div>
 
-    <h3> Abstract </h3>
-    <div class="container"><p> {{ scoreset.abstract }} </p></div>
+      <h3> Abstract </h3>
+        <div><p> {{ scoreset.abstract|default:'No abstract provided.' }} </p></div>
 
-    <hr> <!-- Separator -->
-    <h3> Method description </h3>
-    <div class="container"><p> {{ scoreset.theory }} </p></div>
+      <hr> <!-- Separator -->
+        <h3> Method description </h3>
+        <div><p> {{ scoreset.theory|default:'No method description provided.' }} </p></div>
 
-    <hr> <!-- Separator -->
-    <h3> Statistics </h3>
-    <div class="container"><p>
-      Information regarding the scored dataset including simple statistics,
-      some plots etc.
-    </p></div>
+      <hr> <!-- Separator -->
+        <h3> Statistics </h3>
+        <div>
+          <p>
+            Information regarding the scored dataset including basic statistics
+            and plots such as a density plot of the scores distribution etc. These
+            may be computed at upload time and cached.
+          </p>
+        </div>
 
-    <hr> <!-- Separator -->
-    <h3> Scores </h3>
-    <div id="results_table" class="container">
-      <table id="searchable_table" class="table table-striped table-hover">
-        <thead>
-          <tr>
-            {% for item in scoreset.data_header %}
-              <th class="small_col">{{ item }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <thead class="filters">
-          <tr>
-            {% for item in scoreset.data_header %}
-              <th class="small_col">{{ item }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in scoreset.data_rows  %}
-            <tr>
-              {% for item in row %}
-                <td class="small_col">{{ item }}</td>
+      <hr> <!-- Separator -->
+        <h3> Scores </h3>
+        <div>Showing the first {{ scoreset.data_rows|length }} entries.</div><br>
+        <div id="results_table">
+          <table id="searchable_table" class="table table-striped table-hover">
+            <thead>
+              <tr>
+                {% for item in scoreset.data_header %}
+                  <th class="small_col">{{ item }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <thead class="filters">
+              <tr>
+                {% for item in scoreset.data_header %}
+                  <th class="small_col">{{ item }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in scoreset.data_rows  %}
+                <tr>
+                  {% for item in row %}
+                    <td class="small_col">{{ item }}</td>
+                  {% endfor %}
+                </tr>
               {% endfor %}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <hr> <!-- Separator -->
-    <div class="container">
-      <a href="{% url 'main:download_scoreset' scoreset.accession %}">
-        <button name="download" value="{{ scoreset.accession }}" class="btn btn-primary">
-          Download dataset
-        </button>
-      </a>
-    </div>
+            </tbody>
+          </table>
+        </div>
+        <hr> <!-- Separator -->
+        <div>
+          <a href="{% url 'main:download_scoreset' scoreset.accession %}">
+            <button name="download" value="{{ scoreset.accession }}"
+                    class="btn btn-primary">
+              Download dataset
+            </button>
+          </a>
+        </div>
+    {% endif %}
   </div>
 </div>
 

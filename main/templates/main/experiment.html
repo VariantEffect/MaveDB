@@ -8,25 +8,42 @@
 			{% if not experiment %}
 				<p>This experiment no longer exists.</p>
 			{% else %}
-				<p>{{ experiment.short_description }}</p>
+				<p>{{ experiment.short_description|default:'Short description not provided.' }}</p>
 
       <hr>
 				<h3> Abstract </h3>
 				<div class="inline_content">
-					<div class="inline_attribute">{{ experiment.abstract }}</div>
+					<div class="inline_attribute">
+            {{ experiment.abstract|default:'Abstract not provided.' }}
+          </div>
 				</div>
+      
+        <h3> Citation/DOI </h3>
+        <div>
+          <p> {{ experiment.doi|default:'No citation or doi number provided.' }}</p>
+        </div>
+
+        <h3> Dataset SRA </h3>
+        <div>
+          <p> {{ experiment.sra|default:'No SRA number provided.' }}</p>
+        </div>
+
 
       <hr>
 				<h3> Method </h3>
 				<div class="inline_content">
-					<div class="inline_attribute">{{ experiment.method_description }}</div>
+					<div class="inline_attribute">
+            {{ experiment.method_description|default:'Method description not provided.' }}
+          </div>
 				</div>
 
       <hr>
 				<h3> Information </h3>
 				<div class="inline_content">
 					<label class="inline_label">Wild type sequence: </label>
-          <div class="container"><p style="word-wrap: break-word;">{{ experiment.wt_sequence }}</p></div>
+          <div class="container-fluid">
+            <p style="word-wrap: break-word;">{{ experiment.wt_sequence }}</p>
+          </div>
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Target gene: </label>
@@ -34,15 +51,19 @@
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Target organism: </label>
-					<div class="inline_attribute"><i>{{ experiment.target_organism }}</i></div>
+					<div class="inline_attribute">
+            <i>{{ experiment.target_organism|default:'Target organism provided.' }}</i>
+          </div>
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Related accessions: </label>
-					<div class="inline_attribute"><i>{{ experiment.alt_target_accessions }}</i></div>
+					<div class="inline_attribute">
+            <i>{{ experiment.alt_target_accessions|default:'Alternative accessions not provided.' }}</i>
+          </div>
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Keywords: </label>
-					<div class="inline_attribute">{{ experiment.keywords }}</div>
+					<div class="inline_attribute">{{ experiment.keywords|default:'Keywords not provided.' }}</div>
 				</div>
 				<div class="inline_content">
 					<label class="inline_label">Full author list: </label>
@@ -62,8 +83,8 @@
 					<ul>
 						{% for scoreset in experiment.score_sets %}
 						<li>
-              {% if scoreset.name == 'Not provided' or not scoreset.name %}
-              <label class="inline_label">Name not provided: </label>
+              {% if scoreset.name == 'Not provided.' or not scoreset.name %}
+              <label class="inline_label">Name not provided.: </label>
               {% else %}
               <label class="inline_label">{{ scoreset.name }}: </label>
               {% endif %}
