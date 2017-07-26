@@ -56,6 +56,7 @@ a:hover {
     float: right;
 }
 .navbar, .footerbar {
+    margin: auto;
     margin-left: 0;
 }
 
@@ -81,6 +82,7 @@ a:hover {
 }
 
 .navbar-search {
+    margin: auto;
     margin-left: 7.75%;
 }
 .navbar-search > form {
@@ -104,6 +106,8 @@ a:hover {
 .logo > img {
     display: block;
     margin: auto;
+    width: 92px;
+    height: 92px;
 }
 
 
