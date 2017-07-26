@@ -32,11 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'main',
-    'django_markup',
     'markdownx',
-    'crispy_forms',
-    'bootstrap3',
-    'bootstrap_themes',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -126,88 +122,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static'))
-DATA_UPLOAD_MAX_MEMORY_SIZE=26214400 #25MB
-
-# Markdown settings
-
-MARKUP_SETTINGS = {
-   'restructuredtext': {
-      'settings_overrides': {
-         'raw_enabled': True,
-         'file_insertion_enabled': True,
-      }
-   }
-}
-
-# Django-Bootstrap3 settings
-
-BOOTSTRAP3 = {
-
-    # The URL to the jQuery JavaScript file
-    'jquery_url': '/static/main/js/jquery-3.2.1.min.js',
-
-    # The Bootstrap base URL
-    'base_url': '/static/main/bootstrap/',
-
-    # The complete URL to the Bootstrap CSS file 
-    # (None means derive it from base_url)
-    'css_url': None,
-
-    # The complete URL to the Bootstrap CSS file (None means no theme)
-    'theme_url': None,
-
-    # The complete URL to the Bootstrap JavaScript file (None means derive it 
-    # from base_url)
-    'javascript_url': None,
-
-    # Put JavaScript in the HEAD section of the HTML document (only relevant 
-    # if you use bootstrap3.html)
-    'javascript_in_head': False,
-
-    # Include jQuery with Bootstrap JavaScript (affects django-bootstrap3 
-    # template tags)
-    'include_jquery': True,
-
-    # Label class to use in horizontal forms
-    'horizontal_label_class': 'col-md-3',
-
-    # Field class to use in horizontal forms
-    'horizontal_field_class': 'col-md-9',
-
-    # Set HTML required attribute on required fields, for Django <= 1.8 only
-    'set_required': True,
-
-    # Set HTML disabled attribute on disabled fields, for Django <= 1.8 only
-    'set_disabled': False,
-
-    # Set placeholder attributes to label if no placeholder is provided
-    'set_placeholder': True,
-
-    # Class to indicate required (better to set this in your Django form)
-    'required_css_class': '',
-
-    # Class to indicate error (better to set this in your Django form)
-    'error_css_class': 'has-error',
-
-    # Class to indicate success, meaning the field has valid input 
-    # (better to set this in your Django form)
-    'success_css_class': 'has-success',
-
-    # Renderers (only set these if you have studied the source and 
-    # understand the inner workings)
-    'formset_renderers': {
-        'default': 'bootstrap3.renderers.FormsetRenderer',
-    },
-    'form_renderers': {
-        'default': 'bootstrap3.renderers.FormRenderer',
-    },
-    'field_renderers': {
-        'default': 'bootstrap3.renderers.FieldRenderer',
-        'inline': 'bootstrap3.renderers.InlineFieldRenderer',
-    },
-}
-
-# Crispy form settings
-
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
-CRISPY_FAIL_SILENTLY = DEBUG
+DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400

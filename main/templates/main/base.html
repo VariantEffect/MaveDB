@@ -1,11 +1,3 @@
-{% load bootstrap3 %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
-
-{% load bootstrap_themes %}
-{% bootstrap_styles theme='flatly' type='min.css' %}
-{% bootstrap_script use_min=True %}
-
 {% load static %}
 
 <!DOCTYPE html>
@@ -14,92 +6,82 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MaveDB, a repository for DMS datasets">
+    <meta name="author" content="Daniel C. Esposito">
+    <!-- fonts/icons -->
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" 
+          rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+    <!-- skeleton -->
+    <link rel="stylesheet" href="{% static 'main/skeleton/css/normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'main/skeleton/css/skeleton.css' %}">
+    <!-- jquery-ui -->
+    <link href="{% static 'main/jquery/css/jquery-ui.css' %}" rel="stylesheet">
+    <!-- custom css -->
+    <link href="{% static 'main/main/css/base.css' %}" rel="stylesheet">
+    <!-- favicon -->
+    <link rel="icon" type="image/png" 
+          href="{% static 'main/main/img/minilogo.png' %}"/>
     <title>MaveDB</title>
-    <link rel="stylesheet" type="text/css" 
-          href="{% static 'main/DataTables/css/dataTables.bootstrap.min.css' %}"/>
-    <link rel="Stylesheet" type="text/css"
-          href="{% static 'main/css/jquery-ui.css' %}"/>
-    <link href="{% static 'main/css/base.css' %}" rel="stylesheet" />
   </head>
 
   <body>
-    <div id="header"> 
-      <nav id="nav-header" class="navbar navbar-default">
-        <div class="container">
-          <div id="navbar_logo" class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed"
-                    data-toggle="collapse" data-target="#navbar"
-                    aria-expanded="false" aria-controls="navbar">
-              <span class="sr-only">Toggle navigation</span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </button>
-            <a id="brand" class="navbar-brand" 
-                href="{% url 'main:home' %}">MaveDB</a>
-          </div>
-
-          <div id="navbar_links" class="collapse navbar-collapse">
-            <ul class="nav navbar-nav navbar-right">
-              <li><a href="{% url 'main:search' %}">Search</a></li>
-              <li><a href="{% url 'main:download' %}">Download</a></li>
-              <li><a href="{% url 'main:upload' %}">Upload</a></li>
-              <li>
-                <a href="#" class="dropdown-toggle"
-                    data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                  Help
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a href="{% url 'main:usage_guide' %}">User Guide</a></li>
-                  <li><a href="{% url 'main:documentation' %}">Documentation</a></li>
-                </ul>
-              </li>
-              <li><a href="{% url 'main:login' %}">Login</a></li>
-              <li><a href="{% url 'main:register' %}">Register</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </nav>
-    </div>
-    
-    <div id="body" class="container-fluid">  
-      {% block body %}{% endblock %}
-    </div> 
-
-    <div id="footer" class="footer">
+    <div class="section header">
       <div class="row">
-        <div id="footer_logo" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-          <div class="text-center">
-              <span>MaveDB Logo Goes Here</span>
-          </div>
+        <div class="two columns logo">
+          <img class="logo-img" src="{% static 'main/main/img/minilogo.png' %}">
         </div>
-
-        <div id="footer_link_container" class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-          <div  class="text-center">
-              <a href="{% url 'main:help' %}">Help</a> |
-              <a href="{% url 'main:contact' %}">Contact</a> |
-              <a href="{% url 'main:privacy' %}">Privacy</a> |
-              <a href="{% url 'main:terms' %}">Terms</a>
-          </div>
-          <div id="disclaimer" class="text-center">
-            <p>Copyright 2017, All rights reserved.</p>
-          </div>
+        <nav class="six columns navbar">
+          <ul class="navbar-items">
+            <li class="navbar-item"><a href="#">Home</a></li>
+            <li class="navbar-item"><a href="#">Search</a></li>
+            <li class="navbar-item"><a href="#">Download</a></li>
+            <li class="navbar-item"><a href="#">Upload</a></li>
+            <li class="navbar-item"><a href="#">Usage</a></li>
+            <li class="navbar-item"><a href="#">Documentation</a></li>
+            <li class="navbar-item"><a href="#">Login</a></li>
+            <li class="navbar-item"><a href="#">Register</a></li>
+          </ul>
+        </nav>
+        <div class="four columns navbar-search">
+          <form action="{% url 'main:home' %}" method="post">
+            {% csrf_token %}
+            <input class="navbar-search-input" name="navbar-search-input"
+                   placeholder="Search...">
+            <input type="submit" style="display: none" />
+          </form>
         </div>
       </div>
     </div>
+     
+    <hr> <!-- clear -->
 
-    <!-- Load ALL the Javascripts! -->
-    <script type="text/javascript" 
-            src="{% static 'main/DataTables/js/jquery.dataTables.min.js' %}">
-    </script>
-    <script type="text/javascript" 
-            src="{% static 'main/DataTables/js/dataTables.bootstrap.min.js' %}">
-    </script>
-    <script type="text/javascript"
-            src="{% static 'main/js/jquery-ui.min.js' %}">
-    </script>
-    <script type="text/javascript" src="{% static 'main/js/base.js' %}"></script>
+    <div class="section body-block">
+      {% block body %}
+        <!-- Main template body block -->
+      {% endblock %}
+    </div>
+    
+    <hr> <!-- clear -->
+
+    <div class="section footer">
+      <div class="row"> 
+        <nav class="twelve columns footerbar">
+          <ul class="footer-items">
+            <li class="footer-item"><a href="#">Terms</a></li>
+            <li class="footer-item"><a href="#">Privacy</a></li>
+            <li class="footer-item"><a href="#">Help</a></li>
+            <li class="footer-item"><a href="#">Contact</a></li>
+            <li class="footer-item">All rights reserved, 2017.</li>
+          </ul>
+        </nav>
+      </div>
+    </div>
   </body>
+  
+  <!-- Scripts -->
+  <script href="{% static 'main/jquery/jquery-3.2.1.min.js' %}"></script>
+  <script href="{% static 'main/jquery/jquery-ui.min.js' %}"></script>
+  <script href="{% static 'main/main/js/base.js' %}"></script>
 </html>

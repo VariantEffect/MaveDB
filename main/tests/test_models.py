@@ -20,10 +20,10 @@ class TestNewsModel(TestCase):
         message = "Hello World!"
         date = datetime.date.today().replace(1985, 7, 10)
         expected = "[{}]: {}".format(str(date), message)
-        
+
         item = News(text=message, date=date)
         self.assertEqual(expected, item.message)
-   
+
     def test_DONT_allow_null_message(self):
         item = News(text=None, date=datetime.date.today())
         with self.assertRaises(ValidationError):
@@ -63,7 +63,7 @@ class TestNewsModel(TestCase):
 
 
 class SiteInformationModelTest(TestCase):
-    
+
     def test_can_create_and_save_information(self):
         info = SiteInformation.objects.create(
             about="This is MaveDB", citation="This is a citation.")
@@ -83,20 +83,20 @@ class SiteInformationModelTest(TestCase):
         info_1 = SiteInformation.objects.create(
             about="This is MaveDB",
             citation="This is a citation.")
-        
+
         info_1.about = "New about information."
         info_1.citation = "New citation."
         info_1.save()
         self.assertEqual(info_1.about, "New about information.")
         self.assertEqual(info_1.citation, "New citation.")
-        
+
     def test_DONT_allow_empty_about_text(self):
         with self.assertRaises(ValueError):
             SiteInformation.objects.create(
                 about="",
                 citation="This is a citation."
             )
-    
+
     def test_DONT_allow_null_about_text(self):
         with self.assertRaises(ValueError):
             SiteInformation.objects.create(
@@ -110,7 +110,7 @@ class SiteInformationModelTest(TestCase):
                 about="This is MaveDB",
                 citation=""
             )
-    
+
     def test_DONT_allow_null_citation_text(self):
         with self.assertRaises(ValueError):
             SiteInformation.objects.create(

@@ -50,18 +50,3 @@ class HomePageTest(TestCase):
         response = self.client.get('/')
         self.assertNotContains(response, 'id="citation"')
         self.assertNotContains(response, 'id="about"')
-
-
-class SearchPageTest(TestCase):
-    """
-    This class tests that the search page is rendered correcly.
-    """
-    def setUp(self):
-        TestCase.setUp(self)
-
-    def test_uses_search_template(self):
-        response = self.client.get('/search/')
-        self.assertTemplateUsed(response, 'main/search.html')
-
-    def test_table_renders_sorted_by_date_upon_page_load(self):
-        self.fail("Write this test!")
