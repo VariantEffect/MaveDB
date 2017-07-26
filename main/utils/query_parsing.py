@@ -3,44 +3,25 @@
 Module contains some helper/utility functions to parse search queries.
 """
 
+import re
 
-def chain_until_next_quotes(items, sep=','):
+
+def enclosed_by_quotes(s):
     """
-    Looks at a list of strings that have been split by `sep`
-    and tries to collect items in the list that start with '"' and end
-    with '"' into a single string.
+    Checks if a string is enclosed by double or single quotes.
 
     Parameters
     ----------
-    items : `list`
-        List of strings
-    sep : `str`
-        Separator used to split the list of strings.
+    s : `str`
+        The string to check
 
     Returns
     -------
-    `tuple`
-        The resulting joined string and the number of items joined.
+    `bool`
+        True if surrounded by quotes, false otherwise.
     """
-    i = 1
-    string = items[0]
-
-    if not string.startswith('"') and not string.startswith("'"):
-        return string.strip(), i
-    elif string.startswith('"') and string.endswith('"'):
-        return string.strip(), i
-    elif string.startswith("'") and string.startswith("'"):
-        return string.strip(), i
-    else:
-        while i < len(items):
-            item = items[i]
-            string = '{}{}{}'.format(string, sep, item)
-            i += 1
-            if string.startswith('"') and item.endswith('"'):
-                break
-            elif string.startswith("'") and item.endswith("'"):
-                break
-        return string.strip()[1:-1], i
+    return (s.startswith("'") and s.endswith("'")) or \
+        (s.startswith('"') and s.endswith('"'))
 
 
 def parse_query(query, sep=','):
@@ -60,11 +41,18 @@ def parse_query(query, sep=','):
     `list`
         A list of separate queries.
     """
-    queries = query.split(sep)
+    pattern = r"(['\"]([^'\"]*)['\"]){}".format(sep)
+    queries = [q.strip() for q in re.split(pattern, query) if q.strip()]
+    print(queries)
     parsed = []
-    i = 0
-    while i < len(queries):
-        query, items_taken = chain_until_next_quotes(queries[i:])
-        i += items_taken
-        parsed.append(query)
+    index = 0
+    while index < len(queries):
+        query = queries[index]
+        if enclosed_by_quotes(query):
+            parsed.append(query)
+            index += 2
+        else:
+            simple_queries = [q.strip() for q in query.split(sep) if q.strip()]
+            parsed.extend(simple_queries)
+            index += 1
     return [q.strip() for q in parsed if q.strip()]
