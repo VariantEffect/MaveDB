@@ -2,10 +2,11 @@
 
 {% block body %}
 
-<div>
-    <h4> 
-        Terms and privacy information
-    </h4>
+<div class="container terms-privacy-body">
+  <h1 id="terms"> Terms and conditions</h1>
+	<p> {{ site_information.terms|safe|escape|default:"None" }} </p>	
+	<h1 id="privacy"> Privacy </h1>
+	<p> {{ site_information.privacy|safe|escape|default:"None" }} </p>
 </div>
 
 {% endblock %}

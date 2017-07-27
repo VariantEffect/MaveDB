@@ -3,7 +3,7 @@
 Url patterns for the main database app.
 """
 
-from django.conf.urls import url
+from django.conf.urls import url, include
 
 from .views import home_view
 from .views import download_view, upload_view
@@ -21,6 +21,5 @@ urlpatterns = [
     url(r'register/$', register_view, name='register'),
     url(r'contact/$', help_contact_view, name='contact'),
     url(r'help/$', help_contact_view, name='help'),
-    url(r'terms/$', terms_privacy_view, name='terms'),
-    url(r'privacy/$', terms_privacy_view, name='privacy'),
+    url(r'terms_privacy/$', terms_privacy_view, name='terms_privacy'),
 ]

@@ -5,9 +5,9 @@
 <div class="row">
   <div class="eight columns information">
     <h1> About </h1>
-      <p> {{ site_information.about|default:"None" }} </p>
+    <p> {{ site_information.about|safe|escape|default:"None" }} </p>
     <h1> Citation </h1>
-      <p> {{ site_information.citation|default:"None" }} </p>
+    <p> {{ site_information.citation|safe|escape|default:"None" }} </p> 
   </div>
   
   <div class="four columns news-panel">
@@ -15,7 +15,7 @@
     <div class="container news">
       {% if news_items %}
         {% for news_item in news_items %}
-        <p> {{ news_item.message }} </p>
+          <p>{{ news_item.message }}</p>
         {% endfor %}
       {% else %}
         <p> No news at this time. </p>

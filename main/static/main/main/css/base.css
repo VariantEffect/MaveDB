@@ -2,7 +2,7 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif;
-     /* border: 1px solid red !important;  */
+      /* border: 1px solid red !important;       */
 }
 
 * {
@@ -28,22 +28,37 @@ hr {
 }
 
 
-/* Link Styling
+/* General, navbar and footer Link Styling
 ----------------------------------- */
 a {
+    padding: 2px;
+    text-decoration: none;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;   
+    -ms-transition: 0.5s;
+    transition: color 0.5s ease-in-out, 
+}
+a:hover {
+    color: #222;
+}
+
+.navbar-item, 
+.footerbar-item {
+    margin: 1rem;
+}
+.navbar-item > a,
+.footerbar-item > a {
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
     -ms-transition: 0.5s;
     transition: color 0.5s ease-in-out, 
                 border-top-color 0.5s ease-in-out,
                 border-bottom-color 0.5s ease-in-out;
-    
-    text-decoration: none;
     border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
-
 }
-a:hover {
+.navbar-item > a:hover, 
+.footerbar-item > a:hover {
     color: #222;
     border-top-color: #222;
     border-bottom-color: #222; 
@@ -56,49 +71,45 @@ a:hover {
     float: right;
 }
 .navbar, .footerbar {
-    margin: auto;
     margin-left: 0;
 }
 
-.navbar-items {
-    margin: 1rem;
+.navbar-list {
+    margin-top: 2.5%;
     list-style: none;
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
 }
-.footer-items {
+.footerbar-list {
+    margin-bottom: 2.5%;
     list-style: none;
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
-}
-.navbar-item, .footer-item {
-    float: left;
-    position: relative;
-    text-align: center;
-    margin-left: 1em;
-    margin: 1rem;
 }
 
+
+/* Navbar search box
+------------------------------------ */
 .navbar-search {
-    margin: auto;
     margin-left: 7.75%;
 }
 .navbar-search > form {
-    margin: 0;
+    margin-top: 6%;
 }
-.navbar-search-input {
-    margin: 2rem;
-    margin-left: 0;
+.navbar-search > form > input {
+    margin: auto auto auto 0;
     border: none;
     background: transparent;
     border-bottom: 1px solid grey;
     min-width: 20%;
-    transition: max-width 0.3s ease, min-width 0.3s ease;
+    transition: 
+        max-width 0.3s ease, 
+        min-width 0.3s ease;
 }
-.navbar-search-input:focus {
-    min-width: 80%;
+.navbar-search > form > input:focus {
+    min-width: 90%;
 }
 
 /* Logo Formatting
@@ -114,7 +125,7 @@ a:hover {
 /* body-block formatting
 ----------------------------------- */
 .body-block {
-    margin: 1em;
+    margin: 2%;
 }
 
 .news {
@@ -122,4 +133,45 @@ a:hover {
     border: 1px ridge lightslategray;
     border-radius: 1%;
     background: lightblue;
+}
+
+
+/* Tocbot
+---------------------------------------- */
+h1::before, h2::before, h3::before, 
+h4::before, h5::before, h6::before {
+    display: block;
+    content: " ";
+    height: 60px;
+    margin-top: -60px;
+    visibility: hidden;
+}
+
+.js-toc {
+    background: #fff;
+}
+
+.toc-link::before {
+	background-color: #EEE;
+	content: '';
+	display: inline-block;
+	height: 25%;
+	left: 0;
+	margin-top: 2.5px;
+	position: absolute;
+	width: 2px;
+}
+.is-active-link::before {
+	background-color: #88B784;
+	visibility: visible;
+}
+
+.toc-list-item {
+    list-style: none;
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.is-position-fixed {
+    width: inherit;
 }

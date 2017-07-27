@@ -1,13 +1,15 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-
-<div>
-    <h4> 
-        This page will provide a step-by-step guide on how to use the site,
-        how to create a new account, how to create experiments and how to
-        modify existing experiments.
-    </h4>
+<div class="row usageguie-body">
+    <div class="two columns">
+        <h4>Usage</h4><hr>
+        <!-- Table of contents goes here -->
+        <div class="js-toc"></div>
+    </div>
+    <div class="ten columns js-toc-content">
+        {{ site_information.usage_guide|safe|escape|default:"None" }}
+    </div>
 </div>
 
 {% endblock %}

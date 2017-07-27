@@ -1,18 +1,15 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-
-<div>
-    <h4> 
-        This page will provide documentation information regarding the RESTful
-        api. It will include details such as:
-        <br><br>
-        <ul>
-            <li> Using the API </li>
-            <li> The structure of URLs </li>
-            <li> Downloadable data-types </li>
-        <ul>
-    </h4>
+<div class="row documentation-body">
+    <div class="two columns">
+        <h4>Documentation</h4><hr>
+        <!-- Table of contents goes here -->
+        <div class="js-toc"></div>
+    </div>
+    <div class="ten columns js-toc-content">
+        {{ site_information.documentation|safe|escape|default:"None" }}
+    </div>
 </div>
 
 {% endblock %}

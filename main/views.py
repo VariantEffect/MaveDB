@@ -6,19 +6,10 @@ from .models import News, SiteInformation
 
 def home_view(request):
     news_items = News.recent_news()
-    if request.method == "POST":
-        print(request.POST)
-    
-    if SiteInformation.objects.count() == 1:
-        site_information = SiteInformation.objects.all()[0]
-        return render(request, 'main/home.html', {
-            "news_items": news_items,
-            "site_information": site_information
-        })
-    else:
-        return render(request, 'main/home.html', {
-            "news_items": news_items,
-        })
+    return render(request, 'main/home.html', {
+        "news_items": news_items,
+        "site_information": SiteInformation.get_instance()
+    })
 
 
 def download_view(request):
@@ -38,11 +29,15 @@ def register_view(request):
 
 
 def usage_guide_view(request):
-    return render(request, 'main/usage_guide.html', {})
+    return render(request, 'main/usage_guide.html', {
+        "site_information": SiteInformation.get_instance()
+    })
 
 
 def documentation_view(request):
-    return render(request, 'main/documentation.html', {})
+    return render(request, 'main/documentation.html', {
+        "site_information": SiteInformation.get_instance()
+    })
 
 
 def help_contact_view(request):
@@ -50,4 +45,6 @@ def help_contact_view(request):
 
 
 def terms_privacy_view(request):
-    return render(request, 'main/terms_privacy.html', {})
+    return render(request, 'main/terms_privacy.html', {
+        "site_information": SiteInformation.get_instance()
+    })
