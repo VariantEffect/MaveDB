@@ -55,12 +55,21 @@
             <li class="navbar-item">
               <a href="{% url 'main:documentation'%}">Documentation</a>
             </li>
-            <li class="navbar-item">
-              <a href="#">Login</a>
-            </li>
-            <li class="navbar-item">
-              <a href="#">Register</a>
-            </li>
+            {% if user.is_authenticated %}
+              <li class="navbar-item">
+                <a href="{% url 'accounts:profile'%}">Profile</a>
+              </li>
+              <li class="navbar-item">
+                <a href="{% url 'accounts:logout'%}">Logout</a>
+              </li>
+            {% else %}
+              <li class="navbar-item">
+                <a href="{% url 'accounts:login'%}">Login</a>
+              </li>
+              <li class="navbar-item">
+                <a href="{% url 'accounts:register'%}">Register</a>
+              </li>
+            {% endif %}
           </ul>
         </nav>
         <div class="four columns navbar-search">

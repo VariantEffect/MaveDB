@@ -1,0 +1,18 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="row" style="margin-bottom: 34%;">
+	<div class="two columns">
+		<h1>Sign up</h1>
+	</div>
+	<div class="ten columns">
+		<h3> Oh no! </h3>
+		<p>
+			Something has gone wrong. Your account could not be validated! Please
+			try 
+			<a href="{% url 'accounts:register' %}">registering</a> again.
+			If the problem persists, please contact support.
+		</p>
+	</div>
+</div>
+{% endblock body %} 

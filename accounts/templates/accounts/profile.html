@@ -1,0 +1,20 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="row">
+  <div class="three columns sidebar">
+		<h2> {{ request.user.username }} </h2>
+		<ul style="list-style: none;">
+			<li class="navbar-item"><a href="">General</a></li>
+			<li class="navbar-item"><a href="">Experiment Sets</a></li>
+			<li class="navbar-item"><a href="">Experiments</a></li>
+			<li class="navbar-item"><a href="">Score Sets</a></li>
+		</ul>
+	</div>
+	</div class="nine columns profile-content">
+		{% block profile_content %}
+			<!-- right side page content goes here -->
+		{% endblock profile_content %}
+	</div>	
+</div>
+{% endblock body %}

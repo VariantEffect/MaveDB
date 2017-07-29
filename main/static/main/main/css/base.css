@@ -2,7 +2,7 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif;
-    /* border: 1px solid red !important;        */
+    /* border: 1px solid red !important;         */
 }
 
 * {
@@ -21,6 +21,12 @@ hr {
     margin-bottom: 1em;
 }
 
+hr.vertical {
+    width: 1px;
+    height: 100%;
+    background-color: #E1E1E1;
+}
+
 .row, .container {
     display: flex;
     flex-wrap: wrap;
@@ -30,6 +36,10 @@ hr {
 pre {
 	margin-left: 1%;
 	margin-right: 1%;
+}
+
+form > input {
+    width: 50%;
 }
 
 /* General, navbar and footer Link Styling
