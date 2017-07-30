@@ -7,11 +7,11 @@
 		<small>Registration is free.</small>
 	</div>
 	<div class="ten columns">
-		<h3> Success! </h3>
+		<h3> Activation email sent! </h3>
 		<p>
-			Your account has been activated! Click 
-			<a href="{% url 'accounts:profile' %}">here</a> to log in to your
-			profile.
+			Please check your email and follow the directions to activate 
+			your account. If you did not recieve an email, please click 
+			<a href={% url 'accounts:send_activation_email' uidb64 %}>here</a>.
 		</p>
 	</div>
 </div>

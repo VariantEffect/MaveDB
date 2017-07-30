@@ -22,7 +22,8 @@ from django.conf.urls import url, include
 from django.urls import reverse_lazy
 import django.contrib.auth.views as auth_views
 
-from .views import registration_view, profile_view, activate_account_view
+from .views import registration_view, profile_view
+from .views import activate_account_view, send_activation_email_view
 
 
 urlpatterns = [
@@ -30,8 +31,10 @@ urlpatterns = [
     url(r"^$", profile_view, name="index"),
     url(r"profile/$", profile_view, name="profile"),
     url(r"register/$", registration_view, name="register"),
-    url(r"activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$", 
+    url(r"activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         activate_account_view, name="activate"),
+    url(r"activate/(?P<uidb64>[0-9A-Za-z_\-]+)/$",
+        send_activation_email_view, name='send_activation_email'),
 
     # ------ Login and Logout
     url(

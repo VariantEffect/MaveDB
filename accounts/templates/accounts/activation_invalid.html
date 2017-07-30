@@ -4,14 +4,14 @@
 <div class="row" style="margin-bottom: 34%;">
 	<div class="two columns">
 		<h1>Sign up</h1>
+		<small>Registration is free.</small>
 	</div>
 	<div class="ten columns">
 		<h3> Oh no! </h3>
 		<p>
-			Something has gone wrong. Your account could not be validated! Please
-			try 
-			<a href="{% url 'accounts:register' %}">registering</a> again.
-			If the problem persists, please contact support.
+			Something has gone wrong. Your account could not be validated! Click 
+			<a href={% url 'accounts:send_activation_email' uidb64 %}>here</a> 
+			to resend the activation email.
 		</p>
 	</div>
 </div>
