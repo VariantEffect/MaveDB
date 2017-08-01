@@ -23,6 +23,7 @@ function basePageTags() {
 
 
 $('document').ready(function() {
+  
     $(basePageTags().navbarSearchInput).focus(function (ev) {
         $(this).attr(
             'placeholder',
@@ -31,5 +32,11 @@ $('document').ready(function() {
     });
     $(basePageTags().navbarSearchInput).blur(function (ev) {
         $(this).attr("placeholder", "Search...");
+    });
+
+    $(".select-menu").change(function (ev) {
+        $(".hidden-submit").attr("type", "submit");
+        $(".hidden-submit").trigger("click");
+        $(".hidden-submit").attr("type", "hidden");
     });
 });

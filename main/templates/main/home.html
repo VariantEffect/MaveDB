@@ -12,6 +12,32 @@
     <div id="citation">
       {{ site_information.citation|safe|escape|default:"None" }}
     </div> 
+
+    <div class="row">
+      <div class="six columns">
+        <ul class="pagination">
+          <li class="start"><a href="">&laquo;</a></li>      
+          <li class="active"><a href="">Hello</a></li>
+          <li><a href="">Hello</a></li>
+          <li><a href="">Hello</a></li>
+          <li><a href="">Hello</a></li>
+          <li><a href="">Hello</a></li>
+          <li><a href="">...</a></li>
+          <li class="end"><a href="">&raquo;</a></li>   
+        </ul>
+      </div>
+      <div class="two columns">
+        <form class='u-pull-right' action="{% url 'main:home' %}" method="GET">
+          <input class="hidden-submit" type="hidden" value="Submit">
+          <select class="select-menu" name="items-per-page">
+            <option value="volvo">Volvo</option>
+            <option value="saab">Saab</option>
+            <option value="fiat">Fiat</option>
+            <option value="audi">Audi</option>
+          </select>
+        </form>
+      </div>
+    </div>
   </div>
   
   <div class="four columns news-panel">

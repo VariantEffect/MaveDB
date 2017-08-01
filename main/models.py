@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator
 
 import pypandoc
 pdoc_args = [
-    '--mathml',
+    '--mathjax',
     '--smart',
     '--standalone',
     '--biblatex',

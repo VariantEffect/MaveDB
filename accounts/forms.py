@@ -22,13 +22,9 @@ class RegistrationForm(UserCreationForm):
     Simple :py:class:`UserCreationForm` subclass that exposes additional
     fields compared to the default.
     """
-    first_name = forms.CharField(max_length=32, required=True)
-    last_name = forms.CharField(max_length=32, required=True)
-
     class Meta:
         model = User
         fields = (
-            'first_name', 'last_name',
             'username', 'email',
             'password1', 'password2'
         )
