@@ -19,15 +19,17 @@ class RegistrationFunctionalTest(FunctionalTest):
 
         # Farva loves the new site and decides to sign-up
         form = self.browser.find_element_by_id("register-form")
+        username = self.browser.find_element_by_id("username-input")
         email = self.browser.find_element_by_id("email-input")
         password1 = self.browser.find_element_by_id("password-1-input")
         password2 = self.browser.find_element_by_id("password-2-input")
 
         # Hastily, he enters his details but miss-types his email.
-        email.send_keys("farva@gmail.com")
-        password1.send_keys("password")
-        password2.send_keys("password")
-        form.submit()
+        # username.send_keys("farva")
+        # email.send_keys("farva@gmail.com")
+        # password1.send_keys("password")
+        # password2.send_keys("password")
+        # form.submit()
 
         # A red alert element pops up on the sign-up page instructing
         # Farva to correct his email address.
@@ -44,10 +46,10 @@ class RegistrationFunctionalTest(FunctionalTest):
         # In an unfortunate accident involving a can of creamed corn soup,
         # Farva losses his memory from the previous day. He attempts to create
         # another account the following day.
-        email.send_keys("farva@gmail.com")
-        password1.send_keys("password")
-        password2.send_keys("password")
-        form.submit()
+        # email.send_keys("farva@gmail.com")
+        # password1.send_keys("password")
+        # password2.send_keys("password")
+        # form.submit()
 
         # A red alert element pops up on the sign-up page instructing
         # Farva that the input email address is already in use.
