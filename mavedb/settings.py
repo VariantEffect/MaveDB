@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'main',
     'accounts',
     'experiment',
+    'scoreset',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -128,3 +129,31 @@ LOGOUT_REDIRECT_URL = '/accounts/profile/'
 DEFAULT_FROM_EMAIL = "mave-webmaster@mave.com"
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Set up logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[%(levelname)s] %(asctime)s %(module)s %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+    },
+}
