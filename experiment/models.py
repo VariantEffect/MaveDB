@@ -1,28 +1,21 @@
 
 import logging
 import datetime
-import pypandoc
 from string import ascii_uppercase
 
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 from django.conf import settings
-from django.db import models
-from django.db.models.signals import post_save
+from django.db import models, IntegrityError
+from django.db.models.signals import pre_save, post_save
 
 from .validators import valid_exp_accession, valid_expset_accession
 from .validators import valid_wildtype_sequence
 
 logger = logging.getLogger("django")
-
-pdoc_args = [
-    '--mathjax',
-    '--smart',
-    '--standalone',
-    '--biblatex',
-    '--html-q-tags'
-]
+positive_integer_validator = MinValueValidator(limit_value=0)
 
 
 class ExperimentSet(models.Model):
@@ -43,49 +36,28 @@ class ExperimentSet(models.Model):
         Creates a new accession by creating a digit that has the digit bit of
         the last accession when sorted in ascending order plus one.
     """
-    # ---------------------------------------------------------------------- #
-    #                       Class members/functions
-    # ---------------------------------------------------------------------- #
+
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "EXPS"
 
-    @classmethod
-    def build_accession(cls) -> str:
-        """
-        Creates a new accession by creating a digit that is the count of
-        current class (active and inactive) plus 1.
-
-        Parameters
-        ----------
-        cls : :py:class:`models.base.ModelBase`
-            A class that subclasses django's base model.
-
-        Returns
-        -------
-        `str`:
-            The next accession incremented according to the current
-            database entries.
-        """
-        digit_suffix = 1
-        if cls.objects.count() > 0:
-            accessions = sorted([es.accession for es in cls.objects.all()])
-            digit_suffix = int(accessions[-1][len(cls.ACCESSION_PREFIX):]) + 1
-
-        fill_width = cls.ACCESSION_DIGITS - len(str(digit_suffix)) + 1
-        accession = cls.ACCESSION_PREFIX + \
-            str(digit_suffix).zfill(fill_width)
-        return accession
+    class Meta:
+        ordering = ['-creation_date']
+        verbose_name = "ExperimentSet"
+        verbose_name_plural = "ExperimentSets"
 
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
     accession = models.CharField(
-        unique=True, default=None, blank=False, null=False,
+        unique=True, default=None, blank=False, null=True,
         max_length=ACCESSION_DIGITS + len(ACCESSION_PREFIX),
         verbose_name="Accession", validators=[valid_expset_accession])
 
+    last_used_suffix = models.CharField(
+        blank=True, null=True, default="", max_length=64)
+
     creation_date = models.DateField(
-        blank=False, null=False, default=datetime.date.today, 
+        blank=False, null=False, default=datetime.date.today,
         verbose_name="Creation date")
 
     approved = models.BooleanField(
@@ -95,21 +67,38 @@ class ExperimentSet(models.Model):
         blank=False, null=False, default=True, verbose_name="Private")
 
     # ---------------------------------------------------------------------- #
-    #                       Meta class
-    # ---------------------------------------------------------------------- #
-    class Meta:
-        ordering = ['-creation_date']
-        verbose_name = "ExperimentSet"
-        verbose_name_plural = "ExperimentSets"
-
-    # ---------------------------------------------------------------------- #
-    #                       Data model
+    #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
         return "ExperimentSet({}, {}, {})".format(
             str(self.accession),
             str(self.creation_date),
             str([e.accession for e in self.experiment_set.all()]))
+
+    def save(self, *args, **kwargs):
+        super(ExperimentSet, self).save(*args, **kwargs)
+        if self.accession is not None:
+            valid_expset_accession(self.accession)
+        else:
+            digit_bit = str(self.pk)
+            digit_suffix = digit_bit.zfill(
+                self.ACCESSION_DIGITS - len(digit_bit) + 1)
+            accession = "{}{}".format(self.ACCESSION_PREFIX, digit_suffix)
+            self.accession = accession
+            self.save()
+
+    def next_experiment_suffix(self):
+        if not self.last_used_suffix:
+            suffix = ascii_uppercase[0]
+        else:
+            last_used = self.last_used_suffix
+            index = ascii_uppercase.index(last_used[0].upper()) + 1
+            times_to_repeat = len(last_used)
+            if index >= len(ascii_uppercase):
+                times_to_repeat += 1
+            next_index = index % len(ascii_uppercase)
+            suffix = ascii_uppercase[next_index] * times_to_repeat
+        return suffix
 
 
 class Experiment(models.Model):
@@ -139,56 +128,33 @@ class Experiment(models.Model):
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "EXP"
 
-    @classmethod
-    def build_accession(cls, parent: ExperimentSet) -> str:
-        """
-        Creates a new accession by creating a digit that is the count of
-        current class (active and inactive) plus 1.
-
-        Parameters
-        ----------
-        cls : :py:class:`ExperimentSet`
-            A class that subclasses django's base model.
-
-        Returns
-        -------
-        `str`:
-            The next accession incremented according to the current
-            database entries.
-        """
-        if not isinstance(parent, ExperimentSet):
-            raise TypeError("Parent must be an ExperimentSet instance.")
-        try:
-            n_existing_experiments = parent.experiment_set.count()
-            suffix = ascii_uppercase[n_existing_experiments]
-        except IndexError:
-            index = n_existing_experiments % len(ascii_uppercase)
-            repeat = abs(len(ascii_uppercase) - n_existing_experiments)
-            suffix = ascii_uppercase[index] * repeat
-
-        digits = parent.accession[len(ExperimentSet.ACCESSION_PREFIX):]
-        accession = '{}{}{}'.format(cls.ACCESSION_PREFIX, digits, suffix)
-        return accession
+    class Meta:
+        ordering = ['-creation_date']
+        verbose_name = "Experiment"
+        verbose_name_plural = "Experiments"
 
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
     accession = models.CharField(
-        unique=True, default=None, blank=False, null=False, max_length=64,
+        unique=True, default=None, null=True, max_length=64,
         verbose_name="Accession", validators=[valid_exp_accession])
+
+    experimentset = models.ForeignKey(
+        to=ExperimentSet, on_delete=models.PROTECT, null=True, default=None)
 
     creation_date = models.DateField(
         blank=False, null=False, default=datetime.date.today,
         verbose_name="Creation date")
+
+    last_used_suffix = models.IntegerField(
+        default=0, validators=[positive_integer_validator])
 
     approved = models.BooleanField(
         blank=False, null=False, default=False, verbose_name="Approved")
 
     private = models.BooleanField(
         blank=False, null=False, default=True, verbose_name="Private")
-
-    experimentset = models.ForeignKey(
-        to=ExperimentSet, on_delete=models.PROTECT, null=False, default=None)
 
     wt_sequence = models.TextField(
         default=None, blank=False, null=False,
@@ -217,26 +183,41 @@ class Experiment(models.Model):
     # reference mapping
 
     # ---------------------------------------------------------------------- #
-    #                       Meta class
+    #                       Methods
     # ---------------------------------------------------------------------- #
-    class Meta:
-        ordering = ['-creation_date']
-        verbose_name = "Experiment"
-        verbose_name_plural = "Experiments"
-
-    # ---------------------------------------------------------------------- #
-    #                       Data model
-    # ---------------------------------------------------------------------- #
+    # TODO: add helper functions to check permision bit and author bits
     def __str__(self):
         return "Experiment({}, {}, {})".format(
             str(self.accession),
             str(self.experimentset),
             str(self.creation_date))
 
-    # ---------------------------------------------------------------------- #
-    #                       Methods
-    # ---------------------------------------------------------------------- #
-    # TODO: add helper functions to check permision bit and author bits
+    def save(self, *args, **kwargs):
+        super(Experiment, self).save(*args, **kwargs)
+        if self.accession is not None:
+            valid_exp_accession(self.accession)
+        else:
+            expset = None
+            if self.experimentset is None:
+                expset = ExperimentSet.objects.create()
+                self.experimentset = expset
+
+            parent = self.experimentset
+            suffix = parent.next_experiment_suffix()
+            accession = "{}{}".format(
+                parent.accession.replace(
+                    parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX
+                ),
+                suffix
+            )
+            parent.last_used_suffix = suffix
+            parent.save()
+            self.accession = accession
+            self.save()
+
+    def next_scoreset_suffix(self):
+        return self.last_used_suffix + 1
+
     def md_abstract(self):
         return pypandoc.convert_text(
             self.abstract, 'html', format='md', extra_args=pdoc_args)
