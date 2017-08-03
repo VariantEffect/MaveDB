@@ -27,7 +27,7 @@ def valid_hgvs_string(string):
 
 
 def valid_json_field(json_object):
-    from.models import SCORES_KEY, COUNTS_KEY
+    from .models import SCORES_KEY, COUNTS_KEY
     if SCORES_KEY not in json_object.keys():
         raise ValidationError(
             _("%(data)s is missing the key %(key)s."),
@@ -38,8 +38,10 @@ def valid_json_field(json_object):
             _("%(data)s is missing the key %(key)s."),
             params={"data": json_object, "key": COUNTS_KEY}
         )
-    if sorted(list(json_object.keys())) != [SCORES_KEY, COUNTS_KEY]:
-        expected = [SCORES_KEY, COUNTS_KEY]
+
+    expected = sorted([SCORES_KEY, COUNTS_KEY])
+    extras = [k for k in json_object.keys() if k not in expected]
+    if len(extras) > 0:
         extras = [k for k in json_object.keys() if k not in expected]
         raise ValidationError(
             _("%(data)s has additional keys %(extras)s."),
