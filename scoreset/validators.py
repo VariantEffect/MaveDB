@@ -38,7 +38,6 @@ def valid_json_field(json_object):
             _("%(data)s is missing the key %(key)s."),
             params={"data": json_object, "key": COUNTS_KEY}
         )
-
     expected = sorted([SCORES_KEY, COUNTS_KEY])
     extras = [k for k in json_object.keys() if k not in expected]
     if len(extras) > 0:
