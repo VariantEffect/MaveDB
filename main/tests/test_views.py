@@ -14,6 +14,7 @@ class HomePageTest(TestCase):
     and that site-wide information such as News, About and Citations
     can be created/updated/rendered correctly.
     """
+
     def test_uses_home_template(self):
         response = self.client.get('/')
         self.assertTemplateUsed(response, 'main/home.html')
@@ -28,25 +29,20 @@ class HomePageTest(TestCase):
     def test_NO_news_items_display(self):
         response = self.client.get('/')
         self.assertEquals(response.context['news_items'].count(), 0)
-        self.assertContains(response, "No announcements at this time.")
+        self.assertNotContains(response, 'id="news-item-')
 
     def test_about_site_info_displays(self):
         site_info = SiteInformation.objects.create(
-            about="This is the about text.",
-            citation="This is the citation text."
+            _about="This is the about text.",
+            _citation="This is the citation text."
         )
         response = self.client.get('/')
         self.assertContains(response, site_info.about)
 
     def test_citation_site_info_displays(self):
         site_info = SiteInformation.objects.create(
-            about="This is the about text.",
-            citation="This is the citation text."
+            _about="This is the about text.",
+            _citation="This is the citation text."
         )
         response = self.client.get('/')
         self.assertContains(response, site_info.citation)
-
-    def test_NO_site_info_displays(self):
-        response = self.client.get('/')
-        self.assertNotContains(response, 'id="citation"')
-        self.assertNotContains(response, 'id="about"')

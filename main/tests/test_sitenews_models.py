@@ -75,54 +75,41 @@ class SiteInformationModelTest(TransactionTestCase):
 
     def test_can_create_and_save_information(self):
         info = SiteInformation.objects.create(
-            about="This is MaveDB", citation="This is a citation.")
+            _about="This is MaveDB", _citation="This is a citation.")
         self.assertEqual(SiteInformation.objects.count(), 1)
         self.assertEqual(SiteInformation.objects.all()[0], info)
 
     def test_can_only_have_one_item(self):
         info_1 = SiteInformation.objects.create(
-            about="This is MaveDB",
-            citation="This is a citation.")
+            _about="This is MaveDB",
+            _citation="This is a citation.")
         with self.assertRaises(ValueError):
             info_2 = SiteInformation.objects.create(
-                about="This is another MaveDB",
-                citation="This is a another citation.")
+                _about="This is another MaveDB",
+                _citation="This is a another citation.")
 
     def test_can_edit_and_save_existing_item(self):
         info_1 = SiteInformation.objects.create(
-            about="This is MaveDB",
-            citation="This is a citation.")
+            _about="This is MaveDB",
+            _citation="This is a citation."
+        )
 
-        info_1.about = "New about information."
-        info_1.citation = "New citation."
+        info_1._about = "New about information."
+        info_1._citation = "New citation."
         info_1.save()
-        self.assertEqual(info_1.about, "New about information.")
-        self.assertEqual(info_1.citation, "New citation.")
-
-    def test_DONT_allow_empty_about_text(self):
-        with self.assertRaises(ValueError):
-            SiteInformation.objects.create(
-                about="",
-                citation="This is a citation."
-            )
+        self.assertIn("New about information.", info_1.about)
+        self.assertIn("New citation.", info_1.citation)
 
     def test_DONT_allow_null_about_text(self):
         with self.assertRaises(ValueError):
             SiteInformation.objects.create(
-                about=None,
-                citation="This is a citation."
-            )
-
-    def test_DONT_allow_empty_citation_text(self):
-        with self.assertRaises(ValueError):
-            SiteInformation.objects.create(
-                about="This is MaveDB",
-                citation=""
+                _about=None,
+                _citation="This is a citation."
             )
 
     def test_DONT_allow_null_citation_text(self):
         with self.assertRaises(ValueError):
             SiteInformation.objects.create(
-                about="This is MaveDB",
-                citation=None
+                _about="This is MaveDB",
+                _citation=None
             )

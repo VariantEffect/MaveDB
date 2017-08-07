@@ -2,7 +2,7 @@ import logging
 import datetime
 
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -15,7 +15,7 @@ from experiment.models import Experiment
 
 from .validators import (
     valid_scs_accession, valid_var_accession,
-    valid_json_field, valid_hgvs_string
+    valid_scoreset_json, valid_hgvs_string, valid_variant_json
 )
 
 COUNTS_KEY = "counts"
@@ -64,7 +64,7 @@ class ScoreSet(models.Model):
         verbose_name="Accession", validators=[valid_scs_accession])
 
     experiment = models.ForeignKey(
-        to=Experiment, on_delete=models.PROTECT, null=True, default=None)
+        to=Experiment, on_delete=models.PROTECT, null=False, default=None)
 
     creation_date = models.DateField(
         blank=False, null=False, default=datetime.date.today,
@@ -79,25 +79,26 @@ class ScoreSet(models.Model):
     private = models.BooleanField(
         blank=False, null=False, default=True, verbose_name="Private")
 
+    dataset_columns = JSONField(
+        verbose_name="Dataset columns", default=dict({
+            SCORES_KEY: ['score', 'SE'],
+            COUNTS_KEY: ['count']
+        }),
+        validators=[valid_scoreset_json]
+    )
+
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
     # TODO add the following many2many fields:
     # keywords
-    # metadata
     abstract = models.TextField(
         blank=True, default="", verbose_name="Abstract")
     method_desc = models.TextField(
         blank=True, default="", verbose_name="Method description")
     doi_id = models.TextField(
         blank=True, default="", verbose_name="DOI identifier")
-    dataset_columns = JSONField(
-        verbose_name="Dataset columns", default=dict({
-            SCORES_KEY: [],
-            COUNTS_KEY: []
-        }),
-        validators=[valid_json_field]
-    )
+    metadata = JSONField(blank=True, default={}, verbose_name="Metadata")
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -111,12 +112,8 @@ class ScoreSet(models.Model):
             str(self.dataset_columns))
 
     def save(self, *args, **kwargs):
-        if self.experiment is None:
-            raise IntegrityError("Cannot save when experiment is None")
         super(ScoreSet, self).save(*args, **kwargs)
-        if self.accession is not None:
-            valid_scs_accession(self.accession)
-        else:
+        if not self.accession:
             parent = self.experiment
             middle_digits = parent.accession[-parent.ACCESSION_DIGITS:]
             digit_suffix = parent.next_scoreset_suffix()
@@ -200,7 +197,7 @@ class Variant(models.Model):
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
     accession = models.CharField(
-        unique=True, default=None, blank=False, null=False, max_length=64,
+        unique=True, default=None, blank=False, null=True, max_length=64,
         verbose_name="Accession", validators=[valid_var_accession])
 
     creation_date = models.DateField(
@@ -208,7 +205,7 @@ class Variant(models.Model):
         verbose_name="Creation date")
 
     hgvs_string = models.TextField(
-        blank=False, null=True, default=None, validators=[valid_hgvs_string])
+        blank=False, null=False, default=None, validators=[valid_hgvs_string])
 
     scoreset = models.ForeignKey(
         to=ScoreSet, on_delete=models.PROTECT, null=False, default=None)
@@ -218,10 +215,10 @@ class Variant(models.Model):
     # ---------------------------------------------------------------------- #
     data = JSONField(
         verbose_name="Data columns", default=dict({
-            SCORES_KEY: {},
-            COUNTS_KEY: {}
+            SCORES_KEY: {'score': [None], 'SE': [None]},
+            COUNTS_KEY: {'count': [None]}
         }),
-        validators=[valid_json_field]
+        validators=[valid_variant_json]
     )
 
     # ---------------------------------------------------------------------- #
@@ -243,14 +240,9 @@ class Variant(models.Model):
         return set(self.data[COUNTS_KEY].keys())
 
     def save(self, *args, **kwargs):
-        if self.scoreset is None:
-            raise IntegrityError("Cannot save when scoreset is None")
         super(Variant, self).save(*args, **kwargs)
-        if self.accession is not None:
-            valid_var_accession(self.accession)
-        else:
+        if not self.accession:
             parent = self.scoreset
-            parent.validate_variant_data(self)
             digit_suffix = parent.next_variant_suffix()
             accession = '{}.{}'.format(
                 parent.accession.replace(

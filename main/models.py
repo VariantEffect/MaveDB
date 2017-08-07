@@ -4,14 +4,9 @@ import datetime
 from django.db import models
 from django.core.validators import MinValueValidator
 
-import pypandoc
-pdoc_args = [
-    '--mathjax',
-    '--smart',
-    '--standalone',
-    '--biblatex',
-    '--html-q-tags'
-]
+from .utils.pandoc import convert_md_to_html
+from experiment.models import Experiment
+from scoreset.models import ScoreSet
 
 
 class News(models.Model):
@@ -92,33 +87,27 @@ class SiteInformation(models.Model):
     # ----------------------------------------------------------------------- #
     @property
     def about(self):
-        return pypandoc.convert_text(
-            self._about, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self._about)
 
     @property
     def citation(self):
-        return pypandoc.convert_text(
-            self._citation, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self._citation)
 
     @property
     def usage_guide(self):
-        return pypandoc.convert_text(
-            self._usage_guide, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self._usage_guide)
 
     @property
     def documentation(self):
-        return pypandoc.convert_text(
-            self._documentation, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self._documentation)
 
     @property
     def terms(self):
-        return pypandoc.convert_text(
-            self._terms, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self._terms)
 
     @property
     def privacy(self):
-        return pypandoc.convert_text(
-            self._privacy, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self._privacy)
 
     # ----------------------------------------------------------------------- #
     #                        Model Validation
@@ -147,3 +136,97 @@ class SiteInformation(models.Model):
             raise ValueError("This is a singleton table. Cannot add entry.")
         else:
             super().save(*args, **kwargs)
+
+
+class Keyword(models.Model):
+    """
+    This class represents a keyword that can be associated with an
+    experiment or scoreset.
+    """
+    name = models.TextField(blank=False, null=False, default=None)
+    creation_date = models.DateField(blank=False, default=datetime.date.today)
+    experiment = models.ForeignKey(
+        Experiment, null=True, default=None, on_delete=models.CASCADE)
+    scoreset = models.ForeignKey(
+        ScoreSet, null=True, default=None, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ['-creation_date']
+        verbose_name = "Keyword"
+        verbose_name_plural = "Keywords"
+
+    def __str__(self):
+        return "Keyword({})".format(self.name)
+
+
+class ExternalAccession(models.Model):
+    """
+    This class represents a textual representation of an accession from an
+    external databse that can be associated with a target in an experiment.
+    """
+    creation_date = models.DateField(blank=False, default=datetime.date.today)
+    name = models.TextField(blank=False, null=False, default=None)
+
+    class Meta:
+        ordering = ['-creation_date']
+        verbose_name = "Other accession"
+        verbose_name_plural = "other accessions"
+
+    def __str__(self):
+        return "ExternalAccession({})".format(self.name)
+
+
+class TargetOrganism(models.Model):
+    """
+    This class represents a textual representation of a target organism
+    that can be associated with an experiment.
+    """
+    creation_date = models.DateField(blank=False, default=datetime.date.today)
+    name = models.TextField(blank=False, null=False, default=None)
+
+    class Meta:
+        ordering = ['-creation_date']
+        verbose_name = "Target organism"
+        verbose_name_plural = "Target organisms"
+
+    def __str__(self):
+        return "TargetOrganism({})".format(self.name)
+
+
+class ReferenceMapping(models.Model):
+    """
+    This class models represents a mapping from local genomic ranges
+    within the given target wild type sequence to a genomic range in a 
+    reference serquence.
+    """
+    creation_date = models.DateField(
+        blank=False, default=datetime.date.today)
+    reference = models.TextField(
+        blank=False, null=False, default=None, verbose_name="Reference")
+    is_alternate = models.BooleanField(
+        blank=False, null=False, default=False,
+        verbose_name="Alternate reference")
+    experiment = models.OneToOneField(
+        Experiment, null=False, default=None, on_delete=models.CASCADE)
+    target_start = models.PositiveIntegerField(
+        blank=False, null=False, default=None, verbose_name="Target start")
+    target_end = models.PositiveIntegerField(
+        blank=False, null=False, default=None, verbose_name="Target end")
+    ref_start = models.PositiveIntegerField(
+        blank=False, null=False, default=None, verbose_name="Reference start")
+    ref_end = models.PositiveIntegerField(
+        blank=False, null=False, default=None, verbose_name="Reference end")
+
+    class Meta:
+        ordering = ['-creation_date']
+        verbose_name = "Reference mapping"
+        verbose_name_plural = "Reference mappings"
+
+    def __str__(self):
+        return "ReferenceMapping({}, {}->{}, {}->{}, {}, {})".format(
+            self.name,
+            self.target_start, self.target_end,
+            self.ref_start, self.ref_end,
+            self.is_alternate,
+            self.experiment
+        )
