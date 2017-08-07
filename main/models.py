@@ -166,6 +166,8 @@ class ExternalAccession(models.Model):
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
     name = models.TextField(blank=False, null=False, default=None)
+    experiment = models.ForeignKey(
+        Experiment, null=True, default=None, on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['-creation_date']
@@ -183,6 +185,8 @@ class TargetOrganism(models.Model):
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
     name = models.TextField(blank=False, null=False, default=None)
+    experiment = models.ForeignKey(
+        Experiment, null=True, default=None, on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['-creation_date']
