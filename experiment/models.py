@@ -14,6 +14,8 @@ from django.db.models.signals import pre_save, post_save
 from .validators import valid_exp_accession, valid_expset_accession
 from .validators import valid_wildtype_sequence
 
+from main.models import Keyword, ExternalAccession, TargetOrganism
+
 logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
@@ -81,8 +83,7 @@ class ExperimentSet(models.Model):
             valid_expset_accession(self.accession)
         else:
             digit_bit = str(self.pk)
-            digit_suffix = digit_bit.zfill(
-                self.ACCESSION_DIGITS - len(digit_bit) + 1)
+            digit_suffix = digit_bit.zfill(self.ACCESSION_DIGITS)
             accession = "{}{}".format(self.ACCESSION_PREFIX, digit_suffix)
             self.accession = accession
             self.save()
@@ -176,20 +177,18 @@ class Experiment(models.Model):
     doi_id = models.TextField(
         blank=True, default="", verbose_name="DOI identifier")
 
-    # TODO add the following many2many fields:
-    # keywords
-    # target organism
-    # external accessions
-    # reference mapping
+    keywords = models.ManyToManyField(Keyword)
+    external_accessions = models.ManyToManyField(ExternalAccession)
+    target_organism = models.ManyToManyField(TargetOrganism)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
     # TODO: add helper functions to check permision bit and author bits
     def __str__(self):
-        return "Experiment({}, {}, {})".format(
-            str(self.accession),
-            str(self.experimentset),
+        return "Experiment(id: {}, acc: {}, in set: {}, created: {})".format(
+            str(self.pk), str(self.accession),
+            str(self.experimentset.accession),
             str(self.creation_date))
 
     def save(self, *args, **kwargs):

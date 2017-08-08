@@ -2,11 +2,10 @@
 import datetime
 
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
 from .utils.pandoc import convert_md_to_html
-from experiment.models import Experiment
-from scoreset.models import ScoreSet
 
 
 class News(models.Model):
@@ -143,12 +142,8 @@ class Keyword(models.Model):
     This class represents a keyword that can be associated with an
     experiment or scoreset.
     """
-    name = models.TextField(blank=False, null=False, default=None)
+    text = models.TextField(blank=False, null=False, default=None, unique=True)
     creation_date = models.DateField(blank=False, default=datetime.date.today)
-    experiment = models.ForeignKey(
-        Experiment, null=True, default=None, on_delete=models.CASCADE)
-    scoreset = models.ForeignKey(
-        ScoreSet, null=True, default=None, on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['-creation_date']
@@ -156,7 +151,7 @@ class Keyword(models.Model):
         verbose_name_plural = "Keywords"
 
     def __str__(self):
-        return "Keyword({})".format(self.name)
+        return "Keyword({})".format(self.text)
 
 
 class ExternalAccession(models.Model):
@@ -165,9 +160,7 @@ class ExternalAccession(models.Model):
     external databse that can be associated with a target in an experiment.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
-    name = models.TextField(blank=False, null=False, default=None)
-    experiment = models.ForeignKey(
-        Experiment, null=True, default=None, on_delete=models.CASCADE)
+    text = models.TextField(blank=False, null=False, default=None, unique=True)
 
     class Meta:
         ordering = ['-creation_date']
@@ -175,7 +168,7 @@ class ExternalAccession(models.Model):
         verbose_name_plural = "other accessions"
 
     def __str__(self):
-        return "ExternalAccession({})".format(self.name)
+        return "ExternalAccession({})".format(self.text)
 
 
 class TargetOrganism(models.Model):
@@ -184,9 +177,7 @@ class TargetOrganism(models.Model):
     that can be associated with an experiment.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
-    name = models.TextField(blank=False, null=False, default=None)
-    experiment = models.ForeignKey(
-        Experiment, null=True, default=None, on_delete=models.CASCADE)
+    text = models.TextField(blank=False, null=False, default=None, unique=True)
 
     class Meta:
         ordering = ['-creation_date']
@@ -194,7 +185,7 @@ class TargetOrganism(models.Model):
         verbose_name_plural = "Target organisms"
 
     def __str__(self):
-        return "TargetOrganism({})".format(self.name)
+        return "TargetOrganism({})".format(self.text)
 
 
 class ReferenceMapping(models.Model):
@@ -210,15 +201,17 @@ class ReferenceMapping(models.Model):
     is_alternate = models.BooleanField(
         blank=False, null=False, default=False,
         verbose_name="Alternate reference")
-    experiment = models.OneToOneField(
-        Experiment, null=False, default=None, on_delete=models.CASCADE)
+    experiment = models.ForeignKey(
+        'experiment.Experiment', null=True, default=None,
+        on_delete=models.CASCADE, verbose_name="Experiment target mapping"
+    )
     target_start = models.PositiveIntegerField(
         blank=False, null=False, default=None, verbose_name="Target start")
     target_end = models.PositiveIntegerField(
         blank=False, null=False, default=None, verbose_name="Target end")
-    ref_start = models.PositiveIntegerField(
+    reference_start = models.PositiveIntegerField(
         blank=False, null=False, default=None, verbose_name="Reference start")
-    ref_end = models.PositiveIntegerField(
+    reference_end = models.PositiveIntegerField(
         blank=False, null=False, default=None, verbose_name="Reference end")
 
     class Meta:
@@ -227,10 +220,13 @@ class ReferenceMapping(models.Model):
         verbose_name_plural = "Reference mappings"
 
     def __str__(self):
-        return "ReferenceMapping({}, {}->{}, {}->{}, {}, {})".format(
-            self.name,
+        return "ReferenceMapping({}, {}->{}, {}->{}, {})".format(
+            self.reference,
             self.target_start, self.target_end,
-            self.ref_start, self.ref_end,
+            self.reference_start, self.reference_end,
             self.is_alternate,
-            self.experiment
         )
+
+    @property
+    def datahash(self):
+        return hash(str(self))

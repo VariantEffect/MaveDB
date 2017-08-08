@@ -11,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from main.utils.pandoc import convert_md_to_html
+from main.models import Keyword
 from experiment.models import Experiment
 
 from .validators import (
@@ -99,6 +100,7 @@ class ScoreSet(models.Model):
     doi_id = models.TextField(
         blank=True, default="", verbose_name="DOI identifier")
     metadata = JSONField(blank=True, default={}, verbose_name="Metadata")
+    keywords = models.ManyToManyField(Keyword)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
