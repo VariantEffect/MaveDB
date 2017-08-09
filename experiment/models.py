@@ -143,7 +143,7 @@ class Experiment(models.Model):
 
     experimentset = models.ForeignKey(
         to=ExperimentSet, on_delete=models.PROTECT, null=True,
-        default=None, blank=True
+        default=None, blank=True, verbose_name="Experiment Set"
     )
 
     creation_date = models.DateField(
@@ -164,8 +164,10 @@ class Experiment(models.Model):
         verbose_name="Wild type sequence",
         validators=[valid_wildtype_sequence])
 
-    target = models.TextField(
-        default=None, blank=False, null=False, verbose_name="Target")
+    target = models.CharField(
+        default=None, blank=False, null=False, verbose_name="Target",
+        max_length=128
+    )
 
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
@@ -174,10 +176,14 @@ class Experiment(models.Model):
         blank=True, default="", verbose_name="Abstract")
     method_desc = models.TextField(
         blank=True, default="", verbose_name="Method description")
-    sra_id = models.TextField(
-        blank=True, default="", verbose_name="SRA identifier")
-    doi_id = models.TextField(
-        blank=True, default="", verbose_name="DOI identifier")
+    sra_id = models.CharField(
+        blank=True, default="", verbose_name="SRA identifier",
+        max_length=128
+    )
+    doi_id = models.CharField(
+        blank=True, default="", verbose_name="DOI identifier",
+        max_length=128
+    )
 
     keywords = models.ManyToManyField(Keyword, blank=True)
     external_accessions = models.ManyToManyField(ExternalAccession, blank=True)

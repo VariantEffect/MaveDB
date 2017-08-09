@@ -24,6 +24,14 @@ class TestKeyword(TestCase):
         with self.assertRaises(IntegrityError):
             Keyword.objects.create(text="keyword 1")
 
+    def test_can_create_and_save_keyword(self):
+        kw = Keyword.objects.create(text="DNA repair")
+        self.assertEqual(Keyword.objects.count(), 1)
+
+    def test_cannot_create_with_null_text(self):
+        with self.assertRaises(IntegrityError):
+            kw = Keyword.objects.create(text=None)
+
     # -------------------- Experiment ------------------------------ #
     def test_can_associate_multiple_keywords_with_experiment(self):
         kw1 = Keyword.objects.create(text="keyword 1")
@@ -141,6 +149,10 @@ class TestExternalAccession(TestCase):
         ExternalAccession.objects.create(text="acc 1")
         with self.assertRaises(IntegrityError):
             ExternalAccession.objects.create(text="acc 1")
+
+    def test_cannot_create_with_null_text(self):
+        with self.assertRaises(IntegrityError):
+            ExternalAccession.objects.create(text=None)
 
     def test_can_associate_multiple_accessions_with_experiment(self):
         obj1 = ExternalAccession.objects.create(text="acc 1")

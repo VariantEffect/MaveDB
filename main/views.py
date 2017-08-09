@@ -17,7 +17,8 @@ def download_view(request):
 
 
 def upload_view(request):
-    return render(request, 'main/upload.html', {})
+    form = CreateExperimentForm()
+    return render(request, 'main/upload.html', {"form": form})
 
 
 def login_view(request):

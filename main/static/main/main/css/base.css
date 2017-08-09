@@ -2,7 +2,7 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif;
-     /* border: 1px solid red !important;   */
+      border: 1px solid red !important;   
 }
 
 * {
@@ -240,4 +240,20 @@ h4::before, h5::before, h6::before {
 }
 .hidden-submit {
     visibility: hidden;
+}
+
+/* Model Forms
+---------------------------------------- */
+.model-form-table > tbody > tr > th > label,
+.model-form-table > tbody > tr > td > input,
+.model-form-table > tbody > tr > td > textarea {
+    width: 100%;
+} 
+
+.model-form > input {
+    width: 200px;
+}
+
+#id_private {
+    width: 20px;
 }
