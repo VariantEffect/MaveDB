@@ -51,7 +51,7 @@ class ExperimentSet(models.Model):
     #                       Model fields
     # ---------------------------------------------------------------------- #
     accession = models.CharField(
-        unique=True, default=None, blank=False, null=True,
+        unique=True, default=None, blank=True, null=True,
         max_length=ACCESSION_DIGITS + len(ACCESSION_PREFIX),
         verbose_name="Accession", validators=[valid_expset_accession])
 
@@ -138,11 +138,13 @@ class Experiment(models.Model):
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
     accession = models.CharField(
-        unique=True, default=None, null=True, max_length=64,
+        unique=True, default=None, blank=True, null=True, max_length=64,
         verbose_name="Accession", validators=[valid_exp_accession])
 
     experimentset = models.ForeignKey(
-        to=ExperimentSet, on_delete=models.PROTECT, null=True, default=None)
+        to=ExperimentSet, on_delete=models.PROTECT, null=True,
+        default=None, blank=True
+    )
 
     creation_date = models.DateField(
         blank=False, null=False, default=datetime.date.today,
@@ -177,9 +179,9 @@ class Experiment(models.Model):
     doi_id = models.TextField(
         blank=True, default="", verbose_name="DOI identifier")
 
-    keywords = models.ManyToManyField(Keyword)
-    external_accessions = models.ManyToManyField(ExternalAccession)
-    target_organism = models.ManyToManyField(TargetOrganism)
+    keywords = models.ManyToManyField(Keyword, blank=True)
+    external_accessions = models.ManyToManyField(ExternalAccession, blank=True)
+    target_organism = models.ManyToManyField(TargetOrganism, blank=True)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
