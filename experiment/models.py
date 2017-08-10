@@ -72,10 +72,7 @@ class ExperimentSet(models.Model):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return "ExperimentSet({}, {}, {})".format(
-            str(self.accession),
-            str(self.creation_date),
-            str([e.accession for e in self.experiment_set.all()]))
+        return str(self.accession)
 
     def save(self, *args, **kwargs):
         super(ExperimentSet, self).save(*args, **kwargs)
@@ -194,10 +191,7 @@ class Experiment(models.Model):
     # ---------------------------------------------------------------------- #
     # TODO: add helper functions to check permision bit and author bits
     def __str__(self):
-        return "Experiment(id: {}, acc: {}, in set: {}, created: {})".format(
-            str(self.pk), str(self.accession),
-            str(self.experimentset.accession),
-            str(self.creation_date))
+        return str(self.accession)
 
     def save(self, *args, **kwargs):
         super(Experiment, self).save(*args, **kwargs)

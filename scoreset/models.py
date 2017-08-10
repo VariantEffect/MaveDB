@@ -35,16 +35,38 @@ class ScoreSet(models.Model):
 
     Parameters
     ----------
-    accession : `str`
-        This is the only required field, and should be specified at all points
-        of instantiation (Experiment, Experiment.objects.create).
-
-    Methods
-    -------
-    build_accession
-        Creates a new accession but taking the digit bit from the associated
-        :py:class:`ExperimentSet` and adding an alphabetaical character based
-        on the number of experiments in the set.
+    accession : `models.CharField`
+        The accession in the format 'SCSXXXXXX[A-Z]+'
+    experiment : `models.ForeignKey`, required.
+        The experiment a scoreset is assciated with. Cannot be null.
+    creation_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format.
+    approved : `models.BooleanField`
+        The approved status, as seen by the database admin. Instances are
+        created by default as not approved and must be manually checked
+        before going live.
+    last_used_suffix : `models.IntegerField`
+        Min value of 0. Counts how many variants have been associated with
+        this dataset. Must be manually incremented everytime, but this might
+        change to a post_save signal
+    private : `models.BooleanField`
+        Whether the dataset should be private and viewable only by
+        those approved in the permissions.
+    dataset_columns : `models.JSONField`
+        A JSON instances with keys `scores` and `counts`. The values are
+        lists of strings indicating the columns to be expected in the variants
+        for this dataset.
+    abstract : `models.TextField`
+        A markdown text blob.
+    method_desc : `models.TextField`
+        A markdown text blob of the scoring method.
+    doi_id : `models.CharField`
+        The DOI for this scoreset if any.
+    metadata : `models.JSONField`
+        The free-form json metadata that might be associated with this 
+        experiment
+    keywords : `models.ManyToManyField`
+        The keyword instances that are associated with this instance.
     """
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
@@ -82,7 +104,7 @@ class ScoreSet(models.Model):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns", default=dict({
-            SCORES_KEY: ['score', 'SE'],
+            SCORES_KEY: ['hgvs', 'score', 'se'],
             COUNTS_KEY: ['count']
         }),
         validators=[valid_scoreset_json]
@@ -97,8 +119,8 @@ class ScoreSet(models.Model):
         blank=True, default="", verbose_name="Abstract")
     method_desc = models.TextField(
         blank=True, default="", verbose_name="Method description")
-    doi_id = models.TextField(
-        blank=True, default="", verbose_name="DOI identifier")
+    doi_id = models.CharField(
+        blank=True, default="", verbose_name="DOI identifier", max_length=256)
     metadata = JSONField(blank=True, default={}, verbose_name="Metadata")
     keywords = models.ManyToManyField(Keyword)
 
@@ -217,8 +239,8 @@ class Variant(models.Model):
     # ---------------------------------------------------------------------- #
     data = JSONField(
         verbose_name="Data columns", default=dict({
-            SCORES_KEY: {'score': [None], 'SE': [None]},
-            COUNTS_KEY: {'count': [None]}
+            SCORES_KEY: {'hgvs': [None], 'score': [None], 'se': [None]},
+            COUNTS_KEY: {'hgvs': [None], 'count': [None]}
         }),
         validators=[valid_variant_json]
     )

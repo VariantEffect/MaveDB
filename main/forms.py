@@ -2,6 +2,7 @@
 import datetime
 
 from django import forms
+from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 
@@ -59,7 +60,7 @@ class ReferenceMappingForm(forms.ModelForm):
         )
 
     def clean(self):
-        cleaned_data = super(ReferenceMapping, self).clean()
+        cleaned_data = super(ReferenceMappingForm, self).clean()
         target_start = cleaned_data.get("target_start", 0)
         target_end = cleaned_data.get("target_end", 0)
         reference_start = cleaned_data.get("reference_start", 0)

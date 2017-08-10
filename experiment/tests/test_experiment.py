@@ -7,6 +7,7 @@ from django.test import TransactionTestCase
 
 
 from experiment.models import Experiment, ExperimentSet
+from scoreset.models import ScoreSet
 
 
 class TestExperiment(TransactionTestCase):
@@ -109,7 +110,7 @@ class TestExperiment(TransactionTestCase):
         self.assertTrue(exp.private)
 
     def test_cannot_delete_experiment_with_scoresets(self):
-        self.fail("Write this test!")
+        scs = ScoreSet()
 
     def test_can_autoassign_scoreset_accession(self):
         self.fail("Write this test!")

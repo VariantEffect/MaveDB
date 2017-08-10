@@ -9,9 +9,17 @@ from .utils.pandoc import convert_md_to_html
 
 
 class News(models.Model):
-    # ----------------------------------------------------------------------- #
-    #                           Fields
-    # ----------------------------------------------------------------------- #
+    """
+    The news model represents an singular piece of news presented in a
+    site announcement fashion. News items are sorted by creation date.
+
+    Parameters
+    ----------
+    text : `models.TextField`
+        The content of the news item.abs
+    data : `models.DateField`
+        The date of creation in yyyy-mm-dd format.
+    """
     text = models.TextField(default="default news.", blank=False)
     date = models.DateField(blank=False, default=datetime.date.today)
 
@@ -23,23 +31,20 @@ class News(models.Model):
     def __str__(self):
         return '[{}]: {}'.format(str(self.date), self.text)
 
-    # ----------------------------------------------------------------------- #
-    #                           Static
-    # ----------------------------------------------------------------------- #
     @staticmethod
     def recent_news():
-        return News.objects.all()[0: 10]
+        """
+        Return the 10 most recently published news items.
+        """
+        return News.objects.order_by("-date")[0: 10]
 
-    # ----------------------------------------------------------------------- #
-    #                           Properties
-    # ----------------------------------------------------------------------- #
     @property
     def message(self):
+        """
+        Property for obtaining the text of a news item instance.
+        """
         return str(self)
 
-    # ----------------------------------------------------------------------- #
-    #                        Model Validation
-    # ----------------------------------------------------------------------- #
     def save(self, *args, **kwargs):
         if self.text is None:
             raise ValueError("A null message is not allowed.")
@@ -57,9 +62,27 @@ class News(models.Model):
 
 
 class SiteInformation(models.Model):
-    # ----------------------------------------------------------------------- #
-    #                           Fields
-    # ----------------------------------------------------------------------- #
+    """
+    SiteInformation contains all static content of the webapp such as the
+    about, citation, documentation etc. This may be replaced with flatpages
+    later on in development. There should only be one instance active at any
+    time in the database.
+
+    Parameters
+    ----------
+    _about : `models.TextField`
+        The `about` markdown text.
+    _citation : `models.TextField`
+        The citation for researches to use.
+    _usage_guide : `models.TextField`
+        A basic guide on how to use the website and api.
+    _documentation : `models.TextField`
+        API documentation
+    _terms : `models.TextField`
+        The terms and conditions text blob.
+    _privacy : `models.TextField`
+        The privacy text blob.
+    """
     _about = models.TextField(default="", blank=True)
     _citation = models.TextField(default="", blank=True)
     _usage_guide = models.TextField(default="", blank=True)
@@ -71,19 +94,17 @@ class SiteInformation(models.Model):
         verbose_name_plural = "Site Information"
         verbose_name = "Site Information"
 
-    # ----------------------------------------------------------------------- #
-    #                           Static
-    # ----------------------------------------------------------------------- #
     @staticmethod
     def get_instance():
+        """
+        Tries to get the current instance. If it does not exist, a new one 
+        is created.
+        """
         try:
             return SiteInformation.objects.all()[0]
         except IndexError:
             return SiteInformation()
 
-    # ----------------------------------------------------------------------- #
-    #                           Properties
-    # ----------------------------------------------------------------------- #
     @property
     def about(self):
         return convert_md_to_html(self._about)
@@ -108,10 +129,16 @@ class SiteInformation(models.Model):
     def privacy(self):
         return convert_md_to_html(self._privacy)
 
-    # ----------------------------------------------------------------------- #
-    #                        Model Validation
-    # ----------------------------------------------------------------------- #
     def can_save(self):
+        """
+        Checks to see if the current instance can be saved. It will
+        return `True` if the instance primary key matches that in the 
+        database, or if no `SiteInformation` instances have yet been created.
+
+        Returns
+        -------
+        `bool`
+        """
         existing = SiteInformation.objects.all()
         if len(existing) < 1:
             return True
@@ -141,6 +168,13 @@ class Keyword(models.Model):
     """
     This class represents a keyword that can be associated with an
     experiment or scoreset.
+
+    Parameters
+    ----------
+    creation_date : `models.DateField`
+        The date of instantiation.
+    text : `models.TextField`
+        The free-form textual representation of the keyword.
     """
     text = models.TextField(blank=False, null=False, default=None, unique=True)
     creation_date = models.DateField(blank=False, default=datetime.date.today)
@@ -158,6 +192,14 @@ class ExternalAccession(models.Model):
     """
     This class represents a textual representation of an accession from an
     external databse that can be associated with a target in an experiment.
+
+    Parameters
+    ----------
+    creation_date : `models.DateField`
+        The date of instantiation.
+    text : `models.TextField`
+        The free-form textual representation of the accession from another
+        database.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
     text = models.TextField(blank=False, null=False, default=None, unique=True)
@@ -175,6 +217,13 @@ class TargetOrganism(models.Model):
     """
     This class represents a textual representation of a target organism
     that can be associated with an experiment.
+
+    Parameters
+    ----------
+    creation_date : `models.DateField`
+        The date of instantiation.
+    text : `models.TextField`
+        The free-form textual representation of the target organism.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
     text = models.TextField(blank=False, null=False, default=None, unique=True)
@@ -193,6 +242,28 @@ class ReferenceMapping(models.Model):
     This class models represents a mapping from local genomic ranges
     within the given target wild type sequence to a genomic range in a 
     reference serquence.
+
+    Parameters
+    ----------
+    creation_date : `models.DateField`
+        The date of instantiation.
+    reference : `models.TextField`
+        A string name of the reference being mapped to. There are no
+        restrictions on this field except for not being falsey.
+    is_alternate : `models.BooleanField`
+        Whether this mapping maps to an organism different from the target
+        organism of an experiment.
+    experiment : `models.ForeignKey`
+        The experiment instance this mapping is linked to. This models will
+        be deleted if the experiment is also deleted.
+    target_start : `models.PositiveIntegerField`
+        The starting position within the experiment's target.
+    target_end : `models.PositiveIntegerField`
+        The ending position within the experiment's target.
+    reference_start : `models.PositiveIntegerField`
+        The starting position within the reference.
+    reference_end : `models.PositiveIntegerField`
+        The ending position within the reference.
     """
     creation_date = models.DateField(
         blank=False, default=datetime.date.today)
@@ -229,4 +300,14 @@ class ReferenceMapping(models.Model):
 
     @property
     def datahash(self):
+        """
+        Build a hash value for this instance intended to check equality
+        between two instances. Also achievable through operator overloading,
+        but this might affect django's internals.
+
+        Returns
+        -------
+        `int`
+            The hash of the string representation of this instance.
+        """
         return hash(str(self))
