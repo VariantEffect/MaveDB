@@ -3,6 +3,7 @@ import datetime
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.db.models import ProtectedError
 from django.test import TransactionTestCase
 
 
@@ -110,10 +111,25 @@ class TestExperiment(TransactionTestCase):
         self.assertTrue(exp.private)
 
     def test_cannot_delete_experiment_with_scoresets(self):
-        scs = ScoreSet()
+        exp = self.make_experiment()
+        scs = ScoreSet.objects.create(experiment=exp)
+        with self.assertRaises(ProtectedError):
+            exp.delete()
 
     def test_can_autoassign_scoreset_accession(self):
-        self.fail("Write this test!")
+        exp = self.make_experiment()
+        scs = ScoreSet.objects.create(experiment=exp)
+        expected = exp.accession.replace(
+            exp.ACCESSION_PREFIX, scs.ACCESSION_PREFIX
+        ) + ".1"
+        self.assertEqual(scs.accession, expected)
 
     def test_delete_does_not_rollback_scoreset_accession(self):
-        self.fail("Write this test!")
+        exp = self.make_experiment()
+        scs = ScoreSet.objects.create(experiment=exp)
+        scs.delete()
+        scs = ScoreSet.objects.create(experiment=exp)
+        expected = exp.accession.replace(
+            exp.ACCESSION_PREFIX, scs.ACCESSION_PREFIX
+        ) + ".2"
+        self.assertEqual(scs.accession, expected)

@@ -63,7 +63,7 @@ class ScoreSet(models.Model):
     doi_id : `models.CharField`
         The DOI for this scoreset if any.
     metadata : `models.JSONField`
-        The free-form json metadata that might be associated with this 
+        The free-form json metadata that might be associated with this
         experiment
     keywords : `models.ManyToManyField`
         The keyword instances that are associated with this instance.
@@ -193,18 +193,12 @@ class Variant(models.Model):
         scoreset.
     creation_date : `models.DateField`
         The data the variant was created in yyyy-mm-dd format.
-    hgvs_string : `str`
+    hgvs_string : `str`, required.
         The HGVS string belonging to the variant.
-    scoreset : `ScoreSet`
+    scoreset : `ScoreSet`, required.
         The associated scoreset of the instance.
     data : `JSONField`
         The variant's numerical data.
-
-    Methods
-    -------
-    save
-        Overrides the save from `models.Model` to create an
-        accession after the base save method is called.
     """
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
