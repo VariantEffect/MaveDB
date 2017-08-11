@@ -1,0 +1,52 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class=row>
+	<div class="three columns">
+		<h3> {{ experimentset.accession }} </h3>
+	</div>
+	<div class="seven columns">
+		<div>
+			<h3>Publication information</h3>
+			<span style="font-weight: 600;">Created on:</span>
+				<span>{{ experimentset.creation_date }}</span>
+			<br>
+			<span style="font-weight: 600;">Created by:</span>
+				<span>{{ experimentset.created_by|default:"None" }}</span>
+			<br>
+			<span style="font-weight: 600;">Last edited:</span>
+				<span>{{ experimentset.last_edit|default:"None" }}</span>
+			<br>
+			<span style="font-weight: 600;">Last edited by:</span>
+				<span>{{ experimentset.last_edit_by|default:"None" }}</span>
+			<br>
+			<span style="font-weight: 600;">Authors:</span>
+				<span>{{ experimentset.contributors|default:"None" }}</span>
+			<br>
+			<span style="font-weight: 600;">Reviewed:</span>
+				<span>
+					{% if experimentset.approved %}
+						{{ "Yes "}}
+					{% else %}
+						{{ "No" }}
+					{% endif %}
+				</span>
+			<br>
+		</div>
+
+		<hr>
+		<div>
+			The following experiments belong to this set:
+			<ul style="list-style: none; margin-left: 10px;">
+			{% for exp in experimentset.experiment_set.all %}
+				<li>
+					<a href="{% url 'experiment:experiment_detail' exp.accession %}">
+						{{exp.accession}}
+					</a>
+				</li>
+			{% endfor %}
+			</ul>
+		</div>
+	</div>
+</div>
+{% endblock body %}

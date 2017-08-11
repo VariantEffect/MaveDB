@@ -2,6 +2,82 @@
 
 {% block body %}
 <div class=row>
-    {{ experiment.accession }}
+	<div class="three columns">
+		<h3> {{ experiment.accession }} </h3>
+		<p> 
+			Member of experiment set 
+			<a href="{% url 'experiment:experimentset_detail' experiment.experimentset.accession %}">
+				{{ experiment.experimentset }}
+			</a>
+		</p>
+	</div>
+	<div class="seven columns">
+		<h3> Abstract </h3>
+		<p> {{ experiment.abstract|safe|escape|default:"Not provided" }} </p>
+		<hr>
+		
+		<h3> Method description </h3>
+		<p> {{ experiment.method_desc|safe|escape|default:"Not provided" }} </p>
+		<hr>
+		
+		<h3> Publication information </h3>
+		<span style="font-weight: 600;">Created on:</span>
+			<span>{{ experiment.creation_date }}</span>
+		<br>
+		<span style="font-weight: 600;">Created by:</span>
+			<span>{{ experiment.created_by|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Last edited:</span>
+			<span>{{ experiment.last_edit|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Last edited by:</span>
+			<span>{{ experiment.last_edit_by|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Authors:</span>
+			<span>{{ experiment.get_authors|default:"None" }}</span>
+		<br>	
+		<span style="font-weight: 600;">DOI:</span>
+			<span>{{ experiment.doi_id|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">SRA:</span>
+			<span>{{ experiment.sra_id|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Reviewed:</span>
+			<span>
+				{% if experiment.approved %}
+					{{ "Yes "}}
+				{% else %}
+					{{ "No" }}
+				{% endif %}
+			</span>
+		<br>
+		<hr>
+		
+		<h3> Experiment information </h3>
+		<span style="font-weight: 600;">Target: </span>
+			<span>{{ experiment.target }}</span>
+		<br>
+		<span style="font-weight: 600;">Target organism: </span>
+			<em>{{ experiment.get_target_organism|default:"Not provided" }}</em>
+		<br>
+		<div style="word-wrap: break-word; word-break: break-all;">
+			<span style="font-weight: 600">Wild type sequence: </span>
+				<span>{{ experiment.wt_sequence }}</span>
+		</div>
+		<span style="font-weight: 600;">Keywords: </span>
+			<span>{{ experiment.get_keywords|default:"Not provided" }}</span>
+		<br>
+		<span style="font-weight: 600;">External accessions: </span>
+			<span>{{ experiment.get_other_accessions|default:"Not provided" }}</span>
+		<br>
+		<span style="font-weight: 600;">Reference mappings: </span>
+			<span>{{ experiment.get_ref_mappings|default:"Not provided" }}</span>
+		<br>	
+		<span style="font-weight: 600;">Score sets: </span>
+			{% for scoreset in experiment.scoreset_set.all %}
+				<a href="">{{ scoreset.accession }}</a>,
+			{% endfor %}
+		<br>			
+	</div>
 </div>
 {% endblock body %}

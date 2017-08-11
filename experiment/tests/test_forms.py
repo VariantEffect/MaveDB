@@ -74,7 +74,7 @@ class TestExperimentForm(TestCase):
     def test_not_valid_non_dna_wildtype(self):
         form = ExperimentForm(
             data=self.make_test_data(
-                target="test", wt_sequence="not dna",
+                target="test", wt_sequence="adad",
                 use_exps=True
             )
         )

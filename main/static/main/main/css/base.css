@@ -2,7 +2,7 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif;
-      border: 1px solid red !important;   
+    /* border: 1px solid red !important;     */
 }
 
 * {
@@ -31,6 +31,7 @@ hr.vertical {
     display: flex;
     flex-wrap: wrap;
     width: 100%;
+    word-wrap: break-word;
 }
 
 pre {

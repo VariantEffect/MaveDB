@@ -19,9 +19,9 @@ def valid_exp_accession(accession):
 
 
 def valid_wildtype_sequence(seq):
-    if not re.match(DNA_SEQ_RE, seq):
+    if not re.fullmatch(DNA_SEQ_RE, seq):
         raise ValidationError(
-            "%(seq)s is not a valid accession.",
+            "'%(seq)s' is not a valid wild type sequence.",
             params={"seq": seq}
         )
 

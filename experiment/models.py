@@ -85,6 +85,9 @@ class ExperimentSet(models.Model):
             self.accession = accession
             self.save()
 
+    def get_authors(self):
+        return []
+
     def next_experiment_suffix(self):
         if not self.last_used_suffix:
             suffix = ascii_uppercase[0]
@@ -215,6 +218,18 @@ class Experiment(models.Model):
             parent.save()
             self.accession = accession
             self.save()
+
+    def get_keywords(self):
+        return [kw.text for kw in self.keywords.all()]
+
+    def get_authors(self):
+        return []
+
+    def get_other_accessions(self):
+        return [a.text for a in self.external_accessions.all()]
+
+    def get_ref_mappings(self):
+        return [a for a in self.referencemapping_set.all()]
 
     def next_scoreset_suffix(self):
         return self.last_used_suffix + 1
