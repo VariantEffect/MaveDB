@@ -143,17 +143,17 @@ class TestScoreSet(TransactionTestCase):
         scs = ScoreSet.objects.create(experiment=self.exp)
         var = Variant.objects.create(
             scoreset=scs,
-            hgvs_string="hgvs_string",
+            hgvs="hgvs",
         )
         with self.assertRaises(ProtectedError):
             scs.delete()
 
     def test_delete_does_not_rollback_variant_accession(self):
         scs = ScoreSet.objects.create(experiment=self.exp)
-        Variant.objects.create(scoreset=scs, hgvs_string="hgvs_string")
-        var = Variant.objects.create(scoreset=scs, hgvs_string="hgvs_string")
+        Variant.objects.create(scoreset=scs, hgvs="hgvs")
+        var = Variant.objects.create(scoreset=scs, hgvs="hgvs")
         var.delete()
-        var = Variant.objects.create(scoreset=scs, hgvs_string="hgvs_string")
+        var = Variant.objects.create(scoreset=scs, hgvs="hgvs")
         self.assertEqual(var.accession[-1], '3')
 
     def test_can_associate_valid_variant(self):
@@ -162,8 +162,8 @@ class TestScoreSet(TransactionTestCase):
             dataset_columns={SCORES_KEY: ['score'], COUNTS_KEY: ['count']}
         )
         var = Variant.objects.create(
-            scoreset=scs, hgvs_string="hgvs_string",
-            data={SCORES_KEY: {'score': [1]}, COUNTS_KEY: {'count': [1]}}
+            scoreset=scs, hgvs="hgvs",
+            data={SCORES_KEY: {'score': 1}, COUNTS_KEY: {'count': 1}}
         )
         scs.validate_variant_data(var)  # should pass
 
@@ -173,10 +173,10 @@ class TestScoreSet(TransactionTestCase):
             dataset_columns={SCORES_KEY: ['score'], COUNTS_KEY: ['count']}
         )
         var = Variant.objects.create(
-            scoreset=scs, hgvs_string="hgvs_string",
+            scoreset=scs, hgvs="hgvs",
             data={
-                SCORES_KEY: {'score': [1], 'SE': [1]},
-                COUNTS_KEY: {'count': [1]}
+                SCORES_KEY: {'score': 1, 'SE': 1},
+                COUNTS_KEY: {'count': 1}
             }
         )
         with self.assertRaises(ValueError):
@@ -211,14 +211,14 @@ class TestVariant(TransactionTestCase):
         self.var_accession_22 = "SCSVAR000001A.2.2"
 
     def test_can_create_minimal_variant(self):
-        Variant.objects.create(scoreset=self.scs_1, hgvs_string=self.hgvs_1)
+        Variant.objects.create(scoreset=self.scs_1, hgvs=self.hgvs_1)
         var = Variant.objects.all()[0]
         self.assertEqual(var.accession, self.var_accession_11)
         self.assertEqual(var.scoreset, self.scs_1)
 
     def test_autoassign_accession_in_variant(self):
-        Variant.objects.create(scoreset=self.scs_1, hgvs_string=self.hgvs_1)
-        Variant.objects.create(scoreset=self.scs_1, hgvs_string=self.hgvs_2)
+        Variant.objects.create(scoreset=self.scs_1, hgvs=self.hgvs_1)
+        Variant.objects.create(scoreset=self.scs_1, hgvs=self.hgvs_2)
 
         var_1 = Variant.objects.all()[0]
         var_2 = Variant.objects.all()[1]
@@ -228,12 +228,12 @@ class TestVariant(TransactionTestCase):
     def test_cannot_create_variant_with_duplicate_accession(self):
         Variant.objects.create(
             scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1
+            hgvs=self.hgvs_1
         )
         with self.assertRaises(IntegrityError):
             Variant.objects.create(
                 accession=self.var_accession_11,
-                hgvs_string=self.hgvs_1,
+                hgvs=self.hgvs_1,
                 scoreset=self.scs_1
             )
 
@@ -241,12 +241,12 @@ class TestVariant(TransactionTestCase):
         with self.assertRaises(IntegrityError):
             Variant.objects.create(
                 accession=self.var_accession_11,
-                hgvs_string=self.hgvs_1
+                hgvs=self.hgvs_1
             )
         with self.assertRaises(IntegrityError):
-            Variant.objects.create(hgvs_string=self.hgvs_1)
+            Variant.objects.create(hgvs=self.hgvs_1)
 
-    def test_cannot_save_without_hgvs_string(self):
+    def test_cannot_save_without_hgvs(self):
         with self.assertRaises(IntegrityError):
             Variant.objects.create(
                 scoreset=self.scs_1
@@ -255,7 +255,7 @@ class TestVariant(TransactionTestCase):
     def test_validation_error_json_no_scores_key(self):
         var = Variant.objects.create(
             scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
+            hgvs=self.hgvs_1,
             data={"not scores": {}, COUNTS_KEY: {}}
         )
         with self.assertRaises(ValidationError):
@@ -264,32 +264,8 @@ class TestVariant(TransactionTestCase):
     def test_validation_error_json_no_counts_key(self):
         var = Variant.objects.create(
             scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
+            hgvs=self.hgvs_1,
             data={SCORES_KEY: {}, "not counts": {}}
-        )
-        with self.assertRaises(ValidationError):
-            var.full_clean()
-
-    def test_validation_error_json_value_not_list(self):
-        var = Variant.objects.create(
-            scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
-            data={
-                SCORES_KEY: {'score': 1, 'SE': [None]},
-                COUNTS_KEY: {'count': 1}
-            }
-        )
-        with self.assertRaises(ValidationError):
-            var.full_clean()
-
-    def test_validation_error_json_data_not_len_one(self):
-        var = Variant.objects.create(
-            scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
-            data={
-                SCORES_KEY: {'score': [1, 2], 'SE': [None]},
-                COUNTS_KEY: {'count': [1, 2]}
-            }
         )
         with self.assertRaises(ValidationError):
             var.full_clean()
@@ -299,12 +275,12 @@ class TestVariant(TransactionTestCase):
         date_2 = datetime.date.today() + datetime.timedelta(days=1)
         Variant.objects.create(
             scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
+            hgvs=self.hgvs_1,
             creation_date=date_1
         )
         Variant.objects.create(
             scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
+            hgvs=self.hgvs_1,
             creation_date=date_2
         )
         self.assertEqual(
@@ -313,7 +289,7 @@ class TestVariant(TransactionTestCase):
     def test_new_variant_has_todays_date_by_default(self):
         Variant.objects.create(
             scoreset=self.scs_1,
-            hgvs_string=self.hgvs_1,
+            hgvs=self.hgvs_1,
         )
         var = Variant.objects.all()[0]
         self.assertEqual(var.creation_date, datetime.date.today())

@@ -26,6 +26,12 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^', include('main.urls', namespace='main'), name='main'),
-    url(r'^accounts/',
-        include('accounts.urls', namespace='accounts'), name='accounts')
+    url(
+        r'^accounts/',
+        include('accounts.urls', namespace='accounts'), name='accounts'
+    ),
+    url(
+        r'^experiment/',
+        include("experiment.urls", namespace="experiment"), name="experiment"
+    )
 ]

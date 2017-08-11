@@ -1,9 +1,21 @@
+
 import re
+from io import StringIO
+
 from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
 
+
 SCS_ACCESSION_RE = r'SCS\d{6}[A-Z]+.\d+'
 VAR_ACCESSION_RE = r'SCSVAR\d{6}[A-Z]+.\d+.\d+'
+
+
+class Constants(object):
+    NAN_COL_VALUES = set(['nan', 'na', 'none', ''])
+    HGVS_COLUMN = "hgvs"
+    COUNT_COLUMN = "count"
+    SCORES_DATA = "scores_data"
+    COUNTS_DATA = "counts_data"
 
 
 def valid_scs_accession(accession):
@@ -25,6 +37,49 @@ def valid_var_accession(accession):
 def valid_hgvs_string(string):
     # TODO: Write this.
     pass
+
+
+def valid_scoreset_score_data_input(string):
+    from .forms import Constants
+
+    fp = StringIO(string)
+    expected_header = [Constants.HGVS_COLUMN]
+    header = [l.strip() for l in fp.readline().strip().split(',')]
+    try:
+        valid_header = header[0] == expected_header[0]
+        if not valid_header:
+            raise ValueError()
+    except:
+        raise ValidationError(
+            _(
+                "Header requires the column 'hgvs'. Ensure the columns are "
+                "separated by a comma, and that 'hgvs' is the first column."
+            )
+        )
+    if len(list(fp.readlines())) < 1:
+        raise ValidationError(_("Dataset cannot be empty."))
+
+
+def valid_scoreset_count_data_input(string):
+    from io import StringIO
+    fp = StringIO(string)
+    expected_header = [Constants.HGVS_COLUMN, Constants.COUNT_COLUMN]
+    header = [l.strip() for l in fp.readline().strip().split(',')]
+    try:
+        valid_header = (header[0] == expected_header[0]) and \
+            (header[1] == expected_header[1])
+        if not valid_header:
+            raise ValueError()
+    except:
+        raise ValidationError(
+            _(
+                "Header requires the columns 'hgvs' and 'count'."
+                "Ensure the columns are separated by a comma, and that"
+                "'hgvs' and 'count' are the first two columns."
+            )
+        )
+    if len(list(fp.readlines())) < 1:
+        raise ValidationError(_("Dataset cannot be empty."))
 
 
 def valid_scoreset_json(json_object):
@@ -128,27 +183,3 @@ def valid_variant_json(json_object):
             _("%(data)s dictionary values must be a dict not %(type)s."),
             params={"data": json_object, "type": type_}
         )
-
-    for key, value in json_object[SCORES_KEY].items():
-        if not isinstance(value, list):
-            raise ValidationError(
-                _("data for %(key)s must be a list not %(type)s."),
-                params={"key": key, "type": type(value).__name__}
-            )
-        if len(value) != 1:
-            raise ValidationError(
-                _("data %(data)s for %(key)s must have exactly one item."),
-                params={"key": key, "data": value}
-            )
-
-    for key, value in json_object[COUNTS_KEY].items():
-        if not isinstance(value, list):
-            raise ValidationError(
-                _("data for %(key)s must be a list not %(type)s."),
-                params={"key": key, "type": type(value).__name__}
-            )
-        if len(value) != 1:
-            raise ValidationError(
-                _("data %(data)s for %(key)s must have exactly one item."),
-                params={"key": key, "data": value}
-            )

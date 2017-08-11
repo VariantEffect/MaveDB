@@ -1,3 +1,5 @@
+
+import numpy as np
 import logging
 import datetime
 
@@ -104,8 +106,8 @@ class ScoreSet(models.Model):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns", default=dict({
-            SCORES_KEY: ['hgvs', 'score', 'se'],
-            COUNTS_KEY: ['count']
+            SCORES_KEY: ['hgvs'],
+            COUNTS_KEY: ['hgvs']
         }),
         validators=[valid_scoreset_json]
     )
@@ -131,9 +133,10 @@ class ScoreSet(models.Model):
     def __str__(self):
         return "ScoreSet({}, {}, {}, {})".format(
             str(self.accession),
-            str(self.experiment),
             str(self.creation_date),
-            str(self.dataset_columns))
+            str(self.dataset_columns),
+            str(self.metadata)
+        )
 
     def save(self, *args, **kwargs):
         super(ScoreSet, self).save(*args, **kwargs)
@@ -222,7 +225,7 @@ class Variant(models.Model):
         blank=False, null=False, default=datetime.date.today,
         verbose_name="Creation date")
 
-    hgvs_string = models.TextField(
+    hgvs = models.TextField(
         blank=False, null=False, default=None, validators=[valid_hgvs_string])
 
     scoreset = models.ForeignKey(
@@ -233,8 +236,8 @@ class Variant(models.Model):
     # ---------------------------------------------------------------------- #
     data = JSONField(
         verbose_name="Data columns", default=dict({
-            SCORES_KEY: {'hgvs': [None], 'score': [None], 'se': [None]},
-            COUNTS_KEY: {'hgvs': [None], 'count': [None]}
+            SCORES_KEY: {'hgvs': None},
+            COUNTS_KEY: {'hgvs': None}
         }),
         validators=[valid_variant_json]
     )
@@ -243,11 +246,11 @@ class Variant(models.Model):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return "Variant({}, {}, {}, {})".format(
+        return "Variant({}, {}, {})".format(
             str(self.accession),
             str(self.creation_date),
-            str(self.scoreset),
-            str(self.data))
+            str(self.data)
+        )
 
     @property
     def scores_columns(self) -> set:
