@@ -1,9 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.views.generic import DetailView, FormView
+from django.forms import formset_factory
+
+from main.forms import (
+    KeywordForm, ExternalAccessionForm,
+    ReferenceMappingForm, TargetOrganismForm
+)
 
 from .models import Experiment, ExperimentSet
 from .forms import ExperimentForm
+
+KeywordFormSet = formset_factory(KeywordForm)
+ExternalAccessionFormSet = formset_factory(ExternalAccessionForm)
+ReferenceMappingFormSet = formset_factory(ReferenceMappingForm)
 
 
 class ExperimentDetailView(DetailView):
@@ -26,14 +36,42 @@ class ExperimentSetDetailView(DetailView):
         return get_object_or_404(ExperimentSet, accession=accession)
 
 
-class ExperimentCreateView(FormView):
-    template_name = 'experiment/new_experiment.html'
-    form_class = ExperimentForm
+def experiment_create_view(request):
+    context = {}
 
-    def form_valid(self, form):
-        # This method is called when valid form data has been POSTed.
-        # It should return an HttpResponse.
-        print(form.is_valid())
-        print(form.cleaned_data)
-        if not form.is_valid():
-            return redirect("experiment:experiment_new", form=form)
+    # If you change the prefix arguments here, make sure to change them
+    # in the corresponding template element id fields as well. If you don't,
+    # expect everything to break horribly. You've been warned.
+    if request.method == "POST":
+        context["experiment_form"] = ExperimentForm(
+            request.POST, prefix="experiment"
+        )
+        context["keyword_formset"] = KeywordFormSet(
+            request.POST, prefix="keyword"
+        )
+        context["external_accession_formset"] = ExternalAccessionFormSet(
+            request.POST, prefix="external_accession"
+        )
+        context["ref_mapping_formset"] = ReferenceMappingFormSet(
+            request.POST, prefix="ref_mapping"
+        )
+    else:
+        context["experiment_form"] = ExperimentForm(
+            prefix="experiment"
+        )
+        context["keyword_formset"] = KeywordFormSet(
+            prefix="keyword"
+        )
+        context["external_accession_formset"] = ExternalAccessionFormSet(
+            prefix="external_accession"
+        )
+        context["ref_mapping_formset"] = ReferenceMappingFormSet(
+            prefix="ref_mapping"
+        )
+
+    print(context["keyword_formset"].__dict__)
+    return render(
+        request,
+        "experiment/new_experiment.html",
+        context=context
+    )

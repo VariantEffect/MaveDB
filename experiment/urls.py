@@ -7,7 +7,7 @@ from django.conf.urls import url, include
 
 from .views import (
     ExperimentDetailView, ExperimentSetDetailView,
-    ExperimentCreateView
+    experiment_create_view
 )
 
 urlpatterns = [
@@ -21,6 +21,6 @@ urlpatterns = [
     ),
     url(
         r'new/$',
-        ExperimentCreateView.as_view(), name='experiment_new'
+        experiment_create_view, name='experiment_new'
     ),
 ]

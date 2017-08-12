@@ -2,7 +2,7 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif;
-    /* border: 1px solid red !important;     */
+    /* border: 1px solid red !important; */
 }
 
 * {
@@ -41,6 +41,15 @@ pre {
 
 form > input {
     width: 50%;
+}
+
+input {
+    width: 50%;
+}
+input[type=button],
+input[type=checkbox],
+input[type=number] {
+    width: auto;
 }
 
 .dynamic-resize {
@@ -245,16 +254,20 @@ h4::before, h5::before, h6::before {
 
 /* Model Forms
 ---------------------------------------- */
-.model-form-table > tbody > tr > th > label,
-.model-form-table > tbody > tr > td > input,
-.model-form-table > tbody > tr > td > textarea {
+.model-form > tbody > tr > th > label,
+.model-form > tbody > tr > td > input,
+.model-form > tbody > tr > td > textarea {
     width: 100%;
 } 
 
-.model-form > input {
-    width: 200px;
+.model-form > textarea {
+    min-width: 650px;
+    min-height: 250px;
+    height: 250px;
+    width: 650px;
 }
 
-#id_private {
-    width: 20px;
+#id_experiment-private {
+    width: auto;
 }
+

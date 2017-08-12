@@ -176,7 +176,10 @@ class Keyword(models.Model):
     text : `models.TextField`
         The free-form textual representation of the keyword.
     """
-    text = models.TextField(blank=False, null=False, default=None, unique=True)
+    text = models.CharField(
+        blank=False, null=False, default=None, unique=True, max_length=256,
+        verbose_name="Keyword"
+    )
     creation_date = models.DateField(blank=False, default=datetime.date.today)
 
     class Meta:
@@ -202,7 +205,10 @@ class ExternalAccession(models.Model):
         database.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
-    text = models.TextField(blank=False, null=False, default=None, unique=True)
+    text = models.CharField(
+        blank=False, null=False, default=None, unique=True, max_length=256,
+        verbose_name="Accession"
+    )
 
     class Meta:
         ordering = ['-creation_date']
@@ -226,7 +232,10 @@ class TargetOrganism(models.Model):
         The free-form textual representation of the target organism.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
-    text = models.TextField(blank=False, null=False, default=None, unique=True)
+    text = models.CharField(
+        blank=False, null=False, default=None, unique=True, max_length=256,
+        verbose_name="Target Organism"
+    )
 
     class Meta:
         ordering = ['-creation_date']
@@ -267,8 +276,10 @@ class ReferenceMapping(models.Model):
     """
     creation_date = models.DateField(
         blank=False, default=datetime.date.today)
-    reference = models.TextField(
-        blank=False, null=False, default=None, verbose_name="Reference")
+    reference = models.CharField(
+        blank=False, null=False, default=None, unique=True, max_length=256,
+        verbose_name="Reference"
+    )
     is_alternate = models.BooleanField(
         blank=False, null=False, default=False,
         verbose_name="Alternate reference")

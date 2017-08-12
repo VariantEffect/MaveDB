@@ -2,16 +2,118 @@
 
 {% block body %}
 <div class="row">
-    <div class="three columns">
-        <h3>Create new experiment</h3>
-    </div>
-    <div class="nine columns">
-        <form action="{% url 'experiment:experiment_new' %}" method="POST">
-            {% csrf_token %}
-            {{ form }}
-            <br>
-        <input style="width: 200px;" type="submit" name="submit" value="submit">
-        </form>
-    </div>
+	<div class="two columns">
+		<h3>Create new experiment</h3>
+	</div>
+	<div class="one column" style="margin-left: 1%">
+		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	</div>
+	<div class="six columns" style="margin-left: 1%">
+		<form action="{% url 'experiment:experiment_new' %}" method="POST">
+			{% csrf_token %}
+			
+			{% if experiment_form.non_field_errors %}
+			<div class="non-field-errors">
+				{{ experiment_form.non_field_errors }}
+			</div>
+			{% endif %}
+
+			<div class="model-form">
+				{% for field in experiment_form %}
+					<div class="field-error">{{ field.errors }}</div>
+					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+					{{ field }}
+				{% endfor %}
+			<br><hr>
+
+			<div class="keyword-forms">
+				<h4> Keywords
+					<input type="button" value="+" id="add_keyword">
+					<input type="button" value="-" id="remove_keyword">
+				</h4>
+				<div id="keyword-form-set">
+					{{ keyword_formset.management_form }}
+					{% if not keyword_formset|length %}
+						<div id='keyword-empty-set'>
+							<p>I don't have any keywords.<p><hr>
+						</div>	
+					{% else %}
+						<div id='keyword-empty-set' hidden>
+							<p>I don't have any keywords.<p><hr>
+						</div>
+					{% endif %}
+					{% for form in keyword_formset %}
+						<div id="keyword-formset-{{ forloop.counter }}">
+							{{ form.as_table }}
+						<hr>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+			<div id="keyword-empty-form" style="display:none">
+				{{ keyword_formset.empty_form.as_table }}
+			</div>
+
+			<div class="ext-accession-forms">
+				<h4> External accessions
+					<input type="button" value="+" id="add_external_accession">
+					<input type="button" value="-" id="remove_external_accession">
+				</h4>
+				<div id="external_accession-form-set">
+					{{ external_accession_formset.management_form }}
+					{% if not external_accession_formset|length %}
+						<div id='external_accession-empty-set'>
+							<p>I don't have any other accessions.<p><hr>
+						</div>	
+					{% else %}
+						<div id='external_accession-empty-set' hidden>
+							<p>I don't have any other accessions.<p><hr>
+						</div>
+					{% endif %}
+					{% for form in external_accession_formset %}
+						<div id="external_accession-formset-{{ forloop.counter }}">
+							{{ form.as_table }}
+						<hr>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+			<div id="external_accession-empty-form" style="display:none">
+				{{ external_accession_formset.empty_form.as_table }}
+			</div>
+
+			<div class="ref-mapping-forms">
+				<h4> Reference maps 
+					<input type="button" value="+" id="add_ref_mapping">
+					<input type="button" value="-" id="remove_ref_mapping">
+				</h4>
+				<div id="ref_mapping-form-set">
+					{{ ref_mapping_formset.management_form }}
+					{% if not ref_mapping_formset|length %}
+						<div id='ref_mapping-empty-set'>
+							<p>I don't have any mappings.<p><hr>
+						</div>
+					{% else %}
+						<div id='ref_mapping-empty-set' hidden>
+							<p>I don't have any mappings.<p><hr>
+						</div>
+					{% endif %}
+					{% for form in ref_mapping_formset %}
+						<div id="ref_mapping-formset-{{ forloop.counter }}">
+							{{ form.as_table }}
+						<hr>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+			<div id="ref_mapping-empty-form" style="display:none">
+				{{ ref_mapping_formset.empty_form.as_table }}
+			</div>
+			
+			<input class="u-pull-right" style="width: 200px;" 
+						type="submit" name="submit" value="submit">
+		</form>
+	</div>
 </div>
+<br><br>
 {% endblock body %}
