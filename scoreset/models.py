@@ -158,22 +158,25 @@ class ScoreSet(models.Model):
         return self.last_used_suffix + 1
 
     def validate_variant_data(self, variant):
-        if variant.scores_columns != self.scores_columns:
+        if sorted(variant.scores_columns) != sorted(self.scores_columns):
             raise ValueError("Variant scores columns '{}' do not match "
                              "ScoreSet columns '{}'.".format(
                                  variant.scores_columns, self.scores_columns))
-        if variant.counts_columns != self.counts_columns:
+        if sorted(variant.counts_columns) != sorted(self.counts_columns):
             raise ValueError("Variant counts columns '{}' do not match "
                              "ScoreSet columns '{}'.".format(
                                  variant.counts_columns, self.counts_columns))
 
     @property
-    def scores_columns(self) -> set:
-        return set(self.dataset_columns[SCORES_KEY])
+    def scores_columns(self):
+        return self.dataset_columns[SCORES_KEY]
 
     @property
-    def counts_columns(self) -> set:
-        return set(self.dataset_columns[COUNTS_KEY])
+    def counts_columns(self):
+        return self.dataset_columns[COUNTS_KEY]
+
+    def get_keywords(self):
+        return ', '.join([kw.text for kw in self.keywords.all()])
 
     def md_abstract(self) -> str:
         return convert_md_to_html(self.abstract)
@@ -253,20 +256,18 @@ class Variant(models.Model):
         )
 
     @property
-    def scores_columns(self) -> set:
-        return set(self.data[SCORES_KEY].keys())
+    def scores_columns(self):
+        return self.data[SCORES_KEY].keys()
 
     @property
     def counts_columns(self) -> set:
-        return set(self.data[COUNTS_KEY].keys())
+        return self.data[COUNTS_KEY].keys()
 
-    @property
     def get_ordered_scores_data(self):
         columns = self.scoreset.scores_columns
         data = [self.data[SCORES_KEY][key] for key in columns]
         return data
 
-    @property
     def get_ordered_counts_data(self):
         columns = self.scoreset.counts_columns
         data = [self.data[COUNTS_KEY][key] for key in columns]

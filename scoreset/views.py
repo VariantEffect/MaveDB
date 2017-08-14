@@ -40,8 +40,8 @@ class ScoresetDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ScoresetDetailView, self).get_context_data(**kwargs)
-        variant_list = ScoreSet.objects.all()
-        paginator = Paginator(variant_list, 50)
+        variant_list = Variant.objects.all()
+        paginator = Paginator(variant_list, 2)
 
         try:
             page = self.request.GET.get('page', 1)
@@ -51,7 +51,7 @@ class ScoresetDetailView(DetailView):
         except EmptyPage:
             variants = paginator.page(paginator.num_pages)
 
-        context["variants"] = variant_list
+        context["variants"] = variants
         context["scores_columns"] = \
             context['scoreset'].dataset_columns[SCORES_KEY]
         context["counts_columns"] = \
