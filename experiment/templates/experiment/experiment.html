@@ -13,11 +13,11 @@
 	</div>
 	<div class="seven columns">
 		<h3> Abstract </h3>
-		<p> {{ experiment.abstract|safe|escape|default:"Not provided" }} </p>
+		<p> {{ experiment.md_abstract|safe|escape|default:"Not provided" }} </p>
 		<hr>
 		
 		<h3> Method description </h3>
-		<p> {{ experiment.method_desc|safe|escape|default:"Not provided" }} </p>
+		<p> {{ experiment.md_method_desc|safe|escape|default:"Not provided" }} </p>
 		<hr>
 		
 		<h3> Publication information </h3>
@@ -70,14 +70,41 @@
 		<span style="font-weight: 600;">External accessions: </span>
 			<span>{{ experiment.get_other_accessions|default:"Not provided" }}</span>
 		<br>
-		<span style="font-weight: 600;">Reference mappings: </span>
-			<span>{{ experiment.get_ref_mappings|default:"Not provided" }}</span>
-		<br>	
 		<span style="font-weight: 600;">Score sets: </span>
 			{% for scoreset in experiment.scoreset_set.all %}
-				<a href="">{{ scoreset.accession }}</a>,
+				<a href="{% url 'scoreset:scoreset_detail' scoreset.accession %}">
+					{{ scoreset.accession }}
+				</a>,
 			{% endfor %}
-		<br>			
+		<br>
+		
+		<hr>
+		<h3>Reference mappings</h3>
+		<table>
+			<thead>
+				<tr>
+					<th>Reference</th>
+					<th>Is alternate</th>
+					<th>Target start</th>
+					<th>Target end</th>
+					<th>Reference start</th>
+					<th>Reference end</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for map in experiment.get_ref_mappings %}
+				<tr>
+					<td>{{ map.reference }}</td>
+					<td>{{ map.is_alternate }}</td>
+					<td>{{ map.target_start }}</td>
+					<td>{{ map.target_end }}</td>
+					<td>{{ map.reference_start }}</td>
+					<td>{{ map.reference_end }}</td>
+				</tr>			
+				{% endfor %}
+			</tbody>
+		</table>
+		<br>	
 	</div>
 </div>
 {% endblock body %}

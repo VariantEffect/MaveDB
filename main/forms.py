@@ -19,7 +19,7 @@ class KeywordForm(forms.ModelForm):
     """
     class Meta:
         model = Keyword
-        fields = ("text",)
+        fields = ("text", )
 
 
 class ExternalAccessionForm(forms.ModelForm):

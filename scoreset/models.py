@@ -260,6 +260,18 @@ class Variant(models.Model):
     def counts_columns(self) -> set:
         return set(self.data[COUNTS_KEY].keys())
 
+    @property
+    def get_ordered_scores_data(self):
+        columns = self.scoreset.scores_columns
+        data = [self.data[SCORES_KEY][key] for key in columns]
+        return data
+
+    @property
+    def get_ordered_counts_data(self):
+        columns = self.scoreset.counts_columns
+        data = [self.data[COUNTS_KEY][key] for key in columns]
+        return data
+
     def save(self, *args, **kwargs):
         super(Variant, self).save(*args, **kwargs)
         if not self.accession:

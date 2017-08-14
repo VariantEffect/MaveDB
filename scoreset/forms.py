@@ -21,12 +21,18 @@ class ScoreSetForm(forms.ModelForm):
     scores_data = forms.CharField(
         required=True, label="Scores data",
         help_text="Comma separated fields.",
-        validators=[valid_scoreset_score_data_input]
+        validators=[valid_scoreset_score_data_input],
+        widget=forms.Textarea(
+            attrs={"rows": 100, "cols": 40}
+        )
     )
     counts_data = forms.CharField(
         required=True, label="Counts data",
         help_text="Comma separated fields.",
-        validators=[valid_scoreset_count_data_input]
+        validators=[valid_scoreset_count_data_input],
+        widget=forms.Textarea(
+            attrs={"rows": 100, "cols": 40}
+        )
     )
 
     class Meta:
@@ -85,12 +91,12 @@ class ScoreSetForm(forms.ModelForm):
             h.strip().lower()
             for h in counts_data.readline().strip().split(',')
         ]
-        data_columns = {
+        dataset_columns = {
             SCORES_KEY: [xs.strip() for xs in scores_header],
             COUNTS_KEY: [xs.strip() for xs in counts_header]
         }
-        valid_scoreset_json(data_columns)
-        cleaned_data['data_columns'] = data_columns
+        valid_scoreset_json(dataset_columns)
+        cleaned_data['dataset_columns'] = dataset_columns
         scores_data.close()
         counts_data.close()
         return cleaned_data
@@ -98,9 +104,9 @@ class ScoreSetForm(forms.ModelForm):
     def _validate_rows_create_variants(self, cleaned_data=None):
         if not cleaned_data:
             cleaned_data = super(ScoreSetForm, self).clean()
-        data_columns = cleaned_data.get('data_columns', [])
-        scores_header = data_columns[SCORES_KEY]
-        counts_header = data_columns[COUNTS_KEY]
+        dataset_columns = cleaned_data.get('dataset_columns', [])
+        scores_header = dataset_columns[SCORES_KEY]
+        counts_header = dataset_columns[COUNTS_KEY]
         variants = []
 
         scores_data = StringIO(cleaned_data[Constants.SCORES_DATA])
@@ -116,34 +122,34 @@ class ScoreSetForm(forms.ModelForm):
             if len(score_line) < len(scores_header):
                 raise ValidationError(
                     _(
-                        "Scores row %(row)s contains less columns than those "
-                        "in the header"
+                        "Scores row '%(row)s' contains less columns than "
+                        "those in the header."
                     ),
-                    params={"row": i}
+                    params={"row": ','.join([str(x) for x in score_line])}
                 )
             if len(score_line) > len(scores_header):
                 raise ValidationError(
                     _(
-                        "Scores row %(row)s contains more columns than those "
-                        "in the header"
+                        "Scores row '%(row)s' contains more columns than "
+                        "those in the header."
                     ),
-                    params={"row": i}
+                    params={"row": ','.join([str(x) for x in score_line])}
                 )
             if len(count_line) < len(counts_header):
                 raise ValidationError(
                     _(
-                        "Counts row %(row)s contains less columns than those "
-                        "in the header"
+                        "Counts row '%(row)s' contains less columns than "
+                        "those in the header."
                     ),
-                    params={"row": i}
+                    params={"row": ','.join([str(x) for x in count_line])}
                 )
             if len(count_line) > len(counts_header):
                 raise ValidationError(
                     _(
-                        "Counts row %(row)s contains more columns than those "
-                        "in the header"
+                        "Counts row '%(row)s' contains more columns than "
+                        "those in the header."
                     ),
-                    params={"row": i}
+                    params={"row": ','.join([str(x) for x in count_line])}
                 )
 
             processed_score_line = []
@@ -168,17 +174,19 @@ class ScoreSetForm(forms.ModelForm):
                         col_value = None
                 processed_count_line.append(col_value)
 
+            # Check if the hgvs entries are the same in both datasets.
             if processed_score_line[0] != processed_count_line[0]:
                 raise ValidationError(
                     _(
-                        "The hgvs strings within the scores dataset do "
-                        "not match those within the counts dataset. Ensure "
+                        "The hgvs strings within the Scores data input do "
+                        "not match those within Counts data input. Ensure "
                         "counts data set and scores data set contain the "
                         "same variants in the same order. Also ensure that "
                         "the hgvs column is always first."
                     )
                 )
 
+            # Check if the hgvs entries are the same in both datasets.
             scores_are_floats = (
                 isinstance(value, float)
                 for value in processed_score_line[1:]
@@ -191,13 +199,22 @@ class ScoreSetForm(forms.ModelForm):
             )
             if not all(scores_are_floats):
                 raise ValidationError(
-                    _("Row %(row)s in scores data has non-numeric values"),
-                    params={"row": ','.join(processed_score_line[1:])}
+                    _(
+                        "Row '%(row)s' in the Scores data input contains "
+                        "non-numeric values."
+                    ),
+                    params={"row": ','.join(
+                        [str(x) for x in processed_score_line]
+                    )}
                 )
             if not all(counts_are_floats):
                 raise ValidationError(
-                    _("Row %(row)s in counts data has non-numeric values"),
-                    params={"row": ','.join(processed_count_line[1:])}
+                    _(
+                        "Row '%(row)s' in the Counts data input contains "
+                        "non-numeric values."
+                    ),                    params={"row": ','.join(
+                        [str(x) for x in processed_count_line]
+                    )}
                 )
 
             if not all(d is None for d in processed_score_line[1:]) or \
@@ -229,7 +246,7 @@ class ScoreSetForm(forms.ModelForm):
 
     def save(self, commit=True):
         super(ScoreSetForm, self).save(commit=commit)
-        self.instance.data_columns = self.cleaned_data["data_columns"]
+        self.instance.dataset_columns = self.cleaned_data["dataset_columns"]
         variants = self.cleaned_data["variants"]
         if commit:
             self.instance.save()

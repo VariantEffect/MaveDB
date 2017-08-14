@@ -15,6 +15,7 @@ from .validators import valid_exp_accession, valid_expset_accession
 from .validators import valid_wildtype_sequence
 
 from main.models import Keyword, ExternalAccession, TargetOrganism
+from main.utils.pandoc import convert_md_to_html
 
 logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
@@ -198,6 +199,7 @@ class Experiment(models.Model):
 
     def save(self, *args, **kwargs):
         super(Experiment, self).save(*args, **kwargs)
+        self.wt_sequence = self.wt_sequence.upper()
         if self.accession is not None:
             valid_exp_accession(self.accession)
         else:
@@ -220,24 +222,26 @@ class Experiment(models.Model):
             self.save()
 
     def get_keywords(self):
-        return [kw.text for kw in self.keywords.all()]
+        return ', '.join([kw.text for kw in self.keywords.all()])
 
     def get_authors(self):
-        return []
+        return ', '.join([])
 
     def get_other_accessions(self):
-        return [a.text for a in self.external_accessions.all()]
+        return ', '.join([a.text for a in self.external_accessions.all()])
 
     def get_ref_mappings(self):
         return [a for a in self.referencemapping_set.all()]
+
+    def get_target_organism(self):
+        if self.target_organism.count():
+            return self.target_organism.all()[0].text
 
     def next_scoreset_suffix(self):
         return self.last_used_suffix + 1
 
     def md_abstract(self):
-        return pypandoc.convert_text(
-            self.abstract, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self.abstract)
 
     def md_method_desc(self):
-        return pypandoc.convert_text(
-            self.method_desc, 'html', format='md', extra_args=pdoc_args)
+        return convert_md_to_html(self.method_desc)

@@ -33,5 +33,9 @@ urlpatterns = [
     url(
         r'^experiment/',
         include("experiment.urls", namespace="experiment"), name="experiment"
+    ),
+    url(
+        r'^scoreset/',
+        include("scoreset.urls", namespace="scoreset"), name="scoreset"
     )
 ]

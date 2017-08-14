@@ -1,0 +1,66 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="row">
+	<div class="two columns">
+		<h3>Create new scoreset</h3>
+	</div>
+	<div class="one column" style="margin-left: 1%">
+		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	</div>
+	<div class="six columns" style="margin-left: 1%">
+		<form action="{% url 'scoreset:scoreset_new' %}" method="POST">
+			{% csrf_token %}
+			
+			{% if scoreset_form.non_field_errors %}
+			<div class="non-field-errors">
+				{{ scoreset_form.non_field_errors }}
+			</div>
+			{% endif %}
+
+			<div class="model-form">
+				{% for field in scoreset_form %}
+					<div class="field-error">{{ field.errors }}</div>
+					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+					{{ field }}
+				{% endfor %}
+			<br><hr>
+
+			<div class="keyword-forms">
+				<h4> Keywords
+					<input type="button" value="+" id="add_keyword">
+					<input type="button" value="-" id="remove_keyword">
+				</h4>
+				<div id="keyword-form-set">
+					{{ keyword_formset.management_form }}
+					{% if not keyword_formset|length %}
+						<div id='keyword-empty-set'>
+							<p>I'll add keywords later.<p><hr>
+						</div>	
+					{% else %}
+						<div id='keyword-empty-set' hidden>
+							<p>I'll add keywords later.<p><hr>
+						</div>
+					{% endif %}
+					{% for form in keyword_formset %}
+						<div id="keyword-formset-{{ forloop.counter }}">
+							{% for field in form %}
+							<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+							{{ field }}
+							{% endfor %}
+						<hr>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+			<div id="keyword-empty-form" style="display:none">
+				{{ keyword_formset.empty_form.as_table }}
+            </div>
+
+			<input class="u-pull-right" style="width: 200px;" 
+						type="submit" name="submit" value="submit">
+		</form>
+	</div>
+</div>
+<br><br>
+{% endblock body %}

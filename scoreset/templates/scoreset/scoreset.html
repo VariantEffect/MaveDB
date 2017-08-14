@@ -1,0 +1,114 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class=row>
+	<div class="three columns">
+		<h3> {{ scoreset.accession }} </h3>
+		<p> 
+			Member of experiment
+			<a href="{% url 'experiment:experiment_detail' scoreset.experiment.accession %}">
+				{{ scoreset.experiment.accession }}
+			</a>
+		</p>
+	</div>
+	<div class="seven columns">
+		<h3> Abstract </h3>
+		<p> {{ scoreset.md_abstract|safe|escape|default:"Not provided" }} </p>
+		<hr>
+		
+		<h3> Method description </h3>
+		<p> {{ scoreset.md_method_desc|safe|escape|default:"Not provided" }} </p>
+		<hr>
+		
+		<h3> Publication information </h3>
+		<span style="font-weight: 600;">Created on:</span>
+			<span>{{ scoreset.creation_date }}</span>
+		<br>
+		<span style="font-weight: 600;">Created by:</span>
+			<span>{{ scoreset.created_by|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Last edited:</span>
+			<span>{{ scoreset.last_edit|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Last edited by:</span>
+			<span>{{ scoreset.last_edit_by|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Authors:</span>
+			<span>{{ scoreset.get_authors|default:"None" }}</span>
+		<br>	
+		<span style="font-weight: 600;">DOI:</span>
+			<span>{{ scoreset.doi_id|default:"None" }}</span>
+		<br>
+		<span style="font-weight: 600;">Reviewed:</span>
+			<span>
+				{% if scoreset.approved %}
+					{{ "Yes "}}
+				{% else %}
+					{{ "No" }}
+				{% endif %}
+			</span>
+		<br>
+		<hr>
+		
+		<h3> Scoreset information </h3>
+		<span style="font-weight: 600;">Keywords: </span>
+			<span>{{ scoreset.get_keywords|default:"Not provided" }}</span>
+		<br>
+		<hr>
+		
+		<h3> Scores dataset </h3>
+			{% if not variants %}
+				<p> No scores data available.</p>
+			{% else %}
+				<table>
+					<thead>
+						<tr>
+							{% for column in scores_columns %}
+								<th> {{column}} </th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for var in variants %}
+							<tr>
+								{{var.get_ordered_scores_data }}
+								{% for data in var.get_ordered_scores_data %}
+									<td> {{ data }} </td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			{% endif %}
+		<br>
+		<hr>
+
+		<h3> Counts dataset </h3>
+			{% if not variants %}
+				<p> No scores data available.</p>
+			{% else %}
+				<table>
+					<thead>
+						<tr>
+							{% for column in counts_columns %}
+								<th> {{ column }} </th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for var in variants %}
+							<tr>
+								{% for data in var.get_ordered_counts_data %}
+									<td> {{ data }} </td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			{% endif %}
+		<br>
+		<hr>
+
+	</div>
+</div>
+{% endblock body %}

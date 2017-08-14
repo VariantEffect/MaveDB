@@ -271,3 +271,11 @@ h4::before, h5::before, h6::before {
     width: auto;
 }
 
+.non-field-errors > ul,
+.field-error > ul {
+    list-style: none;
+    text-align: center;
+    border: 1px solid black;
+    background-color: lightcoral;
+    color: black
+}

@@ -277,7 +277,7 @@ class ReferenceMapping(models.Model):
     creation_date = models.DateField(
         blank=False, default=datetime.date.today)
     reference = models.CharField(
-        blank=False, null=False, default=None, unique=True, max_length=256,
+        blank=False, null=False, default=None, unique=False, max_length=256,
         verbose_name="Reference"
     )
     is_alternate = models.BooleanField(
