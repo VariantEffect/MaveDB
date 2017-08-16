@@ -1,13 +1,18 @@
+
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.views.generic import DetailView, FormView
+from django.http import HttpResponse, HttpResponseForbidden, Http404
+from django.core.urlresolvers import reverse_lazy
+from django.views.generic import DetailView
 from django.forms import formset_factory
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
 
 from main.forms import (
     KeywordForm, ExternalAccessionForm,
     ReferenceMappingForm, TargetOrganismForm
 )
+
+from accounts.models import assign_user_as_instance_admin
 
 from main.models import (
     Keyword, ExternalAccession,
@@ -17,15 +22,48 @@ from main.models import (
 from .models import Experiment, ExperimentSet
 from .forms import ExperimentForm
 
+
 KeywordFormSet = formset_factory(KeywordForm)
 ExternalAccessionFormSet = formset_factory(ExternalAccessionForm)
 ReferenceMappingFormSet = formset_factory(ReferenceMappingForm)
 
+EXPERIMENT_FORM_PREFIX = "experiment"
+KEYWORD_FORM_PREFIX = "keyword"
+EXTERNAL_ACCESSION_FORM_PREFIX = "external_accession"
+REFERENCE_MAPPING_FORM_PREFIX = "reference_mapping"
+
 
 class ExperimentDetailView(DetailView):
+    """
+    object in question and render a simple template for public viewing, or
+    Simple class-based detail view for an `Experiment`. Will either find the
+    404.
+
+    Parameters
+    ----------
+    accession : `str`
+        The accession of the `Experiment` to render.
+    """
     model = Experiment
     template_name = 'experiment/experiment.html'
     context_object_name = "experiment"
+
+    def dispatch(self, request, *args, **kwargs):
+        accession = self.kwargs.get('accession', None)
+        experiment = get_object_or_404(Experiment, accession=accession)
+        has_permission = self.request.user.has_perm("can_view", experiment)
+        if experiment.private and not has_permission:
+            response = render(
+                request=request,
+                template_name="experiment/403_forbidden.html",
+                context={"model": experiment},
+            )
+            response.status_code = 403
+            return response
+        else:
+            return super(ExperimentDetailView, self).dispatch(
+                request, *args, **kwargs
+            )
 
     def get_object(self):
         accession = self.kwargs.get('accession', None)
@@ -33,16 +71,64 @@ class ExperimentDetailView(DetailView):
 
 
 class ExperimentSetDetailView(DetailView):
+    """
+    Simple class-based detail view for an `ExperimentSet`. Will either find the
+    object in question and render a simple template for public viewing, or
+    404.
+
+    Parameters
+    ----------
+    accession : `str`
+        The accession of the `ExperimentSet` to render.
+    """
     model = ExperimentSet
     template_name = 'experiment/experimentset.html'
     context_object_name = "experimentset"
+
+    def dispatch(self, request, *args, **kwargs):
+        accession = self.kwargs.get('accession', None)
+        experimentset = get_object_or_404(ExperimentSet, accession=accession)
+        has_permission = self.request.user.has_perm("can_view", experimentset)
+        if experimentset.private and not has_permission:
+            response = render(
+                request=request,
+                template_name="experiment/403_forbidden.html",
+                context={"model": experimentset},
+            )
+            response.status_code = 403
+            return response
+        else:
+            return super(ExperimentSetDetailView, self).dispatch(
+                request, *args, **kwargs
+            )
 
     def get_object(self):
         accession = self.kwargs.get('accession', None)
         return get_object_or_404(ExperimentSet, accession=accession)
 
 
-def parse_text_formset(formset, model_class, prefix):
+def parse_text_formset(formset, model_class, prefix="formset"):
+    """
+    Utility function to parse a formset with a `text` attribute. Parses a
+    formset into a list of instantiated but not commited models. Will only
+    create a new model if the text attribute doesn't already exist in the
+    database. If the form is not valid for a particular model, then `None`
+    is appended to the list.
+
+    Parameters
+    ----------
+    formset : `FormSet`
+        A bound model formset constructed with `formset_factory` or similar.
+    model_class : `any`
+        The model that each form in the formset constructs.
+    prefix : `str`, optional.
+        The prefix of the formset if any.
+
+    Returns
+    -------
+    `list`
+        A list of instantiated models, but non-commited.
+    """
     objects = []
     for i, form in enumerate(formset):
         text = form.data.get("{}-{}-text".format(prefix, i), "")
@@ -53,13 +139,29 @@ def parse_text_formset(formset, model_class, prefix):
             if form.is_valid():
                 if form.cleaned_data:
                     model = form.save(commit=False)
-                    objects.append(model)
+                    if model.text not in set([o.text for o in objects]):
+                        objects.append(model)
             else:
                 objects.append(None)
     return objects
 
 
 def parse_mapping_formset(reference_mapping_formset):
+    """
+    Parses a `ReferenceMappingFormSet` into a list of non-commited
+    `ReferenceMapping` models. If the form is not valid for a particular
+    form, then `None` is appended to the list.
+
+    Parameters
+    ----------
+    reference_mapping_formset : `ReferenceMappingFormSet`
+        A bound ReferenceMappingFormSet instance.
+
+    Returns
+    -------
+    `list`
+        A list of instantiated models, but non-commited.
+    """
     objects = []
     for i, form in enumerate(reference_mapping_formset):
         if form.is_valid():
@@ -71,7 +173,27 @@ def parse_mapping_formset(reference_mapping_formset):
     return objects
 
 
+@login_required(login_url=reverse_lazy("accounts:login"))
 def experiment_create_view(request):
+    """
+    This view serves up four types of forms:
+        - `ExperimentForm` for the instantiation of an Experiment instnace.
+        - `KeywordFormSet` for the instantiation and linking of M2M `Keyword`
+           instnaces.
+        - `ExternalAccessionFormSet` for the instantiation and linking of M2M
+          `ExternalAccession` instnaces.
+        - `ReferenceMappingFormSet` for the instantiation and linking of M2M
+          `ReferenceMapping` instnaces.
+
+    A new experiment instance will only be created if all forms pass validation
+    otherwise the forms with the appropriate errors will be served back. Upon
+    success, the user is redirected to the newly created experiment page.
+
+    Parameters
+    ----------
+    request : `object`
+        The request object that django passes into all views.
+    """
     context = {}
     experiment_form = ExperimentForm(prefix="experiment")
     keyword_formset = KeywordFormSet(prefix="keyword")
@@ -169,7 +291,15 @@ def experiment_create_view(request):
             ref_map.experiment = experiment
             ref_map.save()
 
+        # Save and update permissions. If no experimentset was selected, by
+        # default a new experimentset is created with the current user as
+        # its administrator.
         experiment.save()
+        user = request.user
+        assign_user_as_instance_admin(user, experiment)
+        if not request.POST['{}-experimentset'.format(EXPERIMENT_FORM_PREFIX)]:
+            assign_user_as_instance_admin(user, experiment.experimentset)
+
         accession = experiment.accession
         return redirect("experiment:experiment_detail", accession=accession)
 
