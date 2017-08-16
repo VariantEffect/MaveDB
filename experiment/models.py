@@ -8,13 +8,20 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.db import models, IntegrityError
 from django.db.models.signals import pre_save, post_save
 
 from .validators import valid_exp_accession, valid_expset_accession
 from .validators import valid_wildtype_sequence
 
-from main.models import Keyword, ExternalAccession, TargetOrganism
+from accounts.models import PermissionTypes, GroupTypes
+from accounts.models import make_all_groups_for_instance
+
+from main.models import (
+    Keyword, ExternalAccession,
+    TargetOrganism, ReferenceMapping
+)
 from main.utils.pandoc import convert_md_to_html
 
 logger = logging.getLogger("django")
@@ -30,14 +37,33 @@ class ExperimentSet(models.Model):
 
     Parameters
     ----------
-    accession : `str`
-        This is the only required field, and should be specified at all points
-        of instantiation (ExperimentSet, ExperimentSet.objects.create).
+    accession : `models.CharField`
+        The accession in the format 'EXPSXXXXXX'
+    creation_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format.
+    last_edit_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
+        is called.
+    publish_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
+        called.
+    approved : `models.BooleanField`
+        The approved status, as seen by the database admin. Instances are
+        created by default as not approved and must be manually checked
+        before going live.
+    last_used_suffix : `models.IntegerField`
+        Min value of 0. Counts how many variants have been associated with
+        this dataset. Must be manually incremented everytime, but this might
+        change to a post_save signal
+    private : `models.BooleanField`
+        Whether this experiment should be private and viewable only by
+        those approved in the permissions.
+    metadata : `models.JSONField`
+        The free-form json metadata that might be associated with this
+        experimentset.
+
     Methods
     -------
-    build_accession
-        Creates a new accession by creating a digit that has the digit bit of
-        the last accession when sorted in ascending order plus one.
     """
 
     ACCESSION_DIGITS = 6
@@ -47,6 +73,11 @@ class ExperimentSet(models.Model):
         ordering = ['-creation_date']
         verbose_name = "ExperimentSet"
         verbose_name_plural = "ExperimentSets"
+        permissions = (
+            (PermissionTypes.CAN_VIEW, "Can view"),
+            (PermissionTypes.CAN_EDIT, "Can edit"),
+            (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
 
     # ---------------------------------------------------------------------- #
     #                       Model fields
@@ -61,7 +92,13 @@ class ExperimentSet(models.Model):
 
     creation_date = models.DateField(
         blank=False, null=False, default=datetime.date.today,
-        verbose_name="Creation date")
+        verbose_name="Created on")
+    last_edit_date = models.DateField(
+        blank=False, null=False, default=datetime.date.today,
+        verbose_name="Last edited on")
+    publish_date = models.DateField(
+        blank=False, null=True, default=None,
+        verbose_name="Published on")
 
     approved = models.BooleanField(
         blank=False, null=False, default=False, verbose_name="Approved")
@@ -69,14 +106,21 @@ class ExperimentSet(models.Model):
     private = models.BooleanField(
         blank=False, null=False, default=True, verbose_name="Private")
 
-    # ---------------------------------------------------------------------- #
-    #                       Methods
-    # ---------------------------------------------------------------------- #
+    metadata = JSONField(blank=True, default={}, verbose_name="Metadata")
+
+# ---------------------------------------------------------------------- #
+#                       Methods
+# ---------------------------------------------------------------------- #
     def __str__(self):
         return str(self.accession)
 
     def save(self, *args, **kwargs):
         super(ExperimentSet, self).save(*args, **kwargs)
+
+        # This will not work if manually setting accession.
+        # Replace this section with POST/PRE save signal.
+        self.last_edit_date = datetime.date.today()
+
         if self.accession is not None:
             valid_expset_accession(self.accession)
         else:
@@ -87,7 +131,12 @@ class ExperimentSet(models.Model):
             self.save()
 
     def get_authors(self):
-        return []
+        return ', '.join([])
+
+    def publish(self):
+        self.private = False
+        self.publish_date = datetime.date.today()
+        self.save()
 
     def next_experiment_suffix(self):
         if not self.last_used_suffix:
@@ -113,16 +162,56 @@ class Experiment(models.Model):
 
     Parameters
     ----------
-    accession : `str`
-        This is the only required field, and should be specified at all points
-        of instantiation (Experiment, Experiment.objects.create).
+    accession : `models.CharField`
+        The accession in the format 'EXPXXXXXX[A-Z]+'
+    experimentset : `models.ForeignKey`.
+        The experimentset is instance assciated with. New `ExperimentSet` is
+        created if this is not provided.
+    target : `models.CharField`
+        The gene target this experiment examines.
+    wt_sequence : `models.CharField`
+        The wild type DNA sequence that is related to the `target`. Will
+        be converted to upper-case upon instantiation.
+    creation_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format.
+    last_edit_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
+        is called.
+    publish_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
+        called.
+    approved : `models.BooleanField`
+        The approved status, as seen by the database admin. Instances are
+        created by default as not approved and must be manually checked
+        before going live.
+    last_used_suffix : `models.IntegerField`
+        Min value of 0. Counts how many variants have been associated with
+        this dataset. Must be manually incremented everytime, but this might
+        change to a post_save signal
+    private : `models.BooleanField`
+        Whether this experiment should be private and viewable only by
+        those approved in the permissions.
+    abstract : `models.TextField`
+        A markdown text blob.
+    method_desc : `models.TextField`
+        A markdown text blob of the scoring method.
+    doi_id : `models.CharField`
+        The DOI for this experiment if any.
+    sra_id : `models.CharField`
+        The SRA for this experiment if any.
+    metadata : `models.JSONField`
+        The free-form json metadata that might be associated with this
+        experiment.
+    keywords : `models.ManyToManyField`
+        The keyword instances that are associated with this instance.
+    external_accession : `models.ManyToManyField`
+        Any external accessions that relate to `target`.
+    target_organism : `models.ManyToManyField`
+        The `TargetOrganism` instance that the target comes from. There should
+        only be one associated per `Experiment` instance.
 
     Methods
     -------
-    build_accession
-        Creates a new accession but taking the digit bit from the associated
-        :py:class:`ExperimentSet` and adding an alphabetaical character based
-        on the number of experiments in the set.
     """
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
@@ -134,6 +223,11 @@ class Experiment(models.Model):
         ordering = ['-creation_date']
         verbose_name = "Experiment"
         verbose_name_plural = "Experiments"
+        permissions = (
+            (PermissionTypes.CAN_VIEW, "Can view"),
+            (PermissionTypes.CAN_EDIT, "Can edit"),
+            (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
 
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
@@ -149,7 +243,13 @@ class Experiment(models.Model):
 
     creation_date = models.DateField(
         blank=False, null=False, default=datetime.date.today,
-        verbose_name="Creation date")
+        verbose_name="Created on")
+    last_edit_date = models.DateField(
+        blank=False, null=False, default=datetime.date.today,
+        verbose_name="Last edited on")
+    publish_date = models.DateField(
+        blank=False, null=True, default=None,
+        verbose_name="Published on")
 
     last_used_suffix = models.IntegerField(
         default=0, validators=[positive_integer_validator])
@@ -185,6 +285,7 @@ class Experiment(models.Model):
         blank=True, default="", verbose_name="DOI identifier",
         max_length=128
     )
+    metadata = JSONField(blank=True, default={}, verbose_name="Metadata")
 
     keywords = models.ManyToManyField(Keyword, blank=True)
     external_accessions = models.ManyToManyField(ExternalAccession, blank=True)
@@ -199,7 +300,11 @@ class Experiment(models.Model):
 
     def save(self, *args, **kwargs):
         super(Experiment, self).save(*args, **kwargs)
+        # This will not work if manually setting accession.
+        # Replace this section with POST/PRE save signal.
+        self.last_edit_date = datetime.date.today()
         self.wt_sequence = self.wt_sequence.upper()
+
         if self.accession is not None:
             valid_exp_accession(self.accession)
         else:
@@ -220,6 +325,11 @@ class Experiment(models.Model):
             parent.save()
             self.accession = accession
             self.save()
+
+    def publish(self):
+        self.private = False
+        self.publish_date = datetime.date.today()
+        self.save()
 
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
@@ -245,3 +355,16 @@ class Experiment(models.Model):
 
     def md_method_desc(self):
         return convert_md_to_html(self.method_desc)
+
+
+# --------------------------------------------------------------------------- #
+#                               POST SAVE
+# --------------------------------------------------------------------------- #
+@receiver(post_save, sender=ExperimentSet)
+def create_groups_for_experimentset(sender, instance, **kwargs):
+    make_all_groups_for_instance(instance)
+
+
+@receiver(post_save, sender=Experiment)
+def create_groups_for_experiment(sender, instance, **kwargs):
+    make_all_groups_for_instance(instance)

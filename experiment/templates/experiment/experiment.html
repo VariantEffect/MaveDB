@@ -80,30 +80,34 @@
 		
 		<hr>
 		<h3>Reference mappings</h3>
-		<table>
-			<thead>
-				<tr>
-					<th>Reference</th>
-					<th>Is alternate</th>
-					<th>Target start</th>
-					<th>Target end</th>
-					<th>Reference start</th>
-					<th>Reference end</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for map in experiment.get_ref_mappings %}
-				<tr>
-					<td>{{ map.reference }}</td>
-					<td>{{ map.is_alternate }}</td>
-					<td>{{ map.target_start }}</td>
-					<td>{{ map.target_end }}</td>
-					<td>{{ map.reference_start }}</td>
-					<td>{{ map.reference_end }}</td>
-				</tr>			
-				{% endfor %}
-			</tbody>
-		</table>
+		{% if not experiment.get_ref_mappings %}
+			<p> No maps have been specified for this experiment. </p>
+		{% else %}
+			<table>
+				<thead>
+					<tr>
+						<th>Reference</th>
+						<th>Is alternate</th>
+						<th>Target start</th>
+						<th>Target end</th>
+						<th>Reference start</th>
+						<th>Reference end</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for map in experiment.get_ref_mappings %}
+					<tr>
+						<td>{{ map.reference }}</td>
+						<td>{{ map.is_alternate }}</td>
+						<td>{{ map.target_start }}</td>
+						<td>{{ map.target_end }}</td>
+						<td>{{ map.reference_start }}</td>
+						<td>{{ map.reference_end }}</td>
+					</tr>			
+					{% endfor %}
+				</tbody>
+			</table>
+		{% endif %}
 		<br>	
 	</div>
 </div>
