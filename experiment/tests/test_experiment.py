@@ -2,6 +2,7 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models import ProtectedError
 from django.test import TransactionTestCase
@@ -67,7 +68,6 @@ class TestExperiment(TransactionTestCase):
     def test_cannot_create_experiment_null_target(self):
         with self.assertRaises(IntegrityError):
             Experiment.objects.create(
-                accession=self.exp_accession_1,
                 experimentset=ExperimentSet.objects.create(),
                 wt_sequence=self.wt_seq
             )
@@ -75,7 +75,6 @@ class TestExperiment(TransactionTestCase):
     def test_cannot_create_experiment_null_wt_seq(self):
         with self.assertRaises(IntegrityError):
             Experiment.objects.create(
-                accession=self.exp_accession_1,
                 experimentset=ExperimentSet.objects.create(),
                 target=self.target
             )
@@ -85,13 +84,11 @@ class TestExperiment(TransactionTestCase):
         date_1 = datetime.date.today()
         date_2 = datetime.date.today() + datetime.timedelta(days=1)
         exp_1 = Experiment.objects.create(
-            accession=self.exp_accession_1,
             experimentset=expset,
             target=self.target,
             wt_sequence=self.wt_seq,
             creation_date=date_1)
         exp_2 = Experiment.objects.create(
-            accession=self.exp_accession_2,
             experimentset=expset,
             target=self.target,
             wt_sequence=self.wt_seq,
@@ -100,12 +97,16 @@ class TestExperiment(TransactionTestCase):
             exp_2.accession, Experiment.objects.all()[0].accession)
 
     def test_new_experiment_has_todays_date_by_default(self):
-        self.make_experiment(acc=self.exp_accession_1)
+        self.make_experiment()
         exp = Experiment.objects.all()[0]
         self.assertEqual(exp.creation_date, datetime.date.today())
 
+    def test_experiment_and_its_parent_is_assigned_all_permission_groups(self):
+        self.make_experiment()
+        self.assertEqual(Group.objects.count(), 6)
+
     def test_experiment_not_approved_and_private_by_default(self):
-        self.make_experiment(acc=self.exp_accession_1)
+        self.make_experiment()
         exp = Experiment.objects.all()[0]
         self.assertFalse(exp.approved)
         self.assertTrue(exp.private)

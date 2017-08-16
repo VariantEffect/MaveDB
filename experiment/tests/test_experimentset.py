@@ -1,5 +1,7 @@
 
 import datetime
+
+from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TransactionTestCase
@@ -35,6 +37,10 @@ class TestExperimentSet(TransactionTestCase):
         if save:
             exp.save()
         return exp
+
+    def test_new_experiment_is_assigned_all_permission_groups(self):
+        ExperimentSet.objects.create()
+        self.assertEqual(Group.objects.count(), 3)
 
     def test_can_create_minimal_experimentset(self):
         ExperimentSet.objects.create()
