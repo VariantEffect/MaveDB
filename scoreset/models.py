@@ -16,6 +16,9 @@ from main.utils.pandoc import convert_md_to_html
 from main.models import Keyword
 from experiment.models import Experiment
 
+from accounts.models import PermissionTypes, GroupTypes
+from accounts.models import make_all_groups_for_instance
+
 from .validators import (
     valid_scs_accession, valid_var_accession,
     valid_scoreset_json, valid_hgvs_string, valid_variant_json
@@ -38,11 +41,17 @@ class ScoreSet(models.Model):
     Parameters
     ----------
     accession : `models.CharField`
-        The accession in the format 'SCSXXXXXX[A-Z]+'
+        The accession in the format 'SCSXXXXXX[A-Z]+.\d+'
     experiment : `models.ForeignKey`, required.
         The experiment a scoreset is assciated with. Cannot be null.
     creation_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format.
+    last_edit_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
+        is called.
+    publish_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
+        called.
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
         created by default as not approved and must be manually checked
@@ -66,7 +75,7 @@ class ScoreSet(models.Model):
         The DOI for this scoreset if any.
     metadata : `models.JSONField`
         The free-form json metadata that might be associated with this
-        experiment
+        scoreset.
     keywords : `models.ManyToManyField`
         The keyword instances that are associated with this instance.
     """
@@ -80,6 +89,11 @@ class ScoreSet(models.Model):
         ordering = ['-creation_date']
         verbose_name = "ScoreSet"
         verbose_name_plural = "ScoreSets"
+        permissions = (
+            (PermissionTypes.CAN_VIEW, "Can view"),
+            (PermissionTypes.CAN_EDIT, "Can edit"),
+            (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
 
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
@@ -93,7 +107,13 @@ class ScoreSet(models.Model):
 
     creation_date = models.DateField(
         blank=False, null=False, default=datetime.date.today,
-        verbose_name="Creation date")
+        verbose_name="Created on")
+    last_edit_date = models.DateField(
+        blank=False, null=False, default=datetime.date.today,
+        verbose_name="Last edited on")
+    publish_date = models.DateField(
+        blank=False, null=True, default=None,
+        verbose_name="Published on")
 
     approved = models.BooleanField(
         blank=False, null=False, default=False, verbose_name="Approved")
@@ -115,8 +135,6 @@ class ScoreSet(models.Model):
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
-    # TODO add the following many2many fields:
-    # keywords
     abstract = models.TextField(
         blank=True, default="", verbose_name="Abstract")
     method_desc = models.TextField(
@@ -140,6 +158,11 @@ class ScoreSet(models.Model):
 
     def save(self, *args, **kwargs):
         super(ScoreSet, self).save(*args, **kwargs)
+
+        # This will not work if manually setting accession.
+        # Replace this section with POST/PRE save signal.
+        self.last_edit_date = datetime.date.today()
+
         if not self.accession:
             parent = self.experiment
             middle_digits = parent.accession[-parent.ACCESSION_DIGITS:]
@@ -156,6 +179,11 @@ class ScoreSet(models.Model):
 
     def next_variant_suffix(self):
         return self.last_used_suffix + 1
+
+    def publish(self):
+        self.private = False
+        self.publish_date = datetime.date.today()
+        self.save()
 
     def validate_variant_data(self, variant):
         if sorted(variant.scores_columns) != sorted(self.scores_columns):
@@ -205,6 +233,8 @@ class Variant(models.Model):
         The associated scoreset of the instance.
     data : `JSONField`
         The variant's numerical data.
+    metadata : `JSONField`
+        The variant's metadata.
     """
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
@@ -244,6 +274,7 @@ class Variant(models.Model):
         }),
         validators=[valid_variant_json]
     )
+    metadata = JSONField(blank=True, default={}, verbose_name="Metadata")
 
     # ---------------------------------------------------------------------- #
     #                       Methods
