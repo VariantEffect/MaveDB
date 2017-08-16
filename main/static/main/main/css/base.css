@@ -208,6 +208,7 @@ h4::before, h5::before, h6::before {
 /* Pagination
 ---------------------------------------- */
 .pagination {
+    padding-top: 10px;
     list-style: none;
     display: flex;
 }
@@ -226,7 +227,7 @@ h4::before, h5::before, h6::before {
     border-bottom-right-radius: 4px;
 }
 .pagination > li > a {
-    color: #222;
+    color: #1EAEDB;
     background-color: #fff;
     text-decoration: none;
     
@@ -238,18 +239,22 @@ h4::before, h5::before, h6::before {
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
     -ms-transition: 0.5s;
-    transition: color 0.5s ease-in-out, 
-                background-color 0.5s ease,
+    transition: color 0.5s ease-in-out
 }
 .pagination > li > a:hover {
-    color: #E1E1E1;
-    background-color: #555;
+    color: #222;
 }
 .pagination > li.active > a {
-    font-weight: 600;
+    color: #222;
 }
 .hidden-submit {
     visibility: hidden;
+}
+.items-per-page-form {
+    padding: 4px;
+}
+.items-per-page-form > select {
+    margin-bottom: -1.5px;
 }
 
 /* Model Forms
@@ -267,15 +272,12 @@ h4::before, h5::before, h6::before {
     width: 650px;
 }
 
-#id_experiment-private {
-    width: auto;
-}
-
 .non-field-errors > ul,
 .field-error > ul {
     list-style: none;
     text-align: center;
-    border: 1px solid black;
+    border: 1px solid #222;
     background-color: lightcoral;
+    border-radius: 4px;
     color: black
 }

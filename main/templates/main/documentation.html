@@ -2,16 +2,16 @@
 
 {% block body %}
 <div class="row documentation-body">
-    <div class="two columns">
-        <h4>Documentation</h4><hr>
-        <!-- Table of contents goes here -->
-        <div class="js-toc"></div>
-    </div>
-    <div class="seven columns js-toc-content">
-        <div class="content">
-        {{ site_information.documentation|safe|escape|default:"None" }}
-        </div>
-    </div>
+	<div class="two columns">
+		<h4>Documentation</h4><hr>
+		<!-- Table of contents goes here -->
+		<div class="js-toc"></div>
+	</div>
+	<div class="seven columns js-toc-content">
+		<div class="content">
+		{{ site_information.documentation|safe|escape|default:"None" }}
+		</div>
+	</div>
 </div>
 
 {% endblock %}

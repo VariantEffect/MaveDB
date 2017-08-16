@@ -105,6 +105,7 @@ function remove_formset(prefix) {
     }
 }
 
+
 $('#add_keyword').click(function () {
     reset_index("#keyword");
     add_formset("#keyword");

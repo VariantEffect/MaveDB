@@ -14,28 +14,30 @@
     </div> 
 
     <div class="row">
-      <div class="six columns">
-        <ul class="pagination">
-          <li><a class="start" href="">&laquo;</a></li>      
-          <li class="active"><a href="">Hello</a></li>
-          <li><a href="">Hello</a></li>
-          <li><a href="">Hello</a></li>
-          <li><a href="">Hello</a></li>
-          <li><a href="">Hello</a></li>
-          <li><a href="">...</a></li>
-          <li><a class="end" href="">&raquo;</a></li>   
-        </ul>
-      </div>
-      <div class="two columns">
-        <form class='u-pull-right' action="{% url 'main:home' %}" method="GET">
+      
+      <div class="six columns" style="display: flex;">
+        <form class="pagination-form" action="" method="GET"></form>
           <input class="hidden-submit" type="hidden" value="Submit">
-          <select class="select-menu" name="items-per-page">
-            <option value="volvo">Volvo</option>
-            <option value="saab">Saab</option>
-            <option value="fiat">Fiat</option>
-            <option value="audi">Audi</option>
-          </select>
+          <ul class="pagination">
+            <li><a class="start pagination-link" href="">&laquo;</a></li>      
+            <li class="active pagination-link"><a href="" value=1>1</a></li>
+            <li><a class="pagination-link" href="" value=2>2</a></li>
+            <li><a class="pagination-link" href="" value=3>3</a></li>
+            <li><a class="pagination-link" href="" value=4>4</a></li>
+            <li><a class="pagination-link" href="" value=5>5</a></li>
+            <li><a class="pagination-link" href="">...</a></li>
+            <li><a class="end pagination-link" href="">&raquo;</a></li>   
+          </ul>
         </form>
+        <form class="items-per-page-form" action="" method="GET">
+            <input class="hidden-submit" type="hidden" value="Submit">
+            <select class="select-menu" name="items-per-page">
+              <option value="volvo">Volvo</option>
+              <option value="saab">Saab</option>
+              <option value="fiat">Fiat</option>
+              <option value="audi">Audi</option>
+            </select>
+          </form>
       </div>
     </div>
   </div>
