@@ -1,4 +1,3 @@
-
 import logging
 import datetime
 from string import ascii_uppercase

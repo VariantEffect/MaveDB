@@ -42,6 +42,17 @@ class TestExperimentSet(TransactionTestCase):
         ExperimentSet.objects.create()
         self.assertEqual(Group.objects.count(), 3)
 
+    def test_publish_updates_published_and_last_edit_dates(self):
+        exps = ExperimentSet.objects.create()
+        exps.publish()
+        self.assertEqual(exps.publish_date, datetime.date.today())
+        self.assertEqual(exps.last_edit_date, datetime.date.today())
+
+    def test_publish_updates_private_to_false(self):
+        exps = ExperimentSet.objects.create()
+        exps.publish()
+        self.assertFalse(exps.private)
+
     def test_can_create_minimal_experimentset(self):
         ExperimentSet.objects.create()
         expset = ExperimentSet.objects.all()[0]
@@ -50,27 +61,22 @@ class TestExperimentSet(TransactionTestCase):
         self.assertEqual(expset.experiment_set.count(), 0)
 
     def test_autoassign_accession_in_experimentset(self):
-        ExperimentSet.objects.create()
-        ExperimentSet.objects.create()
-        ExperimentSet.objects.create()
-        expset1 = ExperimentSet.objects.all()[0]
-        expset2 = ExperimentSet.objects.all()[1]
-        expset3 = ExperimentSet.objects.all()[2]
+        expset1 = ExperimentSet.objects.create()
+        expset2 = ExperimentSet.objects.create()
+        expset3 = ExperimentSet.objects.create()
+
         self.assertEqual(expset1.accession, self.expset_accession_1)
         self.assertEqual(expset2.accession, self.expset_accession_2)
         self.assertEqual(expset3.accession, self.expset_accession_3)
 
     def test_autoassign_does_not_reassign_deleted_accession(self):
-        ExperimentSet.objects.create()
-        ExperimentSet.objects.create()
-        expset1 = ExperimentSet.objects.all()[0]
-        expset2 = ExperimentSet.objects.all()[1]
+        expset1 = ExperimentSet.objects.create()
+        expset2 = ExperimentSet.objects.create()
         self.assertEqual(expset1.accession, self.expset_accession_1)
         self.assertEqual(expset2.accession, self.expset_accession_2)
 
         expset2.delete()
-        ExperimentSet.objects.create()
-        expset3 = ExperimentSet.objects.all()[1]
+        expset3 = ExperimentSet.objects.create()
         self.assertEqual(expset3.accession, self.expset_accession_3)
 
     def test_cannot_create_experimentsets_with_duplicate_accession(self):
@@ -109,7 +115,7 @@ class TestExperimentSet(TransactionTestCase):
         expset.save()
         self.assertEqual(expset.next_experiment_suffix(), 'B')
 
-    def test_can_experiment_suffix_wraps(self):
+    def test_experiment_suffix_wraps_by_increasing_letter_count(self):
         expset = ExperimentSet.objects.create(last_used_suffix='Z')
         self.assertEqual(expset.next_experiment_suffix(), 'AA')
 

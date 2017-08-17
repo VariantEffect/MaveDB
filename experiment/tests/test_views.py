@@ -18,7 +18,7 @@ from main.models import (
 from experiment.models import Experiment, ExperimentSet
 from experiment.views import (
     ExperimentDetailView, ExperimentSetDetailView,
-    experiment_create_view, EXPERIMENT_FORM_PREFIX
+    experiment_create_view
 )
 
 
@@ -51,7 +51,7 @@ class TestExperimentSetDetailView(TestCase):
     def test_403_uses_template(self):
         obj = ExperimentSet.objects.create()
         response = self.client.get('/experiment/{}/'.format(obj.accession))
-        self.assertTemplateUsed(response, 'experiment/403_forbidden.html')
+        self.assertTemplateUsed(response, 'main/403_forbidden.html')
 
     def test_private_experiment_rendered_if_user_can_view(self):
         obj = ExperimentSet.objects.create()
@@ -98,7 +98,7 @@ class TestExperimentDetailView(TestCase):
     def test_403_uses_template(self):
         exp = Experiment.objects.create(target="BRCA1", wt_sequence="ATCG")
         response = self.client.get('/experiment/{}/'.format(exp.accession))
-        self.assertTemplateUsed(response, 'experiment/403_forbidden.html')
+        self.assertTemplateUsed(response, 'main/403_forbidden.html')
 
     def test_private_experiment_rendered_if_user_can_view(self):
         exp = Experiment.objects.create(target="BRCA1", wt_sequence="ATCG")
@@ -146,15 +146,15 @@ class TestCreateNewExperimentView(TestCase):
             'external_accession-MIN_NUM_FORMS': ['0'],
             'external_accession-MAX_NUM_FORMS': ['1000'],
             'external_accession-__prefix__-text': [''],
-            'ref_mapping-TOTAL_FORMS': ['0'],
-            'ref_mapping-INITIAL_FORMS': ['0'],
-            'ref_mapping-MIN_NUM_FORMS': ['0'],
-            'ref_mapping-MAX_NUM_FORMS': ['1000'],
-            'ref_mapping-__prefix__-reference': [''],
-            'ref_mapping-__prefix__-target_start': [''],
-            'ref_mapping-__prefix__-target_end': [''],
-            'ref_mapping-__prefix__-reference_start': [''],
-            'ref_mapping-__prefix__-reference_end': [''],
+            'reference_mapping-TOTAL_FORMS': ['0'],
+            'reference_mapping-INITIAL_FORMS': ['0'],
+            'reference_mapping-MIN_NUM_FORMS': ['0'],
+            'reference_mapping-MAX_NUM_FORMS': ['1000'],
+            'reference_mapping-__prefix__-reference': [''],
+            'reference_mapping-__prefix__-target_start': [''],
+            'reference_mapping-__prefix__-target_end': [''],
+            'reference_mapping-__prefix__-reference_start': [''],
+            'reference_mapping-__prefix__-reference_end': [''],
             'submit': ['submit']
         }
 
@@ -178,13 +178,13 @@ class TestCreateNewExperimentView(TestCase):
         data['keyword-0-text'] = ['keyword']
         data['external_accession-TOTAL_FORMS'] = ['1']
         data['external_accession-0-text'] = ['accession']
-        data['ref_mapping-TOTAL_FORMS'] = ['1']
-        data['ref_mapping-0-reference'] = ['reference']
-        data['ref_mapping-0-is_alternate'] = ['off']
-        data['ref_mapping-0-target_start'] = [0]
-        data['ref_mapping-0-target_end'] = [10]
-        data['ref_mapping-0-reference_start'] = [0]
-        data['ref_mapping-0-reference_end'] = [10]
+        data['reference_mapping-TOTAL_FORMS'] = ['1']
+        data['reference_mapping-0-reference'] = ['reference']
+        data['reference_mapping-0-is_alternate'] = ['off']
+        data['reference_mapping-0-target_start'] = [0]
+        data['reference_mapping-0-target_end'] = [10]
+        data['reference_mapping-0-reference_start'] = [0]
+        data['reference_mapping-0-reference_end'] = [10]
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -218,8 +218,8 @@ class TestCreateNewExperimentView(TestCase):
         response = experiment_create_view(request)
         self.assertEqual(response.status_code, 200)
 
-        data['ref_mapping-TOTAL_FORMS'] = ['1']
-        data['ref_mapping-0-reference'] = ['reference']
+        data['reference_mapping-TOTAL_FORMS'] = ['1']
+        data['reference_mapping-0-reference'] = ['reference']
         data['experiment-wt_sequence'] = "atcg"
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -286,20 +286,20 @@ class TestCreateNewExperimentView(TestCase):
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
 
-        data['ref_mapping-TOTAL_FORMS'] = ['2']
-        data['ref_mapping-0-reference'] = ['reference']
-        data['ref_mapping-0-is_alternate'] = ['off']
-        data['ref_mapping-0-target_start'] = [0]
-        data['ref_mapping-0-target_end'] = [10]
-        data['ref_mapping-0-reference_start'] = [0]
-        data['ref_mapping-0-reference_end'] = [10]
+        data['reference_mapping-TOTAL_FORMS'] = ['2']
+        data['reference_mapping-0-reference'] = ['reference']
+        data['reference_mapping-0-is_alternate'] = ['off']
+        data['reference_mapping-0-target_start'] = [0]
+        data['reference_mapping-0-target_end'] = [10]
+        data['reference_mapping-0-reference_start'] = [0]
+        data['reference_mapping-0-reference_end'] = [10]
 
-        data['ref_mapping-1-reference'] = ['reference']
-        data['ref_mapping-1-is_alternate'] = ['off']
-        data['ref_mapping-1-target_start'] = [0]
-        data['ref_mapping-1-target_end'] = [10]
-        data['ref_mapping-1-reference_start'] = [0]
-        data['ref_mapping-1-reference_end'] = [10]
+        data['reference_mapping-1-reference'] = ['reference']
+        data['reference_mapping-1-is_alternate'] = ['off']
+        data['reference_mapping-1-target_start'] = [0]
+        data['reference_mapping-1-target_end'] = [10]
+        data['reference_mapping-1-reference_start'] = [0]
+        data['reference_mapping-1-reference_end'] = [10]
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -348,7 +348,7 @@ class TestCreateNewExperimentView(TestCase):
         data = self.post_data.copy()
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
-        data['ref_mapping-TOTAL_FORMS'] = ['1']
+        data['reference_mapping-TOTAL_FORMS'] = ['1']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob

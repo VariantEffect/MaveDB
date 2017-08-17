@@ -12,7 +12,7 @@ from main.forms import (
     ReferenceMappingForm, TargetOrganismForm
 )
 
-from accounts.models import assign_user_as_instance_admin
+from accounts.models import assign_user_as_instance_admin, PermissionTypes
 
 from main.models import (
     Keyword, ExternalAccession,
@@ -26,6 +26,7 @@ from .forms import ExperimentForm
 KeywordFormSet = formset_factory(KeywordForm)
 ExternalAccessionFormSet = formset_factory(ExternalAccessionForm)
 ReferenceMappingFormSet = formset_factory(ReferenceMappingForm)
+
 
 EXPERIMENT_FORM_PREFIX = "experiment"
 KEYWORD_FORM_PREFIX = "keyword"
@@ -49,13 +50,13 @@ class ExperimentDetailView(DetailView):
     context_object_name = "experiment"
 
     def dispatch(self, request, *args, **kwargs):
-        accession = self.kwargs.get('accession', None)
-        experiment = get_object_or_404(Experiment, accession=accession)
-        has_permission = self.request.user.has_perm("can_view", experiment)
+        experiment = self.get_object()
+        has_permission = self.request.user.has_perm(
+            PermissionTypes.CAN_VIEW, experiment)
         if experiment.private and not has_permission:
             response = render(
                 request=request,
-                template_name="experiment/403_forbidden.html",
+                template_name="main/403_forbidden.html",
                 context={"model": experiment},
             )
             response.status_code = 403
@@ -86,13 +87,13 @@ class ExperimentSetDetailView(DetailView):
     context_object_name = "experimentset"
 
     def dispatch(self, request, *args, **kwargs):
-        accession = self.kwargs.get('accession', None)
-        experimentset = get_object_or_404(ExperimentSet, accession=accession)
-        has_permission = self.request.user.has_perm("can_view", experimentset)
+        experimentset = self.get_object()
+        has_permission = self.request.user.has_perm(
+            PermissionTypes.CAN_VIEW, experimentset)
         if experimentset.private and not has_permission:
             response = render(
                 request=request,
-                template_name="experiment/403_forbidden.html",
+                template_name="main/403_forbidden.html",
                 context={"model": experimentset},
             )
             response.status_code = 403
@@ -195,35 +196,39 @@ def experiment_create_view(request):
         The request object that django passes into all views.
     """
     context = {}
-    experiment_form = ExperimentForm(prefix="experiment")
-    keyword_formset = KeywordFormSet(prefix="keyword")
+    experiment_form = ExperimentForm(prefix=EXPERIMENT_FORM_PREFIX)
+    keyword_formset = KeywordFormSet(prefix=KEYWORD_FORM_PREFIX)
     external_accession_formset = ExternalAccessionFormSet(
-        prefix="external_accession"
+        prefix=EXTERNAL_ACCESSION_FORM_PREFIX
     )
     ref_mapping_formset = ReferenceMappingFormSet(
-        prefix="ref_mapping"
+        prefix=REFERENCE_MAPPING_FORM_PREFIX
     )
     context["experiment_form"] = experiment_form
     context["keyword_formset"] = keyword_formset
     context["external_accession_formset"] = external_accession_formset
-    context["ref_mapping_formset"] = ref_mapping_formset
+    context["reference_mapping_formset"] = ref_mapping_formset
 
     # If you change the prefix arguments here, make sure to change them
     # in the corresponding template element id fields as well. If you don't,
     # expect everything to break horribly. You've been warned.
     if request.method == "POST":
-        experiment_form = ExperimentForm(request.POST, prefix="experiment")
-        keyword_formset = KeywordFormSet(request.POST, prefix="keyword")
+        experiment_form = ExperimentForm(
+            request.POST, prefix=EXPERIMENT_FORM_PREFIX
+        )
+        keyword_formset = KeywordFormSet(
+            request.POST, prefix=KEYWORD_FORM_PREFIX
+        )
         external_accession_formset = ExternalAccessionFormSet(
-            request.POST, prefix="external_accession"
+            request.POST, prefix=EXTERNAL_ACCESSION_FORM_PREFIX
         )
         ref_mapping_formset = ReferenceMappingFormSet(
-            request.POST, prefix="ref_mapping"
+            request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX
         )
         context["experiment_form"] = experiment_form
         context["keyword_formset"] = keyword_formset
         context["external_accession_formset"] = external_accession_formset
-        context["ref_mapping_formset"] = ref_mapping_formset
+        context["reference_mapping_formset"] = ref_mapping_formset
 
         if experiment_form.is_valid():
             experiment = experiment_form.save(commit=False)

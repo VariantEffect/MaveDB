@@ -49,6 +49,21 @@ class TestExperiment(TransactionTestCase):
         self.assertEqual(exp.accession, self.exp_accession_1)
         self.assertEqual(exp.experimentset.accession, self.expset_accession)
 
+    def test_publish_updates_published_and_last_edit_dates(self):
+        exp = Experiment.objects.create(
+            target=self.target, wt_sequence=self.wt_seq
+        )
+        exp.publish()
+        self.assertEqual(exp.publish_date, datetime.date.today())
+        self.assertEqual(exp.last_edit_date, datetime.date.today())
+
+    def test_publish_updates_private_to_false(self):
+        exp = Experiment.objects.create(
+            target=self.target, wt_sequence=self.wt_seq
+        )
+        exp.publish()
+        self.assertFalse(exp.private)
+
     def test_autoassign_accession_in_experimentset(self):
         expset = ExperimentSet.objects.create()
 
@@ -101,7 +116,7 @@ class TestExperiment(TransactionTestCase):
         exp = Experiment.objects.all()[0]
         self.assertEqual(exp.creation_date, datetime.date.today())
 
-    def test_experiment_and_its_parent_is_assigned_all_permission_groups(self):
+    def test_experiment_and_its_parent_assigned_all_permission_groups(self):
         self.make_experiment()
         self.assertEqual(Group.objects.count(), 6)
 
