@@ -35,11 +35,11 @@
 					{{ keyword_formset.management_form }}
 					{% if not keyword_formset|length %}
 						<div id='keyword-empty-set'>
-							<p>I don't have any keywords.<p><hr>
+							<p>I'll add keywords later.<p><hr>
 						</div>	
 					{% else %}
 						<div id='keyword-empty-set' hidden>
-							<p>I don't have any keywords.<p><hr>
+							<p>I'll add keywords later.<p><hr>
 						</div>
 					{% endif %}
 					{% for form in keyword_formset %}
@@ -63,11 +63,11 @@
 					{{ external_accession_formset.management_form }}
 					{% if not external_accession_formset|length %}
 						<div id='external_accession-empty-set'>
-							<p>I don't have any other accessions.<p><hr>
+							<p>I'll add other accessions later.<p><hr>
 						</div>	
 					{% else %}
 						<div id='external_accession-empty-set' hidden>
-							<p>I don't have any other accessions.<p><hr>
+							<p>I'll add other accessions later.<p><hr>
 						</div>
 					{% endif %}
 					{% for form in external_accession_formset %}
@@ -82,32 +82,32 @@
 				{{ external_accession_formset.empty_form.as_table }}
 			</div>
 
-			<div class="ref-mapping-forms">
+			<div class="reference-mapping-forms">
 				<h4> Reference maps 
-					<input type="button" value="+" id="add_ref_mapping">
-					<input type="button" value="-" id="remove_ref_mapping">
+					<input type="button" value="+" id="add_reference_mapping">
+					<input type="button" value="-" id="remove_reference_mapping">
 				</h4>
-				<div id="ref_mapping-form-set">
-					{{ ref_mapping_formset.management_form }}
-					{% if not ref_mapping_formset|length %}
+				<div id="reference-form-set">
+					{{ reference_mapping_formset.management_form }}
+					{% if not reference_mapping_formset|length %}
 						<div id='ref_mapping-empty-set'>
-							<p>I don't have any mappings.<p><hr>
+							<p>I'll add reference maps later.<p><hr>
 						</div>
 					{% else %}
-						<div id='ref_mapping-empty-set' hidden>
-							<p>I don't have any mappings.<p><hr>
+						<div id='reference-empty-set' hidden>
+							<p>I'll add reference maps later.<p><hr>
 						</div>
 					{% endif %}
-					{% for form in ref_mapping_formset %}
-						<div id="ref_mapping-formset-{{ forloop.counter }}">
+					{% for form in reference_mapping_formset %}
+						<div id="reference-formset-{{ forloop.counter }}">
 							{{ form.as_table }}
 						<hr>
 						</div>
 					{% endfor %}
 				</div>
 			</div>
-			<div id="ref_mapping-empty-form" style="display:none">
-				{{ ref_mapping_formset.empty_form.as_table }}
+			<div id="reference-empty-form" style="display:none">
+				{{ reference_mapping_formset.empty_form.as_table }}
 			</div>
 			
 			<input class="u-pull-right" style="width: 200px;" 
