@@ -1,0 +1,25 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+
+<div class=row>
+	<div class="three columns">
+		<h3> {{ model.accession }} </h3>
+	</div>
+	<div class="seven columns">
+		{% if model %}
+			<p> 
+				This is a private entry. Contact user 
+				{{ model.created_by|default:"None" }} 
+				if you believe you should have access permissions.
+			</p>
+		{% else %}
+			<p> 
+				Oops... It appears that you need to be logged in to view this
+				page.
+			</p>
+		{% endif %}
+	</div>
+</div>
+
+{% endblock body %}

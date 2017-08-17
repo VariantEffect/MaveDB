@@ -116,13 +116,13 @@ $('#remove_keyword').click(function () {
     remove_formset("#keyword");
 });
 
-$('#add_ref_mapping').click(function () {
-    reset_index("#ref_mapping");
-    add_formset("#ref_mapping");
+$('#add_reference_mapping').click(function () {
+    reset_index("#reference_mapping");
+    add_formset("#reference_mapping");
 });
-$('#remove_ref_mapping').click(function () {
-    reset_index("#ref_mapping");
-    remove_formset("#ref_mapping");
+$('#remove_reference_mapping').click(function () {
+    reset_index("#reference_mapping");
+    remove_formset("#reference_mapping");
 });
 
 $('#add_external_accession').click(function () {
