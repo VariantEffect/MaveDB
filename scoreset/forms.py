@@ -43,7 +43,6 @@ class ScoreSetForm(forms.ModelForm):
             'abstract',
             'method_desc',
             'doi_id',
-            'metadata',
         )
 
     def save_variants(self):

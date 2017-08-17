@@ -16,7 +16,7 @@ from main.utils.pandoc import convert_md_to_html
 from main.models import Keyword
 from experiment.models import Experiment
 
-from accounts.models import PermissionTypes, GroupTypes
+from accounts.models import PermissionTypes
 from accounts.models import make_all_groups_for_instance
 
 from .validators import (
@@ -318,3 +318,8 @@ class Variant(models.Model):
             parent.save()
             self.accession = accession
             self.save()
+
+
+@receiver(post_save, sender=ScoreSet)
+def create_permission_groups_for_scoreset(sender, instance, **kwargs):
+    make_all_groups_for_instance(instance)

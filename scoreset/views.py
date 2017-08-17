@@ -5,11 +5,15 @@ from django.http import HttpResponse
 from django.http import StreamingHttpResponse
 from django.views.generic import DetailView
 from django.forms import formset_factory
+from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from accounts.models import assign_user_as_instance_admin, PermissionTypes
 
 from experiment.models import Experiment
+
 from main.models import (
     Keyword, ExternalAccession,
     TargetOrganism, ReferenceMapping
@@ -22,6 +26,9 @@ from main.forms import (
 from .models import ScoreSet, Variant, SCORES_KEY, COUNTS_KEY
 from .forms import ScoreSetForm
 
+
+SCORESET_FORM_PREFIX = "scoreset"
+KEYWORD_FORM_PREFIX = "keyword"
 KeywordFormSet = formset_factory(KeywordForm)
 
 
@@ -34,6 +41,23 @@ class ScoresetDetailView(DetailView):
     template_name = 'scoreset/scoreset.html'
     context_object_name = "scoreset"
 
+    def dispatch(self, request, *args, **kwargs):
+        scoreset = self.get_object()
+        has_permission = self.request.user.has_perm(
+            PermissionTypes.CAN_VIEW, scoreset)
+        if scoreset.private and not has_permission:
+            response = render(
+                request=request,
+                template_name="main/403_forbidden.html",
+                context={"model": scoreset},
+            )
+            response.status_code = 403
+            return response
+        else:
+            return super(ScoresetDetailView, self).dispatch(
+                request, *args, **kwargs
+            )
+
     def get_object(self):
         accession = self.kwargs.get('accession', None)
         return get_object_or_404(ScoreSet, accession=accession)
@@ -41,7 +65,7 @@ class ScoresetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(ScoresetDetailView, self).get_context_data(**kwargs)
         variant_list = Variant.objects.all()
-        paginator = Paginator(variant_list, 2)
+        paginator = Paginator(variant_list, 100)
 
         try:
             page = self.request.GET.get('page', 1)
@@ -82,6 +106,18 @@ def download_scoreset_data(request, accession, dataset_key):
         to send all at once.
     """
     scoreset = get_object_or_404(ScoreSet, accession=accession)
+
+    has_permission = request.user.has_perm(
+        PermissionTypes.CAN_VIEW, scoreset)
+    if scoreset.private and not has_permission:
+        response = render(
+            request=request,
+            template_name="main/403_forbidden.html",
+            context={"model": scoreset},
+        )
+        response.status_code = 403
+        return response
+
     variants = scoreset.variant_set.all()
     columns = scoreset.dataset_columns[dataset_key]
 
@@ -112,6 +148,18 @@ def download_scoreset_metadata(request, accession):
         to send all at once.
     """
     scoreset = get_object_or_404(ScoreSet, accession=accession)
+
+    has_permission = request.user.has_perm(
+        PermissionTypes.CAN_VIEW, scoreset)
+    if scoreset.private and not has_permission:
+        response = render(
+            request=request,
+            template_name="main/403_forbidden.html",
+            context={"model": scoreset},
+        )
+        response.status_code = 403
+        return response
+
     json_response = json.dumps(scoreset.metadata)
     return HttpResponse(json_response, content_type="application/json")
 
@@ -146,12 +194,14 @@ def parse_text_formset(formset, model_class, prefix):
             if form.is_valid():
                 if form.cleaned_data:
                     model = form.save(commit=False)
-                    objects.append(model)
+                    if model.text not in set([o.text for o in objects]):
+                        objects.append(model)
             else:
                 objects.append(None)
     return objects
 
 
+@login_required(login_url=reverse_lazy("accounts:login"))
 def scoreset_create_view(request):
     """
     A view to create a new scoreset. Upon successs, this view will redirect
@@ -162,14 +212,16 @@ def scoreset_create_view(request):
     expect everything to break horribly.
     """
     context = {}
-    scoreset_form = ScoreSetForm(prefix="scoreset")
-    keyword_formset = KeywordFormSet(prefix="keyword")
+    scoreset_form = ScoreSetForm(prefix=SCORESET_FORM_PREFIX)
+    keyword_formset = KeywordFormSet(prefix=KEYWORD_FORM_PREFIX)
     context["scoreset_form"] = scoreset_form
     context["keyword_formset"] = keyword_formset
 
     if request.method == "POST":
-        scoreset_form = ScoreSetForm(request.POST, prefix="scoreset")
-        keyword_formset = KeywordFormSet(request.POST, prefix="keyword")
+        scoreset_form = ScoreSetForm(
+            request.POST, prefix=SCORESET_FORM_PREFIX)
+        keyword_formset = KeywordFormSet(
+            request.POST, prefix=KEYWORD_FORM_PREFIX)
         context["scoreset_form"] = scoreset_form
         context["keyword_formset"] = keyword_formset
 
@@ -196,7 +248,13 @@ def scoreset_create_view(request):
         for kw in keywords:
             kw.save()
             scoreset.keywords.add(kw)
+
+        # Save and update permissions. A user will not be added as an
+        # admin to the parent experiment. This must be done by the admin
+        # of said experiment.
         scoreset.save()
+        user = request.user
+        assign_user_as_instance_admin(user, scoreset)
         accession = scoreset.accession
         return redirect("scoreset:scoreset_detail", accession=accession)
 

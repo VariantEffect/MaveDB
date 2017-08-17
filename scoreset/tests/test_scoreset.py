@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import IntegrityError
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.test import TransactionTestCase
 from django.db.models import ProtectedError
@@ -36,6 +37,21 @@ class TestScoreSet(TransactionTestCase):
         self.assertEqual(scs.accession, self.scs_accession_1)
         self.assertEqual(scs.experiment.accession, self.exp_accession)
 
+    def test_publish_updates_published_and_last_edit_dates(self):
+        scs = ScoreSet.objects.create(experiment=self.exp)
+        scs.publish()
+        self.assertEqual(scs.publish_date, datetime.date.today())
+        self.assertEqual(scs.last_edit_date, datetime.date.today())
+
+    def test_publish_updates_private_to_false(self):
+        scs = ScoreSet.objects.create(experiment=self.exp)
+        scs.publish()
+        self.assertFalse(scs.private)
+
+    def test_scoreset_assigned_all_permission_groups(self):
+        scs = ScoreSet.objects.create(experiment=self.exp)
+        self.assertEqual(Group.objects.count(), 9)  # Counting parents as well
+
     def test_autoassign_accession_in_scoreset(self):
         ScoreSet.objects.create(experiment=self.exp)
         ScoreSet.objects.create(experiment=self.exp)
@@ -54,8 +70,6 @@ class TestScoreSet(TransactionTestCase):
             )
 
     def test_cannot_save_without_experiment(self):
-        with self.assertRaises(IntegrityError):
-            ScoreSet.objects.create(accession=self.scs_accession_1)
         with self.assertRaises(IntegrityError):
             ScoreSet.objects.create()
 
