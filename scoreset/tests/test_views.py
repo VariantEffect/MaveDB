@@ -32,6 +32,9 @@ class TestScoreSetSetDetailView(TestCase):
         self.factory = RequestFactory()
         self.exp = Experiment.objects.create(target="test", wt_sequence="AT")
 
+    def test_404_status_and_template_used_when_object_not_found(self):
+        self.fail("Write this test!")
+
     def test_uses_correct_template(self):
         obj = ScoreSet.objects.create(experiment=self.exp, private=False)
         response = self.client.get('/scoreset/{}/'.format(obj.accession))
