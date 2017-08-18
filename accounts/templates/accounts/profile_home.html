@@ -1,0 +1,115 @@
+{% extends "accounts/profile_base.html" %}
+
+{% block profile_body %}
+
+<div class="row">
+	
+	<div class="twelve columns">
+		<h3> Welcome, {{ user.username }} </h3>
+		<hr>
+
+		<div id="admin-models">
+			<h5> Administrator on </h5>
+			{% if administrator_models %}
+				<ul style="list-style: none">
+					{% for model in administrator_models %}
+						<li> {{ model.accession }} </li>
+						<ul style="list-style: none">
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Last edited on: </label>
+									<div>{{ model.last_edit_date }}<div>
+								</div>
+							</li>
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Private: </label>
+									<div> {{ model.private }} <div>
+								</div>
+							</li>
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Approved: </label>
+									<div> {{ model.approved }} <div>
+								</div>
+							</li>
+						</ul>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p> You are not tagged as an administrator on any entries. </p>
+			{% endif %}
+			<hr>
+		</div>
+
+		<div id="contributor-models">
+			<h5> Contributor on </h5>
+			{% if contributor_models %}
+				<ul style="list-style: none">
+					{% for model in contributor_models %}
+						<li> {{ model.accession }} </li>
+						<ul style="list-style: none">
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Last edited on: </label>
+									<div>{{ model.last_edit_date }}<div>
+								</div>
+							</li>
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Private: </label>
+									<div> {{ model.private }} <div>
+								</div>
+							</li>
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Approved: </label>
+									<div> {{ model.approved }} <div>
+								</div>
+							</li>
+						</ul>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p> You are not tagged as a contributor on any entries. </p>
+			{% endif %}
+			<hr>
+		</div>
+
+		<div id="view-only-models">
+			<h5> View only on </h5>
+			{% if viewer_models %}
+				<ul style="list-style: none">
+					{% for model in viewer_models %}
+						<li> {{ model.accession }} </li>
+						<ul style="list-style: none">
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Last edited on: </label>
+									<div>{{ model.last_edit_date }}<div>
+								</div>
+							</li>
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Private: </label>
+									<div> {{ model.private }} <div>
+								</div>
+							</li>
+							<li>
+								<div style="display: inline-flex">
+									<label style="margin-right:5px;">Approved: </label>
+									<div> {{ model.approved }} <div>
+								</div>
+							</li>
+						</ul>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p> You are not tagged as a viewer only on any entries. </p>
+			{% endif %}
+		</div>
+	
+	</div> <!-- end column -->
+</div> <!-- end row -->
+
+{% endblock profile_body %}

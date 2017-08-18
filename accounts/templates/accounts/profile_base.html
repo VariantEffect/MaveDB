@@ -1,0 +1,86 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="row">
+	
+	<!-- Sidebar -->
+  <div class="two columns">
+		<h4> Your entries </h4>
+		<hr>
+		
+		<ul style="list-style: none;">
+			<h5>
+				Experiment Sets 
+				<a href="{% url 'experiment:experiment_new' %}">+</a>
+			</h5>
+			{% if experimentsets %}
+				{% for model in experimentsets %}
+					<li>
+						<a href="{% url 'experiment:experimentset_detail' model.accession %}">
+							{{ model.accession }}
+						</a>
+					</li>
+				{% endfor %}
+			{% else %}
+				<p style='margin-left:2px;'>
+					You don't have access to any experiment sets.
+				</p>
+			{% endif %}
+		</ul>
+		<hr>
+		
+		<ul style="list-style: none;">
+				<h5>
+					Experiments
+					<a href="{% url 'experiment:experiment_new' %}">+</a>
+				</h5>
+				{% if experiments %}
+					{% for model in experiments %}
+						<li>
+							<a href="{% url 'experiment:experiment_detail' model.accession %}">
+								{{ model.accession }}
+							</a>
+						</li>
+					{% endfor %}
+				{% else %}
+					<p style='margin-left:2px;'>
+						You don't have access to any experiments.
+					</p>
+				{% endif %}
+			</ul>
+			<hr>
+		</ul>
+		
+		<ul style="list-style: none;">
+			<h5>
+				Score Sets
+				<a href="{% url 'scoreset:scoreset_new' %}">+</a>
+			</h5>
+			{% if scoresets %}
+				{% for model in scoresets %}
+					<li>
+						<a href="{% url 'scoreset:scoreset_detail' model.accession %}">
+							{{ model.accession }}
+						</a>
+					</li>
+				{% endfor %}			
+			{% else %}
+				<p style='margin-left:2px;'>You don't have access to any score sets.</p>
+			{% endif %}
+		</ul>
+	</div>
+	
+	<!-- Vertical divider -->
+	<div class="one column" style="margin-left:2%; height:75vh">
+		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	</div>		
+	
+	<!-- Content -->
+	<div class="nine columns" style="margin-left: 1%">
+		{% block profile_body %}
+			<!-- Main content for profile view -->
+		{% endblock profile_body %}
+	</div>	
+
+</div>
+{% endblock body %}
