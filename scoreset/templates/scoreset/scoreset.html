@@ -59,7 +59,7 @@
 		<br>
 		<hr>
 		
-		<h3> Scoreset information </h3>
+		<h3> Information </h3>
 		<span style="font-weight: 600;">Keywords: </span>
 			<span>{{ scoreset.get_keywords|default:"Not provided" }}</span>
 		<br>
@@ -75,7 +75,7 @@
 			{% if not variants %}
 				<p> No scores data available.</p>
 			{% else %}
-				<table>
+				<table class="u-full-width">
 					<thead>
 						<tr>
 							{% for column in scores_columns %}
@@ -107,7 +107,7 @@
 		{% if not variants %}
 			<p> No scores data available.</p>
 		{% else %}
-			<table>
+			<table class="u-full-width">
 				<thead>
 					<tr>
 						{% for column in counts_columns %}

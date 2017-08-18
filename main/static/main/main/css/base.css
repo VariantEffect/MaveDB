@@ -272,6 +272,24 @@ h4::before, h5::before, h6::before {
     width: 650px;
 }
 
+.alert {
+    margin: 10px;
+    padding: 5px;
+    text-align: center;
+    width: 80%;
+    border: 1px solid #888;
+    border-radius: 4px;
+    color: black
+}
+.success {
+    background-color: #A5FBA5;
+}
+.error {
+    background-color: #FF9B9B;
+}
+
+
+.non-field-errors,
 .non-field-errors > ul,
 .field-error > ul {
     list-style: none;

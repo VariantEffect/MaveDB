@@ -24,12 +24,11 @@ import django.contrib.auth.views as auth_views
 
 from .views import registration_view, profile_view
 from .views import activate_account_view, send_activation_email_view
+from .views import manage_instance
 
 
 urlpatterns = [
-    # ------ Register, Home/User profile
-    url(r"^$", profile_view, name="index"),
-    url(r"profile/$", profile_view, name="profile"),
+    # ------ Register
     url(r"register/$", registration_view, name="register"),
     url(r"activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
         activate_account_view, name="activate"),
@@ -65,4 +64,13 @@ urlpatterns = [
         r'reset/done/$',
         auth_views.PasswordResetCompleteView.as_view(),
         name="password_reset_complete"),
+
+    # ------ Profile
+    url(r"^$", profile_view, name="index"),
+    url(r"profile/$", profile_view, name="profile"),
+    url(
+        r"profile/manage/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
+        manage_instance,
+        name="manage_instance"
+    )
 ]

@@ -2,14 +2,18 @@
 Views for accounts app.
 """
 
+import re
+import json
+
 from django.apps import apps
+from django.http import HttpResponse, JsonResponse
 from django.core.mail import send_mail
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse_lazy
-from django.shortcuts import render, reverse, redirect
+from django.shortcuts import render, reverse, redirect, get_object_or_404
 
 from django.contrib.auth import login
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser, Group
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 
@@ -17,36 +21,140 @@ from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 
 from guardian.shortcuts import get_objects_for_user
+from guardian.conf.settings import ANONYMOUS_USER_NAME
+
+from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
+from scoreset.validators import SCS_ACCESSION_RE
 
 from .models import (
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
-    user_is_viewer_for_instance
+    user_is_viewer_for_instance,
+    update_admin_list_for_instance,
+    update_contributor_list_for_instance,
+    update_viewer_list_for_instance
 )
 
 from .tokens import account_activation_token
 from .forms import RegistrationForm, send_user_activation_email
-
 
 ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
 Experiment = apps.get_model('experiment', 'Experiment')
 ScoreSet = apps.get_model('scoreset', 'ScoreSet')
 
 
+def get_class_for_accession(accession):
+    if re.fullmatch(EXPS_ACCESSION_RE, accession):
+        return ExperimentSet
+    elif re.fullmatch(EXP_ACCESSION_RE, accession):
+        return Experiment
+    elif re.fullmatch(SCS_ACCESSION_RE, accession):
+        return ScoreSet
+    else:
+        return None
+
+
+def get_base_context_for_profile(request):
+    experimentsets = get_objects_for_user(
+        request.user, perms=[], any_perm=False, klass=ExperimentSet)
+    experiments = get_objects_for_user(
+        request.user, perms=[], any_perm=False, klass=Experiment)
+    scoresets = get_objects_for_user(
+        request.user, perms=[], any_perm=False, klass=ScoreSet)
+    return {
+        "experimentsets": experimentsets,
+        "experiments": experiments,
+        "scoresets": scoresets,
+    }
+
+
+@login_required(login_url=reverse_lazy("accounts:login"))
+def manage_instance(request, accession):
+    context = get_base_context_for_profile(request)
+    klass = get_class_for_accession(accession)
+
+    instance = get_object_or_404(klass, accession=accession)
+    site_users = User.objects.all()
+    instance_admins = []
+    instance_contributors = []
+    instance_viewers = []
+    selectable_users = []
+
+    print(request.user.username)
+    print(context)
+    print(user_is_admin_for_instance(request.user, instance))
+
+    if request.is_ajax():
+        usernames = request.POST.getlist("usernames[]")
+        group_type = request.POST["type"]
+        if not usernames:
+            response = {"error": "There must be at least one administrator"}
+            return HttpResponse(json.dumps(response))
+
+        try:
+            if group_type == "administrators":
+                update_admin_list_for_instance(usernames, instance)
+            elif group_type == "contributors":
+                update_contributor_list_for_instance(usernames, instance)
+            elif group_type == "viewers":
+                update_viewer_list_for_instance(usernames, instance)
+            else:
+                raise ValueError(
+                    "Group type {} not recognised.".format(group_type))
+        except (ValueError, ObjectDoesNotExist) as e:
+            response = {"error": str(e)}
+            return HttpResponse(json.dumps(response))
+
+        for user in site_users:
+            if user.username == ANONYMOUS_USER_NAME:
+                continue
+            if user_is_admin_for_instance(user, instance):
+                instance_admins.append(user)
+            else:
+                selectable_users.append(user)
+
+        response = {
+            "success": "Saved successfully!",
+            "left": [u.username for u in selectable_users],
+            "right": [u.username for u in instance_admins]
+        }
+        return HttpResponse(json.dumps(response))
+
+    if klass is None:
+        get_object_or_404(Experiment, accession="fail")
+
+    for user in site_users:
+        if user.username == ANONYMOUS_USER_NAME:
+            continue
+        if user_is_admin_for_instance(user, instance):
+            instance_admins.append(user)
+        elif user_is_contributor_for_instance(user, instance):
+            instance_contributors.append(user)
+        elif user_is_viewer_for_instance(user, instance):
+            instance_viewers.append(user)
+        else:
+            selectable_users.append(user)
+
+    request.user.save()
+    context["admins"] = instance_admins
+    context["contributors"] = instance_contributors
+    context["viewers"] = instance_viewers
+    context["selectable"] = selectable_users
+
+    return render(request, "accounts/profile_manage.html", context)
+
+
 @login_required(login_url=reverse_lazy("accounts:login"))
 def profile_view(request):
-    context = {}
+    user = request.user
+    context = get_base_context_for_profile(request)
+    experimentsets = context["experimentsets"]
+    experiments = context["experiments"]
+    scoresets = context["scoresets"]
+
     admin_models = []
     contrib_models = []
     viewer_models = []
-
-    user = request.user
-    experimentsets = get_objects_for_user(
-        user, perms=[], any_perm=False, klass=ExperimentSet)
-    experiments = get_objects_for_user(
-        user, perms=[], any_perm=False, klass=Experiment)
-    scoresets = get_objects_for_user(
-        user, perms=[], any_perm=False, klass=ScoreSet)
 
     for instance in experimentsets:
         if user_is_admin_for_instance(user, instance):
@@ -72,16 +180,9 @@ def profile_view(request):
         if user_is_viewer_for_instance(user, instance):
             viewer_models.append(instance)
 
-    context = {
-        "user": user,
-        "experimentsets": experimentsets,
-        "experiments": experiments,
-        "scoresets": scoresets,
-        "administrator_models": admin_models,
-        "contributor_models": contrib_models,
-        "viewer_models": viewer_models
-    }
-
+    context["administrator_models"] = admin_models
+    context["contributor_models"] = contrib_models
+    context["viewer_models"] = viewer_models
     return render(request, 'accounts/profile_home.html', context)
 
 

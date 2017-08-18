@@ -2,12 +2,13 @@
 This module defines stuff.
 """
 
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from guardian.shortcuts import assign_perm, remove_perm
+from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 
 # Base types
@@ -237,3 +238,35 @@ def remove_user_as_instance_viewer(user, instance):
         return True
     except ObjectDoesNotExist:
         return False
+
+
+# Updates
+# --------------------------------------------------------------------------- #
+def update_admin_list_for_instance(usernames, instance):
+    site_users = User.objects.all()
+    for user in site_users:
+        if user.username not in usernames:
+            remove_user_as_instance_admin(user, instance)
+    for username in usernames:
+        user = User.objects.get(username=username)
+        assign_user_as_instance_admin(user, instance)
+
+
+def update_contributor_list_for_instance(usernames, instance):
+    site_users = User.objects.all()
+    for user in site_users:
+        if user.username not in usernames:
+            remove_user_as_instance_contributor(user, instance)
+    for username in usernames:
+        user = User.objects.get(username=username)
+        assign_user_as_instance_contributor(user, instance)
+
+
+def update_viewer_list_for_instance(usernames, instance):
+    site_users = User.objects.all()
+    for user in site_users:
+        if user.username not in usernames:
+            remove_user_as_instance_viewer(user, instance)
+    for username in usernames:
+        user = User.objects.get(username=username)
+        remove_user_as_instance_viewer(user, instance)

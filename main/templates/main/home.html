@@ -14,7 +14,6 @@
     </div> 
 
     <div class="row">
-      
       <div class="six columns" style="display: flex;">
         <form class="pagination-form" action="" method="GET"></form>
           <input class="hidden-submit" type="hidden" value="Submit">
@@ -30,16 +29,58 @@
           </ul>
         </form>
         <form class="items-per-page-form" action="" method="GET">
-            <input class="hidden-submit" type="hidden" value="Submit">
-            <select class="select-menu" name="items-per-page">
-              <option value="volvo">Volvo</option>
-              <option value="saab">Saab</option>
-              <option value="fiat">Fiat</option>
-              <option value="audi">Audi</option>
-            </select>
-          </form>
+          <input class="hidden-submit" type="hidden" value="Submit">
+          <select class="select-menu" name="items-per-page">
+            <option value="volvo">Volvo</option>
+            <option value="saab">Saab</option>
+            <option value="fiat">Fiat</option>
+            <option value="audi">Audi</option>
+          </select>
+        </form>
       </div>
     </div>
+
+    <div class="row">
+      <div class="twelve columns">
+        <div class="row">
+          <div class="five columns" style="width:25%;height:250px;">
+            <select style="width:100%;height:100%;" 
+                    id="select-left" name="select-left" multiple="multiple">
+              <option value="1">Dmaj</option>
+              <option value="2">Dmaj7</option>
+              <option value="3">Dmin7b5</option>
+              <option value="4">Cmaj</option>
+              <option value="5">Cmaj7</option>
+              <option value="6">Cmin7b5</option>
+              <option value="7">Ebmaj</option>
+              <option value="8">Ebmaj7</option>
+              <option value="9">Ebmin7b5</option>
+            </select>
+          </div>
+
+          <div class="two columns" style="display:block;text-align:center;">
+            <button class="button" id="select-add-btn" style="margin-top: 75px;">
+              -->
+            </button><br>
+            <button class="button" id="select-remove-btn">
+              <--
+            </button><br>
+          </div>
+          
+          <div class="five columns" style="width:25%;height:250px;">
+            <form style="width:100%;height:100%;" action="/" method="POST">
+              {% csrf_token %}
+              <select style="width:100%;height:80%;" 
+                      id="select-right" name="select-right" multiple="multiple">
+              </select>
+              <input class="u-pull-right" type="submit" value="Save" 
+                     style="margin-top:-8px;">
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  
   </div>
   
   <div class="four columns news-panel">
