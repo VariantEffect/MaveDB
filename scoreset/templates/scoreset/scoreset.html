@@ -1,7 +1,9 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-<div class=row>
+<div class="row">
+
+	<!-- Sidebar -->
 	<div class="three columns">
 		<h3> {{ scoreset.accession }} </h3>
 		<p> 
@@ -11,7 +13,14 @@
 			</a>
 		</p>
 	</div>
-	<div class="seven columns">
+	
+	<!-- Vertical divider -->
+	<div class="one column" style="margin-left:-1%">
+			<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	</div>	
+	
+	<!-- Content -->
+	<div class="five columns" style="margin-left:-1%">
 		<h3> Abstract </h3>
 		<p> {{ scoreset.md_abstract|safe|escape|default:"Not provided" }} </p>
 		<hr>
@@ -28,7 +37,7 @@
 			<span>{{ scoreset.created_by|default:"None" }}</span>
 		<br>
 		<span style="font-weight: 600;">Last edited:</span>
-			<span>{{ scoreset.last_edit|default:"None" }}</span>
+			<span>{{ scoreset.last_edit_date|default:"None" }}</span>
 		<br>
 		<span style="font-weight: 600;">Last edited by:</span>
 			<span>{{ scoreset.last_edit_by|default:"None" }}</span>
@@ -56,7 +65,13 @@
 		<br>
 		<hr>
 		
-		<h3> Scores dataset </h3>
+		<div style="display:inline-flex;"> 
+				<h3>Scores dataset</h3>
+			 <a style="padding:13px;" 
+					href="{% url 'scoreset:scores_download' scoreset.accession %}">
+				 Download
+			 </a>
+		 </div>
 			{% if not variants %}
 				<p> No scores data available.</p>
 			{% else %}
@@ -82,32 +97,37 @@
 		<br>
 		<hr>
 
-		<h3> Counts dataset </h3>
-			{% if not variants %}
-				<p> No scores data available.</p>
-			{% else %}
-				<table>
-					<thead>
+		<div style="display:inline-flex;"> 
+		 	<h3>Counts dataset</h3>
+			<a 	style="padding:13px;" 
+					href="{% url 'scoreset:counts_download' scoreset.accession %}">
+				Download
+			</a>
+		</div>
+		{% if not variants %}
+			<p> No scores data available.</p>
+		{% else %}
+			<table>
+				<thead>
+					<tr>
+						{% for column in counts_columns %}
+							<th> {{ column }} </th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for var in variants %}
 						<tr>
-							{% for column in counts_columns %}
-								<th> {{ column }} </th>
+							{% for data in var.get_ordered_counts_data %}
+								<td> {{ data }} </td>
 							{% endfor %}
 						</tr>
-					</thead>
-					<tbody>
-						{% for var in variants %}
-							<tr>
-								{% for data in var.get_ordered_counts_data %}
-									<td> {{ data }} </td>
-								{% endfor %}
-							</tr>
-						{% endfor %}
-					</tbody>
-				</table>					
-			{% endif %}
+					{% endfor %}
+				</tbody>
+			</table>					
+		{% endif %}
 		<br>
-		<hr>
 
-	</div>
-</div>
+	</div> <!-- end column -->
+</div> <!-- end row -->
 {% endblock body %}

@@ -82,31 +82,31 @@
 				{{ external_accession_formset.empty_form.as_table }}
 			</div>
 
-			<div class="reference-mapping-forms">
+			<div class="reference_mapping-forms">
 				<h4> Reference maps 
 					<input type="button" value="+" id="add_reference_mapping">
 					<input type="button" value="-" id="remove_reference_mapping">
 				</h4>
-				<div id="reference-form-set">
+				<div id="reference_mapping-form-set">
 					{{ reference_mapping_formset.management_form }}
 					{% if not reference_mapping_formset|length %}
-						<div id='ref_mapping-empty-set'>
+						<div id='reference_mapping-empty-set'>
 							<p>I'll add reference maps later.<p><hr>
 						</div>
 					{% else %}
-						<div id='reference-empty-set' hidden>
+						<div id='reference_mapping-empty-set' hidden>
 							<p>I'll add reference maps later.<p><hr>
 						</div>
 					{% endif %}
 					{% for form in reference_mapping_formset %}
-						<div id="reference-formset-{{ forloop.counter }}">
+						<div id="reference_mapping-formset-{{ forloop.counter }}">
 							{{ form.as_table }}
 						<hr>
 						</div>
 					{% endfor %}
 				</div>
 			</div>
-			<div id="reference-empty-form" style="display:none">
+			<div id="reference_mapping-empty-form" style="display:none">
 				{{ reference_mapping_formset.empty_form.as_table }}
 			</div>
 			

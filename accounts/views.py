@@ -2,9 +2,10 @@
 Views for accounts app.
 """
 
+from django.apps import apps
 from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
-
+from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, reverse, redirect
 
 from django.contrib.auth import login
@@ -15,14 +16,73 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 
+from guardian.shortcuts import get_objects_for_user
+
+from .models import (
+    user_is_admin_for_instance,
+    user_is_contributor_for_instance,
+    user_is_viewer_for_instance
+)
+
 from .tokens import account_activation_token
 from .forms import RegistrationForm, send_user_activation_email
 
 
-@login_required
+ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
+Experiment = apps.get_model('experiment', 'Experiment')
+ScoreSet = apps.get_model('scoreset', 'ScoreSet')
+
+
+@login_required(login_url=reverse_lazy("accounts:login"))
 def profile_view(request):
     context = {}
-    return render(request, 'accounts/profile.html', context)
+    admin_models = []
+    contrib_models = []
+    viewer_models = []
+
+    user = request.user
+    experimentsets = get_objects_for_user(
+        user, perms=[], any_perm=False, klass=ExperimentSet)
+    experiments = get_objects_for_user(
+        user, perms=[], any_perm=False, klass=Experiment)
+    scoresets = get_objects_for_user(
+        user, perms=[], any_perm=False, klass=ScoreSet)
+
+    for instance in experimentsets:
+        if user_is_admin_for_instance(user, instance):
+            admin_models.append(instance)
+        if user_is_contributor_for_instance(user, instance):
+            contrib_models.append(instance)
+        if user_is_viewer_for_instance(user, instance):
+            viewer_models.append(instance)
+
+    for instance in experiments:
+        if user_is_admin_for_instance(user, instance):
+            admin_models.append(instance)
+        if user_is_contributor_for_instance(user, instance):
+            contrib_models.append(instance)
+        if user_is_viewer_for_instance(user, instance):
+            viewer_models.append(instance)
+
+    for instance in scoresets:
+        if user_is_admin_for_instance(user, instance):
+            admin_models.append(instance)
+        if user_is_contributor_for_instance(user, instance):
+            contrib_models.append(instance)
+        if user_is_viewer_for_instance(user, instance):
+            viewer_models.append(instance)
+
+    context = {
+        "user": user,
+        "experimentsets": experimentsets,
+        "experiments": experiments,
+        "scoresets": scoresets,
+        "administrator_models": admin_models,
+        "contributor_models": contrib_models,
+        "viewer_models": viewer_models
+    }
+
+    return render(request, 'accounts/profile_home.html', context)
 
 
 def activate_account_view(request, uidb64, token):

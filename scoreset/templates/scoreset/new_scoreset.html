@@ -42,14 +42,11 @@
 							<p>I'll add keywords later.<p><hr>
 						</div>
 					{% endif %}
-					{% for form in keyword_formset %}					
+					{% for form in keyword_formset %}
 						<div id="keyword-formset-{{ forloop.counter }}">
-							{% for field in form.fields  %}
-								<label for="{{ field.id_for_label }}">{{ field.label }}</label>
-								{{ field }}
-							{% endfor %}
-							<hr>
-						</div>
+						{{ form.as_table }}
+						<hr>
+					</div>
 					{% endfor %}
 				</div>
 			</div>

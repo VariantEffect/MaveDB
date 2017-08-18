@@ -1,7 +1,9 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-<div class=row>
+<div class="row">
+	
+	<!-- Sidebar -->
 	<div class="three columns">
 		<h3> {{ experiment.accession }} </h3>
 		<p> 
@@ -11,7 +13,15 @@
 			</a>
 		</p>
 	</div>
-	<div class="seven columns">
+
+	<!-- Vertical divider -->
+	<div class="one column" style="margin-left: -1%">
+			<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	</div>	
+	
+	<!-- Content -->
+	<div class="six columns" style="margin-left: -1%">
+		
 		<h3> Abstract </h3>
 		<p> {{ experiment.md_abstract|safe|escape|default:"Not provided" }} </p>
 		<hr>
@@ -77,8 +87,8 @@
 				</a>,
 			{% endfor %}
 		<br>
-		
 		<hr>
+		
 		<h3>Reference mappings</h3>
 		{% if not experiment.get_ref_mappings %}
 			<p> No maps have been specified for this experiment. </p>
@@ -109,6 +119,7 @@
 			</table>
 		{% endif %}
 		<br>	
+	
 	</div>
 </div>
 {% endblock body %}
