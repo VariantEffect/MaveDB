@@ -12,7 +12,9 @@ from main.forms import (
     ReferenceMappingForm, TargetOrganismForm
 )
 
-from accounts.models import assign_user_as_instance_admin, PermissionTypes
+from accounts.permissions import (
+    assign_user_as_instance_admin, PermissionTypes
+)
 
 from main.models import (
     Keyword, ExternalAccession,
@@ -57,7 +59,7 @@ class ExperimentDetailView(DetailView):
             response = render(
                 request=request,
                 template_name="main/403_forbidden.html",
-                context={"model": experiment},
+                context={"instance": experiment},
             )
             response.status_code = 403
             return response
@@ -94,7 +96,7 @@ class ExperimentSetDetailView(DetailView):
             response = render(
                 request=request,
                 template_name="main/403_forbidden.html",
-                context={"model": experimentset},
+                context={"instance": experimentset},
             )
             response.status_code = 403
             return response

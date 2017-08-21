@@ -3,7 +3,7 @@
 {% block profile_body %}
 
 <div class="row">
-	
+
 	<div class="twelve columns">
 		<h3> Welcome, {{ request.user.username }} </h3>
 		<hr>
@@ -11,22 +11,22 @@
 		<!-- Instances that user is a ADMIN for -->
 		<div id="admin-models">
 			<h5> Administrator on </h5>
-			{% if administrator_models %}
+			{% if request.user.profile.administrator_instances %}
 				<ul style="list-style: none">
-					{% for model in administrator_models %}
+					{% for model in request.user.profile.administrator_instances %}
 						<div style="display: inline-flex">
 							<li> {{ model.accession }} </li>
 							<li style="padding-left:10px;">
 								<a href="{% url 'accounts:manage_instance' model.accession %}">Manage</a>
-							<li>
+							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
 								<a href="">Edit</a>
-							<li>
+							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
 								<a href="">Preview</a>
-							<li>
+							</li>
 						</div>
 						<!-- Information -->
 						<ul style="list-style: none">
@@ -38,7 +38,7 @@
 							</li>
 							<li>
 								<div style="display: inline-flex">
-									<label style="margin-right:5px;">Private: </label>
+									<label style="margin-right:5px;">View: </label>
 									<div> {{ model.private }} <div>
 								</div>
 							</li>
@@ -60,22 +60,18 @@
 		<!-- Instances that user is a CONTRIBUTOR for -->
 		<div id="contributor-models">
 			<h5> Contributor on </h5>
-			{% if contributor_models %}
+			{% if request.user.profile.contributor_instances %}
 				<ul style="list-style: none">
-					{% for model in contributor_models %}
+					{% for model in request.user.profile.contributor_instances %}
 						<div style="display: inline-flex">
 							<li> {{ model.accession }} </li>
 							<li style="padding-left:10px;">
-									<a href="{% url 'accounts:manage_instance' model.accession %}">Manage</a>
-							<li>
-							<li style="padding-left:10px;"><b>&middot;</b></li>
-							<li style="padding-left:10px;">
 								<a href="">Edit</a>
-							<li>
+							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
-								<a href="">Preview</a>
-							<li>
+								<a href="">View</a>
+							</li>
 						</div>
 						<!-- Information -->
 						<ul style="list-style: none">
@@ -109,22 +105,15 @@
 		<!-- Instances that are VIEW ONLY for user -->
 		<div id="view-only-models">
 			<h5> View only on </h5>
-			{% if viewer_models %}
+			{% if request.user.profile.viewer_instances %}
 				<ul style="list-style: none">
-					{% for model in viewer_models %}
+					{% for model in request.user.profile.viewer_instances %}
 						<div style="display: inline-flex">
 							<li> {{ model.accession }} </li>
-							<li style="padding-left:10px;">
-									<a href="{% url 'accounts:manage_instance' model.accession %}">Manage</a>
-							<li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
-								<a href="">Edit</a>
-							<li>
-							<li style="padding-left:10px;"><b>&middot;</b></li>
-							<li style="padding-left:10px;">
-								<a href="">Preview</a>
-							<li>
+								<a href="">View</a>
+							</li>
 						</div>
 						<!-- Information -->
 						<ul style="list-style: none">

@@ -4,135 +4,72 @@
 
 <!-- Admin management -->
 <div class="row" style="margin-top: 25px;">
-	<div class="twelve columns">
+	<div class="ten columns">
 		<h5> Add/Remove Administrators </h5><hr>
-		<div id="admin-errors" hidden></div>
-		<div id="admin-success" hidden></div>
-		<div class="row" id="admin-management">	
-			<!-- Left select box of all active users -->
-			<div class="five columns" style="width:30%;height:300px;">
-				<select style="width:100%;height:100%;" 
-								id="select-left" name="select-left" multiple="multiple">
-					{% for user in selectable %}
-						<option value={{user.username}}>{{user.username}}</option>
-					{% endfor %}
-					<option value="bob">bob</option>
-				</select>
+		<form action="{% url 'accounts:manage_instance' instance.accession %}" method="post">
+			{% csrf_token %}
+			{% if admin_select_form.non_field_errors %}
+				<div>
+					{{ admin_select_form.non_field_errors }}
+				</div>
+			{% endif %}
+			{% for field in admin_select_form %}
+				<div style="width:100%">{{ admin_select_form.as_table }}</div>
+			{% endfor %}
+			<div style="width:100%;margin-top:5px;">
+				<input class="u-pull-right" type="submit" value="Submit"
+							style="width:150px;margin-bottom:35px;" >
 			</div>
-
-			<!-- Buttons to transfer between boxes -->
-			<div class="two columns" style="display:block;text-align:center;">
-				<button class="button" id="select-add-btn" style="margin-top: 75px;">
-					-->
-				</button><br>
-				<button class="button" id="select-remove-btn">
-					<--
-				</button><br>
-			</div>
-					
-			<!-- Right select box of all active users assigned as admins -->
-			<div class="five columns" style="width:30%;height:300px;">
-				<form style="width:100%;height:100%;" action="" method="POST">
-					{% csrf_token %}
-					<select style="width:100%;height:80%;" 
-									id="select-right" name="select-right" multiple="multiple">
-						{% for user in admins %}
-							<option value={{user.username}}>{{user.username}}</option>
-						{% endfor %}
-					</select>
-					<button id="select-save" class="u-pull-right" style="margin-top:5px;">
-						Save
-					</button>
-				</form>
-			</div>
-		</div>
+		</form>
 	</div> 
 </div> <!-- End admin management -->
 
-{% comment %} <!-- Contrib management -->
-<div class="row" style="margin-top: 25px;">
-	<div class="twelve columns">
-		<h5> Add/Remove Contributors </h5><hr>
-		<div class="row">	
-			<!-- Left select box of all active users -->
-			<div class="five columns" style="width:30%;height:300px;">
-				<select style="width:100%;height:100%;" 
-								id="select-left" name="select-left" multiple="multiple">
-					{% for user in selectable %}
-						<option value={{user.username}}>{{user.username}}</option>
-					{% endfor %}
-				</select>
-			</div>
 
-			<!-- Buttons to transfer between boxes -->
-			<div class="two columns" style="display:block;text-align:center;">
-				<button class="button" id="select-add-btn" style="margin-top: 75px;">
-					-->
-				</button><br>
-				<button class="button" id="select-remove-btn">
-					<--
-				</button><br>
+<!-- Contrib management -->
+<div class="row" style="margin-top: 25px;">
+	<div class="ten columns">
+		<h5> Add/Remove Contributors </h5><hr>
+		<form action="{% url 'accounts:manage_instance' instance.accession %}" method="post">
+			{% csrf_token %}
+			{% if contrib_select_form.non_field_errors %}
+				<div>
+					{{ contrib_select_form.non_field_errors }}
+				</div>
+			{% endif %}
+			{% for field in contrib_select_form %}
+				<div style="width:100%">{{ field.errors }}</div>
+				<div style="width:100%">{{ field }}</div>
+			{% endfor %}
+			<div style="width:100%;margin-top:5px;">
+					<input class="u-pull-right" type="submit" value="Submit"
+								style="width:150px;margin-bottom:35px;" >
 			</div>
-					
-			<!-- Right select box of all active users assigned as admins -->
-			<div class="five columns" style="width:30%;height:300px;">
-				<form style="width:100%;height:100%;" action="/" method="POST">
-				{% csrf_token %}
-				<select style="width:100%;height:80%;" 
-								id="select-right" name="select-right" multiple="multiple">
-					{% for user in contributors %}
-						<option value={{user.username}}>{{user.username}}</option>
-					{% endfor %}
-				</select>
-				<input class="u-pull-right" type="submit" value="Save" 
-								style="margin-top:-4px;">
-				</form>
-			</div>
-		</div>
+		</form>
 	</div> 
-</div> <!-- End contirb management -->
+</div> <!-- End Contrib management -->
+
 
 <!-- Viewer management -->
 <div class="row" style="margin-top: 25px;">
-	<div class="twelve columns">
+	<div class="ten columns">
 		<h5> Add/Remove Viewers </h5><hr>
-		<div class="row">	
-			<!-- Left select box of all active users -->
-			<div class="five columns" style="width:30%;height:300px;">
-				<select style="width:100%;height:100%;" 
-								id="select-left" name="select-left" multiple="multiple">
-					{% for user in selectable %}
-						<option value={{user.username}}>{{user.username}}</option>
-					{% endfor %}
-				</select>
+		<form action="{% url 'accounts:manage_instance' instance.accession %}" method="post">
+			{% csrf_token %}
+			{% if viewer_select_form.non_field_errors %}
+				<div>
+					{{ viewer_select_form.non_field_errors }}
+				</div>
+			{% endif %}
+			{% for field in viewer_select_form %}
+				<div style="width:100%">{{ field.errors }}</div>
+				<div style="width:100%">{{ field }}</div>
+			{% endfor %}
+			<div style="width:100%;margin-top:5px;">
+					<input class="u-pull-right" type="submit" value="Submit"
+								style="width:150px;margin-bottom:35px;" >
 			</div>
-
-			<!-- Buttons to transfer between boxes -->
-			<div class="two columns" style="display:block;text-align:center;">
-				<button class="button" id="select-add-btn" style="margin-top: 75px;">
-					-->
-				</button><br>
-				<button class="button" id="select-remove-btn">
-					<--
-				</button><br>
-			</div>
-					
-			<!-- Right select box of all active users assigned as admins -->
-			<div class="five columns" style="width:30%;height:300px;">
-				<form style="width:100%;height:100%;" action="/" method="POST">
-				{% csrf_token %}
-				<select style="width:100%;height:80%;" 
-								id="select-right" name="select-right" multiple="multiple">
-					{% for user in viewers %}
-						<option value={{user.username}}>{{user.username}}</option>
-					{% endfor %}
-				</select>
-				<input class="u-pull-right" type="submit" value="Save" 
-								style="margin-top:-4px;">
-				</form>
-			</div>
-		</div>
+		</form>
 	</div> 
-</div> <!-- End viewer management --> {% endcomment %}
+</div> <!-- End Viewer management -->
 
 {% endblock profile_body %}

@@ -13,8 +13,8 @@
 				Experiment Sets 
 				<a href="{% url 'experiment:experiment_new' %}">+</a>
 			</h5>
-			{% if experimentsets %}
-				{% for model in experimentsets %}
+			{% if request.user.profile.experimentsets %}
+				{% for model in request.user.profile.experimentsets %}
 					<li>
 						<a href="{% url 'experiment:experimentset_detail' model.accession %}">
 							{{ model.accession }}
@@ -34,8 +34,8 @@
 					Experiments
 					<a href="{% url 'experiment:experiment_new' %}">+</a>
 				</h5>
-				{% if experiments %}
-					{% for model in experiments %}
+				{% if request.user.profile.experiments %}
+					{% for model in request.user.profile.experiments %}
 						<li>
 							<a href="{% url 'experiment:experiment_detail' model.accession %}">
 								{{ model.accession }}
@@ -56,8 +56,8 @@
 				Score Sets
 				<a href="{% url 'scoreset:scoreset_new' %}">+</a>
 			</h5>
-			{% if scoresets %}
-				{% for model in scoresets %}
+			{% if request.user.profile.scoresets %}
+				{% for model in request.user.profile.scoresets %}
 					<li>
 						<a href="{% url 'scoreset:scoreset_detail' model.accession %}">
 							{{ model.accession }}

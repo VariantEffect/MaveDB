@@ -3,20 +3,28 @@
 {% block body %}
 
 <div class=row>
-	<div class="three columns">
-		<h3> {{ model.accession }} </h3>
+	<div class="two columns">
+		<h3> Error 403 - Forbidden </h3>
 	</div>
+
+	<!-- Vertical divider -->
+	<div class="one column" style="margin-left:2%; height:75vh">
+		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	</div>	
+
 	<div class="seven columns">
-		{% if model %}
+		<h3> Access denied. </h3>
+		<p><small> I'm sorry Dave, I'm afraid I can't let you do that. </small></p>
+
+		{% if instance %}
 			<p> 
 				This is a private entry. Contact user 
-				{{ model.created_by|default:"None" }} 
+				{{ instance.created_by|default:"None" }} 
 				if you believe you should have access permissions.
 			</p>
 		{% else %}
 			<p> 
-				Oops... It appears that you need to be logged in to view this
-				page.
+				It appears that you don't have access to this page.
 			</p>
 		{% endif %}
 	</div>

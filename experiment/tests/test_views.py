@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate, login
 
 from guardian.shortcuts import assign_perm, remove_perm
 
-from accounts.models import user_is_admin_for_instance, PermissionTypes
+from accounts.permissions import user_is_admin_for_instance, PermissionTypes
 
 from main.models import (
     Keyword, ExternalAccession,

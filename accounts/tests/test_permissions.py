@@ -6,8 +6,8 @@ from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth import get_user_model
 from django.test import TransactionTestCase, TestCase
 
-from accounts.models import PermissionTypes, GroupTypes
-from accounts.models import (
+from accounts.permissions import PermissionTypes, GroupTypes
+from accounts.permissions import (
     valid_model_instance,
 
     user_is_admin_for_instance,
@@ -29,7 +29,13 @@ from accounts.models import (
 
     remove_user_as_instance_admin,
     remove_user_as_instance_contributor,
-    remove_user_as_instance_viewer
+    remove_user_as_instance_viewer,
+
+    update_admin_list_for_instance,
+    update_contributor_list_for_instance,
+    update_viewer_list_for_instance,
+
+    instances_for_user_with_group_permission
 )
 
 from experiment.models import Experiment, ExperimentSet
@@ -38,6 +44,9 @@ from experiment.models import (
     create_groups_for_experimentset
 )
 from scoreset.models import ScoreSet, Variant
+
+
+User = get_user_model()
 
 
 class UtilitiesTest(TransactionTestCase):
@@ -76,7 +85,6 @@ class GroupConstructionTest(TestCase):
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def setUp(self):
         self.instance = ExperimentSet.objects.create()
-        self.User = get_user_model()
 
     def test_can_make_admin_group_for_instance(self):
         make_admin_group_for_instance(self.instance)
@@ -113,10 +121,9 @@ class UserAssignmentToInstanceGroupTest(TestCase):
     def setUp(self):
         self.instance_1 = ExperimentSet.objects.create()
         self.instance_2 = ExperimentSet.objects.create()
-        self.User = get_user_model()
 
     def user(self):
-        return self.User.objects.create(username="bob", password="pass")
+        return User.objects.create(username="bob", password="pass")
 
     def test_correct_permissions_assigned_to_admin_group(self):
         user = self.user()
@@ -276,3 +283,153 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         assign_user_as_instance_viewer(user, self.instance_1)
         assign_user_as_instance_viewer(user, self.instance_1)
         self.assertEqual(user.groups.count(), 1)
+
+    def test_update_admin_group_empty_list_removes_all(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_admin(bob, self.instance_1)
+        assign_user_as_instance_admin(alice, self.instance_1)
+
+        self.assertTrue(user_is_admin_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_admin_for_instance(alice, self.instance_1))
+
+        update_admin_list_for_instance([], self.instance_1)
+        self.assertFalse(user_is_admin_for_instance(bob, self.instance_1))
+        self.assertFalse(user_is_admin_for_instance(alice, self.instance_1))
+
+    def test_can_update_admin_group_with_user_list(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_admin(bob, self.instance_1)
+        assign_user_as_instance_admin(alice, self.instance_1)
+
+        self.assertTrue(user_is_admin_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_admin_for_instance(alice, self.instance_1))
+
+        update_admin_list_for_instance([alice], self.instance_1)
+        self.assertFalse(user_is_admin_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_admin_for_instance(alice, self.instance_1))
+
+    def test_update_admin_contrib_empty_list_removes_all(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_contributor(bob, self.instance_1)
+        assign_user_as_instance_contributor(alice, self.instance_1)
+
+        self.assertTrue(
+            user_is_contributor_for_instance(bob, self.instance_1)
+        )
+        self.assertTrue(
+            user_is_contributor_for_instance(alice, self.instance_1)
+        )
+
+        update_contributor_list_for_instance([], self.instance_1)
+        self.assertFalse(
+            user_is_contributor_for_instance(bob, self.instance_1)
+        )
+        self.assertFalse(
+            user_is_contributor_for_instance(alice, self.instance_1)
+        )
+
+    def test_can_update_contrib_group_with_user_list(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_contributor(bob, self.instance_1)
+        assign_user_as_instance_contributor(alice, self.instance_1)
+
+        self.assertTrue(
+            user_is_contributor_for_instance(bob, self.instance_1)
+        )
+        self.assertTrue(
+            user_is_contributor_for_instance(alice, self.instance_1)
+        )
+
+        update_contributor_list_for_instance([alice], self.instance_1)
+        self.assertFalse(
+            user_is_contributor_for_instance(bob, self.instance_1)
+        )
+        self.assertTrue(
+            user_is_contributor_for_instance(alice, self.instance_1)
+        )
+
+    def test_update_viewer_group_empty_list_removes_all(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_viewer(bob, self.instance_1)
+        assign_user_as_instance_viewer(alice, self.instance_1)
+
+        self.assertTrue(user_is_viewer_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_viewer_for_instance(alice, self.instance_1))
+
+        update_viewer_list_for_instance([], self.instance_1)
+        self.assertFalse(user_is_viewer_for_instance(bob, self.instance_1))
+        self.assertFalse(user_is_viewer_for_instance(alice, self.instance_1))
+
+    def test_can_update_viewer_group_with_user_list(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_viewer(bob, self.instance_1)
+        assign_user_as_instance_viewer(alice, self.instance_1)
+
+        self.assertTrue(user_is_viewer_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_viewer_for_instance(alice, self.instance_1))
+
+        update_viewer_list_for_instance([alice], self.instance_1)
+        self.assertFalse(user_is_viewer_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_viewer_for_instance(alice, self.instance_1))
+
+    def test_can_get_instances_for_user_in_admin_group(self):
+        bob = User.objects.create(username="bob")
+        alice = User.objects.create(username="alice")
+        assign_user_as_instance_admin(bob, self.instance_1)
+        assign_user_as_instance_admin(alice, self.instance_2)
+
+        alices = instances_for_user_with_group_permission(
+            user=alice,
+            model=ExperimentSet,
+            group_type=GroupTypes.ADMIN
+        )
+        bobs = instances_for_user_with_group_permission(
+            user=bob,
+            model=ExperimentSet,
+            group_type=GroupTypes.ADMIN
+        )
+
+        self.assertEqual(bobs[0], self.instance_1)
+        self.assertEqual(alices[0], self.instance_2)
+
+    def test_empty_list_returned_instances_for_user_in_group(self):
+        alice = User.objects.create(username="alice")
+        alices = instances_for_user_with_group_permission(
+            user=alice,
+            model=ExperimentSet,
+            group_type=GroupTypes.ADMIN
+        )
+        self.assertEqual(len(alices), 0)
+
+    def test_no_instances_returned_anon_user(self):
+        user = AnonymousUser()
+        anons = instances_for_user_with_group_permission(
+            user=user,
+            model=ExperimentSet,
+            group_type=GroupTypes.ADMIN
+        )
+        self.assertEqual(len(anons), 0)
+
+    def test_error_incorrect_model_supplied(self):
+        bob = User.objects.create(username="bob")
+        with self.assertRaises(TypeError):
+            instances_for_user_with_group_permission(
+                user=bob,
+                model=User,
+                group_type=GroupTypes.ADMIN
+            )
+
+    def test_error_incorrect_group_type_supplied(self):
+        bob = User.objects.create(username="bob")
+        with self.assertRaises(ValueError):
+            instances_for_user_with_group_permission(
+                user=bob,
+                model=ExperimentSet,
+                group_type="InvalidGroup"
+            )

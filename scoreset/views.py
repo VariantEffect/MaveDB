@@ -10,7 +10,10 @@ from django.core.urlresolvers import reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from accounts.models import assign_user_as_instance_admin, PermissionTypes
+from accounts.permissions import (
+    assign_user_as_instance_admin,
+    PermissionTypes
+)
 
 from experiment.models import Experiment
 
@@ -49,7 +52,7 @@ class ScoresetDetailView(DetailView):
             response = render(
                 request=request,
                 template_name="main/403_forbidden.html",
-                context={"model": scoreset},
+                context={"instance": scoreset},
             )
             response.status_code = 403
             return response
@@ -113,7 +116,7 @@ def download_scoreset_data(request, accession, dataset_key):
         response = render(
             request=request,
             template_name="main/403_forbidden.html",
-            context={"model": scoreset},
+            context={"instance": scoreset},
         )
         response.status_code = 403
         return response
@@ -155,7 +158,7 @@ def download_scoreset_metadata(request, accession):
         response = render(
             request=request,
             template_name="main/403_forbidden.html",
-            context={"model": scoreset},
+            context={"instance": scoreset},
         )
         response.status_code = 403
         return response

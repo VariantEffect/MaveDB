@@ -14,8 +14,12 @@ from django.db.models.signals import pre_save, post_save
 from .validators import valid_exp_accession, valid_expset_accession
 from .validators import valid_wildtype_sequence
 
-from accounts.models import PermissionTypes, GroupTypes
-from accounts.models import make_all_groups_for_instance
+from accounts.permissions import (
+    PermissionTypes,
+    GroupTypes,
+    make_all_groups_for_instance
+)
+from accounts.mixins import GroupPermissionMixin
 
 from main.models import (
     Keyword, ExternalAccession,
@@ -27,7 +31,7 @@ logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
 
-class ExperimentSet(models.Model):
+class ExperimentSet(models.Model, GroupPermissionMixin):
     """
     This is the class representing a set of related Experiments. Related
     experiments are those that generally had the same data collection
@@ -151,7 +155,7 @@ class ExperimentSet(models.Model):
         return suffix
 
 
-class Experiment(models.Model):
+class Experiment(models.Model, GroupPermissionMixin):
     """
     This is the class representing an Experiment. The experiment object
     houses all information relating to a particular experiment up to the

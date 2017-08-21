@@ -16,8 +16,11 @@ from main.utils.pandoc import convert_md_to_html
 from main.models import Keyword
 from experiment.models import Experiment
 
-from accounts.models import PermissionTypes
-from accounts.models import make_all_groups_for_instance
+from accounts.permissions import (
+    PermissionTypes,
+    make_all_groups_for_instance
+)
+from accounts.mixins import GroupPermissionMixin
 
 from .validators import (
     valid_scs_accession, valid_var_accession,
@@ -30,7 +33,7 @@ logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
 
-class ScoreSet(models.Model):
+class ScoreSet(models.Model, GroupPermissionMixin):
     """
     This is the class representing a set of scores for an experiment.
     The ScoreSet object houses all information relating to a particular

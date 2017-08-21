@@ -20,13 +20,12 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 
-from guardian.shortcuts import get_objects_for_user
-from guardian.conf.settings import ANONYMOUS_USER_NAME
-
 from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
 from scoreset.validators import SCS_ACCESSION_RE
 
-from .models import (
+from .permissions import (
+    GroupTypes,
+    user_is_anonymous,
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
     user_is_viewer_for_instance,
@@ -36,7 +35,11 @@ from .models import (
 )
 
 from .tokens import account_activation_token
-from .forms import RegistrationForm, send_user_activation_email
+from .forms import (
+    RegistrationForm,
+    send_user_activation_email,
+    SelectUsersForm
+)
 
 ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
 Experiment = apps.get_model('experiment', 'Experiment')
@@ -54,138 +57,96 @@ def get_class_for_accession(accession):
         return None
 
 
-def get_base_context_for_profile(request):
-    experimentsets = get_objects_for_user(
-        request.user, perms=[], any_perm=False, klass=ExperimentSet)
-    experiments = get_objects_for_user(
-        request.user, perms=[], any_perm=False, klass=Experiment)
-    scoresets = get_objects_for_user(
-        request.user, perms=[], any_perm=False, klass=ScoreSet)
-    return {
-        "experimentsets": experimentsets,
-        "experiments": experiments,
-        "scoresets": scoresets,
-    }
-
-
+# Profile views
+# ------------------------------------------------------------------------- #
 @login_required(login_url=reverse_lazy("accounts:login"))
 def manage_instance(request, accession):
-    context = get_base_context_for_profile(request)
     klass = get_class_for_accession(accession)
-
     instance = get_object_or_404(klass, accession=accession)
-    site_users = User.objects.all()
-    instance_admins = []
-    instance_contributors = []
-    instance_viewers = []
-    selectable_users = []
+    post_form = None
+    context = {}
+    context["instance"] = instance
 
-    print(request.user.username)
-    print(context)
-    print(user_is_admin_for_instance(request.user, instance))
+    if not user_is_admin_for_instance(request.user, instance):
+        return redirect("accounts:profile")
 
-    if request.is_ajax():
-        usernames = request.POST.getlist("usernames[]")
-        group_type = request.POST["type"]
-        if not usernames:
-            response = {"error": "There must be at least one administrator"}
-            return HttpResponse(json.dumps(response))
+    # Initialise the forms with current group users.
+    admins = instance.administrators()
+    contributors = instance.contributors()
+    viewers = instance.viewers()
+    admin_select_form = SelectUsersForm(
+        initial={"users": [a.pk for a in admins]},
+        group=GroupTypes.ADMIN,
+        instance=instance,
+        required=True,
+        prefix="administrator_management"
+    )
+    contrib_select_form = SelectUsersForm(
+        initial={"users": [c.pk for c in contributors]},
+        group=GroupTypes.CONTRIBUTOR,
+        instance=instance,
+        prefix="contributor_management"
+    )
+    viewer_select_form = SelectUsersForm(
+        initial={"users": [v.pk for v in viewers]},
+        group=GroupTypes.VIEWER,
+        instance=instance,
+        prefix="viewer_management"
+    )
+    context["admin_select_form"] = admin_select_form
+    context["contrib_select_form"] = contrib_select_form
+    context["viewer_select_form"] = viewer_select_form
 
-        try:
-            if group_type == "administrators":
-                update_admin_list_for_instance(usernames, instance)
-            elif group_type == "contributors":
-                update_contributor_list_for_instance(usernames, instance)
-            elif group_type == "viewers":
-                update_viewer_list_for_instance(usernames, instance)
-            else:
-                raise ValueError(
-                    "Group type {} not recognised.".format(group_type))
-        except (ValueError, ObjectDoesNotExist) as e:
-            response = {"error": str(e)}
-            return HttpResponse(json.dumps(response))
+    if request.method == "POST":
+        print(request.POST)
+        if "administrator_management-users" in request.POST:
+            post_form = SelectUsersForm(
+                data=request.POST,
+                group=GroupTypes.ADMIN,
+                instance=instance,
+                required=True,
+                prefix="administrator_management"
+            )
+        elif "contributor_management-users" in request.POST:
+            post_form = SelectUsersForm(
+                data=request.POST,
+                group=GroupTypes.CONTRIBUTOR,
+                instance=instance,
+                prefix="contributor_management"
+            )
+        elif "viewer_management-users" in request.POST:
+            post_form = SelectUsersForm(
+                data=request.POST,
+                group=GroupTypes.VIEWER,
+                instance=instance,
+                prefix="viewer_management"
+            )
 
-        for user in site_users:
-            if user.username == ANONYMOUS_USER_NAME:
-                continue
-            if user_is_admin_for_instance(user, instance):
-                instance_admins.append(user)
-            else:
-                selectable_users.append(user)
+        if post_form is not None and post_form.is_valid():
+            post_form.process_user_list()
+            return redirect("accounts:manage_instance", instance.accession)
 
-        response = {
-            "success": "Saved successfully!",
-            "left": [u.username for u in selectable_users],
-            "right": [u.username for u in instance_admins]
-        }
-        return HttpResponse(json.dumps(response))
-
-    if klass is None:
-        get_object_or_404(Experiment, accession="fail")
-
-    for user in site_users:
-        if user.username == ANONYMOUS_USER_NAME:
-            continue
-        if user_is_admin_for_instance(user, instance):
-            instance_admins.append(user)
-        elif user_is_contributor_for_instance(user, instance):
-            instance_contributors.append(user)
-        elif user_is_viewer_for_instance(user, instance):
-            instance_viewers.append(user)
-        else:
-            selectable_users.append(user)
-
-    request.user.save()
-    context["admins"] = instance_admins
-    context["contributors"] = instance_contributors
-    context["viewers"] = instance_viewers
-    context["selectable"] = selectable_users
+    if post_form is not None and post_form.group == GroupTypes.ADMIN:
+        context["admin_select_form"] = post_form
+    elif post_form is not None and post_form.group == GroupTypes.CONTRIBUTOR:
+        context["contrib_select_form"] = post_form
+    elif post_form is not None and post_form.group == GroupTypes.VIEWER:
+        context["viewer_select_form"] = post_form
 
     return render(request, "accounts/profile_manage.html", context)
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
 def profile_view(request):
-    user = request.user
-    context = get_base_context_for_profile(request)
-    experimentsets = context["experimentsets"]
-    experiments = context["experiments"]
-    scoresets = context["scoresets"]
-
-    admin_models = []
-    contrib_models = []
-    viewer_models = []
-
-    for instance in experimentsets:
-        if user_is_admin_for_instance(user, instance):
-            admin_models.append(instance)
-        if user_is_contributor_for_instance(user, instance):
-            contrib_models.append(instance)
-        if user_is_viewer_for_instance(user, instance):
-            viewer_models.append(instance)
-
-    for instance in experiments:
-        if user_is_admin_for_instance(user, instance):
-            admin_models.append(instance)
-        if user_is_contributor_for_instance(user, instance):
-            contrib_models.append(instance)
-        if user_is_viewer_for_instance(user, instance):
-            viewer_models.append(instance)
-
-    for instance in scoresets:
-        if user_is_admin_for_instance(user, instance):
-            admin_models.append(instance)
-        if user_is_contributor_for_instance(user, instance):
-            contrib_models.append(instance)
-        if user_is_viewer_for_instance(user, instance):
-            viewer_models.append(instance)
-
-    context["administrator_models"] = admin_models
-    context["contributor_models"] = contrib_models
-    context["viewer_models"] = viewer_models
-    return render(request, 'accounts/profile_home.html', context)
+    if user_is_anonymous(request.user):
+        response = render(request, 'main/403_forbidden.html')
+        response.status_code = 403
+        return response
+    return render(request, 'accounts/profile_home.html')
 
 
+# Registration views
+# ------------------------------------------------------------------------- #
 def activate_account_view(request, uidb64, token):
     try:
         uid = force_text(urlsafe_base64_decode(uidb64))
@@ -250,10 +211,17 @@ def registration_view(request):
                     template_name='accounts/activation_email.html')
 
                 if uidb64 is None or token is None:
-                    return render(request, 'accounts/account_not_created.html')
+                    return render(
+                        request,
+                        'accounts/account_not_created.html'
+                    )
                 else:
                     context = {'uidb64': uidb64}
-                    return render(request, 'accounts/activation_sent.html', context)
+                    return render(
+                        request,
+                        'accounts/activation_sent.html',
+                        context
+                    )
 
     context = {'form': form}
     return render(request, 'accounts/register.html', context)
