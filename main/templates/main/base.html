@@ -110,7 +110,10 @@
       </div>
     </div>
   
-    <!-- Scripts -->
+  <!-- Scripts -->
+  <!-- Ask user confirmation to remove themself as an instance admin -->
+  <!-- This needs to be here in order to record the user pk from the django -->
+  <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
   <script type="text/javascript" 
           src="{% static 'main/jquery/js/jquery-3.2.1.min.js' %}"></script>
   <script type="text/javascript" 
@@ -121,7 +124,8 @@
           src="{% static 'main/main/js/base.js' %}"></script>
   <script type="text/javascript"  
           src="{% static 'main/main/js/init_tocbot.js' %}"></script>
-  <script type="text/javascript"  
+          <script type="text/javascript"  
           src="{% static 'main/select2/js/select2.min.js' %}"></script>
+          
   </body>
 </html>
