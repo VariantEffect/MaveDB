@@ -5,15 +5,63 @@ from io import StringIO
 
 import django.forms as forms
 from django.dispatch import receiver
+from django.db.models import ObjectDoesNotExist
 from django.db.models.signals import post_save
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext as _
+
+from main.models import Keyword
 
 from .models import ScoreSet, Variant, SCORES_KEY, COUNTS_KEY
 from .validators import (
     valid_scoreset_count_data_input, valid_scoreset_score_data_input,
     valid_scoreset_json, valid_variant_json, Constants
 )
+
+
+class ScoresetEditForm(forms.ModelForm):
+    # Meta
+    # ---------------------------------------------------------------------- #
+    class Meta:
+        model = ScoreSet
+        fields = (
+            'private',
+            'abstract',
+            'method_desc',
+            'doi_id',
+            'keywords'
+        )
+
+    # Additional fields
+    # ---------------------------------------------------------------------- #
+    keywords = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.widgets.SelectMultiple(
+            attrs={
+                "class": "select2 select2-token-select",
+                "style": "width:100%;height:50px;"
+            }
+        )
+    )
+
+    # Methods
+    # ---------------------------------------------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(ScoresetEditForm, self).__init__(*args, **kwargs)
+        self.fields["keywords"].queryset = Keyword.objects.all()
+        self.keywords = []
+
+    def clean(self):
+        cleaned_data = super(ScoresetEditForm, self).clean()
+        keywords = cleaned_data.get("keywords", None)
+        if keywords is None and self.errors["keywords"]:
+            keywords_pks = self.data.getlist("keywords")
+            keyword_ls = Keyword.parse_pk_list(keywords_pks)
+            cleaned_data["keywords"] = keyword_ls
+            self.errors.pop("keywords")
+            self.keywords = keyword_ls
+        return cleaned_data
 
 
 class ScoreSetForm(forms.ModelForm):
@@ -52,7 +100,7 @@ class ScoreSetForm(forms.ModelForm):
                 var.scoreset = self.instance
                 var.save()
 
-    def cached_variants(self):
+    def get_variants(self):
         if self.is_bound and self.is_valid():
             return self.cleaned_data['variants']
 
@@ -95,15 +143,14 @@ class ScoreSetForm(forms.ModelForm):
             COUNTS_KEY: [xs.strip() for xs in counts_header]
         }
         valid_scoreset_json(dataset_columns)
-        cleaned_data['dataset_columns'] = dataset_columns
         scores_data.close()
         counts_data.close()
-        return cleaned_data
+        return dataset_columns
 
-    def _validate_rows_create_variants(self, cleaned_data=None):
+    def _validate_rows_and_create_variants(
+            self, dataset_columns, cleaned_data=None):
         if not cleaned_data:
             cleaned_data = super(ScoreSetForm, self).clean()
-        dataset_columns = cleaned_data.get('dataset_columns', [])
         scores_header = dataset_columns[SCORES_KEY]
         counts_header = dataset_columns[COUNTS_KEY]
         variants = []
@@ -231,16 +278,20 @@ class ScoreSetForm(forms.ModelForm):
                 var = Variant(scoreset=self.instance, hgvs=hgvs, data=data)
                 variants.append(var)
 
-        cleaned_data['variants'] = variants
-        return cleaned_data
+        return variants
 
     def clean(self):
         if self.errors:
             return super(ScoreSetForm, self).clean()
+        print(self.fields)
         cleaned_data = super(ScoreSetForm, self).clean()
         self._validate_scores_counts_same_rows(cleaned_data)
-        cleaned_data = self._validate_and_create_headers(cleaned_data)
-        cleaned_data = self._validate_rows_create_variants(cleaned_data)
+        dataset_columns = self._validate_and_create_headers(cleaned_data)
+        variants = self._validate_rows_and_create_variants(
+            dataset_columns, cleaned_data
+        )
+        cleaned_data["dataset_columns"] = dataset_columns
+        cleaned_data["variants"] = variants
         return cleaned_data
 
     def save(self, commit=True):
