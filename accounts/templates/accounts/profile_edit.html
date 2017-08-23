@@ -1,0 +1,40 @@
+{% extends "accounts/profile_base.html" %}
+
+{% block profile_body %}
+<!-- Edit instance -->
+<div class="row" style="margin-top: 25px;">
+	<div class="ten columns">
+		<h3> Edit Score Set {{ instance.accession }} </h3>
+		<p> 
+			Only fields shown below are editable. All other fields have been 
+			frozen. If you feel you need to edit additional fields not seen below, 
+			you will need to contact us.
+		</p>
+		<hr>
+		
+		<form id="edit-form"
+					action="{% url 'accounts:edit_instance' instance.accession %}" 
+					method="post">
+			{% csrf_token %}
+			{% if edit_form.non_field_errors %}
+				<div style="width:100%;color:red;list-style:none;">
+					{{ edit_form.non_field_errors }}
+				</div>
+			{% endif %}
+			{% for field in edit_form %}
+				<div style="width:100%;color:red;list-style:none;">
+					{{ field.errors }}
+				 </div>
+				<div style="width:100%"><b>{{ field.label }}</b></div>
+				<div style="width:100%">{{ field }}</div>
+			{% endfor %}
+			<div style="width:100%;margin-top:5px;">
+				<input class="u-pull-right" type="submit" value="Save"
+								style="width:150px;margin-bottom:35px;">
+			</div>
+		</form>
+	
+	</div> 
+</div> <!-- End edit instance -->
+
+{% endblock profile_body %}

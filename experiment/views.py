@@ -52,7 +52,16 @@ class ExperimentDetailView(DetailView):
     context_object_name = "experiment"
 
     def dispatch(self, request, *args, **kwargs):
-        experiment = self.get_object()
+        try:
+            experiment = self.get_object()
+        except Http404:
+            response = render(
+                request=request,
+                template_name="main/404_not_found.html"
+            )
+            response.status_code = 404
+            return response
+
         has_permission = self.request.user.has_perm(
             PermissionTypes.CAN_VIEW, experiment)
         if experiment.private and not has_permission:
@@ -89,7 +98,16 @@ class ExperimentSetDetailView(DetailView):
     context_object_name = "experimentset"
 
     def dispatch(self, request, *args, **kwargs):
-        experimentset = self.get_object()
+        try:
+            experimentset = self.get_object()
+        except Http404:
+            response = render(
+                request=request,
+                template_name="main/404_not_found.html"
+            )
+            response.status_code = 404
+            return response
+
         has_permission = self.request.user.has_perm(
             PermissionTypes.CAN_VIEW, experimentset)
         if experimentset.private and not has_permission:

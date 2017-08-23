@@ -4,6 +4,7 @@ Views for accounts app.
 
 import re
 import json
+import logging
 
 from django.apps import apps
 from django.http import HttpResponse, JsonResponse
@@ -21,8 +22,9 @@ from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 
 from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
+from experiment.forms import ExperimentEditForm
 from scoreset.validators import SCS_ACCESSION_RE
-from scoreset.forms import ScoresetEditForm
+from scoreset.forms import ScoreSetEditForm
 
 from .permissions import (
     GroupTypes,
@@ -43,12 +45,31 @@ from .forms import (
     SelectUsersForm
 )
 
+
+logger = logging.getLogger(name="django")
 ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
 Experiment = apps.get_model('experiment', 'Experiment')
 ScoreSet = apps.get_model('scoreset', 'ScoreSet')
 
 
+# Utilities
+# ------------------------------------------------------------------------- #
 def get_class_for_accession(accession):
+    """
+    Returns the class matching the accession, if it's either 
+    an `ExperimentSet`, `Experiment` or `ScoreSet` otherwise it 
+    returns `None`.
+
+    Parameters
+    ----------
+    accession : `str`
+        The accession for an instance
+
+    Returns
+    -------
+    `cls` or `None`
+        A class that can be instantiated, or None.
+    """
     if re.fullmatch(EXPS_ACCESSION_RE, accession):
         return ExperimentSet
     elif re.fullmatch(EXP_ACCESSION_RE, accession):
@@ -56,29 +77,65 @@ def get_class_for_accession(accession):
     elif re.fullmatch(SCS_ACCESSION_RE, accession):
         return ScoreSet
     else:
-        return None
+        return Nonef
 
 
 # Profile views
 # ------------------------------------------------------------------------- #
 @login_required(login_url=reverse_lazy("accounts:login"))
 def profile_view(request):
-    if user_is_anonymous(request.user):
-        response = render(request, 'main/403_forbidden.html')
-        response.status_code = 403
-        return response
+    """
+    A simple view, at only one line...
+
+    One is the loneliest number that you'll ever do
+    Two can be as bad as one
+    It's the loneliest number since the number one
+
+    No is the saddest experience you'll ever know
+    Yes, it's the saddest experience you'll ever know
+
+    'Cause one is the loneliest number that you'll ever do
+    One is the loneliest number, whoa-oh, worse than two
+
+    It's just no good anymore since you went away
+    Now I spend my time just making rhymes of yesterday
+
+    One is the loneliest number
+    One is the loneliest number
+    One is the loneliest number that you'll ever do
+    One is the loneliest
+    One is the loneliest
+    One is the loneliest number that you'll ever do
+
+    It's just no good anymore since you went away (number)
+    One is the loneliest (number)
+    One is the loneliest (number)
+    One is the loneliest number that you'll ever do (number)
+    One is the loneliest (number)
+    One is the loneliest (number)
+    One is the loneliest number that you'll ever do (number)
+    One (one is the loneliest number that you'll ever do)(number)
+    One is the loneliest number that you'll ever do (number)
+    One is the loneliest number that you'll ever do 
+    """
     return render(request, 'accounts/profile_home.html')
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
 def manage_instance(request, accession):
-    klass = get_class_for_accession(accession)
-    instance = get_object_or_404(klass, accession=accession)
-
     post_form = None
     context = {}
-    context["instance"] = instance
 
+    try:
+        klass = get_class_for_accession(accession)
+        instance = get_object_or_404(klass, accession=accession)
+    except:
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
+        return response
+
+    # 404 if there are no permissions instead of 403 to prevent
+    # information leaking.
     has_permission = [
         user_is_admin_for_instance(request.user, instance),
     ]
@@ -110,12 +167,12 @@ def manage_instance(request, accession):
         instance=instance,
         prefix="viewer_management"
     )
+    context["instance"] = instance
     context["admin_select_form"] = admin_select_form
     context["contrib_select_form"] = contrib_select_form
     context["viewer_select_form"] = viewer_select_form
 
     if request.method == "POST":
-        print(request.POST)
         if "administrator_management-users" in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
@@ -143,6 +200,8 @@ def manage_instance(request, accession):
             post_form.process_user_list()
             return redirect("accounts:manage_instance", instance.accession)
 
+    # Replace the form that has changed. If it reaches this point,
+    # it means there were errors in the form.
     if post_form is not None and post_form.group == GroupTypes.ADMIN:
         context["admin_select_form"] = post_form
     elif post_form is not None and post_form.group == GroupTypes.CONTRIBUTOR:
@@ -155,8 +214,33 @@ def manage_instance(request, accession):
 
 @login_required(login_url=reverse_lazy("accounts:login"))
 def edit_instance(request, accession):
-    klass = get_class_for_accession(accession)
-    instance = get_object_or_404(klass, accession=accession)
+    """
+    This view takes uses the accession string to deduce the class belonging
+    to that accession and then retrieves the appropriate instance or 404s.
+
+    Once the instance has been retrieved, the correct edit form is retrieved
+    and rendered to the user. POST form handling is delegated to the 
+    appropriate method, which is a static method of edit form class.
+
+    Only `Experiment` and `ScoreSet` can be edited. Passing an accession for
+    `ExperimentSet` or `Variant` will return a 404.
+
+    Parameters
+    ----------
+    accession : `str`
+        A string object representing the accession of a database instance
+        of either `Experiment` or `ScoreSet`.
+    """
+    try:
+        klass = get_class_for_accession(accession)
+        if klass not in [Experiment, ScoreSet]:
+            raise TypeError("Can't edit class {}.".format(klass))
+        instance = get_object_or_404(klass, accession=accession)
+    except:
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
+        return response
+
     has_permission = [
         user_is_admin_for_instance(request.user, instance),
         user_is_contributor_for_instance(request.user, instance),
@@ -166,11 +250,28 @@ def edit_instance(request, accession):
         response.status_code = 404
         return response
 
-    form = ScoresetEditForm(instance=instance)
-    context = {"form": form}
+    if klass == Experiment:
+        return handle_experiment_edit_form(request, instance)
+    elif klass == ScoreSet:
+        return handle_scoreset_edit_form(request, instance)
+    else:
+        logger.error(
+            "Tried to process an edit form for an invalid type {}. Expecting "
+            " either `Experiment` or `ScoreSet`.".format(klass)
+        )
+        raise ValueError(
+            "Tried to process an edit form for an invalid "
+            "type {}.".format(klass)
+        )
+
+
+def handle_scoreset_edit_form(request, instance):
+    form = ScoreSetEditForm(instance=instance)
+    context = {"edit_form": form, 'instance': instance}
 
     if request.method == "POST":
-        form = ScoresetEditForm(request.POST, instance=instance)
+        print(request.POST)
+        form = ScoreSetEditForm(request.POST, instance=instance)
         if form.is_valid() and form.has_changed():
             updated_instance = form.save(commit=False)
             existing_keywords = instance.keywords.all()
@@ -189,13 +290,58 @@ def edit_instance(request, accession):
                 "accounts:edit_instance", updated_instance.accession
             )
 
-    return render(request, 'accounts/profile_home.html', context)
+    return render(request, 'accounts/profile_edit.html', context)
+
+
+def handle_experiment_edit_form(request, instance):
+    form = ExperimentEditForm(instance=instance)
+    context = {"edit_form": form, 'instance': instance}
+
+    if request.method == "POST":
+        form = ExperimentEditForm(request.POST, instance=instance)
+        if form.is_valid() and form.has_changed():
+            updated_instance = form.save(commit=False)
+            existing_keywords = instance.keywords.all()
+            new_keywords = form.cleaned_data.get("keywords", [])
+            for keyword in new_keywords:
+                keyword.save()
+
+            updated_instance.save()
+            for keyword in new_keywords:
+                updated_instance.keywords.add(keyword)
+            for keyword in existing_keywords:
+                if keyword not in new_keywords:
+                    updated_instance.keywords.remove(keyword)
+
+            return redirect(
+                "accounts:edit_instance", updated_instance.accession
+            )
+
+    return render(request, 'accounts/profile_edit.html', context)
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
 def view_instance(request, accession):
-    klass = get_class_for_accession(accession)
-    instance = get_object_or_404(klass, accession=accession)
+    """
+    This view takes uses the accession string to deduce the class belonging
+    to that accession and then retrieves the appropriate instance or 404s.
+
+    Once the instance has been retrieved, the user is redirected to the \
+    appropriate view.
+
+    Parameters
+    ----------
+    accession : `str`
+        A string object representing the accession of a database instance.
+    """
+    try:
+        klass = get_class_for_accession(accession)
+        instance = get_object_or_404(klass, accession=accession)
+    except:
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
+        return response
+
     has_permission = [
         user_is_admin_for_instance(request.user, instance),
         user_is_contributor_for_instance(request.user, instance),
@@ -212,6 +358,10 @@ def view_instance(request, accession):
         direct_to = "experiment:experimentset_detail"
     elif klass == ScoreSet:
         direct_to = "scoreset:scoreset_detail"
+    else:
+        response = render(request, "main/404_not_found.html")
+        response.status_code = 404
+        return response
 
     return redirect(direct_to, accession=instance.accession)
 

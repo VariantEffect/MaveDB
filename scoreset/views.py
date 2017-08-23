@@ -1,7 +1,7 @@
 import json
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.http import StreamingHttpResponse
 from django.views.generic import DetailView
 from django.forms import formset_factory
@@ -45,7 +45,16 @@ class ScoresetDetailView(DetailView):
     context_object_name = "scoreset"
 
     def dispatch(self, request, *args, **kwargs):
-        scoreset = self.get_object()
+        try:
+            scoreset = self.get_object()
+        except Http404:
+            response = render(
+                request=request,
+                template_name="main/404_not_found.html"
+            )
+            response.status_code = 404
+            return response
+
         has_permission = self.request.user.has_perm(
             PermissionTypes.CAN_VIEW, scoreset)
         if scoreset.private and not has_permission:

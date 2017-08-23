@@ -7,14 +7,7 @@
 	<div class="twelve columns">
 		<h3> Welcome, {{ request.user.username }} </h3>
 		<hr>
-
-		<form action="" method="post">
-			{% csrf_token %}
-			{{ form.non_field_errors }}
-			{{ form }}
-			<input type="submit" value="Save"/>
-		</form>
-		
+	
 		<!-- Instances that user is a ADMIN for -->
 		<div id="admin-instances">
 			<h5> Administrator on </h5>

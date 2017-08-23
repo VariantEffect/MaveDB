@@ -54,7 +54,9 @@ class TestExperimentSetDetailView(TestCase):
         self.assertTemplateUsed(response, 'main/403_forbidden.html')
 
     def test_404_status_and_template_used_when_object_not_found(self):
-        self.fail("Write this test!")
+        response = self.client.get('/experiment/{}/'.format("EXPS999999"))
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/404_not_found.html')
 
     def test_private_experiment_rendered_if_user_can_view(self):
         obj = ExperimentSet.objects.create()
@@ -104,7 +106,9 @@ class TestExperimentDetailView(TestCase):
         self.assertTemplateUsed(response, 'main/403_forbidden.html')
 
     def test_404_status_and_template_used_when_object_not_found(self):
-        self.fail("Write this test!")
+        response = self.client.get('/experiment/{}/'.format("EXP999999A"))
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/404_not_found.html')
 
     def test_private_experiment_rendered_if_user_can_view(self):
         exp = Experiment.objects.create(target="BRCA1", wt_sequence="ATCG")

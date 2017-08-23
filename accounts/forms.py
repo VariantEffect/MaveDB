@@ -3,6 +3,7 @@ This module contains the definition for the forms used for registration and
 account editing.
 """
 
+import logging
 from django import forms
 
 from django.utils.translation import ugettext as _
@@ -28,8 +29,38 @@ from .permissions import (
     valid_group_type
 )
 
+logger = logging.getLogger("django")
+
 
 class SelectUsersForm(forms.Form):
+    """
+    This form contains a single :py:class:`forms.ModelMultipleChoiceField`
+    field which displays a html select widget that an administrator can
+    choose users from to add/remove to/from a permission group. The submitted
+    input are the primary keys of users in string format and after the clean 
+    process is run, this list is turned into a list of valid user instances.
+
+    Parameters
+    ----------
+    group : `str`
+        A valid string from py:class:`GroupType`
+
+    instance : `ExperimentSet`, `Experiment` or `ScoreSet`
+        An instance for which the permissions are being altered.
+
+    required : `bool`, optional, default: `False`
+        Specify whether the form field should be required.abs
+
+    Methods
+    -------
+    clean
+        Overrides the base class to additionally check if an assignment
+        will result in no administrators. 
+
+    process_user_list
+        Defers the call to the appropriate update function for the input
+        user list based on the initialised group type.
+    """
     users = forms.ModelMultipleChoiceField(
         queryset=None,
         required=False,
@@ -41,14 +72,20 @@ class SelectUsersForm(forms.Form):
         )
     )
 
-    def process_user_list(self):
-        users = self.clean().get("users", [])
-        if self.group == GroupTypes.ADMIN:
-            update_admin_list_for_instance(users, self.instance)
-        elif self.group == GroupTypes.CONTRIBUTOR:
-            update_contributor_list_for_instance(users, self.instance)
-        elif self.group == GroupTypes.VIEWER:
-            update_viewer_list_for_instance(users, self.instance)
+    def __init__(self, group, instance, required=False, *args, **kwargs):
+        super(SelectUsersForm, self).__init__(*args, **kwargs)
+        self.fields["users"].queryset = User.objects.exclude(
+            username=ANONYMOUS_USER_NAME
+        ).exclude(is_superuser=True)
+        self.fields["users"].required = required
+        if not valid_group_type(group):
+            raise ValueError("Unrecognised group type {}".format(group))
+        if not valid_model_instance(instance):
+            raise ValueError("Unrecognised instance type {}".format(
+                instance.__class__.__name__
+            ))
+        self.group = group
+        self.instance = instance
 
     def clean(self):
         cleaned_data = super(SelectUsersForm, self).clean()
@@ -72,20 +109,18 @@ class SelectUsersForm(forms.Form):
                     )
         return cleaned_data
 
-    def __init__(self, group, instance, required=False, *args, **kwargs):
-        super(SelectUsersForm, self).__init__(*args, **kwargs)
-        self.fields["users"].queryset = User.objects.exclude(
-            username=ANONYMOUS_USER_NAME
-        ).exclude(is_superuser=True)
-        self.fields["users"].required = required
-        if not valid_group_type(group):
-            raise ValueError("Unrecognised group type {}".format(group))
-        if not valid_model_instance(instance):
-            raise ValueError("Unrecognised instance type {}".format(
-                instance.__class__.__name__
-            ))
-        self.group = group
-        self.instance = instance
+    def process_user_list(self):
+        """
+        Defer the call to the appropriate update function for the input
+        user list based on the initialised group type.
+        """
+        users = self.clean().get("users", [])
+        if self.group == GroupTypes.ADMIN:
+            update_admin_list_for_instance(users, self.instance)
+        elif self.group == GroupTypes.CONTRIBUTOR:
+            update_contributor_list_for_instance(users, self.instance)
+        elif self.group == GroupTypes.VIEWER:
+            update_viewer_list_for_instance(users, self.instance)
 
 
 class RegistrationForm(UserCreationForm):
@@ -102,17 +137,40 @@ class RegistrationForm(UserCreationForm):
 
 
 def send_user_activation_email(uid, secure, domain, subject, template_name):
+    """
+    Sends an email to the user with the primary key `uid` with
+    an activation link.
+
+    Parameters
+    ----------
+    uid : `int`
+        The primary key for the user.
+    secure : `bool`
+        Whether to use https or http.
+    domain : `str`
+        The domain for this website.
+    subject : `str`
+        Email subject line.`
+    template_name : `str`
+        The name of the email template.
+
+    Returns
+    -------
+    `tuple`
+        Including `(uidb64, token)` where `uid64` is the base64 encoded
+        primary key and `token` is the generated activation link token.
+    """
     try:
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:
-        print("Could not find user {}".format(uid))
+        logger.error("Could not find user {}".format(uid))
         return None, None
 
     try:
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = account_activation_token.make_token(user)
     except (TypeError, ValueError, OverflowError):
-        print("Could not make uidb64/token.")
+        logger.error("Could not make uidb64/token.")
         return None, None
 
     message = render_to_string(template_name, {
