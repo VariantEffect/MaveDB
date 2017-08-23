@@ -2,6 +2,7 @@
 import datetime
 
 from django.db import models
+from django.db.models import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
@@ -176,11 +177,24 @@ class Keyword(models.Model):
     text : `models.TextField`
         The free-form textual representation of the keyword.
     """
+    creation_date = models.DateField(blank=False, default=datetime.date.today)
     text = models.CharField(
         blank=False, null=False, default=None, unique=True, max_length=256,
         verbose_name="Keyword"
     )
-    creation_date = models.DateField(blank=False, default=datetime.date.today)
+
+    @staticmethod
+    def parse_pk_list(accession_pks):
+        accessions = []
+        for pk in accession_pks:
+            try:
+                accession = ExternalAccession.objects.get(pk=pk)
+                accessions.append(accession)
+            except (ValueError, ObjectDoesNotExist):
+                text = str(pk)
+                if not ExternalAccession.objects.filter(text=text).exists():
+                    ExternalAccession.append(ExternalAccession(text=text))
+        return accessions
 
     class Meta:
         ordering = ['-creation_date']
@@ -188,7 +202,7 @@ class Keyword(models.Model):
         verbose_name_plural = "Keywords"
 
     def __str__(self):
-        return "Keyword({})".format(self.text)
+        return self.text
 
 
 class ExternalAccession(models.Model):
@@ -209,6 +223,19 @@ class ExternalAccession(models.Model):
         blank=False, null=False, default=None, unique=True, max_length=256,
         verbose_name="Accession"
     )
+
+    @staticmethod
+    def parse_pk_list(keyword_pks):
+        keywords = []
+        for pk in keyword_pks:
+            try:
+                keyword = Keyword.objects.get(pk=pk)
+                keywords.append(keyword)
+            except (ValueError, ObjectDoesNotExist):
+                text = str(pk)
+                if not Keyword.objects.filter(text=text).exists():
+                    keywords.append(Keyword(text=text))
+        return keywords
 
     class Meta:
         ordering = ['-creation_date']
@@ -237,13 +264,24 @@ class TargetOrganism(models.Model):
         verbose_name="Target Organism"
     )
 
+    @staticmethod
+    def parse_pk(pk):
+        target_org = None
+        try:
+            target_org = TargetOrganism.objects.get(pk=pk)
+        except (ValueError, ObjectDoesNotExist):
+            text = str(pk)
+            if not TargetOrganism.objects.filter(text=text).exists():
+                target_org = TargetOrganism(text=text)
+        return target_org
+
     class Meta:
         ordering = ['-creation_date']
         verbose_name = "Target organism"
         verbose_name_plural = "Target organisms"
 
     def __str__(self):
-        return "TargetOrganism({})".format(self.text)
+        return self.text
 
 
 class ReferenceMapping(models.Model):
@@ -302,7 +340,7 @@ class ReferenceMapping(models.Model):
         verbose_name_plural = "Reference mappings"
 
     def __str__(self):
-        return "ReferenceMapping({}, {}->{}, {}->{}, {})".format(
+        return "{}, {}->{}, {}->{}, {}".format(
             self.reference,
             self.target_start, self.target_end,
             self.reference_start, self.reference_end,
