@@ -56,6 +56,10 @@ input[type=number] {
     min-height: 72vh;
 }
 
+.select2 {
+    margin-bottom: 15px;
+}
+
 /* General, navbar and footer Link Styling
 ----------------------------------- */
 a {

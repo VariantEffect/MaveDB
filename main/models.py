@@ -184,18 +184,6 @@ class Keyword(models.Model):
     )
 
     @staticmethod
-    def parse_pk_list(accession_pks):
-        accessions = []
-        for pk in accession_pks:
-            try:
-                accession = ExternalAccession.objects.get(pk=pk)
-                accessions.append(accession)
-            except (ValueError, ObjectDoesNotExist):
-                text = str(pk)
-                if not ExternalAccession.objects.filter(text=text).exists():
-                    ExternalAccession.append(ExternalAccession(text=text))
-        return accessions
-
     class Meta:
         ordering = ['-creation_date']
         verbose_name = "Keyword"
@@ -224,26 +212,13 @@ class ExternalAccession(models.Model):
         verbose_name="Accession"
     )
 
-    @staticmethod
-    def parse_pk_list(keyword_pks):
-        keywords = []
-        for pk in keyword_pks:
-            try:
-                keyword = Keyword.objects.get(pk=pk)
-                keywords.append(keyword)
-            except (ValueError, ObjectDoesNotExist):
-                text = str(pk)
-                if not Keyword.objects.filter(text=text).exists():
-                    keywords.append(Keyword(text=text))
-        return keywords
-
     class Meta:
         ordering = ['-creation_date']
         verbose_name = "Other accession"
         verbose_name_plural = "other accessions"
 
     def __str__(self):
-        return "ExternalAccession({})".format(self.text)
+        return self.text
 
 
 class TargetOrganism(models.Model):
@@ -263,17 +238,6 @@ class TargetOrganism(models.Model):
         blank=False, null=False, default=None, unique=True, max_length=256,
         verbose_name="Target Organism"
     )
-
-    @staticmethod
-    def parse_pk(pk):
-        target_org = None
-        try:
-            target_org = TargetOrganism.objects.get(pk=pk)
-        except (ValueError, ObjectDoesNotExist):
-            text = str(pk)
-            if not TargetOrganism.objects.filter(text=text).exists():
-                target_org = TargetOrganism(text=text)
-        return target_org
 
     class Meta:
         ordering = ['-creation_date']
