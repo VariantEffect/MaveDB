@@ -33,7 +33,9 @@ class TestScoreSetSetDetailView(TestCase):
         self.exp = Experiment.objects.create(target="test", wt_sequence="AT")
 
     def test_404_status_and_template_used_when_object_not_found(self):
-        self.fail("Write this test!")
+        response = self.client.get('/scoreset/{}/'.format("SCS999999A.1"))
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/404_not_found.html')
 
     def test_uses_correct_template(self):
         obj = ScoreSet.objects.create(experiment=self.exp, private=False)
