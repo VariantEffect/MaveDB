@@ -1,12 +1,16 @@
 {% extends "accounts/profile_base.html" %}
+{% load static %}
 
 {% block profile_body %}
+<h3> {{ instance.accession }} </h3>
 
 <!-- Admin management -->
 <div class="row" style="margin-top: 25px;">
 	<div class="ten columns">
 		<h5> Add/Remove Administrators </h5><hr>
-		<form action="{% url 'accounts:manage_instance' instance.accession %}" method="post">
+		<form id="admin-form"
+					action="{% url 'accounts:manage_instance' instance.accession %}" 
+					method="post">
 			{% csrf_token %}
 			{% if admin_select_form.non_field_errors %}
 				<div>
@@ -17,8 +21,9 @@
 				<div style="width:100%">{{ admin_select_form.as_table }}</div>
 			{% endfor %}
 			<div style="width:100%;margin-top:5px;">
-				<input class="u-pull-right" type="submit" value="Submit"
-							style="width:150px;margin-bottom:35px;" >
+				<input class="u-pull-right" type="button" value="Save"
+							style="width:150px;margin-bottom:35px;" 
+							onclick="validate_admin_submit();">
 			</div>
 		</form>
 	</div> 
@@ -29,7 +34,9 @@
 <div class="row" style="margin-top: 25px;">
 	<div class="ten columns">
 		<h5> Add/Remove Contributors </h5><hr>
-		<form action="{% url 'accounts:manage_instance' instance.accession %}" method="post">
+		<form id="contrib-form"
+					action="{% url 'accounts:manage_instance' instance.accession %}" 
+					method="post">
 			{% csrf_token %}
 			{% if contrib_select_form.non_field_errors %}
 				<div>
@@ -41,8 +48,9 @@
 				<div style="width:100%">{{ field }}</div>
 			{% endfor %}
 			<div style="width:100%;margin-top:5px;">
-					<input class="u-pull-right" type="submit" value="Submit"
-								style="width:150px;margin-bottom:35px;" >
+					<input class="u-pull-right" type="button" value="Save"
+								 style="width:150px;margin-bottom:35px;" 
+								 onclick="validate_contrib_submit();">
 			</div>
 		</form>
 	</div> 
@@ -53,7 +61,9 @@
 <div class="row" style="margin-top: 25px;">
 	<div class="ten columns">
 		<h5> Add/Remove Viewers </h5><hr>
-		<form action="{% url 'accounts:manage_instance' instance.accession %}" method="post">
+		<form id="viewer-form"
+					action="{% url 'accounts:manage_instance' instance.accession %}" 
+					method="post">
 			{% csrf_token %}
 			{% if viewer_select_form.non_field_errors %}
 				<div>
@@ -65,8 +75,9 @@
 				<div style="width:100%">{{ field }}</div>
 			{% endfor %}
 			<div style="width:100%;margin-top:5px;">
-					<input class="u-pull-right" type="submit" value="Submit"
-								style="width:150px;margin-bottom:35px;" >
+					<input class="u-pull-right" type="button" value="Save"
+								 style="width:150px;margin-bottom:35px;" 
+								 onclick="validate_viewer_submit();">
 			</div>
 		</form>
 	</div> 

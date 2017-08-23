@@ -7,25 +7,38 @@
 	<div class="twelve columns">
 		<h3> Welcome, {{ request.user.username }} </h3>
 		<hr>
+
+		<form action="" method="post">
+			{% csrf_token %}
+			{{ form.non_field_errors }}
+			{{ form }}
+			<input type="submit" value="Save"/>
+		</form>
 		
 		<!-- Instances that user is a ADMIN for -->
-		<div id="admin-models">
+		<div id="admin-instances">
 			<h5> Administrator on </h5>
 			{% if request.user.profile.administrator_instances %}
 				<ul style="list-style: none">
-					{% for model in request.user.profile.administrator_instances %}
+					{% for instance in request.user.profile.administrator_instances %}
 						<div style="display: inline-flex">
-							<li> {{ model.accession }} </li>
+							<li> {{ instance.accession }} </li>
 							<li style="padding-left:10px;">
-								<a href="{% url 'accounts:manage_instance' model.accession %}">Manage</a>
+								<a href="{% url 'accounts:manage_instance' instance.accession %}">
+									Manage
+								</a>
 							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
-								<a href="">Edit</a>
+								<a href="{% url 'accounts:edit_instance' instance.accession %}">
+									Edit
+								</a>
 							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
-								<a href="">Preview</a>
+								<a href="{% url 'accounts:view_instance' instance.accession %}">
+									View
+								</a>
 							</li>
 						</div>
 						<!-- Information -->
@@ -33,19 +46,19 @@
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Last edited on: </label>
-									<div>{{ model.last_edit_date }}<div>
+									<div>{{ instance.last_edit_date }}<div>
 								</div>
 							</li>
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">View: </label>
-									<div> {{ model.private }} <div>
+									<div> {{ instance.private }} <div>
 								</div>
 							</li>
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Approved: </label>
-									<div> {{ model.approved }} <div>
+									<div> {{ instance.approved }} <div>
 								</div>
 							</li>
 						</ul>
@@ -58,13 +71,13 @@
 		</div>
 
 		<!-- Instances that user is a CONTRIBUTOR for -->
-		<div id="contributor-models">
+		<div id="contributor-instances">
 			<h5> Contributor on </h5>
 			{% if request.user.profile.contributor_instances %}
 				<ul style="list-style: none">
-					{% for model in request.user.profile.contributor_instances %}
+					{% for instance in request.user.profile.contributor_instances %}
 						<div style="display: inline-flex">
-							<li> {{ model.accession }} </li>
+							<li> {{ instance.accession }} </li>
 							<li style="padding-left:10px;">
 								<a href="">Edit</a>
 							</li>
@@ -78,19 +91,19 @@
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Last edited on: </label>
-									<div>{{ model.last_edit_date }}<div>
+									<div>{{ instance.last_edit_date }}<div>
 								</div>
 							</li>
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Private: </label>
-									<div> {{ model.private }} <div>
+									<div> {{ instance.private }} <div>
 								</div>
 							</li>
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Approved: </label>
-									<div> {{ model.approved }} <div>
+									<div> {{ instance.approved }} <div>
 								</div>
 							</li>
 						</ul>
@@ -103,13 +116,13 @@
 		</div>
 
 		<!-- Instances that are VIEW ONLY for user -->
-		<div id="view-only-models">
+		<div id="view-only-instances">
 			<h5> View only on </h5>
 			{% if request.user.profile.viewer_instances %}
 				<ul style="list-style: none">
-					{% for model in request.user.profile.viewer_instances %}
+					{% for instance in request.user.profile.viewer_instances %}
 						<div style="display: inline-flex">
-							<li> {{ model.accession }} </li>
+							<li> {{ instance.accession }} </li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
 							<li style="padding-left:10px;">
 								<a href="">View</a>
@@ -120,19 +133,19 @@
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Last edited on: </label>
-									<div>{{ model.last_edit_date }}<div>
+									<div>{{ instance.last_edit_date }}<div>
 								</div>
 							</li>
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Private: </label>
-									<div> {{ model.private }} <div>
+									<div> {{ instance.private }} <div>
 								</div>
 							</li>
 							<li>
 								<div style="display: inline-flex">
 									<label style="margin-right:5px;">Approved: </label>
-									<div> {{ model.approved }} <div>
+									<div> {{ instance.approved }} <div>
 								</div>
 							</li>
 						</ul>

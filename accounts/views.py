@@ -14,7 +14,7 @@ from django.shortcuts import render, reverse, redirect, get_object_or_404
 
 from django.contrib.auth import login
 from django.contrib.auth.models import User, AnonymousUser, Group
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.shortcuts import get_current_site
 
 from django.utils.encoding import force_text
@@ -22,9 +22,11 @@ from django.utils.http import urlsafe_base64_decode
 
 from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
 from scoreset.validators import SCS_ACCESSION_RE
+from scoreset.forms import ScoresetEditForm
 
 from .permissions import (
     GroupTypes,
+    PermissionTypes,
     user_is_anonymous,
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
@@ -60,15 +62,30 @@ def get_class_for_accession(accession):
 # Profile views
 # ------------------------------------------------------------------------- #
 @login_required(login_url=reverse_lazy("accounts:login"))
+def profile_view(request):
+    if user_is_anonymous(request.user):
+        response = render(request, 'main/403_forbidden.html')
+        response.status_code = 403
+        return response
+    return render(request, 'accounts/profile_home.html')
+
+
+@login_required(login_url=reverse_lazy("accounts:login"))
 def manage_instance(request, accession):
     klass = get_class_for_accession(accession)
     instance = get_object_or_404(klass, accession=accession)
+
     post_form = None
     context = {}
     context["instance"] = instance
 
-    if not user_is_admin_for_instance(request.user, instance):
-        return redirect("accounts:profile")
+    has_permission = [
+        user_is_admin_for_instance(request.user, instance),
+    ]
+    if not any(has_permission):
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
+        return response
 
     # Initialise the forms with current group users.
     admins = instance.administrators()
@@ -137,12 +154,66 @@ def manage_instance(request, accession):
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def profile_view(request):
-    if user_is_anonymous(request.user):
-        response = render(request, 'main/403_forbidden.html')
-        response.status_code = 403
+def edit_instance(request, accession):
+    klass = get_class_for_accession(accession)
+    instance = get_object_or_404(klass, accession=accession)
+    has_permission = [
+        user_is_admin_for_instance(request.user, instance),
+        user_is_contributor_for_instance(request.user, instance),
+    ]
+    if not any(has_permission):
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
         return response
-    return render(request, 'accounts/profile_home.html')
+
+    form = ScoresetEditForm(instance=instance)
+    context = {"form": form}
+
+    if request.method == "POST":
+        form = ScoresetEditForm(request.POST, instance=instance)
+        if form.is_valid() and form.has_changed():
+            updated_instance = form.save(commit=False)
+            existing_keywords = instance.keywords.all()
+            new_keywords = form.cleaned_data.get("keywords", [])
+            for keyword in new_keywords:
+                keyword.save()
+
+            updated_instance.save()
+            for keyword in new_keywords:
+                updated_instance.keywords.add(keyword)
+            for keyword in existing_keywords:
+                if keyword not in new_keywords:
+                    updated_instance.keywords.remove(keyword)
+
+            return redirect(
+                "accounts:edit_instance", updated_instance.accession
+            )
+
+    return render(request, 'accounts/profile_home.html', context)
+
+
+@login_required(login_url=reverse_lazy("accounts:login"))
+def view_instance(request, accession):
+    klass = get_class_for_accession(accession)
+    instance = get_object_or_404(klass, accession=accession)
+    has_permission = [
+        user_is_admin_for_instance(request.user, instance),
+        user_is_contributor_for_instance(request.user, instance),
+        user_is_viewer_for_instance(request.user, instance)
+    ]
+    if not any(has_permission):
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
+        return response
+
+    if klass == Experiment:
+        direct_to = "experiment:experiment_detail"
+    elif klass == ExperimentSet:
+        direct_to = "experiment:experimentset_detail"
+    elif klass == ScoreSet:
+        direct_to = "scoreset:scoreset_detail"
+
+    return redirect(direct_to, accession=instance.accession)
 
 
 # Registration views

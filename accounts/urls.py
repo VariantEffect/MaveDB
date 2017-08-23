@@ -24,7 +24,7 @@ import django.contrib.auth.views as auth_views
 
 from .views import registration_view, profile_view
 from .views import activate_account_view, send_activation_email_view
-from .views import manage_instance
+from .views import manage_instance, edit_instance, view_instance
 
 
 urlpatterns = [
@@ -72,5 +72,15 @@ urlpatterns = [
         r"profile/manage/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
         manage_instance,
         name="manage_instance"
+    ),
+    url(
+        r"profile/edit/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
+        edit_instance,
+        name="edit_instance"
+    ),
+    url(
+        r"profile/view/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
+        view_instance,
+        name="view_instance"
     )
 ]
