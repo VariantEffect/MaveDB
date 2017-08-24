@@ -29,9 +29,10 @@ class ScoreSetForm(forms.ModelForm):
         fields = (
             'experiment',
             'private',
+            'keywords',
+            'doi_id',
             'abstract',
             'method_desc',
-            'doi_id',
         )
 
     scores_data = forms.CharField(
@@ -51,29 +52,113 @@ class ScoreSetForm(forms.ModelForm):
         )
     )
 
+    def __init__(self, *args, **kwargs):
+        super(ScoreSetForm, self).__init__(*args, **kwargs)
+        self.fields["abstract"].widget = forms.Textarea(
+            attrs={"style": "height:250px;width:100%"}
+        )
+        self.fields["method_desc"].widget = forms.Textarea(
+            attrs={"style": "height:250px;width:100%"}
+        )
+
+        # This needs to be in `__init__` because otherwise it is created as
+        # a class variable at import time.
+        self.fields["keywords"] = ModelSelectMultipleField(
+            klass=Keyword,
+            text_key="text",
+            queryset=None,
+            required=False,
+            widget=forms.widgets.SelectMultiple(
+                attrs={
+                    "class": "select2 select2-token-select",
+                    "style": "width:100%;height:50px;"
+                }
+            )
+        )
+        self.fields["keywords"].queryset = Keyword.objects.all()
+
     def clean(self):
         if self.errors:
             return super(ScoreSetForm, self).clean()
         cleaned_data = super(ScoreSetForm, self).clean()
-        self._validate_scores_counts_same_rows(cleaned_data)
-        dataset_columns = self._validate_and_create_headers(cleaned_data)
-        variants = self._validate_rows_and_create_variants(
-            dataset_columns, cleaned_data
-        )
-        cleaned_data["dataset_columns"] = dataset_columns
-        cleaned_data["variants"] = variants
+
+        has_counts = self.fields.get("counts_data", None) is not None
+        has_scores = self.fields.get("scores_data", None) is not None
+        if has_counts and has_scores:
+            self._validate_scores_counts_same_rows(cleaned_data)
+            dataset_columns = self._validate_and_create_headers(cleaned_data)
+            variants = self._validate_rows_and_create_variants(
+                dataset_columns, cleaned_data
+            )
+            cleaned_data["dataset_columns"] = dataset_columns
+            cleaned_data["variants"] = variants
         return cleaned_data
 
     def save(self, commit=True):
         super(ScoreSetForm, self).save(commit=commit)
-        self.instance.dataset_columns = self.cleaned_data["dataset_columns"]
-        variants = self.cleaned_data["variants"]
         if commit:
-            self.instance.save()
-            for var in variants:
+            self.process_and_save_all()
+        else:
+            self.save_m2m = self.process_and_save_all
+        return self.instance
+
+    def process_and_save_all(self):
+        """
+        This will saved all changes made to the instance. Keywords not
+        present in the form submission will be removed, new keywords will
+        be created in the database and all keywords in the upload form will
+        be added to the instance's keyword m2m field.
+        """
+        if not (self.is_bound and self.is_valid()):
+            return None
+        if self.errors:
+            raise ValueError(
+                "The %s could not be %s because the data didn't validate." % (
+                    self.instance._meta.object_name,
+                    'created' if self.instance._state.adding else 'changed',
+                )
+            )
+
+        self.instance.save()
+
+        has_counts = self.fields.get("counts_data", None) is not None
+        has_scores = self.fields.get("scores_data", None) is not None
+        if has_counts and has_scores:
+            self.instance.dataset_columns = \
+                self.cleaned_data["dataset_columns"]
+            self.save_variants()
+            for var in self.get_variants():
                 var.scoreset = self.instance
                 var.save()
+
+        self.save_new_keywords()
+        self.instance.update_keywords(self.all_keywords())
+
+        self.instance.save()
         return self.instance
+
+    def save_new_keywords(self):
+        """
+        Save new keywords that were created during the clean process.
+        """
+        if self.is_bound and self.is_valid():
+            for kw in self.new_keywords():
+                kw.save()
+
+    def new_keywords(self):
+        """
+        Return a list of keywords that were created during the clean process.
+        """
+        return self.fields["keywords"].new_instances
+
+    def all_keywords(self):
+        """
+        Return a list of all keywords found during the cleaning process
+        """
+        if self.is_bound and self.is_valid():
+            not_new = [kw for kw in self.cleaned_data.get("keywords", [])]
+            new = self.new_keywords()
+            return new + not_new
 
     def save_variants(self):
         if self.is_bound and self.is_valid():
@@ -263,10 +348,14 @@ class ScoreSetForm(forms.ModelForm):
         return variants
 
 
-class ScoreSetEditForm(forms.ModelForm):
+class ScoreSetEditForm(ScoreSetForm):
     """
     Docstring
     """
+    scores_data = None
+    counts_data = None
+    experiment = None
+
     class Meta:
         model = ScoreSet
         fields = (
@@ -276,101 +365,3 @@ class ScoreSetEditForm(forms.ModelForm):
             'abstract',
             'method_desc'
         )
-
-    # Methods
-    # ---------------------------------------------------------------------- #
-    def __init__(self, *args, **kwargs):
-        super(ScoreSetEditForm, self).__init__(*args, **kwargs)
-        self.keywords_at_init = []
-        self.fields["abstract"].widget = forms.Textarea(
-            attrs={"style": "height:250px;width:100%"}
-        )
-        self.fields["method_desc"].widget = forms.Textarea(
-            attrs={"style": "height:250px;width:100%"}
-        )
-
-        # This needs to be in `__init__` because otherwise it is created as
-        # a class variable at import time.
-        self.fields["keywords"] = ModelSelectMultipleField(
-            klass=Keyword,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.SelectMultiple(
-                attrs={
-                    "class": "select2 select2-token-select",
-                    "style": "width:100%;height:50px;"
-                }
-            )
-        )
-        self.fields["keywords"].queryset = Keyword.objects.all()
-        if kwargs.get("instance", None) is not None:
-            self.keywords_at_init = kwargs["instance"].keywords.all()
-
-    def save(self, commit=True):
-        super(ScoreSetEditForm, self).save(commit=commit)
-        if commit:
-            self.process_and_save_all()
-        else:
-            self.save_m2m = self.process_and_save_all
-        return self.instance
-
-    def process_and_save_all(self):
-        """
-        This will saved all changes made to the instance. Keywords not
-        present in the form submission will be removed, new keywords will
-        be created in the database and all keywords in the upload form will
-        be added to the instance's keyword m2m field.
-        """
-        if not (self.is_bound and self.is_valid()):
-            return None
-        if self.errors:
-            raise ValueError(
-                "The %s could not be %s because the data didn't validate." % (
-                    self.instance._meta.object_name,
-                    'created' if self.instance._state.adding else 'changed',
-                )
-            )
-        self.instance.save()
-        self.remove_keywords()
-        self.add_keywords()
-        self.instance.save()
-        return self.instance
-
-    def remove_keywords(self):
-        """
-        This will remove keywords from the instance that were present
-        before the form submission but are not present in the cleaned
-        keyword submission data. Checking is done by using the `text` field.
-        """
-        if self.is_bound and self.is_valid():
-            uploaded = [k.text for k in self.cleaned_data.get("keywords", [])]
-            uploaded += [k.text for k in self.new_keywords()]
-            uploaded = set(uploaded)
-
-            for kw in self.keywords_at_init:
-                if kw.text not in uploaded:
-                    self.instance.keywords.remove(kw)
-
-    def add_keywords(self):
-        """
-        Add all keywords to the instance's m2m field.
-        """
-        if self.is_bound and self.is_valid():
-            self.save_new_keywords()
-            for kw in self.new_keywords():
-                self.instance.keywords.add(kw)
-
-    def save_new_keywords(self):
-        """
-        Save new keywords that were created during the clean process.
-        """
-        if self.is_bound and self.is_valid():
-            for kw in self.new_keywords():
-                kw.save()
-
-    def new_keywords(self):
-        """
-        Return a list of keywords that were created during the clean process.
-        """
-        return self.fields["keywords"].new_instances
