@@ -7,9 +7,10 @@ from django.db import IntegrityError
 from django.db.models import ProtectedError
 from django.test import TransactionTestCase
 
-
-from experiment.models import Experiment, ExperimentSet
+from main.models import TargetOrganism, ExternalAccession, Keyword
 from scoreset.models import ScoreSet
+
+from ..models import Experiment, ExperimentSet
 
 
 class TestExperiment(TransactionTestCase):
@@ -149,3 +150,30 @@ class TestExperiment(TransactionTestCase):
             exp.ACCESSION_PREFIX, scs.ACCESSION_PREFIX
         ) + ".2"
         self.assertEqual(scs.accession, expected)
+
+    def test_can_remove_keywords_during_update(self):
+        exp = exp = self.make_experiment()
+        kw1 = Keyword.objects.create(text="test1")
+        kw2 = Keyword.objects.create(text="test2")
+        exp.keywords.add(kw1)
+        exp.update_keywords([kw2])
+        self.assertEqual(exp.keywords.count(), 1)
+        self.assertEqual(exp.keywords.all()[0], kw2)
+
+    def test_can_external_accessions_during_update(self):
+        exp = self.make_experiment()
+        acc1 = ExternalAccession.objects.create(text="test1")
+        acc2 = ExternalAccession.objects.create(text="test2")
+        exp.external_accessions.add(acc1)
+        exp.update_external_accessions([acc2])
+        self.assertEqual(exp.external_accessions.count(), 1)
+        self.assertEqual(exp.external_accessions.all()[0], acc2)
+
+    def test_can_update_target_organism(self):
+        exp = self.make_experiment()
+        to1 = TargetOrganism.objects.create(text="test1")
+        to2 = TargetOrganism.objects.create(text="test2")
+        exp.target_organism.add(to1)
+        exp.update_target_organism(to2)
+        self.assertEqual(exp.target_organism.count(), 1)
+        self.assertEqual(exp.target_organism.all()[0], to2)

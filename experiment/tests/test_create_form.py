@@ -85,3 +85,34 @@ class TestExperimentForm(TestCase):
         data["experimentset"] = "blah"
         form = ExperimentForm(data=data)
         self.assertFalse(form.is_valid())
+
+    def test_can_create_new_external_accessions(self):
+        data = self.make_test_data(target="test", wt_sequence="atcg")
+        data["external_accessions"] = ["test"]
+        form = ExperimentForm(data=data)
+        instance = form.save(commit=True)
+        self.assertEqual(instance.external_accessions.count(), 1)
+
+    def test_can_create_new_target_organisms(self):
+        data = self.make_test_data(target="test", wt_sequence="atcg")
+        data["target_organism"] = "test"
+        form = ExperimentForm(data=data)
+        instance = form.save(commit=True)
+        self.assertEqual(instance.target_organism.count(), 1)
+
+    def test_can_create_new_keywords(self):
+        data = self.make_test_data(target="test", wt_sequence="atcg")
+        data["keywords"] = ["test"]
+        form = ExperimentForm(data=data)
+        instance = form.save(commit=True)
+        self.assertEqual(instance.keywords.count(), 1)
+
+    def test_only_save_one_target_org(self):
+        data = self.make_test_data(target="test", wt_sequence="atcg")
+        data['target'] = "brca1"
+        data['target_organism'] = ['test1', 'test2']
+        data['wt_sequence'] = "atcg"
+
+        form = ExperimentForm(data=data)
+        instance = form.save(commit=True)
+        self.assertEqual(instance.target_organism.count(), 1)

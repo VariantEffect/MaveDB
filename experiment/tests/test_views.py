@@ -146,16 +146,6 @@ class TestCreateNewExperimentView(TestCase):
             'experiment-method_desc': [''],
             'experiment-sra_id': [''],
             'experiment-doi_id': [''],
-            'keyword-TOTAL_FORMS': ['0'],
-            'keyword-INITIAL_FORMS': ['0'],
-            'keyword-MIN_NUM_FORMS': ['0'],
-            'keyword-MAX_NUM_FORMS': ['1000'],
-            'keyword-__prefix__-text': [''],
-            'external_accession-TOTAL_FORMS': ['0'],
-            'external_accession-INITIAL_FORMS': ['0'],
-            'external_accession-MIN_NUM_FORMS': ['0'],
-            'external_accession-MAX_NUM_FORMS': ['1000'],
-            'external_accession-__prefix__-text': [''],
             'reference_mapping-TOTAL_FORMS': ['0'],
             'reference_mapping-INITIAL_FORMS': ['0'],
             'reference_mapping-MIN_NUM_FORMS': ['0'],
@@ -183,11 +173,9 @@ class TestCreateNewExperimentView(TestCase):
         data = self.post_data.copy()
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
-        data['experiment-target_organism'] = "Homo sapiens"
-        data['keyword-TOTAL_FORMS'] = ['1']
-        data['keyword-0-text'] = ['keyword']
-        data['external_accession-TOTAL_FORMS'] = ['1']
-        data['external_accession-0-text'] = ['accession']
+        data['experiment-target_organism'] = ["Homo sapiens"]
+        data['experiment-keywords'] = ['test']
+        data['experiment-external_accessions'] = ['test']
         data['reference_mapping-TOTAL_FORMS'] = ['1']
         data['reference_mapping-0-reference'] = ['reference']
         data['reference_mapping-0-is_alternate'] = ['off']
@@ -238,11 +226,10 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_only_links_preexisting_keyword_and_doesnt_create(self):
         data = self.post_data.copy()
+        Keyword.objects.create(text='test1')
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
-        data['keyword-TOTAL_FORMS'] = ['2']
-        data['keyword-0-text'] = ['keyword']
-        data['keyword-1-text'] = ['keyword']
+        data['experiment-keywords'] = ['test1']
         request = self.factory.post(
             path=self.path,
             data=data
@@ -254,6 +241,7 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_only_links_preexisting_target_organism_and_doesnt_create(self):
         data = self.post_data.copy()
+        TargetOrganism.objects.create(text='Homo sapiens')
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
 
@@ -277,11 +265,10 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_only_links_preexisting_accession_and_doesnt_create(self):
         data = self.post_data.copy()
+        ExternalAccession.objects.create(text='test1')
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
-        data['external_accession-TOTAL_FORMS'] = ['2']
-        data['external_accession-0-text'] = ['acc']
-        data['external_accession-1-text'] = ['acc']
+        data['experiment-external_accessions'] = ["test1"]
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -321,8 +308,7 @@ class TestCreateNewExperimentView(TestCase):
         data = self.post_data.copy()
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
-        data['keyword-TOTAL_FORMS'] = ['1']
-        data['keyword-0-text'] = [""]
+        data['experiment-keywords'] = ['']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -334,8 +320,6 @@ class TestCreateNewExperimentView(TestCase):
         data['experiment-target'] = "brca1"
         data['experiment-target_organism'] = ""
         data['experiment-wt_sequence'] = "atcg"
-        data['keyword-TOTAL_FORMS'] = ['1']
-        data['keyword-0-text'] = [""]
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -346,8 +330,7 @@ class TestCreateNewExperimentView(TestCase):
         data = self.post_data.copy()
         data['experiment-target'] = "brca1"
         data['experiment-wt_sequence'] = "atcg"
-        data['external_accession-TOTAL_FORMS'] = ['1']
-        data['external_accession-0-text'] = [""]
+        data['experiment-external_accessions'] = ['']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -400,3 +383,36 @@ class TestCreateNewExperimentView(TestCase):
         response = experiment_create_view(request)
         self.assertTrue(response.status_code, 302)
         self.assertFalse(user_is_admin_for_instance(self.bob, es))
+
+    def test_can_create_new_keywords(self):
+        data = self.post_data.copy()
+        data['experiment-target'] = "brca1"
+        data['experiment-wt_sequence'] = "atcg"
+        data['experiment-keywords'] = ['test']
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.bob
+        response = experiment_create_view(request)
+        self.assertEqual(Keyword.objects.count(), 1)
+
+    def test_can_create_new_ext_accessions(self):
+        data = self.post_data.copy()
+        data['experiment-target'] = "brca1"
+        data['experiment-wt_sequence'] = "atcg"
+        data['experiment-external_accessions'] = ['test']
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.bob
+        response = experiment_create_view(request)
+        self.assertEqual(ExternalAccession.objects.count(), 1)
+
+    def test_can_create_new_target_orgs(self):
+        data = self.post_data.copy()
+        data['experiment-target'] = "brca1"
+        data['experiment-target_organism'] = ['test']
+        data['experiment-wt_sequence'] = "atcg"
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.bob
+        response = experiment_create_view(request)
+        self.assertEqual(TargetOrganism.objects.count(), 1)
