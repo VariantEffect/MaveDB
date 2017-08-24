@@ -22,12 +22,14 @@
 								</a>
 							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
+							{% if "EXPS" not in instance.accession %}
 							<li style="padding-left:10px;">
 								<a href="{% url 'accounts:edit_instance' instance.accession %}">
 									Edit
 								</a>
 							</li>
 							<li style="padding-left:10px;"><b>&middot;</b></li>
+							{% endif %}
 							<li style="padding-left:10px;">
 								<a href="{% url 'accounts:view_instance' instance.accession %}">
 									View

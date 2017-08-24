@@ -259,10 +259,9 @@ def edit_instance(request, accession):
             "Tried to process an edit form for an invalid type {}. Expecting "
             " either `Experiment` or `ScoreSet`.".format(klass)
         )
-        raise ValueError(
-            "Tried to process an edit form for an invalid "
-            "type {}.".format(klass)
-        )
+        response = render(request, 'main/404_not_found.html')
+        response.status_code = 404
+        return response
 
 
 def handle_scoreset_edit_form(request, instance):
@@ -273,19 +272,7 @@ def handle_scoreset_edit_form(request, instance):
         print(request.POST)
         form = ScoreSetEditForm(request.POST, instance=instance)
         if form.is_valid() and form.has_changed():
-            updated_instance = form.save(commit=False)
-            existing_keywords = instance.keywords.all()
-            new_keywords = form.cleaned_data.get("keywords", [])
-            for keyword in new_keywords:
-                keyword.save()
-
-            updated_instance.save()
-            for keyword in new_keywords:
-                updated_instance.keywords.add(keyword)
-            for keyword in existing_keywords:
-                if keyword not in new_keywords:
-                    updated_instance.keywords.remove(keyword)
-
+            updated_instance = form.save(commit=True)
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
             )
@@ -300,19 +287,7 @@ def handle_experiment_edit_form(request, instance):
     if request.method == "POST":
         form = ExperimentEditForm(request.POST, instance=instance)
         if form.is_valid() and form.has_changed():
-            updated_instance = form.save(commit=False)
-            existing_keywords = instance.keywords.all()
-            new_keywords = form.cleaned_data.get("keywords", [])
-            for keyword in new_keywords:
-                keyword.save()
-
-            updated_instance.save()
-            for keyword in new_keywords:
-                updated_instance.keywords.add(keyword)
-            for keyword in existing_keywords:
-                if keyword not in new_keywords:
-                    updated_instance.keywords.remove(keyword)
-
+            updated_instance = form.save(commit=True)
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
             )

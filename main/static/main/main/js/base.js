@@ -46,6 +46,8 @@ $('document').ready(function() {
         tags: true,
         tokenSeparators: [',']
     });
+
+
 });
 
 // Check management form submission
@@ -185,16 +187,6 @@ function remove_formset(prefix) {
     }
 }
 
-$('#add_keyword').click(function () {
-    reset_index("#keyword");
-    add_formset("#keyword");
-});
-
-$('#remove_keyword').click(function () {
-    reset_index("#keyword");
-    remove_formset("#keyword");
-});
-
 $('#add_reference_mapping').click(function () {
     reset_index("#reference_mapping");
     add_formset("#reference_mapping");
@@ -202,13 +194,4 @@ $('#add_reference_mapping').click(function () {
 $('#remove_reference_mapping').click(function () {
     reset_index("#reference_mapping");
     remove_formset("#reference_mapping");
-});
-
-$('#add_external_accession').click(function () {
-    reset_index("#external_accession");
-    add_formset("#external_accession");
-});
-$('#remove_external_accession').click(function () {
-    reset_index("#external_accession");
-    remove_formset("#external_accession");
 });

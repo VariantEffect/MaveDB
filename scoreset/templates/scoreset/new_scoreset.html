@@ -25,35 +25,7 @@
 					{{ field }}
 				{% endfor %}
 			<br><hr>
-
-			<div class="keyword-forms">
-				<h4> Keywords
-					<input type="button" value="+" id="add_keyword">
-					<input type="button" value="-" id="remove_keyword">
-				</h4>
-				<div id="keyword-form-set">
-					{{ keyword_formset.management_form }}
-					{% if not keyword_formset|length %}
-						<div id='keyword-empty-set'>
-							<p>I'll add keywords later.<p><hr>
-						</div>	
-					{% else %}
-						<div id='keyword-empty-set' hidden>
-							<p>I'll add keywords later.<p><hr>
-						</div>
-					{% endif %}
-					{% for form in keyword_formset %}
-						<div id="keyword-formset-{{ forloop.counter }}">
-						{{ form.as_table }}
-						<hr>
-					</div>
-					{% endfor %}
-				</div>
-			</div>
-			<div id="keyword-empty-form" style="display:none">
-				{{ keyword_formset.empty_form.as_table }}
-            </div>
-
+			
 			<input class="u-pull-right" style="width: 200px;" 
 						type="submit" name="submit" value="submit">
 		</form>

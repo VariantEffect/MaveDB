@@ -56,6 +56,9 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         return not (is_float or is_int)
 
     def create_if_not_exist(self, value):
+        if isinstance(value, str) and not value.strip():
+            return
+
         key = self.to_field_name or 'pk'
         try:
             self.class_.objects.get(**{key: value})
@@ -72,18 +75,29 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
                 instance = self.class_(**{self.class_text_key: text})
                 self.new_instances.append(instance)
 
+    def clean(self, value):
+        # The `target_organism` widget in `ExperimentForm` uses a non-multiple
+        # select widget which will return a string instead of a list of values.
+        # Instead of subclassing the single selection django widget just
+        # for this field use this line here instead.
+        if self.class_ == TargetOrganism and not isinstance(value, list):
+            value = [value]
+        return super(ModelSelectMultipleField, self).clean(value)
+
     def _check_values(self, value):
         """
         Overrides the base method found in `ModelMultipleChoiceField`.
 
         Given a list of possible PK values, returns a QuerySet of the
-        corresponding objects. Instead of raising a ValidationError if a given 
-        value not a valid PK and instead is a string input, a new instance is 
-        created. This handles the case where new keywords etc must be 
+        corresponding objects. Instead of raising a ValidationError if a given
+        value not a valid PK and instead is a string input, a new instance is
+        created. This handles the case where new keywords etc must be
         added to the database during an instance creation/edit.
         """
         not_pks = []
+        existing_pks = []
         key = self.to_field_name or 'pk'
+        text_key = self.class_text_key
         # deduplicate given values to avoid creating many querysets or
         # requiring the database backend deduplicate efficiently.
         try:
@@ -105,9 +119,13 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
                         params={'pk': pk},
                     )
                 else:
+                    if self.queryset.filter(**{text_key: pk}).exists():
+                        o = self.queryset.get(**{text_key: pk})
+                        existing_pks.append(getattr(o, key))
                     not_pks.append(pk)
 
         valid_pks = [v for v in value if v not in not_pks]
+        valid_pks += [v for v in existing_pks if v not in valid_pks]
         qs = self.queryset.filter(**{'%s__in' % key: valid_pks})
         pks = set(force_text(getattr(o, key)) for o in qs)
         for val in value:
