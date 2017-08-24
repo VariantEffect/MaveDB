@@ -3,6 +3,7 @@ import numpy as np
 import logging
 import datetime
 
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
 from django.contrib.postgres.fields import JSONField
@@ -27,6 +28,7 @@ from .validators import (
     valid_scoreset_json, valid_hgvs_string, valid_variant_json
 )
 
+User = get_user_model()
 COUNTS_KEY = "counts"
 SCORES_KEY = "scores"
 logger = logging.getLogger("django")
@@ -118,6 +120,17 @@ class ScoreSet(models.Model, GroupPermissionMixin):
         blank=False, null=True, default=None,
         verbose_name="Published on")
 
+    last_edit_by = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Last edited by",
+        related_name='scs_edited_by_user'
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Created by",
+        related_name='scs_created_by_user'
+    )
+
     approved = models.BooleanField(
         blank=False, null=False, default=False, verbose_name="Approved")
 
@@ -206,6 +219,14 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def counts_columns(self):
         return self.dataset_columns[COUNTS_KEY]
 
+    def update_keywords(self, keywords):
+        kws_text = set([kw.text for kw in keywords])
+        for kw in self.keywords.all():
+            if kw.text not in kws_text:
+                self.keywords.remove(kw)
+        for kw in keywords:
+            self.keywords.add(kw)
+
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
 
@@ -230,7 +251,7 @@ class Variant(models.Model):
         scoreset.
     creation_date : `models.DateField`
         The data the variant was created in yyyy-mm-dd format.
-    hgvs_string : `str`, required.
+    hgvs : `str`, required.
         The HGVS string belonging to the variant.
     scoreset : `ScoreSet`, required.
         The associated scoreset of the instance.

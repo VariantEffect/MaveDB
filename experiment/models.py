@@ -2,6 +2,7 @@ import logging
 import datetime
 from string import ascii_uppercase
 
+from django.contrib.auth import get_user_model
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -27,6 +28,7 @@ from main.models import (
 )
 from main.utils.pandoc import convert_md_to_html
 
+User = get_user_model()
 logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
@@ -102,6 +104,17 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
     publish_date = models.DateField(
         blank=False, null=True, default=None,
         verbose_name="Published on")
+
+    last_edit_by = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Last edited by",
+        related_name='exps_edited_by_user'
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Created by",
+        related_name='exps_created_by_user'
+    )
 
     approved = models.BooleanField(
         blank=False, null=False, default=False, verbose_name="Approved")
@@ -254,6 +267,17 @@ class Experiment(models.Model, GroupPermissionMixin):
         blank=False, null=True, default=None,
         verbose_name="Published on")
 
+    last_edit_by = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Last edited by",
+        related_name='exp_edited_by_user'
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Created by",
+        related_name='exp_created_by_user'
+    )
+
     last_used_suffix = models.IntegerField(
         default=0, validators=[positive_integer_validator])
 
@@ -333,6 +357,32 @@ class Experiment(models.Model, GroupPermissionMixin):
         self.private = False
         self.publish_date = datetime.date.today()
         self.save()
+
+    def update_keywords(self, keywords):
+        kws_text = set([kw.text for kw in keywords])
+        for kw in self.keywords.all():
+            if kw.text not in kws_text:
+                self.keywords.remove(kw)
+        for kw in keywords:
+            self.keywords.add(kw)
+
+    def update_external_accessions(self, accessions):
+        acc_text = set([acc.text for acc in accessions])
+        for acc in self.external_accessions.all():
+            if acc.text not in acc_text:
+                self.external_accessions.remove(acc)
+        for acc in accessions:
+            self.external_accessions.add(acc)
+
+    def update_target_organism(self, target_organism):
+        if not target_organism:
+            return
+        current = self.target_organism.first()
+        if isinstance(target_organism, list):
+            target_organism = target_organism[0]
+        if current != target_organism:
+            self.target_organism.remove(current)
+            self.target_organism.add(target_organism)
 
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
