@@ -16,7 +16,7 @@ from experiment.models import Experiment
 
 from scoreset.models import ScoreSet, Variant
 from scoreset.views import (
-    ScoresetDetailView, scoreset_create_view,
+    ScoreSetDetailView, scoreset_create_view,
     download_scoreset_data, download_scoreset_metadata
 )
 
@@ -49,7 +49,7 @@ class TestScoreSetSetDetailView(TestCase):
         )
         request = self.factory.get('/scoreset/')
         request.user = bob
-        response = ScoresetDetailView.as_view()(
+        response = ScoreSetDetailView.as_view()(
             request, accession=obj.accession)
         self.assertEqual(response.status_code, 403)
 
@@ -67,7 +67,7 @@ class TestScoreSetSetDetailView(TestCase):
 
         request = self.factory.get('/scoreset/')
         request.user = bob
-        response = ScoresetDetailView.as_view()(
+        response = ScoreSetDetailView.as_view()(
             request, accession=obj.accession)
         self.assertEqual(response.status_code, 200)
 
@@ -92,11 +92,7 @@ class TestCreateNewScoreSetView(TestCase):
             'scoreset-doi_id': [''],
             'scoreset-scores_data': [''],
             'scoreset-counts_data': [''],
-            'keyword-TOTAL_FORMS': ['0'],
-            'keyword-INITIAL_FORMS': ['0'],
-            'keyword-MIN_NUM_FORMS': ['0'],
-            'keyword-MAX_NUM_FORMS': ['1000'],
-            'keyword-__prefix__-text': [''],
+            'scoreset-keywords': [''],
             'submit': ['submit']
         }
 
@@ -121,8 +117,7 @@ class TestCreateNewScoreSetView(TestCase):
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
-        data['keyword-TOTAL_FORMS'] = ['1']
-        data['keyword-0-text'] = ['keyword']
+        data['scoreset-keywords'] = ['test']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -163,12 +158,11 @@ class TestCreateNewScoreSetView(TestCase):
 
     def test_only_links_preexisting_keyword_and_doesnt_create(self):
         data = self.post_data.copy()
+        Keyword.objects.create(text="test")
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
-        data['keyword-TOTAL_FORMS'] = ['2']
-        data['keyword-0-text'] = ['keyword']
-        data['keyword-1-text'] = ['keyword']
+        data['scoreset-keywords'] = ['test']
         request = self.factory.post(
             path=self.path,
             data=data
@@ -183,8 +177,7 @@ class TestCreateNewScoreSetView(TestCase):
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
-        data['keyword-TOTAL_FORMS'] = ['1']
-        data['keyword-0-text'] = [""]
+        data['scoreset-keywords'] = ['']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob

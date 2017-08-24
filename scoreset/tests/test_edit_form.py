@@ -60,7 +60,7 @@ class TestScoreSetEditForm(TestCase):
         form = ScoreSetEditForm(post, instance=instance)
         self.assertTrue(form.is_valid())
         self.assertEqual(len(form.new_keywords()), 1)
-        self.assertEqual(form.cleaned_data["keywords"].count(), 0)
+        self.assertEqual(form.cleaned_data["keywords"].count(), 1)
 
     def test_can_save_update(self):
         instance = ScoreSet.objects.create(experiment=self.experiment)
@@ -104,3 +104,29 @@ class TestScoreSetEditForm(TestCase):
         self.assertEqual(Keyword.objects.count(), 2)
         self.assertEqual(scs.keywords.count(), 1)
         self.assertEqual(scs.keywords.all()[0].text, "test2")
+
+    def test_save_does_not_alter_other_fields(self):
+        instance = ScoreSet.objects.create(
+            experiment=self.experiment,
+            dataset_columns={
+                Constants.SCORES_DATA: [Constants.HGVS_COLUMN, "score"],
+                Constants.COUNTS_DATA: [Constants.HGVS_COLUMN, "count"]
+            }
+        )
+        variant = Variant.objects.create(
+            scoreset=instance,
+            hgvs="test",
+            data={
+                Constants.SCORES_DATA: {
+                    Constants.HGVS_COLUMN: "test", "score": 0.1},
+                Constants.COUNTS_DATA: {
+                    Constants.HGVS_COLUMN: "test", "count": 1.0},
+            }
+        )
+
+        post = QueryDict('', mutable=True)
+        post.setlist("keywords", ["test"])
+        form = ScoreSetEditForm(post, instance=instance)
+        instance = form.save(commit=True)
+        self.assertEqual(instance.variant_set.first(), variant)
+        self.assertEqual(instance.keywords.count(), 1)

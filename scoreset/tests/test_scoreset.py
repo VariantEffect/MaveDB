@@ -6,9 +6,10 @@ from django.core.exceptions import ValidationError
 from django.test import TransactionTestCase
 from django.db.models import ProtectedError
 
+from main.models import Keyword
 from experiment.models import Experiment, ExperimentSet
-from scoreset.models import ScoreSet, Variant
-from scoreset.models import SCORES_KEY, COUNTS_KEY
+from ..models import ScoreSet, Variant
+from ..models import SCORES_KEY, COUNTS_KEY
 
 
 class TestScoreSet(TransactionTestCase):
@@ -47,6 +48,15 @@ class TestScoreSet(TransactionTestCase):
         scs = ScoreSet.objects.create(experiment=self.exp)
         scs.publish()
         self.assertFalse(scs.private)
+
+    def test_can_remove_keywords_during_update(self):
+        scs = ScoreSet.objects.create(experiment=self.exp)
+        kw1 = Keyword.objects.create(text="test1")
+        kw2 = Keyword.objects.create(text="test2")
+        scs.keywords.add(kw1)
+        scs.update_keywords([kw2])
+        self.assertEqual(scs.keywords.count(), 1)
+        self.assertEqual(scs.keywords.all()[0], kw2)
 
     def test_scoreset_assigned_all_permission_groups(self):
         scs = ScoreSet.objects.create(experiment=self.exp)
