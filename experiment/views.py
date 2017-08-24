@@ -128,45 +128,6 @@ class ExperimentSetDetailView(DetailView):
         return get_object_or_404(ExperimentSet, accession=accession)
 
 
-def parse_text_formset(formset, model_class, prefix="formset"):
-    """
-    Utility function to parse a formset with a `text` attribute. Parses a
-    formset into a list of instantiated but not commited models. Will only
-    create a new model if the text attribute doesn't already exist in the
-    database. If the form is not valid for a particular model, then `None`
-    is appended to the list.
-
-    Parameters
-    ----------
-    formset : `FormSet`
-        A bound model formset constructed with `formset_factory` or similar.
-    model_class : `any`
-        The model that each form in the formset constructs.
-    prefix : `str`, optional.
-        The prefix of the formset if any.
-
-    Returns
-    -------
-    `list`
-        A list of instantiated models, but non-commited.
-    """
-    objects = []
-    for i, form in enumerate(formset):
-        text = form.data.get("{}-{}-text".format(prefix, i), "")
-        try:
-            model = model_class.objects.get(text=text)
-            objects.append(model)
-        except ObjectDoesNotExist:
-            if form.is_valid():
-                if form.cleaned_data:
-                    model = form.save(commit=False)
-                    if model.text not in set([o.text for o in objects]):
-                        objects.append(model)
-            else:
-                objects.append(None)
-    return objects
-
-
 def parse_mapping_formset(reference_mapping_formset):
     """
     Parses a `ReferenceMappingFormSet` into a list of non-commited
@@ -199,10 +160,6 @@ def experiment_create_view(request):
     """
     This view serves up four types of forms:
         - `ExperimentForm` for the instantiation of an Experiment instnace.
-        - `KeywordFormSet` for the instantiation and linking of M2M `Keyword`
-           instnaces.
-        - `ExternalAccessionFormSet` for the instantiation and linking of M2M
-          `ExternalAccession` instnaces.
         - `ReferenceMappingFormSet` for the instantiation and linking of M2M
           `ReferenceMapping` instnaces.
 
@@ -217,16 +174,10 @@ def experiment_create_view(request):
     """
     context = {}
     experiment_form = ExperimentForm(prefix=EXPERIMENT_FORM_PREFIX)
-    keyword_formset = KeywordFormSet(prefix=KEYWORD_FORM_PREFIX)
-    external_accession_formset = ExternalAccessionFormSet(
-        prefix=EXTERNAL_ACCESSION_FORM_PREFIX
-    )
     ref_mapping_formset = ReferenceMappingFormSet(
         prefix=REFERENCE_MAPPING_FORM_PREFIX
     )
     context["experiment_form"] = experiment_form
-    context["keyword_formset"] = keyword_formset
-    context["external_accession_formset"] = external_accession_formset
     context["reference_mapping_formset"] = ref_mapping_formset
 
     # If you change the prefix arguments here, make sure to change them
@@ -236,85 +187,26 @@ def experiment_create_view(request):
         experiment_form = ExperimentForm(
             request.POST, prefix=EXPERIMENT_FORM_PREFIX
         )
-        keyword_formset = KeywordFormSet(
-            request.POST, prefix=KEYWORD_FORM_PREFIX
-        )
-        external_accession_formset = ExternalAccessionFormSet(
-            request.POST, prefix=EXTERNAL_ACCESSION_FORM_PREFIX
-        )
         ref_mapping_formset = ReferenceMappingFormSet(
             request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX
         )
         context["experiment_form"] = experiment_form
-        context["keyword_formset"] = keyword_formset
-        context["external_accession_formset"] = external_accession_formset
         context["reference_mapping_formset"] = ref_mapping_formset
 
-        if experiment_form.is_valid():
-            experiment = experiment_form.save(commit=False)
-        else:
-            return render(
-                request,
-                "experiment/new_experiment.html",
-                context=context
-            )
-
-        keywords = parse_text_formset(keyword_formset, Keyword, "keyword")
-        if not all([k is not None for k in keywords]):
-            return render(
-                request,
-                "experiment/new_experiment.html",
-                context=context
-            )
-
-        accessions = parse_text_formset(
-            external_accession_formset,
-            ExternalAccession, "external_accession"
-        )
-        if not all([a is not None for a in accessions]):
-            return render(
-                request,
-                "experiment/new_experiment.html",
-                context=context
-            )
-
         maps = parse_mapping_formset(ref_mapping_formset)
-        if not all([m is not None for m in maps]):
+        if not all([m is not None for m in maps]) or \
+                not experiment_form.is_valid():
             return render(
                 request,
                 "experiment/new_experiment.html",
                 context=context
             )
 
-        # Get target organism data
-        target_organism = experiment_form.cleaned_data.get(
-            "target_organism", "")
-        if target_organism:
-            try:
-                target_organism = TargetOrganism.objects.get(
-                    text=target_organism)
-            except ObjectDoesNotExist:
-                target_organism = TargetOrganism(text=target_organism)
-        else:
-            target_organism = None
-
-        # Looks like everything is good to save
-        experiment.save()
-        if target_organism is not None:
-            target_organism.save()
-            experiment.target_organism.add(target_organism)
-
-        for kw in keywords:
-            kw.save()
-            experiment.keywords.add(kw)
-
-        for acc in accessions:
-            acc.save()
-            experiment.external_accessions.add(acc)
-
+        experiment = experiment_form.save(commit=True)
         for ref_map in maps:
             ref_map.experiment = experiment
             ref_map.save()
+        experiment.save()
 
         # Save and update permissions. If no experimentset was selected, by
         # default a new experimentset is created with the current user as
