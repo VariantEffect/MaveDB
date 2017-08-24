@@ -176,3 +176,19 @@ class TestModelSelectMultipleField(TestCase):
             values = ["test1", "test4"]
             qs = field.clean(values)
             self.assertEqual(len(field.new_instances), 1)
+
+    def test_blank_input_ignored(self):
+        for klass in [Keyword, ExternalAccession, TargetOrganism]:
+            instances = self.create_n_instances(
+                klass, ['test1', 'test2', 'test3']
+            )
+            field = ModelSelectMultipleField(
+                queryset=None,
+                required=False,
+                klass=klass,
+                text_key="text"
+            )
+            field.queryset = klass.objects.all()
+            values = ['']
+            qs = field.clean(values)
+            self.assertEqual(len(field.new_instances), 0)
