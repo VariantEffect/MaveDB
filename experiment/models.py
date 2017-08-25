@@ -17,7 +17,6 @@ from .validators import valid_wildtype_sequence
 
 from accounts.permissions import (
     PermissionTypes,
-    GroupTypes,
     make_all_groups_for_instance
 )
 from accounts.mixins import GroupPermissionMixin
@@ -108,12 +107,12 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
     last_edit_by = models.ForeignKey(
         User, on_delete=models.DO_NOTHING, null=True,
         verbose_name="Last edited by",
-        related_name='exps_edited_by_user'
+        related_name='last_edited_experimentset'
     )
     created_by = models.ForeignKey(
         User, on_delete=models.DO_NOTHING, null=True,
         verbose_name="Created by",
-        related_name='exps_created_by_user'
+        related_name='last_created_experimentset'
     )
 
     approved = models.BooleanField(
@@ -145,9 +144,6 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
             accession = "{}{}".format(self.ACCESSION_PREFIX, digit_suffix)
             self.accession = accession
             self.save()
-
-    def get_authors(self):
-        return ', '.join([])
 
     def publish(self):
         self.private = False
@@ -270,12 +266,12 @@ class Experiment(models.Model, GroupPermissionMixin):
     last_edit_by = models.ForeignKey(
         User, on_delete=models.DO_NOTHING, null=True,
         verbose_name="Last edited by",
-        related_name='exp_edited_by_user'
+        related_name='last_edited_experiment'
     )
     created_by = models.ForeignKey(
         User, on_delete=models.DO_NOTHING, null=True,
         verbose_name="Created by",
-        related_name='exp_created_by_user'
+        related_name='last_created_experiment'
     )
 
     last_used_suffix = models.IntegerField(
@@ -386,9 +382,6 @@ class Experiment(models.Model, GroupPermissionMixin):
 
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
-
-    def get_authors(self):
-        return ', '.join([])
 
     def get_other_accessions(self):
         return ', '.join([a.text for a in self.external_accessions.all()])

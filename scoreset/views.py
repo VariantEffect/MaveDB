@@ -210,6 +210,10 @@ def scoreset_create_view(request):
         # of said experiment.
         scoreset.save()
         user = request.user
+        scoreset.created_by = user
+        scoreset.last_edit_by = user
+        scoreset.save()
+
         assign_user_as_instance_admin(user, scoreset)
         accession = scoreset.accession
         return redirect("scoreset:scoreset_detail", accession=accession)

@@ -19,7 +19,8 @@ from experiment.models import Experiment
 
 from accounts.permissions import (
     PermissionTypes,
-    make_all_groups_for_instance
+    make_all_groups_for_instance,
+    authors_for_instance
 )
 from accounts.mixins import GroupPermissionMixin
 
@@ -123,12 +124,12 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     last_edit_by = models.ForeignKey(
         User, on_delete=models.DO_NOTHING, null=True,
         verbose_name="Last edited by",
-        related_name='scs_edited_by_user'
+        related_name='last_edited_scoreset'
     )
     created_by = models.ForeignKey(
         User, on_delete=models.DO_NOTHING, null=True,
         verbose_name="Created by",
-        related_name='scs_created_by_user'
+        related_name='last_created_scoreset'
     )
 
     approved = models.BooleanField(
@@ -230,10 +231,10 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
 
-    def md_abstract(self) -> str:
+    def md_abstract(self):
         return convert_md_to_html(self.abstract)
 
-    def md_method_desc(self) -> str:
+    def md_method_desc(self):
         return convert_md_to_html(self.method_desc)
 
 
