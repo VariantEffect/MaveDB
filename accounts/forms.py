@@ -37,7 +37,7 @@ class SelectUsersForm(forms.Form):
     This form contains a single :py:class:`forms.ModelMultipleChoiceField`
     field which displays a html select widget that an administrator can
     choose users from to add/remove to/from a permission group. The submitted
-    input are the primary keys of users in string format and after the clean 
+    input are the primary keys of users in string format and after the clean
     process is run, this list is turned into a list of valid user instances.
 
     Parameters
@@ -55,7 +55,7 @@ class SelectUsersForm(forms.Form):
     -------
     clean
         Overrides the base class to additionally check if an assignment
-        will result in no administrators. 
+        will result in no administrators.
 
     process_user_list
         Defers the call to the appropriate update function for the input
@@ -73,17 +73,29 @@ class SelectUsersForm(forms.Form):
     )
 
     def __init__(self, group, instance, required=False, *args, **kwargs):
-        super(SelectUsersForm, self).__init__(*args, **kwargs)
-        self.fields["users"].queryset = User.objects.exclude(
-            username=ANONYMOUS_USER_NAME
-        ).exclude(is_superuser=True)
-        self.fields["users"].required = required
         if not valid_group_type(group):
             raise ValueError("Unrecognised group type {}".format(group))
         if not valid_model_instance(instance):
             raise ValueError("Unrecognised instance type {}".format(
                 instance.__class__.__name__
             ))
+
+        if instance is not None:
+            if group == GroupTypes.ADMIN:
+                initial = [u.pk for u in instance.administrators()]
+                kwargs["initial"] = {"users": initial}
+            elif group == GroupTypes.CONTRIBUTOR:
+                initial = [u.pk for u in instance.contributors()]
+                kwargs["initial"] = {"users": initial}
+            elif group == GroupTypes.VIEWER:
+                initial = [u.pk for u in instance.viewers()]
+                kwargs["initial"] = {"users": initial}
+
+        super(SelectUsersForm, self).__init__(*args, **kwargs)
+        self.fields["users"].queryset = User.objects.exclude(
+            username=ANONYMOUS_USER_NAME
+        ).exclude(is_superuser=True)
+        self.fields["users"].required = required
         self.group = group
         self.instance = instance
 
@@ -114,13 +126,14 @@ class SelectUsersForm(forms.Form):
         Defer the call to the appropriate update function for the input
         user list based on the initialised group type.
         """
-        users = self.clean().get("users", [])
-        if self.group == GroupTypes.ADMIN:
-            update_admin_list_for_instance(users, self.instance)
-        elif self.group == GroupTypes.CONTRIBUTOR:
-            update_contributor_list_for_instance(users, self.instance)
-        elif self.group == GroupTypes.VIEWER:
-            update_viewer_list_for_instance(users, self.instance)
+        if self.is_bound and self.is_valid():
+            users = self.clean().get("users", [])
+            if self.group == GroupTypes.ADMIN:
+                update_admin_list_for_instance(users, self.instance)
+            elif self.group == GroupTypes.CONTRIBUTOR:
+                update_contributor_list_for_instance(users, self.instance)
+            elif self.group == GroupTypes.VIEWER:
+                update_viewer_list_for_instance(users, self.instance)
 
 
 class RegistrationForm(UserCreationForm):

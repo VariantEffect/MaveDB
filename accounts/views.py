@@ -116,7 +116,7 @@ def profile_view(request):
     One is the loneliest number that you'll ever do (number)
     One (one is the loneliest number that you'll ever do)(number)
     One is the loneliest number that you'll ever do (number)
-    One is the loneliest number that you'll ever do 
+    One is the loneliest number that you'll ever do
     """
     return render(request, 'accounts/profile_home.html')
 
@@ -145,24 +145,18 @@ def manage_instance(request, accession):
         return response
 
     # Initialise the forms with current group users.
-    admins = instance.administrators()
-    contributors = instance.contributors()
-    viewers = instance.viewers()
     admin_select_form = SelectUsersForm(
-        initial={"users": [a.pk for a in admins]},
         group=GroupTypes.ADMIN,
         instance=instance,
         required=True,
         prefix="administrator_management"
     )
     contrib_select_form = SelectUsersForm(
-        initial={"users": [c.pk for c in contributors]},
         group=GroupTypes.CONTRIBUTOR,
         instance=instance,
         prefix="contributor_management"
     )
     viewer_select_form = SelectUsersForm(
-        initial={"users": [v.pk for v in viewers]},
         group=GroupTypes.VIEWER,
         instance=instance,
         prefix="viewer_management"
@@ -272,7 +266,7 @@ def handle_scoreset_edit_form(request, instance):
 
     if request.method == "POST":
         form = ScoreSetEditForm(request.POST, instance=instance)
-        if form.is_valid() and form.has_changed():
+        if form.is_valid():
             if "preview" in request.POST:
                 updated_instance = form.save(commit=False)
                 context = {"scoreset": updated_instance}
@@ -298,7 +292,7 @@ def handle_experiment_edit_form(request, instance):
 
     if request.method == "POST":
         form = ExperimentEditForm(request.POST, instance=instance)
-        if form.is_valid() and form.has_changed():
+        if form.is_valid():
             if "preview" in request.POST:
                 updated_instance = form.save(commit=False)
                 context = {"experiment": updated_instance}
