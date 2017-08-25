@@ -9,6 +9,7 @@ from django.test import TransactionTestCase, TestCase
 from accounts.permissions import PermissionTypes, GroupTypes
 from accounts.permissions import (
     valid_model_instance,
+    authors_for_instance,
 
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
@@ -433,3 +434,18 @@ class UserAssignmentToInstanceGroupTest(TestCase):
                 model=ExperimentSet,
                 group_type="InvalidGroup"
             )
+
+    def test_can_get_authors_for_instance(self):
+        alice = User.objects.create(username="alice")
+        bob = User.objects.create(username="bob")
+        farva = User.objects.create(username="farva")
+
+        assign_user_as_instance_admin(alice, self.instance_1)
+        assign_user_as_instance_contributor(farva, self.instance_1)
+        assign_user_as_instance_viewer(bob, self.instance_1)
+
+        authors = authors_for_instance(self.instance_1)
+
+        self.assertIn(alice, authors)
+        self.assertIn(farva, authors)
+        self.assertNotIn(bob, authors)

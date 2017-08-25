@@ -6,6 +6,7 @@ from .permissions import (
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
     user_is_viewer_for_instance,
+    authors_for_instance
 )
 
 
@@ -28,3 +29,7 @@ class GroupPermissionMixin(object):
         users = User.objects.all()
         viewers = [u.pk for u in users if user_is_viewer_for_instance(u, self)]
         return User.objects.filter(pk__in=viewers).exclude(is_superuser=True)
+
+    def get_authors(self):
+        authors = authors_for_instance(self)
+        return ', '.join([u.username for u in authors])

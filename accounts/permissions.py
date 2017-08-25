@@ -2,12 +2,15 @@
 This module defines stuff.
 """
 
-from django.contrib.auth.models import Group, User, AnonymousUser
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, AnonymousUser
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
 
 from guardian.shortcuts import assign_perm, remove_perm
 from guardian.conf.settings import ANONYMOUS_USER_NAME
+
+User = get_user_model()
 
 
 # Base types
@@ -144,6 +147,19 @@ def instances_for_user_with_group_permission(user, model, group_type):
         raise ValueError("Unrecognised group type {}.".format(group_type))
 
     return [i for i in instances if is_in_group(user, i)]
+
+
+def authors_for_instance(instance):
+    author_pks = set()
+    if not valid_model_instance(instance):
+        raise TypeError("Invalid type supplied {}".format(type(instance)))
+    users = User.objects.all()
+    for u in users:
+        if user_is_admin_for_instance(u, instance):
+            author_pks.add(u.pk)
+        elif user_is_contributor_for_instance(u, instance):
+            author_pks.add(u.pk)
+    return User.objects.filter(pk__in=author_pks)
 
 
 # Group construction

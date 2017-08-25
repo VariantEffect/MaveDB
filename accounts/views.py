@@ -198,6 +198,8 @@ def manage_instance(request, accession):
 
         if post_form is not None and post_form.is_valid():
             post_form.process_user_list()
+            instance.last_edit_by = request.user
+            instance.save()
             return redirect("accounts:manage_instance", instance.accession)
 
     # Replace the form that has changed. If it reaches this point,
@@ -269,13 +271,23 @@ def handle_scoreset_edit_form(request, instance):
     context = {"edit_form": form, 'instance': instance}
 
     if request.method == "POST":
-        print(request.POST)
         form = ScoreSetEditForm(request.POST, instance=instance)
         if form.is_valid() and form.has_changed():
-            updated_instance = form.save(commit=True)
-            return redirect(
-                "accounts:edit_instance", updated_instance.accession
-            )
+            if "preview" in request.POST:
+                updated_instance = form.save(commit=False)
+                context = {"scoreset": updated_instance}
+                return render(
+                    request,
+                    "scoreset/scoreset.html",
+                    context
+                )
+            else:
+                updated_instance = form.save(commit=True)
+                updated_instance.last_edit_by = request.user
+                updated_instance.save()
+                return redirect(
+                    "accounts:edit_instance", updated_instance.accession
+                )
 
     return render(request, 'accounts/profile_edit.html', context)
 
@@ -287,10 +299,21 @@ def handle_experiment_edit_form(request, instance):
     if request.method == "POST":
         form = ExperimentEditForm(request.POST, instance=instance)
         if form.is_valid() and form.has_changed():
-            updated_instance = form.save(commit=True)
-            return redirect(
-                "accounts:edit_instance", updated_instance.accession
-            )
+            if "preview" in request.POST:
+                updated_instance = form.save(commit=False)
+                context = {"experiment": updated_instance}
+                return render(
+                    request,
+                    "experiment/experiment.html",
+                    context
+                )
+            else:
+                updated_instance = form.save(commit=True)
+                updated_instance.last_edit_by = request.user
+                updated_instance.save()
+                return redirect(
+                    "accounts:edit_instance", updated_instance.accession
+                )
 
     return render(request, 'accounts/profile_edit.html', context)
 
@@ -301,7 +324,7 @@ def view_instance(request, accession):
     This view takes uses the accession string to deduce the class belonging
     to that accession and then retrieves the appropriate instance or 404s.
 
-    Once the instance has been retrieved, the user is redirected to the \
+    Once the instance has been retrieved, the user is redirected to the
     appropriate view.
 
     Parameters
