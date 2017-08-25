@@ -4,7 +4,7 @@
 <!-- Edit instance -->
 <div class="row" style="margin-top: 25px;">
 	<div class="ten columns">
-		<h3> Edit Score Set {{ instance.accession }} </h3>
+		<h3> Edit entry {{ instance.accession }} </h3>
 		<p> 
 			Only fields shown below are editable. All other fields have been 
 			frozen. If you feel you need to edit additional fields not seen below, 
@@ -29,8 +29,10 @@
 				<div style="width:100%">{{ field }}</div>
 			{% endfor %}
 			<div style="width:100%;margin-top:5px;">
-				<input class="u-pull-right" type="submit" value="Save"
+				<input class="u-pull-right" type="submit" value="Save" name="save"
 								style="width:150px;margin-bottom:35px;">
+				<input class="u-pull-right" type="submit" value="Preview" name="preview"
+								style="width:150px;margin-bottom:35px;margin-right:2px;">
 			</div>
 		</form>
 	

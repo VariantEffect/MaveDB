@@ -4,8 +4,8 @@
 <div class="row">
 
 	<!-- Sidebar -->
-	<div class="three columns">
-		<h3> {{ scoreset.accession }} </h3>
+	<div class="two columns">
+		<h5> {{ scoreset.accession }} </h5>
 		<p> 
 			Member of experiment
 			<a href="{% url 'experiment:experiment_detail' scoreset.experiment.accession %}">
@@ -15,12 +15,12 @@
 	</div>
 	
 	<!-- Vertical divider -->
-	<div class="one column" style="margin-left:-1%">
-			<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
+	<div class="one column" style="margin-left:1%">
+		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
 	</div>	
 	
 	<!-- Content -->
-	<div class="five columns" style="margin-left:-1%">
+	<div class="nine columns" style="margin-left:-1%">
 		<h3> Abstract </h3>
 		<p> {{ scoreset.md_abstract|safe|escape|default:"Not provided" }} </p>
 		<hr>
