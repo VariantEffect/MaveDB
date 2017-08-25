@@ -48,40 +48,59 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     ----------
     accession : `models.CharField`
         The accession in the format 'SCSXXXXXX[A-Z]+.\d+'
+
     experiment : `models.ForeignKey`, required.
         The experiment a scoreset is assciated with. Cannot be null.
+
     creation_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format.
+
     last_edit_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
         is called.
+
     publish_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
         called.
+
+    created_by : `models.ForeignKey`
+        User the instance was created by.
+
+    last_edit_by : `models.ForeignKey`
+        User to make the latest change to the instnace.
+
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
         created by default as not approved and must be manually checked
         before going live.
+
     last_used_suffix : `models.IntegerField`
         Min value of 0. Counts how many variants have been associated with
         this dataset. Must be manually incremented everytime, but this might
         change to a post_save signal
+
     private : `models.BooleanField`
         Whether the dataset should be private and viewable only by
         those approved in the permissions.
+
     dataset_columns : `models.JSONField`
         A JSON instances with keys `scores` and `counts`. The values are
         lists of strings indicating the columns to be expected in the variants
         for this dataset.
+
     abstract : `models.TextField`
         A markdown text blob.
+
     method_desc : `models.TextField`
         A markdown text blob of the scoring method.
+
     doi_id : `models.CharField`
         The DOI for this scoreset if any.
+
     metadata : `models.JSONField`
         The free-form json metadata that might be associated with this
         scoreset.
+
     keywords : `models.ManyToManyField`
         The keyword instances that are associated with this instance.
     """
@@ -122,12 +141,12 @@ class ScoreSet(models.Model, GroupPermissionMixin):
         verbose_name="Published on")
 
     last_edit_by = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, null=True,
+        User, on_delete=models.SET_NULL, null=True,
         verbose_name="Last edited by",
         related_name='last_edited_scoreset'
     )
     created_by = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, null=True,
+        User, on_delete=models.SET_NULL, null=True,
         verbose_name="Created by",
         related_name='last_created_scoreset'
     )
@@ -197,6 +216,11 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def next_variant_suffix(self):
         return self.last_used_suffix + 1
 
+    def update_last_edit_info(self, user):
+        self.last_edit_date = datetime.date.today()
+        self.last_edit_by = user
+        self.save()
+
     def publish(self):
         self.private = False
         self.publish_date = datetime.date.today()
@@ -250,14 +274,19 @@ class Variant(models.Model):
     accession : `str`
         The accession of the variant. Auto-assigned based off the associated
         scoreset.
+
     creation_date : `models.DateField`
         The data the variant was created in yyyy-mm-dd format.
+
     hgvs : `str`, required.
         The HGVS string belonging to the variant.
+
     scoreset : `ScoreSet`, required.
         The associated scoreset of the instance.
+
     data : `JSONField`
         The variant's numerical data.
+
     metadata : `JSONField`
         The variant's metadata.
     """
@@ -316,7 +345,7 @@ class Variant(models.Model):
         return self.data[SCORES_KEY].keys()
 
     @property
-    def counts_columns(self) -> set:
+    def counts_columns(self):
         return self.data[COUNTS_KEY].keys()
 
     def get_ordered_scores_data(self):

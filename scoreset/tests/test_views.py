@@ -6,13 +6,14 @@ from django.test import TestCase, TransactionTestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
 
-from guardian.shortcuts import assign_perm, remove_perm
-
-from accounts.permissions import user_is_admin_for_instance, PermissionTypes
-
 from main.models import Keyword
-
 from experiment.models import Experiment
+from accounts.permissions import (
+    user_is_admin_for_instance,
+    assign_user_as_instance_viewer,
+    assign_user_as_instance_contributor,
+    assign_user_as_instance_viewer
+)
 
 from scoreset.models import ScoreSet, Variant
 from scoreset.views import (
@@ -63,7 +64,7 @@ class TestScoreSetSetDetailView(TestCase):
         bob = self.User.objects.create_user(
             username='bob', password='top_secret'
         )
-        assign_perm(PermissionTypes.CAN_VIEW, bob, obj)
+        assign_user_as_instance_viewer(bob, obj)
 
         request = self.factory.get('/scoreset/')
         request.user = bob

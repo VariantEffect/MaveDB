@@ -212,6 +212,7 @@ def scoreset_create_view(request):
         user = request.user
         scoreset.created_by = user
         scoreset.last_edit_by = user
+        scoreset.update_last_edit_info(user)
         scoreset.save()
 
         assign_user_as_instance_admin(user, scoreset)

@@ -43,25 +43,38 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
     ----------
     accession : `models.CharField`
         The accession in the format 'EXPSXXXXXX'
+
     creation_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format.
+
     last_edit_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
         is called.
+
+    created_by : `models.ForeignKey`
+        User the instance was created by.
+
+    last_edit_by : `models.ForeignKey`
+        User to make the latest change to the instnace.
+
     publish_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
         called.
+
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
         created by default as not approved and must be manually checked
         before going live.
+
     last_used_suffix : `models.IntegerField`
         Min value of 0. Counts how many variants have been associated with
         this dataset. Must be manually incremented everytime, but this might
         change to a post_save signal
+
     private : `models.BooleanField`
         Whether this experiment should be private and viewable only by
         those approved in the permissions.
+
     metadata : `models.JSONField`
         The free-form json metadata that might be associated with this
         experimentset.
@@ -105,12 +118,12 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
         verbose_name="Published on")
 
     last_edit_by = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, null=True,
+        User, on_delete=models.SET_NULL, null=True,
         verbose_name="Last edited by",
         related_name='last_edited_experimentset'
     )
     created_by = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, null=True,
+        User, on_delete=models.SET_NULL, null=True,
         verbose_name="Created by",
         related_name='last_created_experimentset'
     )
@@ -145,6 +158,11 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
             self.accession = accession
             self.save()
 
+    def update_last_edit_info(self, user):
+        self.last_edit_date = datetime.date.today()
+        self.last_edit_by = user
+        self.save()
+
     def publish(self):
         self.private = False
         self.publish_date = datetime.date.today()
@@ -176,48 +194,71 @@ class Experiment(models.Model, GroupPermissionMixin):
     ----------
     accession : `models.CharField`
         The accession in the format 'EXPXXXXXX[A-Z]+'
+
     experimentset : `models.ForeignKey`.
         The experimentset is instance assciated with. New `ExperimentSet` is
         created if this is not provided.
+
     target : `models.CharField`
         The gene target this experiment examines.
+
     wt_sequence : `models.CharField`
         The wild type DNA sequence that is related to the `target`. Will
         be converted to upper-case upon instantiation.
+
     creation_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format.
+
     last_edit_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
         is called.
+
+    created_by : `models.ForeignKey`
+        User the instance was created by.
+
+    last_edit_by : `models.ForeignKey`
+        User to make the latest change to the instnace.
+
     publish_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
         called.
+
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
         created by default as not approved and must be manually checked
         before going live.
+
     last_used_suffix : `models.IntegerField`
         Min value of 0. Counts how many variants have been associated with
         this dataset. Must be manually incremented everytime, but this might
         change to a post_save signal
+
     private : `models.BooleanField`
         Whether this experiment should be private and viewable only by
         those approved in the permissions.
+
     abstract : `models.TextField`
         A markdown text blob.
+
     method_desc : `models.TextField`
         A markdown text blob of the scoring method.
+
     doi_id : `models.CharField`
         The DOI for this experiment if any.
+
     sra_id : `models.CharField`
         The SRA for this experiment if any.
+
     metadata : `models.JSONField`
         The free-form json metadata that might be associated with this
         experiment.
+
     keywords : `models.ManyToManyField`
         The keyword instances that are associated with this instance.
+
     external_accession : `models.ManyToManyField`
         Any external accessions that relate to `target`.
+
     target_organism : `models.ManyToManyField`
         The `TargetOrganism` instance that the target comes from. There should
         only be one associated per `Experiment` instance.
@@ -264,12 +305,12 @@ class Experiment(models.Model, GroupPermissionMixin):
         verbose_name="Published on")
 
     last_edit_by = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, null=True,
+        User, on_delete=models.SET_NULL, null=True,
         verbose_name="Last edited by",
         related_name='last_edited_experiment'
     )
     created_by = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, null=True,
+        User, on_delete=models.SET_NULL, null=True,
         verbose_name="Created by",
         related_name='last_created_experiment'
     )
@@ -320,6 +361,11 @@ class Experiment(models.Model, GroupPermissionMixin):
     # TODO: add helper functions to check permision bit and author bits
     def __str__(self):
         return str(self.accession)
+
+    def update_last_edit_info(self, user):
+        self.last_edit_date = datetime.date.today()
+        self.last_edit_by = user
+        self.save()
 
     def save(self, *args, **kwargs):
         super(Experiment, self).save(*args, **kwargs)

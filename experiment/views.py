@@ -215,17 +215,15 @@ def experiment_create_view(request):
         user = request.user
         assign_user_as_instance_admin(user, experiment)
         experiment.created_by = user
-        experiment.last_edit_by = user
+        experiment.update_last_edit_info(user)
         experiment.save()
 
         if not request.POST['{}-experimentset'.format(EXPERIMENT_FORM_PREFIX)]:
             assign_user_as_instance_admin(user, experiment.experimentset)
-            experiment.experimentset.created_by = user
-            experiment.experimentset.last_edit_by = user
+            experiment.experimentset.update_last_edit_info(user)
             experiment.experimentset.save()
 
         accession = experiment.accession
-
         return redirect("experiment:experiment_detail", accession=accession)
 
     else:
