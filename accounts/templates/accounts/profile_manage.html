@@ -6,7 +6,7 @@
 
 <!-- Admin management -->
 <div class="row" style="margin-top: 25px;">
-	<div class="ten columns">
+	<div class="col-md-10">
 		<h5> Add/Remove Administrators </h5><hr>
 		<form id="admin-form"
 					action="{% url 'accounts:manage_instance' instance.accession %}" 
@@ -32,7 +32,7 @@
 
 <!-- Contrib management -->
 <div class="row" style="margin-top: 25px;">
-	<div class="ten columns">
+	<div class="col-md-10">
 		<h5> Add/Remove Contributors </h5><hr>
 		<form id="contrib-form"
 					action="{% url 'accounts:manage_instance' instance.accession %}" 
@@ -59,7 +59,7 @@
 
 <!-- Viewer management -->
 <div class="row" style="margin-top: 25px;">
-	<div class="ten columns">
+	<div class="col-md-10">
 		<h5> Add/Remove Viewers </h5><hr>
 		<form id="viewer-form"
 					action="{% url 'accounts:manage_instance' instance.accession %}" 

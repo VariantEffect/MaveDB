@@ -2,11 +2,11 @@
 
 {% block body %}
 <div class="row">
-	<div class="two columns">
+	<div class="col-md-2">
 		<h1>Sign up</h1>
 		<small>Registration is free.</small>
 	</div>
-	<div class="ten columns">
+	<div class="col-md-10">
 		<form id="register-form" method="post">
 			{% csrf_token %}
 			{% for field in form %}

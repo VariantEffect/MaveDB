@@ -1,7 +1,7 @@
 /* Global 
 ----------------------------------- */
 * {
-    font-family: 'Raleway', sans-serif;
+    font-family: 'Raleway', sans-serif !important;
     /* border: 1px solid red !important; */
 }
 
@@ -16,22 +16,10 @@ body {
     margin: 1%;
 }
 
-hr {
-    margin-top: 1em;
-    margin-bottom: 1em;
-}
-
 hr.vertical {
     width: 1px;
     height: 100%;
     background-color: #E1E1E1;
-}
-
-.row, .container {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    word-wrap: break-word;
 }
 
 pre {
@@ -52,7 +40,7 @@ input[type=number] {
     width: auto;
 }
 
-.dynamic-resize {
+.full-height {
     min-height: 72vh;
 }
 
@@ -60,26 +48,25 @@ input[type=number] {
     margin-bottom: 15px;
 }
 
+.border-secondary {
+    border-color:rgba(0,0,0,.1) !important;
+}
+
 /* General, navbar and footer Link Styling
 ----------------------------------- */
 a {
-    padding: 2px;
-    text-decoration: none;
+    color: #1EAEDB !important;
+    text-decoration: none !important;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
     -ms-transition: 0.5s;
     transition: color 0.5s ease-in-out, 
 }
 a:hover {
-    color: #222;
+    color: #222 !important;
 }
 
-.navbar-item, 
-.footerbar-item {
-    margin: 1rem;
-}
-.navbar-item > a,
-.footerbar-item > a {
+.nav-item > a {
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
     -ms-transition: 0.5s;
@@ -89,8 +76,7 @@ a:hover {
     border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
 }
-.navbar-item > a:hover, 
-.footerbar-item > a:hover {
+.nav-item > a:hover {
     color: #222;
     border-top-color: #222;
     border-bottom-color: #222; 
@@ -101,26 +87,8 @@ a:hover {
 ----------------------------------- */
 .footer {
     float: right;
+    margin-bottom: 10px;
 }
-.navbar, .footerbar {
-    margin-left: 0;
-}
-
-.navbar-list {
-    margin-top: 2.5%;
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-}
-.footerbar-list {
-    margin-bottom: 2.5%;
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-}
-
 
 /* Navbar search box
 ------------------------------------ */

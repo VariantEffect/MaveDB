@@ -4,7 +4,7 @@
 <div class="row">
 	
 	<!-- Sidebar -->
-  <div class="two columns">	
+  <div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">	
 		<ul style="list-style: none;">
 			<h5>
 				Experiment Sets 
@@ -66,14 +66,9 @@
 			{% endif %}
 		</ul>
 	</div>
-	
-	<!-- Vertical divider -->
-	<div class="one column" style="margin-left:1%">
-		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
-	</div>
-	
+		
 	<!-- Content -->
-	<div class="nine columns" style="margin-left:-1%">
+	<div class="col-md-8 mx-3">
 		{% block profile_body %}
 			<!-- Main content for profile view -->
 		{% endblock profile_body %}

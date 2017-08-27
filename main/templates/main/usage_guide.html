@@ -2,12 +2,12 @@
 
 {% block body %}
 <div class="row usageguie-body">
-    <div class="two columns">
+    <div class="col-2">
         <h4>Usage</h4><hr>
         <!-- Table of contents goes here -->
         <div class="js-toc"></div>
     </div>
-    <div class="seven columns js-toc-content">
+    <div class="col-8 js-toc-content">
         {{ site_information.usage_guide|safe|escape|default:"None" }}
     </div>
 </div>

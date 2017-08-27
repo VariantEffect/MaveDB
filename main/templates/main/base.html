@@ -14,8 +14,8 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
     <!-- skeleton -->
-    <link rel="stylesheet" href="{% static 'main/skeleton/css/normalize.css' %}"> 
-    <link rel="stylesheet" href="{% static 'main/skeleton/css/skeleton.css' %}"> 
+    <link rel="stylesheet" href="{% static 'main/bootstrap4b/css/bootstrap.min.css' %}"> 
+    {% comment %} <link rel="stylesheet" href="{% static 'main/skeleton/css/skeleton.css' %}">  {% endcomment %}
     <!-- jquery-ui -->
     <link href="{% static 'main/jquery/css/jquery-ui.css' %}" rel="stylesheet">
     <!-- tocbot -->
@@ -31,82 +31,99 @@
   </head>
 
   <body>
-    <div class="section header">
-      <div class="row">
-        <div class="two columns logo centered">
-          <img class="logo-img" type="image/svg+xml"
-               src="{% static 'main/main/img/logo.svg' %}">
-        </div>
-        <nav class="six columns navbar">
-          <ul class="navbar-list container">
-            <li class="navbar-item">
-              <a href="{% url 'main:home'%}">Home</a>
+    <div class="section header container-fluid">
+      <nav class="navbar navbar-expand-md navbar-light">
+        
+        <!-- MaveDB logo -->
+        <a class="navbar-brand" href="{% url 'main:home' %}" style="color: #222 !important;">
+          <img src="{% static 'main/main/img/logo.svg' %}" width="92" height="92">
+          MaveDB
+        </a>
+        
+        <!-- Bootstrap collapse button -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" 
+                data-target="#navbar-links" aria-controls="navbar-links" 
+                aria-expanded="true" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse ml-4" id="navbar-links">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'main:home'%}">Home</a>
             </li>
-            <li class="navbar-item">
-              <a href="#">Search</a>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Search</a>
             </li>
-            <li class="navbar-item">
-              <a href="#">Download</a>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Download</a>
             </li>
-            <li class="navbar-item">
-              <a href="{% url 'main:usage_guide'%}">Usage</a>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'main:usage_guide'%}">Usage</a>
             </li>
-            <li class="navbar-item">
-              <a href="{% url 'main:documentation'%}">Documentation</a>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'main:documentation'%}">Documentation</a>
             </li>
             {% if user.is_authenticated %}
-              <li class="navbar-item">
-                <a href="{% url 'accounts:profile'%}">Profile</a>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:profile'%}">Profile</a>
               </li>
-              <li class="navbar-item">
-                <a href="{% url 'accounts:logout'%}">Logout</a>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:logout'%}">Logout</a>
               </li>
             {% else %}
-              <li class="navbar-item">
-                <a href="{% url 'accounts:login'%}">Login</a>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:login'%}">Login</a>
               </li>
-              <li class="navbar-item">
-                <a href="{% url 'accounts:register'%}">Register</a>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:register'%}">Register</a>
               </li>
             {% endif %}
           </ul>
-        </nav>
-        <div class="four columns navbar-search">
-          <form class="container" action="{% url 'main:home' %}" method="post">
+          
+          <form class="form-inline my-2 my-lg-0" action="" method="post">
             {% csrf_token %}
-            <input name="navbar-search-input" placeholder="Search...">
-            <input type="submit" style="display: none" />
+            <input class="form-control mr-sm-1" type="text" aria-label="Search"
+                   placeholder="Search...">
+            <button class="btn btn-outline-info my-2 my-sm-0" type="submit">
+              Search
+            </button>
           </form>
-        </div>
-      </div>
-    </div>
-     
+            
+        </div> <!-- End navbar links -->
+      </nav> <!-- End navbar -->
+    </div> <!-- End Header div -->
+
     <hr> <!-- clear -->
 
-    <div class="section body-block dynamic-resize">
+    <div class="container-fluid full-height body-block" style="width:95%;">
       {% block body %}
         <!-- Main template body block -->
       {% endblock %}
     </div>
     
-    <br><hr> <!-- clear -->
+    <hr> <!-- clear -->
 
     <div class="section footer">
-      <div class="row"> 
-        <nav class="twelve columns footerbar">
-          <ul class="footerbar-list container">
-            <li class="footerbar-item">
-              <a href="{% url 'main:terms_privacy'%}">Terms</a>
-            </li>
-            <li class="footerbar-item">
-              <a href="{% url 'main:terms_privacy'%}#privacy">Privacy</a>
-            </li>
-            <li class="footerbar-item">
-              <a href="#">Contact</a>
-            </li>
-            <li class="footerbar-item">All rights reserved, 2017.</li>
-          </ul>
-        </nav>
+      <nav class="navbar navbar-expand-md navbar-light">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'main:terms_privacy'%}">Terms</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'main:terms_privacy'%}#privacy">
+              Privacy
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Contact</a>
+          </li>
+          <div class="align-self-center float-left">
+            <small>All rights reserved, 2017.</small>
+          </div>   
+        </ul>       
+      </nav>
       </div>
     </div>
   
@@ -124,8 +141,9 @@
           src="{% static 'main/main/js/base.js' %}"></script>
   <script type="text/javascript"  
           src="{% static 'main/main/js/init_tocbot.js' %}"></script>
-          <script type="text/javascript"  
+  <script type="text/javascript"  
           src="{% static 'main/select2/js/select2.min.js' %}"></script>
-          
+  <script type="text/javascript"  
+          src="{% static 'main/bootstrap4b/js/bootstrap.min.js' %}"></script>
   </body>
 </html>

@@ -2,10 +2,10 @@
 
 {% block body %}
 <div class="row">
-  <div class="two columns sidebar">
+  <div class="col-md-2 sidebar">
 		<h2> Login </h2>
 	</div>
-	<div class="ten columns login-form">
+	<div class="col-md-10 login-form">
 		<form id="login-form" method="post">
 			{% csrf_token %}
 			{% for error in form.non_field_errors %}

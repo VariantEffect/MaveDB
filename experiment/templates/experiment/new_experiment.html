@@ -2,15 +2,11 @@
 
 {% block body %}
 <div class="row">
-	<div class="two columns">
+	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
 		<h3>Create new experiment</h3>
 	</div>
 	
-	<div class="one column" style="margin-left: 1%">
-		<div style="width:1px;height:100%;background-color:#E1E1E1;">&nbsp;</div>
-	</div>
-
-	<div class="nine columns" style="margin-left: 1%">
+	<div class="col-md-8 mx-3">
 		<form action="{% url 'experiment:experiment_new' %}" method="POST">
 			{% csrf_token %}
 			
