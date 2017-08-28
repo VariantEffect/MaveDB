@@ -40,6 +40,15 @@ $('document').ready(function() {
         tags: true,
         tokenSeparators: [',']
     });
+
+    currentUrl = window.location.toString();
+    if (currentUrl.endsWith("#counts")) {
+        $("#counts-tab").click();
+    }
+    if (currentUrl.endsWith("#scores")) {
+        $("#scores-tab").click();
+    }
+
 });
 
 // Check management form submission

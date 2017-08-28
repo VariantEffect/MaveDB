@@ -3,7 +3,7 @@
 {% block body %}
 
 <div class="row">
-  <div class="col-8 information">
+  <div class="col-md-8 information">
     <h1> About </h1>
     <div id="about">
       {{ site_information.about|safe|escape|default:"None" }}
@@ -14,7 +14,7 @@
     </div> 
   </div> <!-- end column -->
   
-  <div class="col-4 news-panel">
+  <div class="col-md-4 news-panel">
     <h1> News </h1>
     <div class="container news">
       {% if news_items %}

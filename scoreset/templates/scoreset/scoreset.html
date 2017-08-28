@@ -4,7 +4,7 @@
 <div class="row">
 
 	<!-- Sidebar -->
-	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary" 
+	<div class="sidebar col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary" 
 			 style="min-height:80vh;width:200px !important;">
 		<h5> {{ scoreset.accession }} </h5>
 		<p> 
@@ -108,27 +108,76 @@
 					{% if not variants %}
 						<p> No scores data available.</p>
 					{% else %}
-						<table class="table-hover container-fluid">
-							<thead>
-								<tr>
-									{% for column in scores_columns %}
-										<th> {{column}} </th>
-									{% endfor %}
-								</tr>
-							</thead>
-							<tbody>
-								{% for var in variants %}
+						<div id="scores-table-container" class="table-container container-fluid" >
+							<table id="scores-table" class="styled-table table table-hover">
+								<thead>
 									<tr>
-										{% for data in var.get_ordered_scores_data %}
-											<td> {{ data }} </td>
+										{% for column in scores_columns %}
+											<th> {{column}} </th>
 										{% endfor %}
 									</tr>
-								{% endfor %}
-							</tbody>
-						</table>
+								</thead>
+								<tbody>
+									{% for var in variants %}
+										<tr>
+											{% for data in var.get_ordered_scores_data %}
+												<td> {{ data }} </td>
+											{% endfor %}
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
 					{% endif %}
+
+					<!-- Pagination -->
+					{% if variants.has_other_pages %}
+					<ul class="pagination justify-content-end">
+						{% if variants.has_previous %}
+							<li class="page-item">
+								<a class="page-link" 
+									 href="?page={{ variants.previous_page_number }}#scores">
+									 &laquo;
+								</a>
+							</li>
+						{% else %}
+							<li class="page-item disabled">
+								<a class="page-link" href="#">
+									<span aria-hidden="true">&laquo;</span>
+								</a>
+							</li>
+						{% endif %}
+						
+						{% for i in page_range %}
+							{% if variants.number == i %}
+								<li class="page-item active">
+									<a class="page-link" href="?page={{ i }}#scores">{{ i }}</a>
+								</li>
+							{% else %}
+								<li class="page-item">
+									<a class="page-link" href="?page={{ i }}#scores">{{ i }}</a>
+								</li>
+							{% endif %}
+						{% endfor %}
+						
+						{% if variants.has_next %}
+							<li class="page-item">
+								<a class="page-link" 
+									 href="?page={{ variants.next_page_number }}#scores">
+									 &raquo;
+								</a>
+							</li>
+						{% else %}
+							<li class="page-item disabled">
+								<a class="page-link" href="#">
+									<span aria-hidden="true">&raquo;</span>
+								</a>
+							</li>
+						{% endif %}
+					</ul>
+					{% endif %} <!-- End pagination -->
+				
 				</div>
-			
 			</div> <!-- End scores data tab -->
 			
 			<!-- Counts data tab -->
@@ -151,7 +200,8 @@
 					{% if not variants %}
 						<p> No scores data available.</p>
 					{% else %}
-						<table class="table-hover container-fluid">
+					<div id="counts-table-container" class="table-container container-fluid" >
+						<table id="counts-table" class="styled-table table table-hover">
 							<thead>
 								<tr>
 									{% for column in counts_columns %}
@@ -168,8 +218,56 @@
 									</tr>
 								{% endfor %}
 							</tbody>
-						</table>					
+						</table>
+					</div>
 					{% endif %}
+					
+					<!-- Pagination -->
+					{% if variants.has_other_pages %}
+					<ul class="pagination justify-content-end">
+						{% if variants.has_previous %}
+							<li class="page-item">
+								<a class="page-link" 
+									 href="page={{ variants.previous_page_number }}#counts">
+									 &laquo;
+								</a>
+							</li>
+						{% else %}
+							<li class="page-item disabled">
+								<a class="page-link" href="#">
+									<span aria-hidden="true">&laquo;</span>
+								</a>
+							</li>
+						{% endif %}
+						
+						{% for i in page_range %}
+							{% if variants.number == i %}
+								<li class="page-item active">
+									<a class="page-link" href="?page={{ i }}#counts">{{ i }}</a>
+								</li>
+							{% else %}
+								<li class="page-item">
+									<a class="page-link" href="?page={{ i }}#counts">{{ i }}</a>
+								</li>
+							{% endif %}
+						{% endfor %}
+						
+						{% if variants.has_next %}
+							<li class="page-item">
+								<a class="page-link" 
+									 href="?page={{ variants.next_page_number }}#counts">
+									 &raquo;
+								</a>
+							</li>
+						{% else %}
+							<li class="page-item disabled">
+								<a class="page-link" href="#">
+									<span aria-hidden="true">&raquo;</span>
+								</a>
+							</li>
+						{% endif %}
+					</ul>
+					{% endif %} <!-- End pagination -->
 				</div>
 			</div> <!-- end counts data tab -->
 		

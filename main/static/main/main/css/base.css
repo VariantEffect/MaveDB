@@ -16,12 +16,6 @@ body {
     margin: 1%;
 }
 
-hr.vertical {
-    width: 1px;
-    height: 100%;
-    background-color: #E1E1E1;
-}
-
 pre {
 	margin-left: 1%;
 	margin-right: 1%;
@@ -41,7 +35,7 @@ input[type=number] {
 }
 
 .full-height {
-    min-height: 72vh;
+    min-height: 85vh;
 }
 
 .select2 {
@@ -56,6 +50,7 @@ input[type=number] {
     border: 1px solid #222 !important;
     color: white !important;
 }
+
 
 /* General, navbar and footer Link Styling
 ----------------------------------- */
@@ -89,8 +84,22 @@ a:hover {
 
 /* Tables
 ---------------------------------- */
-th, tr {
-    border-bottom: 1px solid #222;
+.table-container {
+    border: 1.5px solid #AFC8FA;
+    padding: 0.5px 0.25px 0.5px 0.25px;
+}
+.styled-table {
+    margin-bottom: 0; 
+    background: whitesmoke;
+}
+.styled-table th {
+    background: #AFC8FA;
+}
+.table thead th, 
+.table tbody td  {
+    font-size: 14px;
+    line-height: 0.10em;
+    border: 1px solid white;
 }
 
 
@@ -100,9 +109,17 @@ th, tr {
     float: right;
     margin-bottom: 10px;
 }
+.sidebar {
+    min-height:80vh !important;
+    width:200px !important;
+}
 
-/* Navbar search box
+/* Navbar / search box
 ------------------------------------ */
+.nav-link {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+}
 .navbar-search {
     margin-left: 7.75%;
 }
@@ -154,10 +171,14 @@ th, tr {
     z-index: 999;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 800px) {
     .js-toc {
         width: 100%;
         margin-bottom: 25px;
+    }
+    .sidebar {
+        min-height: auto !important;
+        border: 0px !important;
     }
 } 
 
@@ -183,6 +204,11 @@ th, tr {
 
 /* Pagination
 ---------------------------------------- */
+.page-item.active > .page-link {
+    color: whitesmoke !important;
+    border-color: #D1D1D1 !important;
+    background-color: #AFC8FA !important;
+}
 .pagination {
     padding-top: 10px;
     list-style: none;
@@ -192,8 +218,8 @@ th, tr {
     margin-top: auto;
 }
 .pagination > li > a.start {
-    border: 1px solid #D1D1D1;
-    border-right: 0px solid #D1D1D1;
+    border: 1px solid #999999;
+    border-right: 0px solid #999999;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
 }
@@ -223,13 +249,10 @@ th, tr {
 .pagination > li.active > a {
     color: #222;
 }
-.hidden-submit {
-    visibility: hidden;
-}
-.items-per-page-form {
+.items-per-page {
     padding: 4px;
 }
-.items-per-page-form > select {
+.items-per-page > select {
     margin-bottom: -1.5px;
 }
 

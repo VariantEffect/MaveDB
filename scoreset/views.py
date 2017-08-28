@@ -78,7 +78,9 @@ class ScoreSetDetailView(DetailView):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
         variant_list = instance.variant_set.all()
-        paginator = Paginator(variant_list, 100)
+        paginator = Paginator(variant_list, per_page=2)
+
+        print(self.request.GET)
 
         try:
             page = self.request.GET.get('page', 1)
@@ -88,7 +90,15 @@ class ScoreSetDetailView(DetailView):
         except EmptyPage:
             variants = paginator.page(paginator.num_pages)
 
+        # Handle the case when there are too many pages.
+        index = paginator.page_range.index(variants.number)
+        max_index = len(paginator.page_range)
+        start_index = index - 3 if index >= 3 else 0
+        end_index = index + 3 if index <= max_index - 3 else max_index
+        page_range = paginator.page_range[start_index:end_index]
+
         context["variants"] = variants
+        context["page_range"] = page_range
         context["scores_columns"] = \
             context['scoreset'].dataset_columns[SCORES_KEY]
         context["counts_columns"] = \
