@@ -52,6 +52,11 @@ input[type=number] {
     border-color:rgba(0,0,0,.1) !important;
 }
 
+.download-btn:hover {
+    border: 1px solid #222 !important;
+    color: white !important;
+}
+
 /* General, navbar and footer Link Styling
 ----------------------------------- */
 a {
@@ -80,6 +85,12 @@ a:hover {
     color: #222;
     border-top-color: #222;
     border-bottom-color: #222; 
+}
+
+/* Tables
+---------------------------------- */
+th, tr {
+    border-bottom: 1px solid #222;
 }
 
 
@@ -138,43 +149,36 @@ a:hover {
 
 /* Tocbot
 ---------------------------------------- */
-h1::before, h2::before, h3::before, 
-h4::before, h5::before, h6::before {
-    display: block;
-    content: " ";
-    height: 60px;
-    margin-top: -60px;
-    visibility: hidden;
-}
-
 .js-toc {
     background: #fff;
+    z-index: 999;
 }
 
-.toc-link::before {
-	background-color: #EEE;
-	content: '';
-	display: inline-block;
-	height: 25%;
-	left: 0;
-	margin-top: 2.5px;
-	position: absolute;
-	width: 2px;
-}
-.is-active-link::before {
-	background-color: #88B784;
-	visibility: visible;
+@media (max-width: 768px) {
+    .js-toc {
+        width: 100%;
+        margin-bottom: 25px;
+    }
+} 
+
+.toc-link {
+    color: #222 !important;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;   
+    -ms-transition: 0.5s;
+    transition: color 0.5s ease-in-out, 
 }
 
-.toc-list-item {
-    list-style: none;
-    font-size: 20px;
-    margin-bottom: 0;
+.toc-link:hover {
+    color: #1EAEDB !important;
 }
 
-.is-position-fixed {
-    width: inherit;
-}
+.node-name--H1 { font-size: 24px;}
+.node-name--H2 { font-size: 22px;}
+.node-name--H3 { font-size: 20px;}
+.node-name--H4 { font-size: 18px;}
+.node-name--H5 { font-size: 16px;}
+.node-name--H6 { font-size: 14px;}
 
 
 /* Pagination
@@ -242,32 +246,4 @@ h4::before, h5::before, h6::before {
     min-height: 250px;
     height: 250px;
     width: 650px;
-}
-
-.alert {
-    margin: 10px;
-    padding: 5px;
-    text-align: center;
-    width: 80%;
-    border: 1px solid #888;
-    border-radius: 4px;
-    color: black
-}
-.success {
-    background-color: #A5FBA5;
-}
-.error {
-    background-color: #FF9B9B;
-}
-
-
-.non-field-errors,
-.non-field-errors > ul,
-.field-error > ul {
-    list-style: none;
-    text-align: center;
-    border: 1px solid #222;
-    background-color: lightcoral;
-    border-radius: 4px;
-    color: black
 }

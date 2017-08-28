@@ -13,13 +13,12 @@
           rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
-    <!-- skeleton -->
+    <!-- Bootstrap -->
     <link rel="stylesheet" href="{% static 'main/bootstrap4b/css/bootstrap.min.css' %}"> 
-    {% comment %} <link rel="stylesheet" href="{% static 'main/skeleton/css/skeleton.css' %}">  {% endcomment %}
-    <!-- jquery-ui -->
-    <link href="{% static 'main/jquery/css/jquery-ui.css' %}" rel="stylesheet">
     <!-- tocbot -->
     <link href="{% static 'main/tocbot/css/tocbot.css' %}" rel="stylesheet">
+    <!-- jquery-ui -->
+    <link href="{% static 'main/jquery/css/jquery-ui.css' %}" rel="stylesheet">
     <!-- Select2 -->
     <link href="{% static 'main/select2/css/select2.min.css' %}" rel="stylesheet">
     <!-- custom css -->
@@ -131,19 +130,29 @@
   <!-- Ask user confirmation to remove themself as an instance admin -->
   <!-- This needs to be here in order to record the user pk from the django -->
   <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
-  <script type="text/javascript" 
-          src="{% static 'main/jquery/js/jquery-3.2.1.min.js' %}"></script>
+  <!-- JQuery/JQuery UI -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" 
+          integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" 
+          crossorigin="anonymous"></script>
   <script type="text/javascript" 
           src="{% static 'main/jquery/js/jquery-ui.min.js' %}"></script>
+  <!-- Popper.js/Bootstrap -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" 
+          integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" 
+          crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" 
+          integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" 
+          crossorigin="anonymous"></script>
+  <!-- Tocbot -->
   <script type="text/javascript" 
           src="{% static 'main/tocbot/js/tocbot.js' %}"></script>
   <script type="text/javascript"  
-          src="{% static 'main/main/js/base.js' %}"></script>
-  <script type="text/javascript"  
           src="{% static 'main/main/js/init_tocbot.js' %}"></script>
+  <!-- Select2 -->
   <script type="text/javascript"  
-          src="{% static 'main/select2/js/select2.min.js' %}"></script>
+          src="{% static 'main/select2/js/select2.min.js' %}"></script>         
+  <!-- Cutom -->
   <script type="text/javascript"  
-          src="{% static 'main/bootstrap4b/js/bootstrap.min.js' %}"></script>
+          src="{% static 'main/main/js/base.js' %}"></script>
   </body>
 </html>

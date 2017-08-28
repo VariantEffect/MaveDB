@@ -4,7 +4,8 @@
 <div class="row">
 	
 	<!-- Sidebar -->
-	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
+	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary"
+			 style="min-height:80vh;width:200px !important;">
 		<h5> {{ experiment.accession }} </h5>
 		<p> 
 			Member of experiment set 
@@ -16,105 +17,148 @@
 	
 	<!-- Content -->
 	<div class="col-md-8 mx-3">
-		
-		<h3> Abstract </h3>
-		<p> {{ experiment.md_abstract|safe|escape|default:"Not provided" }} </p>
-		<hr>
-		
-		<h3> Method description </h3>
-		<p> {{ experiment.md_method_desc|safe|escape|default:"Not provided" }} </p>
-		<hr>
-		
-		<h3> Publication information </h3>
-		<span style="font-weight: 600;">Created on:</span>
-			<span>{{ experiment.creation_date }}</span>
-		<br>
-		<span style="font-weight: 600;">Created by:</span>
-			<span>{{ experiment.created_by|default:"None" }}</span>
-		<br>
-		<span style="font-weight: 600;">Last edited on:</span>
-			<span>{{ experiment.last_edit_date|default:"None" }}</span>
-		<br>
-		<span style="font-weight: 600;">Last edited by:</span>
-			<span>{{ experiment.last_edit_by|default:"None" }}</span>
-		<br>
-		<span style="font-weight: 600;">Authors:</span>
-			<span>{{ experiment.get_authors|default:"None" }}</span>
-		<br>	
-		<span style="font-weight: 600;">DOI:</span>
-			<span>{{ experiment.doi_id|default:"None" }}</span>
-		<br>
-		<span style="font-weight: 600;">SRA:</span>
-			<span>{{ experiment.sra_id|default:"None" }}</span>
-		<br>
-		<span style="font-weight: 600;">Reviewed:</span>
-			<span>
-				{% if experiment.approved %}
-					{{ "Yes "}}
-				{% else %}
-					{{ "No" }}
-				{% endif %}
-			</span>
-		<br>
-		<hr>
-		
-		<h3> Experiment information </h3>
-		<span style="font-weight: 600;">Target: </span>
-			<span>{{ experiment.target }}</span>
-		<br>
-		<span style="font-weight: 600;">Target organism: </span>
-			<em>{{ experiment.get_target_organism|default:"Not provided" }}</em>
-		<br>
-		<div style="word-wrap: break-word; word-break: break-all;">
-			<span style="font-weight: 600">Wild type sequence: </span>
-				<span>{{ experiment.wt_sequence }}</span>
-		</div>
-		<span style="font-weight: 600;">Keywords: </span>
-			<span>{{ experiment.get_keywords|default:"Not provided" }}</span>
-		<br>
-		<span style="font-weight: 600;">External accessions: </span>
-			<span>{{ experiment.get_other_accessions|default:"Not provided" }}</span>
-		<br>
-		<span style="font-weight: 600;">Score sets: </span>
-			{% for scoreset in experiment.scoreset_set.all %}
-				<a href="{% url 'scoreset:scoreset_detail' scoreset.accession %}">
-					{{ scoreset.accession }}
-				</a>,
-			{% endfor %}
-		<br>
-		<hr>
-		
-		<h3>Reference mappings</h3>
-		{% if not experiment.get_ref_mappings %}
-			<p> No maps have been specified for this experiment. </p>
-		{% else %}
-			<table>
-				<thead>
-					<tr>
-						<th>Reference</th>
-						<th>Is alternate</th>
-						<th>Target start</th>
-						<th>Target end</th>
-						<th>Reference start</th>
-						<th>Reference end</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for map in experiment.get_ref_mappings %}
-					<tr>
-						<td>{{ map.reference }}</td>
-						<td>{{ map.is_alternate }}</td>
-						<td>{{ map.target_start }}</td>
-						<td>{{ map.target_end }}</td>
-						<td>{{ map.reference_start }}</td>
-						<td>{{ map.reference_end }}</td>
-					</tr>			
-					{% endfor %}
-				</tbody>
-			</table>
-		{% endif %}
-		<br>	
+
+		<!-- Tab/Pills menu -->
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item">
+				<a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" 
+						role="tab" aria-controls="info" aria-expanded="true">Information</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" id="scoresets-tab" data-toggle="tab" href="#scoresets" 
+						role="tab" aria-controls="scoresets">Scores Sets</a>
+			</li>
+			<li class="nav-item">
+					<a class="nav-link" id="refmaps-tab" data-toggle="tab" href="#refmaps" 
+						 role="tab" aria-controls="refmaps">Reference Maps</a>
+			</li>
+		</ul>
+
+		<!-- Tab/Pills content -->
+		<div class="tab-content" id="myTabContent">
+			
+			<!-- Information tab -->
+			<div class="tab-pane fade show active" id="info" role="tabpanel" 
+					 aria-labelledby="info-tab">
+				<div class="container-fluid mt-4">
+					<h3> Abstract </h3>
+					<p> {{ experiment.md_abstract|safe|escape|default:"Not provided" }} </p>
+					<hr>
+					
+					<h3> Method description </h3>
+					<p> {{ experiment.md_method_desc|safe|escape|default:"Not provided" }} </p>
+					<hr>
+					
+					<h3> Publication information </h3>
+					<span style="font-weight: 600;">Created on:</span>
+						<span>{{ experiment.creation_date }}</span>
+					<br>
+					<span style="font-weight: 600;">Created by:</span>
+						<span>{{ experiment.created_by|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Last edited on:</span>
+						<span>{{ experiment.last_edit_date|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Last edited by:</span>
+						<span>{{ experiment.last_edit_by|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Authors:</span>
+						<span>{{ experiment.get_authors|default:"None" }}</span>
+					<br>	
+					<span style="font-weight: 600;">DOI:</span>
+						<span>{{ experiment.doi_id|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">SRA:</span>
+						<span>{{ experiment.sra_id|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Reviewed:</span>
+						<span>
+							{% if experiment.approved %}
+								{{ "Yes "}}
+							{% else %}
+								{{ "No" }}
+							{% endif %}
+						</span>
+					<br>
+					<hr>
+			
+					<h3> Experiment information </h3>
+					<span style="font-weight: 600;">Target: </span>
+						<span>{{ experiment.target }}</span>
+					<br>
+					<span style="font-weight: 600;">Target organism: </span>
+						<em>{{ experiment.get_target_organism|default:"Not provided" }}</em>
+					<br>
+					<div style="word-wrap: break-word; word-break: break-all;">
+						<span style="font-weight: 600">Wild type sequence: </span>
+							<span>{{ experiment.wt_sequence }}</span>
+					</div>
+					<span style="font-weight: 600;">Keywords: </span>
+						<span>{{ experiment.get_keywords|default:"Not provided" }}</span>
+					<br>
+					<span style="font-weight: 600;">External accessions: </span>
+						<span>{{ experiment.get_other_accessions|default:"Not provided" }}</span>
+				</div>
+			</div> <!-- End information tab -->
+
+			<!-- Reference mapping tab -->
+			<div class="tab-pane fade show" id="refmaps" role="tabpanel" 
+					 aria-labelledby="refmaps-tab">
+				<div class="container-fluid mt-4">
+					{% if not experiment.get_ref_mappings %}
+						<p> No maps have been specified for this experiment. </p>
+					{% else %}
+						The following maps have been specified for this experiment:
+						<table class="container-fluid table-hover">
+							<thead>
+								<tr>
+									<th>Reference</th>
+									<th>Is alternate</th>
+									<th>Target start</th>
+									<th>Target end</th>
+									<th>Reference start</th>
+									<th>Reference end</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for map in experiment.get_ref_mappings %}
+								<tr>
+									<td>{{ map.reference }}</td>
+									<td>{{ map.is_alternate }}</td>
+									<td>{{ map.target_start }}</td>
+									<td>{{ map.target_end }}</td>
+									<td>{{ map.reference_start }}</td>
+									<td>{{ map.reference_end }}</td>
+								</tr>			
+								{% endfor %}
+							</tbody>
+						</table>
+					{% endif %}	
+				</div>
+			</div> <!-- End ref map tab -->
+
+			<!-- Scoreset tab -->
+			<div class="tab-pane fade show" id="scoresets" role="tabpanel" 
+					 aria-labelledby="scoresets-tab">
+				<div class="container-fluid mt-4">
+					{% if not experiment.scoreset_set %}
+						<p> No score sets have been associated with this experiment.</p>
+					{% else %}
+						The following score sets are associated with this experiment:
+						<ul class="mt-2" style="list-style: none;">
+							{% for scoreset in experiment.scoreset_set.all %}
+							<li>
+								<a href="{% url 'scoreset:scoreset_detail' scoreset.accession %}">
+									{{ scoreset.accession }}
+								</a>
+							</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+			</div> <!-- End scoreset tab -->
+		</div> <!-- End tab content -->
 	
-	</div>
-</div>
+	</div> <!-- End column -->
+</div> <!-- End row -->
 {% endblock body %}

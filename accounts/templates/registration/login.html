@@ -2,26 +2,51 @@
 
 {% block body %}
 <div class="row">
-  <div class="col-md-2 sidebar">
+  <div class="col-md-2">
 		<h2> Login </h2>
 	</div>
-	<div class="col-md-10 login-form">
+	
+	<div class="col-md-6">
 		<form id="login-form" method="post">
 			{% csrf_token %}
-			{% for error in form.non_field_errors %}
-				<b style="color: red"> {{ error }} </b><br>
-			{% endfor %}
-			{% for field in form %}
-				{{ field.label_tag }}
-				{{ field }}
-				{% for error in field.errors %}
-					<b style="color: red"> {{ error }} </b><br>
+
+			{% if form.non_field_errors %}	
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					{% for error in form.non_field_errors %}
+					<h4 class="alert-heading">Login error!</h4>
+					<hr>
+					<p> {{ error }} </p>
+					{% endfor %}
+				</div>
+			{% endif %}
+
+			<div class="form-group">
+				<label for="id_username">{{ form.username.label_tag }}</label>					
+				{% for error in form.username.errors %}
+					<b style="color: red;list-style: none;"> {{ error }} </b><br>
 				{% endfor %}
-			{% endfor %}
-			<p>
-				<button type="submit">Login</button><br>
-				<a href="{% url 'accounts:password_reset' %}">Lost password?</a>
-			</p>
+				<input class="form-control" name="username" maxlength="150" 
+							 autofocus="" required="" id="id_username" type="text">
+			</div>
+
+			<div class="form-group">
+				<label for="id_password">{{ form.password.label_tag }}</label>					
+				{% for error in form.password.errors %}
+					<b style="color: red;list-style: none;"> {{ error }} </b><br>
+				{% endfor %}
+				<input class="form-control" name="password" required="" 
+							 id="id_password" type="password">
+			</div>
+
+			<div>
+				<button type="submit" class="btn btn-primary mb-2 float-right">Submit</button>
+				<br><br>
+				<a class="float-right" href="{% url 'accounts:password_reset' %}">Lost password?</a>
+			</div>
+		
 		</form>
 	</div>	
 </div>

@@ -34,20 +34,12 @@ $('document').ready(function() {
         $(this).attr("placeholder", "Search...");
     });
 
-    $(".select-menu").change(function (ev) {
-        $(".hidden-submit").attr("type", "submit");
-        $(".hidden-submit").trigger("click");
-        $(".hidden-submit").attr("type", "hidden");
-    });
-
     // Initialise select2
     $('.select2').select2();
     $(".select2-token-select").select2({
         tags: true,
         tokenSeparators: [',']
     });
-
-
 });
 
 // Check management form submission

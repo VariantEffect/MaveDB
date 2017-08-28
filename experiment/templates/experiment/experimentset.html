@@ -5,53 +5,79 @@
 	
 	<!-- Sidebar -->
 	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary" 
-		 style="height:80vh;width:200px !important;">
+		 style="min-height:80vh;width:200px !important;">
 		<h5> {{ experimentset.accession }} </h5>
 	</div>
 
 	<!-- Content -->
 	<div class="col-md-8 mx-3">
-		<div>
-			<h3>Publication information</h3>
-			<span style="font-weight: 600;">Created on:</span>
-				<span>{{ experimentset.creation_date }}</span>
-			<br>
-			<span style="font-weight: 600;">Created by:</span>
-				<span>{{ experimentset.created_by|default:"None" }}</span>
-			<br>
-			<span style="font-weight: 600;">Last edited on:</span>
-				<span>{{ experimentset.last_edit_date|default:"None" }}</span>
-			<br>
-			<span style="font-weight: 600;">Last edited by:</span>
-				<span>{{ experimentset.last_edit_by|default:"None" }}</span>
-			<br>
-			<span style="font-weight: 600;">Authors:</span>
-				<span>{{ experimentset.get_authors|default:"None" }}</span>
-			<br>
-			<span style="font-weight: 600;">Reviewed:</span>
-				<span>
-					{% if experimentset.approved %}
-						{{ "Yes "}}
-					{% else %}
-						{{ "No" }}
-					{% endif %}
-				</span>
-			<br>
-		</div>
+		
+		<!-- Tab/Pills menu -->
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item">
+				<a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" 
+						role="tab" aria-controls="info" aria-expanded="true">Information</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" id="experiments-tab" data-toggle="tab" href="#experiments" 
+						role="tab" aria-controls="experiments">Experiments</a>
+			</li>
+		</ul>
 
-		<hr>
-		<div>
-			The following experiments belong to this set:
-			<ul style="list-style: none; margin-left: 10px;">
-			{% for exp in experimentset.experiment_set.all %}
-				<li>
-					<a href="{% url 'experiment:experiment_detail' exp.accession %}">
-						{{exp.accession}}
-					</a>
-				</li>
-			{% endfor %}
-			</ul>
-		</div>
+		<!-- Tab/Pills content -->
+		<div class="tab-content" id="myTabContent">
+		
+			<!-- Information tab -->
+			<div class="tab-pane fade show active" id="info" role="tabpanel" 
+					 aria-labelledby="info-tab">
+				<div class="container-fluid mt-4">
+					<h3>Publication information</h3>
+					<span style="font-weight: 600;">Created on:</span>
+						<span>{{ experimentset.creation_date }}</span>
+					<br>
+					<span style="font-weight: 600;">Created by:</span>
+						<span>{{ experimentset.created_by|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Last edited on:</span>
+						<span>{{ experimentset.last_edit_date|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Last edited by:</span>
+						<span>{{ experimentset.last_edit_by|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Authors:</span>
+						<span>{{ experimentset.get_authors|default:"None" }}</span>
+					<br>
+					<span style="font-weight: 600;">Reviewed:</span>
+						<span>
+							{% if experimentset.approved %}
+								{{ "Yes "}}
+							{% else %}
+								{{ "No" }}
+							{% endif %}
+						</span>
+				</div>
+			</div> <!-- End info tab -->
+			
+			<!-- Experiments tab -->
+			<div class="tab-pane fade show" id="experiments" role="tabpanel" 
+					 aria-labelledby="experiments-tab">
+				<div class="container-fluid mt-4">
+					{% if not experimentset.experiment_set %}
+					<p> No experiments have been associated with this experiment set.</p>
+					{% else %}
+						The following experiments have been associated with this set:
+						<ul class="mt-2" style="list-style: none;">
+						{% for exp in experimentset.experiment_set.all %}
+							<li>
+								<a href="{% url 'experiment:experiment_detail' exp.accession %}">
+									{{exp.accession}}
+								</a>
+							</li>
+						{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+			</div> <!-- End experiments tab -->
 	
 	</div> <!-- end column -->
 </div> <!-- end row -->
