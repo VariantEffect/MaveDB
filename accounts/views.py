@@ -224,7 +224,6 @@ def edit_instance(request, accession):
 
     has_permission = [
         user_is_admin_for_instance(request.user, instance),
-        user_is_contributor_for_instance(request.user, instance),
     ]
     if not any(has_permission):
         response = render(request, 'main/404_not_found.html')
@@ -321,7 +320,6 @@ def view_instance(request, accession):
 
     has_permission = [
         user_is_admin_for_instance(request.user, instance),
-        user_is_contributor_for_instance(request.user, instance),
         user_is_viewer_for_instance(request.user, instance)
     ]
     if not any(has_permission):
