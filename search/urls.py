@@ -1,4 +1,3 @@
-
 """
 mavedb URL Configuration
 
@@ -20,26 +19,10 @@ Including another URLconf
 """
 
 from django.conf.urls import url, include
-from django.contrib import admin
+from django.urls import reverse_lazy
 
+from .views import search_view
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
-    url(r'^', include('main.urls', namespace='main'), name='main'),
-    url(
-        r'^accounts/',
-        include('accounts.urls', namespace='accounts'), name='accounts'
-    ),
-    url(
-        r'^experiment/',
-        include("experiment.urls", namespace="experiment"), name="experiment"
-    ),
-    url(
-        r'^scoreset/',
-        include("scoreset.urls", namespace="scoreset"), name="scoreset"
-    ),
-    url(
-        r'^search/',
-        include("search.urls", namespace="search"), name="search"
-    )
+    url(r"^$", search_view, name="search")
 ]

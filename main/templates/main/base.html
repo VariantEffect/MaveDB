@@ -53,7 +53,7 @@
               <a class="nav-link" href="{% url 'main:home'%}">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Search</a>
+              <a class="nav-link" href="{% url 'search:search' %}">Search</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#">Download</a>
@@ -81,7 +81,7 @@
             {% endif %}
           </ul>
           
-          <form class="form-inline my-2 my-lg-0" action="" method="post">
+          <form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="post">
             {% csrf_token %}
             <input class="form-control mr-sm-1" type="text" aria-label="Search"
                    placeholder="Search...">

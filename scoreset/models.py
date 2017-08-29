@@ -185,12 +185,7 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     # TODO: add helper functions to check permision bit and author bits
     def __str__(self):
-        return "ScoreSet({}, {}, {}, {})".format(
-            str(self.accession),
-            str(self.creation_date),
-            str(self.dataset_columns),
-            str(self.metadata)
-        )
+        return str(self.accession)
 
     def save(self, *args, **kwargs):
         super(ScoreSet, self).save(*args, **kwargs)
@@ -334,11 +329,7 @@ class Variant(models.Model):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return "Variant({}, {}, {})".format(
-            str(self.accession),
-            str(self.creation_date),
-            str(self.data)
-        )
+        return str(self.accession)
 
     @property
     def scores_columns(self):

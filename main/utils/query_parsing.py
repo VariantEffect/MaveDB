@@ -43,7 +43,6 @@ def parse_query(query, sep=','):
     """
     pattern = r"(['\"]([^'\"]*)['\"]){}".format(sep)
     queries = [q.strip() for q in re.split(pattern, query) if q.strip()]
-    print(queries)
     parsed = []
     index = 0
     while index < len(queries):

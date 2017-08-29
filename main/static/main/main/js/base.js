@@ -48,8 +48,31 @@ $('document').ready(function() {
     if (currentUrl.endsWith("#scores")) {
         $("#scores-tab").click();
     }
-
 });
+
+// Stop counts and scores tables bleeding into other tabs
+// ----------------------------------------------------------------------- //
+// $("#counts-tab").bind("blur", function(ev) {
+//     $("#scores").attr("aria-expanded", false);
+//     $("#scores").attr("class", "tab-pane fade");
+//     $("#info").attr("aria-expanded", false);
+//     $("#info").attr("class", "tab-pane fade");
+//     return true;
+// });
+// $("#scores-tab").bind("blur", function(ev) {
+//     $("#counts").attr("aria-expanded", false);
+//     $("#counts").attr("class", "tab-pane fade");
+//     $("#info").attr("aria-expanded", false);
+//     $("#info").attr("class", "tab-pane fade");
+//     return true;
+// });
+// $("#info-tab").bind("blur", function(ev) {
+//     $("#scores").attr("aria-expanded", false);
+//     $("#scores").attr("class", "tab-pane fade");
+//     $("#counts").attr("aria-expanded", false);
+//     $("#counts").attr("class", "tab-pane fade");
+//     return true;
+// });
 
 // Check management form submission
 // ----------------------------------------------------------------------- //

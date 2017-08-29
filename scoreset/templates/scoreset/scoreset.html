@@ -1,4 +1,5 @@
 {% extends "main/base.html" %}
+{% load render_table from django_tables2 %}
 
 {% block body %}
 <div class="row">
@@ -25,12 +26,12 @@
 					 role="tab" aria-controls="info" aria-expanded="true">Information</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link" id="scores-tab" data-toggle="tab" href="#scores" 
+				<a class="nav-link" id="scores-tab" data-toggle="tab" href="#scores"  
 					 role="tab" aria-controls="scores">Scores</a>
 			</li>
 			<li class="nav-item">
 				<a class="nav-link" id="counts-tab" data-toggle="tab" href="#counts" 
-						role="tab" aria-controls="counts">Counts</a>
+					 role="tab" aria-controls="counts">Counts</a>
 			</li>
 		</ul>
 		
@@ -38,8 +39,7 @@
 		<div class="tab-content" id="myTabContent">
 
 			<!-- Information tab -->
-			<div class="tab-pane fade show active" id="info" role="tabpanel" 
-					 aria-labelledby="info-tab">
+			<div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
 				<div class="container-fluid mt-4">
 					<h3> Abstract </h3>
 					<p> {{ scoreset.md_abstract|safe|escape|default:"Not provided" }} </p>
@@ -88,27 +88,25 @@
 			</div> <!-- End information tab -->
 			
 			<!-- Scores data tab -->
-			<div class="tab-pane fade" id="scores" role="tabpanel" 
-					 aria-labelledby="scores-tab">
-				
+			<div class="tab-pane fade" id="scores" role="tabpanel" aria-labelledby="scores-tab">
 				<div class="container-fluid mt-4">
 
 					<div class="row mb-4 mt-4">						
 						<div class="col-md-3">
 							<h3 style="margin: 0;">Scores dataset</h3>
 						</div>
-						<div class="cold-md-1">
+						<div class="col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
 								 href="{% url 'scoreset:scores_download' scoreset.accession %}">
 								Download
 							</a>
 						</div>
 					</div>
-					
-					{% if not variants %}
+
+					{% if not scores_variants %}
 						<p> No scores data available.</p>
 					{% else %}
-						<div id="scores-table-container" class="table-container container-fluid" >
+						<div id="scores-table-container" class="table-container container-fluid">
 							<table id="scores-table" class="styled-table table table-hover">
 								<thead>
 									<tr>
@@ -118,7 +116,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{% for var in variants %}
+									{% for var in scores_variants %}
 										<tr>
 											{% for data in var.get_ordered_scores_data %}
 												<td> {{ data }} </td>
@@ -128,148 +126,134 @@
 								</tbody>
 							</table>
 						</div>
-					{% endif %}
 
-					<!-- Pagination -->
-					{% if variants.has_other_pages %}
-					<ul class="pagination justify-content-end">
-						{% if variants.has_previous %}
-							<li class="page-item">
-								<a class="page-link" 
-									 href="?page={{ variants.previous_page_number }}#scores">
-									 &laquo;
-								</a>
-							</li>
-						{% else %}
-							<li class="page-item disabled">
-								<a class="page-link" href="#">
-									<span aria-hidden="true">&laquo;</span>
-								</a>
-							</li>
-						{% endif %}
-						
-						{% for i in page_range %}
-							{% if variants.number == i %}
-								<li class="page-item active">
-									<a class="page-link" href="?page={{ i }}#scores">{{ i }}</a>
-								</li>
-							{% else %}
-								<li class="page-item">
-									<a class="page-link" href="?page={{ i }}#scores">{{ i }}</a>
-								</li>
-							{% endif %}
-						{% endfor %}
-						
-						{% if variants.has_next %}
-							<li class="page-item">
-								<a class="page-link" 
-									 href="?page={{ variants.next_page_number }}#scores">
-									 &raquo;
-								</a>
-							</li>
-						{% else %}
-							<li class="page-item disabled">
-								<a class="page-link" href="#">
-									<span aria-hidden="true">&raquo;</span>
-								</a>
-							</li>
-						{% endif %}
-					</ul>
-					{% endif %} <!-- End pagination -->
-				
+						<!-- Pagination -->
+						{% if scores_variants.has_other_pages %}
+							<ul class="pagination justify-content-end">
+								{% if scores_variants.has_previous %}
+									<li class="page-item">
+										<a class="page-link" 
+											href="?scores_page={{ scores_variants.previous_page_number }}#scores">
+											&laquo;
+										</a>
+									</li>
+								{% else %}
+									<li class="page-item disabled">
+										<a class="page-link" href="#">
+											<span aria-hidden="true">&laquo;</span>
+										</a>
+									</li>
+								{% endif %}
+								
+								{% for i in scores_page_range %}
+										<li class="page-item">
+											<a class="page-link" href="?scores_page={{ i }}#scores">{{ i }}</a>
+										</li>
+								{% endfor %}
+								
+								{% if scores_variants.has_next %}
+									<li class="page-item">
+										<a class="page-link" 
+											href="?scores_page={{ scores_variants.next_page_number }}#scores">
+											&raquo;
+										</a>
+									</li>
+								{% else %}
+									<li class="page-item disabled">
+										<a class="page-link" href="#">
+											<span aria-hidden="true">&raquo;</span>
+										</a>
+									</li>
+								{% endif %}
+							</ul>
+						{% endif %} <!-- End pagination -->
+					{% endif %}				
 				</div>
-			</div> <!-- End scores data tab -->
-			
+			</div> <!-- End scores data tab -->		
+
 			<!-- Counts data tab -->
-			<div class="tab-pane fade" id="counts" role="tabpanel" 
-					 aria-labelledby="counts-tab">
-				
+			<div class="tab-pane fade" id="counts" role="tabpanel" aria-labelledby="counts-tab">
 				<div class="container-fluid mt-4">
+
 					<div class="row mb-4 mt-4">						
 						<div class="col-md-3">
 							<h3 style="margin: 0;">Counts dataset</h3>
 						</div>
-						<div class="cold-md-1">
+						<div class="col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
 									href="{% url 'scoreset:counts_download' scoreset.accession %}">
 								Download
 							</a>
 						</div>
 					</div>
-					
-					{% if not variants %}
-						<p> No scores data available.</p>
+
+					{% if not counts_variants %}
+						<p> No counts data available.</p>
 					{% else %}
-					<div id="counts-table-container" class="table-container container-fluid" >
-						<table id="counts-table" class="styled-table table table-hover">
-							<thead>
-								<tr>
-									{% for column in counts_columns %}
-										<th> {{ column }} </th>
-									{% endfor %}
-								</tr>
-							</thead>
-							<tbody>
-								{% for var in variants %}
+						<div id="counts-table-container" class="table-container container-fluid">
+							<table id="counts-table" class="styled-table table table-hover">
+								<thead>
 									<tr>
-										{% for data in var.get_ordered_counts_data %}
-											<td> {{ data }} </td>
+										{% for column in counts_columns %}
+											<th> {{column}} </th>
 										{% endfor %}
 									</tr>
+								</thead>
+								<tbody>
+									{% for var in counts_variants %}
+										<tr>
+											{% for data in var.get_ordered_counts_data %}
+												<td> {{ data }} </td>
+											{% endfor %}
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+
+						<!-- Pagination -->
+						{% if counts_variants.has_other_pages %}
+							<ul class="pagination justify-content-end">
+								{% if counts_variants.has_previous %}
+									<li class="page-item">
+										<a class="page-link" 
+											href="?counts_page={{ counts_variants.previous_page_number }}#counts">
+											&laquo;
+										</a>
+									</li>
+								{% else %}
+									<li class="page-item disabled">
+										<a class="page-link" href="#">
+											<span aria-hidden="true">&laquo;</span>
+										</a>
+									</li>
+								{% endif %}
+								
+								{% for i in counts_page_range %}
+										<li class="page-item">
+											<a class="page-link" href="?counts_page={{ i }}#counts">{{ i }}</a>
+										</li>
 								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-					{% endif %}
-					
-					<!-- Pagination -->
-					{% if variants.has_other_pages %}
-					<ul class="pagination justify-content-end">
-						{% if variants.has_previous %}
-							<li class="page-item">
-								<a class="page-link" 
-									 href="page={{ variants.previous_page_number }}#counts">
-									 &laquo;
-								</a>
-							</li>
-						{% else %}
-							<li class="page-item disabled">
-								<a class="page-link" href="#">
-									<span aria-hidden="true">&laquo;</span>
-								</a>
-							</li>
-						{% endif %}
-						
-						{% for i in page_range %}
-							{% if variants.number == i %}
-								<li class="page-item active">
-									<a class="page-link" href="?page={{ i }}#counts">{{ i }}</a>
-								</li>
-							{% else %}
-								<li class="page-item">
-									<a class="page-link" href="?page={{ i }}#counts">{{ i }}</a>
-								</li>
-							{% endif %}
-						{% endfor %}
-						
-						{% if variants.has_next %}
-							<li class="page-item">
-								<a class="page-link" 
-									 href="?page={{ variants.next_page_number }}#counts">
-									 &raquo;
-								</a>
-							</li>
-						{% else %}
-							<li class="page-item disabled">
-								<a class="page-link" href="#">
-									<span aria-hidden="true">&raquo;</span>
-								</a>
-							</li>
-						{% endif %}
-					</ul>
-					{% endif %} <!-- End pagination -->
+								
+								{% if counts_variants.has_next %}
+									<li class="page-item">
+										<a class="page-link" 
+											href="?counts_page={{ counts_variants.next_page_number }}#counts">
+											&raquo;
+										</a>
+									</li>
+								{% else %}
+									<li class="page-item disabled">
+										<a class="page-link" href="#">
+											<span aria-hidden="true">&raquo;</span>
+										</a>
+									</li>
+								{% endif %}
+							</ul>
+						{% endif %} <!-- End pagination -->
+					{% endif %}				
 				</div>
-			</div> <!-- end counts data tab -->
+			</div> <!-- End counts data tab -->		
 		
 		</div> <!-- End tab/pills content -->
 	</div> <!-- end column --> 
