@@ -29,33 +29,6 @@
 	</div> 
 </div> <!-- End admin management -->
 
-
-<!-- Contrib management -->
-<div class="row" style="margin-top: 25px;">
-	<div class="col-md-10">
-		<h5> Add/Remove Contributors </h5><hr>
-		<form id="contrib-form"
-					action="{% url 'accounts:manage_instance' instance.accession %}" 
-					method="post">
-			{% csrf_token %}
-			{% if contrib_select_form.non_field_errors %}
-				<div>
-					{{ contrib_select_form.non_field_errors }}
-				</div>
-			{% endif %}
-			{% for field in contrib_select_form %}
-				<div style="width:100%">{{ field.errors }}</div>
-				<div style="width:100%">{{ field }}</div>
-			{% endfor %}
-			<div style="width:100%;margin-top:5px;">
-					<input class="btn btn-primary" type="button" value="Save"
-								 style="width:150px;margin-bottom:35px;" 
-								 onclick="validate_contrib_submit();">
-			</div>
-		</form>
-	</div> 
-</div> <!-- End Contrib management -->
-
 <!-- Viewer management -->
 <div class="row" style="margin-top: 25px;">
 	<div class="col-md-10">

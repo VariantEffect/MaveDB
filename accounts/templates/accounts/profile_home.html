@@ -62,51 +62,6 @@
 	<hr>
 </div>
 
-<!-- Instances that user is a CONTRIBUTOR for -->
-<div id="contributor-instances">
-	<h5> Contributor on </h5>
-	{% if request.user.profile.contributor_instances %}
-		<ul style="list-style: none">
-			{% for instance in request.user.profile.contributor_instances %}
-				<div style="display: inline-flex">
-					<li> {{ instance.accession }} </li>
-					<li style="padding-left:10px;">
-						<a href="">Edit</a>
-					</li>
-					<li style="padding-left:10px;"><b>&middot;</b></li>
-					<li style="padding-left:10px;">
-						<a href="">View</a>
-					</li>
-				</div>
-				<!-- Information -->
-				<ul style="list-style: none">
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Last edited on: </label>
-							<div>{{ instance.last_edit_date }}<div>
-						</div>
-					</li>
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Private: </label>
-							<div> {{ instance.private }} <div>
-						</div>
-					</li>
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Approved: </label>
-							<div> {{ instance.approved }} <div>
-						</div>
-					</li>
-				</ul>
-			{% endfor %}
-		</ul>
-	{% else %}
-		<p> You are not tagged as a contributor on any entries. </p>
-	{% endif %}
-	<hr>
-</div>
-
 <!-- Instances that are VIEW ONLY for user -->
 <div id="view-only-instances">
 	<h5> View only on </h5>

@@ -151,11 +151,6 @@ def manage_instance(request, accession):
         required=True,
         prefix="administrator_management"
     )
-    contrib_select_form = SelectUsersForm(
-        group=GroupTypes.CONTRIBUTOR,
-        instance=instance,
-        prefix="contributor_management"
-    )
     viewer_select_form = SelectUsersForm(
         group=GroupTypes.VIEWER,
         instance=instance,
@@ -163,7 +158,6 @@ def manage_instance(request, accession):
     )
     context["instance"] = instance
     context["admin_select_form"] = admin_select_form
-    context["contrib_select_form"] = contrib_select_form
     context["viewer_select_form"] = viewer_select_form
 
     if request.method == "POST":
@@ -174,13 +168,6 @@ def manage_instance(request, accession):
                 instance=instance,
                 required=True,
                 prefix="administrator_management"
-            )
-        elif "contributor_management-users" in request.POST:
-            post_form = SelectUsersForm(
-                data=request.POST,
-                group=GroupTypes.CONTRIBUTOR,
-                instance=instance,
-                prefix="contributor_management"
             )
         elif "viewer_management-users" in request.POST:
             post_form = SelectUsersForm(
@@ -200,8 +187,6 @@ def manage_instance(request, accession):
     # it means there were errors in the form.
     if post_form is not None and post_form.group == GroupTypes.ADMIN:
         context["admin_select_form"] = post_form
-    elif post_form is not None and post_form.group == GroupTypes.CONTRIBUTOR:
-        context["contrib_select_form"] = post_form
     elif post_form is not None and post_form.group == GroupTypes.VIEWER:
         context["viewer_select_form"] = post_form
 
