@@ -176,13 +176,6 @@ class TestScoreSetForm(TransactionTestCase):
         form_is_valid = form.is_valid()
         self.assertFalse(form_is_valid)
 
-    def test_invalid_count_not_second_column_in_count_data(self):
-        data = self.make_test_data()
-        data[Constants.COUNTS_DATA] = "col1,col2,hgvs,count\n1,1,test,1"
-        form = ScoreSetForm(data=data)
-        form_is_valid = form.is_valid()
-        self.assertFalse(form_is_valid)
-
     def test_invalid_hgvs_not_first_column_in_score_data(self):
         data = self.make_test_data()
         data[Constants.SCORES_DATA] = "score,hgvs,se\n1,test,1"

@@ -81,10 +81,9 @@
             {% endif %}
           </ul>
           
-          <form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="post">
-            {% csrf_token %}
+          <form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
             <input class="form-control mr-sm-1" type="text" aria-label="Search"
-                   placeholder="Search...">
+                   placeholder="Search..." name="search_all">
             <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">
               Search
             </button>

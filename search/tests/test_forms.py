@@ -33,6 +33,14 @@ class TestSearchForm(TestCase):
         form = SearchForm(data={})
         self.assertTrue(form.is_valid())
 
+    def test_can_parse_search_all_get_request(self):
+        form = SearchForm(data={"search_all": "one,two,'three,four'"})
+        self.assertTrue(form.is_valid())
+        self.assertEqual(
+            sorted(form.cleaned_data.get("search_all")),
+            sorted(['one', 'two', 'three,four'])
+        )
+
     def test_form_splits_by_comma(self):
         # All fields use the same `parse_query` method so only need
         # to test one field
@@ -60,6 +68,7 @@ class TestSearchForm(TestCase):
             sorted(['one', 'two', 'three,four'])
         )
 
+    ###
     def test_can_search_experiment_by_keywords(self):
         key = 'keywords'
         self.exp_1.keywords.add(self.kw_1)
@@ -95,6 +104,172 @@ class TestSearchForm(TestCase):
         key = 'keywords'
         self.exp_1.keywords.add(self.kw_1)
         form = SearchForm(data={key: '{}'.format(self.kw_1.text.upper())})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    ###
+    def test_can_search_experiment_by_ext_accession(self):
+        key = 'ext_accessions'
+        self.exp_1.external_accessions.add(self.ext_accession_1)
+        form = SearchForm(data={key: '{}'.format(self.ext_accession_1.text)})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    def test_search_experiment_by_ext_accession_returns_empty_qs(self):
+        key = 'ext_accessions'
+        form = SearchForm(data={key: '{},{}'.format(
+            self.ext_accession_2.text, self.ext_accession_3.text)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 0)
+
+    def test_experiment_ext_accession_search_can_return_multiple_results(self):
+        key = 'ext_accessions'
+        self.exp_1.external_accessions.add(self.ext_accession_1)
+        self.exp_2.external_accessions.add(self.ext_accession_2)
+        form = SearchForm(data={key: '{},{}'.format(
+            self.ext_accession_1.text, self.ext_accession_2.text)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 2)
+        self.assertEqual(self.exp_1, instances[0])
+        self.assertEqual(self.exp_2, instances[1])
+
+    def test_experiment_ext_accession_search_is_case_insensitive(self):
+        key = 'ext_accessions'
+        self.exp_1.external_accessions.add(self.ext_accession_1)
+        form = SearchForm(data={key: '{}'.format(
+            self.ext_accession_1.text.upper())}
+        )
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    ###
+    def test_can_search_experiment_by_target(self):
+        key = 'target'
+        form = SearchForm(data={key: self.target_1})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    def test_search_experiment_by_target_returns_empty_qs(self):
+        key = 'target'
+        form = SearchForm(data={key: 'not a target'})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 0)
+
+    def test_experiment_target_search_can_return_multiple_results(self):
+        key = 'target'
+        form = SearchForm(data={key: '{},{}'.format(
+            self.target_1, self.target_2)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 2)
+        self.assertEqual(self.exp_1, instances[0])
+        self.assertEqual(self.exp_2, instances[1])
+
+    def test_experiment_target_search_is_case_insensitive(self):
+        key = 'target'
+        form = SearchForm(data={key: '{}'.format(
+            self.target_1.upper())
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    ###
+    def test_can_search_experiment_by_target_organism(self):
+        key = 'target_organism'
+        self.exp_1.target_organism.add(self.target_org_1)
+        form = SearchForm(data={key: '{}'.format(self.target_org_1.text)})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    def test_search_experiment_by_target_organism_returns_empty_qs(self):
+        key = 'target_organism'
+        form = SearchForm(data={key: '{},{}'.format(
+            self.target_org_2.text, self.target_org_3.text)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 0)
+
+    def test_experiment_target_org_search_can_return_multiple_results(self):
+        key = 'target_organism'
+        self.exp_1.target_organism.add(self.target_org_1)
+        self.exp_2.target_organism.add(self.target_org_2)
+        form = SearchForm(data={key: '{},{}'.format(
+            self.target_org_1.text, self.target_org_2.text)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 2)
+        self.assertEqual(self.exp_1, instances[0])
+        self.assertEqual(self.exp_2, instances[1])
+
+    def test_experiment_target_organism_search_is_case_insensitive(self):
+        key = 'target_organism'
+        self.exp_1.target_organism.add(self.target_org_1)
+        form = SearchForm(data={key: '{}'.format(
+            self.target_org_1.text.upper())}
+        )
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    ###
+    def test_can_search_experiment_by_target_organism(self):
+        key = 'target_organism'
+        self.exp_1.target_organism.add(self.target_org_1)
+        form = SearchForm(data={key: '{}'.format(self.target_org_1.text)})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
+
+    def test_search_experiment_by_target_organism_returns_empty_qs(self):
+        key = 'target_organism'
+        form = SearchForm(data={key: '{},{}'.format(
+            self.target_org_2.text, self.target_org_3.text)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 0)
+
+    def test_experiment_target_org_search_can_return_multiple_results(self):
+        key = 'target_organism'
+        self.exp_1.target_organism.add(self.target_org_1)
+        self.exp_2.target_organism.add(self.target_org_2)
+        form = SearchForm(data={key: '{},{}'.format(
+            self.target_org_1.text, self.target_org_2.text)
+        })
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 2)
+        self.assertEqual(self.exp_1, instances[0])
+        self.assertEqual(self.exp_2, instances[1])
+
+    def test_experiment_target_organism_search_is_case_insensitive(self):
+        key = 'target_organism'
+        self.exp_1.target_organism.add(self.target_org_1)
+        form = SearchForm(data={key: '{}'.format(
+            self.target_org_1.text.upper())}
+        )
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 1)

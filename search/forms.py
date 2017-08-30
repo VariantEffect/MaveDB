@@ -8,25 +8,46 @@ from scoreset.models import ScoreSet
 
 class SearchForm(forms.Form):
     accession = forms.CharField(
-        max_length=None, label="Accession", required=False
+        max_length=None, label="Accession", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
     ext_accessions = forms.CharField(
-        max_length=None, label="External Accessions", required=False
+        max_length=None, label="External Accessions", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
     keywords = forms.CharField(
-        max_length=None, label="Keywords", required=False
+        max_length=None, label="Keywords", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
     target = forms.CharField(
-        max_length=None, label="Target", required=False
+        max_length=None, label="Target", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
     target_organism = forms.CharField(
-        max_length=None, label="Target Organism", required=False
+        max_length=None, label="Target Organism", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
     authors = forms.CharField(
-        max_length=None, label="Authors", required=False
+        max_length=None, label="Authors", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
     metadata = forms.CharField(
-        max_length=None, label="Metadata", required=False
+        max_length=None, label="Metadata", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
     )
 
     def clean_accession(self):
@@ -52,8 +73,13 @@ class SearchForm(forms.Form):
 
     def clean(self):
         cleaned_data = super(SearchForm, self).clean()
+        if 'search_all' in self.data:
+            cleaned_data['search_all'] = parse_query(
+                self.data.get("search_all")
+            )
+        return cleaned_data
 
-    def query_model(self, model):
+    def search_model(self, model):
         instances = model.objects.all()
 
         # Experiment specific model attributes
@@ -137,7 +163,7 @@ class SearchForm(forms.Form):
         return instances
 
     def query_experiments(self):
-        return self.query_model(Experiment)
+        return self.search_model(Experiment)
 
     def query_scoresets(self):
-        return self.query_model(ScoreSet)
+        return self.search_model(ScoreSet)

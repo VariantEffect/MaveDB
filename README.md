@@ -2,9 +2,10 @@
 Prototype for the MaveDB web application
 
 # Requirements
-- django-crispy-forms (pip install django-crispy-forms)
-- django-guardian (pip install django-crispy-forms)
-- pypandoc (pip install pypandoc)
+- django-guardian (pip install django-guardian)
+- pypandoc (pip install pypandoc, but may require installation of pandoc depending on the wheel available, and whether it includes pandoc)
+- psycopg2 (pip install psycopg2, also requires python-devel installed through
+apt-get/yum etc)
 
 ### For Unit/Functional testing
 - selenium (pip install selenium)

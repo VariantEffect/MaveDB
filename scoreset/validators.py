@@ -63,19 +63,17 @@ def valid_scoreset_score_data_input(string):
 def valid_scoreset_count_data_input(string):
     from io import StringIO
     fp = StringIO(string)
-    expected_header = [Constants.HGVS_COLUMN, Constants.COUNT_COLUMN]
+    expected_header = [Constants.HGVS_COLUMN]
     header = [l.strip() for l in fp.readline().strip().split(',')]
     try:
-        valid_header = (header[0] == expected_header[0]) and \
-            (header[1] == expected_header[1])
+        valid_header = (header[0] == expected_header[0])
         if not valid_header:
             raise ValueError()
     except:
         raise ValidationError(
             _(
-                "Header requires the columns 'hgvs' and 'count'."
-                "Ensure the columns are separated by a comma, and that"
-                "'hgvs' and 'count' are the first two columns."
+                "Header requires the column 'hgvs'. Ensure the columns are "
+                "separated by a comma, and that 'hgvs' is the first column."
             )
         )
     if len(list(fp.readlines())) < 1:

@@ -1,7 +1,10 @@
 from django.shortcuts import render
 
-# Create your views here.
+from experiment.models import Experiment
+from .forms import SearchForm
 
 
 def search_view(request):
-    return render(request, "main/404_not_found.html")
+    form = SearchForm()
+    context = {"form": form}
+    return render(request, "search/search.html", context)
