@@ -95,16 +95,22 @@
 						<div class="col-md-3">
 							<h3 style="margin: 0;">Scores dataset</h3>
 						</div>
+						{% if not preview %}
 						<div class="col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
 								 href="{% url 'scoreset:scores_download' scoreset.accession %}">
 								Download
 							</a>
 						</div>
+						{% endif %}
 					</div>
 
 					{% if not scores_variants %}
-						<p> No scores data available.</p>
+					{% if preview %}
+						<p> Information hidden in preview mode.</p>
+					{% else %}
+						<p> No counts data available.</p>
+					{% endif %}
 					{% else %}
 						<div id="scores-table-container" class="table-container container-fluid">
 							<table id="scores-table" class="styled-table table table-hover">
@@ -179,16 +185,22 @@
 						<div class="col-md-3">
 							<h3 style="margin: 0;">Counts dataset</h3>
 						</div>
+						{% if not preview %}
 						<div class="col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
 									href="{% url 'scoreset:counts_download' scoreset.accession %}">
 								Download
 							</a>
 						</div>
+						{% endif %}
 					</div>
 
 					{% if not counts_variants %}
-						<p> No counts data available.</p>
+						{% if preview %}
+							<p> Information hidden in preview mode.</p>
+						{% else %}
+							<p> No counts data available.</p>
+						{% endif %}
 					{% else %}
 						<div id="counts-table-container" class="table-container container-fluid">
 							<table id="counts-table" class="styled-table table table-hover">

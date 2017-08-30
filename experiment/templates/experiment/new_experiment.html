@@ -6,56 +6,101 @@
 		<h3>Create new experiment</h3>
 	</div>
 	
+	<!-- Composite form rendering -->
 	<div class="col-md-8 mx-3">
 		<form action="{% url 'experiment:experiment_new' %}" method="POST">
 			{% csrf_token %}
 			
 			{% if experiment_form.non_field_errors %}
-			<div class="non-field-errors">
-				{{ experiment_form.non_field_errors }}
+			<div class="alert alert-danger alert-dismissible fade show">
+				<h4> Oh no! </h4>
+				<p> There were some errors with your submission </p>
+				<hr>
+				<p>{{ experiment_form.non_field_errors }}</p>
 			</div>
 			{% endif %}
-
+			
+			<!-- Model form rendering -->
 			<div class="model-form">
 				{% for field in experiment_form %}
-					<div class="field-error">{{ field.errors }}</div>
-					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
-					{{ field }}
+					<div class="form-group">
+						<label for="{{ field.id_for_label }}">
+							{{ field.label }}{% if field.field.required %}*{% endif %}
+						</label>
+						{% if field.errors %}
+							<div class="alert alert-danger alert-dismissible fade show" role="alert">
+								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>	
+								{{ field.errors }}
+						</div>
+						{% endif %}
+						<br>
+						{{ field }}
+					</div>
 				{% endfor %}
-			<br><hr>
-
+			<br><hr> <!-- End model form rendering -->
+			
+			<!-- Formset rendering -->
 			<div class="reference_mapping-forms">
 				<h4> Reference maps 
-					<input type="button" value="+" id="add_reference_mapping">
-					<input type="button" value="-" id="remove_reference_mapping">
+					<input class="btn btn-sm btn-outline-dark" type="button" value="+" id="add_reference_mapping">
+					<input class="btn btn-sm btn-outline-dark" type="button" value="-" id="remove_reference_mapping">
 				</h4>
 				<div id="reference_mapping-form-set">
 					{{ reference_mapping_formset.management_form }}
-					{% if not reference_mapping_formset|length %}
-						<div id='reference_mapping-empty-set'>
-							<p>I'll add reference maps later.<p><hr>
-						</div>
-					{% else %}
-						<div id='reference_mapping-empty-set' hidden>
-							<p>I'll add reference maps later.<p><hr>
-						</div>
-					{% endif %}
+					<div id='reference_mapping-empty-set' style="display:none;">
+						<p>I'll add reference maps later.<p><hr>
+					</div>
 					{% for form in reference_mapping_formset %}
 						<div id="reference_mapping-formset-{{ forloop.counter }}">
-							{{ form.as_table }}
+							{% for field in form %}
+								<div class="form-group">
+									<label for="{{ field.id_for_label }}">
+										{{ field.label }}{% if field.field.required %}*{% endif %}
+									</label>
+									{% if field.errors %}
+										<div class="alert alert-danger alert-dismissible fade show" role="alert">
+											<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+												<span aria-hidden="true">&times;</span>
+											</button>	
+											{{ field.errors }}
+										</div>
+									{% endif %}
+									<br>
+									{{ field }}
+								</div>
+							{% endfor %}
 						<hr>
 						</div>
 					{% endfor %}
 				</div>
-			</div>
+			</div> <!-- End formset rendering -->
+			
+			<!-- Empty formset for add/minus buttons -->
 			<div id="reference_mapping-empty-form" style="display:none">
-				{{ reference_mapping_formset.empty_form.as_table }}
+				{% for field in reference_mapping_formset.empty_form %}
+					<div class="form-group">
+						<label for="{{ field.id_for_label }}">
+							{{ field.label }}{% if field.field.required %}*{% endif %}
+						</label>
+						{% if field.errors %}
+							<div class="alert alert-danger alert-dismissible fade show" role="alert">
+								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>		
+								{{ field.errors }}
+							</div>
+						{% endif %}
+						<br>
+						{{ field }}
+					</div>
+				{% endfor %}
 			</div>
 			
-			<input class="u-pull-right" style="width: 200px;" 
-						type="submit" name="submit" value="submit">
+			<input class="btn btn-outline-dark" style="width: 200px;" 
+						type="submit" name="submit" value="Submit">
 		</form>
-	</div>
+	</div> <!-- End composite form rendering -->
 </div>
-<br><br>
 {% endblock body %}

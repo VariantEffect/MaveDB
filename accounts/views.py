@@ -160,8 +160,12 @@ def manage_instance(request, accession):
     context["admin_select_form"] = admin_select_form
     context["viewer_select_form"] = viewer_select_form
 
+    print(request.POST)
+
     if request.method == "POST":
-        if "administrator_management-users" in request.POST:
+        # Hidden list in each form submission so we can determine which
+        # form was submitted
+        if 'administrators[]' in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
                 group=GroupTypes.ADMIN,
@@ -169,7 +173,7 @@ def manage_instance(request, accession):
                 required=True,
                 prefix="administrator_management"
             )
-        elif "viewer_management-users" in request.POST:
+        elif 'viewers[]' in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
                 group=GroupTypes.VIEWER,
@@ -253,7 +257,7 @@ def handle_scoreset_edit_form(request, instance):
         if form.is_valid():
             if "preview" in request.POST:
                 updated_instance = form.save(commit=False)
-                context = {"scoreset": updated_instance}
+                context = {"scoreset": updated_instance, "preview": True}
                 return render(
                     request,
                     "scoreset/scoreset.html",
@@ -279,7 +283,7 @@ def handle_experiment_edit_form(request, instance):
         if form.is_valid():
             if "preview" in request.POST:
                 updated_instance = form.save(commit=False)
-                context = {"experiment": updated_instance}
+                context = {"experiment": updated_instance, "preview": True}
                 return render(
                     request,
                     "experiment/experiment.html",
@@ -397,7 +401,7 @@ def registration_view(request):
                     "email", ValidationError("This email is already in use."))
             else:
                 user = form.save(commit=False)
-                user.is_active = False
+                user.is_active = True  # TODO: change this during deployment
                 user.save()
                 uidb64, token = send_user_activation_email(
                     uid=user.pk,

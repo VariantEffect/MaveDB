@@ -32,11 +32,44 @@ class ExperimentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ExperimentForm, self).__init__(*args, **kwargs)
+        self.fields["private"].widget = forms.CheckboxInput(
+            attrs={
+                "class": "form-control",
+            }
+        )
+        self.fields["target"].widget = forms.TextInput(
+            attrs={
+                "class": "form-control",
+            }
+        )
+        self.fields["sra_id"].widget = forms.TextInput(
+            attrs={
+                "class": "form-control",
+            }
+        )
+        self.fields["doi_id"].widget = forms.TextInput(
+            attrs={
+                "class": "form-control",
+            }
+        )
+
+        self.fields["wt_sequence"].widget = forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
+        )
         self.fields["abstract"].widget = forms.Textarea(
-            attrs={"style": "height:250px;width:100%"}
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
         )
         self.fields["method_desc"].widget = forms.Textarea(
-            attrs={"style": "height:250px;width:100%"}
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
         )
 
         # This needs to be in `__init__` because otherwise it is created as
@@ -48,7 +81,7 @@ class ExperimentForm(forms.ModelForm):
             required=False,
             widget=forms.widgets.SelectMultiple(
                 attrs={
-                    "class": "select2 select2-token-select",
+                    "class": "form-control select2 select2-token-select",
                     "style": "width:100%;height:50px;"
                 }
             )
@@ -60,7 +93,7 @@ class ExperimentForm(forms.ModelForm):
             required=False,
             widget=forms.widgets.SelectMultiple(
                 attrs={
-                    "class": "select2 select2-token-select",
+                    "class": "form-control select2 select2-token-select",
                     "style": "width:100%;height:50px;"
                 }
             )
@@ -72,7 +105,7 @@ class ExperimentForm(forms.ModelForm):
             required=False,
             widget=forms.widgets.Select(
                 attrs={
-                    "class": "select2 select2-token-select",
+                    "class": "form-control select2 select2-token-select",
                     "style": "width:50%;height:auto;"
                 }
             )
@@ -168,15 +201,22 @@ class ExperimentEditForm(ExperimentForm):
     class Meta:
         model = Experiment
         fields = (
+            'experimentset',  # excluded
             'private',
-            'doi_id',
+            'target',  # excluded
+            'target_organism',  # excluded
+            'wt_sequence',  # excluded
             'sra_id',
+            'doi_id',
             'keywords',
             'external_accessions',
             'abstract',
-            'method_desc'
+            'method_desc',
         )
 
     def __init__(self, *args, **kwargs):
         super(ExperimentEditForm, self).__init__(*args, **kwargs)
         self.fields.pop('target_organism')
+        self.fields.pop('target')
+        self.fields.pop('wt_sequence')
+        self.fields.pop('experimentset')

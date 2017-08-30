@@ -81,7 +81,7 @@ class SearchForm(forms.Form):
                 for instance in instances:
                     instance_exas = set([
                         exa.text.lower()
-                        for to in instance.external_accessions.all()
+                        for exa in instance.external_accessions.all()
                     ])
                     if queried_exas & instance_exas:
                         entries.append(instance.pk)

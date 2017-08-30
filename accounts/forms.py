@@ -66,7 +66,7 @@ class SelectUsersForm(forms.Form):
         required=False,
         widget=forms.SelectMultiple(
             attrs={
-                "class": "select2 select2-token-select",
+                "class": "form-control select2 select2-token-select",
                 "style": "width:100%;height:50px;"
             }
         )

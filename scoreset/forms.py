@@ -40,7 +40,10 @@ class ScoreSetForm(forms.ModelForm):
         help_text="Comma separated fields.",
         validators=[valid_scoreset_score_data_input],
         widget=forms.Textarea(
-            attrs={"rows": 100, "cols": 40}
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
         )
     )
     counts_data = forms.CharField(
@@ -48,17 +51,36 @@ class ScoreSetForm(forms.ModelForm):
         help_text="Comma separated fields.",
         validators=[valid_scoreset_count_data_input],
         widget=forms.Textarea(
-            attrs={"rows": 100, "cols": 40}
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
         )
     )
 
     def __init__(self, *args, **kwargs):
         super(ScoreSetForm, self).__init__(*args, **kwargs)
+        self.fields["private"].widget = forms.CheckboxInput(
+            attrs={
+                "class": "form-control",
+            }
+        )
+        self.fields["doi_id"].widget = forms.TextInput(
+            attrs={
+                "class": "form-control",
+            }
+        )
         self.fields["abstract"].widget = forms.Textarea(
-            attrs={"style": "height:250px;width:100%"}
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
         )
         self.fields["method_desc"].widget = forms.Textarea(
-            attrs={"style": "height:250px;width:100%"}
+            attrs={
+                "class": "form-control",
+                "style": "height:250px;width:100%"
+            }
         )
 
         # This needs to be in `__init__` because otherwise it is created as
@@ -70,7 +92,7 @@ class ScoreSetForm(forms.ModelForm):
             required=False,
             widget=forms.widgets.SelectMultiple(
                 attrs={
-                    "class": "select2 select2-token-select",
+                    "class": "form-control select2 select2-token-select",
                     "style": "width:100%;height:50px;"
                 }
             )

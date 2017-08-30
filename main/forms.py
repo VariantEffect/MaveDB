@@ -59,6 +59,27 @@ class ReferenceMappingForm(forms.ModelForm):
             "reference_end"
         )
 
+    def __init__(self, *args, **kwargs):
+        super(ReferenceMappingForm, self).__init__(*args, **kwargs)
+        self.fields["reference"].widget = forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
+        self.fields["is_alternate"].widget = forms.widgets.CheckboxInput(
+            attrs={"class": "form-control"}
+        )
+        self.fields["target_start"].widget = forms.widgets.NumberInput(
+            attrs={"class": "form-control"}
+        )
+        self.fields["target_end"].widget = forms.widgets.NumberInput(
+            attrs={"class": "form-control"}
+        )
+        self.fields["reference_start"].widget = forms.widgets.NumberInput(
+            attrs={"class": "form-control"}
+        )
+        self.fields["reference_end"].widget = forms.widgets.NumberInput(
+            attrs={"class": "form-control"}
+        )
+
     def clean(self):
         cleaned_data = super(ReferenceMappingForm, self).clean()
         target_start = cleaned_data.get("target_start", 0)

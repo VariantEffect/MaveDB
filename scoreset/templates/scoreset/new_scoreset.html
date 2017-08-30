@@ -11,20 +11,39 @@
 			{% csrf_token %}
 			
 			{% if scoreset_form.non_field_errors %}
-			<div class="non-field-errors">
-				{{ scoreset_form.non_field_errors }}
+			<div class="alert alert-danger alert-dismissible fade show" role="alert">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4> Oh no! </h4>
+				<p> There were some errors with your submission </p>
+				<hr>
+				<p>{{ scoreset_form.non_field_errors }}</p>
 			</div>
 			{% endif %}
 
 			<div class="model-form">
 				{% for field in scoreset_form %}
-					<div class="field-error">{{ field.errors }}</div>
-					<label for="{{ field.id_for_label }}">{{ field.label }}</label>
-					{{ field }}
+					<div class="form-group">
+						<label for="{{ field.id_for_label }}">
+							{{ field.label }}{% if field.field.required %}*{% endif %}
+						</label>
+						{% if field.errors %}
+							<div class="alert alert-danger alert-dismissible fade show" role="alert">
+								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
+								{{ field.errors }}
+							</div>
+						{% endif %}
+						<br>
+						{{ field }}
+					</div>
 				{% endfor %}
+			</div>
 			<br><hr>
 			
-			<input class="u-pull-right" style="width: 200px;" 
+			<input class="btn btn-outline-dark" style="width: 200px;" 
 						type="submit" name="submit" value="submit">
 		</form>
 	</div>

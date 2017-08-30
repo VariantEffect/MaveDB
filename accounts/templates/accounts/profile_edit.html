@@ -17,21 +17,37 @@
 					method="post">
 			{% csrf_token %}
 			{% if edit_form.non_field_errors %}
-				<div style="width:100%;color:red;list-style:none;">
-					{{ edit_form.non_field_errors }}
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>	
+					<h4> Oh no! </h4>
+					<p> There were some errors with your submission </p>
+					<hr>
+					<p>{{ edit_form.non_field_errors }}</p>
 				</div>
 			{% endif %}
 			{% for field in edit_form %}
-				<div style="width:100%;color:red;list-style:none;">
-					{{ field.errors }}
-				 </div>
-				<div style="width:100%"><b>{{ field.label }}</b></div>
-				<div style="width:100%">{{ field }}</div>
+				<div class="form-group">
+					<label for="{{ field.id_for_label }}">
+						{{ field.label }}{% if field.field.required %}*{% endif %}
+					</label>
+					{% if field.errors %}
+						<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>	
+							{{ field.errors }}
+						</div>
+					{% endif %}
+					<br>
+					{{ field }}
+				</div>
 			{% endfor %}
 			<div style="width:100%;margin-top:5px;">
-				<input class="u-pull-right" type="submit" value="Save" name="save"
+				<input class="btn btn-outline-dark" type="submit" value="Save" name="save"
 								style="width:150px;margin-bottom:35px;">
-				<input class="u-pull-right" type="submit" value="Preview" name="preview"
+				<input class="btn btn-outline-dark" type="submit" value="Preview" name="preview"
 								style="width:150px;margin-bottom:35px;margin-right:2px;">
 			</div>
 		</form>

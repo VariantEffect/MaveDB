@@ -41,14 +41,14 @@ def parse_query(query, sep=','):
     `list`
         A list of separate queries.
     """
-    pattern = r"(['\"]([^'\"]*)['\"]){}".format(sep)
+    pattern = r"(['\"]([^'\"]*)['\"])".format(sep)
     queries = [q.strip() for q in re.split(pattern, query) if q.strip()]
     parsed = []
     index = 0
     while index < len(queries):
         query = queries[index]
         if enclosed_by_quotes(query):
-            parsed.append(query)
+            parsed.append(query[1:-1])
             index += 2
         else:
             simple_queries = [q.strip() for q in query.split(sep) if q.strip()]

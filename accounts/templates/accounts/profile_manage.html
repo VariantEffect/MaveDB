@@ -7,21 +7,53 @@
 <!-- Admin management -->
 <div class="row" style="margin-top: 25px;">
 	<div class="col-md-10">
+
+		{% if admin_select_form.non_field_errors %}
+			<div class="alert alert-danger alert-dismissible fade show" role="alert">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>	
+				<h4> Oh no! </h4>
+				<p> There were some errors with your submission </p>
+				<hr>
+				<p>{{ admin_select_form.non_field_errors }}</p>
+			</div>
+		{% endif %}
+
+		{% if viewer_select_form.non_field_errors %}
+			<div class="alert alert-danger alert-dismissible fade show" role="alert">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>	
+				<h4> Oh no! </h4>
+				<p> There were some errors with your submission </p>
+				<hr>
+				<p>{{ viewer_select_form.non_field_errors }}</p>
+			</div>
+		{% endif %}
+
 		<h5> Add/Remove Administrators </h5><hr>
 		<form id="admin-form"
 					action="{% url 'accounts:manage_instance' instance.accession %}" 
 					method="post">
 			{% csrf_token %}
-			{% if admin_select_form.non_field_errors %}
-				<div>
-					{{ admin_select_form.non_field_errors }}
-				</div>
-			{% endif %}
+			<input type='hidden' name='administrators[]'/>
 			{% for field in admin_select_form %}
-				<div style="width:100%">{{ admin_select_form.as_table }}</div>
+				<div class="form-group">
+					{% if field.errors %}
+						<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							{{ field.errors }}
+						</div>
+					{% endif %}
+					{{ field }}
+				</div>
 			{% endfor %}
+
 			<div style="width:100%;margin-top:5px;">
-				<input class="btn btn-primary" type="button" value="Save"
+				<input class="btn btn-outline-dark" type="button" value="Save" name="admins"
 							style="width:150px;margin-bottom:35px;" 
 							onclick="validate_admin_submit();">
 			</div>
@@ -36,18 +68,24 @@
 		<form id="viewer-form"
 					action="{% url 'accounts:manage_instance' instance.accession %}" 
 					method="post">
-			{% csrf_token %}
-			{% if viewer_select_form.non_field_errors %}
-				<div>
-					{{ viewer_select_form.non_field_errors }}
-				</div>
-			{% endif %}
+			{% csrf_token %}			
+			<input type='hidden' name='viewers[]'/>
 			{% for field in viewer_select_form %}
-				<div style="width:100%">{{ field.errors }}</div>
-				<div style="width:100%">{{ field }}</div>
+				<div class="form-group">
+					{% if field.errors %}
+						<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							{{ field.errors }}
+						</div>
+					{% endif %}
+					{{ field }}
+				</div>
 			{% endfor %}
+			
 			<div style="width:100%;margin-top:5px;">
-					<input class="btn btn-primary" type="button" value="Save"
+					<input class="btn btn-outline-dark" type="button" value="Save" name="viewer"
 								 style="width:150px;margin-bottom:35px;" 
 								 onclick="validate_viewer_submit();">
 			</div>
