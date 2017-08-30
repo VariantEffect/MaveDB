@@ -233,44 +233,50 @@ class TestSearchForm(TestCase):
         self.assertEqual(self.exp_1, instances[0])
 
     ###
-    def test_can_search_experiment_by_target_organism(self):
-        key = 'target_organism'
-        self.exp_1.target_organism.add(self.target_org_1)
-        form = SearchForm(data={key: '{}'.format(self.target_org_1.text)})
+    def test_can_search_experiment_by_metadata(self):
+        key = 'metadata'
+        self.exp_1.abstract = "DNA repair"
+        self.exp_2.method_desc = "DNA repair"
+        self.exp_1.save()
+        self.exp_2.save()
+        form = SearchForm(data={key: "DNA repair"})
         form.is_valid()
         instances = form.query_experiments()
-        self.assertEqual(instances.count(), 1)
-        self.assertEqual(self.exp_1, instances[0])
+        self.assertEqual(instances.count(), 2)
 
-    def test_search_experiment_by_target_organism_returns_empty_qs(self):
-        key = 'target_organism'
-        form = SearchForm(data={key: '{},{}'.format(
-            self.target_org_2.text, self.target_org_3.text)
-        })
+    def test_search_experiment_by_metadata_returns_empty_qs(self):
+        key = 'metadata'
+        form = SearchForm(data={key: 'should not find a hit'})
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 0)
 
-    def test_experiment_target_org_search_can_return_multiple_results(self):
-        key = 'target_organism'
-        self.exp_1.target_organism.add(self.target_org_1)
-        self.exp_2.target_organism.add(self.target_org_2)
-        form = SearchForm(data={key: '{},{}'.format(
-            self.target_org_1.text, self.target_org_2.text)
-        })
+    def test_experiment_metadata_search_can_return_multiple_results(self):
+        key = 'metadata'
+        self.exp_1.abstract = "DNA repair"
+        self.exp_2.method_desc = "the great mitochondria war"
+        self.exp_1.save()
+        self.exp_2.save()
+        form = SearchForm(data={key: 'DNA repair,the great mitochondria war'})
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 2)
         self.assertEqual(self.exp_1, instances[0])
         self.assertEqual(self.exp_2, instances[1])
 
-    def test_experiment_target_organism_search_is_case_insensitive(self):
-        key = 'target_organism'
-        self.exp_1.target_organism.add(self.target_org_1)
-        form = SearchForm(data={key: '{}'.format(
-            self.target_org_1.text.upper())}
-        )
+    def test_experiment_metadata_search_is_case_insensitive(self):
+        key = 'metadata'
+        self.exp_1.abstract = "DNA repair"
+        self.exp_1.save()
+        form = SearchForm(data={key: 'DNA REPAIR'})
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
+
+    ###
+    def test_can_search_experiment_by_author_name(self):
+        self.fail("Write this test!")
+
+    def test_can_search_experiment_by_author_orcid(self):
+        self.fail("Write this test!")
