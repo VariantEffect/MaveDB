@@ -10,8 +10,6 @@ from django.core.urlresolvers import reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-import django_tables2 as tables
-
 from accounts.permissions import (
     assign_user_as_instance_admin,
     PermissionTypes
