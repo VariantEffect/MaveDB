@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'scoreset',
     'search',
     'guardian',
-    'django_tables2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -97,7 +96,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "mave",
         "USER": "postgres",
-        "PASSWORD": "iodate90",
+        "PASSWORD": "abc123",
         "HOST": "localhost",
         "PORT": "5432",
     }
