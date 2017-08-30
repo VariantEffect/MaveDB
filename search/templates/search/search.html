@@ -1,0 +1,56 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+
+<div class="row">
+	<div class="container card">
+		<div class="card-body">
+			<div class="card-header mb-2">
+				<h4> Advanced search </h4>
+			</div>
+
+			{% if form.non_field_errors %}
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4> Oh no! </h4>
+						<p> There were some errors with your submission </p>
+						<hr>
+						<p>{{ form.non_field_errors }}</p>
+				</div>
+			{% endif %}
+			
+			<form action="{% url 'search:search' %}" method="GET">
+				{% for field in form %}
+					<div class="form-group">
+						<label for="{{ field.id_for_label }}">
+							{{ field.label }}{% if field.field.required %}*{% endif %}
+						</label>
+						{% if field.errors %}
+							<div class="alert alert-danger alert-dismissible fade show" role="alert">
+								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
+								{{ field.errors }}
+							</div>
+						{% endif %}
+						<br>
+						{{ field }}
+					</div>
+				{% endfor %}
+				<div class="card-footer">
+					<input class="btn btn-outline-dark float-right" style="width: 150px;" 
+								 type="submit" name="submit" value="Search">
+				</div>
+			</form>
+		
+		</div> <!-- End card body -->
+	</div> <!-- End card -->
+</div> <!-- end row -->
+
+<div class="search-results row">
+	
+</div>
+
+{% endblock %}

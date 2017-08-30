@@ -7,19 +7,44 @@
 		<small>Registration is free.</small>
 	</div>
 	<div class="col-md-10">
+
+		{% if form.non_field_errors %}	
+			<div class="alert alert-danger alert-dismissible fade show" role="alert">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				{% for error in form.non_field_errors %}
+				<h4 class="alert-heading">Login error!</h4>
+				<hr>
+				<p> {{ error }} </p>
+				{% endfor %}
+			</div>
+		{% endif %}
+		
 		<form id="register-form" method="post">
 			{% csrf_token %}
 			{% for field in form %}
-				{{ field.label_tag }}
-				{% for error in field.errors %}
-					<b style="color: red"> {{ error }} </b><br>
-				{% endfor %}
-				{{ field }}
+				<div class="form-group">
+					<label for="{{ field.id_for_label }}">
+							{{ field.label }}{% if field.field.required %}*{% endif %}
+					</label>
+					{% if field.errors %}
+						<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							{{ field.errors }}
+						</div>
+					{% endif %}
+					<br>
+					{{ field }}
+				</div>
 			{% endfor %}
 			<p>
-				<button type="submit">Sign up</button>
+				<button class="btn btn-outline-dark" type="submit">Sign up</button>
 			</p>
 		</form>
+	
 	</div>
 </div>
 {% endblock body %} 
