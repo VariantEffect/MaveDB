@@ -94,11 +94,11 @@ WSGI_APPLICATION = 'mavedb.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "mave",
-        "USER": "postgres",
+        "NAME": "mavedb",
+        "USER": "mave_admin",
         "PASSWORD": "abc123",
         "HOST": "localhost",
-        "PORT": "5432",
+        "PORT": "",
     }
 }
 
@@ -137,7 +137,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static'))
+STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'static'))
 DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
