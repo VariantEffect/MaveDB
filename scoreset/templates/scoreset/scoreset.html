@@ -82,7 +82,28 @@
 					<h3> Information </h3>
 					<span style="font-weight: 600;">Keywords: </span>
 					<span>{{ scoreset.get_keywords|default:"Not provided" }}</span>
-
+					<br>
+					<span style="font-weight: 600;">Replaced by: </span>
+					<span>
+						{% if scoreset.replaced_by %}
+						<a href="{% url 'scoreset:scoreset_detail' scoreset.replaced_by.accession %}">
+							{{ scoreset.replaced_by }}
+						</a>
+						{% else %}
+						None
+						{% endif %}
+					</span>
+					<br>
+					<span style="font-weight: 600;">Replaces: </span>
+					<span>
+						{% if scoreset.replaces %}
+						<a href="{% url 'scoreset:scoreset_detail' scoreset.replaces.accession %}">
+							{{ scoreset.replaces }}
+						</a>
+						{% else %}
+						None
+						{% endif %}
+					</span>
 				</div>
 			</div> <!-- End information tab -->
 			
@@ -111,7 +132,7 @@
 						<p> No counts data available.</p>
 					{% endif %}
 					{% else %}
-						<div id="scores-table-container" class="table-container container-fluid">
+						<div id="scores-table-container" class="numeric-container container-fluid">
 							<table id="scores-table" class="styled-table table table-hover">
 								<thead>
 									<tr>
@@ -201,7 +222,7 @@
 							<p> No counts data available.</p>
 						{% endif %}
 					{% else %}
-						<div id="counts-table-container" class="table-container container-fluid">
+						<div id="counts-table-container" class="numeric-container container-fluid">
 							<table id="counts-table" class="styled-table table table-hover">
 								<thead>
 									<tr>

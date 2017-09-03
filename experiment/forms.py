@@ -32,6 +32,7 @@ class ExperimentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ExperimentForm, self).__init__(*args, **kwargs)
+
         self.fields["private"].widget = forms.CheckboxInput(
             attrs={
                 "class": "form-control",

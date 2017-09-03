@@ -10,7 +10,7 @@ from main.models import Keyword
 from experiment.models import Experiment
 from accounts.permissions import (
     user_is_admin_for_instance,
-    assign_user_as_instance_viewer,
+    assign_user_as_instance_admin,
     assign_user_as_instance_contributor,
     assign_user_as_instance_viewer
 )
@@ -87,6 +87,7 @@ class TestCreateNewScoreSetView(TestCase):
         self.template = 'scoreset/new_scoreset.html'
         self.post_data = {
             'scoreset-experiment': [''],
+            'scoreset-replaces': [''],
             'scoreset-private': ['on'],
             'scoreset-abstract': [''],
             'scoreset-method_desc': [''],
@@ -113,9 +114,35 @@ class TestCreateNewScoreSetView(TestCase):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
+    def test_experiment_options_are_restricted_to_admin_instances(self):
+        data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
+
+        request = self.factory.get('/scoreset/new/')
+        request.user = self.bob
+        response = scoreset_create_view(request)
+        self.assertContains(response, self.exp_1.accession)
+        self.assertNotContains(response, self.exp_2.accession)
+
+    def test_replaces_options_are_restricted_to_admin_instances(self):
+        data = self.post_data.copy()
+        scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
+        scs_2 = ScoreSet.objects.create(experiment=self.exp_1)
+        assign_user_as_instance_admin(self.bob, scs_1)
+
+        request = self.factory.get('/scoreset/new/')
+        request.user = self.bob
+        response = scoreset_create_view(request)
+        self.assertContains(response, scs_1.accession)
+        self.assertNotContains(response, scs_2.accession)
+
     def test_can_submit_and_create_scoreset_when_forms_are_valid(self):
         data = self.post_data.copy()
+        scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
+        assign_user_as_instance_admin(self.bob, scs_1)
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
+        data['scoreset-replaces'] = [scs_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
         data['scoreset-keywords'] = ['test']
@@ -123,9 +150,11 @@ class TestCreateNewScoreSetView(TestCase):
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = scoreset_create_view(request)
+        created = ScoreSet.objects.all()[0]
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Keyword.objects.count(), 1)
         self.assertEqual(Variant.objects.count(), 1)
+        self.assertEqual(created.replaces, scs_1)
 
         scs = ScoreSet.objects.all()[0]
         self.assertEqual(scs.keywords.count(), 1)
@@ -152,6 +181,7 @@ class TestCreateNewScoreSetView(TestCase):
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = [""]
         data['scoreset-counts_data'] = [""]
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = scoreset_create_view(request)
@@ -160,6 +190,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_only_links_preexisting_keyword_and_doesnt_create(self):
         data = self.post_data.copy()
         Keyword.objects.create(text="test")
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
@@ -175,6 +206,7 @@ class TestCreateNewScoreSetView(TestCase):
 
     def test_blank_keywords_not_created(self):
         data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
@@ -187,6 +219,7 @@ class TestCreateNewScoreSetView(TestCase):
 
     def test_scoreset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
@@ -197,20 +230,9 @@ class TestCreateNewScoreSetView(TestCase):
         scs = ScoreSet.objects.all()[0]
         self.assertTrue(user_is_admin_for_instance(self.bob, scs))
 
-    def test_user_not_added_as_admin_to_scoreset_experiment(self):
-        data = self.post_data.copy()
-        data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
-
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
-        scs = ScoreSet.objects.all()[0]
-        self.assertFalse(user_is_admin_for_instance(self.bob, scs.experiment))
-
     def test_private_dataset_request_returns_403(self):
         data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
@@ -232,6 +254,7 @@ class TestCreateNewScoreSetView(TestCase):
 
     def test_private_metadata_request_returns_403(self):
         data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
         data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]

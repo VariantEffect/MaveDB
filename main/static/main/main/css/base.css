@@ -86,7 +86,11 @@ a:hover {
 ---------------------------------- */
 .table-container {
     border: 1.5px solid #AFC8FA;
-    padding: 0.5px 0.25px 0.5px 0.25px;
+    padding: 0.5px 1px 0.25px 0.25px;
+}
+.numeric-container {
+    border: 1.5px solid #AFC8FA;
+    padding: 1px 1.5px 1px 1.25px;
 }
 .styled-table {
     margin-bottom: 0; 
@@ -100,6 +104,40 @@ a:hover {
     font-size: 14px;
     line-height: 0.10em;
     border: 1px solid white;
+}
+
+.styled-table .input-group .form-control,
+.table {
+    color: black;
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    height: auto;
+    
+    border: 1px solid black;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.styled-table .filters th .textinput.textInput.form-control {
+    color: black;
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    height: auto;
+    max-width: 80%;
+    
+    border: 1px solid black;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
 }
 
 

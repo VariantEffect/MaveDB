@@ -173,7 +173,11 @@ def experiment_create_view(request):
         The request object that django passes into all views.
     """
     context = {}
+    pks = [i.pk for i in request.user.profile.administrator_experimentsets()]
+    experimentsets = ExperimentSet.objects.filter(pk__in=set(pks))
+
     experiment_form = ExperimentForm(prefix=EXPERIMENT_FORM_PREFIX)
+    experiment_form.fields["experimentset"].queryset = experimentsets
     ref_mapping_formset = ReferenceMappingFormSet(
         prefix=REFERENCE_MAPPING_FORM_PREFIX
     )
@@ -187,6 +191,7 @@ def experiment_create_view(request):
         experiment_form = ExperimentForm(
             request.POST, prefix=EXPERIMENT_FORM_PREFIX
         )
+        experiment_form.fields["experimentset"].queryset = experimentsets
         ref_mapping_formset = ReferenceMappingFormSet(
             request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX
         )

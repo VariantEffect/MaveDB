@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db import IntegrityError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -103,6 +103,9 @@ class ScoreSet(models.Model, GroupPermissionMixin):
 
     keywords : `models.ManyToManyField`
         The keyword instances that are associated with this instance.
+
+    replaces : `models.ForeignKey`
+        Indicates a scoreset instances that replaces the current instance.
     """
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
@@ -167,6 +170,10 @@ class ScoreSet(models.Model, GroupPermissionMixin):
         }),
         validators=[valid_scoreset_json]
     )
+    replaces = models.OneToOneField(
+        to='scoreset.ScoreSet', on_delete=models.DO_NOTHING, null=True,
+        verbose_name="Replaces", related_name="replaced_by"
+    )
 
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
@@ -188,25 +195,26 @@ class ScoreSet(models.Model, GroupPermissionMixin):
         return str(self.accession)
 
     def save(self, *args, **kwargs):
-        super(ScoreSet, self).save(*args, **kwargs)
+        with transaction.atomic():
+            super(ScoreSet, self).save(*args, **kwargs)
 
-        # This will not work if manually setting accession.
-        # Replace this section with POST/PRE save signal.
-        self.last_edit_date = datetime.date.today()
+            # This will not work if manually setting accession.
+            # Replace this section with POST/PRE save signal.
+            self.last_edit_date = datetime.date.today()
 
-        if not self.accession:
-            parent = self.experiment
-            middle_digits = parent.accession[-parent.ACCESSION_DIGITS:]
-            digit_suffix = parent.next_scoreset_suffix()
-            accession = '{}.{}'.format(
-                parent.accession.replace(
-                    parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
-                digit_suffix
-            )
-            parent.last_used_suffix = digit_suffix
-            parent.save()
-            self.accession = accession
-            self.save()
+            if not self.accession:
+                parent = self.experiment
+                middle_digits = parent.accession[-parent.ACCESSION_DIGITS:]
+                digit_suffix = parent.next_scoreset_suffix()
+                accession = '{}.{}'.format(
+                    parent.accession.replace(
+                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
+                    digit_suffix
+                )
+                parent.last_used_suffix = digit_suffix
+                parent.save()
+                self.accession = accession
+                self.save()
 
     def next_variant_suffix(self):
         return self.last_used_suffix + 1
@@ -350,19 +358,20 @@ class Variant(models.Model):
         return data
 
     def save(self, *args, **kwargs):
-        super(Variant, self).save(*args, **kwargs)
-        if not self.accession:
-            parent = self.scoreset
-            digit_suffix = parent.next_variant_suffix()
-            accession = '{}.{}'.format(
-                parent.accession.replace(
-                    parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
-                digit_suffix
-            )
-            parent.last_used_suffix = digit_suffix
-            parent.save()
-            self.accession = accession
-            self.save()
+        with transaction.atomic():
+            super(Variant, self).save(*args, **kwargs)
+            if not self.accession:
+                parent = self.scoreset
+                digit_suffix = parent.next_variant_suffix()
+                accession = '{}.{}'.format(
+                    parent.accession.replace(
+                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
+                    digit_suffix
+                )
+                parent.last_used_suffix = digit_suffix
+                parent.save()
+                self.accession = accession
+                self.save()
 
 
 @receiver(post_save, sender=ScoreSet)

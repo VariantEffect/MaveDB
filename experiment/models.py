@@ -9,7 +9,7 @@ from django.core.validators import MinValueValidator
 
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
-from django.db import models, IntegrityError
+from django.db import models, IntegrityError, transaction
 from django.db.models.signals import pre_save, post_save
 
 from .validators import valid_exp_accession, valid_expset_accession
@@ -143,20 +143,21 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
         return str(self.accession)
 
     def save(self, *args, **kwargs):
-        super(ExperimentSet, self).save(*args, **kwargs)
+        with transaction.atomic():
+            super(ExperimentSet, self).save(*args, **kwargs)
 
-        # This will not work if manually setting accession.
-        # Replace this section with POST/PRE save signal.
-        self.last_edit_date = datetime.date.today()
+            # This will not work if manually setting accession.
+            # Replace this section with POST/PRE save signal.
+            self.last_edit_date = datetime.date.today()
 
-        if self.accession is not None:
-            valid_expset_accession(self.accession)
-        else:
-            digit_bit = str(self.pk)
-            digit_suffix = digit_bit.zfill(self.ACCESSION_DIGITS)
-            accession = "{}{}".format(self.ACCESSION_PREFIX, digit_suffix)
-            self.accession = accession
-            self.save()
+            if self.accession is not None:
+                valid_expset_accession(self.accession)
+            else:
+                digit_bit = str(self.pk)
+                digit_suffix = digit_bit.zfill(self.ACCESSION_DIGITS)
+                accession = "{}{}".format(self.ACCESSION_PREFIX, digit_suffix)
+                self.accession = accession
+                self.save()
 
     def update_last_edit_info(self, user):
         self.last_edit_date = datetime.date.today()
@@ -368,32 +369,33 @@ class Experiment(models.Model, GroupPermissionMixin):
         self.save()
 
     def save(self, *args, **kwargs):
-        super(Experiment, self).save(*args, **kwargs)
-        # This will not work if manually setting accession.
-        # Replace this section with POST/PRE save signal.
-        self.last_edit_date = datetime.date.today()
-        self.wt_sequence = self.wt_sequence.upper()
+        with transaction.atomic():
+            super(Experiment, self).save(*args, **kwargs)
+            # This will not work if manually setting accession.
+            # Replace this section with POST/PRE save signal.
+            self.last_edit_date = datetime.date.today()
+            self.wt_sequence = self.wt_sequence.upper()
 
-        if self.accession is not None:
-            valid_exp_accession(self.accession)
-        else:
-            expset = None
-            if self.experimentset is None:
-                expset = ExperimentSet.objects.create()
-                self.experimentset = expset
+            if self.accession is not None:
+                valid_exp_accession(self.accession)
+            else:
+                expset = None
+                if self.experimentset is None:
+                    expset = ExperimentSet.objects.create()
+                    self.experimentset = expset
 
-            parent = self.experimentset
-            suffix = parent.next_experiment_suffix()
-            accession = "{}{}".format(
-                parent.accession.replace(
-                    parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX
-                ),
-                suffix
-            )
-            parent.last_used_suffix = suffix
-            parent.save()
-            self.accession = accession
-            self.save()
+                parent = self.experimentset
+                suffix = parent.next_experiment_suffix()
+                accession = "{}{}".format(
+                    parent.accession.replace(
+                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX
+                    ),
+                    suffix
+                )
+                parent.last_used_suffix = suffix
+                parent.save()
+                self.accession = accession
+                self.save()
 
     def publish(self):
         self.private = False

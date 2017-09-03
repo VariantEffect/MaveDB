@@ -28,6 +28,7 @@ class ScoreSetForm(forms.ModelForm):
         model = ScoreSet
         fields = (
             'experiment',
+            'replaces',
             'private',
             'keywords',
             'doi_id',
@@ -60,6 +61,10 @@ class ScoreSetForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ScoreSetForm, self).__init__(*args, **kwargs)
+
+        if "replaces" in self.fields:
+            self.fields["replaces"].required = False
+
         self.fields["private"].widget = forms.CheckboxInput(
             attrs={
                 "class": "form-control",
@@ -377,6 +382,7 @@ class ScoreSetEditForm(ScoreSetForm):
     scores_data = None
     counts_data = None
     experiment = None
+    replaces = None
 
     class Meta:
         model = ScoreSet

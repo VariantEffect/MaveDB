@@ -49,8 +49,52 @@
 	</div> <!-- End card -->
 </div> <!-- end row -->
 
-<div class="search-results row">
-	
+<div class="search-results table-container row mt-5">
+	<table id="search_table" class="styled-table table table-hover">
+		<thead>
+			<tr>
+				<th>Accesion</th>
+				<th>Target</th>
+				<th>Authors</th>
+				<th>Target Organism</th>
+				<th>Keywords</th>
+				<th>External accessions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for exp in experiments  %}
+				<tr>
+					<td>
+						<a 
+							href="{% url 'experiment:experiment_detail' exp.accession %}">
+							{{ exp.accession }}
+						</a>
+					</td>
+					<td>{{ exp.target }}</td>
+					<td>{{ exp.get_authors }}</td>
+					<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
+					<td>{{ exp.get_keywords|default:"-" }}</td>
+					<td>{{ exp.get_other_accessions|default:"-" }}</td>
+				</tr>
+			{% endfor %}
+			
+			{% for scs in scoresets  %}
+			<tr>
+				<td>
+					<a 
+						href="{% url 'scoreset:scoreset_detail' scs.accession %}">
+						{{ scs.accession }}
+					</a>
+				</td>
+				<td>{{ scs.experiment.target }}</td>
+				<td>{{ scs.get_authors }}</td>
+				<td><em>{{ scs.experiment.get_target_organism|default:"-" }}</em></td>
+				<td>{{ scs.get_keywords|default:"-" }}</td>
+				<td>{{ scs.experiment.get_other_accessions|default:"-" }}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
 </div>
 
 {% endblock %}

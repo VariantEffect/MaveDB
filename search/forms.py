@@ -169,11 +169,11 @@ class SearchForm(forms.Form):
             accessions = self.cleaned_data.get(
                 "accessions", None
             ) or search_all
-            targets = self.cleaned_data.get(
-                "targets", None
-            ) or search_all
             metadata_tags = self.cleaned_data.get(
                 "metadata", None
+            ) or search_all
+            targets = self.cleaned_data.get(
+                "targets", None
             ) or search_all
             ext_accessions = self.cleaned_data.get(
                 "ext_accessions", None
@@ -184,10 +184,10 @@ class SearchForm(forms.Form):
 
             keyword_hits = self.search_by_keyword(model, keywords)
             accessions_hits = self.search_by_accession(model, accessions)
-            targets_hits = self.search_by_target(model, targets)
             metadata_hits = self.search_by_metadata(model, metadata_tags)
 
             if model == Experiment:
+                targets_hits = self.search_by_target(model, targets)
                 ext_accessions_hits = self.search_by_external_accession(
                     ext_accessions
                 )
@@ -197,6 +197,7 @@ class SearchForm(forms.Form):
             else:
                 ext_accessions_hits = None
                 target_organism_hits = None
+                targets_hits = None
 
             if union_search:
                 instances = model.objects.none()

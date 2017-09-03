@@ -7,9 +7,11 @@ from django.test import TestCase, TransactionTestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
 
-from guardian.shortcuts import assign_perm, remove_perm
-
-from accounts.permissions import user_is_admin_for_instance, PermissionTypes
+from accounts.permissions import (
+    user_is_admin_for_instance,
+    assign_user_as_instance_admin,
+    assign_user_as_instance_viewer
+)
 
 from main.models import (
     Keyword, ExternalAccession,
@@ -63,8 +65,7 @@ class TestExperimentSetDetailView(TestCase):
         bob = self.User.objects.create_user(
             username='bob', password='top_secret'
         )
-        assign_perm(PermissionTypes.CAN_VIEW, bob, obj)
-
+        assign_user_as_instance_viewer(bob, obj)
         request = self.factory.get('/experiment/')
         request.user = bob
         response = ExperimentSetDetailView.as_view()(
@@ -115,8 +116,7 @@ class TestExperimentDetailView(TestCase):
         bob = self.User.objects.create_user(
             username='bob', password='top_secret'
         )
-        assign_perm(PermissionTypes.CAN_VIEW, bob, exp)
-
+        assign_user_as_instance_viewer(bob, exp)
         request = self.factory.get('/experiment/')
         request.user = bob
         response = ExperimentDetailView.as_view()(
@@ -168,6 +168,18 @@ class TestCreateNewExperimentView(TestCase):
     def test_redirect_to_login_not_logged_in(self):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
+
+    def test_experimentset_options_are_restricted_to_admin_instances(self):
+        data = self.post_data.copy()
+        exps_1 = ExperimentSet.objects.create()
+        exps_2 = ExperimentSet.objects.create()
+        assign_user_as_instance_admin(self.bob, exps_1)
+
+        request = self.factory.get('/experiment/new/')
+        request.user = self.bob
+        response = experiment_create_view(request)
+        self.assertContains(response, exps_1.accession)
+        self.assertNotContains(response, exps_2.accession)
 
     def test_can_submit_and_create_experiment_when_forms_are_valid(self):
         data = self.post_data.copy()
