@@ -129,11 +129,11 @@ def instances_for_user_with_group_permission(user, model, group_type):
         return []
 
     if model == ExperimentSet:
-        instances = ExperimentSet.objects.all()
+        instances = ExperimentSet.objects.all().order_by("accession")
     elif model == Experiment:
-        instances = Experiment.objects.all()
+        instances = Experiment.objects.all().order_by("accession")
     elif model == ScoreSet:
-        instances = ScoreSet.objects.all()
+        instances = ScoreSet.objects.all().order_by("accession")
     else:
         raise TypeError("Unrecognised model type {}.".format(model))
 

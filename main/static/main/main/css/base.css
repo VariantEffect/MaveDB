@@ -106,6 +106,15 @@ a:hover {
     border: 1px solid white;
 }
 
+table td, 
+table th {
+    white-space: nowrap !important;
+    width: 1% !important;
+}
+table {
+    max-width: none;
+}
+
 .styled-table .input-group .form-control,
 .table {
     color: black;
