@@ -77,9 +77,22 @@ class ScoreSetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-        variant_list = instance.variant_set.all()
-        scores_paginator = Paginator(variant_list, per_page=2)
-        counts_paginator = Paginator(variant_list, per_page=2)
+        variant_list = instance.variant_set.all().order_by("hgvs")
+
+        try:
+            counts_per_page = self.request.GET.get('counts-per-page', '')
+            counts_per_page = int(counts_per_page)
+        except:
+            counts_per_page = 20
+
+        try:
+            scores_per_page = self.request.GET.get('scores-per-page', '')
+            scores_per_page = int(scores_per_page)
+        except:
+            scores_per_page = 20
+
+        scores_paginator = Paginator(variant_list, per_page=scores_per_page)
+        counts_paginator = Paginator(variant_list, per_page=counts_per_page)
 
         try:
             scores_page = self.request.GET.get('scores_page', None)
@@ -119,6 +132,10 @@ class ScoreSetDetailView(DetailView):
         context["counts_columns"] = \
             context['scoreset'].dataset_columns[COUNTS_KEY]
 
+        context["scores_per_page"] = scores_per_page
+        context["counts_per_page"] = counts_per_page
+        context["per_page_selections"] = [20, 50, 100]
+
         return context
 
 
@@ -156,7 +173,7 @@ def download_scoreset_data(request, accession, dataset_key):
         response.status_code = 403
         return response
 
-    variants = scoreset.variant_set.all()
+    variants = scoreset.variant_set.all().order_by("accession")
     columns = scoreset.dataset_columns[dataset_key]
 
     def gen_repsonse():
@@ -215,7 +232,9 @@ def scoreset_create_view(request):
     context = {}
     scoreset_form = ScoreSetForm(prefix=SCORESET_FORM_PREFIX)
     pks = [i.pk for i in request.user.profile.administrator_experiments()]
-    experiments = Experiment.objects.filter(pk__in=set(pks))
+    experiments = Experiment.objects.filter(
+        pk__in=set(pks)
+    ).order_by("accession")
     scoreset_form.fields["experiment"].queryset = experiments
 
     pks = [i.pk for i in request.user.profile.administrator_scoresets()]

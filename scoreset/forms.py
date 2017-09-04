@@ -59,6 +59,19 @@ class ScoreSetForm(forms.ModelForm):
         )
     )
 
+    def clean_replaces(self):
+        scoreset = self.cleaned_data.get("replaces", None)
+        experiment = self.cleaned_data.get("experiment", None)
+        if scoreset is not None and experiment is not None:
+            if scoreset not in experiment.scoreset_set.all():
+                raise ValidationError(
+                    _(
+                        "Replaces field selection must be a member of the "
+                        "selected experiment."
+                    )
+                )
+        return scoreset
+
     def __init__(self, *args, **kwargs):
         super(ScoreSetForm, self).__init__(*args, **kwargs)
 

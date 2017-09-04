@@ -377,3 +377,20 @@ class Variant(models.Model):
 @receiver(post_save, sender=ScoreSet)
 def create_permission_groups_for_scoreset(sender, instance, **kwargs):
     make_all_groups_for_instance(instance)
+
+
+@receiver(post_save, sender=ScoreSet)
+def propagate_private_bit(sender, instance, **kwargs):
+    experiment = instance.experiment
+    experiment_is_private = all(
+        [s.private for s in experiment.scoreset_set.all()]
+    )
+    experiment.private = experiment_is_private
+    experiment.save()
+
+    experimentset = experiment.experimentset
+    experimentset_is_private = all(
+        [e.private for e in experimentset.experiment_set.all()]
+    )
+    experimentset.private = experimentset_is_private
+    experimentset.save()
