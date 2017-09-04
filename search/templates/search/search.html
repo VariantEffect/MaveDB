@@ -62,37 +62,45 @@
 			</tr>
 		</thead>
 		<tbody>
-			{% for exp in experiments  %}
+			{% if not has_data %}
 				<tr>
-					<td>
-						<a 
-							href="{% url 'experiment:experiment_detail' exp.accession %}">
-							{{ exp.accession }}
-						</a>
-					</td>
-					<td>{{ exp.target }}</td>
-					<td>{{ exp.get_authors }}</td>
-					<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
-					<td>{{ exp.get_keywords|default:"-" }}</td>
-					<td>{{ exp.get_other_accessions|default:"-" }}</td>
+					<td colspan=6> 0 search results returned. </td>
 				</tr>
-			{% endfor %}
-			
-			{% for scs in scoresets  %}
-			<tr>
-				<td>
-					<a 
-						href="{% url 'scoreset:scoreset_detail' scs.accession %}">
-						{{ scs.accession }}
-					</a>
-				</td>
-				<td>{{ scs.experiment.target }}</td>
-				<td>{{ scs.get_authors }}</td>
-				<td><em>{{ scs.experiment.get_target_organism|default:"-" }}</em></td>
-				<td>{{ scs.get_keywords|default:"-" }}</td>
-				<td>{{ scs.experiment.get_other_accessions|default:"-" }}</td>
-			</tr>
-		{% endfor %}
+			{% else %}
+				{% for exp in experiments  %}
+					{% if not exp.private %}
+						<tr>
+							<td>
+								<a 
+									href="{% url 'experiment:experiment_detail' exp.accession %}">
+									{{ exp.accession }}
+								</a>
+							</td>
+							<td>{{ exp.target }}</td>
+							<td>{{ exp.get_authors }}</td>
+							<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
+							<td>{{ exp.get_keywords|default:"-" }}</td>
+							<td>{{ exp.get_other_accessions|default:"-" }}</td>
+						</tr>
+					{% else %}
+						{% if exp in request.user.profile.experiments %}
+							<tr>
+								<td>
+									<a 
+										href="{% url 'experiment:experiment_detail' exp.accession %}">
+										{{ exp.accession }} [P]
+									</a>
+								</td>
+								<td>{{ exp.target }}</td>
+								<td>{{ exp.get_authors }}</td>
+								<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
+								<td>{{ exp.get_keywords|default:"-" }}</td>
+								<td>{{ exp.get_other_accessions|default:"-" }}</td>
+							</tr>
+						{% endif %}
+					{% endif %}
+				{% endfor %}
+			{% endif %}
 		</tbody>
 	</table>
 </div>
