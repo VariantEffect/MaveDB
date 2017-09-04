@@ -174,7 +174,9 @@ def experiment_create_view(request):
     """
     context = {}
     pks = [i.pk for i in request.user.profile.administrator_experimentsets()]
-    experimentsets = ExperimentSet.objects.filter(pk__in=set(pks))
+    experimentsets = ExperimentSet.objects.filter(
+        pk__in=set(pks)
+    ).order_by("accession")
 
     experiment_form = ExperimentForm(prefix=EXPERIMENT_FORM_PREFIX)
     experiment_form.fields["experimentset"].queryset = experimentsets

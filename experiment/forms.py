@@ -18,7 +18,6 @@ class ExperimentForm(forms.ModelForm):
         model = Experiment
         fields = (
             'experimentset',
-            'private',
             'target',
             'target_organism',
             'wt_sequence',
@@ -32,12 +31,6 @@ class ExperimentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ExperimentForm, self).__init__(*args, **kwargs)
-
-        self.fields["private"].widget = forms.CheckboxInput(
-            attrs={
-                "class": "form-control",
-            }
-        )
         self.fields["target"].widget = forms.TextInput(
             attrs={
                 "class": "form-control",
@@ -203,7 +196,6 @@ class ExperimentEditForm(ExperimentForm):
         model = Experiment
         fields = (
             'experimentset',  # excluded
-            'private',
             'target',  # excluded
             'target_organism',  # excluded
             'wt_sequence',  # excluded

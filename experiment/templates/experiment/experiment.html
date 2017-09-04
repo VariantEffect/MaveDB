@@ -26,7 +26,7 @@
 			</li>
 			<li class="nav-item">
 				<a class="nav-link" id="scoresets-tab" data-toggle="tab" href="#scoresets" 
-						role="tab" aria-controls="scoresets">Scores Sets</a>
+						role="tab" aria-controls="scoresets">Score Sets</a>
 			</li>
 			<li class="nav-item">
 					<a class="nav-link" id="refmaps-tab" data-toggle="tab" href="#refmaps" 
@@ -141,7 +141,7 @@
 			<div class="tab-pane fade show" id="scoresets" role="tabpanel" 
 					 aria-labelledby="scoresets-tab">
 				<div class="container-fluid mt-4">
-					{% if not experiment.scoreset_set %}
+					{% if not experiment.scoreset_set.all %}
 						<p> No score sets have been associated with this experiment.</p>
 					{% else %}
 						The following score sets are associated with this experiment:

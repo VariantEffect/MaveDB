@@ -25,7 +25,7 @@
 				{% for field in experiment_form %}
 					<div class="form-group">
 						<label for="{{ field.id_for_label }}">
-							{{ field.label }}{% if field.field.required %}*{% endif %}
+							{{ field.label }}{% if field.field.required %} * {% endif %}
 						</label>
 						{% if field.errors %}
 							<div class="alert alert-danger alert-dismissible fade show" role="alert">
