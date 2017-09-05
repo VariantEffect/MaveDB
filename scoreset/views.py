@@ -75,9 +75,13 @@ class ScoreSetDetailView(DetailView):
         return get_object_or_404(ScoreSet, accession=accession)
 
     def get_context_data(self, **kwargs):
+
+        print(self.request.GET)
+
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-        variant_list = instance.variant_set.all().order_by("hgvs")
+        scores_variant_list = instance.variant_set.all().order_by("hgvs")
+        counts_variant_list = instance.variant_set.all().order_by("hgvs")
 
         try:
             counts_per_page = self.request.GET.get('counts-per-page', '')
@@ -91,30 +95,36 @@ class ScoreSetDetailView(DetailView):
         except:
             scores_per_page = 20
 
-        scores_paginator = Paginator(variant_list, per_page=scores_per_page)
-        counts_paginator = Paginator(variant_list, per_page=counts_per_page)
+        scores_paginator = Paginator(
+            scores_variant_list, per_page=scores_per_page)
+        counts_paginator = Paginator(
+            counts_variant_list, per_page=counts_per_page)
 
         try:
-            scores_page = self.request.GET.get('scores_page', None)
+            scores_page = self.request.GET.get('scores-page', None)
             scores_variants = scores_paginator.page(scores_page)
         except PageNotAnInteger:
-            scores_variants = scores_paginator.page(1)
+            scores_page = 1
+            scores_variants = scores_paginator.page(scores_page)
         except EmptyPage:
-            scores_variants = scores_paginator.page(scores_paginator.num_pages)
+            scores_page = scores_paginator.num_pages
+            scores_variants = scores_paginator.page(scores_page)
 
         try:
-            counts_page = self.request.GET.get('counts_page', None)
+            counts_page = self.request.GET.get('counts-page', None)
             counts_variants = counts_paginator.page(counts_page)
         except PageNotAnInteger:
-            counts_variants = counts_paginator.page(1)
+            counts_page = 1
+            counts_variants = counts_paginator.page(counts_page)
         except EmptyPage:
-            counts_variants = counts_paginator.page(counts_paginator.num_pages)
+            counts_page = counts_paginator.num_pages
+            counts_variants = counts_paginator.page(counts_page)
 
         # Handle the case when there are too many pages for scores.
         index = scores_paginator.page_range.index(scores_variants.number)
         max_index = len(scores_paginator.page_range)
-        start_index = index - 3 if index >= 3 else 0
-        end_index = index + 3 if index <= max_index - 3 else max_index
+        start_index = index - 5 if index >= 5 else 0
+        end_index = index + 5 if index <= max_index - 5 else max_index
         page_range = scores_paginator.page_range[start_index:end_index]
         context["scores_page_range"] = page_range
         context["scores_variants"] = scores_variants
@@ -124,8 +134,8 @@ class ScoreSetDetailView(DetailView):
         # Handle the case when there are too many pages for counts.
         index = counts_paginator.page_range.index(counts_variants.number)
         max_index = len(counts_paginator.page_range)
-        start_index = index - 3 if index >= 3 else 0
-        end_index = index + 3 if index <= max_index - 3 else max_index
+        start_index = index - 5 if index >= 5 else 0
+        end_index = index + 5 if index <= max_index - 5 else max_index
         page_range = counts_paginator.page_range[start_index:end_index]
         context["counts_page_range"] = page_range
         context["counts_variants"] = counts_variants

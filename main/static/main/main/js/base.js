@@ -50,6 +50,58 @@ $('document').ready(function() {
     }
 });
 
+// Pagination submission
+// dataType: 'scores' or 'counts'
+// selectObj: select object
+function paginationSubmit(dataType, clickedLink) {
+    var scoresSelect = $("#scores-per-page-select")[0];
+    var countsSelect = $("#counts-per-page-select")[0];
+
+    var scoresPageNum = parseInt($(".scores-active")[0].innerHTML);
+    var countsPageNum = parseInt($(".counts-active")[0].innerHTML);
+
+    if (clickedLink !== undefined) {
+        var nextPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+        var previousPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+
+        if (dataType === "scores") {
+            scoresPageNum = parseInt(clickedLink.innerHTML);
+            if (nextPageNum !== undefined) {
+                scoresPageNum = nextPageNum;
+            }
+            else if (previousPageNum !== undefined) {
+                scoresPageNum = previousPageNum;
+            }
+        }
+        else if (dataType === "counts") {
+            countsPageNum = parseInt(clickedLink.innerHTML);
+            if (nextPageNum !== undefined) {
+                countsPageNum = nextPageNum;
+            }
+            else if (previousPageNum !== undefined) {
+                countsPageNum = previousPageNum;
+            }
+        }
+    }
+
+    var scoresPerPage = parseInt(
+        scoresSelect.options[scoresSelect.selectedIndex].value
+    );
+    var countsPerPage = parseInt(
+        countsSelect.options[countsSelect.selectedIndex].value
+    );
+
+    var base = window.location.toString().split("#")[0].split("?")[0];
+    var a = "?scores-per-page=" + scoresPerPage;
+    var b = "&counts-per-page=" + countsPerPage;
+    var c = "&scores-page=" + scoresPageNum;
+    var d = "&counts-page=" + countsPageNum;
+    url = base + a + b + c + d + "#" + dataType;
+
+    window.location.assign(url);
+    return false;
+}
+
 // Check management form submission
 // ----------------------------------------------------------------------- //
 // `userPk` is a global defined in base.html using Django's templating system.

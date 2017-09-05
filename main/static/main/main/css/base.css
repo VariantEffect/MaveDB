@@ -84,13 +84,22 @@ a:hover {
 
 /* Tables
 ---------------------------------- */
-.table-container {
-    border: 1.5px solid #AFC8FA;
-    padding: 0.5px 1px 0.25px 0.25px;
+table td, 
+table th {
+    white-space: nowrap !important;
+    width: 1% !important;
 }
-.numeric-container {
-    border: 1.5px solid #AFC8FA;
-    padding: 1px 1.5px 1px 1.25px;
+table {
+    max-width: none;
+}
+
+.numeric-container,
+.table-container {
+    border: 2px solid #AFC8FA;
+    padding: 0px 0.25px 0.25px 1px;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 .styled-table {
     margin-bottom: 0; 
@@ -104,15 +113,6 @@ a:hover {
     font-size: 14px;
     line-height: 0.10em;
     border: 1px solid white;
-}
-
-table td, 
-table th {
-    white-space: nowrap !important;
-    width: 1% !important;
-}
-table {
-    max-width: none;
 }
 
 .styled-table .input-group .form-control,
@@ -148,7 +148,6 @@ table {
     padding-top: 1px;
     padding-bottom: 1px;
 }
-
 
 /* navbar/header/footer Formatting 
 ----------------------------------- */
@@ -241,21 +240,23 @@ table {
     color: #1EAEDB !important;
 }
 
-.node-name--H1 { font-size: 24px;}
-.node-name--H2 { font-size: 22px;}
-.node-name--H3 { font-size: 20px;}
-.node-name--H4 { font-size: 18px;}
-.node-name--H5 { font-size: 16px;}
-.node-name--H6 { font-size: 14px;}
+.node-name--H1 { font-size: 20px;}
+.node-name--H2 { font-size: 18px;}
+.node-name--H3 { font-size: 16px;}
+.node-name--H4 { font-size: 14px;}
+.node-name--H5 { font-size: 12px;}
+.node-name--H6 { font-size: 10px;}
 
 
 /* Pagination
 ---------------------------------------- */
-.page-item.active > .page-link {
+.page-link.scores-active,
+.page-link.counts-active {
     color: whitesmoke !important;
     border-color: #D1D1D1 !important;
     background-color: #AFC8FA !important;
 }
+
 .pagination {
     padding-top: 10px;
     list-style: none;
@@ -292,15 +293,6 @@ table {
 }
 .pagination > li > a:hover {
     color: #222;
-}
-.pagination > li.active > a {
-    color: #222;
-}
-.items-per-page {
-    padding: 4px;
-}
-.items-per-page > select {
-    margin-bottom: -1.5px;
 }
 
 /* Model Forms
