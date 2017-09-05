@@ -1,0 +1,9 @@
+Django>=1.11.2
+django-guardian>=1.4.9
+django-reversion>=2.0.9
+factory-boy>=2.9.2
+Faker>=0.7.18
+numpy>=1.12.1
+psycopg2>=2.7.1
+pypandoc>=1.4
+selenium>=3.4.3

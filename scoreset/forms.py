@@ -10,6 +10,7 @@ from django.db.models.signals import post_save
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext as _
 
+from main.utils.query_parsing import parse_query
 from main.models import Keyword
 from main.fields import ModelSelectMultipleField
 
