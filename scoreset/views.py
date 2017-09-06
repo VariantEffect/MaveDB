@@ -261,6 +261,8 @@ def scoreset_create_view(request):
             prefix=SCORESET_FORM_PREFIX
         )
         scoreset_form.fields["experiment"].queryset = experiments
+        scoreset_form.fields["replaces"].queryset = scoresets
+
         if scoreset_form.is_valid():
             scoreset = scoreset_form.save(commit=True)
         else:
