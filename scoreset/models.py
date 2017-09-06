@@ -165,8 +165,7 @@ class ScoreSet(models.Model, GroupPermissionMixin):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns", default=dict({
-            SCORES_KEY: ['hgvs'],
-            COUNTS_KEY: ['hgvs']
+            SCORES_KEY: [], COUNTS_KEY: []
         }),
         validators=[valid_scoreset_json]
     )
@@ -247,6 +246,9 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def counts_columns(self):
         return self.dataset_columns[COUNTS_KEY]
 
+    def has_counts_dataset(self):
+        return not self.dataset_columns[COUNTS_KEY] == []
+
     def update_keywords(self, keywords):
         kws_text = set([kw.text for kw in keywords])
         for kw in self.keywords.all():
@@ -326,8 +328,7 @@ class Variant(models.Model):
     # ---------------------------------------------------------------------- #
     data = JSONField(
         verbose_name="Data columns", default=dict({
-            SCORES_KEY: {'hgvs': None},
-            COUNTS_KEY: {'hgvs': None}
+            SCORES_KEY: {}, COUNTS_KEY: {}
         }),
         validators=[valid_variant_json]
     )

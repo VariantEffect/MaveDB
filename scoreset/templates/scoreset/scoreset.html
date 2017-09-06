@@ -234,14 +234,6 @@
 						<div class="col-md-3">
 							<h3 style="margin: 0;">Counts dataset</h3>
 						</div>
-						{% if not preview %}
-						<div class="col-md-1">
-							<a class="download-btn btn btn-sm btn-outline-primary" 
-									href="{% url 'scoreset:counts_download' scoreset.accession %}">
-								Download
-							</a>
-						</div>
-						{% endif %}
 					</div>
 
 					{% if not counts_variants %}
@@ -251,6 +243,13 @@
 							<p> No counts data available.</p>
 						{% endif %}
 					{% else %}
+						<div class="col-md-1">
+							<a class="download-btn btn btn-sm btn-outline-primary" 
+									href="{% url 'scoreset:counts_download' scoreset.accession %}">
+								Download
+							</a>
+						</div>
+						
 						<div id="counts-table-container" class="numeric-container container-fluid">
 							<table id="counts-table" class="styled-table table table-hover">
 								<thead>

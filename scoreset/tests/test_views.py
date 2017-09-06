@@ -2,6 +2,7 @@
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, HttpResponseForbidden
 from django.test import TestCase, TransactionTestCase, RequestFactory
+from django.test.client import Client
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
@@ -20,6 +21,8 @@ from scoreset.views import (
     ScoreSetDetailView, scoreset_create_view,
     download_scoreset_data, download_scoreset_metadata
 )
+
+from .utility import make_score_count_files
 
 
 class TestScoreSetSetDetailView(TestCase):
@@ -85,6 +88,8 @@ class TestCreateNewScoreSetView(TestCase):
         self.factory = RequestFactory()
         self.path = reverse_lazy("scoreset:scoreset_new")
         self.template = 'scoreset/new_scoreset.html'
+
+        score_file, count_file = make_score_count_files()
         self.post_data = {
             'scoreset-experiment': [''],
             'scoreset-replaces': [''],
@@ -92,8 +97,8 @@ class TestCreateNewScoreSetView(TestCase):
             'scoreset-abstract': [''],
             'scoreset-method_desc': [''],
             'scoreset-doi_id': [''],
-            'scoreset-scores_data': [''],
-            'scoreset-counts_data': [''],
+            'scoreset-scores_data': [score_file],
+            'scoreset-counts_data': [count_file],
             'scoreset-keywords': [''],
             'submit': ['submit']
         }
@@ -115,9 +120,7 @@ class TestCreateNewScoreSetView(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_experiment_options_are_restricted_to_admin_instances(self):
-        data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
-
         request = self.factory.get('/scoreset/new/')
         request.user = self.bob
         response = scoreset_create_view(request)
@@ -125,7 +128,6 @@ class TestCreateNewScoreSetView(TestCase):
         self.assertNotContains(response, self.exp_2.accession)
 
     def test_replaces_options_are_restricted_to_admin_instances(self):
-        data = self.post_data.copy()
         scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
         scs_2 = ScoreSet.objects.create(experiment=self.exp_1)
         assign_user_as_instance_admin(self.bob, scs_1)
@@ -143,48 +145,31 @@ class TestCreateNewScoreSetView(TestCase):
         assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
         data['scoreset-replaces'] = [scs_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
         data['scoreset-keywords'] = ['test']
 
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(self.path, data=data)
+
         created = ScoreSet.objects.all()[0]
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Keyword.objects.count(), 1)
         self.assertEqual(Variant.objects.count(), 1)
-        self.assertEqual(created.replaces, scs_1)
+        self.assertNotEqual(scs_1.replaced_by, None)
 
-        scs = ScoreSet.objects.all()[0]
+        scs = ScoreSet.objects.all()[1]
         self.assertEqual(scs.keywords.count(), 1)
         self.assertEqual(scs.variant_set.count(), 1)
 
     def test_correct_tamplate_when_logged_in(self):
-        self.client.login(
-            username=self.username,
-            password=self.password
-        )
+        self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.path)
         self.assertTemplateUsed(response, self.template)
 
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()
         data['scoreset-experiment'] = ['wrong_pk']
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
-        self.assertEqual(response.status_code, 200)
-
-        data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = [""]
-        data['scoreset-counts_data'] = [""]
-        assign_user_as_instance_admin(self.bob, self.exp_1)
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
         self.assertEqual(response.status_code, 200)
 
     def test_only_links_preexisting_keyword_and_doesnt_create(self):
@@ -192,15 +177,10 @@ class TestCreateNewScoreSetView(TestCase):
         Keyword.objects.create(text="test")
         assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
         data['scoreset-keywords'] = ['test']
-        request = self.factory.post(
-            path=self.path,
-            data=data
-        )
-        request.user = self.bob
-        response = scoreset_create_view(request)
+
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
         self.assertEqual(Keyword.objects.count(), 1)
         self.assertEqual(ScoreSet.objects.all()[0].keywords.count(), 1)
 
@@ -208,25 +188,19 @@ class TestCreateNewScoreSetView(TestCase):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
         data['scoreset-keywords'] = ['']
 
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
         self.assertEqual(Keyword.objects.count(), 0)
 
     def test_scoreset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
 
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
         scs = ScoreSet.objects.all()[0]
         self.assertTrue(user_is_admin_for_instance(self.bob, scs))
 
@@ -234,14 +208,12 @@ class TestCreateNewScoreSetView(TestCase):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
 
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
+        self.client.logout()
+
         scs = ScoreSet.objects.all()[0]
-
         scores_dataset_path = '{}/{}/{}/'.format(
             self.path, scs.accession, 'scores')
         response = self.client.get(scores_dataset_path)
@@ -256,15 +228,27 @@ class TestCreateNewScoreSetView(TestCase):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
         data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-scores_data'] = ["hgvs,score\nstring,0.1"]
-        data['scoreset-counts_data'] = ["hgvs,count\nstring,2"]
 
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.bob
-        response = scoreset_create_view(request)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
+        self.client.logout()
+
         scs = ScoreSet.objects.all()[0]
-
         scores_dataset_path = '{}/{}/{}/'.format(
             self.path, scs.accession, 'metadata')
         response = self.client.get(scores_dataset_path)
         self.assertEqual(response.status_code, 403)
+
+    def test_download_returns_empty_response_if_no_counts_dataset(self):
+        data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
+        data['scoreset-experiment'] = [self.exp_1.pk]
+
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
+
+        scs = ScoreSet.objects.all()[0]
+        counts_dataset_path = '{}/{}/{}/'.format(
+            self.path, scs.accession, 'counts')
+        response = self.client.get(counts_dataset_path)
+        self.assertNotContains(response, "hgvs")

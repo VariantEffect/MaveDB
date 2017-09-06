@@ -206,6 +206,13 @@ class TestScoreSet(TransactionTestCase):
         with self.assertRaises(ValueError):
             scs.validate_variant_data(var)
 
+    def test_has_counts_dataset_return_false_when_COUNTS_KEY_is_empty_list(self):
+        scs = ScoreSet.objects.create(
+            experiment=self.exp,
+            dataset_columns={SCORES_KEY: ['score'], COUNTS_KEY: []}
+        )
+        self.assertFalse(scs.has_counts_dataset())
+
 
 class TestVariant(TransactionTestCase):
     """

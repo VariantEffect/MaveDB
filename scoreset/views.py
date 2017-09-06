@@ -75,13 +75,14 @@ class ScoreSetDetailView(DetailView):
         return get_object_or_404(ScoreSet, accession=accession)
 
     def get_context_data(self, **kwargs):
-
-        print(self.request.GET)
-
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
         scores_variant_list = instance.variant_set.all().order_by("hgvs")
-        counts_variant_list = instance.variant_set.all().order_by("hgvs")
+
+        if instance.has_counts_dataset():
+            counts_variant_list = instance.variant_set.all().order_by("hgvs")
+        else:
+            counts_variant_list = instance.variant_set.none()
 
         try:
             counts_per_page = self.request.GET.get('counts-per-page', '')
@@ -183,6 +184,9 @@ def download_scoreset_data(request, accession, dataset_key):
         response.status_code = 403
         return response
 
+    if not scoreset.has_counts_dataset() and dataset_key == COUNTS_KEY:
+        return StreamingHttpResponse("", content_type='text')
+
     variants = scoreset.variant_set.all().order_by("accession")
     columns = scoreset.dataset_columns[dataset_key]
 
@@ -254,7 +258,9 @@ def scoreset_create_view(request):
 
     if request.method == "POST":
         scoreset_form = ScoreSetForm(
-            request.POST, prefix=SCORESET_FORM_PREFIX)
+            data=request.POST, files=request.FILES,
+            prefix=SCORESET_FORM_PREFIX
+        )
         scoreset_form.fields["experiment"].queryset = experiments
         context["scoreset_form"] = scoreset_form
 

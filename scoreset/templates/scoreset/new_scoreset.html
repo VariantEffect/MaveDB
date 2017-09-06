@@ -7,7 +7,7 @@
 	</div>
 
 	<div class="col-md-8 mx-3">
-		<form action="{% url 'scoreset:scoreset_new' %}" method="POST">
+		<form action="{% url 'scoreset:scoreset_new' %}" method="POST" enctype="multipart/form-data">
 			{% csrf_token %}
 			
 			{% if scoreset_form.non_field_errors %}
