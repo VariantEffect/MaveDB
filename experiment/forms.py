@@ -31,6 +31,10 @@ class ExperimentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ExperimentForm, self).__init__(*args, **kwargs)
+        if "experimentset" in self.fields:
+            self.fields["experimentset"].widget = forms.widgets.Select(
+                attrs={"style": 'width:20%;'}
+            )
         self.fields["target"].widget = forms.TextInput(
             attrs={
                 "class": "form-control",

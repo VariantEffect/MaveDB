@@ -254,7 +254,6 @@ def scoreset_create_view(request):
     pks = [i.pk for i in request.user.profile.administrator_scoresets()]
     scoresets = ScoreSet.objects.filter(pk__in=set(pks))
     scoreset_form.fields["replaces"].queryset = scoresets
-    context["scoreset_form"] = scoreset_form
 
     if request.method == "POST":
         scoreset_form = ScoreSetForm(
@@ -262,11 +261,10 @@ def scoreset_create_view(request):
             prefix=SCORESET_FORM_PREFIX
         )
         scoreset_form.fields["experiment"].queryset = experiments
-        context["scoreset_form"] = scoreset_form
-
         if scoreset_form.is_valid():
             scoreset = scoreset_form.save(commit=True)
         else:
+            context["scoreset_form"] = scoreset_form
             return render(
                 request,
                 "scoreset/new_scoreset.html",
@@ -288,6 +286,7 @@ def scoreset_create_view(request):
         return redirect("scoreset:scoreset_detail", accession=accession)
 
     else:
+        context["scoreset_form"] = scoreset_form
         return render(
             request,
             "scoreset/new_scoreset.html",

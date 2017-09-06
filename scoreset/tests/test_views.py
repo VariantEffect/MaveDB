@@ -150,15 +150,10 @@ class TestCreateNewScoreSetView(TestCase):
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(self.path, data=data)
 
-        created = ScoreSet.objects.all()[0]
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Keyword.objects.count(), 1)
         self.assertEqual(Variant.objects.count(), 1)
         self.assertNotEqual(scs_1.replaced_by, None)
-
-        scs = ScoreSet.objects.all()[1]
-        self.assertEqual(scs.keywords.count(), 1)
-        self.assertEqual(scs.variant_set.count(), 1)
 
     def test_correct_tamplate_when_logged_in(self):
         self.client.login(username=self.username, password=self.password)

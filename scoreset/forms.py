@@ -51,22 +51,12 @@ class ScoreSetForm(forms.ModelForm):
     scores_data = forms.FileField(
         required=True, label="Score data",
         validators=[valid_scoreset_score_data_input, csv_validator],
-        widget=forms.widgets.FileInput(
-            attrs={
-                "class": "form-control",
-                "accept": "csv"
-            }
-        )
+        widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
     counts_data = forms.FileField(
         required=False, label="Count data",
         validators=[valid_scoreset_count_data_input, csv_validator],
-        widget=forms.widgets.FileInput(
-            attrs={
-                "class": "form-control",
-                "accept": "csv"
-            }
-        )
+        widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
 
     def __init__(self, *args, **kwargs):
@@ -77,6 +67,13 @@ class ScoreSetForm(forms.ModelForm):
 
         if "replaces" in self.fields:
             self.fields["replaces"].required = False
+            self.fields["replaces"].widget = forms.widgets.Select(
+                attrs={"style": 'width:20%;'}
+            )
+        if "experiment" in self.fields:
+            self.fields["experiment"].widget = forms.widgets.Select(
+                attrs={"style": 'width:20%;'}
+            )
 
         self.fields["private"].widget = forms.CheckboxInput(
             attrs={
@@ -307,6 +304,8 @@ class ScoreSetForm(forms.ModelForm):
         return counts_file
 
     def clean(self):
+        if self.errors:
+            return super(ScoreSetForm, self).clean()
         cleaned_data = super(ScoreSetForm, self).clean()
         has_scores = cleaned_data.get("scores_data", None) is not None
         has_counts = cleaned_data.get("counts_data", None) is not None

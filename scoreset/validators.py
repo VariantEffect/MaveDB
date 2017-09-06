@@ -165,14 +165,14 @@ def valid_scoreset_json(json_object, has_counts_data=False):
             raise ValidationError("")
     except IndexError:
         raise ValidationError(
-            _("Value for key %(key)s must not be empty."),
+            _("No header could be found for '%(key)s' dataset."),
             params={"key": SCORES_KEY}
         )
     except ValidationError:
         type_ = type(json_object[SCORES_KEY][0]).__name__
         raise ValidationError(
-            _("%(data)s list values must be strings not %(type)s."),
-            params={"data": json_object[SCORES_KEY], "type": type_}
+            _("Header values must be strings not '%(type)s'."),
+            params={"type": type_}
         )
 
     try:
@@ -181,14 +181,14 @@ def valid_scoreset_json(json_object, has_counts_data=False):
     except IndexError:
         if has_counts_data:
             raise ValidationError(
-                _("Value for key %(key)s must not be empty."),
+                _("No header could be found for '%(key)s' dataset."),
                 params={"key": COUNTS_KEY}
             )
     except ValidationError:
         type_ = type(json_object[COUNTS_KEY][0]).__name__
         raise ValidationError(
-            _("%(data)s list values must be strings not %(type)s."),
-            params={"data": json_object[COUNTS_KEY], "type": type_}
+            _("Header values must be strings not '%(type)s'."),
+            params={"type": type_}
         )
 
 
