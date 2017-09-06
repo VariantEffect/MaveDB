@@ -57,12 +57,25 @@ function paginationSubmit(dataType, clickedLink) {
     var scoresSelect = $("#scores-per-page-select")[0];
     var countsSelect = $("#counts-per-page-select")[0];
 
-    var scoresPageNum = parseInt($(".scores-active")[0].innerHTML);
-    var countsPageNum = parseInt($(".counts-active")[0].innerHTML);
+    var scoresPageLink = $(".scores-active")[0];
+    var countsPageLink = $(".counts-active")[0];
+
+    var scoresPageNum;
+    var countsPageNum;
+    if (scoresPageLink !== undefined) {
+        scoresPageNum = parseInt(scoresPageLink.innerHTML);
+    }
+    if (countsPageLink !== undefined) {
+        countsPageNum = parseInt(countsPageLink.innerHTML);
+    }
 
     if (clickedLink !== undefined) {
-        var nextPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
-        var previousPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+        var nextPageNum;
+        var previousPageNum;
+        if (clickedLink.childNodes[1] !== undefined) {
+            nextPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+            previousPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+        }
 
         if (dataType === "scores") {
             scoresPageNum = parseInt(clickedLink.innerHTML);
@@ -84,20 +97,35 @@ function paginationSubmit(dataType, clickedLink) {
         }
     }
 
-    var scoresPerPage = parseInt(
-        scoresSelect.options[scoresSelect.selectedIndex].value
-    );
-    var countsPerPage = parseInt(
-        countsSelect.options[countsSelect.selectedIndex].value
-    );
+    var scoresPerPage;
+    var countsPerPage;
+    if (scoresSelect !== undefined) {
+        scoresPerPage = parseInt(
+            scoresSelect.options[scoresSelect.selectedIndex].value
+        );
+    }
+    if (countsSelect !== undefined) {
+        countsPerPage = parseInt(
+            countsSelect.options[countsSelect.selectedIndex].value
+        );
+    }
 
     var base = window.location.toString().split("#")[0].split("?")[0];
-    var a = "?scores-per-page=" + scoresPerPage;
-    var b = "&counts-per-page=" + countsPerPage;
-    var c = "&scores-page=" + scoresPageNum;
-    var d = "&counts-page=" + countsPageNum;
-    url = base + a + b + c + d + "#" + dataType;
+    var url = base;
 
+    if (scoresPerPage !== undefined) {
+        url += "?scores-per-page=" + scoresPerPage;
+    }
+    if (countsPerPage !== undefined) {
+        url += "&counts-per-page=" + countsPerPage;
+    }
+    if (scoresPageNum !== undefined) {
+        url += "&scores-page=" + scoresPageNum;
+    }
+    if (countsPageNum !== undefined) {
+        url += "&counts-page=" + countsPageNum;
+    }
+    url += "#" + dataType;
     window.location.assign(url);
     return false;
 }
