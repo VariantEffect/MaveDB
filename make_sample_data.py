@@ -19,10 +19,10 @@ for i in range(0, 1000):
     line = "{},{}\n".format(hgvs, count)
     count_lines.append(line)
 
-with open("scores.txt", 'wt') as fp:
+with open("scores.csv", 'wt') as fp:
     for line in score_lines:
         fp.writelines(line)
 
-with open("counts.txt", 'wt') as fp:
+with open("counts.csv", 'wt') as fp:
     for line in count_lines:
         fp.writelines(line)
