@@ -6,6 +6,23 @@ Module contains some helper/utility functions to parse search queries.
 import re
 
 
+def filter_empty(ls):
+    """
+    Filter a list only returning non-false values.
+
+    Parameters
+    ----------
+    ls: `list`
+        List to filter
+
+    Returns
+    -------
+    `list`
+        Filtered list
+    """
+    return [x for x in ls if x]
+
+
 def enclosed_by_quotes(s):
     """
     Checks if a string is enclosed by double or single quotes.
@@ -42,7 +59,7 @@ def parse_query(query, sep=','):
         A list of separate queries.
     """
     pattern = r"(['\"]([^'\"]*)['\"])".format(sep)
-    queries = [q.strip() for q in re.split(pattern, query) if q.strip()]
+    queries = [q.strip() for q in re.split(pattern, query)]
     parsed = []
     index = 0
     while index < len(queries):
@@ -51,7 +68,7 @@ def parse_query(query, sep=','):
             parsed.append(query[1:-1])
             index += 2
         else:
-            simple_queries = [q.strip() for q in query.split(sep) if q.strip()]
+            simple_queries = [q.strip() for q in query.split(sep)]
             parsed.extend(simple_queries)
             index += 1
-    return [q.strip() for q in parsed if q.strip()]
+    return [q.strip() for q in parsed]
