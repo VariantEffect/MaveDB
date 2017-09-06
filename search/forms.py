@@ -1,7 +1,7 @@
 
 import django.forms as forms
 
-from main.utils.query_parsing import parse_query
+from main.utils.query_parsing import parse_query, filter_empty
 from experiment.models import Experiment
 from scoreset.models import ScoreSet
 
@@ -51,32 +51,46 @@ class SearchForm(forms.Form):
     )
 
     def clean_accessions(self):
-        return parse_query(self.cleaned_data.get("accessions", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("accessions", ""))
+        )
 
     def clean_ext_accessions(self):
-        return parse_query(self.cleaned_data.get("ext_accessions", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("ext_accessions", ""))
+        )
 
     def clean_keywords(self):
-        return parse_query(self.cleaned_data.get("keywords", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("keywords", ""))
+        )
 
     def clean_targets(self):
-        return parse_query(self.cleaned_data.get("targets", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("targets", ""))
+        )
 
     def clean_target_organisms(self):
-        return parse_query(self.cleaned_data.get("target_organisms", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("target_organisms", ""))
+        )
 
     def clean_authors(self):
-        return parse_query(self.cleaned_data.get("authors", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("authors", ""))
+        )
 
     def clean_metadata(self):
-        return parse_query(self.cleaned_data.get("metadata", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("metadata", ""))
+        )
 
     def clean(self):
         cleaned_data = super(SearchForm, self).clean()
         if 'search_all' in self.data:
-            cleaned_data['search_all'] = parse_query(
+            cleaned_data['search_all'] = filter_empty(parse_query(
                 self.data.get("search_all")
-            )
+            ))
         return cleaned_data
 
     def search_by_keyword(self, model, keywords):
