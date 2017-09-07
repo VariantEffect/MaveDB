@@ -21,18 +21,13 @@ from main.models import (
     TargetOrganism, ReferenceMapping
 )
 
+from scoreset.views import scoreset_create_view
+
 from .models import Experiment, ExperimentSet
 from .forms import ExperimentForm
 
 
-KeywordFormSet = formset_factory(KeywordForm)
-ExternalAccessionFormSet = formset_factory(ExternalAccessionForm)
 ReferenceMappingFormSet = formset_factory(ReferenceMappingForm)
-
-
-EXPERIMENT_FORM_PREFIX = "experiment"
-KEYWORD_FORM_PREFIX = "keyword"
-EXTERNAL_ACCESSION_FORM_PREFIX = "external_accession"
 REFERENCE_MAPPING_FORM_PREFIX = "reference_mapping"
 
 
@@ -241,9 +236,11 @@ def experiment_create_view(request):
             experiment.experimentset.update_last_edit_info(user)
             experiment.experimentset.save()
 
-        accession = experiment.accession
-        return redirect("experiment:experiment_detail", accession=accession)
-
+        return scoreset_create_view(
+            request,
+            came_from_new_experiment=True,
+            e_accession=experiment.accession
+        )
     else:
         return render(
             request,

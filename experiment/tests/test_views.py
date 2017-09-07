@@ -199,7 +199,6 @@ class TestCreateNewExperimentView(TestCase):
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 302)
         self.assertEqual(Keyword.objects.count(), 1)
         self.assertEqual(ExternalAccession.objects.count(), 1)
         self.assertEqual(TargetOrganism.objects.count(), 1)
@@ -313,7 +312,6 @@ class TestCreateNewExperimentView(TestCase):
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 302)
         self.assertEqual(ReferenceMapping.objects.count(), 2)
 
     def test_blank_keywords_not_created(self):
@@ -380,7 +378,6 @@ class TestCreateNewExperimentView(TestCase):
         request.user = self.bob
         response = experiment_create_view(request)
         es = ExperimentSet.objects.all()[0]
-        self.assertTrue(response.status_code, 302)
         self.assertTrue(user_is_admin_for_instance(self.bob, es))
 
     def test_selected_experimentset_does_not_add_user_as_admin(self):
@@ -393,7 +390,6 @@ class TestCreateNewExperimentView(TestCase):
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
-        self.assertTrue(response.status_code, 302)
         self.assertFalse(user_is_admin_for_instance(self.bob, es))
 
     def test_can_create_new_keywords(self):

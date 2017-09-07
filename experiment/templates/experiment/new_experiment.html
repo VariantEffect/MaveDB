@@ -4,6 +4,12 @@
 <div class="row">
 	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
 		<h3>Create new experiment</h3>
+		<p class="mt-4">
+			Please fill out the form below. The fields 'Experiment Set', 'Target', 
+			'Target Organism' and 'Wild type sequence' will be frozen after submission. 
+			All other fields can be edited later.
+		</p>
+		<p>* indicates a required field</p>
 	</div>
 	
 	<!-- Composite form rendering -->
@@ -30,7 +36,23 @@
 					<div class="form-group">
 						<label for="{{ field.id_for_label }}">
 							{{ field.label }}{% if field.field.required %} * {% endif %}
+							{% if field.label == "Abstract" %}
+								<!-- Button trigger modal -->
+								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+												data-target="#abstract-markdown-modal" id="preview-abstract">
+								Preview
+								</button>
+							{% endif %}
+							
+							{% if field.label == "Method description" %}
+								<!-- Button trigger modal -->
+								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+												data-target="#method-markdown-modal" id="preview-method">
+								Preview
+								</button>
+							{% endif %}
 						</label>
+						
 						{% if field.errors %}
 							<div class="alert alert-danger alert-dismissible fade show" role="alert">
 								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
