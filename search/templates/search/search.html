@@ -2,8 +2,25 @@
 
 {% block body %}
 
-<div class="row">
-	<div class="container card">
+<div class="container-fluid mb-4" style="width:100%;">
+	<div class="container" style="float: none; margin: 0 auto;">
+		<form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
+			<input class="form-control mr-sm-1" type="text" aria-label="Search"
+							placeholder="Search..." name="search_all" style="width:80%;">
+			<button class="btn btn-outline-dark my-2 my-sm-0" type="submit">
+				Search
+			</button>
+			<button data-toggle="collapse" data-target="#search-options" 
+							class="btn btn-outline-primary ml-1">
+					Advanced
+			</button>
+		</form>
+	</div>
+</div>
+
+
+<div id="search-options" class="row collapse fade" aria-hidden="true">
+	<div class="container card" >
 		<div class="card-body">
 			<div class="card-header bg-white mb-2">
 				<h4> Advanced search </h4>
@@ -50,7 +67,7 @@
 </div> <!-- end row -->
 
 <div class="search-results table-container row mt-5">
-	<table id="search_table" class="styled-table table table-hover">
+	<table id="search-table" class="styled-table table table-hover paginated">
 		<thead>
 			<tr>
 				<th>Accesion</th>
@@ -104,5 +121,70 @@
 		</tbody>
 	</table>
 </div>
+
+<!-- Pagination -->
+{% if experiments.has_other_pages %}
+<div class="row">
+	<div class="col-md-2 mt-2">
+		<form action="?per-page=" method="GET">
+			<div class="form-inline">
+				<label class="mr-2" for="per-page-select"> Entries per page </label>
+				<select name="per-page" id="per-page-select" onchange="paginationSubmit('search')">
+					{% for i in per_page_selections %}
+						{% if i == per_page %}
+							<option value={{i}} selected="">{{i}}</option>
+						{% else %}
+							<option value={{i}}>{{i}}</option>
+						{% endif %}
+					{% endfor %}
+				</select>
+			</div>
+		</form>
+	</div>
+
+	<div class="col-md-10">
+		<ul class="pagination justify-content-end">
+			{% if experiments.has_previous %}
+				<li class="page-item">
+					<a class="page-link previous" href=""
+						 onclick="return paginationSubmit('search', this);">
+						&laquo;
+						<div id="search-previous" hidden>{{ experiments.previous_page_number }}</div>
+					</a>
+				</li>
+			{% else %}
+				<li class="page-item disabled">
+					<a class="page-link" href="">
+						<span aria-hidden="true">&laquo;</span>
+					</a>
+				</li>
+			{% endif %}
+			
+			{% for i in experiments.paginator.page_range %}
+				<li class="page-item">
+					<a class="page-link {% if experiments.number == i %}search-active{% endif %}" href="" 
+						 onclick="return paginationSubmit('search', this);">{{ i }}</a>
+				</li>
+			{% endfor %}
+			
+			{% if experiments.has_next %}
+				<li class="page-item">
+					<a class="page-link previous" href=""
+						 onclick="return paginationSubmit('search', this);">
+						&raquo;
+						<div id="search-next" hidden>{{ experiments.next_page_number }}</div>
+					</a>
+				</li>
+			{% else %}
+				<li class="page-item disabled">
+					<a class="page-link" href="">
+						<span aria-hidden="true">&raquo;</span>
+					</a>
+				</li>
+			{% endif %}
+		</ul>
+	</div>
+</div>
+{% endif %} <!-- End pagination -->
 
 {% endblock %}

@@ -10,43 +10,43 @@ class SearchForm(forms.Form):
     accessions = forms.CharField(
         max_length=None, label="Accessions", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     ext_accessions = forms.CharField(
         max_length=None, label="External Accessions", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     keywords = forms.CharField(
         max_length=None, label="Keywords", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     targets = forms.CharField(
         max_length=None, label="Target", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     target_organisms = forms.CharField(
         max_length=None, label="Target Organism", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     authors = forms.CharField(
         max_length=None, label="Authors", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     metadata = forms.CharField(
         max_length=None, label="Metadata", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
 
