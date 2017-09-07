@@ -1,4 +1,4 @@
-
+import reversion
 import datetime
 
 from django.db import models
@@ -9,6 +9,7 @@ from django.core.validators import MinValueValidator
 from .utils.pandoc import convert_md_to_html
 
 
+@reversion.register()
 class News(models.Model):
     """
     The news model represents an singular piece of news presented in a
@@ -62,6 +63,7 @@ class News(models.Model):
             super().save(*args, **kwargs)
 
 
+@reversion.register()
 class SiteInformation(models.Model):
     """
     SiteInformation contains all static content of the webapp such as the
@@ -165,6 +167,7 @@ class SiteInformation(models.Model):
             super().save(*args, **kwargs)
 
 
+@reversion.register()
 class Keyword(models.Model):
     """
     This class represents a keyword that can be associated with an
@@ -193,6 +196,7 @@ class Keyword(models.Model):
         return self.text
 
 
+@reversion.register()
 class ExternalAccession(models.Model):
     """
     This class represents a textual representation of an accession from an
@@ -221,6 +225,7 @@ class ExternalAccession(models.Model):
         return self.text
 
 
+@reversion.register()
 class TargetOrganism(models.Model):
     """
     This class represents a textual representation of a target organism
@@ -248,6 +253,7 @@ class TargetOrganism(models.Model):
         return self.text
 
 
+@reversion.register()
 class ReferenceMapping(models.Model):
     """
     This class models represents a mapping from local genomic ranges

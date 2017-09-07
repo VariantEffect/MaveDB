@@ -1,5 +1,6 @@
 import logging
 import datetime
+import reversion
 from string import ascii_uppercase
 
 from django.contrib.auth import get_user_model
@@ -32,6 +33,7 @@ logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
 
+@reversion.register()
 class ExperimentSet(models.Model, GroupPermissionMixin):
     """
     This is the class representing a set of related Experiments. Related
@@ -183,6 +185,7 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
         return suffix
 
 
+@reversion.register()
 class Experiment(models.Model, GroupPermissionMixin):
     """
     This is the class representing an Experiment. The experiment object

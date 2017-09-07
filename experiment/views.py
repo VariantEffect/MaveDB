@@ -1,3 +1,4 @@
+import reversion
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseForbidden, Http404
@@ -219,12 +220,10 @@ def experiment_create_view(request):
         for ref_map in maps:
             ref_map.experiment = experiment
             ref_map.save()
-        experiment.save()
 
-        # Save and update permissions. If no experimentset was selected, by
-        # default a new experimentset is created with the current user as
-        # its administrator.
-        experiment.save()
+        # Save and update permissions. If no experimentset was selected,
+        # by default a new experimentset is created with the current user
+        # as it's administrator.
         user = request.user
         assign_user_as_instance_admin(user, experiment)
         experiment.created_by = user

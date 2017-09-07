@@ -10,6 +10,7 @@ from .models import Keyword, ExternalAccession, TargetOrganism
 from .models import ReferenceMapping
 
 
+# Register with admin
 @admin.register(News)
 class YourModelAdmin(VersionAdmin):
     pass
@@ -31,11 +32,6 @@ class YourModelAdmin(VersionAdmin):
 
 
 @admin.register(ScoreSet)
-class YourModelAdmin(VersionAdmin):
-    pass
-
-
-@admin.register(Variant)
 class YourModelAdmin(VersionAdmin):
     pass
 

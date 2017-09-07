@@ -1,7 +1,6 @@
-
-import numpy as np
 import logging
 import datetime
+import reversion
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -36,6 +35,7 @@ logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
 
+@reversion.register()
 class ScoreSet(models.Model, GroupPermissionMixin):
     """
     This is the class representing a set of scores for an experiment.
