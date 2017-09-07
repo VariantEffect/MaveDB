@@ -281,21 +281,12 @@ def handle_experiment_edit_form(request, instance):
     if request.method == "POST":
         form = ExperimentEditForm(request.POST, instance=instance)
         if form.is_valid():
-            if "preview" in request.POST:
-                updated_instance = form.save(commit=False)
-                context = {"experiment": updated_instance, "preview": True}
-                return render(
-                    request,
-                    "experiment/experiment.html",
-                    context
-                )
-            else:
-                updated_instance = form.save(commit=True)
-                updated_instance.last_edit_by = request.user
-                updated_instance.save()
-                return redirect(
-                    "accounts:edit_instance", updated_instance.accession
-                )
+            updated_instance = form.save(commit=True)
+            updated_instance.last_edit_by = request.user
+            updated_instance.save()
+            return redirect(
+                "accounts:edit_instance", updated_instance.accession
+            )
 
     return render(request, 'accounts/profile_edit.html', context)
 
