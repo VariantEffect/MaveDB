@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'scoreset',
     'search',
     'guardian',
+    'reversion',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
