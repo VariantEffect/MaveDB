@@ -19,6 +19,10 @@
 				<p>{{ experiment_form.non_field_errors }}</p>
 			</div>
 			{% endif %}
+
+			<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
+			<div id="accession-to-add" hidden>{{ repop_external_accessions }}</div>
+			<div id="organisms-to-add" hidden>{{ repop_target_organism }}</div>
 			
 			<!-- Model form rendering -->
 			<div class="model-form">

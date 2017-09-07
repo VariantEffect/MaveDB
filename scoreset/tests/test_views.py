@@ -91,15 +91,15 @@ class TestCreateNewScoreSetView(TestCase):
 
         score_file, count_file = make_score_count_files()
         self.post_data = {
-            'scoreset-experiment': [''],
-            'scoreset-replaces': [''],
-            'scoreset-private': ['on'],
-            'scoreset-abstract': [''],
-            'scoreset-method_desc': [''],
-            'scoreset-doi_id': [''],
-            'scoreset-scores_data': [score_file],
-            'scoreset-counts_data': [count_file],
-            'scoreset-keywords': [''],
+            'experiment': [''],
+            'replaces': [''],
+            'private': ['on'],
+            'abstract': [''],
+            'method_desc': [''],
+            'doi_id': [''],
+            'scores_data': [score_file],
+            'counts_data': [count_file],
+            'keywords': [''],
             'submit': ['submit']
         }
 
@@ -143,9 +143,9 @@ class TestCreateNewScoreSetView(TestCase):
         scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
         assign_user_as_instance_admin(self.bob, scs_1)
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-replaces'] = [scs_1.pk]
-        data['scoreset-keywords'] = ['test']
+        data['experiment'] = [self.exp_1.pk]
+        data['replaces'] = [scs_1.pk]
+        data['keywords'] = ['test']
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(self.path, data=data)
@@ -162,7 +162,7 @@ class TestCreateNewScoreSetView(TestCase):
 
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()
-        data['scoreset-experiment'] = ['wrong_pk']
+        data['experiment'] = ['wrong_pk']
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)
         self.assertEqual(response.status_code, 200)
@@ -171,8 +171,8 @@ class TestCreateNewScoreSetView(TestCase):
         data = self.post_data.copy()
         Keyword.objects.create(text="test")
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-keywords'] = ['test']
+        data['experiment'] = [self.exp_1.pk]
+        data['keywords'] = ['test']
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)
@@ -182,8 +182,8 @@ class TestCreateNewScoreSetView(TestCase):
     def test_blank_keywords_not_created(self):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
-        data['scoreset-keywords'] = ['']
+        data['experiment'] = [self.exp_1.pk]
+        data['keywords'] = ['']
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)
@@ -192,7 +192,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_scoreset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
+        data['experiment'] = [self.exp_1.pk]
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)
@@ -202,7 +202,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_private_dataset_request_returns_403(self):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
+        data['experiment'] = [self.exp_1.pk]
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)
@@ -222,7 +222,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_private_metadata_request_returns_403(self):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
+        data['experiment'] = [self.exp_1.pk]
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)
@@ -237,7 +237,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_download_returns_empty_response_if_no_counts_dataset(self):
         data = self.post_data.copy()
         assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['scoreset-experiment'] = [self.exp_1.pk]
+        data['experiment'] = [self.exp_1.pk]
 
         self.client.login(username=self.username, password=self.password)
         response = self.client.post(path=self.path, data=data)

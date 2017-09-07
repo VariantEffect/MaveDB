@@ -17,6 +17,7 @@ from accounts.permissions import (
 
 from experiment.models import Experiment
 
+from main.fields import ModelSelectMultipleField as msmf
 from main.models import (
     Keyword, ExternalAccession,
     TargetOrganism, ReferenceMapping
@@ -244,7 +245,8 @@ def scoreset_create_view(request):
     expect everything to break horribly.
     """
     context = {}
-    scoreset_form = ScoreSetForm(prefix=SCORESET_FORM_PREFIX)
+    scoreset_form = ScoreSetForm()
+
     pks = [i.pk for i in request.user.profile.administrator_experiments()]
     experiments = Experiment.objects.filter(
         pk__in=set(pks)
@@ -252,21 +254,24 @@ def scoreset_create_view(request):
     scoreset_form.fields["experiment"].queryset = experiments
 
     pks = [i.pk for i in request.user.profile.administrator_scoresets()]
-    scoresets = ScoreSet.objects.filter(pk__in=set(pks))
+    scoresets = ScoreSet.objects.filter(pk__in=set(pks)).order_by("accession")
     scoreset_form.fields["replaces"].queryset = scoresets
 
     if request.method == "POST":
-        scoreset_form = ScoreSetForm(
-            data=request.POST, files=request.FILES,
-            prefix=SCORESET_FORM_PREFIX
-        )
+        # Get the new keywords so that we can return them for
+        # list repopulation if the form has errors.
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+
+        scoreset_form = ScoreSetForm(data=request.POST, files=request.FILES)
         scoreset_form.fields["experiment"].queryset = experiments
         scoreset_form.fields["replaces"].queryset = scoresets
+        context["repop_keywords"] = ','.join(keywords)
+        context["scoreset_form"] = scoreset_form
 
         if scoreset_form.is_valid():
             scoreset = scoreset_form.save(commit=True)
         else:
-            context["scoreset_form"] = scoreset_form
             return render(
                 request,
                 "scoreset/new_scoreset.html",

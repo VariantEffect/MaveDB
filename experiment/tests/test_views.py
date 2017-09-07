@@ -137,15 +137,15 @@ class TestCreateNewExperimentView(TestCase):
         self.path = reverse_lazy("experiment:experiment_new")
         self.template = 'experiment/new_experiment.html'
         self.post_data = {
-            'experiment-experimentset': [''],
-            'experiment-private': ['on'],
-            'experiment-target': [''],
-            'experiment-target_organism': [''],
-            'experiment-wt_sequence': [''],
-            'experiment-abstract': [''],
-            'experiment-method_desc': [''],
-            'experiment-sra_id': [''],
-            'experiment-doi_id': [''],
+            'experimentset': [''],
+            'private': ['on'],
+            'target': [''],
+            'target_organism': [''],
+            'wt_sequence': [''],
+            'abstract': [''],
+            'method_desc': [''],
+            'sra_id': [''],
+            'doi_id': [''],
             'reference_mapping-TOTAL_FORMS': ['0'],
             'reference_mapping-INITIAL_FORMS': ['0'],
             'reference_mapping-MIN_NUM_FORMS': ['0'],
@@ -183,11 +183,11 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_can_submit_and_create_experiment_when_forms_are_valid(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-target_organism'] = ["Homo sapiens"]
-        data['experiment-keywords'] = ['test']
-        data['experiment-external_accessions'] = ['test']
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['target_organism'] = ["Homo sapiens"]
+        data['keywords'] = ['test']
+        data['external_accessions'] = ['test']
         data['reference_mapping-TOTAL_FORMS'] = ['1']
         data['reference_mapping-0-reference'] = ['reference']
         data['reference_mapping-0-is_alternate'] = ['off']
@@ -221,8 +221,8 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = ""  # required field missing
+        data['target'] = "brca1"
+        data['wt_sequence'] = ""  # required field missing
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
@@ -230,7 +230,7 @@ class TestCreateNewExperimentView(TestCase):
 
         data['reference_mapping-TOTAL_FORMS'] = ['1']
         data['reference_mapping-0-reference'] = ['reference']
-        data['experiment-wt_sequence'] = "atcg"
+        data['wt_sequence'] = "atcg"
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
@@ -239,9 +239,9 @@ class TestCreateNewExperimentView(TestCase):
     def test_only_links_preexisting_keyword_and_doesnt_create(self):
         data = self.post_data.copy()
         Keyword.objects.create(text='test1')
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-keywords'] = ['test1']
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['keywords'] = ['test1']
         request = self.factory.post(
             path=self.path,
             data=data
@@ -254,17 +254,17 @@ class TestCreateNewExperimentView(TestCase):
     def test_only_links_preexisting_target_organism_and_doesnt_create(self):
         data = self.post_data.copy()
         TargetOrganism.objects.create(text='Homo sapiens')
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
 
         # Create first experiment
-        data['experiment-target_organism'] = "Homo sapiens"
+        data['target_organism'] = "Homo sapiens"
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
 
         # Create second experiment with same target organism
-        data['experiment-target_organism'] = "Homo sapiens"
+        data['target_organism'] = "Homo sapiens"
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
@@ -278,9 +278,9 @@ class TestCreateNewExperimentView(TestCase):
     def test_only_links_preexisting_accession_and_doesnt_create(self):
         data = self.post_data.copy()
         ExternalAccession.objects.create(text='test1')
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-external_accessions'] = ["test1"]
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['external_accessions'] = ["test1"]
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -292,8 +292,8 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_multiple_ref_maps_will_be_created(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
 
         data['reference_mapping-TOTAL_FORMS'] = ['2']
         data['reference_mapping-0-reference'] = ['reference']
@@ -318,9 +318,9 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_blank_keywords_not_created(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-keywords'] = ['']
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['keywords'] = ['']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -329,9 +329,9 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_blank_target_organism_not_created(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-target_organism'] = ""
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['target_organism'] = ""
+        data['wt_sequence'] = "atcg"
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -340,9 +340,9 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_blank_external_accessions_not_created(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-external_accessions'] = ['']
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['external_accessions'] = ['']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -351,8 +351,8 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_blank_ref_map_not_created(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
         data['reference_mapping-TOTAL_FORMS'] = ['1']
 
         request = self.factory.post(path=self.path, data=data)
@@ -362,8 +362,8 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_experiment_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -373,8 +373,8 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_experimentset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -386,9 +386,9 @@ class TestCreateNewExperimentView(TestCase):
     def test_selected_experimentset_does_not_add_user_as_admin(self):
         data = self.post_data.copy()
         es = ExperimentSet.objects.create()
-        data['experiment-experimentset'] = es.pk
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
+        data['experimentset'] = es.pk
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -398,9 +398,9 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_can_create_new_keywords(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-keywords'] = ['test']
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['keywords'] = ['test']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -409,9 +409,9 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_can_create_new_ext_accessions(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-wt_sequence'] = "atcg"
-        data['experiment-external_accessions'] = ['test']
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+        data['external_accessions'] = ['test']
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
@@ -420,9 +420,9 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_can_create_new_target_orgs(self):
         data = self.post_data.copy()
-        data['experiment-target'] = "brca1"
-        data['experiment-target_organism'] = ['test']
-        data['experiment-wt_sequence'] = "atcg"
+        data['target'] = "brca1"
+        data['target_organism'] = ['test']
+        data['wt_sequence'] = "atcg"
 
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob

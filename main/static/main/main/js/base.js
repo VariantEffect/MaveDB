@@ -48,7 +48,33 @@ $('document').ready(function() {
     if (currentUrl.endsWith("#scores")) {
         $("#scores-tab").click();
     }
+
+    // Re-add any external_accession, keywords or target organism
+    // back to failed form submission
+    repopulateSelect("#id_keywords", "#keywords-to-add");
+    repopulateSelect("#id_external_accessions", "#accession-to-add");
+    repopulateSelect("#id_target_organism", "#organisms-to-add");
 });
+
+
+// Re-add any external_accession, keywords or target organism
+// back to failed form submission
+function repopulateSelect(selectId, listId) {
+    ls = $(listId).text();
+    if (ls !== undefined) {
+        ls = ls.trim().split(',');
+        $.each(ls, function (index, value) {
+            if (value !== "") {
+                $(selectId).append($('<option/>', {
+                    value: value,
+                    text: value,
+                    selected: true
+                }));
+            }
+        });
+    }
+}
+
 
 // Pagination submission
 // dataType: 'scores' or 'counts'

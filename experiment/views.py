@@ -7,15 +7,15 @@ from django.forms import formset_factory
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 
-from main.forms import (
-    KeywordForm, ExternalAccessionForm,
-    ReferenceMappingForm, TargetOrganismForm
-)
-
 from accounts.permissions import (
     assign_user_as_instance_admin, PermissionTypes
 )
 
+from main.fields import ModelSelectMultipleField as msmf
+from main.forms import (
+    KeywordForm, ExternalAccessionForm,
+    ReferenceMappingForm, TargetOrganismForm
+)
 from main.models import (
     Keyword, ExternalAccession,
     TargetOrganism, ReferenceMapping
@@ -178,7 +178,7 @@ def experiment_create_view(request):
         pk__in=set(pks)
     ).order_by("accession")
 
-    experiment_form = ExperimentForm(prefix=EXPERIMENT_FORM_PREFIX)
+    experiment_form = ExperimentForm()
     experiment_form.fields["experimentset"].queryset = experimentsets
     ref_mapping_formset = ReferenceMappingFormSet(
         prefix=REFERENCE_MAPPING_FORM_PREFIX
@@ -190,15 +190,26 @@ def experiment_create_view(request):
     # in the corresponding template element id fields as well. If you don't,
     # expect everything to break horribly. You've been warned.
     if request.method == "POST":
-        experiment_form = ExperimentForm(
-            request.POST, prefix=EXPERIMENT_FORM_PREFIX
-        )
+
+        # Get the new keywords/accession/target org so that we can return
+        # them for list repopulation if the form has errors.
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        e_accessions = request.POST.getlist("external_accessions")
+        e_accessions = [ea for ea in e_accessions if msmf.is_word(ea)]
+        target_organism = request.POST.getlist("target_organism")
+        target_organism = [to for to in target_organism if msmf.is_word(to)]
+
+        experiment_form = ExperimentForm(request.POST)
         experiment_form.fields["experimentset"].queryset = experimentsets
         ref_mapping_formset = ReferenceMappingFormSet(
             request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX
         )
         context["experiment_form"] = experiment_form
         context["reference_mapping_formset"] = ref_mapping_formset
+        context["repop_keywords"] = ','.join(keywords)
+        context["repop_external_accessions"] = ','.join(e_accessions)
+        context["repop_target_organism"] = ','.join(target_organism)
 
         maps = parse_mapping_formset(ref_mapping_formset)
         if not all([m is not None for m in maps]) or \
@@ -225,7 +236,7 @@ def experiment_create_view(request):
         experiment.update_last_edit_info(user)
         experiment.save()
 
-        if not request.POST['{}-experimentset'.format(EXPERIMENT_FORM_PREFIX)]:
+        if not request.POST['experimentset']:
             assign_user_as_instance_admin(user, experiment.experimentset)
             experiment.experimentset.update_last_edit_info(user)
             experiment.experimentset.save()
