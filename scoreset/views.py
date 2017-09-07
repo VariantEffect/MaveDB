@@ -17,6 +17,7 @@ from accounts.permissions import (
 
 from experiment.models import Experiment
 
+from main.utils.pandoc import convert_md_to_html
 from main.fields import ModelSelectMultipleField as msmf
 from main.models import (
     Keyword, ExternalAccession,
@@ -235,7 +236,7 @@ def download_scoreset_metadata(request, accession):
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def scoreset_create_view(request):
+def scoreset_create_view(request, came_from_new_experiment=False, e_accession=None):
     """
     A view to create a new scoreset. Upon successs, this view will redirect
     to the newly created scoreset object.
@@ -256,6 +257,30 @@ def scoreset_create_view(request):
     pks = [i.pk for i in request.user.profile.administrator_scoresets()]
     scoresets = ScoreSet.objects.filter(pk__in=set(pks)).order_by("accession")
     scoreset_form.fields["replaces"].queryset = scoresets
+
+    if came_from_new_experiment:
+        experiments = Experiment.objects.filter(accession=e_accession)
+        scoreset_form.fields["experiment"].queryset = experiments
+        context["scoreset_form"] = scoreset_form
+        context["came_from_new_experiment"] = came_from_new_experiment
+        context["e_accession"] = e_accession
+        return render(
+            request,
+            "scoreset/new_scoreset.html",
+            context=context
+        )
+
+    # If the request is ajax, then it's for previewing the abstract
+    # or method description
+    if request.is_ajax():
+        data = {}
+        data['abstract'] = convert_md_to_html(
+            request.GET.get("abstract", "")
+        )
+        data['method_desc'] = convert_md_to_html(
+            request.GET.get("method_desc", "")
+        )
+        return HttpResponse(json.dumps(data), content_type="application/json")
 
     if request.method == "POST":
         # Get the new keywords so that we can return them for

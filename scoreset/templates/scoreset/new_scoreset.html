@@ -1,9 +1,21 @@
 {% extends "main/base.html" %}
 
 {% block body %}
+
 <div class="row">
 	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
-		<h3>Create new scoreset</h3>
+		<h3>
+			Create new scoreset
+		</h3>
+		{% if came_from_new_experiment %}
+			<a href="{% url 'experiment:experiment_detail' e_accession %}"><h4 class="mt-4">Skip for now</h4></a>
+		{% endif %}
+		<p class="mt-4">
+			Please fill out the form below. The fields 'Score data', 'Count data', 
+			'Experiment' and 'Replaces' will be frozen after submission. All other fields
+			can be edited later.
+		</p>
+		<p>* indicates a required field</p>
 	</div>
 
 	<div class="col-md-8 mx-3">
@@ -29,7 +41,23 @@
 					<div class="form-group">
 						<label for="{{ field.id_for_label }}">
 							{{ field.label }}{% if field.field.required %}*{% endif %}
+							{% if field.label == "Abstract" %}
+								<!-- Button trigger modal -->
+								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+												data-target="#abstract-markdown-modal" id="preview-abstract">
+								Preview
+								</button>
+							{% endif %}
+							
+							{% if field.label == "Method description" %}
+								<!-- Button trigger modal -->
+								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+												data-target="#method-markdown-modal" id="preview-method">
+								Preview
+								</button>
+							{% endif %}
 						</label>
+						
 						{% if field.errors %}
 							<div class="alert alert-danger alert-dismissible fade show" role="alert">
 								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
