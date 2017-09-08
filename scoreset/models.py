@@ -12,6 +12,7 @@ from django.db import IntegrityError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
 from main.utils.pandoc import convert_md_to_html
 from main.models import Keyword
 from experiment.models import Experiment
@@ -112,6 +113,9 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "SCS"
+    TRACKED_FIELDS = (
+        "private", "abstract", "method_desc", "doi_id", "keywords"
+    )
 
     class Meta:
         ordering = ['-creation_date']

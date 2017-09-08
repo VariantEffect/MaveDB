@@ -18,6 +18,7 @@ from accounts.permissions import (
 from experiment.models import Experiment
 
 from main.utils.pandoc import convert_md_to_html
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
 from main.fields import ModelSelectMultipleField as msmf
 from main.models import (
     Keyword, ExternalAccession,
@@ -306,12 +307,11 @@ def scoreset_create_view(request, came_from_new_experiment=False, e_accession=No
         # Save and update permissions. A user will not be added as an
         # admin to the parent experiment. This must be done by the admin
         # of said experiment.
-        scoreset.save()
         user = request.user
         scoreset.created_by = user
         scoreset.last_edit_by = user
         scoreset.update_last_edit_info(user)
-        scoreset.save()
+        save_and_create_revision_if_tracked_changed(user, scoreset)
 
         assign_user_as_instance_admin(user, scoreset)
         accession = scoreset.accession

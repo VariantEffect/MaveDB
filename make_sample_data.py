@@ -2,7 +2,7 @@ import random as rand
 score_lines = ["hgvs,score,epsilon,se\n"]
 count_lines = ["hgvs,count\n"]
 
-for i in range(0, 1000):
+for i in range(0, 250):
     if i == 0:
         hgvs = "_wt"
     else:

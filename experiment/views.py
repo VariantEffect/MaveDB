@@ -1,5 +1,3 @@
-import reversion
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseForbidden, Http404
 from django.core.urlresolvers import reverse_lazy
@@ -12,6 +10,7 @@ from accounts.permissions import (
     assign_user_as_instance_admin, PermissionTypes
 )
 
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
 from main.fields import ModelSelectMultipleField as msmf
 from main.forms import (
     KeywordForm, ExternalAccessionForm,
@@ -228,12 +227,14 @@ def experiment_create_view(request):
         assign_user_as_instance_admin(user, experiment)
         experiment.created_by = user
         experiment.update_last_edit_info(user)
-        experiment.save()
+        save_and_create_revision_if_tracked_changed(user, experiment)
 
         if not request.POST['experimentset']:
             assign_user_as_instance_admin(user, experiment.experimentset)
             experiment.experimentset.update_last_edit_info(user)
-            experiment.experimentset.save()
+            save_and_create_revision_if_tracked_changed(
+                user, experiment.experimentset
+            )
 
         return scoreset_create_view(
             request,

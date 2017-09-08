@@ -11,14 +11,16 @@ from .models import ReferenceMapping
 
 
 # Register with admin
-@admin.register(News)
-class YourModelAdmin(VersionAdmin):
-    pass
+admin.site.register(News)
+admin.site.register(SiteInformation)
+
+admin.site.register(TargetOrganism)
+admin.site.register(Keyword)
+admin.site.register(ExternalAccession)
+admin.site.register(ReferenceMapping)
 
 
-@admin.register(SiteInformation)
-class YourModelAdmin(VersionAdmin):
-    pass
+admin.site.register(Variant)
 
 
 @admin.register(ExperimentSet)
@@ -32,25 +34,5 @@ class YourModelAdmin(VersionAdmin):
 
 
 @admin.register(ScoreSet)
-class YourModelAdmin(VersionAdmin):
-    pass
-
-
-@admin.register(Keyword)
-class YourModelAdmin(VersionAdmin):
-    pass
-
-
-@admin.register(ExternalAccession)
-class YourModelAdmin(VersionAdmin):
-    pass
-
-
-@admin.register(TargetOrganism)
-class YourModelAdmin(VersionAdmin):
-    pass
-
-
-@admin.register(ReferenceMapping)
 class YourModelAdmin(VersionAdmin):
     pass
