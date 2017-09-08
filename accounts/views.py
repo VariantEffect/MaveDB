@@ -5,6 +5,7 @@ Views for accounts app.
 import re
 import json
 import logging
+import reversion
 
 from django.apps import apps
 from django.http import HttpResponse, JsonResponse
@@ -25,6 +26,8 @@ from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
 from experiment.forms import ExperimentEditForm
 from scoreset.validators import SCS_ACCESSION_RE
 from scoreset.forms import ScoreSetEditForm
+
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .permissions import (
     GroupTypes,
@@ -82,6 +85,20 @@ def get_class_for_accession(accession):
 
 # Profile views
 # ------------------------------------------------------------------------- #
+def login_with_remember_me(request):
+    import django.contrib.auth.views as auth_views
+    response = auth_views.LoginView.as_view()(request)
+    if request.POST.get('remember', None):
+        print("Setting session to expire at 1209600.")
+        request.session.set_expiry(1209600)  # 2 weeks
+    else:
+        print("Setting session to expire at close.")
+        request.session.set_expiry(0)
+
+    print(request.session.get_expire_at_browser_close())
+    return response
+
+
 @login_required(login_url=reverse_lazy("accounts:login"))
 def profile_view(request):
     """
@@ -185,6 +202,7 @@ def manage_instance(request, accession):
             post_form.process_user_list()
             instance.last_edit_by = request.user
             instance.save()
+
             return redirect("accounts:manage_instance", instance.accession)
 
     # Replace the form that has changed. If it reaches this point,
@@ -255,21 +273,15 @@ def handle_scoreset_edit_form(request, instance):
     if request.method == "POST":
         form = ScoreSetEditForm(request.POST, instance=instance)
         if form.is_valid():
-            if "preview" in request.POST:
-                updated_instance = form.save(commit=False)
-                context = {"scoreset": updated_instance, "preview": True}
-                return render(
-                    request,
-                    "scoreset/scoreset.html",
-                    context
-                )
-            else:
-                updated_instance = form.save(commit=True)
-                updated_instance.last_edit_by = request.user
-                updated_instance.save()
-                return redirect(
-                    "accounts:edit_instance", updated_instance.accession
-                )
+            updated_instance = form.save(commit=True)
+            updated_instance.last_edit_by = request.user
+            save_and_create_revision_if_tracked_changed(
+                request.user, updated_instance
+            )
+
+            return redirect(
+                "accounts:edit_instance", updated_instance.accession
+            )
 
     return render(request, 'accounts/profile_edit.html', context)
 
@@ -283,7 +295,10 @@ def handle_experiment_edit_form(request, instance):
         if form.is_valid():
             updated_instance = form.save(commit=True)
             updated_instance.last_edit_by = request.user
-            updated_instance.save()
+            save_and_create_revision_if_tracked_changed(
+                request.user, updated_instance
+            )
+
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
             )

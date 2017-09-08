@@ -25,6 +25,7 @@ import django.contrib.auth.views as auth_views
 from .views import registration_view, profile_view
 from .views import activate_account_view, send_activation_email_view
 from .views import manage_instance, edit_instance, view_instance
+from .views import login_with_remember_me
 
 
 urlpatterns = [
@@ -38,7 +39,7 @@ urlpatterns = [
     # ------ Login and Logout
     url(
         r'login/$',
-        auth_views.LoginView.as_view(),
+        login_with_remember_me,
         name='login'),
     url(
         r'logout/$',
