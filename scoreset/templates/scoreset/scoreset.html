@@ -111,12 +111,12 @@
 			<div class="tab-pane fade" id="scores" role="tabpanel" aria-labelledby="scores-tab">
 				<div class="container-fluid mt-4">
 
-					<div class="row mb-4 mt-4">						
-						<div class="col-md-3">
+					<div class="row mt-1 mb-3">						
+						<div class="cold-sm-6 col-md-6">
 							<h3 style="margin: 0;">Scores dataset</h3>
 						</div>
 						{% if not preview %}
-						<div class="col-md-1">
+						<div class="col-sm-1 col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
 								 href="{% url 'scoreset:scores_download' scoreset.accession %}">
 								Download
@@ -160,7 +160,7 @@
 						<!-- Pagination -->
 						{% if scores_variants.has_other_pages %}
 							<div class="row">
-								<div class="col-md-2 mt-2">
+								<div class="col-sm-4 col-md-4 mt-2">
 									<form action="?scores-per-page=#scores" method="GET">
 										<div class="form-inline">
 											<label for="scores-per-page-select"> Variants per page </label>
@@ -177,7 +177,7 @@
 									</form>
 								</div>
 								
-								<div class="col-md-10">
+								<div class="col-sm-8 col-md-8">
 									<ul class="pagination justify-content-end">
 										{% if scores_variants.has_previous %}
 											<li class="page-item">
@@ -230,8 +230,8 @@
 			<div class="tab-pane fade" id="counts" role="tabpanel" aria-labelledby="counts-tab">
 				<div class="container-fluid mt-4">
 
-					<div class="row mb-4 mt-4">						
-						<div class="col-md-3">
+					<div class="row mb-3 mt-1">						
+						<div class="col-sm-6 col-md-6">
 							<h3 style="margin: 0;">Counts dataset</h3>
 						</div>
 					</div>
@@ -243,7 +243,7 @@
 							<p> No counts data available.</p>
 						{% endif %}
 					{% else %}
-						<div class="col-md-1">
+						<div class="col-sm-1 col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
 									href="{% url 'scoreset:counts_download' scoreset.accession %}">
 								Download
@@ -278,7 +278,7 @@
 						<!-- Pagination -->
 						{% if counts_variants.has_other_pages %}
 							<div class="row">
-								<div class="col-md-2 mt-2">
+								<div class="col-sm-4 col-md-4 mt-2">
 									<form action="?counts-per-page=#counts" method="GET">
 										<div class="form-inline">
 											<label for="counts-per-page-select"> Variants per page </label>
@@ -295,7 +295,7 @@
 									</form>
 								</div>
 
-								<div class="col-md-10">
+								<div class="col-sm-8 col-md-8">
 									<ul class="pagination justify-content-end">
 										{% if counts_variants.has_previous %}
 											<li class="page-item">

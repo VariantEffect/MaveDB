@@ -27,6 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+SOCIAL_AUTH_ORCID_KEY = 'APP-UQBTXJLTAPFI16XI'
+SOCIAL_AUTH_ORCID_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
+
+SOCIAL_AUTH_ORCID_SANDBOX_KEY = 'APP-UQBTXJLTAPFI16XI'
+SOCIAL_AUTH_ORCID_SANDBOX_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
+
 
 # Application definition
 
@@ -38,6 +44,7 @@ INSTALLED_APPS = [
     'search',
     'guardian',
     'reversion',
+    'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,6 +56,8 @@ INSTALLED_APPS = [
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # this is default
     'guardian.backends.ObjectPermissionBackend',
+    'social_core.backends.orcid.ORCIDOAuth2',
+    'social_core.backends.orcid.ORCIDOAuth2Sandbox',
 )
 
 MIDDLEWARE = [
@@ -74,6 +83,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
