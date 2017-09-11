@@ -1,3 +1,8 @@
+venv
+*.pyc
+staticfiles
+.env
+
 geckodriver.log
 *.pyc
 

@@ -1,0 +1,311 @@
+/* Global 
+----------------------------------- */
+* {
+    font-family: 'Raleway', sans-serif !important;
+    /* border: 1px solid red !important; */
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 1%;
+}
+
+pre {
+	margin-left: 1%;
+	margin-right: 1%;
+}
+
+form > input {
+    width: 50%;
+}
+
+input {
+    width: 50%;
+}
+input[type=button],
+input[type=checkbox],
+input[type=number] {
+    width: auto;
+}
+
+.full-height {
+    min-height: 85vh;
+}
+
+.select2 {
+    margin-bottom: 15px;
+}
+
+.border-secondary {
+    border-color:rgba(0,0,0,.1) !important;
+}
+
+.download-btn:hover {
+    border: 1px solid #222 !important;
+    color: white !important;
+}
+
+
+/* General, navbar and footer Link Styling
+----------------------------------- */
+a {
+    color: #1EAEDB !important;
+    text-decoration: none !important;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;   
+    -ms-transition: 0.5s;
+    transition: color 0.5s ease-in-out, 
+}
+a:hover {
+    color: #222 !important;
+}
+
+.nav-item > a {
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;   
+    -ms-transition: 0.5s;
+    transition: color 0.5s ease-in-out, 
+                border-top-color 0.5s ease-in-out,
+                border-bottom-color 0.5s ease-in-out;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+}
+.nav-item > a:hover {
+    color: #222;
+    border-top-color: #222;
+    border-bottom-color: #222; 
+}
+
+/* Tables
+---------------------------------- */
+table td, 
+table th {
+    white-space: nowrap !important;
+    width: 1% !important;
+}
+table {
+    max-width: none;
+}
+
+.numeric-container,
+.table-container {
+    border: 2px solid #AFC8FA;
+    padding: 0px 0.25px 0.25px 1px;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.styled-table {
+    margin-bottom: 0; 
+    background: whitesmoke;
+}
+.styled-table th {
+    background: #AFC8FA;
+}
+.table thead th, 
+.table tbody td  {
+    font-size: 14px;
+    line-height: 0.10em;
+    border: 1px solid white;
+}
+
+.styled-table .input-group .form-control,
+.table {
+    color: black;
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    height: auto;
+    
+    border: 1px solid black;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.styled-table .filters th .textinput.textInput.form-control {
+    color: black;
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    height: auto;
+    max-width: 80%;
+    
+    border: 1px solid black;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+/* navbar/header/footer Formatting 
+----------------------------------- */
+.footer {
+    float: right;
+    margin-bottom: 10px;
+}
+.sidebar {
+    min-height:80vh !important;
+    width:200px !important;
+}
+
+/* Navbar / search box
+------------------------------------ */
+.nav-link {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+}
+.navbar-search {
+    margin-left: 7.75%;
+}
+.navbar-search > form {
+    margin-top: 6%;
+}
+.navbar-search > form > input {
+    margin: auto auto auto 0;
+    border: none;
+    background: transparent;
+    border-bottom: 1px solid grey;
+    min-width: 20%;
+    transition: 
+        max-width 0.3s ease, 
+        min-width 0.3s ease;
+}
+.navbar-search > form > input:focus {
+    min-width: 90%;
+}
+
+/* Logo Formatting
+----------------------------------- */
+.logo > img {
+    display: block;
+    margin: auto;
+    width: 92px;
+    height: 92px;
+}
+
+
+/* body-block formatting
+----------------------------------- */
+.body-block {
+    margin: 2%;
+}
+
+.news {
+    padding: 1em;
+    border: 1px ridge lightslategray;
+    border-radius: 1%;
+    background: lightblue;
+}
+
+
+/* Tocbot
+---------------------------------------- */
+.js-toc {
+    background: #fff;
+    z-index: 999;
+}
+
+@media (max-width: 800px) {
+    .js-toc {
+        width: 100%;
+        margin-bottom: 25px;
+    }
+    .sidebar {
+        min-height: auto !important;
+        border: 0px !important;
+    }
+} 
+
+.toc-link {
+    color: #222 !important;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;   
+    -ms-transition: 0.5s;
+    transition: color 0.5s ease-in-out, 
+}
+
+.toc-link:hover {
+    color: #1EAEDB !important;
+}
+
+.node-name--H1 { font-size: 20px;}
+.node-name--H2 { font-size: 18px;}
+.node-name--H3 { font-size: 16px;}
+.node-name--H4 { font-size: 14px;}
+.node-name--H5 { font-size: 12px;}
+.node-name--H6 { font-size: 10px;}
+
+
+/* Pagination
+---------------------------------------- */
+.page-link.scores-active,
+.page-link.counts-active {
+    color: whitesmoke !important;
+    border-color: #D1D1D1 !important;
+    background-color: #AFC8FA !important;
+}
+
+.pagination {
+    padding-top: 10px;
+    list-style: none;
+    display: flex;
+}
+.pagination > li {
+    margin-top: auto;
+}
+.pagination > li > a.start {
+    border: 1px solid #999999;
+    border-right: 0px solid #999999;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+.pagination > li > a.end {
+    border: 1px solid #D1D1D1;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.pagination > li > a {
+    color: #1EAEDB;
+    background-color: #fff;
+    text-decoration: none;
+    
+    padding: 0.5em;
+    border-top: 1px solid #D1D1D1;
+    border-bottom: 1px solid #D1D1D1;
+    border-left: 1px solid #D1D1D1;
+    
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;   
+    -ms-transition: 0.5s;
+    transition: color 0.5s ease-in-out
+}
+.pagination > li > a:hover {
+    color: #222;
+}
+
+/* Model Forms
+---------------------------------------- */
+.model-form > tbody > tr > th > label,
+.model-form > tbody > tr > td > input,
+.model-form > tbody > tr > td > textarea {
+    width: 100%;
+} 
+
+.model-form > textarea {
+    min-width: 650px;
+    min-height: 250px;
+    height: 250px;
+    width: 650px;
+}

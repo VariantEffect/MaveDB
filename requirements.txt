@@ -7,3 +7,6 @@ numpy>=1.12.1
 psycopg2>=2.7.1
 pypandoc>=1.4
 selenium>=3.4.3
+social-auth-app-django
+gunicorn
+whitenoise
