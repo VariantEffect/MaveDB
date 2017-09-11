@@ -1,6 +1,7 @@
 venv
 *.pyc
-staticfiles
+staticfiles/
+static/
 .env
 
 geckodriver.log
