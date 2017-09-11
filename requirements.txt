@@ -10,3 +10,4 @@ selenium>=3.4.3
 social-auth-app-django
 gunicorn
 whitenoise
+dj-database-url
