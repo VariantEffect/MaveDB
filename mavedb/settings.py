@@ -35,11 +35,8 @@ SOCIAL_AUTH_ORCID_SANDBOX_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = ''
 SOCIAL_AUTH_USER_MODEL = 'auth.User'
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 
 # Application definition
-
 INSTALLED_APPS = [
     'main',
     'accounts',
@@ -48,7 +45,6 @@ INSTALLED_APPS = [
     'search',
     'guardian',
     'reversion',
-    'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -60,8 +56,6 @@ INSTALLED_APPS = [
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # this is default
     'guardian.backends.ObjectPermissionBackend',
-    'social_core.backends.orcid.ORCIDOAuth2',
-    'social_core.backends.orcid.ORCIDOAuth2Sandbox',
 )
 
 MIDDLEWARE = [
@@ -70,9 +64,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'mavedb.urls'
@@ -88,8 +82,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -168,16 +160,16 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': 'info.log',
             'formatter': 'verbose'
         },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
     },

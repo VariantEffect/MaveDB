@@ -89,13 +89,9 @@ def login_with_remember_me(request):
     import django.contrib.auth.views as auth_views
     response = auth_views.LoginView.as_view()(request)
     if request.POST.get('remember', None):
-        print("Setting session to expire at 1209600.")
         request.session.set_expiry(1209600)  # 2 weeks
     else:
-        print("Setting session to expire at close.")
         request.session.set_expiry(0)
-
-    print(request.session.get_expire_at_browser_close())
     return response
 
 
@@ -103,37 +99,6 @@ def login_with_remember_me(request):
 def profile_view(request):
     """
     A simple view, at only one line...
-
-    One is the loneliest number that you'll ever do
-    Two can be as bad as one
-    It's the loneliest number since the number one
-
-    No is the saddest experience you'll ever know
-    Yes, it's the saddest experience you'll ever know
-
-    'Cause one is the loneliest number that you'll ever do
-    One is the loneliest number, whoa-oh, worse than two
-
-    It's just no good anymore since you went away
-    Now I spend my time just making rhymes of yesterday
-
-    One is the loneliest number
-    One is the loneliest number
-    One is the loneliest number that you'll ever do
-    One is the loneliest
-    One is the loneliest
-    One is the loneliest number that you'll ever do
-
-    It's just no good anymore since you went away (number)
-    One is the loneliest (number)
-    One is the loneliest (number)
-    One is the loneliest number that you'll ever do (number)
-    One is the loneliest (number)
-    One is the loneliest (number)
-    One is the loneliest number that you'll ever do (number)
-    One (one is the loneliest number that you'll ever do)(number)
-    One is the loneliest number that you'll ever do (number)
-    One is the loneliest number that you'll ever do
     """
     return render(request, 'accounts/profile_home.html')
 
@@ -176,8 +141,6 @@ def manage_instance(request, accession):
     context["instance"] = instance
     context["admin_select_form"] = admin_select_form
     context["viewer_select_form"] = viewer_select_form
-
-    print(request.POST)
 
     if request.method == "POST":
         # Hidden list in each form submission so we can determine which

@@ -1,6 +1,7 @@
 
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.test import TestCase, RequestFactory
+from django.utils.functional import SimpleLazyObject
 from django.contrib.auth import get_user_model
 
 from ..views import (
@@ -52,36 +53,52 @@ class TestProfileHomeView(TestCase):
         self.alice = User.objects.create(username="alice")
         self.bob = User.objects.create(username="bob")
 
-    def test_uses_correct_template(self):
-        self.fail("Write this test!")
-
     def test_requires_login(self):
-        self.fail("Write this test!")
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestProfileManageInstanceView(TestCase):
 
     def setUp(self):
-        self.path = reverse_lazy("accounts:manage_instance")
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
-        self.bob = User.objects.create(username="bob")
+        self.alice = User.objects.create(username="alice", password="secret")
+        self.bob = User.objects.create(username="bob", password="secret")
         self.data = {"users": []}
-
-    def test_uses_correct_template(self):
-        self.fail("Write this test!")
+        self.client.logout()
 
     def test_requires_login(self):
-        self.fail("Write this test!")
+        obj = ExperimentSet.objects.create()
+        assign_user_as_instance_admin(self.bob, obj)
+        request = self.factory.get('/profile/manage/{}/'.format(obj.accession))
+        response = manage_instance(request, accession=obj.accession)
+        request.user = SimpleLazyObject(lambda: None)
+        self.assertRedirects(response, reverse("accounts:login"))
 
     def test_404_if_no_admin_permissions(self):
-        self.fail("Write this test!")
+        obj = ExperimentSet.objects.create()
+        assign_user_as_instance_viewer(self.bob, obj)
+        response = self.client.get(
+            '/profile/manage/{}/'.format(obj.accession)
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_404_if_klass_cannot_be_inferred_from_accession(self):
-        self.fail("Write this test!")
+        obj = ExperimentSet.objects.create()
+        assign_user_as_instance_viewer(self.bob, obj)
+        response = self.client.get('/profile/manage/NOT_ACCESSION/')
+        self.assertEqual(response.status_code, 404)
 
     def test_404_if_instance_not_found(self):
-        self.fail("Write this test!")
+        obj = ExperimentSet.objects.create()
+        accession = obj.accession
+        assign_user_as_instance_viewer(self.bob, obj)
+        obj.delete()
+
+        response = self.client.get(
+            '/profile/manage/{}/'.format(obj.accession)
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_updates_admins_with_valid_post_data(self):
         self.fail("Write this test!")
@@ -144,12 +161,6 @@ class TestProfileEditInstanceView(TestCase):
     def test_404_edit_an_experimentset(self):
         self.fail("Write this test!")
 
-    def test_preview_mode_does_not_save_experiment_instance(self):
-        self.fail("Write this test!")
-
-    def test_preview_mode_does_not_save_scoreset_instance(self):
-        self.fail("Write this test!")
-
 
 class TestProfileViewInstanceView(TestCase):
 
@@ -168,7 +179,7 @@ class TestProfileViewInstanceView(TestCase):
     def test_redirects_to_correct_view_based_on_accession(self):
         self.fail("Write this test!")
 
-    def test_404_not_viewer_contrib_or_admin(self):
+    def test_404_not_viewer_or_admin(self):
         self.fail("Write this test!")
 
     def test_404_object_not_found(self):
