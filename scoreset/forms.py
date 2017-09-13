@@ -5,6 +5,7 @@ from io import StringIO
 
 import django.forms as forms
 from django.dispatch import receiver
+from django.db import transaction
 from django.db.models import ObjectDoesNotExist
 from django.db.models.signals import post_save
 from django.core.exceptions import ValidationError
@@ -130,8 +131,15 @@ class ScoreSetForm(forms.ModelForm):
 
     def clean_scores_data(self):
         scores_file = self.cleaned_data.get("scores_data", None)
-        scores_file.seek(0)
+        if not scores_file and self.fields["scores_data"].required:
+            raise ValidationError(
+                _("Score data field is required.")
+            )
+        if not scores_file:
+            self.dataset_columns[SCORES_KEY] = []
+            return None
 
+        scores_file.seek(0)
         header_line = scores_file.readline()
         if isinstance(header_line, bytes):
             header_line = header_line.decode()
@@ -310,17 +318,19 @@ class ScoreSetForm(forms.ModelForm):
         has_scores = cleaned_data.get("scores_data", None) is not None
         has_counts = cleaned_data.get("counts_data", None) is not None
 
-        if not hasattr(self, "edit_mode"):
-            valid_scoreset_json(self.dataset_columns, has_counts)
-            cleaned_data["dataset_columns"] = self.dataset_columns
-
-            if not has_scores:
+        if not has_scores and not hasattr(self, "edit_mode"):
+            scores_required = self.fields["scores_data"].required
+            if scores_required:
                 raise ValidationError(
                     _(
-                        "Score data cannot be empty/must contain at least one "
-                        "row with non-null values"
+                        "Score data cannot be empty/must contain at least one"
+                        " row with non-null values"
                     )
                 )
+
+        if has_scores:
+            valid_scoreset_json(self.dataset_columns, has_counts)
+            cleaned_data["dataset_columns"] = self.dataset_columns
 
             # For every hgvs in scores but not in counts, fill in the
             # counts columns (if a counts dataset is supplied) with null values
@@ -384,15 +394,15 @@ class ScoreSetForm(forms.ModelForm):
 
         self.instance.save()
 
-        has_counts = self.fields.get("counts_data", None) is not None
-        has_scores = self.fields.get("scores_data", None) is not None
-        if has_counts and has_scores:
+        has_counts = self.cleaned_data.get("counts_data", None) is not None
+        has_scores = self.cleaned_data.get("scores_data", None) is not None
+        if has_counts or has_scores:
+            self.save_variants()
+            # Set this after save_variants since save_variants will
+            # delete previous a variant_set and reset dataset_columns
+            # to a default value.
             self.instance.dataset_columns = \
                 self.cleaned_data["dataset_columns"]
-            self.save_variants()
-            for var in self.get_variants():
-                var.scoreset = self.instance
-                var.save()
 
         self.save_new_keywords()
         self.instance.update_keywords(self.all_keywords())
@@ -425,14 +435,41 @@ class ScoreSetForm(forms.ModelForm):
 
     def save_variants(self):
         if self.is_bound and self.is_valid():
-            variants = self.cleaned_data["variants"]
-            for var in variants:
-                var.scoreset = self.instance
-                var.save()
+            variants = self.cleaned_data.get("variants", [])
+            if not variants:
+                return
+            with transaction.atomic():
+                self.instance.delete_variants()
+                for var in variants:
+                    var.scoreset = self.instance
+                    var.save()
 
     def get_variants(self):
         if self.is_bound and self.is_valid():
             return self.cleaned_data['variants']
+
+    @classmethod
+    def PartialFormFromRequest(cls, request, instance):
+        if request.method == "POST":
+            form = cls(
+                data=request.POST, files=request.FILES, instance=instance
+            )
+        else:
+            form = cls(instance=instance)
+
+        form.fields.pop("experiment")
+        pks = [
+            i.pk for i in request.user.profile.administrator_scoresets()
+            if i in instance.experiment.scoreset_set.all() and i != instance
+        ]
+        scoresets = ScoreSet.objects.filter(
+            pk__in=set(pks)).order_by("accession")
+        form.fields["replaces"].queryset = scoresets
+
+        for field in form.fields:
+            form.fields[field].required = False
+
+        return form
 
 
 class ScoreSetEditForm(ScoreSetForm):

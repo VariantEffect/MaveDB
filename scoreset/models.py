@@ -222,6 +222,10 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def next_variant_suffix(self):
         return self.last_used_suffix + 1
 
+    def reset_variant_suffix(self):
+        self.last_used_suffix = 0
+        self.save()
+
     def update_last_edit_info(self, user):
         self.last_edit_date = datetime.date.today()
         self.last_edit_by = user
@@ -230,6 +234,23 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def publish(self):
         self.private = False
         self.publish_date = datetime.date.today()
+        self.save()
+
+    def has_variants(self):
+        return self.variant_set.count() > 0
+
+    def get_variants(self):
+        if self.has_variants():
+            return self.variant_set.all()
+        else:
+            return Variant.objects.none()
+
+    def delete_variants(self):
+        self.variant_set.all().delete()
+        self.dataset_columns = dict({
+            SCORES_KEY: [], COUNTS_KEY: []
+        })
+        self.reset_variant_suffix()
         self.save()
 
     def validate_variant_data(self, variant):

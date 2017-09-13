@@ -5,16 +5,26 @@
 <div class="row" style="margin-top: 25px;">
 	<div class="col-md-10">
 		<h3> Edit entry {{ instance.accession }} </h3>
+		{% if instance.private %}
 		<p> 
-			Only fields shown below are editable. All other fields have been 
-			frozen. If you feel you need to edit additional fields not seen below, 
-			you will need to contact us.
+			This entry will remain fully editable until you click publish
+			at the bottom of this form. Should you choose to publish, your
+			entry will go live and some fields will become permanently frozen.
+			See our <a href="{% url 'main:documentation' %}"> documentation </a>
+			for further information.
 		</p>
+		{% else %}
+		<p> 
+			This entry has been published and only fields shown below are 
+			editable. If you feel you need to edit additional fields not 
+			seen below, you will need to contact us.
+		</p>
+		{% endif %}
 		<hr>
 		
 		<form id="edit-form"
 					action="{% url 'accounts:edit_instance' instance.accession %}" 
-					method="post">
+					method="post" enctype="multipart/form-data">
 			{% csrf_token %}
 			{% if edit_form.non_field_errors %}
 				<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -47,6 +57,25 @@
 							</button>
 						{% endif %}
 					</label>
+
+					{% if field.label == "Count data" %}
+					<div class="alert alert-warning"> 
+						If you are making changes to Score data, pre-existing count data will
+						be deleted. You will also need to re-upload an updated version of
+						your count data.
+						<br><br>
+						{{ field }}
+					</div>
+					{% endif %}
+
+					{% if field.label == "Score data" %}
+					<div class="alert alert-warning"> 
+						Uploading a new Score data file will delete a previously 
+						uploaded dataset.
+						<br><br>
+						{{ field }}
+					</div>
+					{% endif %}
 					
 					{% if field.errors %}
 						<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -57,12 +86,22 @@
 						</div>
 					{% endif %}
 					<br>
-					{{ field }}
+					{% if not field.label == "Count data" and not field.label == "Score data" %}
+						{{ field }}
+					{% endif %}
 				</div>
 			{% endfor %}
 			<div style="width:100%;margin-top:5px;">
 				<input class="btn btn-outline-dark" type="submit" value="Save" name="save"
+								style="width:150px;margin-bottom:35px;" data-toggle="tooltip" 
+								data-placement="top|right|bottom|left"
+								title="Save your changes without publishing.">
+				{% if instance.private %}
+					<input type="submit" value="Publish" class="btn btn-outline-danger" data-toggle="tooltip" 
+								data-placement="top|right|bottom|left" name="publish"
+								title="Publish your entry. This action is final and will freeze your certain aspects of your entry."
 								style="width:150px;margin-bottom:35px;">
+				{% endif %}
 			</div>
 		</form>
 	

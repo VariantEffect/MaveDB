@@ -25,7 +25,7 @@ from django.utils.http import urlsafe_base64_decode
 from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
 from experiment.forms import ExperimentEditForm
 from scoreset.validators import SCS_ACCESSION_RE
-from scoreset.forms import ScoreSetEditForm
+from scoreset.forms import ScoreSetEditForm, ScoreSetForm
 
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
@@ -80,7 +80,7 @@ def get_class_for_accession(accession):
     elif re.fullmatch(SCS_ACCESSION_RE, accession):
         return ScoreSet
     else:
-        return Nonef
+        return None
 
 
 # Profile views
@@ -230,22 +230,34 @@ def edit_instance(request, accession):
 
 
 def handle_scoreset_edit_form(request, instance):
-    form = ScoreSetEditForm(instance=instance)
-    context = {"edit_form": form, 'instance': instance}
+    if not instance.private:
+        form = ScoreSetEditForm(instance=instance)
+    else:
+        form = ScoreSetForm.PartialFormFromRequest(request, instance)
 
     if request.method == "POST":
-        form = ScoreSetEditForm(request.POST, instance=instance)
+        if not instance.private:
+            form = ScoreSetEditForm(request.POST, instance=instance)
+        else:
+            form = ScoreSetForm.PartialFormFromRequest(request, instance)
+
         if form.is_valid():
             updated_instance = form.save(commit=True)
             updated_instance.last_edit_by = request.user
             save_and_create_revision_if_tracked_changed(
                 request.user, updated_instance
             )
+            if request.POST.get("publish", None):
+                updated_instance.publish()
 
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
             )
 
+    context = {
+        "edit_form": form,
+        'instance': instance
+    }
     return render(request, 'accounts/profile_edit.html', context)
 
 
@@ -261,6 +273,9 @@ def handle_experiment_edit_form(request, instance):
             save_and_create_revision_if_tracked_changed(
                 request.user, updated_instance
             )
+
+            if request.POST.get("publish", None):
+                updated_instance.publish()
 
             return redirect(
                 "accounts:edit_instance", updated_instance.accession

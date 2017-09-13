@@ -7,6 +7,15 @@ def save_and_create_revision_if_tracked_changed(user, instance):
     comments = []
     klass = instance.__class__.__name__
     versions = Version.objects.get_for_object(instance)
+
+    # Store these to check if uneeded revisions are added later.
+    experiment = instance.experiment
+    experimentset = experiment.experimentset
+    old_exp_versions = Version.objects.get_for_object(experiment)
+    old_exps_versions = Version.objects.get_for_object(
+        experimentset
+    )
+
     if len(versions) < 1:
         comments.append("{} created first revision.".format(user))
     else:
@@ -32,7 +41,11 @@ def save_and_create_revision_if_tracked_changed(user, instance):
     # Delete revisions created in a post_save signal from ScoreSet that
     # don't involve the private bit being changed.
     if klass == "ScoreSet" and not any(["private" in c for c in comments]):
-        experiment = instance.experiment
-        experimentset = experiment.experimentset
-        Version.objects.get_for_object(experiment)[0].delete()
-        Version.objects.get_for_object(experimentset)[0].delete()
+        new_exp_versions = Version.objects.get_for_object(experiment)
+        new_exps_versions = Version.objects.get_for_object(experimentset)
+
+        if len(old_exp_versions) < len(new_exp_versions):
+            Version.objects.get_for_object(experiment)[0].delete()
+
+        if len(old_exps_versions) < len(new_exps_versions):
+            Version.objects.get_for_object(experimentset)[0].delete()
