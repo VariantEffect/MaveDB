@@ -9,12 +9,13 @@ def save_and_create_revision_if_tracked_changed(user, instance):
     versions = Version.objects.get_for_object(instance)
 
     # Store these to check if uneeded revisions are added later.
-    experiment = instance.experiment
-    experimentset = experiment.experimentset
-    old_exp_versions = Version.objects.get_for_object(experiment)
-    old_exps_versions = Version.objects.get_for_object(
-        experimentset
-    )
+    if klass == "ScoreSet":
+        experiment = instance.experiment
+        experimentset = experiment.experimentset
+        old_exp_versions = Version.objects.get_for_object(experiment)
+        old_exps_versions = Version.objects.get_for_object(
+            experimentset
+        )
 
     if len(versions) < 1:
         comments.append("{} created first revision.".format(user))

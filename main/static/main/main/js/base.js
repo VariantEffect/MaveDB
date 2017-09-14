@@ -197,6 +197,22 @@ function paginationSubmit(dataType, clickedLink) {
     return false;
 }
 
+
+// Check Publish is ok with user
+$("#publish").click(function (event) {
+    var saidYes = confirm(
+        'WARNING! Proceeding will freeze your upload and limit which fields can be edited. ' +
+        
+        'If this score set is part of a private experiment, this experiment ' +
+        'will also be published and frozen. ' + 
+        
+        'Please make sure you have read the documentation before proceeding. ' +
+        'This action cannot be undone. Would you like to reversed?'
+    );
+    return saidYes;
+});
+
+
 // Check management form submission
 // ----------------------------------------------------------------------- //
 // `userPk` is a global defined in base.html using Django's templating system.
