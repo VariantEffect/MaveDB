@@ -29,7 +29,6 @@ class TestScoreSetEditForm(TestCase):
         data = {
             "method_desc": "hello",
             "abstract": "world",
-            "private": False,
             "doi_id": "11111"
         }
         post = QueryDict('', mutable=True)
@@ -40,7 +39,6 @@ class TestScoreSetEditForm(TestCase):
         scs = form.save(commit=True)
         self.assertEqual(scs.method_desc, "hello")
         self.assertEqual(scs.abstract, "world")
-        self.assertEqual(scs.private, False)
         self.assertEqual(scs.doi_id, "11111")
 
     def test_can_create_new_keywords(self):

@@ -1,6 +1,7 @@
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
+from django.contrib.auth import get_user_model
 
 from experiment.models import Experiment
 from scoreset.models import ScoreSet, Variant
@@ -8,6 +9,8 @@ from scoreset.forms import ScoreSetForm
 from scoreset.validators import Constants
 
 from .utility import make_score_count_files
+
+User = get_user_model()
 
 
 class TestScoreSetForm(TestCase):
@@ -147,7 +150,7 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(data=data, files=files)
         model = form.save(commit=False)
         model.save()
-        form.save_variants()
+        form.save_variants_and_set_dataset_columns()
         self.assertEqual(ScoreSet.objects.count(), 1)
         self.assertEqual(Variant.objects.count(), 1)
 
@@ -251,3 +254,81 @@ class TestScoreSetForm(TestCase):
         form.save()
         var = Variant.objects.get(hgvs="c.54A>G")
         self.assertEqual(var.data["counts"], {})
+
+
+class TestPartialForm(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.alice = User.objects.create(username="alice")
+        self.experiment = Experiment.objects.create(
+            target="test", wt_sequence="ATCG"
+        )
+
+    def make_test_data(self, scores_data=None, counts_data=None, use_exp=True):
+        data = {"experiment": self.experiment.pk if use_exp else None}
+        s_file, c_file = make_score_count_files(scores_data, counts_data)
+        files = {Constants.SCORES_DATA: s_file}
+        if c_file is not None:
+            files[Constants.COUNTS_DATA] = c_file
+        return data, files
+
+    def test_new_score_upload_will_delete_old_score_data(self):
+        data, files = self.make_test_data(
+            scores_data="hgvs,score\nc.50A>G,1"
+        )
+        form = ScoreSetForm(data=data, files=files)
+        form.is_valid()
+        old_model = form.save()
+        old_variant = Variant.objects.all()[0]
+        self.assertEqual(ScoreSet.objects.count(), 1)
+        self.assertEqual(Variant.objects.count(), 1)
+
+        # Now try editing the new instance
+        data, files = self.make_test_data(
+            scores_data="hgvs,score\nc.100A>G,1"
+        )
+        request = self.factory.post(
+            path="/accounts/profile/edit/{}/".format(old_model.accession),
+            data=data
+        )
+        request.user = self.alice
+        request.FILES.update(files)
+        form = ScoreSetForm.PartialFormFromRequest(
+            request=request, instance=old_model
+        )
+
+        new_model = form.save()
+        new_variant = Variant.objects.all()[0]
+        self.assertEqual(ScoreSet.objects.count(), 1)
+        self.assertEqual(Variant.objects.count(), 1)
+        self.assertNotEqual(old_variant.hgvs, new_variant.hgvs)
+
+    def test_supply_only_counts_file_results_in_error(self):
+        data, files = self.make_test_data(
+            scores_data="hgvs,score\nc.50A>G,1"
+        )
+        form = ScoreSetForm(data=data, files=files)
+        form.is_valid()
+        old_model = form.save()
+        old_variant = Variant.objects.all()[0]
+        self.assertEqual(ScoreSet.objects.count(), 1)
+        self.assertEqual(Variant.objects.count(), 1)
+
+        # Now try editing the new instance
+        data, files = self.make_test_data(
+            counts_data="hgvs,count\nc.100A>G,1"
+        )
+        request = self.factory.post(
+            path="/accounts/profile/edit/{}/".format(old_model.accession),
+            data=data
+        )
+        request.user = self.alice
+        request.FILES.update(
+            {Constants.COUNTS_DATA: files[Constants.COUNTS_DATA]}
+        )
+        form = ScoreSetForm.PartialFormFromRequest(
+            request=request, instance=old_model
+        )
+
+        self.assertFalse(form.is_valid())

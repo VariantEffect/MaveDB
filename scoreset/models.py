@@ -175,7 +175,7 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     )
     replaces = models.OneToOneField(
         to='scoreset.ScoreSet', on_delete=models.DO_NOTHING, null=True,
-        verbose_name="Replaces", related_name="replaced_by"
+        verbose_name="Replaces", related_name="replaced_by", blank=True
     )
 
     # ---------------------------------------------------------------------- #

@@ -53,13 +53,13 @@
 						<span>{{ scoreset.creation_date }}</span>
 					<br>
 					<span style="font-weight: 600;">Created by:</span>
-						<span>{{ scoreset.created_by|default:"None" }}</span>
+						<span>{{ scoreset.created_by.profile.get_full_name_or_username }}</span>
 					<br>
 					<span style="font-weight: 600;">Last edited on:</span>
 						<span>{{ scoreset.last_edit_date|default:"None" }}</span>
 					<br>
 					<span style="font-weight: 600;">Last edited by:</span>
-						<span>{{ scoreset.last_edit_by|default:"None" }}</span>
+						<span>{{ scoreset.last_edit_by.profile.get_full_name_or_username }}</span>
 					<br>
 					<span style="font-weight: 600;">Authors:</span>
 						<span>{{ scoreset.get_authors|default:"None" }}</span>
@@ -164,7 +164,7 @@
 									<form action="?scores-per-page=#scores" method="GET">
 										<div class="form-inline">
 											<label for="scores-per-page-select"> Variants per page </label>
-											<select name="scores-per-page" id="scores-per-page-select" onchange="paginationSubmit('scores')">
+											<select class="ml-2" name="scores-per-page" id="scores-per-page-select" onchange="paginationSubmit('scores')">
 												{% for i in per_page_selections %}
 													{% if i == scores_per_page %}
 														<option value={{i}} selected="">{{i}}</option>
@@ -234,7 +234,6 @@
 						<div class="col-sm-6 col-md-6">
 							<h3 style="margin: 0;">Counts dataset</h3>
 						</div>
-					</div>
 
 					{% if not counts_variants %}
 						{% if preview %}
@@ -249,6 +248,7 @@
 								Download
 							</a>
 						</div>
+					</div>
 						
 						<div id="counts-table-container" class="numeric-container container-fluid">
 							<table id="counts-table" class="styled-table table table-hover">
@@ -282,7 +282,7 @@
 									<form action="?counts-per-page=#counts" method="GET">
 										<div class="form-inline">
 											<label for="counts-per-page-select"> Variants per page </label>
-											<select name="counts-per-page" id="counts-per-page-select" onchange="paginationSubmit('counts')">
+											<select class="ml-2" name="counts-per-page" id="counts-per-page-select" onchange="paginationSubmit('counts')">
 												{% for i in per_page_selections %}
 													{% if i == counts_per_page %}
 														<option value={{i}} selected="">{{i}}</option>

@@ -42,7 +42,6 @@ class ScoreSetForm(forms.ModelForm):
         fields = (
             'experiment',
             'replaces',
-            'private',
             'keywords',
             'doi_id',
             'abstract',
@@ -76,11 +75,6 @@ class ScoreSetForm(forms.ModelForm):
                 attrs={"style": 'width:20%;'}
             )
 
-        self.fields["private"].widget = forms.CheckboxInput(
-            attrs={
-                "class": "form-control",
-            }
-        )
         self.fields["doi_id"].widget = forms.TextInput(
             attrs={
                 "class": "form-control",
@@ -328,6 +322,14 @@ class ScoreSetForm(forms.ModelForm):
                     )
                 )
 
+        if has_counts and not has_scores:
+            raise ValidationError(
+                _(
+                    "You must upload an accompanying Score data file with "
+                    "a Count data file."
+                )
+            )
+
         if has_scores:
             valid_scoreset_json(self.dataset_columns, has_counts)
             cleaned_data["dataset_columns"] = self.dataset_columns
@@ -393,20 +395,12 @@ class ScoreSetForm(forms.ModelForm):
             )
 
         self.instance.save()
-
         has_counts = self.cleaned_data.get("counts_data", None) is not None
         has_scores = self.cleaned_data.get("scores_data", None) is not None
         if has_counts or has_scores:
-            self.save_variants()
-            # Set this after save_variants since save_variants will
-            # delete previous a variant_set and reset dataset_columns
-            # to a default value.
-            self.instance.dataset_columns = \
-                self.cleaned_data["dataset_columns"]
-
+            self.save_variants_and_set_dataset_columns()
         self.save_new_keywords()
         self.instance.update_keywords(self.all_keywords())
-
         self.instance.save()
         return self.instance
 
@@ -433,7 +427,7 @@ class ScoreSetForm(forms.ModelForm):
             new = self.new_keywords()
             return new + not_new
 
-    def save_variants(self):
+    def save_variants_and_set_dataset_columns(self):
         if self.is_bound and self.is_valid():
             variants = self.cleaned_data.get("variants", [])
             if not variants:
@@ -443,6 +437,8 @@ class ScoreSetForm(forms.ModelForm):
                 for var in variants:
                     var.scoreset = self.instance
                     var.save()
+            self.instance.dataset_columns = \
+                self.cleaned_data["dataset_columns"]
 
     def get_variants(self):
         if self.is_bound and self.is_valid():
@@ -486,7 +482,6 @@ class ScoreSetEditForm(ScoreSetForm):
     class Meta:
         model = ScoreSet
         fields = (
-            'private',
             'doi_id',
             'keywords',
             'abstract',
