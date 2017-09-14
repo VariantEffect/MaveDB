@@ -1,11 +1,15 @@
 from django.core.urlresolvers import reverse_lazy
 from django.test import TestCase, RequestFactory
+from django.contrib.auth import get_user_model
 
 from main.models import Keyword, ExternalAccession, TargetOrganism
 from experiment.models import Experiment
 from scoreset.models import ScoreSet
+from accounts.permissions import assign_user_as_instance_admin
 
 from ..forms import SearchForm
+
+User = get_user_model()
 
 
 class TestSearchForm(TestCase):
@@ -303,7 +307,26 @@ class TestSearchForm(TestCase):
 
     ###
     def test_can_search_experiment_by_author_name(self):
-        self.fail("Write this test!")
+        key = 'authors'
+        alice = User.objects.create(
+            username="0000", first_name="Alice", last_name="Bob"
+        )
+        assign_user_as_instance_admin(alice, self.exp_1)
+
+        form = SearchForm(data={key: 'alice'})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])
 
     def test_can_search_experiment_by_author_orcid(self):
-        self.fail("Write this test!")
+        key = 'authors'
+        alice = User.objects.create(
+            username="0000"
+        )
+        assign_user_as_instance_admin(alice, self.exp_1)
+        form = SearchForm(data={key: '0000'})
+        form.is_valid()
+        instances = form.query_experiments()
+        self.assertEqual(instances.count(), 1)
+        self.assertEqual(self.exp_1, instances[0])

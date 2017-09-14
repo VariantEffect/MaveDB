@@ -155,8 +155,23 @@ class SearchForm(forms.Form):
             return entries
         return None
 
-    def search_by_authors(self, authors):
-        pass
+    def search_by_authors(self, model, authors):
+        if authors:
+            selected = set()
+            entries = model.objects.none()
+            model_author_ls = [
+                (m.pk, m.get_authors_by_full_name())
+                for m in model.objects.all()
+            ]
+
+            for author in authors:
+                for pk, model_authors in model_author_ls:
+                    if model_authors.lower().find(author.lower()) > -1:
+                        selected.add(pk)
+
+            entries |= model.objects.all().filter(pk__in=selected)
+            return entries
+        return None
 
     def search_by_external_accession(self, ext_accessions):
         if ext_accessions:
@@ -180,6 +195,9 @@ class SearchForm(forms.Form):
             keywords = self.cleaned_data.get(
                 "keywords", None
             ) or search_all
+            authors = self.cleaned_data.get(
+                "authors", None
+            ) or search_all
             accessions = self.cleaned_data.get(
                 "accessions", None
             ) or search_all
@@ -199,6 +217,7 @@ class SearchForm(forms.Form):
             keyword_hits = self.search_by_keyword(model, keywords)
             accessions_hits = self.search_by_accession(model, accessions)
             metadata_hits = self.search_by_metadata(model, metadata_tags)
+            author_hits = self.search_by_authors(model, authors)
 
             if model == Experiment:
                 targets_hits = self.search_by_target(model, targets)
@@ -223,6 +242,12 @@ class SearchForm(forms.Form):
                     instances &= keyword_hits
                 else:
                     instances |= keyword_hits
+
+            if author_hits is not None:
+                if not union_search:
+                    instances &= author_hits
+                else:
+                    instances |= author_hits
 
             if accessions_hits is not None:
                 if not union_search:
