@@ -144,7 +144,8 @@ def parse_mapping_formset(reference_mapping_formset):
         if form.is_valid():
             if form.cleaned_data:
                 model = form.save(commit=False)
-                objects.append(model)
+                if model.datahash not in set(m.datahash for m in objects):
+                    objects.append(model)
         else:
             objects.append(None)
     return objects
@@ -182,8 +183,7 @@ def experiment_create_view(request):
     context["reference_mapping_formset"] = ref_mapping_formset
 
     # If you change the prefix arguments here, make sure to change them
-    # in the corresponding template element id fields as well. If you don't,
-    # expect everything to break horribly. You've been warned.
+    # in base.js as well for the +/- buttons to work correctly.
     if request.method == "POST":
 
         # Get the new keywords/accession/target org so that we can return
@@ -231,6 +231,7 @@ def experiment_create_view(request):
 
         if not request.POST['experimentset']:
             assign_user_as_instance_admin(user, experiment.experimentset)
+            experiment.experimentset.created_by = user
             experiment.experimentset.update_last_edit_info(user)
             save_and_create_revision_if_tracked_changed(
                 user, experiment.experimentset

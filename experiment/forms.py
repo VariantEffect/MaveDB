@@ -186,6 +186,15 @@ class ExperimentForm(forms.ModelForm):
             new = self.new_m2m(field_name)
             return new + not_new
 
+    @classmethod
+    def PartialFormFromRequest(cls, request, instance):
+        if request.method == "POST":
+            form = cls(data=request.POST, instance=instance)
+        else:
+            form = cls(instance=instance)
+        form.fields.pop("experimentset")
+        return form
+
 
 class ExperimentEditForm(ExperimentForm):
     """

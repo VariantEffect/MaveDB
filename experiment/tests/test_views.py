@@ -305,6 +305,31 @@ class TestCreateNewExperimentView(TestCase):
         data['reference_mapping-1-reference'] = ['reference']
         data['reference_mapping-1-is_alternate'] = ['off']
         data['reference_mapping-1-target_start'] = [0]
+        data['reference_mapping-1-target_end'] = [50]
+        data['reference_mapping-1-reference_start'] = [0]
+        data['reference_mapping-1-reference_end'] = [600]
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.bob
+        response = experiment_create_view(request)
+        self.assertEqual(ReferenceMapping.objects.count(), 2)
+
+    def test_only_keep_one_ref_map_if_duplicates_supplied(self):
+        data = self.post_data.copy()
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+
+        data['reference_mapping-TOTAL_FORMS'] = ['2']
+        data['reference_mapping-0-reference'] = ['reference']
+        data['reference_mapping-0-is_alternate'] = ['off']
+        data['reference_mapping-0-target_start'] = [0]
+        data['reference_mapping-0-target_end'] = [10]
+        data['reference_mapping-0-reference_start'] = [0]
+        data['reference_mapping-0-reference_end'] = [10]
+
+        data['reference_mapping-1-reference'] = ['reference']
+        data['reference_mapping-1-is_alternate'] = ['off']
+        data['reference_mapping-1-target_start'] = [0]
         data['reference_mapping-1-target_end'] = [10]
         data['reference_mapping-1-reference_start'] = [0]
         data['reference_mapping-1-reference_end'] = [10]
@@ -312,7 +337,7 @@ class TestCreateNewExperimentView(TestCase):
         request = self.factory.post(path=self.path, data=data)
         request.user = self.bob
         response = experiment_create_view(request)
-        self.assertEqual(ReferenceMapping.objects.count(), 2)
+        self.assertEqual(ReferenceMapping.objects.count(), 1)
 
     def test_blank_keywords_not_created(self):
         data = self.post_data.copy()

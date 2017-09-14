@@ -54,13 +54,13 @@
 						<span>{{ experiment.creation_date }}</span>
 					<br>
 					<span style="font-weight: 600;">Created by:</span>
-						<span>{{ experiment.created_by|default:"None" }}</span>
+						<span>{{ experiment.created_by.profile.get_full_name_or_username}}</span>
 					<br>
 					<span style="font-weight: 600;">Last edited on:</span>
 						<span>{{ experiment.last_edit_date|default:"None" }}</span>
 					<br>
 					<span style="font-weight: 600;">Last edited by:</span>
-						<span>{{ experiment.last_edit_by|default:"None" }}</span>
+						<span>{{ experiment.last_edit_by.profile.get_full_name_or_username}}</span>
 					<br>
 					<span style="font-weight: 600;">Authors:</span>
 						<span>{{ experiment.get_authors|default:"None" }}</span>
@@ -104,12 +104,12 @@
 			<!-- Reference mapping tab -->
 			<div class="tab-pane fade show" id="refmaps" role="tabpanel" 
 					 aria-labelledby="refmaps-tab">
-				<div class="container-fluid mt-4">
-					{% if not experiment.get_ref_mappings %}
-						<p> No maps have been specified for this experiment. </p>
-					{% else %}
-						The following maps have been specified for this experiment:
-						<table class="container-fluid table-hover">
+				{% if not experiment.get_ref_mappings %}
+					<p> No maps have been specified for this experiment. </p>
+				{% else %}
+				<p class="mt-4">The following maps have been specified for this experiment: </p>
+				<div class="numeric-container container-fluid mt-2">
+						<table class="styled-table table table-hover">
 							<thead>
 								<tr>
 									<th>Reference</th>
