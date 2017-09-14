@@ -12,8 +12,10 @@ from ..views import (
     get_class_for_accession
 )
 
+from main.models import ReferenceMapping
 from experiment.models import ExperimentSet, Experiment
 from scoreset.models import ScoreSet
+from scoreset.validators import Constants
 from scoreset.tests.utility import make_score_count_files
 
 from ..models import Profile, user_is_anonymous
@@ -151,14 +153,14 @@ class TestProfileManageInstanceView(TestCase):
         response = manage_instance(request, accession=obj.accession)
         self.assertEqual(response.status_code, 302)
 
-    def test_returns_updated_admin_form_when_inputting_invalid_data(self):
+    def test_returns_admin_form_when_inputting_invalid_data(self):
         obj = ExperimentSet.objects.create()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.accession),
             data={
-                "administrators[]": ['99'],
-                "administrator_management-users": ['99']
+                "administrators[]": [10000],
+                "administrator_management-users": [10000]
             }
         )
         request.user = self.alice
@@ -171,8 +173,8 @@ class TestProfileManageInstanceView(TestCase):
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.accession),
             data={
-                "viewers[]": ['99'],
-                "viewer_management-users": ['99']
+                "viewers[]": [10000],
+                "viewer_management-users": [10000]
             }
         )
         request.user = self.alice
@@ -190,12 +192,22 @@ class TestProfileEditInstanceView(TestCase):
         self.experiment_post_data = {
             'doi_id': [""],
             'sra_id': [""],
-            "target": [""],
+            "target": ["brca1"],
+            'wt_sequence': ["atcg"],
             "target_organism": [''],
             'keywords': [''],
             'external_accessions': [''],
             'abstract': [""],
             'method_desc': [""],
+            'reference_mapping-TOTAL_FORMS': ['0'],
+            'reference_mapping-INITIAL_FORMS': ['0'],
+            'reference_mapping-MIN_NUM_FORMS': ['0'],
+            'reference_mapping-MAX_NUM_FORMS': ['1000'],
+            'reference_mapping-__prefix__-reference': [''],
+            'reference_mapping-__prefix__-target_start': [''],
+            'reference_mapping-__prefix__-target_end': [''],
+            'reference_mapping-__prefix__-reference_start': [''],
+            'reference_mapping-__prefix__-reference_end': [''],
             'submit': ['submit'],
             'publish': ['']
         }
@@ -206,12 +218,18 @@ class TestProfileEditInstanceView(TestCase):
             'abstract': [''],
             'method_desc': [''],
             'doi_id': [''],
-            'scores_data': [score_file],
-            'counts_data': [count_file],
             'keywords': [''],
             'submit': ['submit'],
             'publish': ['']
         }
+
+    def make_scores_test_data(self, scores_data=None, counts_data=None):
+        data = self.scoreset_post_data.copy()
+        s_file, c_file = make_score_count_files(scores_data, counts_data)
+        files = {Constants.SCORES_DATA: s_file}
+        if c_file is not None:
+            files[Constants.COUNTS_DATA] = c_file
+        return data, files
 
     def test_404_object_not_found(self):
         obj = experiment()
@@ -254,20 +272,67 @@ class TestProfileEditInstanceView(TestCase):
         response = edit_instance(request, accession=obj.accession)
         self.assertEqual(response.status_code, 404)
 
-    def test_scoreset_upload_new_scores_clears_old_variants(self):
-        obj = scoreset()
-
-    def test_scoreset_upload_new_counts_clears_old_variants(self):
-        self.fail()
-
-    def test_experiment_upload_updates_instance(self):
-        self.fail()
-
     def test_published_scoreset_instance_returns_edit_only_mode_form(self):
-        self.fail()
+        obj = scoreset()
+        obj.private = False
+        obj.save()
+        assign_user_as_instance_admin(self.alice, obj)
+        request = self.factory.get(
+            '/accounts/profile/edit/{}/'.format(obj.accession)
+        )
+        request.user = self.alice
+        response = edit_instance(request, accession=obj.accession)
+        self.assertNotContains(response, 'Score data')
+        self.assertNotContains(response, 'Count data')
 
     def test_published_experiment_instance_returns_edit_only_mode_form(self):
-        self.fail()
+        obj = experiment()
+        obj.private = False
+        obj.save()
+        assign_user_as_instance_admin(self.alice, obj)
+        request = self.factory.get(
+            '/accounts/profile/edit/{}/'.format(obj.accession)
+        )
+        request.user = self.alice
+        response = edit_instance(request, accession=obj.accession)
+        self.assertNotContains(response, 'Target')
+
+    def test_refmapping_update_deletes_removed_mappings(self):
+        obj = experiment()
+        assign_user_as_instance_admin(self.alice, obj)
+        data = self.experiment_post_data.copy()
+        data['reference_mapping-TOTAL_FORMS'] = ['1']
+        data['reference_mapping-0-reference'] = ['test1']
+        data['reference_mapping-0-is_alternate'] = ['off']
+        data['reference_mapping-0-target_start'] = [0]
+        data['reference_mapping-0-target_end'] = [10]
+        data['reference_mapping-0-reference_start'] = [0]
+        data['reference_mapping-0-reference_end'] = [10]
+        request = self.factory.post(
+            '/accounts/profile/edit/{}/'.format(obj.accession),
+            data=data
+        )
+        request.user = self.alice
+        edit_instance(request, accession=obj.accession)
+
+        # Now delete and add a new one.
+        data = self.experiment_post_data.copy()
+        data['reference_mapping-TOTAL_FORMS'] = ['1']
+        data['reference_mapping-0-reference'] = ['test2']
+        data['reference_mapping-0-is_alternate'] = ['off']
+        data['reference_mapping-0-target_start'] = [0]
+        data['reference_mapping-0-target_end'] = [10]
+        data['reference_mapping-0-reference_start'] = [0]
+        data['reference_mapping-0-reference_end'] = [20]
+        request = self.factory.post(
+            '/accounts/profile/edit/{}/'.format(obj.accession),
+            data=data
+        )
+        request.user = self.alice
+        response = edit_instance(request, accession=obj.accession)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ReferenceMapping.objects.count(), 1)
+        self.assertEqual(ReferenceMapping.objects.all()[0].reference, 'test2')
 
 
 class TestProfileViewInstanceView(TestCase):

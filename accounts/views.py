@@ -10,6 +10,7 @@ import reversion
 from django.apps import apps
 from django.http import HttpResponse, JsonResponse
 from django.core.mail import send_mail
+from django.db import transaction
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, reverse, redirect, get_object_or_404
@@ -22,11 +23,17 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 
+from experiment.views import (
+    ReferenceMappingFormSet,
+    REFERENCE_MAPPING_FORM_PREFIX,
+    parse_mapping_formset
+)
 from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
-from experiment.forms import ExperimentEditForm
+from experiment.forms import ExperimentEditForm, ExperimentForm
 from scoreset.validators import SCS_ACCESSION_RE
 from scoreset.forms import ScoreSetEditForm, ScoreSetForm
 
+from main.fields import ModelSelectMultipleField as msmf
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .permissions import (
@@ -165,7 +172,6 @@ def manage_instance(request, accession):
             post_form.process_user_list()
             instance.last_edit_by = request.user
             instance.save()
-
             return redirect("accounts:manage_instance", instance.accession)
 
     # Replace the form that has changed. If it reaches this point,
@@ -235,47 +241,114 @@ def handle_scoreset_edit_form(request, instance):
     else:
         form = ScoreSetForm.PartialFormFromRequest(request, instance)
 
+    context = {
+        "edit_form": form,
+        'instance': instance
+    }
+
     if request.method == "POST":
         if not instance.private:
             form = ScoreSetEditForm(request.POST, instance=instance)
         else:
             form = ScoreSetForm.PartialFormFromRequest(request, instance)
 
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        context["repop_keywords"] = ','.join(keywords)
+        context["edit_form"] = form
+
         if form.is_valid():
-            updated_instance = form.save(commit=True)
-            updated_instance.last_edit_by = request.user
-            save_and_create_revision_if_tracked_changed(
-                request.user, updated_instance
-            )
-            if request.POST.get("publish", None):
-                updated_instance.publish()
+            with transaction.atomic():
+                updated_instance = form.save(commit=True)
+                updated_instance.update_last_edit_info(request.user)
+                save_and_create_revision_if_tracked_changed(
+                    request.user, updated_instance
+                )
+
+                if request.POST.get("publish", None):
+                    updated_instance.publish()
 
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
             )
 
-    context = {
-        "edit_form": form,
-        'instance': instance
-    }
     return render(request, 'accounts/profile_edit.html', context)
 
 
 def handle_experiment_edit_form(request, instance):
-    form = ExperimentEditForm(instance=instance)
-    context = {"edit_form": form, 'instance': instance}
+    if not instance.private:
+        form = ExperimentEditForm(instance=instance)
+    else:
+        form = ExperimentForm.PartialFormFromRequest(request, instance)
 
+    # Set up the initial base context
+    context = {"edit_form": form, 'instance': instance, 'experiment': True}
+
+    # Set up the formset with initial data
+    if instance.private:
+        prev_reference_maps = instance.referencemapping_set.all()
+        ref_mapping_formset = ReferenceMappingFormSet(
+            initial=[r.to_json() for r in prev_reference_maps],
+            prefix=REFERENCE_MAPPING_FORM_PREFIX
+        )
+        context["reference_mapping_formset"] = ref_mapping_formset
+
+    # If you change the prefix arguments here, make sure to change them
+    # in base.js as well for the +/- buttons to work correctly.
     if request.method == "POST":
-        form = ExperimentEditForm(request.POST, instance=instance)
-        if form.is_valid():
-            updated_instance = form.save(commit=True)
-            updated_instance.last_edit_by = request.user
-            save_and_create_revision_if_tracked_changed(
-                request.user, updated_instance
-            )
+        if not instance.private:
+            form = ExperimentEditForm(request.POST, instance=instance)
+        else:
+            form = ExperimentForm.PartialFormFromRequest(request, instance)
 
-            if request.POST.get("publish", None):
-                updated_instance.publish()
+        # Build the reference mapping formset
+        if instance.private:
+            ref_mapping_formset = ReferenceMappingFormSet(
+                request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX,
+                initial=[r.to_json() for r in prev_reference_maps]
+            )
+            context["reference_mapping_formset"] = ref_mapping_formset
+
+        # Get the new keywords/accession/target org so that we can return
+        # them for list repopulation if the form has errors.
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        e_accessions = request.POST.getlist("external_accessions")
+        e_accessions = [ea for ea in e_accessions if msmf.is_word(ea)]
+        target_organism = request.POST.getlist("target_organism")
+        target_organism = [to for to in target_organism if msmf.is_word(to)]
+
+        # Set the context
+        context["edit_form"] = form
+        context["repop_keywords"] = ','.join(keywords)
+        context["repop_external_accessions"] = ','.join(e_accessions)
+        context["repop_target_organism"] = ','.join(target_organism)
+
+        if form.is_valid():
+            if instance.private:
+                maps = parse_mapping_formset(ref_mapping_formset)
+                if not all([m is not None for m in maps]):
+                    return render(
+                        request, 'accounts/profile_edit.html', context
+                    )
+
+                with transaction.atomic():
+                    updated_instance = form.save(commit=True)
+                    updated_instance.update_last_edit_info(request.user)
+                    save_and_create_revision_if_tracked_changed(
+                        request.user, updated_instance
+                    )
+                    prev_reference_maps.delete()
+                    for ref_map in maps:
+                        ref_map.experiment = updated_instance
+                        ref_map.save()
+            else:
+                with transaction.atomic():
+                    updated_instance = form.save(commit=True)
+                    updated_instance.update_last_edit_info(request.user)
+                    save_and_create_revision_if_tracked_changed(
+                        request.user, updated_instance
+                    )
 
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
@@ -385,7 +458,7 @@ def registration_view(request):
                     "email", ValidationError("This email is already in use."))
             else:
                 user = form.save(commit=False)
-                user.is_active = True  # TODO: change this during deployment
+                user.is_active = True
                 user.save()
                 uidb64, token = send_user_activation_email(
                     uid=user.pk,
