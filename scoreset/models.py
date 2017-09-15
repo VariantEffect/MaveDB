@@ -291,6 +291,23 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def md_method_desc(self):
         return convert_md_to_html(self.method_desc)
 
+    def get_latest_version(self):
+        next_instance = self
+        try:
+            next_instance = self.replaced_by
+            while True:
+                next_instance = next_instance.replaced_by
+        except:  # Catch RelatedObjectDoesNotExist
+            return next_instance
+
+    def get_replaced_by(self):
+        next_instance = None
+        try:
+            next_instance = self.replaced_by
+            return next_instance
+        except:  # Catch RelatedObjectDoesNotExist
+            return next_instance
+
 
 class Variant(models.Model):
     """

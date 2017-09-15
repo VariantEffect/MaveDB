@@ -213,6 +213,28 @@ class TestScoreSet(TransactionTestCase):
         )
         self.assertFalse(scs.has_counts_dataset())
 
+    def test_can_traverse_replaced_by_tree(self):
+        scs_1 = ScoreSet.objects.create(
+            experiment=self.exp,
+        )
+        scs_2 = ScoreSet.objects.create(
+            experiment=self.exp, replaces=scs_1
+        )
+        scs_3 = ScoreSet.objects.create(
+            experiment=self.exp, replaces=scs_2
+        )
+        self.assertEqual(scs_1.get_latest_version(), scs_3)
+
+    def test_get_replaced_by(self):
+        scs_1 = ScoreSet.objects.create(
+            experiment=self.exp,
+        )
+        scs_2 = ScoreSet.objects.create(
+            experiment=self.exp, replaces=scs_1
+        )
+        self.assertEqual(scs_1.get_replaced_by(), scs_2)
+        self.assertEqual(scs_2.get_replaced_by(), None)
+
 
 class TestVariant(TransactionTestCase):
     """
