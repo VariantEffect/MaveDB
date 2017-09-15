@@ -30,16 +30,20 @@ class GroupPermissionMixin(object):
         viewers = [u.pk for u in users if user_is_viewer_for_instance(u, self)]
         return User.objects.filter(pk__in=viewers).exclude(is_superuser=True)
 
-    def get_authors(self):
+    def get_authors(self, string=True):
         authors = [
             u.profile.get_authorship_name()
             for u in authors_for_instance(self)
         ]
-        return ', '.join(authors)
+        return ', '.join(authors) if string else authors
 
-    def get_authors_by_full_name(self):
+    def get_authors_by_full_name(self, string=True):
         authors = [
             u.profile.get_full_name_or_username()
             for u in authors_for_instance(self)
         ]
-        return ', '.join(authors)
+        return ', '.join(authors) if string else authors
+
+    def get_authors_by_username(self, string=True):
+        authors = [u.username for u in authors_for_instance(self)]
+        return ', '.join(authors) if string else authors
