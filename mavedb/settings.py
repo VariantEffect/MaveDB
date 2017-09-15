@@ -27,15 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-SOCIAL_AUTH_ORCID_KEY = 'APP-UQBTXJLTAPFI16XI'
-SOCIAL_AUTH_ORCID_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
-SOCIAL_AUTH_ORCID_SANDBOX_KEY = 'APP-UQBTXJLTAPFI16XI'
-SOCIAL_AUTH_ORCID_SANDBOX_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
-
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = ''
-SOCIAL_AUTH_USER_MODEL = 'auth.User'
-
-
 # Application definition
 INSTALLED_APPS = [
     'main',
@@ -161,7 +152,7 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'INFO',
+            'level': 'WARNING',
             'class': 'logging.FileHandler',
             'filename': 'info.log',
             'formatter': 'verbose'
@@ -170,7 +161,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'INFO',
+            'level': 'WARNING',
             'propagate': True
         },
     },
