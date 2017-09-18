@@ -12,11 +12,12 @@ from django.http import HttpResponse, JsonResponse
 from django.core.mail import send_mail
 from django.db import transaction
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 
-from django.contrib.auth import login
-from django.contrib.auth.models import User, AnonymousUser, Group
+from django.contrib.auth import login, get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.shortcuts import get_current_site
 
@@ -56,6 +57,7 @@ from .forms import (
 )
 
 
+User = get_user_model()
 logger = logging.getLogger(name="django")
 ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
 Experiment = apps.get_model('experiment', 'Experiment')
@@ -88,6 +90,44 @@ def get_class_for_accession(accession):
         return ScoreSet
     else:
         return None
+
+
+# List Users
+# ------------------------------------------------------------------------- #
+def list_all_users_and_their_data(request):
+    users = [
+        user for user in User.objects.all()
+        if not (user_is_anonymous(user) or user.is_superuser)
+    ]
+
+    # Handle the pagination request options
+    try:
+        per_page = request.GET.get('per-page', 25)
+        per_page = int(per_page)
+        paginator = Paginator(users, per_page=per_page)
+    except (PageNotAnInteger, ValueError, EmptyPage):
+        per_page = 25
+        paginator = Paginator(users, per_page=per_page)
+
+    try:
+        page_num = request.GET.get('page', 1)
+        users = paginator.page(page_num)
+    except PageNotAnInteger:
+        page_num = 1
+        users = paginator.page(page_num)
+    except EmptyPage:
+        page_num = paginator.num_pages
+        users = paginator.page(page_num)
+
+    context = {
+        "users": users,
+        "per_page": per_page,
+        "page_num": page_num,
+        "per_page_selections": [25, 50, 100]
+    }
+    return render(
+        request, "accounts/list_all.html", context
+    )
 
 
 # Profile views

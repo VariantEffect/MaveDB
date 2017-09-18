@@ -25,10 +25,13 @@ import django.contrib.auth.views as auth_views
 from .views import registration_view, profile_view
 from .views import activate_account_view, send_activation_email_view
 from .views import manage_instance, edit_instance, view_instance
-from .views import login_with_remember_me
+from .views import login_with_remember_me, list_all_users_and_their_data
 
 
 urlpatterns = [
+    # --- User list
+    url(r"list/$", list_all_users_and_their_data, name="list_accounts"),
+
     # ------ Register
     url(r"register/$", registration_view, name="register"),
     url(r"activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$",
