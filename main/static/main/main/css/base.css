@@ -251,7 +251,8 @@ table {
 /* Pagination
 ---------------------------------------- */
 .page-link.scores-active,
-.page-link.counts-active {
+.page-link.counts-active,
+.page-link.search-active {
     color: whitesmoke !important;
     border-color: #D1D1D1 !important;
     background-color: #AFC8FA !important;
