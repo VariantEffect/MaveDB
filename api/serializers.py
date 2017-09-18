@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from experiment.models import Experiment, ExperimentSet
 from scoreset.models import ScoreSet
 
+from accounts.permissions import user_is_anonymous
+
 User = get_user_model()
 
 
@@ -30,9 +32,6 @@ class ExperimentSetSerializer(Serializer):
     An implmentation of a Serializer for an ExperimentSet
     model
     """
-
-    def __init__(self):
-        super(ExperimentSetSerializer, self).__init__()
 
     def serialize(self, pk):
         try:
@@ -102,6 +101,7 @@ class ScoreSetSerializer(Serializer):
             "authors": instance.get_authors_by_username(string=False),
             "replaced_by": replaced_by,
             "replaces": replaces,
+            "reviewed": instance.approved,
             "current_version": instance.get_latest_version().accession,
             "score_columns": instance.scores_columns,
             "count_columns": instance.counts_columns
@@ -141,7 +141,7 @@ class UserSerializer(Serializer):
             ]
         }
 
-    def serialize_set(self, queryset):
+    def serialize_set(self, queryset, filter_private=True):
         return {
-            "users": [self.serialize(s.pk) for s in queryset]
+            "users": [self.serialize(s.pk, filter_private) for s in queryset]
         }

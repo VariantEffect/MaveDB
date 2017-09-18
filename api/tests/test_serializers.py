@@ -173,6 +173,7 @@ class TestScoreSetSerializer(TestCase):
             "current_version": instance.accession,
             "replaced_by": '',
             "replaces": '',
+            "reviewed": False,
             "score_columns": [],
             "count_columns": []
         }
