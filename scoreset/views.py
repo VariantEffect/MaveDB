@@ -2,7 +2,7 @@ import json
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, Http404
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from django.views.generic import DetailView
 from django.forms import formset_factory
 from django.contrib.auth.decorators import login_required
@@ -177,7 +177,8 @@ def download_scoreset_data(request, accession, dataset_key):
     scoreset = get_object_or_404(ScoreSet, accession=accession)
 
     has_permission = request.user.has_perm(
-        PermissionTypes.CAN_VIEW, scoreset)
+        PermissionTypes.CAN_VIEW, scoreset
+    )
     if scoreset.private and not has_permission:
         response = render(
             request=request,
@@ -202,38 +203,6 @@ def download_scoreset_data(request, accession, dataset_key):
             yield ','.join(data) + '\n'
 
     return StreamingHttpResponse(gen_repsonse(), content_type='text')
-
-
-def download_scoreset_metadata(request, accession):
-    """
-    This view returns the scoreset metadata in text format for viewing.
-
-    Parameters
-    ----------
-    accession : `str`
-        The `ScoreSet` accession which will be queried.
-
-    Returns
-    -------
-    `StreamingHttpResponse`
-        A stream is returned to handle the case where the data is too large
-        to send all at once.
-    """
-    scoreset = get_object_or_404(ScoreSet, accession=accession)
-
-    has_permission = request.user.has_perm(
-        PermissionTypes.CAN_VIEW, scoreset)
-    if scoreset.private and not has_permission:
-        response = render(
-            request=request,
-            template_name="main/403_forbidden.html",
-            context={"instance": scoreset},
-        )
-        response.status_code = 403
-        return response
-
-    json_response = json.dumps(scoreset.metadata)
-    return HttpResponse(json_response, content_type="application/json")
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))

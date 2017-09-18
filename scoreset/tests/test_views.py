@@ -19,7 +19,7 @@ from accounts.permissions import (
 from scoreset.models import ScoreSet, Variant
 from scoreset.views import (
     ScoreSetDetailView, scoreset_create_view,
-    download_scoreset_data, download_scoreset_metadata
+    download_scoreset_data
 )
 
 from .utility import make_score_count_files
@@ -216,21 +216,6 @@ class TestCreateNewScoreSetView(TestCase):
 
         counts_dataset_path = '{}/{}/{}/'.format(
             self.path, scs.accession, 'counts')
-        response = self.client.get(scores_dataset_path)
-        self.assertEqual(response.status_code, 403)
-
-    def test_private_metadata_request_returns_403(self):
-        data = self.post_data.copy()
-        assign_user_as_instance_admin(self.bob, self.exp_1)
-        data['experiment'] = [self.exp_1.pk]
-
-        self.client.login(username=self.username, password=self.password)
-        response = self.client.post(path=self.path, data=data)
-        self.client.logout()
-
-        scs = ScoreSet.objects.all()[0]
-        scores_dataset_path = '{}/{}/{}/'.format(
-            self.path, scs.accession, 'metadata')
         response = self.client.get(scores_dataset_path)
         self.assertEqual(response.status_code, 403)
 
