@@ -71,15 +71,6 @@
 					<span style="font-weight: 600;">SRA:</span>
 						<span>{{ experiment.sra_id|default:"None" }}</span>
 					<br>
-					<span style="font-weight: 600;">Reviewed:</span>
-						<span>
-							{% if experiment.approved %}
-								{{ "Yes "}}
-							{% else %}
-								{{ "No" }}
-							{% endif %}
-						</span>
-					<br>
 					<hr>
 			
 					<h3> Experiment information </h3>
@@ -102,49 +93,49 @@
 			</div> <!-- End information tab -->
 
 			<!-- Reference mapping tab -->
-			<div class="tab-pane fade show" id="refmaps" role="tabpanel" 
-					 aria-labelledby="refmaps-tab">
-				{% if not experiment.get_ref_mappings %}
-					<p> No maps have been specified for this experiment. </p>
-				{% else %}
-				<p class="mt-4">The following maps have been specified for this experiment: </p>
-				<div class="numeric-container container-fluid mt-2">
-						<table class="styled-table table table-hover">
-							<thead>
-								<tr>
-									<th>Reference</th>
-									<th>Is alternate</th>
-									<th>Target start</th>
-									<th>Target end</th>
-									<th>Reference start</th>
-									<th>Reference end</th>
-								</tr>
-							</thead>
-							<tbody>
-								{% for map in experiment.get_ref_mappings %}
-								<tr>
-									<td>{{ map.reference }}</td>
-									<td>{{ map.is_alternate }}</td>
-									<td>{{ map.target_start }}</td>
-									<td>{{ map.target_end }}</td>
-									<td>{{ map.reference_start }}</td>
-									<td>{{ map.reference_end }}</td>
-								</tr>			
-								{% endfor %}
-							</tbody>
-						</table>
-					{% endif %}	
+			<div class="tab-pane fade show" id="refmaps" role="tabpanel" aria-labelledby="refmaps-tab">
+				<div class="container-fluid mt-4">
+					{% if not experiment.get_ref_mappings %}
+						<p> No maps have been specified for this experiment. </p>
+					{% else %}
+						<p class="mt-4">The following maps have been specified for this experiment: </p>
+						<div class="numeric-container container-fluid mt-2">
+							<table class="styled-table table table-hover">
+								<thead>
+									<tr>
+										<th>Reference</th>
+										<th>Is alternate</th>
+										<th>Target start</th>
+										<th>Target end</th>
+										<th>Reference start</th>
+										<th>Reference end</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for map in experiment.get_ref_mappings %}
+									<tr>
+										<td>{{ map.reference }}</td>
+										<td>{{ map.is_alternate }}</td>
+										<td>{{ map.target_start }}</td>
+										<td>{{ map.target_end }}</td>
+										<td>{{ map.reference_start }}</td>
+										<td>{{ map.reference_end }}</td>
+									</tr>			
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+					{% endif %}
 				</div>
 			</div> <!-- End ref map tab -->
 
 			<!-- Scoreset tab -->
-			<div class="tab-pane fade show" id="scoresets" role="tabpanel" 
-					 aria-labelledby="scoresets-tab">
+			<div class="tab-pane fade show" id="scoresets" role="tabpanel" aria-labelledby="scoresets-tab">
 				<div class="container-fluid mt-4">
 					{% if not experiment.scoreset_set.all %}
-						<p> No score sets have been associated with this experiment.</p>
+						<p> No scoresets have been associated with this experiment. </p>
 					{% else %}
-						The following score sets are associated with this experiment:
+						<p> following score sets are associated with this experiment: </p>
 						<ul class="mt-2" style="list-style: none;">
 							{% for scoreset in experiment.scoreset_set.all %}
 							<li>
@@ -157,6 +148,7 @@
 					{% endif %}
 				</div>
 			</div> <!-- End scoreset tab -->
+		
 		</div> <!-- End tab content -->
 	
 	</div> <!-- End column -->

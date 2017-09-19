@@ -13,7 +13,7 @@ from django.core.validators import FileExtensionValidator
 from django.utils.translation import ugettext as _
 
 from main.utils.query_parsing import parse_query, filter_empty
-from main.models import Keyword
+from main.models import Keyword, Licence
 from main.fields import ModelSelectMultipleField
 
 from .models import ScoreSet, Variant, SCORES_KEY, COUNTS_KEY
@@ -42,6 +42,7 @@ class ScoreSetForm(forms.ModelForm):
         fields = (
             'experiment',
             'replaces',
+            'licence_type',
             'keywords',
             'doi_id',
             'abstract',
@@ -74,6 +75,10 @@ class ScoreSetForm(forms.ModelForm):
             self.fields["experiment"].widget = forms.widgets.Select(
                 attrs={"style": 'width:20%;'}
             )
+        if "licence_type" in self.fields:
+            if not self.fields["licence_type"].initial:
+                self.fields["licence_type"].initial = Licence.get_default()
+            self.fields["licence_type"].empty_label = None
 
         self.fields["doi_id"].widget = forms.TextInput(
             attrs={
@@ -109,6 +114,12 @@ class ScoreSetForm(forms.ModelForm):
             )
         )
         self.fields["keywords"].queryset = Keyword.objects.all()
+
+    def clean_licence_type(self):
+        licence = self.cleaned_data.get("licence_type", None)
+        if not licence:
+            licence = Licence.objects.get(short_name="CC BY-NC-SA 4.0")
+        return licence
 
     def clean_replaces(self):
         scoreset = self.cleaned_data.get("replaces", None)
@@ -478,6 +489,7 @@ class ScoreSetEditForm(ScoreSetForm):
     counts_data = None
     experiment = None
     replaces = None
+    licence_type = None
 
     class Meta:
         model = ScoreSet

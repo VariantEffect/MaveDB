@@ -14,7 +14,7 @@ from django.dispatch import receiver
 
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 from main.utils.pandoc import convert_md_to_html
-from main.models import Keyword
+from main.models import Keyword, Licence
 from experiment.models import Experiment
 
 from accounts.permissions import (
@@ -70,6 +70,9 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     last_edit_by : `models.ForeignKey`
         User to make the latest change to the instnace.
 
+    licence_type : `models.ForeignKey`
+        Licence type attached to the instance.
+
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
         created by default as not approved and must be manually checked
@@ -114,7 +117,8 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "SCS"
     TRACKED_FIELDS = (
-        "private", "approved", "abstract", "method_desc", "doi_id", "keywords"
+        "private", "approved", "abstract", "method_desc", "doi_id", "keywords",
+        "licence_type"
     )
 
     class Meta:
@@ -156,6 +160,12 @@ class ScoreSet(models.Model, GroupPermissionMixin):
         User, on_delete=models.SET_NULL, null=True,
         verbose_name="Created by",
         related_name='last_created_scoreset'
+    )
+
+    licence_type = models.ForeignKey(
+        to=Licence, on_delete=models.DO_NOTHING,
+        verbose_name="Licence",
+        related_name="attached_scoresets", null=True, blank=True
     )
 
     approved = models.BooleanField(
@@ -428,7 +438,7 @@ def propagate_private_bit(sender, instance, **kwargs):
     experiment_is_private = all(
         [s.private for s in experiment.scoreset_set.all()]
     )
-    experiment_is_approved = all(
+    experiment_is_approved = any(
         [s.approved for s in experiment.scoreset_set.all()]
     )
     experiment.private = experiment_is_private
@@ -439,7 +449,7 @@ def propagate_private_bit(sender, instance, **kwargs):
     experimentset_is_private = all(
         [e.private for e in experimentset.experiment_set.all()]
     )
-    experimentset_is_approved = all(
+    experimentset_is_approved = any(
         [e.approved for e in experimentset.experiment_set.all()]
     )
     experimentset.private = experimentset_is_private

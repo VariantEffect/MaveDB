@@ -1,6 +1,14 @@
 // Forward declare jQuery's `$` symbol
 jQuery, $;
 
+// ORCID button in base.html
+function openORCID() {
+    var currentUrl = "accounts/login/";
+    window.location.assign(currentUrl);
+    return false;
+}
+
+
 $('document').ready(function() {
     // Initialise select2
     $('.select2').select2();

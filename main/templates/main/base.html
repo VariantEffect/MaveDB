@@ -103,7 +103,32 @@
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:login'%}">Login</a>
+                <a class="nav-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
+                  
+                <!-- Modal -->
+                <div class="modal fade" id="orcid-login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Log in with ORCID</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <p>
+                          ORCID is an independent non-profit effort to provide an open registry of unique researcher 
+                          identifiers and open services to link research activities and organizations to these 
+                          identifiers. Learn more at <a href="https://orcid.org/">orcid.org</a>.
+                        </p>
+                        <button id="connect-orcid-button" onclick="openORCID()">
+                          <img id="orcid-id-logo" src="https://orcid.org/sites/default/files/images/orcid_24x24.png" width='24' height='24' alt="ORCID logo"/>
+                          Create or Connect your ORCID iD
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </li>
             {% endif %}
           </ul>

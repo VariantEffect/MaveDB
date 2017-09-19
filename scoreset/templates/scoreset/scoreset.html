@@ -65,17 +65,7 @@
 						<span>{{ scoreset.get_authors|default:"None" }}</span>
 					<br>	
 					<span style="font-weight: 600;">DOI:</span>
-						<span>{{ scoreset.doi_id|default:"None" }}</span>
-					<br>
-					<span style="font-weight: 600;">Reviewed:</span>
-					<span>
-						{% if scoreset.approved %}
-							{{ "Yes "}}
-						{% else %}
-							{{ "No" }}
-						{% endif %}
-					</span>
-					
+						<span>{{ scoreset.doi_id|default:"None" }}</span>					
 					<br>
 					<hr>
 					

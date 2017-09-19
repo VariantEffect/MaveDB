@@ -94,6 +94,12 @@ def list_all_users_and_their_data(request):
         if not (user_is_anonymous(user) or user.is_superuser)
     ]
 
+    # Filter out users that are not associated with any public datasets
+    users = [
+        user for user in users
+        if any(not i.private for i in user.profile.administrator_instances())
+    ]
+
     # Handle the pagination request options
     try:
         per_page = request.GET.get('per-page', 25)

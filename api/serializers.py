@@ -33,7 +33,7 @@ class ExperimentSetSerializer(Serializer):
     model
     """
 
-    def serialize(self, pk):
+    def serialize(self, pk, filter_private=True):
         try:
             instance = ExperimentSet.objects.get(pk=pk)
         except ObjectDoesNotExist:
@@ -44,12 +44,15 @@ class ExperimentSetSerializer(Serializer):
             "authors": instance.get_authors_by_username(string=False),
             "experiments": [
                 e.accession for e in instance.experiment_set.all()
+                if not (e.private and filter_private)
             ]
         }
 
-    def serialize_set(self, queryset):
+    def serialize_set(self, queryset, filter_private=True):
         return {
-            "experimentsets": [self.serialize(exps.pk) for exps in queryset]
+            "experimentsets": [
+                self.serialize(exps.pk, filter_private) for exps in queryset
+            ]
         }
 
 
@@ -58,7 +61,7 @@ class ExperimentSerializer(Serializer):
     An implmentation of a Serializer for an Experiment model
     """
 
-    def serialize(self, pk):
+    def serialize(self, pk, filter_private=True):
         try:
             instance = Experiment.objects.get(pk=pk)
         except ObjectDoesNotExist:
@@ -71,12 +74,15 @@ class ExperimentSerializer(Serializer):
             "scoresets": [
                 s.get_latest_version().accession
                 for s in instance.scoreset_set.all()
+                if not (s.private and filter_private)
             ]
         }
 
-    def serialize_set(self, queryset):
+    def serialize_set(self, queryset, filter_private=True):
         return {
-            "experiments": [self.serialize(exp.pk) for exp in queryset]
+            "experiments": [
+                self.serialize(exp.pk, filter_private) for exp in queryset
+            ]
         }
 
 
@@ -101,7 +107,9 @@ class ScoreSetSerializer(Serializer):
             "authors": instance.get_authors_by_username(string=False),
             "replaced_by": replaced_by,
             "replaces": replaces,
-            "reviewed": instance.approved,
+            "licence": [
+                instance.licence_type.short_name, instance.licence_type.link,
+            ],
             "current_version": instance.get_latest_version().accession,
             "score_columns": instance.scores_columns,
             "count_columns": instance.counts_columns

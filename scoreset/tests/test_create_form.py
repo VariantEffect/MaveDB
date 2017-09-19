@@ -7,6 +7,7 @@ from experiment.models import Experiment
 from scoreset.models import ScoreSet, Variant
 from scoreset.forms import ScoreSetForm
 from scoreset.validators import Constants
+from main.models import Licence
 
 from .utility import make_score_count_files
 
@@ -35,6 +36,23 @@ class TestScoreSetForm(TestCase):
         model = form.save()
         self.assertEqual(ScoreSet.objects.count(), 1)
         self.assertEqual(Variant.objects.count(), 1)
+
+    def test_licence_defaults_to_cc4(self):
+        data, files = self.make_test_data()
+        form = ScoreSetForm(data=data, files=files)
+        form.is_valid()
+        model = form.save()
+        cc4 = Licence.get_default()
+        self.assertEqual(model.licence_type, cc4)
+
+    def test_can_set_licence_type(self):
+        data, files = self.make_test_data()
+        cc0 = Licence.get_cc0()
+        data["licence_type"] = cc0.pk
+        form = ScoreSetForm(data=data, files=files)
+        form.is_valid()
+        model = form.save()
+        self.assertEqual(model.licence_type, cc0)
 
     def test_not_valid_experiment_not_found(self):
         data, files = self.make_test_data()

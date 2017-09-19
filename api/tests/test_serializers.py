@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
+from main.models import Licence
 from accounts.permissions import (
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer
@@ -32,14 +33,19 @@ def make_experiment(experimentset=None):
 def make_scoreset(experiment=None, replaces=None):
     if not experiment:
         experiment = make_experiment()
-    return ScoreSet.objects.create(experiment=experiment, replaces=replaces)
+    scs = ScoreSet.objects.create(experiment=experiment, replaces=replaces)
+    scs.licence_type = Licence.get_default()
+    scs.save()
+    return scs
 
 
 class TestExperimentSetSerializer(TestCase):
 
     def test_can_correctly_serialize_instance(self):
         experiment = make_experiment()
+        experiment.publish()
         instance = experiment.experimentset
+        instance.publish()
         alice = User.objects.create(username="alice")
         bob = User.objects.create(username="bob")
         assign_user_as_instance_admin(alice, instance)
@@ -50,6 +56,24 @@ class TestExperimentSetSerializer(TestCase):
             "authors": ["alice"],
             "accession": instance.accession,
             "experiments": [experiment.accession]
+        }
+        result = serializer.serialize(instance.pk)
+        self.assertEqual(expected, result)
+
+    def test_can_filter_out_private(self):
+        experiment = make_experiment()
+        instance = experiment.experimentset
+
+        alice = User.objects.create(username="alice")
+        bob = User.objects.create(username="bob")
+        assign_user_as_instance_admin(alice, instance)
+        assign_user_as_instance_viewer(bob, instance)
+
+        serializer = ExperimentSetSerializer()
+        expected = {
+            "authors": ["alice"],
+            "accession": instance.accession,
+            "experiments": []
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -97,6 +121,7 @@ class TestExperimentSerializer(TestCase):
     def test_can_correctly_serialize_instance(self):
         instance = make_experiment()
         scoreset_1 = make_scoreset(experiment=instance)
+        scoreset_1.publish()
 
         alice = User.objects.create(username="alice")
         bob = User.objects.create(username="bob")
@@ -109,6 +134,25 @@ class TestExperimentSerializer(TestCase):
             "experimentset": instance.experimentset.accession,
             "accession": instance.accession,
             "scoresets": [scoreset_1.accession]
+        }
+        result = serializer.serialize(instance.pk)
+        self.assertEqual(expected, result)
+
+    def test_can_filter_out_private(self):
+        instance = make_experiment()
+        scoreset_1 = make_scoreset(experiment=instance)
+
+        alice = User.objects.create(username="alice")
+        bob = User.objects.create(username="bob")
+        assign_user_as_instance_admin(alice, instance)
+        assign_user_as_instance_viewer(bob, instance)
+
+        serializer = ExperimentSerializer()
+        expected = {
+            "authors": ["alice"],
+            "experimentset": instance.experimentset.accession,
+            "accession": instance.accession,
+            "scoresets": []
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -130,6 +174,8 @@ class TestExperimentSerializer(TestCase):
         instance = make_experiment()
         scoreset_1 = make_scoreset(experiment=instance)
         scoreset_2 = make_scoreset()  # not associated
+        scoreset_1.publish()
+        scoreset_2.publish()
 
         serializer = ExperimentSerializer()
         expected = [scoreset_1.accession]
@@ -173,7 +219,9 @@ class TestScoreSetSerializer(TestCase):
             "current_version": instance.accession,
             "replaced_by": '',
             "replaces": '',
-            "reviewed": False,
+            "licence": [
+                instance.licence_type.short_name, instance.licence_type.link,
+            ],
             "score_columns": [],
             "count_columns": []
         }

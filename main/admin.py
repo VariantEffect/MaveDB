@@ -1,17 +1,20 @@
+from django.conf import settings
 from django.contrib import admin
+from django.db.models import ObjectDoesNotExist
 
 from reversion.admin import VersionAdmin
 
 from experiment.models import Experiment, ExperimentSet
 from scoreset.models import ScoreSet, Variant
 
-from .models import News, SiteInformation
+from .models import News, SiteInformation, Licence
 from .models import Keyword, ExternalAccession, TargetOrganism
 from .models import ReferenceMapping
 
 
 # Register with admin
 admin.site.register(News)
+admin.site.register(Licence)
 admin.site.register(SiteInformation)
 
 admin.site.register(TargetOrganism)

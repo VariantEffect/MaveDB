@@ -29,7 +29,7 @@ def users_all(request):
     serializer = UserSerializer()
     users = [
         user for user in User.objects.all()
-        if not (user_is_anonymous(user))
+        if not (user_is_anonymous(user) or user.is_superuser)
     ]
     data = serializer.serialize_set(users)
     return JsonResponse(data)

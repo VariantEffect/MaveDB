@@ -46,15 +46,6 @@
 					<br>
 					<span style="font-weight: 600;">Authors:</span>
 						<span>{{ experimentset.get_authors|default:"None" }}</span>
-					<br>
-					<span style="font-weight: 600;">Reviewed:</span>
-						<span>
-							{% if experimentset.approved %}
-								{{ "Yes "}}
-							{% else %}
-								{{ "No" }}
-							{% endif %}
-						</span>
 				</div>
 			</div> <!-- End info tab -->
 			
