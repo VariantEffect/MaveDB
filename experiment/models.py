@@ -87,7 +87,7 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
 
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "EXPS"
-    TRACKED_FIELDS = ("private",)
+    TRACKED_FIELDS = ("private", "approved")
 
     class Meta:
         ordering = ['-creation_date']
@@ -277,7 +277,7 @@ class Experiment(models.Model, GroupPermissionMixin):
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "EXP"
     TRACKED_FIELDS = (
-        "private", "abstract", "method_desc",
+        "private", "approved", "abstract", "method_desc",
         "doi_id", "sra_id", "keywords", "external_accessions"
     )
 
