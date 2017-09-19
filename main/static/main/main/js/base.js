@@ -207,7 +207,7 @@ $("#publish").click(function (event) {
         'will also be published and frozen. ' + 
         
         'Please make sure you have read the documentation before proceeding. ' +
-        'This action cannot be undone. Would you like to reversed?'
+        'This action cannot be undone. Would you like to proceed?'
     );
     return saidYes;
 });

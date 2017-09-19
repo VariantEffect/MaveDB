@@ -90,6 +90,7 @@ class SiteInformation(models.Model):
     _documentation = models.TextField(default="", blank=True)
     _terms = models.TextField(default="", blank=True)
     _privacy = models.TextField(default="", blank=True)
+    _email = models.EmailField(default="", blank=True)
 
     class Meta:
         verbose_name_plural = "Site Information"
@@ -129,6 +130,10 @@ class SiteInformation(models.Model):
     @property
     def privacy(self):
         return convert_md_to_html(self._privacy)
+
+    @property
+    def email(self):
+        return self._email
 
     def can_save(self):
         """

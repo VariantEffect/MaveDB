@@ -2,10 +2,12 @@
 
 {% block body %}
 
-<div>
-    <h4> 
-        Help page and contact information.
-    </h4>
+<div class="container-fluid terms-privacy-body">
+    <h1 id="contact"> Contact </h1>
+    <p> 
+        Please email us at {{ site_information.email|safe|escape|default:"None" }}
+        if you have any questions or you are having any trouble using the site.
+    </p>
 </div>
 
 {% endblock %}

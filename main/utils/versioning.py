@@ -40,8 +40,9 @@ def save_and_create_revision_if_tracked_changed(user, instance):
             reversion.set_comment(', '.join(comments))
 
     # Delete revisions created in a post_save signal from ScoreSet that
-    # don't involve the private bit being changed.
-    if klass == "ScoreSet" and not any(["private" in c for c in comments]):
+    # don't involve the private/approved bit being changed.
+    if klass == "ScoreSet" and not any(["private" in c for c in comments]) \
+            and not any(["approved" in c for c in comments]):
         new_exp_versions = Version.objects.get_for_object(experiment)
         new_exps_versions = Version.objects.get_for_object(experimentset)
 
