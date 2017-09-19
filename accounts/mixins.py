@@ -30,6 +30,9 @@ class GroupPermissionMixin(object):
         viewers = [u.pk for u in users if user_is_viewer_for_instance(u, self)]
         return User.objects.filter(pk__in=viewers).exclude(is_superuser=True)
 
+    def get_author_models(self):
+        return list(authors_for_instance(self))
+
     def get_authors(self, string=True):
         authors = [
             u.profile.get_authorship_name()

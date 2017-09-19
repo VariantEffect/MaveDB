@@ -135,6 +135,8 @@ class UserSerializer(Serializer):
         profile = user.profile
         return {
             "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "experimentsets": [
                 i.accession for i in profile.administrator_experimentsets()
                 if not (i.private and filter_private)

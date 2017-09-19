@@ -52,12 +52,16 @@ class TestUserAPIViews(TestCase):
             "users": [
                 {
                     "username": "alice",
+                    "first_name": "",
+                    "last_name": "",
                     'experimentsets': [],
                     'experiments': [],
                     'scoresets': []
                 },
                 {
                     "username": "bob",
+                    "first_name": "",
+                    "last_name": "",
                     'experimentsets': [],
                     'experiments': [],
                     'scoresets': []
@@ -77,6 +81,8 @@ class TestUserAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = {
             "username": "alice",
+            "first_name": "",
+            "last_name": "",
             'experimentsets': [],
             'experiments': [],
             'scoresets': [scs_2.accession]

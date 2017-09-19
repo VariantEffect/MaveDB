@@ -17,38 +17,48 @@
 		<tbody>
 			{% for user in users %}
 				<tr>
-					<td>{{ user.username }}</td>
+					<td><a href="http://orcid.org/{{ user.username }}">{{ user.username }}</a></td>
 					<td>{{ user.first_name|default:"-" }}</td>
 					<td>{{ user.last_name|default:"-" }}</td>
 					<td>
-						{% for exps in user.profile.administrator_experimentsets %}
-							{% if not exps.private %}
-								<a href="{% url 'experiment:experimentset_detail' exps.accession %}">{{ exps.accession }}</a>
-								{% if forloop.counter|add:1 < user.profile.administrator_experimentsets|length %}
-								,
+						{% if not user.profile.administrator_experimentsets %}
+						-
+						{% else %}
+							{% for exps in user.profile.administrator_experimentsets %}
+								{% if not exps.private %}
+									<a href="{% url 'experiment:experimentset_detail' exps.accession %}">{{ exps.accession }}</a>
+									{% if forloop.counter|add:1 < user.profile.administrator_experimentsets|length %},{% endif %}
 								{% endif %}
-							{% endif %}
-						{% endfor %}
+							{% endfor %}
+						{% endif %}
 					</td>
 					<td>
-						{% for exp in user.profile.administrator_experiments %}
-							{% if not exp.private %}
-								<a href="{% url 'experiment:experiment_detail' exp.accession %}">{{ exp.accession }}</a>
-								{% if forloop.counter|add:1 < user.profile.administrator_experiments|length %}
-								,
+						{% if not user.profile.administrator_experiments %}
+						-
+						{% else %}
+							{% for exp in user.profile.administrator_experiments %}
+								{% if not exp.private %}
+									<a href="{% url 'experiment:experiment_detail' exp.accession %}">{{ exp.accession }}</a>
+									{% if forloop.counter|add:1 < user.profile.administrator_experiments|length %}
+									,
+									{% endif %}
 								{% endif %}
-							{% endif %}
-						{% endfor %}
+							{% endfor %}
+						{% endif %}	
 					</td>
 					<td>
-						{% for scs in user.profile.administrator_scoresets %}
-							{% if not scs.private %}
-								<a href="{% url 'scoreset:scoreset_detail' scs.accession %}">{{ scs.accession }}</a>
-								{% if forloop.counter|add:1 < user.profile.administrator_scoresets|length %}
-								,
+						{% if not user.profile.administrator_scoresets %}
+						-
+						{% else %}
+							{% for scs in user.profile.administrator_scoresets %}
+								{% if not scs.private %}
+									<a href="{% url 'scoreset:scoreset_detail' scs.accession %}">{{ scs.accession }}</a>
+									{% if forloop.counter|add:1 < user.profile.administrator_scoresets|length %}
+									,
+									{% endif %}
 								{% endif %}
-							{% endif %}
-						{% endfor %}				
+							{% endfor %}	
+						{% endif %}		
 					</td>
 				</tr>
 			{% endfor %}

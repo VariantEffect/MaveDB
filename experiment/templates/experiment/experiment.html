@@ -54,22 +54,35 @@
 						<span>{{ experiment.creation_date }}</span>
 					<br>
 					<span style="font-weight: 600;">Created by:</span>
-						<span>{{ experiment.created_by.profile.get_full_name_or_username}}</span>
+						<span>
+							<a href="https://orcid.org/{{ experiment.created_by.username }}">
+								{{ experiment.created_by.profile.get_full_name_or_username}}
+							</a>
+						</span>
 					<br>
 					<span style="font-weight: 600;">Last edited on:</span>
 						<span>{{ experiment.last_edit_date|default:"None" }}</span>
 					<br>
 					<span style="font-weight: 600;">Last edited by:</span>
-						<span>{{ experiment.last_edit_by.profile.get_full_name_or_username}}</span>
+						<span>
+							<a href="https://orcid.org/{{ experiment.last_edit_by.username }}">
+								{{ experiment.last_edit_by.profile.get_full_name_or_username}}
+							</a>
+						</span>					
 					<br>
 					<span style="font-weight: 600;">Authors:</span>
-						<span>{{ experiment.get_authors|default:"None" }}</span>
+						<span>
+							{% for user in experiment.get_author_models %}
+								<a href="https://orcid.org/{{ user.username }}">{{ user.profile.get_full_name_or_username }}</a>
+								{% if forloop.counter < experiment.get_author_models|length %},{% endif %}
+							{% endfor %}
+						</span>
 					<br>	
 					<span style="font-weight: 600;">DOI:</span>
-						<span>{{ experiment.doi_id|default:"None" }}</span>
+						<span>{{ experiment.doi_id|default:"Not provided" }}</span>
 					<br>
 					<span style="font-weight: 600;">SRA:</span>
-						<span>{{ experiment.sra_id|default:"None" }}</span>
+						<span>{{ experiment.sra_id|default:"Not provided" }}</span>
 					<br>
 					<hr>
 			
@@ -78,7 +91,11 @@
 						<span>{{ experiment.target }}</span>
 					<br>
 					<span style="font-weight: 600;">Target organism: </span>
-						<em>{{ experiment.get_target_organism|default:"Not provided" }}</em>
+						{% if experiment.get_target_organism != 'None' %}
+							<em>{{ experiment.get_target_organism }}</em>
+						{% else %}
+							Not provided
+						{% endif %}
 					<br>
 					<div style="word-wrap: break-word; word-break: break-all;">
 						<span style="font-weight: 600">Wild type sequence: </span>

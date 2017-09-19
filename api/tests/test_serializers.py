@@ -302,7 +302,7 @@ class TestScoreSetSerializer(TestCase):
 class TestUserSerializer(TestCase):
 
     def setUp(self):
-        self.alice = User.objects.create(username="alice")
+        self.alice = User.objects.create(username="alice", first_name="Alice")
         self.bob = User.objects.create(username="bob")
 
     def test_can_serialize_minimal_example(self):
@@ -318,6 +318,8 @@ class TestUserSerializer(TestCase):
         result = serializer.serialize(self.alice.pk, filter_private=False)
         expected = {
             "username": "alice",
+            "first_name": "Alice",
+            "last_name": "",
             "experimentsets": [exps.accession],
             "experiments": [exp.accession],
             "scoresets": [scs.accession],
