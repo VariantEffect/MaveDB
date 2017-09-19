@@ -33,7 +33,10 @@ class Profile(models.Model):
         if not (self.user.first_name or self.user.last_name):
             return self.user.username
         else:
-            return '{} {}'.format(self.user.first_name, self.user.last_name)
+            return '{} {}'.format(
+                self.user.first_name.capitalize(),
+                self.user.last_name.capitalize()
+            )
 
     def get_authorship_name(self):
         if self.is_anon():
@@ -43,7 +46,8 @@ class Profile(models.Model):
             return self.user.username
         else:
             return '{}, {}'.format(
-                self.user.last_name, self.user.first_name[0]
+                self.user.last_name.capitalize(),
+                self.user.first_name[0].capitalize()
             )
 
     def __str__(self):

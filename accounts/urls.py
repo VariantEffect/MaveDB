@@ -22,9 +22,9 @@ from django.conf.urls import url, include
 from django.urls import reverse_lazy
 import django.contrib.auth.views as auth_views
 
-from .views import registration_view, profile_view
+from .views import registration_view, profile_view, log_user_out, login_error
 from .views import manage_instance, edit_instance, view_instance
-from .views import login_with_remember_me, list_all_users_and_their_data
+from .views import login_delegator, list_all_users_and_their_data
 
 
 urlpatterns = [
@@ -34,15 +34,20 @@ urlpatterns = [
     # ------ Register
     url(r"register/$", registration_view, name="register"),
 
+    # ------ Social stuff
+    url(r"error", login_error, name="login_error"),
+    url(
+        r'^oauth/', include('social_django.urls', namespace='social'),
+        name="social"
+    ),
+
     # ------ Login and Logout
+    url(r'^logout/$', log_user_out, name='logout'),
     url(
         r'login/$',
-        login_with_remember_me,
-        name='login'),
-    url(
-        r'logout/$',
-        auth_views.LogoutView.as_view(),
-        name='logout'),
+        login_delegator,
+        name='login'
+    ),
 
     # ------ Profile
     url(r"^$", profile_view, name="index"),

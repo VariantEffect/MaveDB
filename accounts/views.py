@@ -7,22 +7,17 @@ import json
 import logging
 import reversion
 
+from django.conf import settings
 from django.apps import apps
-from django.http import HttpResponse, JsonResponse
-from django.core.mail import send_mail
 from django.db import transaction
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 
-from django.contrib.auth import login, get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth import logout, get_user_model
+import django.contrib.auth.views as auth_views
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.sites.shortcuts import get_current_site
-
-from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_decode
 
 from experiment.views import (
     ReferenceMappingFormSet,
@@ -49,11 +44,10 @@ from .permissions import (
     update_viewer_list_for_instance
 )
 
-from .tokens import account_activation_token
 from .forms import (
     RegistrationForm,
-    send_user_activation_email,
-    SelectUsersForm
+    SelectUsersForm,
+    send_admin_email
 )
 
 
@@ -132,14 +126,20 @@ def list_all_users_and_their_data(request):
 
 # Profile views
 # ------------------------------------------------------------------------- #
-def login_with_remember_me(request):
-    import django.contrib.auth.views as auth_views
-    response = auth_views.LoginView.as_view()(request)
-    if request.POST.get('remember', None):
-        request.session.set_expiry(1209600)  # 2 weeks
+def login_delegator(request):
+    if settings.USE_SOCIAL_AUTH:
+        return redirect("accounts:social:begin", "orcid")
     else:
-        request.session.set_expiry(0)
-    return response
+        return auth_views.LoginView.as_view()(request)
+
+
+def log_user_out(request):
+    logout(request)
+    return redirect("main:home")
+
+
+def login_error(request):
+    return render(request, "accounts/account_not_created.html")
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
@@ -305,8 +305,9 @@ def handle_scoreset_edit_form(request, instance):
                     request.user, updated_instance
                 )
 
-                if request.POST.get("publish", None):
-                    updated_instance.publish()
+            if request.POST.get("publish", None):
+                updated_instance.publish()
+                send_admin_email(request.user, updated_instance)
 
             return redirect(
                 "accounts:edit_instance", updated_instance.accession

@@ -1,7 +1,6 @@
 {% autoescape off %}
 
-A new {{ class_name }} has been created by {{ user.profile.get_full_name_or_username }}. You
+A new {{ class_name }} has been created by user {{ user.profile.get_full_name_or_username }}. You
 will need to manually approve accession {{ instance.accession }} via the admin interface.
-
 
 {% endautoescape %}

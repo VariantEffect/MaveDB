@@ -1,4 +1,5 @@
 
+from django.core import mail
 from django.core.urlresolvers import reverse_lazy, reverse
 from django.test import TestCase, RequestFactory
 from django.utils.functional import SimpleLazyObject
@@ -188,6 +189,8 @@ class TestProfileEditInstanceView(TestCase):
         self.path = reverse_lazy("accounts:edit_instance")
         self.factory = RequestFactory()
         self.alice = User.objects.create(username="alice")
+        self.alice.set_password("secret_key")
+        self.alice.save()
         self.bob = User.objects.create(username="bob")
         self.experiment_post_data = {
             'doi_id': [""],
@@ -242,6 +245,28 @@ class TestProfileEditInstanceView(TestCase):
         obj.delete()
         response = edit_instance(request, accession=accession)
         self.assertEqual(response.status_code, 404)
+
+    def test_publish_button_sends_admin_emails(self):
+        admin = User.objects.create(
+            username="admin", email="admin@admin.com"
+        )
+        admin.is_superuser = True
+        admin.save()
+
+        obj = scoreset()
+        assign_user_as_instance_admin(self.alice, obj)
+        data, _ = self.make_scores_test_data()
+        score_file, count_file = make_score_count_files()
+        data['scores_data'] = score_file
+        data['counts_data'] = count_file
+        data['publish'] = ['publish']
+        path = '/accounts/profile/edit/{}/'.format(obj.accession)
+        self.client.login(username="alice", password="secret_key")
+        response = self.client.post(path=path, data=data)
+
+        obj.refresh_from_db()
+        self.assertFalse(obj.private)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_requires_login(self):
         obj = experiment()
