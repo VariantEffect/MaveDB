@@ -95,7 +95,13 @@
 							</td>
 							<td>{{ exp.target }}</td>
 							<td>{{ exp.get_authors }}</td>
-							<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
+							<td>
+								{% if exp.get_target_organism != 'None' %}
+									<em>{{ exp.get_target_organism }}</em>
+								{% else %}
+									-
+								{% endif %}
+							</td>
 							<td>{{ exp.get_keywords|default:"-" }}</td>
 							<td>{{ exp.get_other_accessions|default:"-" }}</td>
 						</tr>
