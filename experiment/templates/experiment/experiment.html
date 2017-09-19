@@ -152,7 +152,7 @@
 					{% if not experiment.scoreset_set.all %}
 						<p> No scoresets have been associated with this experiment. </p>
 					{% else %}
-						<p> following score sets are associated with this experiment: </p>
+						<p> The following score sets are associated with this experiment: </p>
 						<ul class="mt-2" style="list-style: none;">
 							{% for scoreset in experiment.scoreset_set.all %}
 							<li>
