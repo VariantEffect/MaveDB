@@ -24,8 +24,30 @@ SECRET_KEY = 'u0f4jvthu$der#dy048qu7w*r$&_&1qw_lmz92bgq@c6&c!7zs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+USE_SOCIAL_AUTH = False
 
 ALLOWED_HOSTS = []
+
+# social-auth settings
+# SECURITY WARNING: keep the secret key below in production secret!
+SOCIAL_AUTH_ORCID_KEY = 'APP-UQBTXJLTAPFI16XI'
+SOCIAL_AUTH_ORCID_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
+
+SOCIAL_AUTH_USER_MODEL = 'auth.User'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/accounts/profile/"
+SOCIAL_AUTH_LOGIN_ERROR_URL = "/accounts/error/"
+SOCIAL_AUTH_URL_NAMESPACE = 'accounts:social'
+SOCIAL_AUTH_PIPELINE = [
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -37,6 +59,7 @@ INSTALLED_APPS = [
     'search',
     'guardian',
     'reversion',
+    'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,6 +71,7 @@ INSTALLED_APPS = [
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # this is default
     'guardian.backends.ObjectPermissionBackend',
+    'social_core.backends.orcid.ORCIDOAuth2'
 )
 
 MIDDLEWARE = [
@@ -59,6 +83,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Social-auth middleware
+    'social_django.middleware.SocialAuthExceptionMiddleware'
 ]
 
 ROOT_URLCONF = 'mavedb.urls'
@@ -74,6 +101,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # Social-auth context_processors
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
