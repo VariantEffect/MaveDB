@@ -12,14 +12,10 @@ from django.contrib.auth.models import User
 
 from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
-
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from django.template.loader import render_to_string
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
-from .tokens import account_activation_token
 from .permissions import (
     GroupTypes,
     update_admin_list_for_instance,
@@ -149,48 +145,27 @@ class RegistrationForm(UserCreationForm):
         )
 
 
-def send_user_activation_email(uid, secure, domain, subject, template_name):
+def send_admin_email(user, instance):
     """
-    Sends an email to the user with the primary key `uid` with
-    an activation link.
+    Sends an email to all admins.
 
     Parameters
     ----------
-    uid : `int`
-        The primary key for the user.
-    secure : `bool`
-        Whether to use https or http.
-    domain : `str`
-        The domain for this website.
-    subject : `str`
-        Email subject line.`
-    template_name : `str`
-        The name of the email template.
+    user : `auth.User`
+        The user who created the instance.
+    instance : `object`
+        The instance created.
 
-    Returns
-    -------
-    `tuple`
-        Including `(uidb64, token)` where `uid64` is the base64 encoded
-        primary key and `token` is the generated activation link token.
     """
-    try:
-        user = User.objects.get(pk=uid)
-    except User.DoesNotExist:
-        logger.error("Could not find user {}".format(uid))
-        return None, None
-
-    try:
-        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-        token = account_activation_token.make_token(user)
-    except (TypeError, ValueError, OverflowError):
-        logger.error("Could not make uidb64/token.")
-        return None, None
-
+    template_name = "accounts/alert_admin_new_entry_email.html"
+    admins = User.objects.filter(is_superuser=True)
     message = render_to_string(template_name, {
         'user': user,
-        'protocol': 'https' if secure else 'http',
-        'domain': domain,
-        'uid': uidb64,
-        'token': token})
-    user.email_user(subject, message)
-    return uidb64, token
+        'instance': instance,
+        'class_name': instance.__class__.__name__
+    })
+
+    subject = "[MAVEDB ADMIN] New entry requires your attention."
+    for admin in admins:
+        logger.warning("Sending email to {}".format(admin.username))
+        admin.email_user(subject, message)
