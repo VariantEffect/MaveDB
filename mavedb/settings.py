@@ -20,18 +20,22 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# SECRET_KEY = os.environ.get("SECRET_KEY", '')
 SECRET_KEY = 'u0f4jvthu$der#dy048qu7w*r$&_&1qw_lmz92bgq@c6&c!7zs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-USE_SOCIAL_AUTH = False
 
+# Set the host for this site. Set when DEBUG = FALSE
 ALLOWED_HOSTS = []
 
 # social-auth settings
 # SECURITY WARNING: keep the secret key below in production secret!
-SOCIAL_AUTH_ORCID_KEY = 'APP-UQBTXJLTAPFI16XI'
-SOCIAL_AUTH_ORCID_SECRET = '53a169d9-7b25-4b0b-a1b0-0a2ca40a8e4a'
+SOCIAL_AUTH_ORCID_KEY = os.environ.get("SOCIAL_AUTH_ORCID_KEY", '')
+SOCIAL_AUTH_ORCID_SECRET = os.environ.get("SOCIAL_AUTH_ORCID_SECRET", '')
+
+USE_SOCIAL_AUTH = bool(SOCIAL_AUTH_ORCID_KEY) and \
+    bool(SOCIAL_AUTH_ORCID_SECRET) and bool(ALLOWED_HOSTS)
 
 SOCIAL_AUTH_USER_MODEL = 'auth.User'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/accounts/profile/"
@@ -165,7 +169,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 LOGIN_REDIRECT_URL = '/accounts/profile/'
 LOGOUT_REDIRECT_URL = '/accounts/profile/'
 
-# DEBUG email server
+# DEBUG email server, set to something proper when DEBUG = FALSE
 DEFAULT_FROM_EMAIL = "mave-webmaster@mave.com"
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
