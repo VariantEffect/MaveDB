@@ -235,6 +235,15 @@ class TestScoreSet(TransactionTestCase):
         self.assertEqual(scs_1.get_replaced_by(), scs_2)
         self.assertEqual(scs_2.get_replaced_by(), None)
 
+    def test_approved_bit_propagates(self):
+        scs_1 = ScoreSet.objects.create(experiment=self.exp)
+        self.assertEqual(scs_1.experiment.approved, False)
+        self.assertEqual(scs_1.experiment.experimentset.approved, False)
+        scs_1.approved = True
+        scs_1.save()
+        self.assertEqual(scs_1.experiment.approved, True)
+        self.assertEqual(scs_1.experiment.experimentset.approved, True)
+
 
 class TestVariant(TransactionTestCase):
     """

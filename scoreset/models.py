@@ -114,7 +114,7 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "SCS"
     TRACKED_FIELDS = (
-        "private", "abstract", "method_desc", "doi_id", "keywords"
+        "private", "approved", "abstract", "method_desc", "doi_id", "keywords"
     )
 
     class Meta:
@@ -428,12 +428,20 @@ def propagate_private_bit(sender, instance, **kwargs):
     experiment_is_private = all(
         [s.private for s in experiment.scoreset_set.all()]
     )
+    experiment_is_approved = all(
+        [s.approved for s in experiment.scoreset_set.all()]
+    )
     experiment.private = experiment_is_private
+    experiment.approved = experiment_is_approved
     experiment.save()
 
     experimentset = experiment.experimentset
     experimentset_is_private = all(
         [e.private for e in experimentset.experiment_set.all()]
     )
+    experimentset_is_approved = all(
+        [e.approved for e in experimentset.experiment_set.all()]
+    )
     experimentset.private = experimentset_is_private
+    experimentset.approved = experimentset_is_approved
     experimentset.save()

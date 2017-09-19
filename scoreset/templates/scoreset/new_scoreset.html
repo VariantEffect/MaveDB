@@ -71,8 +71,16 @@
 			</div>
 			<br><hr>
 			
-			<input class="btn btn-outline-dark" style="width: 200px;" 
-						type="submit" name="submit" value="submit">
+			<div style="width:100%;margin-top:5px;">
+				<input class="btn btn-outline-dark" type="submit" value="Save" name="save"
+								style="width:150px;margin-bottom:35px;" data-toggle="tooltip" 
+								data-placement="top|right|bottom|left"
+								title="Save your changes without publishing.">
+				<input type="submit" value="Publish" class="btn btn-outline-danger" data-toggle="tooltip" 
+							data-placement="top|right|bottom|left" name="publish"
+							title="Publish your entry. This action is final and will freeze your certain aspects of your entry."
+							style="width:150px;margin-bottom:35px;" id="publish">
+			</div>
 		</form>
 	</div>
 </div>

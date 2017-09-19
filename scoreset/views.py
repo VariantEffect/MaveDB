@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from accounts.forms import send_admin_email
 from accounts.permissions import (
     assign_user_as_instance_admin,
     PermissionTypes
@@ -276,6 +277,10 @@ def scoreset_create_view(request, came_from_new_experiment=False, e_accession=No
         # Save and update permissions. A user will not be added as an
         # admin to the parent experiment. This must be done by the admin
         # of said experiment.
+        if request.POST.get("publish", None):
+            scoreset.publish()
+            send_admin_email(request.user, scoreset)
+
         user = request.user
         scoreset.created_by = user
         scoreset.last_edit_by = user

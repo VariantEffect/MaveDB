@@ -1,4 +1,5 @@
 
+from django.core import mail
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, HttpResponseForbidden
 from django.test import TestCase, TransactionTestCase, RequestFactory
@@ -9,6 +10,7 @@ from django.contrib.auth import authenticate, login
 
 from main.models import Keyword
 from experiment.models import Experiment
+
 from accounts.permissions import (
     user_is_admin_for_instance,
     assign_user_as_instance_admin,
@@ -100,7 +102,8 @@ class TestCreateNewScoreSetView(TestCase):
             'scores_data': [score_file],
             'counts_data': [count_file],
             'keywords': [''],
-            'submit': ['submit']
+            'submit': ['submit'],
+            "publish": ['']
         }
 
         self.exp_1 = Experiment.objects.create(
@@ -198,6 +201,24 @@ class TestCreateNewScoreSetView(TestCase):
         response = self.client.post(path=self.path, data=data)
         scs = ScoreSet.objects.all()[0]
         self.assertTrue(user_is_admin_for_instance(self.bob, scs))
+
+    def test_scoreset_published_sends_email_to_admin(self):
+        admin = self.User.objects.create(
+            username="admin", email="admin@admin.com"
+        )
+        admin.is_superuser = True
+        admin.save()
+
+        data = self.post_data.copy()
+        assign_user_as_instance_admin(self.bob, self.exp_1)
+        data['experiment'] = [self.exp_1.pk]
+        data['publish'] = ['publish']
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(path=self.path, data=data)
+
+        scs = ScoreSet.objects.all()[0]
+        self.assertFalse(scs.private)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_private_dataset_request_returns_403(self):
         data = self.post_data.copy()
