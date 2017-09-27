@@ -292,8 +292,8 @@ class TestSearchForm(TestCase):
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 2)
-        self.assertEqual(self.exp_1, instances[0])
-        self.assertEqual(self.exp_2, instances[1])
+        self.assertTrue(self.exp_1 in instances)
+        self.assertTrue(self.exp_2 in instances)
 
     def test_experiment_metadata_search_is_case_insensitive(self):
         key = 'metadata'
