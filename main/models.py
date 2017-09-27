@@ -365,8 +365,8 @@ class Licence(models.Model):
     short_name = models.CharField(
         null=False, default=None, verbose_name="Short name", max_length=2048
     )
-    text = models.TextField(
-        verbose_name="Licence", null=False, default=None
+    legal_code = models.TextField(
+        verbose_name="Legal Code", null=False, default=None
     )
     link = models.CharField(
         null=False, default=None, verbose_name="Link", max_length=2048
@@ -381,6 +381,9 @@ class Licence(models.Model):
 
     def __str__(self):
         return self.long_name
+
+    def get_license_legalcode(self):
+        return self.legal_code
 
     @classmethod
     def populate(cls):
@@ -399,7 +402,7 @@ class Licence(models.Model):
             licence = cls.objects.create(
                 short_name="CC0",
                 long_name="CC0 (Public domain)",
-                text=open(settings.LICENCE_DIR + "CC0.txt", 'rt').read(),
+                legal_code=open(settings.LICENCE_DIR + "CC0.txt", 'rt').read(),
                 link="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
                 version=1.0
             )
@@ -413,8 +416,9 @@ class Licence(models.Model):
             licence = cls.objects.create(
                 short_name="CC BY-NC-SA 4.0",
                 long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
-                text=open(
-                    settings.LICENCE_DIR + "CC_BY-NC-SA_4.0.txt", 'rt').read(),
+                legal_code=open(
+                    settings.LICENCE_DIR + "CC_BY-NC-SA_4.0.txt", 'rt'
+                ).read(),
                 link="https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
                 version=4.0
             )
