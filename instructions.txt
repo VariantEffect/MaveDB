@@ -1,0 +1,29 @@
+In the mavedb/settings.py file set the below as follows:
+
+DEBUG = False
+ALLOWED_HOSTS = [<your host>]
+
+Next, sign up for an ORCID account, go to 'developer tools' in the menu bar at the top
+of the screen. Enable public API access by following the instructions at
+https://support.orcid.org/knowledgebase/articles/343182-register-a-public-api-client-application.
+Make sure to set 'Your website URL' and 'Redirect URIs' to the same address. Once you
+have done this, define the following environment variables in the web server:
+
+set SOCIAL_AUTH_ORCID_KEY=<Client ID from ORCID>
+set SOCIAL_AUTH_ORCID_SECRET=<Client secret from ORCID>
+
+Finally, In the virtual environment you have created for the prototype:
+
+1. python manage.py migrate
+2. python manage.py collectstatic
+
+Django will look for SOCIAL_AUTH_ORCID_KEY, SOCIAL_AUTH_ORCID_SECRET and a valid host
+in ALLOWED_HOSTS to configure the ORCID login system. If these variables have
+been set correctly, the ORCID login system will be used. If not, the default
+contrib.auth login system will be used. If you have problems, open settings.py
+abd set the client ID and client secret directly by replacing the 'os.environ.get' calls
+with the keys:
+
+SOCIAL_AUTH_ORCID_KEY = <Client ID from ORCID>
+SOCIAL_AUTH_ORCID_SECRET = <Client secret from ORCID>
+
