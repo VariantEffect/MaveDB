@@ -16,6 +16,10 @@ Finally, In the virtual environment you have created for the prototype:
 
 1. python manage.py migrate
 2. python manage.py collectstatic
+3. python manage.py createsuperuser
+
+Follow the prompts for step 3 and enter a valid email. This email will be
+used to notify you of recently published datasets.
 
 Django will look for SOCIAL_AUTH_ORCID_KEY, SOCIAL_AUTH_ORCID_SECRET and a valid host
 in ALLOWED_HOSTS to configure the ORCID login system. If these variables have
