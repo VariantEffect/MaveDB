@@ -388,7 +388,7 @@ class Licence(models.Model):
     @classmethod
     def populate(cls):
         cls.get_cc0()
-        cls.get_cc4
+        cls.get_cc4()
 
     @classmethod
     def get_default(cls):
