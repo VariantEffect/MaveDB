@@ -31,3 +31,8 @@ with the keys:
 SOCIAL_AUTH_ORCID_KEY = <Client ID from ORCID>
 SOCIAL_AUTH_ORCID_SECRET = <Client secret from ORCID>
 
+To set up the License database table run:
+1. python manage.py shell
+2. from main.models import Licence
+3. Licence.populate()
+
