@@ -390,7 +390,7 @@ class Variant(models.Model):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return str(self.accession)
+        return 'ID: {}, HGVS: {}'.format(str(self.pk), str(self.hgvs))
 
     @property
     def scores_columns(self):
@@ -413,18 +413,18 @@ class Variant(models.Model):
     def save(self, *args, **kwargs):
         with transaction.atomic():
             super(Variant, self).save(*args, **kwargs)
-            if not self.accession:
-                parent = self.scoreset
-                digit_suffix = parent.next_variant_suffix()
-                accession = '{}.{}'.format(
-                    parent.accession.replace(
-                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
-                    digit_suffix
-                )
-                parent.last_used_suffix = digit_suffix
-                parent.save()
-                self.accession = accession
-                self.save()
+#            if not self.accession:
+#                parent = self.scoreset
+#                digit_suffix = parent.next_variant_suffix()
+#                accession = '{}.{}'.format(
+#                    parent.accession.replace(
+#                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
+#                    digit_suffix
+#                )
+#                parent.last_used_suffix = digit_suffix
+#                parent.save()
+#                self.accession = accession
+#                self.save()
 
 
 @receiver(post_save, sender=ScoreSet)

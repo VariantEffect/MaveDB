@@ -58,20 +58,21 @@ def valid_var_accession(accession):
 
 
 def valid_hgvs_string(string):
-    variants = [v.strip() for v in string.strip().split(',')]
-
-    protein_matches = all([re_protein.match(v) for v in variants])
-    nucleotide_matches = all([re_nucleotide.match(v) for v in variants])
-    coding_matches = all([re_coding.match(v) for v in variants])
-    noncoding_matches = all([re_noncoding.match(v) for v in variants])
-    wt_or_sy = all([v in ["_wt", "_sy"] for v in variants])
-
-    if not (protein_matches or nucleotide_matches or
-            coding_matches or noncoding_matches or wt_or_sy):
-        raise ValidationError(
-            _("Variant '%(variant)s' is not a valid HGVS string."),
-            params={'variant': string}
-        )
+#    variants = [v.strip() for v in string.strip().split(',')]
+#
+#    protein_matches = all([re_protein.match(v) for v in variants])
+#    nucleotide_matches = all([re_nucleotide.match(v) for v in variants])
+#    coding_matches = all([re_coding.match(v) for v in variants])
+#    noncoding_matches = all([re_noncoding.match(v) for v in variants])
+#    wt_or_sy = all([v in ["_wt", "_sy"] for v in variants])
+#
+#    if not (protein_matches or nucleotide_matches or
+#            coding_matches or noncoding_matches or wt_or_sy):
+#        raise ValidationError(
+#            _("Variant '%(variant)s' is not a valid HGVS string."),
+#            params={'variant': string}
+#        )
+    return
 
 
 def valid_scoreset_score_data_input(file):
