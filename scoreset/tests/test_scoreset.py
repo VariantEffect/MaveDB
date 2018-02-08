@@ -206,6 +206,44 @@ class TestScoreSet(TransactionTestCase):
         with self.assertRaises(ValueError):
             scs.validate_variant_data(var)
 
+    def test_has_counts_dataset_return_false_when_COUNTS_KEY_is_empty_list(self):
+        scs = ScoreSet.objects.create(
+            experiment=self.exp,
+            dataset_columns={SCORES_KEY: ['score'], COUNTS_KEY: []}
+        )
+        self.assertFalse(scs.has_counts_dataset())
+
+    def test_can_traverse_replaced_by_tree(self):
+        scs_1 = ScoreSet.objects.create(
+            experiment=self.exp,
+        )
+        scs_2 = ScoreSet.objects.create(
+            experiment=self.exp, replaces=scs_1
+        )
+        scs_3 = ScoreSet.objects.create(
+            experiment=self.exp, replaces=scs_2
+        )
+        self.assertEqual(scs_1.get_latest_version(), scs_3)
+
+    def test_get_replaced_by(self):
+        scs_1 = ScoreSet.objects.create(
+            experiment=self.exp,
+        )
+        scs_2 = ScoreSet.objects.create(
+            experiment=self.exp, replaces=scs_1
+        )
+        self.assertEqual(scs_1.get_replaced_by(), scs_2)
+        self.assertEqual(scs_2.get_replaced_by(), None)
+
+    def test_approved_bit_propagates(self):
+        scs_1 = ScoreSet.objects.create(experiment=self.exp)
+        self.assertEqual(scs_1.experiment.approved, False)
+        self.assertEqual(scs_1.experiment.experimentset.approved, False)
+        scs_1.approved = True
+        scs_1.save()
+        self.assertEqual(scs_1.experiment.approved, True)
+        self.assertEqual(scs_1.experiment.experimentset.approved, True)
+
 
 class TestVariant(TransactionTestCase):
     """

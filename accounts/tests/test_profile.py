@@ -41,6 +41,35 @@ class TestUserProfile(TestCase):
         self.assertFalse(user_is_anonymous(bob))
         self.assertTrue(user_is_anonymous(anon))
 
+    def test_can_get_full_name(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey",
+            first_name="daniel", last_name="smith"
+        )
+        self.assertEqual(
+            bob.profile.get_full_name_or_username(), "Daniel Smith"
+        )
+
+    def test_can_get_authorship_name(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey",
+            first_name="daniel", last_name="smith"
+        )
+        self.assertEqual(
+            bob.profile.get_authorship_name(), "Smith, D"
+        )
+
+    def test_name_methods_default_to_username(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey"
+        )
+        self.assertEqual(
+            bob.profile.get_full_name_or_username(), "bob"
+        )
+        self.assertEqual(
+            bob.profile.get_authorship_name(), "bob"
+        )
+
     def test_can_create_user_profile(self):
         bob = User.objects.create(username="bob", password="secretkey")
         self.assertEqual(len(Profile.non_anonymous_profiles()), 1)

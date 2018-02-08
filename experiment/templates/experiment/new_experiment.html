@@ -4,6 +4,10 @@
 <div class="row">
 	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
 		<h3>Create new experiment</h3>
+		<p class="mt-4">
+			Please fill out the form to the right. All fields will remain editable until published.
+		</p>
+		<p>* indicates a required field</p>
 	</div>
 	
 	<!-- Composite form rendering -->
@@ -19,6 +23,10 @@
 				<p>{{ experiment_form.non_field_errors }}</p>
 			</div>
 			{% endif %}
+
+			<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
+			<div id="accession-to-add" hidden>{{ repop_external_accessions }}</div>
+			<div id="organisms-to-add" hidden>{{ repop_target_organism }}</div>
 			
 			<!-- Model form rendering -->
 			<div class="model-form">
@@ -26,7 +34,23 @@
 					<div class="form-group">
 						<label for="{{ field.id_for_label }}">
 							{{ field.label }}{% if field.field.required %} * {% endif %}
+							{% if field.label == "Abstract" %}
+								<!-- Button trigger modal -->
+								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+												data-target="#abstract-markdown-modal" id="preview-abstract">
+								Preview
+								</button>
+							{% endif %}
+							
+							{% if field.label == "Method description" %}
+								<!-- Button trigger modal -->
+								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+												data-target="#method-markdown-modal" id="preview-method">
+								Preview
+								</button>
+							{% endif %}
 						</label>
+						
 						{% if field.errors %}
 							<div class="alert alert-danger alert-dismissible fade show" role="alert">
 								<button type="button" class="close" data-dismiss="alert" aria-label="Close">

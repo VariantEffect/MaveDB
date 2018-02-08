@@ -2,7 +2,7 @@ import json
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, Http404
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from django.views.generic import DetailView
 from django.forms import formset_factory
 from django.contrib.auth.decorators import login_required
@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from accounts.forms import send_admin_email
 from accounts.permissions import (
     assign_user_as_instance_admin,
     PermissionTypes
@@ -17,6 +18,9 @@ from accounts.permissions import (
 
 from experiment.models import Experiment
 
+from main.utils.pandoc import convert_md_to_html
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
+from main.fields import ModelSelectMultipleField as msmf
 from main.models import (
     Keyword, ExternalAccession,
     TargetOrganism, ReferenceMapping
@@ -77,7 +81,12 @@ class ScoreSetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-        variant_list = instance.variant_set.all().order_by("hgvs")
+        scores_variant_list = instance.variant_set.all().order_by("hgvs")
+
+        if instance.has_counts_dataset():
+            counts_variant_list = instance.variant_set.all().order_by("hgvs")
+        else:
+            counts_variant_list = instance.variant_set.none()
 
         try:
             counts_per_page = self.request.GET.get('counts-per-page', '')
@@ -91,30 +100,36 @@ class ScoreSetDetailView(DetailView):
         except:
             scores_per_page = 20
 
-        scores_paginator = Paginator(variant_list, per_page=scores_per_page)
-        counts_paginator = Paginator(variant_list, per_page=counts_per_page)
+        scores_paginator = Paginator(
+            scores_variant_list, per_page=scores_per_page)
+        counts_paginator = Paginator(
+            counts_variant_list, per_page=counts_per_page)
 
         try:
-            scores_page = self.request.GET.get('scores_page', None)
+            scores_page = self.request.GET.get('scores-page', None)
             scores_variants = scores_paginator.page(scores_page)
         except PageNotAnInteger:
-            scores_variants = scores_paginator.page(1)
+            scores_page = 1
+            scores_variants = scores_paginator.page(scores_page)
         except EmptyPage:
-            scores_variants = scores_paginator.page(scores_paginator.num_pages)
+            scores_page = scores_paginator.num_pages
+            scores_variants = scores_paginator.page(scores_page)
 
         try:
-            counts_page = self.request.GET.get('counts_page', None)
+            counts_page = self.request.GET.get('counts-page', None)
             counts_variants = counts_paginator.page(counts_page)
         except PageNotAnInteger:
-            counts_variants = counts_paginator.page(1)
+            counts_page = 1
+            counts_variants = counts_paginator.page(counts_page)
         except EmptyPage:
-            counts_variants = counts_paginator.page(counts_paginator.num_pages)
+            counts_page = counts_paginator.num_pages
+            counts_variants = counts_paginator.page(counts_page)
 
         # Handle the case when there are too many pages for scores.
         index = scores_paginator.page_range.index(scores_variants.number)
         max_index = len(scores_paginator.page_range)
-        start_index = index - 3 if index >= 3 else 0
-        end_index = index + 3 if index <= max_index - 3 else max_index
+        start_index = index - 5 if index >= 5 else 0
+        end_index = index + 5 if index <= max_index - 5 else max_index
         page_range = scores_paginator.page_range[start_index:end_index]
         context["scores_page_range"] = page_range
         context["scores_variants"] = scores_variants
@@ -124,8 +139,8 @@ class ScoreSetDetailView(DetailView):
         # Handle the case when there are too many pages for counts.
         index = counts_paginator.page_range.index(counts_variants.number)
         max_index = len(counts_paginator.page_range)
-        start_index = index - 3 if index >= 3 else 0
-        end_index = index + 3 if index <= max_index - 3 else max_index
+        start_index = index - 5 if index >= 5 else 0
+        end_index = index + 5 if index <= max_index - 5 else max_index
         page_range = counts_paginator.page_range[start_index:end_index]
         context["counts_page_range"] = page_range
         context["counts_variants"] = counts_variants
@@ -163,7 +178,8 @@ def download_scoreset_data(request, accession, dataset_key):
     scoreset = get_object_or_404(ScoreSet, accession=accession)
 
     has_permission = request.user.has_perm(
-        PermissionTypes.CAN_VIEW, scoreset)
+        PermissionTypes.CAN_VIEW, scoreset
+    )
     if scoreset.private and not has_permission:
         response = render(
             request=request,
@@ -172,6 +188,9 @@ def download_scoreset_data(request, accession, dataset_key):
         )
         response.status_code = 403
         return response
+
+    if not scoreset.has_counts_dataset() and dataset_key == COUNTS_KEY:
+        return StreamingHttpResponse("", content_type='text')
 
     variants = scoreset.variant_set.all().order_by("accession")
     columns = scoreset.dataset_columns[dataset_key]
@@ -187,40 +206,8 @@ def download_scoreset_data(request, accession, dataset_key):
     return StreamingHttpResponse(gen_repsonse(), content_type='text')
 
 
-def download_scoreset_metadata(request, accession):
-    """
-    This view returns the scoreset metadata in text format for viewing.
-
-    Parameters
-    ----------
-    accession : `str`
-        The `ScoreSet` accession which will be queried.
-
-    Returns
-    -------
-    `StreamingHttpResponse`
-        A stream is returned to handle the case where the data is too large
-        to send all at once.
-    """
-    scoreset = get_object_or_404(ScoreSet, accession=accession)
-
-    has_permission = request.user.has_perm(
-        PermissionTypes.CAN_VIEW, scoreset)
-    if scoreset.private and not has_permission:
-        response = render(
-            request=request,
-            template_name="main/403_forbidden.html",
-            context={"instance": scoreset},
-        )
-        response.status_code = 403
-        return response
-
-    json_response = json.dumps(scoreset.metadata)
-    return HttpResponse(json_response, content_type="application/json")
-
-
 @login_required(login_url=reverse_lazy("accounts:login"))
-def scoreset_create_view(request):
+def scoreset_create_view(request, came_from_new_experiment=False, e_accession=None):
     """
     A view to create a new scoreset. Upon successs, this view will redirect
     to the newly created scoreset object.
@@ -230,7 +217,8 @@ def scoreset_create_view(request):
     expect everything to break horribly.
     """
     context = {}
-    scoreset_form = ScoreSetForm(prefix=SCORESET_FORM_PREFIX)
+    scoreset_form = ScoreSetForm()
+
     pks = [i.pk for i in request.user.profile.administrator_experiments()]
     experiments = Experiment.objects.filter(
         pk__in=set(pks)
@@ -238,14 +226,43 @@ def scoreset_create_view(request):
     scoreset_form.fields["experiment"].queryset = experiments
 
     pks = [i.pk for i in request.user.profile.administrator_scoresets()]
-    scoresets = ScoreSet.objects.filter(pk__in=set(pks))
+    scoresets = ScoreSet.objects.filter(pk__in=set(pks)).order_by("accession")
     scoreset_form.fields["replaces"].queryset = scoresets
-    context["scoreset_form"] = scoreset_form
+
+    if came_from_new_experiment:
+        experiments = Experiment.objects.filter(accession=e_accession)
+        scoreset_form.fields["experiment"].queryset = experiments
+        context["scoreset_form"] = scoreset_form
+        context["came_from_new_experiment"] = came_from_new_experiment
+        context["e_accession"] = e_accession
+        return render(
+            request,
+            "scoreset/new_scoreset.html",
+            context=context
+        )
+
+    # If the request is ajax, then it's for previewing the abstract
+    # or method description
+    if request.is_ajax():
+        data = {}
+        data['abstract'] = convert_md_to_html(
+            request.GET.get("abstract", "")
+        )
+        data['method_desc'] = convert_md_to_html(
+            request.GET.get("method_desc", "")
+        )
+        return HttpResponse(json.dumps(data), content_type="application/json")
 
     if request.method == "POST":
-        scoreset_form = ScoreSetForm(
-            request.POST, prefix=SCORESET_FORM_PREFIX)
+        # Get the new keywords so that we can return them for
+        # list repopulation if the form has errors.
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+
+        scoreset_form = ScoreSetForm(data=request.POST, files=request.FILES)
         scoreset_form.fields["experiment"].queryset = experiments
+        scoreset_form.fields["replaces"].queryset = scoresets
+        context["repop_keywords"] = ','.join(keywords)
         context["scoreset_form"] = scoreset_form
 
         if scoreset_form.is_valid():
@@ -260,18 +277,22 @@ def scoreset_create_view(request):
         # Save and update permissions. A user will not be added as an
         # admin to the parent experiment. This must be done by the admin
         # of said experiment.
-        scoreset.save()
+        if request.POST.get("publish", None):
+            scoreset.publish()
+            send_admin_email(request.user, scoreset)
+
         user = request.user
         scoreset.created_by = user
         scoreset.last_edit_by = user
         scoreset.update_last_edit_info(user)
-        scoreset.save()
+        save_and_create_revision_if_tracked_changed(user, scoreset)
 
         assign_user_as_instance_admin(user, scoreset)
         accession = scoreset.accession
         return redirect("scoreset:scoreset_detail", accession=accession)
 
     else:
+        context["scoreset_form"] = scoreset_form
         return render(
             request,
             "scoreset/new_scoreset.html",

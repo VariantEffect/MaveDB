@@ -15,11 +15,8 @@
           rel="stylesheet">
     <!-- Bootstrap -->
     <link rel="stylesheet" href="{% static 'main/bootstrap4b/css/bootstrap.min.css' %}"> 
-    <!-- DataTables -->
     <!-- tocbot -->
     <link href="{% static 'main/tocbot/css/tocbot.css' %}" rel="stylesheet">
-    <!-- jquery-ui -->
-    <link href="{% static 'main/jquery/css/jquery-ui.css' %}" rel="stylesheet">
     <!-- Select2 -->
     <link href="{% static 'main/select2/css/select2.min.css' %}" rel="stylesheet">
     <!-- custom css -->
@@ -31,6 +28,41 @@
   </head>
 
   <body>
+    <!-- Modal for abstract preview -->
+    <div class="modal fade" id="abstract-markdown-modal" tabindex="-1" role="dialog" 
+        aria-labelledby="modelTitleId" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="modelTitleId">Abstract</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for method preview -->
+    <div class="modal fade" id="method-markdown-modal" tabindex="-1" role="dialog" 
+        aria-labelledby="modelTitleId" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="modelTitleId">Method description</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body content -->
     <div class="section header container-fluid">
       <nav class="navbar navbar-expand-md navbar-light">
         
@@ -57,7 +89,7 @@
               <a class="nav-link" href="{% url 'search:search' %}">Search</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Download</a>
+              <a class="nav-link" href="{% url 'accounts:list_accounts' %}">Users</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{% url 'main:documentation'%}">Documentation</a>
@@ -71,10 +103,32 @@
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:login'%}">Login</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:register'%}">Register</a>
+                <a class="nav-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
+                  
+                <!-- Modal -->
+                <div class="modal fade" id="orcid-login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Log in with ORCID</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <p>
+                          ORCID is an independent non-profit effort to provide an open registry of unique researcher 
+                          identifiers and open services to link research activities and organizations to these 
+                          identifiers. Learn more at <a href="https://orcid.org/">orcid.org</a>.
+                        </p>
+                        <button id="connect-orcid-button" onclick="openORCID()">
+                          <img id="orcid-id-logo" src="https://orcid.org/sites/default/files/images/orcid_24x24.png" width='24' height='24' alt="ORCID logo"/>
+                          Create or Connect your ORCID iD
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </li>
             {% endif %}
           </ul>
@@ -113,7 +167,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Contact</a>
+            <a class="nav-link" href="{% url 'main:contact'%}">Contact</a>
           </li>
           <div class="align-self-center float-left">
             <small>All rights reserved, 2017.</small>
@@ -128,8 +182,9 @@
   <!-- This needs to be here in order to record the user pk from the django -->
   <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
   <!-- JQuery/JQuery UI -->
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" 
-          integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" 
+  <script type="text/javascript"
+          src="https://code.jquery.com/jquery-3.2.1.min.js"
+          integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
           crossorigin="anonymous"></script>
   <script type="text/javascript" 
           src="{% static 'main/jquery/js/jquery-ui.min.js' %}"></script>
@@ -145,7 +200,6 @@
           src="{% static 'main/tocbot/js/tocbot.js' %}"></script>
   <script type="text/javascript"  
           src="{% static 'main/main/js/init_tocbot.js' %}"></script>
-  <!-- DataTables -->
   <!-- Select2 -->
   <script type="text/javascript"  
           src="{% static 'main/select2/js/select2.min.js' %}"></script>         

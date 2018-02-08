@@ -18,6 +18,7 @@ os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LICENCE_DIR = BASE_DIR + '/licences/'
 
 
 # Quick-start development settings - unsuitable for production
@@ -60,14 +61,16 @@ SOCIAL_AUTH_PIPELINE = [
 ]
 
 # Application definition
-
 INSTALLED_APPS = [
     'main',
+    'api',
     'accounts',
     'experiment',
     'scoreset',
     'search',
     'guardian',
+    'reversion',
+    'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,6 +82,7 @@ INSTALLED_APPS = [
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # this is default
     'guardian.backends.ObjectPermissionBackend',
+    'social_core.backends.orcid.ORCIDOAuth2'
 )
 
 MIDDLEWARE = [
@@ -89,6 +93,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Social-auth middleware
+    'social_django.middleware.SocialAuthExceptionMiddleware'
 ]
 
 ROOT_URLCONF = 'mavedb.urls'
@@ -104,6 +111,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # Social-auth context_processors
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -197,16 +208,16 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': 'info.log',
             'formatter': 'verbose'
         },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'propagate': True
         },
     },

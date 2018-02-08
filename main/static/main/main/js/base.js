@@ -1,39 +1,15 @@
 // Forward declare jQuery's `$` symbol
 jQuery, $;
 
-// Container variable for common tags on the base tamplate
-function basePageTags() {
-    "use strict";
-    var tags = {
-        header: ".header",
-        logoCol: ".logo",
-        logoImage: ".logo-img",
-        navbarCol: ".navbar",
-        navbarList: ".navbar-list",
-        navbarItem: ".navbar-item",
-        navbarSearchCol: ".navbar-search",
-        navbarSearchForm: ".navbar-search > form",
-        navbarSearchInput: ".navbar-search > form > input",
-        bodyBlock: ".body-block",
-        footer: ".footer",
-        footerbar: ".footerbar",
-        footerbarList: ".footerbar-list",
-        footerbarItem: ".footerbar-item"
-    };
-    return tags;
+// ORCID button in base.html
+function openORCID() {
+    var currentUrl = "accounts/login/";
+    window.location.assign(currentUrl);
+    return false;
 }
 
-$('document').ready(function() {
-    $(basePageTags().navbarSearchInput).focus(function (ev) {
-        $(this).attr(
-            'placeholder',
-            "Kinase, DNA repair, regression, 'exact string', ..."
-        );
-    });
-    $(basePageTags().navbarSearchInput).blur(function (ev) {
-        $(this).attr("placeholder", "Search...");
-    });
 
+$('document').ready(function() {
     // Initialise select2
     $('.select2').select2();
     $(".select2-token-select").select2({
@@ -48,7 +24,202 @@ $('document').ready(function() {
     if (currentUrl.endsWith("#scores")) {
         $("#scores-tab").click();
     }
+
+    // Re-add any external_accession, keywords or target organism
+    // back to failed form submission
+    repopulateSelect("#id_keywords", "#keywords-to-add");
+    repopulateSelect("#id_external_accessions", "#accession-to-add");
+    repopulateSelect("#id_target_organism", "#organisms-to-add");
 });
+
+// Ajax for markdown field preview
+$("#preview-abstract").click(function (e) {
+    // First get whatever is in the form and send an ajax request
+    // to convert it to markdown.
+    var abstract = $("#id_abstract").val();
+    $.ajax({
+        url: "/scoreset/new/",
+        type: "GET",
+        data: { "abstract": abstract },
+        dataType: "json",
+        success: function (data) {
+            abstract = data.abstract;
+            $("#abstract-markdown-modal .modal-body").text("");
+            $("#abstract-markdown-modal .modal-body").append(abstract);
+        },
+        error : function(xhr,errmsg,err) {
+            console.log(xhr.status + ": " + xhr.responseText);
+        }
+    });
+    return true;
+});
+$("#preview-method").click(function (e) {
+    // First get whatever is in the form and send an ajax request
+    // to convert it to markdown.
+    var method = $("#id_method_desc").val();
+    $.ajax({
+        url: "/scoreset/new/",
+        type: "GET",
+        data: { "method_desc": method },
+        dataType: "json",
+        success: function (data) {
+            method = data.method_desc;
+            $("#method-markdown-modal .modal-body").text("");
+            $("#method-markdown-modal .modal-body").append(method);
+        },
+        error : function(xhr,errmsg,err) {
+            console.log(xhr.status + ": " + xhr.responseText);
+        }
+    });
+    return true;
+});
+
+
+// Re-add any external_accession, keywords or target organism
+// back to failed form submission
+function repopulateSelect(selectId, listId) {
+    ls = $(listId).text();
+    if (ls !== undefined) {
+        ls = ls.trim().split(',');
+        $.each(ls, function (index, value) {
+            if (value !== "") {
+                $(selectId).append($('<option/>', {
+                    value: value,
+                    text: value,
+                    selected: true
+                }));
+            }
+        });
+    }
+}
+
+
+// Pagination submission
+// dataType: 'scores', 'counts' or 'search'
+// selectObj: select object
+function paginationSubmit(dataType, clickedLink) {
+    var scoresSelect = $("#scores-per-page-select")[0];
+    var countsSelect = $("#counts-per-page-select")[0];
+    var searchSelect = $("#per-page-select")[0];
+
+    var scoresPageLink = $(".scores-active")[0];
+    var countsPageLink = $(".counts-active")[0];
+    var searchPageLink = $(".search-active")[0];
+
+    var scoresPageNum;
+    var countsPageNum;
+    var searchPageNum;
+    if (scoresPageLink !== undefined) {
+        scoresPageNum = parseInt(scoresPageLink.innerHTML);
+    }
+    if (countsPageLink !== undefined) {
+        countsPageNum = parseInt(countsPageLink.innerHTML);
+    }
+    if (searchPageLink !== undefined) {
+        searchPageNum = parseInt(searchPageLink.innerHTML);
+    }
+
+    if (clickedLink !== undefined) {
+        var nextPageNum;
+        var previousPageNum;
+        if (clickedLink.childNodes[1] !== undefined) {
+            nextPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+            previousPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
+        }
+
+        if (dataType === "scores") {
+            scoresPageNum = parseInt(clickedLink.innerHTML);
+            if (nextPageNum !== undefined) {
+                scoresPageNum = nextPageNum;
+            }
+            else if (previousPageNum !== undefined) {
+                scoresPageNum = previousPageNum;
+            }
+        }
+        else if (dataType === "counts") {
+            countsPageNum = parseInt(clickedLink.innerHTML);
+            if (nextPageNum !== undefined) {
+                countsPageNum = nextPageNum;
+            }
+            else if (previousPageNum !== undefined) {
+                countsPageNum = previousPageNum;
+            }
+        }
+        else if (dataType === "search") {
+            searchPageNum = parseInt(clickedLink.innerHTML);
+            if (nextPageNum !== undefined) {
+                searchPageNum = nextPageNum;
+            }
+            else if (previousPageNum !== undefined) {
+                searchPageNum = previousPageNum;
+            }
+        }
+    }
+
+    var scoresPerPage;
+    var countsPerPage;
+    var searchPerPage;
+    if (scoresSelect !== undefined) {
+        scoresPerPage = parseInt(
+            scoresSelect.options[scoresSelect.selectedIndex].value
+        );
+    }
+    if (countsSelect !== undefined) {
+        countsPerPage = parseInt(
+            countsSelect.options[countsSelect.selectedIndex].value
+        );
+    }
+    if (searchSelect !== undefined) {
+        searchPerPage = parseInt(
+            searchSelect.options[searchSelect.selectedIndex].value
+        );
+    }
+
+    var base = window.location.toString().split("#")[0].split("?")[0];
+    var url = base;
+    if (dataType !== "search") {
+        if (scoresPerPage !== undefined) {
+            url += "?scores-per-page=" + scoresPerPage;
+        }
+        if (countsPerPage !== undefined) {
+            url += "&counts-per-page=" + countsPerPage;
+        }
+        if (scoresPageNum !== undefined) {
+            url += "&scores-page=" + scoresPageNum;
+        }
+        if (countsPageNum !== undefined) {
+            url += "&counts-page=" + countsPageNum;
+        }
+        url += "#" + dataType;
+    }
+    else {
+        if (searchPerPage !== undefined) {
+            url += "?per-page=" + searchPerPage;
+        }
+        if (searchPageNum !== undefined) {
+            url += "&page=" + searchPageNum;
+        }
+    }
+
+    window.location.assign(url);
+    return false;
+}
+
+
+// Check Publish is ok with user
+$("#publish").click(function (event) {
+    var saidYes = confirm(
+        'WARNING! Proceeding will freeze your upload and limit which fields can be edited. ' +
+        
+        'If this score set is part of a private experiment, this experiment ' +
+        'will also be published and frozen. ' + 
+        
+        'Please make sure you have read the documentation before proceeding. ' +
+        'This action cannot be undone. Would you like to proceed?'
+    );
+    return saidYes;
+});
+
 
 // Check management form submission
 // ----------------------------------------------------------------------- //

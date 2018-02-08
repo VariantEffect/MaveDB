@@ -1,0 +1,49 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="row">
+	<div class="col-md-2">
+		<h1>Sign up [DEBUG]</h1>
+	</div>
+	<div class="col-md-10">
+
+		{% if form.non_field_errors %}	
+			<div class="alert alert-danger alert-dismissible fade show" role="alert">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				{% for error in form.non_field_errors %}
+				<h4 class="alert-heading">Login error!</h4>
+				<hr>
+				<p> {{ error }} </p>
+				{% endfor %}
+			</div>
+		{% endif %}
+		
+		<form id="register-form" method="post">
+			{% csrf_token %}
+			{% for field in form %}
+				<div class="form-group">
+					<label for="{{ field.id_for_label }}">
+							{{ field.label }}{% if field.field.required %}*{% endif %}
+					</label>
+					{% if field.errors %}
+						<div class="alert alert-danger alert-dismissible fade show" role="alert">
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							{{ field.errors }}
+						</div>
+					{% endif %}
+					<br>
+					{{ field }}
+				</div>
+			{% endfor %}
+			<p>
+				<button class="btn btn-outline-dark" type="submit">Sign up</button>
+			</p>
+		</form>
+	
+	</div>
+</div>
+{% endblock body %} 

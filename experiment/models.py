@@ -1,5 +1,6 @@
 import logging
 import datetime
+import reversion
 from string import ascii_uppercase
 
 from django.contrib.auth import get_user_model
@@ -32,6 +33,7 @@ logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
 
+@reversion.register()
 class ExperimentSet(models.Model, GroupPermissionMixin):
     """
     This is the class representing a set of related Experiments. Related
@@ -85,6 +87,7 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
 
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "EXPS"
+    TRACKED_FIELDS = ("private", "approved")
 
     class Meta:
         ordering = ['-creation_date']
@@ -183,6 +186,7 @@ class ExperimentSet(models.Model, GroupPermissionMixin):
         return suffix
 
 
+@reversion.register()
 class Experiment(models.Model, GroupPermissionMixin):
     """
     This is the class representing an Experiment. The experiment object
@@ -257,7 +261,7 @@ class Experiment(models.Model, GroupPermissionMixin):
     keywords : `models.ManyToManyField`
         The keyword instances that are associated with this instance.
 
-    external_accession : `models.ManyToManyField`
+    external_accessions : `models.ManyToManyField`
         Any external accessions that relate to `target`.
 
     target_organism : `models.ManyToManyField`
@@ -272,6 +276,10 @@ class Experiment(models.Model, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "EXP"
+    TRACKED_FIELDS = (
+        "private", "approved", "abstract", "method_desc",
+        "doi_id", "sra_id", "keywords", "external_accessions"
+    )
 
     class Meta:
         ordering = ['-creation_date']
@@ -359,7 +367,6 @@ class Experiment(models.Model, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
-    # TODO: add helper functions to check permision bit and author bits
     def __str__(self):
         return str(self.accession)
 

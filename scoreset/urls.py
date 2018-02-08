@@ -8,7 +8,7 @@ from django.conf.urls import url, include
 
 from .views import (
     ScoreSetDetailView, scoreset_create_view,
-    download_scoreset_data, download_scoreset_metadata
+    download_scoreset_data
 )
 
 download_scores = partial(download_scoreset_data, dataset_key='scores')
@@ -26,10 +26,6 @@ urlpatterns = [
     url(
         r'(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/counts/$',
         download_counts, name='counts_download'
-    ),
-    url(
-        r'(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/metadata/$',
-        download_scoreset_metadata, name='metadata_download'
     ),
     url(
         r'new/$',

@@ -1,7 +1,6 @@
-
-import numpy as np
 import logging
 import datetime
+import reversion
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -13,8 +12,9 @@ from django.db import IntegrityError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
 from main.utils.pandoc import convert_md_to_html
-from main.models import Keyword
+from main.models import Keyword, Licence
 from experiment.models import Experiment
 
 from accounts.permissions import (
@@ -36,6 +36,7 @@ logger = logging.getLogger("django")
 positive_integer_validator = MinValueValidator(limit_value=0)
 
 
+@reversion.register()
 class ScoreSet(models.Model, GroupPermissionMixin):
     """
     This is the class representing a set of scores for an experiment.
@@ -68,6 +69,9 @@ class ScoreSet(models.Model, GroupPermissionMixin):
 
     last_edit_by : `models.ForeignKey`
         User to make the latest change to the instnace.
+
+    licence_type : `models.ForeignKey`
+        Licence type attached to the instance.
 
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
@@ -112,6 +116,10 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     ACCESSION_DIGITS = 6
     ACCESSION_PREFIX = "SCS"
+    TRACKED_FIELDS = (
+        "private", "approved", "abstract", "method_desc", "doi_id", "keywords",
+        "licence_type"
+    )
 
     class Meta:
         ordering = ['-creation_date']
@@ -154,6 +162,12 @@ class ScoreSet(models.Model, GroupPermissionMixin):
         related_name='last_created_scoreset'
     )
 
+    licence_type = models.ForeignKey(
+        to=Licence, on_delete=models.DO_NOTHING,
+        verbose_name="Licence",
+        related_name="attached_scoresets", null=True, blank=True
+    )
+
     approved = models.BooleanField(
         blank=False, null=False, default=False, verbose_name="Approved")
 
@@ -165,14 +179,13 @@ class ScoreSet(models.Model, GroupPermissionMixin):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns", default=dict({
-            SCORES_KEY: ['hgvs'],
-            COUNTS_KEY: ['hgvs']
+            SCORES_KEY: [], COUNTS_KEY: []
         }),
         validators=[valid_scoreset_json]
     )
     replaces = models.OneToOneField(
         to='scoreset.ScoreSet', on_delete=models.DO_NOTHING, null=True,
-        verbose_name="Replaces", related_name="replaced_by"
+        verbose_name="Replaces", related_name="replaced_by", blank=True
     )
 
     # ---------------------------------------------------------------------- #
@@ -219,6 +232,10 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def next_variant_suffix(self):
         return self.last_used_suffix + 1
 
+    def reset_variant_suffix(self):
+        self.last_used_suffix = 0
+        self.save()
+
     def update_last_edit_info(self, user):
         self.last_edit_date = datetime.date.today()
         self.last_edit_by = user
@@ -227,6 +244,23 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def publish(self):
         self.private = False
         self.publish_date = datetime.date.today()
+        self.save()
+
+    def has_variants(self):
+        return self.variant_set.count() > 0
+
+    def get_variants(self):
+        if self.has_variants():
+            return self.variant_set.all()
+        else:
+            return Variant.objects.none()
+
+    def delete_variants(self):
+        self.variant_set.all().delete()
+        self.dataset_columns = dict({
+            SCORES_KEY: [], COUNTS_KEY: []
+        })
+        self.reset_variant_suffix()
         self.save()
 
     def validate_variant_data(self, variant):
@@ -247,6 +281,9 @@ class ScoreSet(models.Model, GroupPermissionMixin):
     def counts_columns(self):
         return self.dataset_columns[COUNTS_KEY]
 
+    def has_counts_dataset(self):
+        return not self.dataset_columns[COUNTS_KEY] == []
+
     def update_keywords(self, keywords):
         kws_text = set([kw.text for kw in keywords])
         for kw in self.keywords.all():
@@ -263,6 +300,23 @@ class ScoreSet(models.Model, GroupPermissionMixin):
 
     def md_method_desc(self):
         return convert_md_to_html(self.method_desc)
+
+    def get_latest_version(self):
+        next_instance = self
+        try:
+            next_instance = self.replaced_by
+            while True:
+                next_instance = next_instance.replaced_by
+        except:  # Catch RelatedObjectDoesNotExist
+            return next_instance
+
+    def get_replaced_by(self):
+        next_instance = None
+        try:
+            next_instance = self.replaced_by
+            return next_instance
+        except:  # Catch RelatedObjectDoesNotExist
+            return next_instance
 
 
 class Variant(models.Model):
@@ -326,8 +380,7 @@ class Variant(models.Model):
     # ---------------------------------------------------------------------- #
     data = JSONField(
         verbose_name="Data columns", default=dict({
-            SCORES_KEY: {'hgvs': None},
-            COUNTS_KEY: {'hgvs': None}
+            SCORES_KEY: {}, COUNTS_KEY: {}
         }),
         validators=[valid_variant_json]
     )
@@ -337,7 +390,7 @@ class Variant(models.Model):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return str(self.accession)
+        return 'ID: {}, HGVS: {}'.format(str(self.pk), str(self.hgvs))
 
     @property
     def scores_columns(self):
@@ -360,18 +413,18 @@ class Variant(models.Model):
     def save(self, *args, **kwargs):
         with transaction.atomic():
             super(Variant, self).save(*args, **kwargs)
-            if not self.accession:
-                parent = self.scoreset
-                digit_suffix = parent.next_variant_suffix()
-                accession = '{}.{}'.format(
-                    parent.accession.replace(
-                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
-                    digit_suffix
-                )
-                parent.last_used_suffix = digit_suffix
-                parent.save()
-                self.accession = accession
-                self.save()
+#            if not self.accession:
+#                parent = self.scoreset
+#                digit_suffix = parent.next_variant_suffix()
+#                accession = '{}.{}'.format(
+#                    parent.accession.replace(
+#                        parent.ACCESSION_PREFIX, self.ACCESSION_PREFIX),
+#                    digit_suffix
+#                )
+#                parent.last_used_suffix = digit_suffix
+#                parent.save()
+#                self.accession = accession
+#                self.save()
 
 
 @receiver(post_save, sender=ScoreSet)
@@ -385,12 +438,20 @@ def propagate_private_bit(sender, instance, **kwargs):
     experiment_is_private = all(
         [s.private for s in experiment.scoreset_set.all()]
     )
+    experiment_is_approved = any(
+        [s.approved for s in experiment.scoreset_set.all()]
+    )
     experiment.private = experiment_is_private
+    experiment.approved = experiment_is_approved
     experiment.save()
 
     experimentset = experiment.experimentset
     experimentset_is_private = all(
         [e.private for e in experimentset.experiment_set.all()]
     )
+    experimentset_is_approved = any(
+        [e.approved for e in experimentset.experiment_set.all()]
+    )
     experimentset.private = experimentset_is_private
+    experimentset.approved = experimentset_is_approved
     experimentset.save()

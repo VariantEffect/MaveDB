@@ -1,6 +1,6 @@
-
 import datetime
 
+from django.conf import settings
 from django.db import models
 from django.db.models import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
@@ -90,6 +90,7 @@ class SiteInformation(models.Model):
     _documentation = models.TextField(default="", blank=True)
     _terms = models.TextField(default="", blank=True)
     _privacy = models.TextField(default="", blank=True)
+    _email = models.EmailField(default="", blank=True)
 
     class Meta:
         verbose_name_plural = "Site Information"
@@ -129,6 +130,10 @@ class SiteInformation(models.Model):
     @property
     def privacy(self):
         return convert_md_to_html(self._privacy)
+
+    @property
+    def email(self):
+        return self._email
 
     def can_save(self):
         """
@@ -324,3 +329,97 @@ class ReferenceMapping(models.Model):
             The hash of the string representation of this instance.
         """
         return hash(str(self))
+
+    def to_json(self):
+        return {
+            'reference': self.reference,
+            'target_start': self.target_start,
+            'target_end': self.target_end,
+            'reference_start': self.reference_start,
+            'reference_end': self.reference_end,
+            'is_alternate': self.is_alternate,
+        }
+
+
+class Licence(models.Model):
+    """
+    This class models represents the licence associated with a
+    scoreset.
+
+    Parameters
+    ----------
+    long_name : `models.CharField`
+        The long name of the licence.
+    short_name : `models.CharField`
+        The short name of the licence.
+    text : `models.TextField`
+        The actual blob licence text.
+    link : `models.CharField`
+        The link to the licence.
+    version : `models.FloatField`
+        Version number of the licence.
+    """
+    long_name = models.CharField(
+        null=False, default=None, verbose_name="Long name", max_length=2048
+    )
+    short_name = models.CharField(
+        null=False, default=None, verbose_name="Short name", max_length=2048
+    )
+    legal_code = models.TextField(
+        verbose_name="Legal Code", null=False, default=None
+    )
+    link = models.CharField(
+        null=False, default=None, verbose_name="Link", max_length=2048
+    )
+    version = models.FloatField(
+        null=False, default=None, verbose_name="Version"
+    )
+
+    class Meta:
+        verbose_name = "Licence"
+        verbose_name_plural = "Licence"
+
+    def __str__(self):
+        return self.long_name
+
+    def get_license_legalcode(self):
+        return self.legal_code
+
+    @classmethod
+    def populate(cls):
+        cls.get_cc0()
+        cls.get_cc4()
+
+    @classmethod
+    def get_default(cls):
+        return cls.get_cc4()
+
+    @classmethod
+    def get_cc0(cls):
+        try:
+            licence = cls.objects.get(short_name="CC0")
+        except ObjectDoesNotExist:
+            licence = cls.objects.create(
+                short_name="CC0",
+                long_name="CC0 (Public domain)",
+                legal_code=open(settings.LICENCE_DIR + "CC0.txt", 'rt').read(),
+                link="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+                version=1.0
+            )
+        return licence
+
+    @classmethod
+    def get_cc4(cls):
+        try:
+            licence = cls.objects.get(short_name="CC BY-NC-SA 4.0")
+        except ObjectDoesNotExist:
+            licence = cls.objects.create(
+                short_name="CC BY-NC-SA 4.0",
+                long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
+                legal_code=open(
+                    settings.LICENCE_DIR + "CC_BY-NC-SA_4.0.txt", 'rt'
+                ).read(),
+                link="https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+                version=4.0
+            )
+        return licence

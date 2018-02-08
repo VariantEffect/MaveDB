@@ -1,7 +1,7 @@
 
 import django.forms as forms
 
-from main.utils.query_parsing import parse_query
+from main.utils.query_parsing import parse_query, filter_empty
 from experiment.models import Experiment
 from scoreset.models import ScoreSet
 
@@ -10,73 +10,87 @@ class SearchForm(forms.Form):
     accessions = forms.CharField(
         max_length=None, label="Accessions", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     ext_accessions = forms.CharField(
         max_length=None, label="External Accessions", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     keywords = forms.CharField(
         max_length=None, label="Keywords", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     targets = forms.CharField(
         max_length=None, label="Target", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     target_organisms = forms.CharField(
         max_length=None, label="Target Organism", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     authors = forms.CharField(
         max_length=None, label="Authors", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
     metadata = forms.CharField(
         max_length=None, label="Metadata", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
+            attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )
     )
 
     def clean_accessions(self):
-        return parse_query(self.cleaned_data.get("accessions", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("accessions", ""))
+        )
 
     def clean_ext_accessions(self):
-        return parse_query(self.cleaned_data.get("ext_accessions", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("ext_accessions", ""))
+        )
 
     def clean_keywords(self):
-        return parse_query(self.cleaned_data.get("keywords", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("keywords", ""))
+        )
 
     def clean_targets(self):
-        return parse_query(self.cleaned_data.get("targets", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("targets", ""))
+        )
 
     def clean_target_organisms(self):
-        return parse_query(self.cleaned_data.get("target_organisms", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("target_organisms", ""))
+        )
 
     def clean_authors(self):
-        return parse_query(self.cleaned_data.get("authors", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("authors", ""))
+        )
 
     def clean_metadata(self):
-        return parse_query(self.cleaned_data.get("metadata", ""))
+        return filter_empty(
+            parse_query(self.cleaned_data.get("metadata", ""))
+        )
 
     def clean(self):
         cleaned_data = super(SearchForm, self).clean()
         if 'search_all' in self.data:
-            cleaned_data['search_all'] = parse_query(
+            cleaned_data['search_all'] = filter_empty(parse_query(
                 self.data.get("search_all")
-            )
+            ))
         return cleaned_data
 
     def search_by_keyword(self, model, keywords):
@@ -141,8 +155,23 @@ class SearchForm(forms.Form):
             return entries
         return None
 
-    def search_by_authors(self, authors):
-        pass
+    def search_by_authors(self, model, authors):
+        if authors:
+            selected = set()
+            entries = model.objects.none()
+            model_author_ls = [
+                (m.pk, m.get_authors_by_full_name())
+                for m in model.objects.all()
+            ]
+
+            for author in authors:
+                for pk, model_authors in model_author_ls:
+                    if model_authors.lower().find(author.lower()) > -1:
+                        selected.add(pk)
+
+            entries |= model.objects.all().filter(pk__in=selected)
+            return entries
+        return None
 
     def search_by_external_accession(self, ext_accessions):
         if ext_accessions:
@@ -166,6 +195,9 @@ class SearchForm(forms.Form):
             keywords = self.cleaned_data.get(
                 "keywords", None
             ) or search_all
+            authors = self.cleaned_data.get(
+                "authors", None
+            ) or search_all
             accessions = self.cleaned_data.get(
                 "accessions", None
             ) or search_all
@@ -185,6 +217,7 @@ class SearchForm(forms.Form):
             keyword_hits = self.search_by_keyword(model, keywords)
             accessions_hits = self.search_by_accession(model, accessions)
             metadata_hits = self.search_by_metadata(model, metadata_tags)
+            author_hits = self.search_by_authors(model, authors)
 
             if model == Experiment:
                 targets_hits = self.search_by_target(model, targets)
@@ -209,6 +242,12 @@ class SearchForm(forms.Form):
                     instances &= keyword_hits
                 else:
                     instances |= keyword_hits
+
+            if author_hits is not None:
+                if not union_search:
+                    instances &= author_hits
+                else:
+                    instances |= author_hits
 
             if accessions_hits is not None:
                 if not union_search:

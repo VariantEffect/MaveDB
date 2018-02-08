@@ -27,6 +27,29 @@ class Profile(models.Model):
     def is_anon(self):
         return user_is_anonymous(self.user)
 
+    def get_full_name_or_username(self):
+        if self.is_anon():
+            return None
+        if not (self.user.first_name or self.user.last_name):
+            return self.user.username
+        else:
+            return '{} {}'.format(
+                self.user.first_name.capitalize(),
+                self.user.last_name.capitalize()
+            )
+
+    def get_authorship_name(self):
+        if self.is_anon():
+            return None
+
+        if not (self.user.first_name or self.user.last_name):
+            return self.user.username
+        else:
+            return '{}, {}'.format(
+                self.user.last_name.capitalize(),
+                self.user.first_name[0].capitalize()
+            )
+
     def __str__(self):
         return "{}_profile".format(self.user.username)
 

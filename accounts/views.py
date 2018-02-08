@@ -5,26 +5,32 @@ Views for accounts app.
 import re
 import json
 import logging
+import reversion
 
+from django.conf import settings
 from django.apps import apps
-from django.http import HttpResponse, JsonResponse
-from django.core.mail import send_mail
+from django.db import transaction
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, reverse, redirect, get_object_or_404
 
-from django.contrib.auth import login
-from django.contrib.auth.models import User, AnonymousUser, Group
+from django.contrib.auth import logout, get_user_model
+import django.contrib.auth.views as auth_views
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.sites.shortcuts import get_current_site
 
-from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_decode
-
+from experiment.views import (
+    ReferenceMappingFormSet,
+    REFERENCE_MAPPING_FORM_PREFIX,
+    parse_mapping_formset
+)
 from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
-from experiment.forms import ExperimentEditForm
+from experiment.forms import ExperimentEditForm, ExperimentForm
 from scoreset.validators import SCS_ACCESSION_RE
-from scoreset.forms import ScoreSetEditForm
+from scoreset.forms import ScoreSetEditForm, ScoreSetForm
+
+from main.fields import ModelSelectMultipleField as msmf
+from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .permissions import (
     GroupTypes,
@@ -38,14 +44,14 @@ from .permissions import (
     update_viewer_list_for_instance
 )
 
-from .tokens import account_activation_token
 from .forms import (
     RegistrationForm,
-    send_user_activation_email,
-    SelectUsersForm
+    SelectUsersForm,
+    send_admin_email
 )
 
 
+User = get_user_model()
 logger = logging.getLogger(name="django")
 ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
 Experiment = apps.get_model('experiment', 'Experiment')
@@ -77,46 +83,75 @@ def get_class_for_accession(accession):
     elif re.fullmatch(SCS_ACCESSION_RE, accession):
         return ScoreSet
     else:
-        return Nonef
+        return None
+
+
+# List Users
+# ------------------------------------------------------------------------- #
+def list_all_users_and_their_data(request):
+    users = [
+        user for user in User.objects.all()
+        if not (user_is_anonymous(user) or user.is_superuser)
+    ]
+
+    # Filter out users that are not associated with any public datasets
+    users = [
+        user for user in users
+        if any(not i.private for i in user.profile.administrator_instances())
+    ]
+
+    # Handle the pagination request options
+    try:
+        per_page = request.GET.get('per-page', 25)
+        per_page = int(per_page)
+        paginator = Paginator(users, per_page=per_page)
+    except (PageNotAnInteger, ValueError, EmptyPage):
+        per_page = 25
+        paginator = Paginator(users, per_page=per_page)
+
+    try:
+        page_num = request.GET.get('page', 1)
+        users = paginator.page(page_num)
+    except PageNotAnInteger:
+        page_num = 1
+        users = paginator.page(page_num)
+    except EmptyPage:
+        page_num = paginator.num_pages
+        users = paginator.page(page_num)
+
+    context = {
+        "users": users,
+        "per_page": per_page,
+        "page_num": page_num,
+        "per_page_selections": [25, 50, 100]
+    }
+    return render(
+        request, "accounts/list_all.html", context
+    )
 
 
 # Profile views
 # ------------------------------------------------------------------------- #
+def login_delegator(request):
+    if settings.USE_SOCIAL_AUTH:
+        return redirect("accounts:social:begin", "orcid")
+    else:
+        return auth_views.LoginView.as_view()(request)
+
+
+def log_user_out(request):
+    logout(request)
+    return redirect("main:home")
+
+
+def login_error(request):
+    return render(request, "accounts/account_not_created.html")
+
+
 @login_required(login_url=reverse_lazy("accounts:login"))
 def profile_view(request):
     """
     A simple view, at only one line...
-
-    One is the loneliest number that you'll ever do
-    Two can be as bad as one
-    It's the loneliest number since the number one
-
-    No is the saddest experience you'll ever know
-    Yes, it's the saddest experience you'll ever know
-
-    'Cause one is the loneliest number that you'll ever do
-    One is the loneliest number, whoa-oh, worse than two
-
-    It's just no good anymore since you went away
-    Now I spend my time just making rhymes of yesterday
-
-    One is the loneliest number
-    One is the loneliest number
-    One is the loneliest number that you'll ever do
-    One is the loneliest
-    One is the loneliest
-    One is the loneliest number that you'll ever do
-
-    It's just no good anymore since you went away (number)
-    One is the loneliest (number)
-    One is the loneliest (number)
-    One is the loneliest number that you'll ever do (number)
-    One is the loneliest (number)
-    One is the loneliest (number)
-    One is the loneliest number that you'll ever do (number)
-    One (one is the loneliest number that you'll ever do)(number)
-    One is the loneliest number that you'll ever do (number)
-    One is the loneliest number that you'll ever do
     """
     return render(request, 'accounts/profile_home.html')
 
@@ -159,8 +194,6 @@ def manage_instance(request, accession):
     context["instance"] = instance
     context["admin_select_form"] = admin_select_form
     context["viewer_select_form"] = viewer_select_form
-
-    print(request.POST)
 
     if request.method == "POST":
         # Hidden list in each form submission so we can determine which
@@ -249,53 +282,124 @@ def edit_instance(request, accession):
 
 
 def handle_scoreset_edit_form(request, instance):
-    form = ScoreSetEditForm(instance=instance)
-    context = {"edit_form": form, 'instance': instance}
+    if not instance.private:
+        form = ScoreSetEditForm(instance=instance)
+    else:
+        form = ScoreSetForm.PartialFormFromRequest(request, instance)
+
+    context = {
+        "edit_form": form,
+        'instance': instance
+    }
 
     if request.method == "POST":
-        form = ScoreSetEditForm(request.POST, instance=instance)
+        if not instance.private:
+            form = ScoreSetEditForm(request.POST, instance=instance)
+        else:
+            form = ScoreSetForm.PartialFormFromRequest(request, instance)
+
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        context["repop_keywords"] = ','.join(keywords)
+        context["edit_form"] = form
+
         if form.is_valid():
-            if "preview" in request.POST:
-                updated_instance = form.save(commit=False)
-                context = {"scoreset": updated_instance, "preview": True}
-                return render(
-                    request,
-                    "scoreset/scoreset.html",
-                    context
-                )
-            else:
+            with transaction.atomic():
                 updated_instance = form.save(commit=True)
-                updated_instance.last_edit_by = request.user
-                updated_instance.save()
-                return redirect(
-                    "accounts:edit_instance", updated_instance.accession
+                updated_instance.update_last_edit_info(request.user)
+                save_and_create_revision_if_tracked_changed(
+                    request.user, updated_instance
                 )
+
+            if request.POST.get("publish", None):
+                updated_instance.publish()
+                send_admin_email(request.user, updated_instance)
+
+            return redirect(
+                "accounts:edit_instance", updated_instance.accession
+            )
 
     return render(request, 'accounts/profile_edit.html', context)
 
 
 def handle_experiment_edit_form(request, instance):
-    form = ExperimentEditForm(instance=instance)
-    context = {"edit_form": form, 'instance': instance}
+    if not instance.private:
+        form = ExperimentEditForm(instance=instance)
+    else:
+        form = ExperimentForm.PartialFormFromRequest(request, instance)
 
+    # Set up the initial base context
+    context = {"edit_form": form, 'instance': instance, 'experiment': True}
+
+    # Set up the formset with initial data
+    if instance.private:
+        prev_reference_maps = instance.referencemapping_set.all()
+        ref_mapping_formset = ReferenceMappingFormSet(
+            initial=[r.to_json() for r in prev_reference_maps],
+            prefix=REFERENCE_MAPPING_FORM_PREFIX
+        )
+        context["reference_mapping_formset"] = ref_mapping_formset
+
+    # If you change the prefix arguments here, make sure to change them
+    # in base.js as well for the +/- buttons to work correctly.
     if request.method == "POST":
-        form = ExperimentEditForm(request.POST, instance=instance)
+        if not instance.private:
+            form = ExperimentEditForm(request.POST, instance=instance)
+        else:
+            form = ExperimentForm.PartialFormFromRequest(request, instance)
+
+        # Build the reference mapping formset
+        if instance.private:
+            ref_mapping_formset = ReferenceMappingFormSet(
+                request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX,
+                initial=[r.to_json() for r in prev_reference_maps]
+            )
+            context["reference_mapping_formset"] = ref_mapping_formset
+
+        # Get the new keywords/accession/target org so that we can return
+        # them for list repopulation if the form has errors.
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        e_accessions = request.POST.getlist("external_accessions")
+        e_accessions = [ea for ea in e_accessions if msmf.is_word(ea)]
+        target_organism = request.POST.getlist("target_organism")
+        target_organism = [to for to in target_organism if msmf.is_word(to)]
+
+        # Set the context
+        context["edit_form"] = form
+        context["repop_keywords"] = ','.join(keywords)
+        context["repop_external_accessions"] = ','.join(e_accessions)
+        context["repop_target_organism"] = ','.join(target_organism)
+
         if form.is_valid():
-            if "preview" in request.POST:
-                updated_instance = form.save(commit=False)
-                context = {"experiment": updated_instance, "preview": True}
-                return render(
-                    request,
-                    "experiment/experiment.html",
-                    context
-                )
+            if instance.private:
+                maps = parse_mapping_formset(ref_mapping_formset)
+                if not all([m is not None for m in maps]):
+                    return render(
+                        request, 'accounts/profile_edit.html', context
+                    )
+
+                with transaction.atomic():
+                    updated_instance = form.save(commit=True)
+                    updated_instance.update_last_edit_info(request.user)
+                    save_and_create_revision_if_tracked_changed(
+                        request.user, updated_instance
+                    )
+                    prev_reference_maps.delete()
+                    for ref_map in maps:
+                        ref_map.experiment = updated_instance
+                        ref_map.save()
             else:
-                updated_instance = form.save(commit=True)
-                updated_instance.last_edit_by = request.user
-                updated_instance.save()
-                return redirect(
-                    "accounts:edit_instance", updated_instance.accession
-                )
+                with transaction.atomic():
+                    updated_instance = form.save(commit=True)
+                    updated_instance.update_last_edit_info(request.user)
+                    save_and_create_revision_if_tracked_changed(
+                        request.user, updated_instance
+                    )
+
+            return redirect(
+                "accounts:edit_instance", updated_instance.accession
+            )
 
     return render(request, 'accounts/profile_edit.html', context)
 
@@ -347,81 +451,15 @@ def view_instance(request, accession):
 
 # Registration views
 # ------------------------------------------------------------------------- #
-def activate_account_view(request, uidb64, token):
-    try:
-        uid = force_text(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        render(request, 'accounts/account_not_created.html')
-
-    if user is not None and account_activation_token.check_token(user, token):
-        user.is_active = True
-        user.save()
-        return redirect('accounts:profile')
-    else:
-        context = {'uidb64': uidb64}
-        return render(request, 'accounts/activation_invalid.html', context)
-
-
-def send_activation_email_view(request, uidb64):
-    try:
-        uid = force_text(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-    if user is None:
-        return render(request, 'accounts/account_not_created.html')
-
-    # We have the User object, now try to send an email. If the new uidb64
-    # or token could not be made, abort the send/resend cycle.
-    uidb64, token = send_user_activation_email(
-        uid=user.pk,
-        secure=request.is_secure(),
-        domain=get_current_site(request).domain,
-        subject='Activate Your Account',
-        template_name='accounts/activation_email.html')
-
-    if uidb64 is None or token is None:
-        return render(request, 'accounts/account_not_created.html')
-    else:
-        context = {'uidb64': uidb64}
-        return render(request, 'accounts/activation_sent.html', context)
-
-
 def registration_view(request):
     form = RegistrationForm()
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            # Additional hacked-on checking to see if email is unique.
-            email = form.cleaned_data['email']
-
-            if User.objects.filter(email__iexact=email).count() > 0:
-                form.add_error(
-                    "email", ValidationError("This email is already in use."))
-            else:
-                user = form.save(commit=False)
-                user.is_active = True  # TODO: change this during deployment
-                user.save()
-                uidb64, token = send_user_activation_email(
-                    uid=user.pk,
-                    secure=request.is_secure(),
-                    domain=get_current_site(request).domain,
-                    subject='Activate Your Account',
-                    template_name='accounts/activation_email.html')
-
-                if uidb64 is None or token is None:
-                    return render(
-                        request,
-                        'accounts/account_not_created.html'
-                    )
-                else:
-                    context = {'uidb64': uidb64}
-                    return render(
-                        request,
-                        'accounts/activation_sent.html',
-                        context
-                    )
+            user = form.save(commit=False)
+            user.is_active = True
+            user.save()
+            return redirect('accounts:profile')
 
     context = {'form': form}
-    return render(request, 'accounts/register.html', context)
+    return render(request, 'registration/register.html', context)

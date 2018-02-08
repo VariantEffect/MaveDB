@@ -31,6 +31,10 @@ class ExperimentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ExperimentForm, self).__init__(*args, **kwargs)
+        if "experimentset" in self.fields:
+            self.fields["experimentset"].widget = forms.widgets.Select(
+                attrs={"style": 'width:20%;'}
+            )
         self.fields["target"].widget = forms.TextInput(
             attrs={
                 "class": "form-control",
@@ -181,6 +185,15 @@ class ExperimentForm(forms.ModelForm):
             not_new = [i for i in self.cleaned_data.get(field_name, [])]
             new = self.new_m2m(field_name)
             return new + not_new
+
+    @classmethod
+    def PartialFormFromRequest(cls, request, instance):
+        if request.method == "POST":
+            form = cls(data=request.POST, instance=instance)
+        else:
+            form = cls(instance=instance)
+        form.fields.pop("experimentset")
+        return form
 
 
 class ExperimentEditForm(ExperimentForm):

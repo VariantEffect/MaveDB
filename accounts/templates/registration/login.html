@@ -3,7 +3,7 @@
 {% block body %}
 <div class="row">
   <div class="col-md-2">
-		<h2> Login </h2>
+		<h2> Login [DEBUG] </h2>
 	</div>
 	
 	<div class="col-md-6">
@@ -25,26 +25,35 @@
 
 			<div class="form-group">
 				<label for="id_username">{{ form.username.label_tag }}</label>					
-				{% for error in form.username.errors %}
-					<b style="color: red;list-style: none;"> {{ error }} </b><br>
-				{% endfor %}
+				{% if form.username.errors %}
+					<div class="alert alert-danger alert-dismissible fade show" role="alert">
+						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<p>{{ form.username.errors }}</p>
+					</div>
+				{% endif %}
 				<input class="form-control" name="username" maxlength="150" 
 							 autofocus="" required="" id="id_username" type="text">
 			</div>
 
 			<div class="form-group">
 				<label for="id_password">{{ form.password.label_tag }}</label>					
-				{% for error in form.password.errors %}
-					<b style="color: red;list-style: none;"> {{ error }} </b><br>
-				{% endfor %}
+				{% if form.password.errors %}
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<p>{{ form.username.errors }}</p>
+				</div>
+				{% endif %}
 				<input class="form-control" name="password" required="" 
 							 id="id_password" type="password">
 			</div>
 
 			<div>
-				<button type="submit" class="btn btn-outline-dark mb-2 float-right">Submit</button>
-				<br><br>
-				<a class="float-right" href="{% url 'accounts:password_reset' %}">Lost password?</a>
+				<button type="submit" class="btn btn-outline-dark mb-2">Submit</button>
+				<a href="{% url 'accounts:register'%}">Register</a>					
 			</div>
 		
 		</form>
