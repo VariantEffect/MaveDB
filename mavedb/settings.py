@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+from .orcid_secrets import SOCIAL_AUTH_ORCID_KEY, SOCIAL_AUTH_ORCID_SECRET
+from .secret_key import SECRET_KEY
+
+os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,14 +23,41 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
+# secret key is stored in the untracked secret_key.py file
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'u0f4jvthu$der#dy048qu7w*r$&_&1qw_lmz92bgq@c6&c!7zs'
+# SECRET_KEY = 'u0f4jvthu$der#dy048qu7w*r$&_&1qw_lmz92bgq@c6&c!7zs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+# Set the host for this site. Set when DEBUG = FALSE
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','www.mavedb.org']
 
+# social-auth settings
+# keys are stored in the untracked orcid_secrets.py file
+# SECURITY WARNING: keep the secret key below in production secret!
+# SOCIAL_AUTH_ORCID_KEY = os.environ.get("SOCIAL_AUTH_ORCID_KEY", '')
+# SOCIAL_AUTH_ORCID_SECRET = os.environ.get("SOCIAL_AUTH_ORCID_SECRET", '')
+
+USE_SOCIAL_AUTH = not DEBUG
+# USE_SOCIAL_AUTH = bool(SOCIAL_AUTH_ORCID_KEY) and \
+#    bool(SOCIAL_AUTH_ORCID_SECRET) and bool(ALLOWED_HOSTS)
+
+SOCIAL_AUTH_USER_MODEL = 'auth.User'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/accounts/profile/"
+SOCIAL_AUTH_LOGIN_ERROR_URL = "/accounts/error/"
+SOCIAL_AUTH_URL_NAMESPACE = 'accounts:social'
+SOCIAL_AUTH_PIPELINE = [
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+]
 
 # Application definition
 
@@ -133,9 +164,24 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 LOGIN_REDIRECT_URL = '/accounts/profile/'
 LOGOUT_REDIRECT_URL = '/accounts/profile/'
 
-# DEBUG email server
-DEFAULT_FROM_EMAIL = "mave-webmaster@mave.com"
+# DEBUG email server, set to something proper when DEBUG = FALSE
+DEFAULT_FROM_EMAIL = "mavedb@mavedb.org"
+SERVER_EMAIL = "admin@mavedb.org"
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Host for sending e-mail
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+
+# Optional SMTP authentication information for EMAIL_HOST
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
+
+# Reply-to email for user emails
+# REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')
+REPLY_TO_EMAIL = "alan.rubin@wehi.edu.au"
 
 # Set up logging
 LOGGING = {
