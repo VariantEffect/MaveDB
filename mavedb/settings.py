@@ -29,10 +29,10 @@ LICENCE_DIR = BASE_DIR + '/licences/'
 # SECRET_KEY = 'u0f4jvthu$der#dy048qu7w*r$&_&1qw_lmz92bgq@c6&c!7zs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # Set the host for this site. Set when DEBUG = FALSE
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','www.mavedb.org']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.mavedb.org', '.compute.amazonaws.com']
 
 # social-auth settings
 # keys are stored in the untracked orcid_secrets.py file
@@ -76,7 +76,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles'
+    'django.contrib.staticfiles',
+    'mod_wsgi.server',
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -210,7 +211,7 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'info.log',
+            'filename': '/var/www/mavedb-test/info.log',
             'formatter': 'verbose'
         },
     },
