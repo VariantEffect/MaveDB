@@ -38,7 +38,7 @@ class SearchForm(forms.Form):
         )
     )
     authors = forms.CharField(
-        max_length=None, label="Authors", required=False,
+        max_length=None, label="Contributors", required=False,
         widget=forms.widgets.TextInput(
             attrs={"class": "form-control", "placeholder": "Comma delimited"}
         )

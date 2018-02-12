@@ -70,7 +70,7 @@
 							</a>
 						</span>					
 					<br>
-					<span style="font-weight: 600;">Authors:</span>
+					<span style="font-weight: 600;">Contributors:</span>
 						<span>
 							{% for user in experiment.get_author_models %}
 								<a href="https://orcid.org/{{ user.username }}">{{ user.profile.get_full_name_or_username }}</a>
