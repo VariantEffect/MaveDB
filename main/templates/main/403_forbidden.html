@@ -9,12 +9,10 @@
 
 	<div class="col-md-8 mx-3">
 		<h3> Access denied. </h3>
-		<p><small> I'm sorry Dave, I'm afraid I can't let you do that. </small></p>
-
 		{% if instance %}
 			<p> 
 				This is a private entry. Contact user 
-				{{ instance.created_by|default:"None" }} 
+				{{ instance.created_by.profile.get_full_name_or_username|default:"None" }} 
 				if you believe you should have access permissions.
 			</p>
 		{% else %}
