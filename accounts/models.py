@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from django.utils.html import format_html
+
 from experiment.models import ExperimentSet, Experiment
 from scoreset.models import ScoreSet
 
@@ -37,9 +39,9 @@ class Profile(models.Model):
         if self.is_anon():
             return 'anonymous user'
         else:
-            return '<a href="{url}">{name}</a>'.format(
+            return format_html('<a href="{url}">{name}</a>'.format(
                 url=self.get_orcid_url(),
-                name=self.get_full_name())
+                name=self.get_full_name()))
 
     def get_full_name(self):
         if self.is_anon():
