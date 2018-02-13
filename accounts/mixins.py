@@ -35,14 +35,14 @@ class GroupPermissionMixin(object):
 
     def get_authors(self, string=True):
         authors = [
-            u.profile.get_authorship_name()
+            u.profile.get_short_name()
             for u in authors_for_instance(self)
         ]
         return ', '.join(authors) if string else authors
 
     def get_authors_by_full_name(self, string=True):
         authors = [
-            u.profile.get_full_name_or_username()
+            u.profile.get_full_name()
             for u in authors_for_instance(self)
         ]
         return ', '.join(authors) if string else authors

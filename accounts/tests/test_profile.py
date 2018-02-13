@@ -47,16 +47,16 @@ class TestUserProfile(TestCase):
             first_name="daniel", last_name="smith"
         )
         self.assertEqual(
-            bob.profile.get_full_name_or_username(), "Daniel Smith"
+            bob.profile.get_full_name(), "Daniel Smith"
         )
 
-    def test_can_get_authorship_name(self):
+    def test_can_get_short_name(self):
         bob = User.objects.create(
             username="bob", password="secretkey",
             first_name="daniel", last_name="smith"
         )
         self.assertEqual(
-            bob.profile.get_authorship_name(), "Smith, D"
+            bob.profile.get_short_name(), "Smith, D"
         )
 
     def test_name_methods_default_to_username(self):
@@ -64,10 +64,10 @@ class TestUserProfile(TestCase):
             username="bob", password="secretkey"
         )
         self.assertEqual(
-            bob.profile.get_full_name_or_username(), "bob"
+            bob.profile.get_full_name(), "bob"
         )
         self.assertEqual(
-            bob.profile.get_authorship_name(), "bob"
+            bob.profile.get_short_name(), "bob"
         )
 
     def test_can_create_user_profile(self):

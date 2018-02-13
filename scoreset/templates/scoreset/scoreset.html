@@ -54,9 +54,7 @@
 					<br>
 					<span style="font-weight: 600;">Created by:</span>
 						<span>
-							<a href="https://orcid.org/{{ scoreset.created_by.username }}">
-								{{ scoreset.created_by.profile.get_full_name_or_username}}
-							</a>
+							{{ scoreset.created_by.profile.get_full_name_hyperlink }}
 						</span>						
 					<br>
 					<span style="font-weight: 600;">Last edited on:</span>
@@ -64,15 +62,13 @@
 					<br>
 					<span style="font-weight: 600;">Last edited by:</span>
 						<span>
-							<a href="https://orcid.org/{{ scoreset.last_edit_by.username }}">
-								{{ scoreset.last_edit_by.profile.get_full_name_or_username}}
-							</a>
+							{{ scoreset.last_edit_by.profile.get_full_name_hyperlink }}
 						</span>						
 					<br>
 					<span style="font-weight: 600;">Contributors:</span>
 						<span>
 							{% for user in scoreset.get_author_models %}
-								<a href="https://orcid.org/{{ user.username }}">{{ user.profile.get_full_name_or_username }}</a>
+								{{ user.profile.get_full_name_hyperlink }}
 								{% if forloop.counter < scoreset.get_author_models|length %},{% endif %}
 							{% endfor %}
 						</span>					

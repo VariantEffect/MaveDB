@@ -37,9 +37,7 @@
 					<br>
 					<span style="font-weight: 600;">Created by:</span>
 						<span>
-							<a href="https://orcid.org/{{ experimentset.created_by.username }}">
-								{{ experimentset.created_by.profile.get_full_name_or_username}}
-							</a>
+							{{ experimentset.created_by.profile.get_full_name_hyperlink }}
 						</span>					
 					<br>
 					<span style="font-weight: 600;">Last edited on:</span>
@@ -47,9 +45,7 @@
 					<br>
 					<span style="font-weight: 600;">Last edited by:</span>
 						<span>
-							<a href="https://orcid.org/{{ experimentset.last_edit_by.username }}">
-								{{ experimentset.last_edit_by.profile.get_full_name_or_username}}
-							</a>
+							{{ experimentset.last_edit_by.profile.get_full_name_hyperlink }}
 						</span>	
 					<br>
 					<span style="font-weight: 600;">Contributors:</span>
