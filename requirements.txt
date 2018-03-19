@@ -11,3 +11,5 @@ social-auth-app-django
 gunicorn
 whitenoise
 dj-database-url
+idutils
+metapub
