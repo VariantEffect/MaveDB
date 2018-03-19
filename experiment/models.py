@@ -12,18 +12,30 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models, IntegrityError, transaction
 from django.db.models.signals import pre_save, post_save
 
-from .validators import valid_mavedb_urn, MAVEDB_URN_MAX_LENGTH
-from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, MAVEDB_URN_NAMESPACE
-from .validators import valid_mavedb_urn_experimentset, valid_mavedb_urn_experiment, valid_mavedb_urn_scoreset, valid_mavedb_urn_variant
-from .validators import valid_wildtype_sequence
+from main.models import Licence
+import main.utils.pandoc as pandoc
 
+from accounts.mixins import GroupPermissionMixin
 from accounts.permissions import (
     PermissionTypes,
     make_all_groups_for_instance
 )
-from accounts.mixins import GroupPermissionMixin
 
-import main.utils.pandoc as pandoc
+from .validators import Constants
+from .validators import MAVEDB_URN_MAX_LENGTH
+from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, MAVEDB_URN_NAMESPACE
+from .validators import (
+    valid_mavedb_urn_experimentset,
+    valid_mavedb_urn_experiment,
+    valid_mavedb_urn_scoreset,
+    valid_mavedb_urn_variant,
+    valid_mavedb_urn,
+    valid_wildtype_sequence,
+    valid_hgvs_string,
+    valid_scoreset_json,
+    valid_variant_json
+)
+
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -70,11 +82,14 @@ class ExternalAccession(models.Model):
     ----------
     creation_date : `models.DateField`
         The date of instantiation.
+
     resource_accession : `models.TextField`
         The free-form textual representation of the accession from another
         database.
+
     resource_url : `models.URLField`
         The URL for the resource in the other database. Optional.
+
     database_name : `models.TextField`
         The name of the external database.
     """
@@ -135,8 +150,6 @@ class AccessionModel(models.Model):
     """
     Abstract class for all entries in MAVEDB that have an accession number.
 
-    Parameters
-    ----------
     Parameters
     ----------
     accession : `models.CharField`
@@ -680,8 +693,8 @@ class ScoreSet(DatasetModel):
     dataset_columns = JSONField(
         verbose_name="Dataset columns",
         default=dict({
-            SCORES_KEY: [],
-            COUNTS_KEY: [],
+            Constants.SCORES_KEY: [],
+            Constants.COUNTS_KEY: [],
         }),
         validators=[valid_scoreset_json]
     )
@@ -723,7 +736,7 @@ class ScoreSet(DatasetModel):
     def delete_variants(self):
         self.variant_set.all().delete()
         self.dataset_columns = dict({
-            SCORES_KEY: [], COUNTS_KEY: []
+            Constants.SCORES_KEY: [], Constants.COUNTS_KEY: []
         })
         self.reset_variant_suffix()
         self.save()
@@ -740,14 +753,14 @@ class ScoreSet(DatasetModel):
 
     @property
     def scores_columns(self):
-        return self.dataset_columns[SCORES_KEY]
+        return self.dataset_columns[Constants.SCORES_KEY]
 
     @property
     def counts_columns(self):
-        return self.dataset_columns[COUNTS_KEY]
+        return self.dataset_columns[Constants.COUNTS_KEY]
 
     def has_counts_dataset(self):
-        return not self.dataset_columns[COUNTS_KEY] == []
+        return not self.dataset_columns[Constants.COUNTS_KEY] == []
 
     def has_replacement(self):
         return self.replaced_by is not None
@@ -813,8 +826,8 @@ class Variant(AccessionModel):
     data = JSONField(
         verbose_name="Data columns",
         default=dict({
-            SCORES_KEY: {},
-            COUNTS_KEY: {},
+            Constants.SCORES_KEY: {},
+            Constants.COUNTS_KEY: {},
         }),
         validators=[valid_variant_json],
     )
@@ -824,20 +837,20 @@ class Variant(AccessionModel):
     # ---------------------------------------------------------------------- #
     @property
     def scores_columns(self):
-        return self.data[SCORES_KEY].keys()
+        return self.data[Constants.SCORES_KEY].keys()
 
     @property
     def counts_columns(self):
-        return self.data[COUNTS_KEY].keys()
+        return self.data[Constants.COUNTS_KEY].keys()
 
     def get_ordered_scores_data(self):
         columns = self.scoreset.scores_columns
-        data = [self.data[SCORES_KEY][key] for key in columns]
+        data = [self.data[Constants.SCORES_KEY][key] for key in columns]
         return data
 
     def get_ordered_counts_data(self):
         columns = self.scoreset.counts_columns
-        data = [self.data[COUNTS_KEY][key] for key in columns]
+        data = [self.data[Constants.COUNTS_KEY][key] for key in columns]
         return data
 
 
