@@ -206,45 +206,55 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
         Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
         is called.
 
+    publish_date : `models.DataField`
+        Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
+        called.
+
     created_by : `models.ForeignKey`
         User the instance was created by.
 
     last_edit_by : `models.ForeignKey`
         User to make the latest change to the instance.
 
-    publish_date : `models.DataField`
-        Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
-        called.
-
     approved : `models.BooleanField`
         The approved status, as seen by the database admin. Instances are
         created by default as not approved and must be manually checked
         before going live.
 
-    last_child_value : `models.IntegerField`
-        Min value of 0. Counts how many child entities have been associated
-        with this entity. Must be manually incremented after each child is
-        added, but this might be changed to a `post_save` signal later.
-
     private : `models.BooleanField`
         Whether this experiment should be private and viewable only by
         those approved in the permissions.
 
-    abstract_text : `models.TextField`
-        A markdown text blob.
-
-    method_text : `models.TextField`
-        A markdown text blob of the scoring method.
-
-    linked_doi : `models.CharField`
-        Associated DOI entries, if any. Primarily used for linking to raw data.
-
-    linked_pmid : `models.CharField`
-        Associated PubMed entries, if any. Used for linking to relevant
-        publications.
+    last_child_value : `models.IntegerField`
+        Min value of 0. Counts how many child entities have been associated
+        with this entity. Must be incremented on child creation. Used to
+        generate accession numbers for new child entries.
 
     extra_metadata : `models.JSONField`
         Free-form json metadata that might be associated with this entry.
+
+    abstract_text : `models.TextField`
+        A markdown text blob for the abstract.
+
+    method_text : `models.TextField`
+        A markdown text blob for the methods description.
+
+    keywords : `models.ManyToManyField`
+        Associated `Keyword` objects for this entry.
+
+    sra_accessions : `models.ManyToManyField`
+        Associated `ExternalAccession` objects for this entry that map to the
+        NCBI Sequence Read Archive (https://www.ncbi.nlm.nih.gov/sra).
+
+    doi_accessions : `models.ManyToManyField`
+        Associated `ExternalAccession` objects for this entry that map to
+        Digital Object Identifiers (https://www.doi.org). These are intended to
+        be used for data objects rather than publications.
+
+    pmid_accessions : `models.ManyToManyField`
+        Associated `ExternalAccession` objects for this entry that map to
+        NCBI PubMed identifiers (https://www.ncbi.nlm.nih.gov/pubmed). These
+        will be formatted and displayed as publications.
     """
     class Meta:
         abstract = True
@@ -258,11 +268,6 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
-    last_child_value = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(limit_value=0)],
-    )
-
     creation_date = models.DateField(
         blank=False,
         null=False,
@@ -312,6 +317,11 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
         null=False,
         default=True,
         verbose_name="Private",
+    )
+
+    last_child_value = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(limit_value=0)],
     )
 
     extra_metadata = JSONField(
