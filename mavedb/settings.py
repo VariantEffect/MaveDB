@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 from .orcid_secrets import SOCIAL_AUTH_ORCID_KEY, SOCIAL_AUTH_ORCID_SECRET
 from .secret_key import SECRET_KEY
+from .log import LOGGING
 
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
@@ -32,7 +33,8 @@ LICENCE_DIR = BASE_DIR + '/licences/'
 DEBUG = True
 
 # Set the host for this site. Set when DEBUG = FALSE
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.mavedb.org', '.compute.amazonaws.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1',
+                 'www.mavedb.org', '.compute.amazonaws.com']
 
 # social-auth settings
 # keys are stored in the untracked orcid_secrets.py file
@@ -194,32 +196,3 @@ EMAIL_USE_SSL = False
 # Reply-to email for user emails
 # REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')
 REPLY_TO_EMAIL = "alan.rubin@wehi.edu.au"
-
-# Set up logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[%(levelname)s] %(asctime)s %(module)s %(message)s'
-        },
-        'simple': {
-            'format': '%(levelname)s %(message)s'
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': '/var/www/mavedb-test/info.log',
-            'formatter': 'verbose'
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'WARNING',
-            'propagate': True
-        },
-    },
-}
