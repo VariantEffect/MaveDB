@@ -15,7 +15,8 @@ from .serializers import (
 )
 
 from experiment.models import Experiment, ExperimentSet
-from scoreset.models import ScoreSet, COUNTS_KEY, SCORES_KEY
+from experiment.models import ScoreSet
+from experiment.validators import Constants
 from accounts.permissions import (
     user_is_anonymous
 )
@@ -146,14 +147,14 @@ def scoreset_score_data(request, accession):
         return response
 
     variants = scoreset.variant_set.all().order_by("accession")
-    columns = scoreset.dataset_columns[SCORES_KEY]
+    columns = scoreset.dataset_columns[Constants.SCORES_KEY]
 
     def gen_repsonse():
         yield ','.join(columns) + '\n'
         for var in variants:
             data = []
             for column_key in columns:
-                data.append(str(var.data[SCORES_KEY][column_key]))
+                data.append(str(var.data[Constants.SCORES_KEY][column_key]))
             yield ','.join(data) + '\n'
 
     return StreamingHttpResponse(gen_repsonse(), content_type='text')
@@ -176,14 +177,14 @@ def scoreset_count_data(request, accession):
         return StreamingHttpResponse("", content_type='text')
 
     variants = scoreset.variant_set.all().order_by("accession")
-    columns = scoreset.dataset_columns[COUNTS_KEY]
+    columns = scoreset.dataset_columns[Constants.COUNTS_KEY]
 
     def gen_repsonse():
         yield ','.join(columns) + '\n'
         for var in variants:
             data = []
             for column_key in columns:
-                data.append(str(var.data[COUNTS_KEY][column_key]))
+                data.append(str(var.data[Constants.COUNTS_KEY][column_key]))
             yield ','.join(data) + '\n'
 
     return StreamingHttpResponse(gen_repsonse(), content_type='text')
