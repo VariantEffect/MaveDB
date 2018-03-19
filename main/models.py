@@ -5,8 +5,6 @@ import os.path
 from django.conf import settings
 from django.db import models
 from django.db.models import ObjectDoesNotExist
-from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
 
 from .utils.pandoc import convert_md_to_html
 
