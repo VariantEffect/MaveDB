@@ -19,17 +19,16 @@ from django.contrib.auth import logout, get_user_model
 import django.contrib.auth.views as auth_views
 from django.contrib.auth.decorators import login_required, permission_required
 
-from experiment.views import (
-    ReferenceMappingFormSet,
-    REFERENCE_MAPPING_FORM_PREFIX,
-    parse_mapping_formset
-)
-from experiment.validators import EXP_ACCESSION_RE, EXPS_ACCESSION_RE
 from experiment.forms import ExperimentEditForm, ExperimentForm
-from scoreset.validators import SCS_ACCESSION_RE
-from scoreset.forms import ScoreSetEditForm, ScoreSetForm
+from experiment.forms import ScoreSetEditForm, ScoreSetForm
+from experiment.fields import ModelSelectMultipleField as msmf
+from experiment.validators import (
+    MAVEDB_EXPERIMENT_URN_PATTERN,
+    MAVEDB_EXPERIMENTSET_URN_PATTERN,
+    MAVEDB_SCORESET_URN_PATTERN,
+    MAVEDB_VARIANT_URN_PATTERN
+)
 
-from main.fields import ModelSelectMultipleField as msmf
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .permissions import (
@@ -76,11 +75,11 @@ def get_class_for_accession(accession):
     `cls` or `None`
         A class that can be instantiated, or None.
     """
-    if re.fullmatch(EXPS_ACCESSION_RE, accession):
+    if re.fullmatch(MAVEDB_EXPERIMENTSET_URN_PATTERN, accession):
         return ExperimentSet
-    elif re.fullmatch(EXP_ACCESSION_RE, accession):
+    elif re.fullmatch(MAVEDB_EXPERIMENT_URN_PATTERN, accession):
         return Experiment
-    elif re.fullmatch(SCS_ACCESSION_RE, accession):
+    elif re.fullmatch(MAVEDB_SCORESET_URN_PATTERN, accession):
         return ScoreSet
     else:
         return None
@@ -175,8 +174,8 @@ def manage_instance(request, accession):
         user_is_admin_for_instance(request.user, instance),
     ]
     if not any(has_permission):
-        response = render(request, 'main/404_not_found.html')
-        response.status_code = 404
+        response = render(request, 'main/403_forbidden.html')
+        response.status_code = 403
         return response
 
     # Initialise the forms with current group users.
@@ -281,17 +280,14 @@ def edit_instance(request, accession):
         return response
 
 
+@transaction.atomic
 def handle_scoreset_edit_form(request, instance):
     if not instance.private:
         form = ScoreSetEditForm(instance=instance)
     else:
         form = ScoreSetForm.PartialFormFromRequest(request, instance)
 
-    context = {
-        "edit_form": form,
-        'instance': instance
-    }
-
+    context = {'edit_form': form, 'instance': instance}
     if request.method == "POST":
         if not instance.private:
             form = ScoreSetEditForm(request.POST, instance=instance)
@@ -304,13 +300,11 @@ def handle_scoreset_edit_form(request, instance):
         context["edit_form"] = form
 
         if form.is_valid():
-            with transaction.atomic():
-                updated_instance = form.save(commit=True)
-                updated_instance.update_last_edit_info(request.user)
-                save_and_create_revision_if_tracked_changed(
-                    request.user, updated_instance
-                )
-
+            updated_instance = form.save(commit=True)
+            updated_instance.update_last_edit_info(request.user)
+            save_and_create_revision_if_tracked_changed(
+                request.user, updated_instance
+            )
             if request.POST.get("publish", None):
                 updated_instance.publish()
                 send_admin_email(request.user, updated_instance)
@@ -322,6 +316,7 @@ def handle_scoreset_edit_form(request, instance):
     return render(request, 'accounts/profile_edit.html', context)
 
 
+@transaction.atomic
 def handle_experiment_edit_form(request, instance):
     if not instance.private:
         form = ExperimentEditForm(instance=instance)
@@ -331,15 +326,6 @@ def handle_experiment_edit_form(request, instance):
     # Set up the initial base context
     context = {"edit_form": form, 'instance': instance, 'experiment': True}
 
-    # Set up the formset with initial data
-    if instance.private:
-        prev_reference_maps = instance.referencemapping_set.all()
-        ref_mapping_formset = ReferenceMappingFormSet(
-            initial=[r.to_json() for r in prev_reference_maps],
-            prefix=REFERENCE_MAPPING_FORM_PREFIX
-        )
-        context["reference_mapping_formset"] = ref_mapping_formset
-
     # If you change the prefix arguments here, make sure to change them
     # in base.js as well for the +/- buttons to work correctly.
     if request.method == "POST":
@@ -347,14 +333,6 @@ def handle_experiment_edit_form(request, instance):
             form = ExperimentEditForm(request.POST, instance=instance)
         else:
             form = ExperimentForm.PartialFormFromRequest(request, instance)
-
-        # Build the reference mapping formset
-        if instance.private:
-            ref_mapping_formset = ReferenceMappingFormSet(
-                request.POST, prefix=REFERENCE_MAPPING_FORM_PREFIX,
-                initial=[r.to_json() for r in prev_reference_maps]
-            )
-            context["reference_mapping_formset"] = ref_mapping_formset
 
         # Get the new keywords/accession/target org so that we can return
         # them for list repopulation if the form has errors.
@@ -372,30 +350,11 @@ def handle_experiment_edit_form(request, instance):
         context["repop_target_organism"] = ','.join(target_organism)
 
         if form.is_valid():
-            if instance.private:
-                maps = parse_mapping_formset(ref_mapping_formset)
-                if not all([m is not None for m in maps]):
-                    return render(
-                        request, 'accounts/profile_edit.html', context
-                    )
-
-                with transaction.atomic():
-                    updated_instance = form.save(commit=True)
-                    updated_instance.update_last_edit_info(request.user)
-                    save_and_create_revision_if_tracked_changed(
-                        request.user, updated_instance
-                    )
-                    prev_reference_maps.delete()
-                    for ref_map in maps:
-                        ref_map.experiment = updated_instance
-                        ref_map.save()
-            else:
-                with transaction.atomic():
-                    updated_instance = form.save(commit=True)
-                    updated_instance.update_last_edit_info(request.user)
-                    save_and_create_revision_if_tracked_changed(
-                        request.user, updated_instance
-                    )
+            updated_instance = form.save(commit=True)
+            updated_instance.update_last_edit_info(request.user)
+            save_and_create_revision_if_tracked_changed(
+                request.user, updated_instance
+            )
 
             return redirect(
                 "accounts:edit_instance", updated_instance.accession
@@ -431,8 +390,8 @@ def view_instance(request, accession):
         user_is_viewer_for_instance(request.user, instance)
     ]
     if not any(has_permission):
-        response = render(request, 'main/404_not_found.html')
-        response.status_code = 404
+        response = render(request, 'main/403_forbidden.html')
+        response.status_code = 403
         return response
 
     if klass == Experiment:

@@ -9,8 +9,7 @@ from django.dispatch import receiver
 
 from django.utils.html import format_html
 
-from experiment.models import ExperimentSet, Experiment
-from scoreset.models import ScoreSet
+from experiment.models import ExperimentSet, Experiment, ScoreSet
 
 from .permissions import (
     GroupTypes,

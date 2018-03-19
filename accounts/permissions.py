@@ -58,8 +58,7 @@ class GroupTypes:
 # Utilities
 # --------------------------------------------------------------------------- #
 def valid_model_instance(instance):
-    from experiment.models import Experiment, ExperimentSet
-    from scoreset.models import ScoreSet
+    from experiment.models import Experiment, ExperimentSet, ScoreSet
     if not hasattr(instance, 'accession'):
         return False
     if not getattr(instance, 'accession'):
@@ -122,8 +121,7 @@ def user_is_viewer_for_instance(user, instance):
 
 
 def instances_for_user_with_group_permission(user, model, group_type):
-    from experiment.models import Experiment, ExperimentSet
-    from scoreset.models import ScoreSet
+    from experiment.models import Experiment, ExperimentSet, ScoreSet
 
     if user_is_anonymous(user):
         return []
