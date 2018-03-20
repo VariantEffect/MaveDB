@@ -4,7 +4,7 @@ from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
-DNA_SEQ_RE = r'[ATGCatgc]+'
+DNA_SEQ_PATTERN = r'[ATGCatgc]+'
 
 MAVEDB_EXPERIMENTSET_URN_DIGITS = 8
 MAVEDB_URN_MAX_LENGTH = 64
@@ -14,18 +14,22 @@ MAVEDB_EXPERIMENTSET_URN_PATTERN = r'^urn:{namespace}:\d{{{width}}}$'.format(
     namespace=MAVEDB_URN_NAMESPACE,
     width=MAVEDB_EXPERIMENTSET_URN_DIGITS
 )
+MAVEDB_EXPERIMENTSET_URN_RE = re.compile(MAVEDB_EXPERIMENTSET_URN_PATTERN)
 
 MAVEDB_EXPERIMENT_URN_PATTERN = r'{pattern}-[a-z]+$'.format(
     pattern=MAVEDB_EXPERIMENTSET_URN_PATTERN[:-1]
 )
+MAVEDB_EXPERIMENT_URN_RE = re.compile(MAVEDB_EXPERIMENT_URN_PATTERN)
 
 MAVEDB_SCORESET_URN_PATTERN = r'{pattern}-\d+$'.format(
     pattern=MAVEDB_EXPERIMENT_URN_PATTERN[:-1]
 )
+MAVEDB_SCORESET_URN_RE = re.compile(MAVEDB_SCORESET_URN_PATTERN)
 
 MAVEDB_VARIANT_URN_PATTERN = r'{pattern}#\d+$'.format(
     pattern=MAVEDB_SCORESET_URN_PATTERN[:-1]
 )
+MAVEDB_VARIANT_URN_RE = re.compile(MAVEDB_VARIANT_URN_PATTERN)
 
 MAVEDB_ANY_URN_PATTERN = '|'.join([r'({pattern})'.format(pattern=p) for p in (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
@@ -33,6 +37,23 @@ MAVEDB_ANY_URN_PATTERN = '|'.join([r'({pattern})'.format(pattern=p) for p in (
     MAVEDB_SCORESET_URN_PATTERN,
     MAVEDB_VARIANT_URN_PATTERN)
 ])
+MAVEDB_ANY_URN_RE = re.compile(MAVEDB_ANY_URN_PATTERN)
+
+SRA_BIOPROJECT_PATTERN = r'^PRJNA\d+$'
+SRA_BIOPROJECT_RE = re.compile(SRA_BIOPROJECT_PATTERN)
+SRA_STUDY_PATTERN = r'^[SED]RP\d+$'
+SRA_STUDY_RE = re.compile(SRA_STUDY_PATTERN)
+SRA_EXPERIMENT_PATTERN = r'^[SED]RX\d+$'
+SRA_EXPERIMENT_RE = re.compile(SRA_EXPERIMENT_PATTERN)
+SRA_RUN_PATTERN = r'^[SED]RR\d+$'
+SRA_RUN_RE = re.compile(SRA_RUN_PATTERN)
+SRA_ANY_PATTERN = '|'.join([r'({pattern})'.format(pattern=p) for p in (
+    SRA_BIOPROJECT_PATTERN,
+    SRA_STUDY_PATTERN,
+    SRA_EXPERIMENT_PATTERN,
+    SRA_RUN_PATTERN)
+])
+SRA_ANY_RE = re.compile(SRA_ANY_PATTERN)
 
 #: Matches a single amino acid substitution in HGVS_ format.
 RE_PROTEIN = re.compile(
@@ -74,43 +95,43 @@ def is_null(value):
 # --------------------------------------------------------------------------- #
 #                           URN Validators
 # --------------------------------------------------------------------------- #
-def valid_mavedb_urn(accession):
-    if not re.match(MAVEDB_ANY_URN_PATTERN, accession):
+def valid_mavedb_urn(urn):
+    if not MAVEDB_ANY_URN_RE.match(urn):
         raise ValidationError(
             "%(urn)s is not a valid urn.",
-            params={"urn": accession}
+            params={"urn": urn}
         )
 
 
-def valid_mavedb_urn_experimentset(accession):
-    if not re.match(MAVEDB_EXPERIMENTSET_URN_PATTERN, accession):
+def valid_mavedb_urn_experimentset(urn):
+    if not MAVEDB_EXPERIMENTSET_URN_RE.match(urn):
         raise ValidationError(
             "%(urn)s is not a valid Experiment Set urn.",
-            params={"urn": accession}
+            params={"urn": urn}
         )
 
 
-def valid_mavedb_urn_experiment(accession):
-    if not re.match(MAVEDB_EXPERIMENT_URN_PATTERN, accession):
+def valid_mavedb_urn_experiment(urn):
+    if not MAVEDB_EXPERIMENT_URN_RE.match(urn):
         raise ValidationError(
             "%(urn)s is not a valid Experiment urn.",
-            params={"urn": accession}
+            params={"urn": urn}
         )
 
 
-def valid_mavedb_urn_scoreset(accession):
-    if not re.match(MAVEDB_SCORESET_URN_PATTERN, accession):
+def valid_mavedb_urn_scoreset(urn):
+    if not MAVEDB_SCORESET_URN_RE.match(urn):
         raise ValidationError(
             "%(urn)s is not a valid Score Set urn.",
-            params={"urn": accession}
+            params={"urn": urn}
         )
 
 
-def valid_mavedb_urn_variant(accession):
-    if not re.match(MAVEDB_VARIANT_URN_PATTERN, accession):
+def valid_mavedb_urn_variant(urn):
+    if not MAVEDB_VARIANT_URN_RE.match(urn):
         raise ValidationError(
             "%(urn)s is not a valid Variant urn.",
-            params={"urn": accession}
+            params={"urn": urn}
         )
 
 
@@ -118,7 +139,7 @@ def valid_mavedb_urn_variant(accession):
 #                           Sequence/HGVS Validators
 # --------------------------------------------------------------------------- #
 def valid_wildtype_sequence(seq):
-    if not re.fullmatch(DNA_SEQ_RE, seq):
+    if not re.fullmatch(DNA_SEQ_PATTERN, seq):
         raise ValidationError(
             "'%(seq)s' is not a valid wild type sequence.",
             params={"seq": seq}
@@ -141,6 +162,16 @@ def valid_hgvs_string(string):
    #         params={'variant': string}
    #     )
     return
+
+# --------------------------------------------------------------------------- #
+#                           ExternalIdentifier Validators
+# --------------------------------------------------------------------------- #
+def valid_sra_identifier(identifier):
+    if not SRA_ANY_RE.match(identifier):
+        raise ValidationError(
+            "%(id)s is not a valid SRA identifier.",
+            params={"id": identifier}
+        )
 
 # --------------------------------------------------------------------------- #
 #                           ScoreSet Validators
