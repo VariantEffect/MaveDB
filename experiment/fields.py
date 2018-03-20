@@ -1,13 +1,6 @@
-
-import string
-
-from django.db.models import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 from django.forms import ModelMultipleChoiceField
-from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
-
-from experiment.models import Keyword, ExternalAccession, TargetOrganism
 
 
 class ModelSelectMultipleField(ModelMultipleChoiceField):
@@ -30,57 +23,39 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         )
     }
 
-    def __init__(self, klass, text_key, *args, **kwargs):
+    def __init__(self, klass, *args, **kwargs):
         super(ModelSelectMultipleField, self).__init__(*args, **kwargs)
-        self.class_ = klass
-        self.class_text_key = text_key
+        if self.to_field_name is None:
+            raise ValueError("You must define 'to_field_name'.")
+        self.klass = klass
         self.new_instances = []
 
-        if klass not in [Keyword, ExternalAccession, TargetOrganism]:
-            raise TypeError("{} is not a supported class.".format(klass))
-
-    @staticmethod
-    def is_word(value):
-        try:
-            float(str(value).strip())
-            is_float = True
-        except (ValueError, TypeError):
-            is_float = False
-
-        try:
-            int(str(value).strip())
-            is_int = True
-        except (ValueError, TypeError):
-            is_int = False
-
-        return not (is_float or is_int)
 
     def create_if_not_exist(self, value):
-        if isinstance(value, str) and not value.strip():
+        if value is None or not str(value).strip():
             return
 
-        key = self.to_field_name or 'pk'
-        try:
-            self.class_.objects.get(**{key: value})
-        except (ValueError, ObjectDoesNotExist):
-            text = str(value)
-            exists_in_db = self.class_.objects.filter(
-                **{self.class_text_key: text}
-            ).exists()
-            exists_in_new = text in {
-                getattr(inst, self.class_text_key)
-                for inst in self.new_instances
-            }
-            if not (exists_in_new or exists_in_db):
-                instance = self.class_(**{self.class_text_key: text})
-                self.new_instances.append(instance)
+        accession = str(value).strip()
+        exists_in_db = self.klass.objects.filter(
+            **{self.to_field_name: accession}
+        ).count() > 0
+        exists_in_new = accession in set([
+            getattr(inst, self.to_field_name)
+            for inst in self.new_instances
+        ])
+        if not (exists_in_new or exists_in_db):
+            instance = self.klass(**{self.to_field_name: accession})
+            self.new_instances.append(instance)
+            return accession
+        else:
+            return None
 
     def clean(self, value):
         # The `target_organism` widget in `ExperimentForm` uses a non-multiple
         # select widget which will return a string instead of a list of values.
         # Instead of subclassing the single selection django widget just
         # for this field use this line here instead.
-        if self.class_ == TargetOrganism and not isinstance(value, list):
+        if isinstance(value, str):
             value = [value]
         return super(ModelSelectMultipleField, self).clean(value)
 
@@ -94,48 +69,22 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         created. This handles the case where new keywords etc must be
         added to the database during an instance creation/edit.
         """
-        not_pks = []
-        existing_pks = []
-        key = self.to_field_name or 'pk'
-        text_key = self.class_text_key
+        existing = []
         # deduplicate given values to avoid creating many querysets or
         # requiring the database backend deduplicate efficiently.
         try:
-            value = frozenset(value)
+            values = frozenset(value)
         except TypeError:
             # list of lists isn't hashable, for example
             raise ValidationError(
                 self.error_messages['list'],
                 code='list',
             )
-        for pk in value:
-            try:
-                self.queryset.filter(**{key: pk})
-            except (ValueError, TypeError):
-                if not self.is_word(pk):
-                    raise ValidationError(
-                        self.error_messages['invalid_pk_value'],
-                        code='invalid_pk_value',
-                        params={'pk': pk},
-                    )
-                else:
-                    if self.queryset.filter(**{text_key: pk}).exists():
-                        o = self.queryset.get(**{text_key: pk})
-                        existing_pks.append(getattr(o, key))
-                    not_pks.append(pk)
+        for value in values:
+            created_value = self.create_if_not_exist(value)
+            if created_value is None:
+                existing.append(value)
+        return super(ModelSelectMultipleField)._check_values(existing)
 
-        valid_pks = [v for v in value if v not in not_pks]
-        valid_pks += [v for v in existing_pks if v not in valid_pks]
-        qs = self.queryset.filter(**{'%s__in' % key: valid_pks})
-        pks = set(force_text(getattr(o, key)) for o in qs)
-        for val in value:
-            if force_text(val) not in pks:
-                if self.is_word(force_text(val)):
-                    instance = self.create_if_not_exist(val)
-                else:
-                    raise ValidationError(
-                        self.error_messages['invalid_choice'],
-                        code='invalid_choice',
-                        params={'value': val},
-                    )
-        return qs
+
+
