@@ -120,6 +120,13 @@ def user_is_viewer_for_instance(user, instance):
         return False
 
 
+GROUP_TYPE_CALLBACK = {
+    GroupTypes.ADMIN: user_is_admin_for_instance,
+    GroupTypes.CONTRIBUTOR: user_is_contributor_for_instance,
+    GroupTypes.VIEWER: user_is_viewer_for_instance
+}
+
+
 def instances_for_user_with_group_permission(user, model, group_type):
     from experiment.models import Experiment, ExperimentSet, ScoreSet
 
@@ -135,12 +142,7 @@ def instances_for_user_with_group_permission(user, model, group_type):
     else:
         raise TypeError("Unrecognised model type {}.".format(model))
 
-    group_type_callables = {
-        GroupTypes.ADMIN: user_is_admin_for_instance,
-        GroupTypes.CONTRIBUTOR: user_is_contributor_for_instance,
-        GroupTypes.VIEWER: user_is_viewer_for_instance
-    }
-    is_in_group = group_type_callables.get(group_type, None)
+    is_in_group = GROUP_TYPE_CALLBACK.get(group_type, None)
     if is_in_group is None:
         raise ValueError("Unrecognised group type {}.".format(group_type))
 
