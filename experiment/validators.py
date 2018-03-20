@@ -296,7 +296,7 @@ def valid_variant_json(json_object):
 
 
 # --------------------------------------------------------------------------- #
-#                           Keyword Validator
+#                           Accession Validators
 # --------------------------------------------------------------------------- #
 def validate_keyword(value):
     pass
@@ -311,4 +311,32 @@ def validate_sra(value):
 
 
 def validate_doi(value):
+    pass
+
+
+def validate_keyword_list(values):
+    for value in values:
+        validate_keyword(value)
+
+
+def validate_pubmed_list(values):
+    for value in values:
+        validate_pubmed(value)
+
+
+def validate_sra_list(values):
+    for value in values:
+        validate_sra(value)
+
+
+def validate_doi_list(values):
+    for value in values:
+        validate_doi(value)
+
+
+def validate_target(value):
+    pass
+
+
+def validate_target_organism(value):
     pass
