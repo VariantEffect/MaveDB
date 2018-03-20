@@ -9,9 +9,9 @@ from main.utils.query_parsing import parse_query
 from main.models import Licence
 
 from .fields import ModelSelectMultipleField
-from .models import ExternalAccession, Keyword, TargetOrganism
+from .models import Keyword, TargetOrganism, SraAccession, PubmedAccession, DoiAccession
 from .models import Experiment, ScoreSet, Variant, ExperimentSet
-from .models import DatasetModel, AccessionModel
+from .models import DatasetModel, AccessionModel, ExternalAccession
 
 from .validators import (
     valid_scoreset_count_data_input, valid_scoreset_score_data_input,
@@ -34,77 +34,41 @@ class DatasetModelForm(forms.ModelForm):
             'doi_accessions',
             'pmid_accessions'
         )
-
+        widgets = {
+            'abstract_text': forms.Textarea(attrs={"class": "form-control"}),
+            'method_text': forms.Textarea(attrs={"class": "form-control"}),
+            'keywords': ModelSelectMultipleField(
+                klass=Keyword, to_field_name='text', required=False,
+                widget=forms.widgets.SelectMultiple(
+                    attrs={"class": "form-control select2 select2-token-select"}
+                )
+            ),
+            'sra_accessions': ModelSelectMultipleField(
+                klass=Keyword, to_field_name='resource_accession', required=False,
+                widget=forms.widgets.SelectMultiple(
+                    attrs={"class": "form-control select2 select2-token-select"}
+                )
+            ),
+            'doi_accessions': ModelSelectMultipleField(
+                klass=Keyword, to_field_name='resource_accession', required=False,
+                widget=forms.widgets.SelectMultiple(
+                    attrs={"class": "form-control select2 select2-token-select"}
+                )
+            ),
+            'pmid_accessions': ModelSelectMultipleField(
+                klass=Keyword, to_field_name='resource_accession', required=False,
+                widget=forms.widgets.SelectMultiple(
+                    attrs={"class": "form-control select2 select2-token-select"}
+                )
+            )
+        }
 
     def __init__(self, *args, **kwargs):
         super(DatasetModelForm).__init__(*args, **kwargs)
-        self.fields["abstract_text"].widget = forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "style": "height:250px;width:100%"
-            }
-        )
-        self.fields["method_text"].widget = forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "style": "height:250px;width:100%"
-            }
-        )
-
-        # This needs to be in `__init__` because otherwise it is created as
-        # a class variable at import time.
-        self.fields["keywords"] = ModelSelectMultipleField(
-            klass=Keyword,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.SelectMultiple(
-                attrs={
-                    "class": "form-control select2 select2-token-select",
-                    "style": "width:100%;height:50px;"
-                }
-            )
-        )
-        self.fields["sra_accessions"] = ModelSelectMultipleField(
-            klass=ExternalAccession,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.SelectMultiple(
-                attrs={
-                    "class": "form-control select2 select2-token-select",
-                    "style": "width:100%;height:50px;"
-                }
-            )
-        )
-        self.fields["doi_accessions"] = ModelSelectMultipleField(
-            klass=ExternalAccession,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.SelectMultiple(
-                attrs={
-                    "class": "form-control select2 select2-token-select",
-                    "style": "width:100%;height:50px;"
-                }
-            )
-        )
-        self.fields["target_organism"] = ModelSelectMultipleField(
-            klass=TargetOrganism,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.Select(
-                attrs={
-                    "class": "form-control select2 select2-token-select",
-                    "style": "width:50%;height:auto;"
-                }
-            )
-        )
         self.fields["keywords"].queryset = Keyword.objects.all()
-        self.fields["external_accessions"].queryset = \
-            ExternalAccession.objects.all()
-        self.fields["target_organism"].queryset = TargetOrganism.objects.all()
+        self.fields["sra_accessions"].queryset = SraAccession.objects.all()
+        self.fields["doi_accessions"].queryset = DoiAccession.objects.all()
+        self.fields["pubmed_accessions"].queryset = PubmedAccession.objects.all()
 
 
 class ExperimentForm(DatasetModelForm):
@@ -116,7 +80,6 @@ class ExperimentForm(DatasetModelForm):
         fields = (
             'experimentset',
             'target',
-            'target_organism',
             'wt_sequence'
         )
 
@@ -137,6 +100,21 @@ class ExperimentForm(DatasetModelForm):
                 "style": "height:250px;width:100%"
             }
         )
+
+        self.fields["target_organism"] = ModelSelectMultipleField(
+            klass=TargetOrganism,
+            text_key="text",
+            queryset=None,
+            required=False,
+            widget=forms.widgets.Select(
+                attrs={
+                    "class": "form-control select2 select2-token-select",
+                    "style": "width:50%;height:auto;"
+                }
+            )
+        )
+        self.fields["target_organism"].queryset = TargetOrganism.objects.all()
+
 
     def save(self, commit=True):
         super(ExperimentForm, self).save(commit=commit)
