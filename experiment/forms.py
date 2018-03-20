@@ -130,9 +130,6 @@ class ExperimentForm(DatasetModelForm):
             self.save_m2m = self.process_and_save_all
         return self.instance
 
-
-    def _save_m2m(self):
-
     def process_and_save_all(self):
         """
         This will saved all changes made to the instance. Keywords not
