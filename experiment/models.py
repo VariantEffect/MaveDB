@@ -50,6 +50,7 @@ class Keyword(models.Model):
     ----------
     creation_date : `models.DateField`
         The date of instantiation.
+
     text : `models.TextField`
         The free-form textual representation of the keyword.
     """
@@ -94,7 +95,21 @@ class ExternalAccession(models.Model):
         The name of the external database.
     """
     creation_date = models.DateField(blank=False, default=datetime.date.today)
-    text = models.CharField(
+    database_name = models.CharField(
+        blank=False,
+        null=False,
+        default=None,
+        max_length=256,
+        verbose_name='Database name'
+    )
+    resource_url = models.URLField(
+        blank=True,
+        null=True,
+        default=None,
+        max_length=256,
+        verbose_name='Accession URL'
+    )
+    resource_accession = models.CharField(
         blank=False,
         null=False,
         default=None,
@@ -104,12 +119,67 @@ class ExternalAccession(models.Model):
     )
 
     class Meta:
+        abstract = True
         ordering = ['-creation_date']
         verbose_name = "Other accession"
         verbose_name_plural = "other accessions"
 
     def __str__(self):
-        return self.text
+        return self.resource_accession
+
+    def format_url(self):
+        raise NotImplementedError()
+
+    def save(self, *args, **kwargs):
+        # The 'pk' is 'id' for an ExternalAccession, which is an
+        # auto-incrementing integer field. It will be None until the
+        # instance is saved for the first time.
+        if self.pk is None:
+            self.resource_url = self.format_url()
+        super().save(*args, **kwargs)
+
+
+class SraAccession(ExternalAccession):
+    """
+    An SRA accession.
+    """
+    def format_url(self):
+        return ""
+
+
+
+class DoiAccession(ExternalAccession):
+    """
+    A DOI accession.
+    """
+    def format_url(self):
+        return ""
+
+
+class PubmedAccession(ExternalAccession):
+    """
+    A PubMed accession.
+    """
+    resource_markup = models.TextField(
+        blank=True,
+        null=True,
+        default=None,
+        verbose_name='Accession Markup'
+    )
+
+    def format_url(self):
+        return ""
+
+    def format_markup(self):
+        return ""
+
+    def save(self, *args, **kwargs):
+        # The 'pk' is 'id' for an ExternalAccession, which is an
+        # auto-incrementing integer field. It will be None until the
+        # instance is saved for the first time.
+        if self.pk is None:
+            self.resource_markup = self.format_markup()
+        super().save(*args, **kwargs)
 
 
 class TargetOrganism(models.Model):
@@ -358,9 +428,9 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
     keywords = models.ManyToManyField(Keyword, blank=True)
-    sra_accessions = models.ManyToManyField(ExternalAccession, blank=True)
-    doi_accessions = models.ManyToManyField(ExternalAccession, blank=True)
-    pmid_accessions = models.ManyToManyField(ExternalAccession, blank=True)
+    sra_accessions = models.ManyToManyField(SraAccession, blank=True)
+    doi_accessions = models.ManyToManyField(DoiAccession, blank=True)
+    pmid_accessions = models.ManyToManyField(PubmedAccession, blank=True)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -368,7 +438,6 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-
         # This will not work if manually setting accession.
         # Replace this section with POST/PRE save signal.
         self.last_edit_date = datetime.date.today()
@@ -522,13 +591,12 @@ class Experiment(DatasetModel):
         blank=False,
         null=False,
         verbose_name="Target",
-        max_length=128,
+        max_length=256,
     )
 
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
-    target_accessions = models.ManyToManyField(ExternalAccession, blank=True)
     target_organism = models.ManyToManyField(TargetOrganism, blank=True)
 
     # ---------------------------------------------------------------------- #
