@@ -5,7 +5,7 @@ from django.db.models import ObjectDoesNotExist
 from reversion.admin import VersionAdmin
 
 from experiment.models import Experiment, ExperimentSet
-from experiment.models import Keyword, ExternalAccession, TargetOrganism
+from experiment.models import Keyword, ExternalIdentifier, TargetOrganism
 from experiment.models import ScoreSet, Variant
 
 from .models import News, SiteInformation, Licence
@@ -18,7 +18,7 @@ admin.site.register(SiteInformation)
 
 admin.site.register(TargetOrganism)
 admin.site.register(Keyword)
-admin.site.register(ExternalAccession)
+admin.site.register(ExternalIdentifier)
 
 
 admin.site.register(Variant)

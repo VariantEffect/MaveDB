@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 
-from experiment.models import Keyword, ExternalAccession, TargetOrganism
+from experiment.models import Keyword, ExternalIdentifier, TargetOrganism
 from experiment.models import Experiment
 from experiment.models import ScoreSet
 from accounts.permissions import assign_user_as_instance_admin
@@ -18,9 +18,9 @@ class TestSearchForm(TestCase):
         self.kw_1 = Keyword.objects.create(text="kw_1")
         self.kw_2 = Keyword.objects.create(text="kw_2")
         self.kw_3 = Keyword.objects.create(text="kw_3")
-        self.ext_accession_1 = ExternalAccession.objects.create(text="ea_1")
-        self.ext_accession_2 = ExternalAccession.objects.create(text="ea_2")
-        self.ext_accession_3 = ExternalAccession.objects.create(text="ea_3")
+        self.ext_accession_1 = ExternalIdentifier.objects.create(text="ea_1")
+        self.ext_accession_2 = ExternalIdentifier.objects.create(text="ea_2")
+        self.ext_accession_3 = ExternalIdentifier.objects.create(text="ea_3")
         self.target_org_1 = TargetOrganism.objects.create(text="to_1")
         self.target_org_2 = TargetOrganism.objects.create(text="to_2")
         self.target_org_3 = TargetOrganism.objects.create(text="to_3")

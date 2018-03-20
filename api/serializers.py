@@ -40,10 +40,10 @@ class ExperimentSetSerializer(Serializer):
             return {}
 
         return {
-            "accession": instance.accession,
+            "urn": instance.urn,
             "authors": instance.get_authors_by_username(string=False),
             "experiments": [
-                e.accession for e in instance.experiment_set.all()
+                e.urn for e in instance.experiment_set.all()
                 if not (e.private and filter_private)
             ]
         }
@@ -68,11 +68,11 @@ class ExperimentSerializer(Serializer):
             return {}
 
         return {
-            "accession": instance.accession,
+            "urn": instance.urn,
             "authors": instance.get_authors_by_username(string=False),
-            "experimentset": instance.experimentset.accession,
+            "experimentset": instance.experimentset.urn,
             "scoresets": [
-                s.get_latest_version().accession
+                s.get_latest_version().urn
                 for s in instance.scoreset_set.all()
                 if not (s.private and filter_private)
             ]
@@ -99,18 +99,18 @@ class ScoreSetSerializer(Serializer):
 
         replaced_by = instance.get_replaced_by()
         replaces = instance.replaces
-        replaced_by = '' if not replaced_by else replaced_by.accession
-        replaces = '' if not replaces else replaces.accession
+        replaced_by = '' if not replaced_by else replaced_by.urn
+        replaces = '' if not replaces else replaces.urn
 
         return {
-            "accession": instance.accession,
+            "urn": instance.urn,
             "authors": instance.get_authors_by_username(string=False),
             "replaced_by": replaced_by,
             "replaces": replaces,
             "licence": [
                 instance.licence_type.short_name, instance.licence_type.link,
             ],
-            "current_version": instance.get_latest_version().accession,
+            "current_version": instance.get_latest_version().urn,
             "score_columns": instance.scores_columns,
             "count_columns": instance.counts_columns
         }
@@ -138,15 +138,15 @@ class UserSerializer(Serializer):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "experimentsets": [
-                i.accession for i in profile.administrator_experimentsets()
+                i.urn for i in profile.administrator_experimentsets()
                 if not (i.private and filter_private)
             ],
             "experiments": [
-                i.accession for i in profile.administrator_experiments()
+                i.urn for i in profile.administrator_experiments()
                 if not (i.private and filter_private)
             ],
             "scoresets": [
-                i.accession for i in profile.administrator_scoresets()
+                i.urn for i in profile.administrator_scoresets()
                 if not (i.private and filter_private)
             ]
         }

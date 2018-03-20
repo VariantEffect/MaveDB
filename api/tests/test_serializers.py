@@ -54,7 +54,7 @@ class TestExperimentSetSerializer(TestCase):
         serializer = ExperimentSetSerializer()
         expected = {
             "authors": ["alice"],
-            "accession": instance.accession,
+            "urn": instance.accession,
             "experiments": [experiment.accession]
         }
         result = serializer.serialize(instance.pk)
@@ -72,7 +72,7 @@ class TestExperimentSetSerializer(TestCase):
         serializer = ExperimentSetSerializer()
         expected = {
             "authors": ["alice"],
-            "accession": instance.accession,
+            "urn": instance.accession,
             "experiments": []
         }
         result = serializer.serialize(instance.pk)
@@ -102,12 +102,12 @@ class TestExperimentSetSerializer(TestCase):
             "experimentsets": [
                 {
                     "authors": [],
-                    "accession": instances[0].accession,
+                    "urn": instances[0].accession,
                     "experiments": []
                 },
                 {
                     "authors": [],
-                    "accession": instances[1].accession,
+                    "urn": instances[1].accession,
                     "experiments": []
                 }
             ]
@@ -132,7 +132,7 @@ class TestExperimentSerializer(TestCase):
         expected = {
             "authors": ["alice"],
             "experimentset": instance.experimentset.accession,
-            "accession": instance.accession,
+            "urn": instance.accession,
             "scoresets": [scoreset_1.accession]
         }
         result = serializer.serialize(instance.pk)
@@ -151,7 +151,7 @@ class TestExperimentSerializer(TestCase):
         expected = {
             "authors": ["alice"],
             "experimentset": instance.experimentset.accession,
-            "accession": instance.accession,
+            "urn": instance.accession,
             "scoresets": []
         }
         result = serializer.serialize(instance.pk)
@@ -193,13 +193,13 @@ class TestExperimentSerializer(TestCase):
             "experiments": [
                 {
                     "authors": [],
-                    "accession": instances[0].accession,
+                    "urn": instances[0].accession,
                     "experimentset": instances[0].experimentset.accession,
                     "scoresets": []
                 },
                 {
                     "authors": [],
-                    "accession": instances[1].accession,
+                    "urn": instances[1].accession,
                     "experimentset": instances[1].experimentset.accession,
                     "scoresets": []
                 }
@@ -214,7 +214,7 @@ class TestScoreSetSerializer(TestCase):
     def test_can_serialize_minimal_example(self):
         instance = make_scoreset()
         expected = {
-            "accession": instance.accession,
+            "urn": instance.accession,
             "authors": [],
             "current_version": instance.accession,
             "replaced_by": '',

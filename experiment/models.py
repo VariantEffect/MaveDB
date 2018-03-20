@@ -74,9 +74,9 @@ class Keyword(models.Model):
         return self.text
 
 
-class ExternalAccession(models.Model):
+class ExternalIdentifier(models.Model):
     """
-    This class represents a textual representation of an accession from an
+    This class represents a textual representation of an identifier from an
     external database that can be associated with a target in an experiment.
 
     Parameters
@@ -84,97 +84,119 @@ class ExternalAccession(models.Model):
     creation_date : `models.DateField`
         The date of instantiation.
 
-    resource_accession : `models.TextField`
-        The free-form textual representation of the accession from another
+    identifier : `models.TextField`
+        The free-form textual representation of the identifier from another
         database.
 
-    resource_url : `models.URLField`
+    url : `models.URLField`
         The URL for the resource in the other database. Optional.
 
-    database_name : `models.TextField`
+    dbname : `models.TextField`
         The name of the external database.
     """
-    creation_date = models.DateField(blank=False, default=datetime.date.today)
-    database_name = models.CharField(
+    creation_date = models.DateField(
+        blank=False,
+        default=datetime.date.today
+    )
+    dbname = models.CharField(
         blank=False,
         null=False,
         default=None,
         max_length=256,
         verbose_name='Database name'
     )
-    resource_url = models.URLField(
+    url = models.URLField(
         blank=True,
         null=True,
         default=None,
         max_length=256,
-        verbose_name='Accession URL'
+        verbose_name='Identifier URL'
     )
-    resource_accession = models.CharField(
+    identifier = models.CharField(
         blank=False,
         null=False,
         default=None,
         unique=True,
         max_length=256,
-        verbose_name="Accession",
+        verbose_name="Identifier",
     )
 
     class Meta:
         abstract = True
         ordering = ['-creation_date']
-        verbose_name = "Other accession"
-        verbose_name_plural = "other accessions"
+        verbose_name = "Other identifier"
+        verbose_name_plural = "Other identifiers"
 
     def __str__(self):
-        return self.resource_accession
+        return "{}:{}".format(self.dbname, self.identifier)
 
     def format_url(self):
         raise NotImplementedError()
 
     def save(self, *args, **kwargs):
-        # The 'pk' is 'id' for an ExternalAccession, which is an
+        # The 'pk' is 'id' for an ExternalIdentifier, which is an
         # auto-incrementing integer field. It will be None until the
         # instance is saved for the first time.
         if self.pk is None:
-            self.resource_url = self.format_url()
+            self.url = self.format_url()
+            self.dbname = self.DATABASE_NAME
         super().save(*args, **kwargs)
 
 
-class SraAccession(ExternalAccession):
+class SraIdentifier(ExternalIdentifier):
     """
-    An SRA accession.
+    An SRA identifier.
     """
+    DATABASE_NAME = "SRA"
+
+    class Meta:
+        verbose_name = "SRA urn"
+        verbose_name_plural = "SRA accessions"
+
     def format_url(self):
         return ""
 
 
 
-class DoiAccession(ExternalAccession):
+class DoiIdentifier(ExternalIdentifier):
     """
-    A DOI accession.
+    A DOI identifier.
     """
+    DATABASE_NAME = "DOI"
+
+    class Meta:
+        verbose_name = "DOI"
+        verbose_name_plural = "DOIs"
+
     def format_url(self):
         return ""
 
 
-class PubmedAccession(ExternalAccession):
+class PubmedIdentifier(ExternalIdentifier):
     """
-    A PubMed accession.
+    A PubMed identifier.
     """
-    resource_markup = models.TextField(
+    DATABASE_NAME = "PubMed"
+
+    class Meta:
+        verbose_name = "PubMed identifier"
+        verbose_name_plural = "PubMed identifiers"
+
+    reference_html = models.TextField(
         blank=True,
         null=True,
         default=None,
-        verbose_name='Accession Markup'
+        verbose_name='Formatted reference'
     )
 
     def format_url(self):
         return ""
 
-    def format_markup(self):
+    def format_html(self):
         return ""
 
     def save(self, *args, **kwargs):
-        # The 'pk' is 'id' for an ExternalAccession, which is an
+        # The 'pk' is 'id' for an ExternalIdentifier, which is an
         # auto-incrementing integer field. It will be None until the
         # instance is saved for the first time.
         if self.pk is None:
@@ -216,14 +238,14 @@ class TargetOrganism(models.Model):
         return self.text
 
 
-class AccessionModel(models.Model):
+class UrnModel(models.Model):
     """
-    Abstract class for all entries in MAVEDB that have an accession number.
+    Abstract class for all entries in MAVEDB that have a URN.
 
     Parameters
     ----------
-    accession : `models.CharField`
-        The accession in the MAVEDB URN format:
+    urn : `models.CharField`
+        The urn in the MAVEDB URN format:
         `urn:mavedb:<ExperimentSet>-<Experiment>-<ScoreSet>#<Variant>`, where
         `<ExperimentSet>` is a zero-padded eight-digit integer, `<Experiment>`
         is a lowercase letter or string of letters ('aa' follows 'z' in the rare
@@ -238,43 +260,43 @@ class AccessionModel(models.Model):
         abstract = True
         ordering = ['-creation_date']
 
-    default_kwargs = {
+    default_urn_kwargs = {
         "unique": True,
         "default": None,
         "blank": True,
         "null": True,
         "max_length": MAVEDB_URN_MAX_LENGTH,
-        "verbose_name": "Accession",
+        "verbose_name": "URN",
     }
 
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
-    accession = None
-#    accession = models.CharField(
+    urn = None
+#    urn = models.CharField(
 #        validators=[valid_mavedb_urn],
-#        **default_kwargs,
+#        **default_urn_kwargs,
 #    )
 
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return str(self.accession)
+        return str(self.urn)
 
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-        if self.accession is None:
-            self.accession = self.create_urn()
+        if self.urn is None:
+            self.urn = self.create_urn()
             self.save()
 
     def create_urn(self):
         raise NotImplementedError()
 
 
-class DatasetModel(AccessionModel, GroupPermissionMixin):
+class DatasetModel(UrnModel, GroupPermissionMixin):
     """
     This is the abstract base class for ExperimentSet, Experiment, and
     ScoreSet classes. It includes permissions, creation/edit details, shared
@@ -311,7 +333,7 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     last_child_value : `models.IntegerField`
         Min value of 0. Counts how many child entities have been associated
         with this entity. Must be incremented on child creation. Used to
-        generate accession numbers for new child entries.
+        generate urn numbers for new child entries.
 
     extra_metadata : `models.JSONField`
         Free-form json metadata that might be associated with this entry.
@@ -325,17 +347,17 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     keywords : `models.ManyToManyField`
         Associated `Keyword` objects for this entry.
 
-    sra_accessions : `models.ManyToManyField`
-        Associated `ExternalAccession` objects for this entry that map to the
+    sra_ids : `models.ManyToManyField`
+        Associated `ExternalIdentifier` objects for this entry that map to the
         NCBI Sequence Read Archive (https://www.ncbi.nlm.nih.gov/sra).
 
-    doi_accessions : `models.ManyToManyField`
-        Associated `ExternalAccession` objects for this entry that map to
+    doi_ids : `models.ManyToManyField`
+        Associated `ExternalIdentifier` objects for this entry that map to
         Digital Object Identifiers (https://www.doi.org). These are intended to
         be used for data objects rather than publications.
 
-    pmid_accessions : `models.ManyToManyField`
-        Associated `ExternalAccession` objects for this entry that map to
+    pmid_ids : `models.ManyToManyField`
+        Associated `ExternalIdentifier` objects for this entry that map to
         NCBI PubMed identifiers (https://www.ncbi.nlm.nih.gov/pubmed). These
         will be formatted and displayed as publications.
     """
@@ -428,9 +450,9 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
     keywords = models.ManyToManyField(Keyword, blank=True)
-    sra_accessions = models.ManyToManyField(SraAccession, blank=True)
-    doi_accessions = models.ManyToManyField(DoiAccession, blank=True)
-    pmid_accessions = models.ManyToManyField(PubmedAccession, blank=True)
+    sra_ids = models.ManyToManyField(SraIdentifier, blank=True)
+    doi_ids = models.ManyToManyField(DoiIdentifier, blank=True)
+    pmid_ids = models.ManyToManyField(PubmedIdentifier, blank=True)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -438,7 +460,7 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # This will not work if manually setting accession.
+        # This will not work if manually setting urn.
         # Replace this section with POST/PRE save signal.
         self.last_edit_date = datetime.date.today()
         self.save()
@@ -465,8 +487,8 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
         self.keywords.add(keyword)
 
     def add_external_accession(self, instance, m2m_field):
-        if not isinstance(instance, ExternalAccession):
-            raise TypeError("`instance` must be an ExternalAccession instance.")
+        if not isinstance(instance, ExternalIdentifier):
+            raise TypeError("`instance` must be an ExternalIdentifier instance.")
         getattr(self, m2m_field).add(instance)
 
     def get_keywords(self):
@@ -495,9 +517,9 @@ class ExperimentSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
-    accession = models.CharField(
+    urn = models.CharField(
         validators=[valid_mavedb_urn_experimentset],
-        **AccessionModel.default_kwargs,
+        **UrnModel.default_urn_kwargs,
     )
 
     # ---------------------------------------------------------------------- #
@@ -506,8 +528,8 @@ class ExperimentSet(DatasetModel):
     def create_urn(self):
         expset_number = str(self.pk)
         padded_expset_number = expset_number.zfill(self.URN_DIGITS)
-        accession = "{}{}".format(self.URN_PREFIX, padded_expset_number)
-        return accession
+        urn = "{}{}".format(self.URN_PREFIX, padded_expset_number)
+        return urn
 
 
 @reversion.register()
@@ -558,9 +580,9 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
-    accession = models.CharField(
+    urn = models.CharField(
         validators=[valid_mavedb_urn_experiment],
-        **AccessionModel.default_kwargs,
+        **UrnModel.default_urn_kwargs,
     )
 
     experimentset = models.ForeignKey(
@@ -618,13 +640,13 @@ class Experiment(DatasetModel):
             x, y = divmod(x - 1, len(string.ascii_lowercase))
             suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
 
-        accession = "{}-{}".format(parent.accession, suffix)
+        urn = "{}-{}".format(parent.urn, suffix)
 
         # update parent
         parent.last_child_value = child_value
         parent.save()
 
-        return accession
+        return urn
 
     def update_target_organism(self, target_organism):
         if not target_organism:
@@ -652,8 +674,8 @@ class ScoreSet(DatasetModel):
 
     Parameters
     ----------
-    accession : `models.CharField`
-        The accession in the format 'SCSXXXXXX[A-Z]+.\d+'
+    urn : `models.CharField`
+        The urn in the format 'SCSXXXXXX[A-Z]+.\d+'
 
     experiment : `models.ForeignKey`, required.
         The experiment a scoreset is assciated with. Cannot be null.
@@ -732,9 +754,9 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
-    accession = models.CharField(
+    urn = models.CharField(
         validators=[valid_mavedb_urn_scoreset],
-        **AccessionModel.default_kwargs,
+        **UrnModel.default_urn_kwargs,
     )
 
     experiment = models.ForeignKey(
@@ -778,13 +800,13 @@ class ScoreSet(DatasetModel):
         parent = self.experiment
         child_value = parent.last_child_value + 1
 
-        accession = "{}-{}".format(parent.accession, child_value)
+        urn = "{}-{}".format(parent.urn, child_value)
 
         # update parent
         parent.last_child_value = child_value
         parent.save()
 
-        return accession
+        return urn
 
     def has_variants(self):
         return self.variant_set.count() > 0
@@ -834,7 +856,7 @@ class ScoreSet(DatasetModel):
         return next_instance
 
 
-class Variant(AccessionModel):
+class Variant(UrnModel):
     """
     This is the class representing an individual variant belonging to one
     and only one ScoreSet instance. The numerical parameters of a variant
@@ -863,9 +885,9 @@ class Variant(AccessionModel):
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
-    accession = models.CharField(
+    urn = models.CharField(
         validators=[valid_mavedb_urn_variant],
-        **AccessionModel.default_kwargs,
+        **UrnModel.default_urn_kwargs,
     )
 
     hgvs = models.TextField(

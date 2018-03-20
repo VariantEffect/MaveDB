@@ -16,15 +16,15 @@ download_counts = partial(download_scoreset_data, dataset_key='counts')
 
 urlpatterns = [
     url(
-        r'(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/$',
+        r'(?P<urn>(SCS|scs)\d{6}[A-Z]+.\d+)/$',
         ScoreSetDetailView.as_view(), name='scoreset_detail'
     ),
     url(
-        r'(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/scores/$',
+        r'(?P<urn>(SCS|scs)\d{6}[A-Z]+.\d+)/scores/$',
         download_scores, name='scores_download'
     ),
     url(
-        r'(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/counts/$',
+        r'(?P<urn>(SCS|scs)\d{6}[A-Z]+.\d+)/counts/$',
         download_counts, name='counts_download'
     ),
     url(

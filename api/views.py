@@ -61,9 +61,9 @@ def experimentset_all(request):
     return JsonResponse(data)
 
 
-def experimentset_by_accession(request, accession):
+def experimentset_by_urn(request, urn):
     try:
-        obj = get_object_or_404(ExperimentSet, accession=accession)
+        obj = get_object_or_404(ExperimentSet, urn=urn)
         if obj.private:
             raise Http404()
     except Http404:
@@ -88,9 +88,9 @@ def experiments_all(request):
     return JsonResponse(data)
 
 
-def experiment_by_accession(request, accession):
+def experiment_by_urn(request, urn):
     try:
-        obj = get_object_or_404(Experiment, accession=accession)
+        obj = get_object_or_404(Experiment, urn=urn)
         if obj.private:
             raise Http404()
     except Http404:
@@ -115,9 +115,9 @@ def scoresets_all(request):
     return JsonResponse(data)
 
 
-def scoreset_by_accession(request, accession):
+def scoreset_by_urn(request, urn):
     try:
-        obj = get_object_or_404(ScoreSet, accession=accession)
+        obj = get_object_or_404(ScoreSet, urn=urn)
         if obj.private:
             raise Http404()
     except Http404:
@@ -133,9 +133,9 @@ def scoreset_by_accession(request, accession):
     return JsonResponse(data)
 
 
-def scoreset_score_data(request, accession):
+def scoreset_score_data(request, urn):
     try:
-        scoreset = get_object_or_404(ScoreSet, accession=accession)
+        scoreset = get_object_or_404(ScoreSet, urn=urn)
         if scoreset.private:
             raise Http404()
     except Http404:
@@ -146,7 +146,7 @@ def scoreset_score_data(request, accession):
         response.status_code = 404
         return response
 
-    variants = scoreset.variant_set.all().order_by("accession")
+    variants = scoreset.variant_set.all().order_by("urn")
     columns = scoreset.dataset_columns[Constants.SCORES_KEY]
 
     def gen_repsonse():
@@ -160,9 +160,9 @@ def scoreset_score_data(request, accession):
     return StreamingHttpResponse(gen_repsonse(), content_type='text')
 
 
-def scoreset_count_data(request, accession):
+def scoreset_count_data(request, urn):
     try:
-        scoreset = get_object_or_404(ScoreSet, accession=accession)
+        scoreset = get_object_or_404(ScoreSet, urn=urn)
         if scoreset.private:
             raise Http404()
     except Http404:
@@ -176,7 +176,7 @@ def scoreset_count_data(request, accession):
     if not scoreset.has_counts_dataset():
         return StreamingHttpResponse("", content_type='text')
 
-    variants = scoreset.variant_set.all().order_by("accession")
+    variants = scoreset.variant_set.all().order_by("urn")
     columns = scoreset.dataset_columns[Constants.COUNTS_KEY]
 
     def gen_repsonse():

@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             name='ScoreSet',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('accession', models.CharField(default=None, max_length=64, null=True, unique=True, validators=[scoreset.validators.valid_scs_accession], verbose_name='Accession')),
+                ('urn', models.CharField(default=None, max_length=64, null=True, unique=True, validators=[scoreset.validators.valid_scs_accession], verbose_name='Accession')),
                 ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
                 ('approved', models.BooleanField(default=False, verbose_name='Approved')),
                 ('last_used_suffix', models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(limit_value=0)])),
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
             name='Variant',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('accession', models.CharField(default=None, max_length=64, null=True, unique=True, validators=[scoreset.validators.valid_var_accession], verbose_name='Accession')),
+                ('urn', models.CharField(default=None, max_length=64, null=True, unique=True, validators=[scoreset.validators.valid_var_accession], verbose_name='Accession')),
                 ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
                 ('hgvs', models.TextField(default=None, validators=[scoreset.validators.valid_hgvs_string])),
                 ('data', django.contrib.postgres.fields.jsonb.JSONField(default={'counts': {'hgvs': None}, 'scores': {'hgvs': None}}, validators=[scoreset.validators.valid_variant_json], verbose_name='Data columns')),

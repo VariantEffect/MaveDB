@@ -85,7 +85,7 @@ class TestUserAPIViews(TestCase):
             "last_name": "",
             'experimentsets': [],
             'experiments': [],
-            'scoresets': [scs_2.accession]
+            'scoresets': [scs_2.urn]
         }
         self.assertEqual(expected, result)
 

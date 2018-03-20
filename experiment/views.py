@@ -42,8 +42,8 @@ class ExperimentDetailView(DetailView):
 
     Parameters
     ----------
-    accession : `str`
-        The accession of the `Experiment` to render.
+    urn : `str`
+        The urn of the `Experiment` to render.
     """
     model = Experiment
     template_name = 'experiment/experiment.html'
@@ -76,7 +76,7 @@ class ExperimentDetailView(DetailView):
             )
 
     def get_object(self):
-        accession = self.kwargs.get('accession', None)
+        accession = self.kwargs.get('urn', None)
         return get_object_or_404(Experiment, accession=accession)
 
 
@@ -88,8 +88,8 @@ class ExperimentSetDetailView(DetailView):
 
     Parameters
     ----------
-    accession : `str`
-        The accession of the `ExperimentSet` to render.
+    urn : `str`
+        The urn of the `ExperimentSet` to render.
     """
     model = ExperimentSet
     template_name = 'experiment/experimentset.html'
@@ -122,7 +122,7 @@ class ExperimentSetDetailView(DetailView):
             )
 
     def get_object(self):
-        accession = self.kwargs.get('accession', None)
+        accession = self.kwargs.get('urn', None)
         return get_object_or_404(ExperimentSet, accession=accession)
 
 
@@ -175,7 +175,7 @@ def experiment_create_view(request):
     pks = [i.pk for i in request.user.profile.administrator_experimentsets()]
     experimentsets = ExperimentSet.objects.filter(
         pk__in=set(pks)
-    ).order_by("accession")
+    ).order_by("urn")
 
     experiment_form = ExperimentForm()
     experiment_form.fields["experimentset"].queryset = experimentsets
@@ -184,7 +184,7 @@ def experiment_create_view(request):
     # If you change the prefix arguments here, make sure to change them
     # in base.js as well for the +/- buttons to work correctly.
     if request.method == "POST":
-        # Get the new keywords/accession/target org so that we can return
+        # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
         keywords = request.POST.getlist("keywords")
         keywords = [kw for kw in keywords if msmf.is_word(kw)]
@@ -278,7 +278,7 @@ class ScoreSetDetailView(DetailView):
             )
 
     def get_object(self):
-        accession = self.kwargs.get('accession', None)
+        accession = self.kwargs.get('urn', None)
         return get_object_or_404(ScoreSet, accession=accession)
 
     def get_context_data(self, **kwargs):
@@ -367,7 +367,7 @@ def download_scoreset_data(request, accession, dataset_key):
     Parameters
     ----------
     accession : `str`
-        The `ScoreSet` accession which will be queried.
+        The `ScoreSet` urn which will be queried.
     dataset_key : `str`
         The type of dataset requested. Currently this is either 'scores' or
         'counts' as these are the only two supported datasets.
@@ -395,7 +395,7 @@ def download_scoreset_data(request, accession, dataset_key):
     if not scoreset.has_counts_dataset() and dataset_key == Constants.COUNTS_KEY:
         return StreamingHttpResponse("", content_type='text')
 
-    variants = scoreset.variant_set.all().order_by("accession")
+    variants = scoreset.variant_set.all().order_by("urn")
     columns = scoreset.dataset_columns[dataset_key]
 
     def gen_repsonse():
@@ -425,11 +425,11 @@ def scoreset_create_view(request, came_from_new_experiment=False, e_accession=No
     pks = [i.pk for i in request.user.profile.administrator_experiments()]
     experiments = Experiment.objects.filter(
         pk__in=set(pks)
-    ).order_by("accession")
+    ).order_by("urn")
     scoreset_form.fields["experiment"].queryset = experiments
 
     pks = [i.pk for i in request.user.profile.administrator_scoresets()]
-    scoresets = ScoreSet.objects.filter(pk__in=set(pks)).order_by("accession")
+    scoresets = ScoreSet.objects.filter(pk__in=set(pks)).order_by("urn")
     scoreset_form.fields["replaces"].queryset = scoresets
 
     if came_from_new_experiment:

@@ -31,7 +31,7 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
 
     def is_new_value(self, value):
         """
-        Creates the an instance with the accession `value` if it does not exist
+        Creates the an instance with the urn `value` if it does not exist
         in the database already. The value is considered new if it cannot be
         found filtering by `to_field_name`.
 

@@ -59,9 +59,9 @@ class GroupTypes:
 # --------------------------------------------------------------------------- #
 def valid_model_instance(instance):
     from experiment.models import Experiment, ExperimentSet, ScoreSet
-    if not hasattr(instance, 'accession'):
+    if not hasattr(instance, 'urn'):
         return False
-    if not getattr(instance, 'accession'):
+    if not getattr(instance, 'urn'):
         return False
     if not isinstance(instance, Experiment) and \
             not isinstance(instance, ExperimentSet) and \
@@ -134,11 +134,11 @@ def instances_for_user_with_group_permission(user, model, group_type):
         return []
 
     if model == ExperimentSet:
-        instances = ExperimentSet.objects.all().order_by("accession")
+        instances = ExperimentSet.objects.all().order_by("urn")
     elif model == Experiment:
-        instances = Experiment.objects.all().order_by("accession")
+        instances = Experiment.objects.all().order_by("urn")
     elif model == ScoreSet:
-        instances = ScoreSet.objects.all().order_by("accession")
+        instances = ScoreSet.objects.all().order_by("urn")
     else:
         raise TypeError("Unrecognised model type {}.".format(model))
 

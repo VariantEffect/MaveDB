@@ -9,9 +9,9 @@ from main.utils.query_parsing import parse_query
 from main.models import Licence
 
 from .fields import ModelSelectMultipleField
-from .models import Keyword, TargetOrganism, SraAccession, PubmedAccession, DoiAccession
+from .models import Keyword, TargetOrganism, SraIdentifier, PubmedIdentifier, DoiIdentifier
 from .models import Experiment, ScoreSet, Variant, ExperimentSet
-from .models import DatasetModel, AccessionModel, ExternalAccession
+from .models import DatasetModel, UrnModel, ExternalIdentifier
 
 from .validators import (
     valid_scoreset_count_data_input, valid_scoreset_score_data_input,
@@ -73,9 +73,9 @@ class DatasetModelForm(forms.ModelForm):
         self.fields['pubmed_accessions'].validators.append(validate_pubmed_list)
 
         self.fields["keywords"].queryset = Keyword.objects.all()
-        self.fields["sra_accessions"].queryset = SraAccession.objects.all()
-        self.fields["doi_accessions"].queryset = DoiAccession.objects.all()
-        self.fields["pubmed_accessions"].queryset = PubmedAccession.objects.all()
+        self.fields["sra_accessions"].queryset = SraIdentifier.objects.all()
+        self.fields["doi_accessions"].queryset = DoiIdentifier.objects.all()
+        self.fields["pubmed_accessions"].queryset = PubmedIdentifier.objects.all()
 
 
     def save(self, commit=True):
@@ -687,7 +687,7 @@ class ScoreSetForm(forms.ModelForm):
             if i in instance.experiment.scoreset_set.all() and i != instance
         ]
         scoresets = ScoreSet.objects.filter(
-            pk__in=set(pks)).order_by("accession")
+            pk__in=set(pks)).order_by("urn")
         form.fields["replaces"].queryset = scoresets
 
         for field in form.fields:

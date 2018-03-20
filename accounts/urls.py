@@ -53,17 +53,17 @@ urlpatterns = [
     url(r"^$", profile_view, name="index"),
     url(r"profile/$", profile_view, name="profile"),
     url(
-        r"profile/manage/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
+        r"profile/manage/(?P<urn>[A-Za-z]{3,4}\d+.*)/$",
         manage_instance,
         name="manage_instance"
     ),
     url(
-        r"profile/edit/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
+        r"profile/edit/(?P<urn>[A-Za-z]{3,4}\d+.*)/$",
         edit_instance,
         name="edit_instance"
     ),
     url(
-        r"profile/view/(?P<accession>[A-Za-z]{3,4}\d+.*)/$",
+        r"profile/view/(?P<urn>[A-Za-z]{3,4}\d+.*)/$",
         view_instance,
         name="view_instance"
     )

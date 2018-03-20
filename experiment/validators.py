@@ -77,40 +77,40 @@ def is_null(value):
 def valid_mavedb_urn(accession):
     if not re.match(MAVEDB_ANY_URN_PATTERN, accession):
         raise ValidationError(
-            "%(accession)s is not a valid accession.",
-            params={"accession": accession}
+            "%(urn)s is not a valid urn.",
+            params={"urn": accession}
         )
 
 
 def valid_mavedb_urn_experimentset(accession):
     if not re.match(MAVEDB_EXPERIMENTSET_URN_PATTERN, accession):
         raise ValidationError(
-            "%(accession)s is not a valid Experiment Set accession.",
-            params={"accession": accession}
+            "%(urn)s is not a valid Experiment Set urn.",
+            params={"urn": accession}
         )
 
 
 def valid_mavedb_urn_experiment(accession):
     if not re.match(MAVEDB_EXPERIMENT_URN_PATTERN, accession):
         raise ValidationError(
-            "%(accession)s is not a valid Experiment accession.",
-            params={"accession": accession}
+            "%(urn)s is not a valid Experiment urn.",
+            params={"urn": accession}
         )
 
 
 def valid_mavedb_urn_scoreset(accession):
     if not re.match(MAVEDB_SCORESET_URN_PATTERN, accession):
         raise ValidationError(
-            "%(accession)s is not a valid Score Set accession.",
-            params={"accession": accession}
+            "%(urn)s is not a valid Score Set urn.",
+            params={"urn": accession}
         )
 
 
 def valid_mavedb_urn_variant(accession):
     if not re.match(MAVEDB_VARIANT_URN_PATTERN, accession):
         raise ValidationError(
-            "%(accession)s is not a valid Variant accession.",
-            params={"accession": accession}
+            "%(urn)s is not a valid Variant urn.",
+            params={"urn": accession}
         )
 
 

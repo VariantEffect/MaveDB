@@ -61,14 +61,14 @@ ScoreSet = apps.get_model('scoreset', 'ScoreSet')
 # ------------------------------------------------------------------------- #
 def get_class_for_accession(accession):
     """
-    Returns the class matching the accession, if it's either 
+    Returns the class matching the urn, if it's either
     an `ExperimentSet`, `Experiment` or `ScoreSet` otherwise it 
     returns `None`.
 
     Parameters
     ----------
     accession : `str`
-        The accession for an instance
+        The urn for an instance
 
     Returns
     -------
@@ -232,20 +232,20 @@ def manage_instance(request, accession):
 @login_required(login_url=reverse_lazy("accounts:login"))
 def edit_instance(request, accession):
     """
-    This view takes uses the accession string to deduce the class belonging
-    to that accession and then retrieves the appropriate instance or 404s.
+    This view takes uses the urn string to deduce the class belonging
+    to that urn and then retrieves the appropriate instance or 404s.
 
     Once the instance has been retrieved, the correct edit form is retrieved
     and rendered to the user. POST form handling is delegated to the 
     appropriate method, which is a static method of edit form class.
 
-    Only `Experiment` and `ScoreSet` can be edited. Passing an accession for
+    Only `Experiment` and `ScoreSet` can be edited. Passing an urn for
     `ExperimentSet` or `Variant` will return a 404.
 
     Parameters
     ----------
     accession : `str`
-        A string object representing the accession of a database instance
+        A string object representing the urn of a database instance
         of either `Experiment` or `ScoreSet`.
     """
     try:
@@ -334,7 +334,7 @@ def handle_experiment_edit_form(request, instance):
         else:
             form = ExperimentForm.PartialFormFromRequest(request, instance)
 
-        # Get the new keywords/accession/target org so that we can return
+        # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
         keywords = request.POST.getlist("keywords")
         keywords = [kw for kw in keywords if msmf.is_word(kw)]
@@ -366,8 +366,8 @@ def handle_experiment_edit_form(request, instance):
 @login_required(login_url=reverse_lazy("accounts:login"))
 def view_instance(request, accession):
     """
-    This view takes uses the accession string to deduce the class belonging
-    to that accession and then retrieves the appropriate instance or 404s.
+    This view takes uses the urn string to deduce the class belonging
+    to that urn and then retrieves the appropriate instance or 404s.
 
     Once the instance has been retrieved, the user is redirected to the
     appropriate view.
@@ -375,7 +375,7 @@ def view_instance(request, accession):
     Parameters
     ----------
     accession : `str`
-        A string object representing the accession of a database instance.
+        A string object representing the urn of a database instance.
     """
     try:
         klass = get_class_for_accession(accession)
