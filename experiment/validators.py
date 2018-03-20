@@ -1,5 +1,6 @@
 
 import re
+from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
@@ -33,10 +34,46 @@ MAVEDB_ANY_URN_PATTERN = '|'.join([r'({pattern})'.format(pattern=p) for p in (
     MAVEDB_VARIANT_URN_PATTERN)
 ])
 
-csv_validator = FileExtensionValidator(
-    allowed_extensions=['csv']
-)
+#: Matches a single amino acid substitution in HGVS_ format.
+RE_PROTEIN = re.compile(
+    "(?P<match>p\.(?P<pre>[A-Z][a-z][a-z])(?P<pos>-?\d+)"
+    "(?P<post>[A-Z][a-z][a-z]))")
 
+
+#: Matches a single nucleotide substitution (coding or noncoding)
+#: in HGVS_ format.
+RE_NUCLEOTIDE = re.compile(
+    "(?P<match>[nc]\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]))")
+
+
+#: Matches a single coding nucleotide substitution in HGVS_ format.
+RE_CODING = re.compile(
+    "(?P<match>c\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]) "
+    "\(p\.(?:=|[A-Z][a-z][a-z]-?\d+[A-Z][a-z][a-z])\))")
+
+
+#: Matches a single noncoding nucleotide substitution in HGVS_ format.
+RE_NONCODING = re.compile(
+    "(?P<match>n\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]))")
+
+
+class Constants(object):
+    NAN_COL_VALUES = set(['nan', 'na', 'none', '', ' '])
+    HGVS_COLUMN = "hgvs"
+    COUNT_COLUMN = "count"
+    SCORES_DATA = "scores_data"
+    COUNTS_DATA = "counts_data"
+    SCORES_KEY = 'score'
+    COUNTS_KEY = 'count'
+
+
+def is_null(value):
+    return str(value).strip().lower() in Constants.NAN_COL_VALUES
+
+
+# --------------------------------------------------------------------------- #
+#                           URN Validators
+# --------------------------------------------------------------------------- #
 def valid_mavedb_urn(accession):
     if not re.match(MAVEDB_ANY_URN_PATTERN, accession):
         raise ValidationError(
@@ -77,6 +114,9 @@ def valid_mavedb_urn_variant(accession):
         )
 
 
+# --------------------------------------------------------------------------- #
+#                           Sequence/HGVS Validators
+# --------------------------------------------------------------------------- #
 def valid_wildtype_sequence(seq):
     if not re.fullmatch(DNA_SEQ_RE, seq):
         raise ValidationError(
@@ -85,51 +125,10 @@ def valid_wildtype_sequence(seq):
         )
 
 
-# --------------------------------------------------------------------------- #
-#                           ScoreSet Validators
-# --------------------------------------------------------------------------- #
-#: Matches a single amino acid substitution in HGVS_ format.
-re_protein = re.compile(
-    "(?P<match>p\.(?P<pre>[A-Z][a-z][a-z])(?P<pos>-?\d+)"
-    "(?P<post>[A-Z][a-z][a-z]))")
-
-
-#: Matches a single nucleotide substitution (coding or noncoding)
-#: in HGVS_ format.
-re_nucleotide = re.compile(
-    "(?P<match>[nc]\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]))")
-
-
-#: Matches a single coding nucleotide substitution in HGVS_ format.
-re_coding = re.compile(
-    "(?P<match>c\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]) "
-    "\(p\.(?:=|[A-Z][a-z][a-z]-?\d+[A-Z][a-z][a-z])\))")
-
-
-#: Matches a single noncoding nucleotide substitution in HGVS_ format.
-re_noncoding = re.compile(
-    "(?P<match>n\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]))")
-
-
-
-class Constants(object):
-    NAN_COL_VALUES = set(['nan', 'na', 'none', '', ' '])
-    HGVS_COLUMN = "hgvs"
-    COUNT_COLUMN = "count"
-    SCORES_DATA = "scores_data"
-    COUNTS_DATA = "counts_data"
-    SCORES_KEY = 'score'
-    COUNTS_KEY = 'count'
-
-
-def is_null(value):
-    return str(value).strip().lower() in Constants.NAN_COL_VALUES
-
-
 def valid_hgvs_string(string):
    # variants = [v.strip() for v in string.strip().split(',')]
    #
-   # protein_matches = all([re_protein.match(v) for v in variants])
+   # protein_matches = all([RE_PROTEIN.match(v) for v in variants])
    # nucleotide_matches = all([re_nucleotide.match(v) for v in variants])
    # coding_matches = all([re_coding.match(v) for v in variants])
    # noncoding_matches = all([re_noncoding.match(v) for v in variants])
@@ -143,6 +142,10 @@ def valid_hgvs_string(string):
    #     )
     return
 
+# --------------------------------------------------------------------------- #
+#                           ScoreSet Validators
+# --------------------------------------------------------------------------- #
+csv_validator = FileExtensionValidator(allowed_extensions=['csv'])
 
 def valid_scoreset_score_data_input(file):
     header_line = file.readline()
@@ -291,3 +294,21 @@ def valid_variant_json(json_object):
             params={"data": json_object, "type": type_}
         )
 
+
+# --------------------------------------------------------------------------- #
+#                           Keyword Validator
+# --------------------------------------------------------------------------- #
+def validate_keyword(value):
+    pass
+
+
+def validate_pubmed(value):
+    pass
+
+
+def validate_sra(value):
+    pass
+
+
+def validate_doi(value):
+    pass
