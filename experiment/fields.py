@@ -11,7 +11,6 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
     `init` method otherwise it will be created as a class instance since
     django will not defer it's instatiation at import time.
     """
-
     default_error_messages = {
         'list': _('Enter a list of values.'),
         'invalid_choice': _(
@@ -28,29 +27,45 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         if self.to_field_name is None:
             raise ValueError("You must define 'to_field_name'.")
         self.klass = klass
-        self.new_instances = []
+        self.new_values = set()
 
+    def is_new_value(self, value):
+        """
+        Creates the an instance with the accession `value` if it does not exist
+        in the database already. The value is considered new if it cannot be
+        found filtering by `to_field_name`.
 
-    def create_if_not_exist(self, value):
-        if value is None or not str(value).strip():
-            return
+        Parameters
+        ----------
+        value : str
+            The field value corresponding the model field `to_field_name`.
 
+        Returns
+        -------
+        `bool`
+            Returns True if an instance already exists with the value for the
+            field defined by `to_field_name`.
+        """
         accession = str(value).strip()
         exists_in_db = self.klass.objects.filter(
             **{self.to_field_name: accession}
         ).count() > 0
         exists_in_new = accession in set([
             getattr(inst, self.to_field_name)
-            for inst in self.new_instances
+            for inst in self.new_values
         ])
-        if not (exists_in_new or exists_in_db):
-            instance = self.klass(**{self.to_field_name: accession})
-            self.new_instances.append(instance)
-            return accession
-        else:
-            return None
+        return not (exists_in_db or exists_in_new)
 
     def clean(self, value):
+        """
+        Cleans the value returning a QuerySet of instances relating
+        to the chosen values in `value`.
+
+        Note: QuerySet that is returned will only contain instances that
+        are already in the database. If new keywords etc have been created
+        then these values are in the `new_values` attribute. These should
+        be saved only when the form containing this field is valid.
+        """
         # The `target_organism` widget in `ExperimentForm` uses a non-multiple
         # select widget which will return a string instead of a list of values.
         # Instead of subclassing the single selection django widget just
@@ -68,6 +83,17 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         value not a valid PK and instead is a string input, a new instance is
         created. This handles the case where new keywords etc must be
         added to the database during an instance creation/edit.
+
+        Parameters
+        ----------
+        value : list
+            The field values corresponding the model field `to_field_name`.
+
+        Returns
+        -------
+        `QuerySet`
+            Returns the queryset of instances corresponding to the selected
+            options.
         """
         existing = []
         # deduplicate given values to avoid creating many querysets or
@@ -81,8 +107,9 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
                 code='list',
             )
         for value in values:
-            created_value = self.create_if_not_exist(value)
-            if created_value is None:
+            if self.is_new_value(value):
+                self.new_values.add(value)
+            else:
                 existing.append(value)
         return super(ModelSelectMultipleField)._check_values(existing)
 
