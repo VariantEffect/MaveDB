@@ -16,7 +16,9 @@ from .models import DatasetModel, AccessionModel, ExternalAccession
 from .validators import (
     valid_scoreset_count_data_input, valid_scoreset_score_data_input,
     valid_scoreset_json, valid_variant_json, Constants, valid_hgvs_string,
-    csv_validator
+    csv_validator, validate_sra_list, validate_doi_list, validate_keyword_list,
+    validate_pubmed_list, valid_wildtype_sequence, validate_target,
+    validate_target_organism
 )
 
 
@@ -64,11 +66,20 @@ class DatasetModelForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        super(DatasetModelForm).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.fields['keywords'].validators.append(validate_keyword_list)
+        self.fields['sra_accessions'].validators.append(validate_sra_list)
+        self.fields['doi_accessions'].validators.append(validate_doi_list)
+        self.fields['pubmed_accessions'].validators.append(validate_pubmed_list)
+
         self.fields["keywords"].queryset = Keyword.objects.all()
         self.fields["sra_accessions"].queryset = SraAccession.objects.all()
         self.fields["doi_accessions"].queryset = DoiAccession.objects.all()
         self.fields["pubmed_accessions"].queryset = PubmedAccession.objects.all()
+
+
+    def save(self, commit=True):
+        pass
 
 
 class ExperimentForm(DatasetModelForm):
@@ -82,47 +93,45 @@ class ExperimentForm(DatasetModelForm):
             'target',
             'wt_sequence'
         )
+        widgets = {
+            'wt_sequence': forms.Textarea(attrs={"class": "form-control"}),
+            'target': forms.TextInput(attrs={"class": "form-control"}),
+            'experimentset': forms.widgets.Select(
+                attrs={"class": "form-control select2 select2-token-select"}
+            ),
+            'target_organism': ModelSelectMultipleField(
+                klass=TargetOrganism, to_field_name='resource_accession',
+                required=False, widget=forms.widgets.SelectMultiple(
+                    attrs={"class": "form-control select2 select2-token-select"}
+                )
+            )
+        }
 
     def __init__(self, *args, **kwargs):
-        super(ExperimentForm, self).__init__(*args, **kwargs)
-        if "experimentset" in self.fields:
-            self.fields["experimentset"].widget = forms.widgets.Select(
-                attrs={"style": 'width:20%;'}
-            )
-        self.fields["target"].widget = forms.TextInput(
-            attrs={
-                "class": "form-control",
-            }
-        )
-        self.fields["wt_sequence"].widget = forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "style": "height:250px;width:100%"
-            }
-        )
+        self.user = kwargs.pop("user")
+        super().__init__(*args, **kwargs)
 
-        self.fields["target_organism"] = ModelSelectMultipleField(
-            klass=TargetOrganism,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.Select(
-                attrs={
-                    "class": "form-control select2 select2-token-select",
-                    "style": "width:50%;height:auto;"
-                }
-            )
-        )
+        self.fields["target"].validators.append(validate_target)
+        self.fields["target_organism"].validators.append(validate_target_organism)
+        self.fields["wt_sequence"].validators.append(valid_wildtype_sequence)
+        # Populate the experimentset drop down with a list of experimentsets
+        # that the user for this form has write access to.
         self.fields["target_organism"].queryset = TargetOrganism.objects.all()
+        self.fields["experimentset"].queryset = \
+            self.user.profile.administrator_experimentsets() + \
+            self.user.profile.contributor_experimentsets()
 
 
     def save(self, commit=True):
-        super(ExperimentForm, self).save(commit=commit)
+        super().save(commit=commit)
         if commit:
             self.process_and_save_all()
         else:
             self.save_m2m = self.process_and_save_all
         return self.instance
+
+
+    def _save_m2m(self):
 
     def process_and_save_all(self):
         """
@@ -715,35 +724,3 @@ class ScoreSetEditForm(ScoreSetForm):
         super(ScoreSetEditForm, self).__init__(*args, **kwargs)
         self.edit_mode = True
 
-
-# --------------------------------------------------------------------------- #
-#                              MetaForms
-# --------------------------------------------------------------------------- #
-class KeywordForm(forms.ModelForm):
-    """
-    Keyword `ModelForm` to be instantiated with a dictionary or an
-    existing instance.
-    """
-    class Meta:
-        model = Keyword
-        fields = ("text", )
-
-
-class ExternalAccessionForm(forms.ModelForm):
-    """
-    ExternalAccession `ModelForm` to be instantiated with a dictionary or an
-    existing instance.
-    """
-    class Meta:
-        model = ExternalAccession
-        fields = ("text",)
-
-
-class TargetOrganismForm(forms.ModelForm):
-    """
-    TargetOrganism `ModelForm` to be instantiated with a dictionary or an
-    existing instance.
-    """
-    class Meta:
-        model = TargetOrganism
-        fields = ("text",)
