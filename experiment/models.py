@@ -152,6 +152,9 @@ class ExternalIdentifier(models.Model):
         # auto-incrementing integer field. It will be None until the
         # instance is saved for the first time.
         if self.pk is None:
+            if self.IDUTILS_SCHEME is not None:
+                self.identifier = idutils.normalize_pid(
+                    self.identifier, self.IDUTILS_SCHEME)
             self.url = self.format_url()
             self.dbname = self.DATABASE_NAME
         super().save(*args, **kwargs)
