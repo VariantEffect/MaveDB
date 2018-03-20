@@ -459,28 +459,22 @@ class DatasetModel(AccessionModel, GroupPermissionMixin):
     def md_methods(self):
         return pandoc.convert_md_to_html(self.method_text)
 
-    def update_keywords(self, keywords):
-        kws_text = set([kw.text for kw in keywords])
-        for kw in self.keywords.all():
-            if kw.text not in kws_text:
-                self.keywords.remove(kw)
-        for kw in keywords:
-            self.keywords.add(kw)
+    def add_keyword(self, keyword):
+        if not isinstance(keyword, Keyword):
+            raise TypeError("`keyword` must be a Keyword instance.")
+        self.keywords.add(keyword)
 
-    # TODO: revisit this in the context of different URLS, different databases
-    def update_external_accessions(self, accessions):
-        acc_text = set([acc.text for acc in accessions])
-        for acc in self.external_accessions.all():
-            if acc.text not in acc_text:
-                self.external_accessions.remove(acc)
-        for acc in accessions:
-            self.external_accessions.add(acc)
+    def add_external_accession(self, instance, m2m_field):
+        if not isinstance(instance, ExternalAccession):
+            raise TypeError("`instance` must be an ExternalAccession instance.")
+        getattr(self, m2m_field).add(instance)
 
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
 
-    def get_other_accessions(self):
-        return ', '.join([a.text for a in self.external_accessions.all()])
+    def get_external_accessions(self, m2m_field):
+        return ', '.join([str(e) for e in getattr(self, m2m_field).all()])
+
 
 
 @reversion.register()
