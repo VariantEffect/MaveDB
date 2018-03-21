@@ -163,6 +163,12 @@ class ExternalIdentifier(models.Model):
 class SraIdentifier(ExternalIdentifier):
     """
     An SRA identifier.
+
+    See Also
+    --------
+    Details of the SRA accession formats can be found
+    `here <https://www.ncbi.nlm.nih.gov/books/NBK56913/#search.what_do_the_different_sra_accessi>`_
+
     """
     DATABASE_NAME = "SRA"
 
@@ -170,8 +176,6 @@ class SraIdentifier(ExternalIdentifier):
         verbose_name = "SRA accession"
         verbose_name_plural = "SRA accessions"
 
-    # Details of the SRA accession formats can be found here:
-    # https://www.ncbi.nlm.nih.gov/books/NBK56913/#search.what_do_the_different_sra_accessi
     def format_url(self):
         if SRA_BIOPROJECT_RE.match(self.identifier):
             return "https://www.ncbi.nlm.nih.gov/" \
@@ -191,7 +195,6 @@ class SraIdentifier(ExternalIdentifier):
         else:
             raise ValueError("Invalid SRA identifier '{}'".format(
                 self.identifier))
-
 
 
 class DoiIdentifier(ExternalIdentifier):
@@ -518,17 +521,27 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             raise TypeError("`keyword` must be a Keyword instance.")
         self.keywords.add(keyword)
 
-    def add_external_accession(self, instance, m2m_field):
+    def add_external_accession(self, instance):
         if not isinstance(instance, ExternalIdentifier):
             raise TypeError("`instance` must be an ExternalIdentifier instance.")
-        getattr(self, m2m_field).add(instance)
+
+        if isinstance(instance, SraIdentifier):
+            self.sra_ids.add(instance)
+        elif isinstance(instance, PubmedIdentifier):
+            self.pmid_ids.add(instance)
+        elif isinstance(instance, DoiIdentifier):
+            self.doi_ids.add(instance)
+        else:
+            raise TypeError(
+                "Unsupported class `{}` for `instance`.".format(
+                    type(instance).__name__
+                ))
+
+    def clear_m2m(self, field_name):
+        getattr(self, field_name).clear()
 
     def get_keywords(self):
         return ', '.join([kw.text for kw in self.keywords.all()])
-
-    def get_external_accessions(self, m2m_field):
-        return ', '.join([str(e) for e in getattr(self, m2m_field).all()])
-
 
 
 @reversion.register()
@@ -775,7 +788,8 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     # TODO: Update TRACKED_FIELDS in all classes to use inheritance
     TRACKED_FIELDS = (
-        "private", "approved", "abstract", "method_desc", "doi_id", "keywords",
+        "private", "approved", "abstract",
+        "method_desc", "doi_id", "keywords",
         "licence_type"
     )
 
@@ -796,6 +810,8 @@ class ScoreSet(DatasetModel):
         on_delete=models.PROTECT,
         null=False,
         default=None,
+        verbose_name='Experiment',
+        related_name='scoresets'
     )
 
     licence = models.ForeignKey(
