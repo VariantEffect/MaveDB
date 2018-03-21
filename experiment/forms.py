@@ -25,61 +25,115 @@ from .validators import (
 class DatasetModelForm(forms.ModelForm):
     """
     Base form handling the fields present in :class:`.models.DatasetModel`
+
+    Parameters
+    ----------
+    user : :class:`User`
+        The user instance that this form is served to.
     """
+    M2M_FIELD_NAMES = (
+        'keywords',
+        'sra_ids',
+        'doi_ids',
+        'pmid_ids'
+    )
+
     class Meta:
         model = DatasetModel
         fields = (
             'abstract_text',
             'method_text',
             'keywords',
-            'sra_accessions',
-            'doi_accessions',
-            'pmid_accessions'
+            'sra_ids',
+            'doi_ids',
+            'pmid_ids'
         )
         widgets = {
             'abstract_text': forms.Textarea(attrs={"class": "form-control"}),
             'method_text': forms.Textarea(attrs={"class": "form-control"}),
             'keywords': ModelSelectMultipleField(
                 klass=Keyword, to_field_name='text', required=False,
-                widget=forms.widgets.SelectMultiple(
+                widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             ),
-            'sra_accessions': ModelSelectMultipleField(
+            'sra_ids': ModelSelectMultipleField(
                 klass=Keyword, to_field_name='resource_accession', required=False,
-                widget=forms.widgets.SelectMultiple(
+                widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             ),
-            'doi_accessions': ModelSelectMultipleField(
+            'doi_ids': ModelSelectMultipleField(
                 klass=Keyword, to_field_name='resource_accession', required=False,
-                widget=forms.widgets.SelectMultiple(
+                widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             ),
-            'pmid_accessions': ModelSelectMultipleField(
+            'pmid_ids': ModelSelectMultipleField(
                 klass=Keyword, to_field_name='resource_accession', required=False,
-                widget=forms.widgets.SelectMultiple(
+                widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             )
         }
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
+
         self.fields['keywords'].validators.append(validate_keyword_list)
-        self.fields['sra_accessions'].validators.append(validate_sra_list)
-        self.fields['doi_accessions'].validators.append(validate_doi_list)
-        self.fields['pubmed_accessions'].validators.append(validate_pubmed_list)
+        self.fields['sra_ids'].validators.append(validate_sra_list)
+        self.fields['doi_ids'].validators.append(validate_doi_list)
+        self.fields['pmid_ids'].validators.append(validate_pubmed_list)
 
         self.fields["keywords"].queryset = Keyword.objects.all()
-        self.fields["sra_accessions"].queryset = SraIdentifier.objects.all()
-        self.fields["doi_accessions"].queryset = DoiIdentifier.objects.all()
-        self.fields["pubmed_accessions"].queryset = PubmedIdentifier.objects.all()
+        self.fields["sra_ids"].queryset = SraIdentifier.objects.all()
+        self.fields["doi_ids"].queryset = DoiIdentifier.objects.all()
+        self.fields["pmid_ids"].queryset = PubmedIdentifier.objects.all()
 
+    def _clean_field_name(self, field_name):
+        field = self.fields[field_name]
+        cleaned_queryset = self.cleaned_data[field_name]
+        all_instances = list(cleaned_queryset.all()) + field.create_new()
+        return all_instances
 
+    def clean_keywords(self):
+        return self._clean_field_name('keywords')
+
+    def clean_sra_identifiers(self):
+        return self._clean_field_name('sra_identifiers')
+
+    def clean_doi_identifiers(self):
+        return self._clean_field_name('doi_identifiers')
+
+    def clean_pubmed_identifiers(self):
+        return self._clean_field_name('pubmed_identifiers')
+
+    def _save_m2m(self):
+        # Save all instances before calling super() so that all new instances
+        # are in the database before m2m relationships are created.
+        for m2m_field in self.M2M_FIELD_NAMES:
+            if m2m_field in self.fields:
+                for instance in self.cleaned_data.get(m2m_field, []):
+                    instance.save(commit=True)
+                self.instance.clear_m2m(m2m_field)
+        super()._save_m2m()
+
+    # Make this atomic since new m2m instances will need to be saved.
+    @transaction.atomic
     def save(self, commit=True):
-        pass
+        super().save(commit=commit)
+
+    def m2m_instances_for_field(self, field_name, return_new=True):
+        if field_name not in self.fields:
+            raise ValueError(
+                '{} is not a field in this form.'.format(field_name)
+            )
+        existing_entries = [i for i in self.cleaned_data.get(field_name, [])]
+        if return_new:
+            new_entries = self.fields[field_name].new_instances
+            return existing_entries + new_entries
+        return existing_entries
 
 
 class ExperimentForm(DatasetModelForm):
@@ -88,29 +142,26 @@ class ExperimentForm(DatasetModelForm):
     """
     class Meta(DatasetModel.Meta):
         model = Experiment
-        fields = (
+        fields = DatasetModelForm.Meta.fields + (
             'experimentset',
             'target',
-            'wt_sequence'
+            'wt_sequence',
+            'target_organism',
         )
-        widgets = {
+        widgets = DatasetModelForm.Meta.widgets.update(**{
             'wt_sequence': forms.Textarea(attrs={"class": "form-control"}),
             'target': forms.TextInput(attrs={"class": "form-control"}),
-            'experimentset': forms.widgets.Select(
-                attrs={"class": "form-control select2 select2-token-select"}
-            ),
+            'experimentset': forms.Select(attrs={"class": "form-control"}),
             'target_organism': ModelSelectMultipleField(
                 klass=TargetOrganism, to_field_name='resource_accession',
-                required=False, widget=forms.widgets.SelectMultiple(
+                required=False, widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             )
-        }
+        })
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
-
         self.fields["target"].validators.append(validate_target)
         self.fields["target_organism"].validators.append(validate_target_organism)
         self.fields["wt_sequence"].validators.append(valid_wildtype_sequence)
@@ -121,88 +172,22 @@ class ExperimentForm(DatasetModelForm):
             self.user.profile.administrator_experimentsets() + \
             self.user.profile.contributor_experimentsets()
 
+    def clean_target_organism(self):
+        return self._clean_field_name('target_organism')
 
+    def _save_m2m(self):
+        # Save all target_organism instances before calling super()
+        # so that all new instances are in the database before m2m
+        # relationships are created.
+        if 'target_organism' in self.fields:
+            for instance in self.cleaned_data.get('target_organism', []):
+                instance.save(commit=True)
+            self.instance.clear_m2m('target_organism')
+        super()._save_m2m()
+
+    @transaction.atomic
     def save(self, commit=True):
         super().save(commit=commit)
-        if commit:
-            self.process_and_save_all()
-        else:
-            self.save_m2m = self.process_and_save_all
-        return self.instance
-
-    def process_and_save_all(self):
-        """
-        This will saved all changes made to the instance. Keywords not
-        present in the form submission will be removed, new keywords will
-        be created in the database and all keywords in the upload form will
-        be added to the instance's keyword m2m field.
-        """
-        if not (self.is_bound and self.is_valid()):
-            return None
-        if self.errors:
-            raise ValueError(
-                "The %s could not be %s because the data didn't validate." % (
-                    self.instance._meta.object_name,
-                    'created' if self.instance._state.adding else 'changed',
-                )
-            )
-
-        self.instance.save()
-
-        if "keywords" in self.fields:
-            self.save_new_m2m("keywords")
-            self.instance.update_keywords(
-                self.all_m2m("keywords")
-            )
-        if "external_accessions" in self.fields:
-            self.save_new_m2m("external_accessions")
-            self.instance.update_external_accessions(
-                self.all_m2m("external_accessions")
-            )
-        if "target_organism" in self.fields:
-            self.save_new_m2m("target_organism")
-            self.instance.update_target_organism(
-                self.all_m2m("target_organism")
-            )
-
-        self.instance.save()
-        return self.instance
-
-    def save_new_m2m(self, field_name):
-        """
-        Save new m2m instances that were created during the clean process.
-        """
-        if self.is_bound and self.is_valid():
-            for instance in self.new_m2m(field_name):
-                instance.save()
-
-    def new_m2m(self, field_name):
-        """
-        Return a list of keywords that were created during the clean process.
-        """
-        if field_name not in self.fields:
-            raise ValueError(
-                '{} is not a field in this form.'.format(field_name)
-            )
-        return self.fields[field_name].new_instances
-
-    def all_m2m(self, field_name):
-        """
-        Return a list of all keywords found during the cleaning process
-        """
-        if self.is_bound and self.is_valid():
-            not_new = [i for i in self.cleaned_data.get(field_name, [])]
-            new = self.new_m2m(field_name)
-            return new + not_new
-
-    @classmethod
-    def PartialFormFromRequest(cls, request, instance):
-        if request.method == "POST":
-            form = cls(data=request.POST, instance=instance)
-        else:
-            form = cls(instance=instance)
-        form.fields.pop("experimentset")
-        return form
 
 
 class ExperimentEditForm(ExperimentForm):
@@ -210,27 +195,8 @@ class ExperimentEditForm(ExperimentForm):
     A subset of `ExperimentForm` for editiing instances. Follows the same
     logic as `ExperimentForm`
     """
-    experimentset = None
-    target = None
-    wt_sequence = None
-
-    class Meta:
-        model = Experiment
-        fields = (
-            'experimentset',  # excluded
-            'target',  # excluded
-            'target_organism',  # excluded
-            'wt_sequence',  # excluded
-            'sra_id',
-            'doi_id',
-            'keywords',
-            'external_accessions',
-            'abstract',
-            'method_desc',
-        )
-
     def __init__(self, *args, **kwargs):
-        super(ExperimentEditForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fields.pop('target_organism')
         self.fields.pop('target')
         self.fields.pop('wt_sequence')
@@ -240,7 +206,7 @@ class ExperimentEditForm(ExperimentForm):
 # --------------------------------------------------------------------------- #
 #                           ScoreSet Form
 # --------------------------------------------------------------------------- #
-class ScoreSetForm(forms.ModelForm):
+class ScoreSetForm(DatasetModelForm):
     """
     This form is presented on the create new scoreset view. It contains
     all the validation logic required to ensure that a score dataset and
@@ -249,17 +215,18 @@ class ScoreSetForm(forms.ModelForm):
     the `replaces` field in scoreset to make sure that the selected
     `ScoreSet` is a member of the selected `Experiment` instance.
     """
-    class Meta:
+    class Meta(DatasetModelForm.Meta):
         model = ScoreSet
-        fields = (
+        fields = DatasetModelForm.Meta.fields + (
             'experiment',
-            'replaces',
             'licence_type',
-            'keywords',
-            'doi_id',
-            'abstract',
-            'method_desc',
+            'replaces'
         )
+        widgets = DatasetModelForm.Meta.widgets.update(**{
+            "experiment": forms.Select(attrs={"class": "form-control"}),
+            "licence_type": forms.Select(attrs={"class": "form-control"}),
+            "replaces": forms.Select(attrs={"class": "form-control"}),
+        })
 
     scores_data = forms.FileField(
         required=True, label="Score data",
@@ -274,6 +241,7 @@ class ScoreSetForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ScoreSetForm, self).__init__(*args, **kwargs)
+
         self.dataset_columns = {
             Constants.SCORES_KEY: [], Constants.COUNTS_KEY: []
         }
@@ -282,52 +250,15 @@ class ScoreSetForm(forms.ModelForm):
 
         if "replaces" in self.fields:
             self.fields["replaces"].required = False
-            self.fields["replaces"].widget = forms.widgets.Select(
-                attrs={"style": 'width:20%;'}
-            )
-        if "experiment" in self.fields:
-            self.fields["experiment"].widget = forms.widgets.Select(
-                attrs={"style": 'width:20%;'}
-            )
+            self.fields["replaces"].initial = \
+                self.user.profile.administrator_scoresets() + \
+                self.user.profile.contributor_scoresets()
+
         if "licence_type" in self.fields:
+            self.fields["licence_type"].required = False
             if not self.fields["licence_type"].initial:
                 self.fields["licence_type"].initial = Licence.get_default()
-            self.fields["licence_type"].empty_label = None
-
-        self.fields["doi_id"].widget = forms.TextInput(
-            attrs={
-                "class": "form-control",
-            }
-        )
-        self.fields["abstract"].widget = forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "style": "height:250px;width:100%"
-            }
-        )
-        self.fields["method_desc"].widget = forms.Textarea(
-            attrs={
-                "class": "form-control",
-                "style": "height:250px;width:100%"
-            }
-        )
-
-        # This needs to be in `__init__` because otherwise it is created as
-        # a class variable at import time. This happens because django
-        # won't defer loading of custom fields.
-        self.fields["keywords"] = ModelSelectMultipleField(
-            klass=Keyword,
-            text_key="text",
-            queryset=None,
-            required=False,
-            widget=forms.widgets.SelectMultiple(
-                attrs={
-                    "class": "form-control select2 select2-token-select",
-                    "style": "width:100%;height:50px;"
-                }
-            )
-        )
-        self.fields["keywords"].queryset = Keyword.objects.all()
+            self.fields["licence_type"].empty_label = 'Default'
 
     def clean_licence_type(self):
         licence = self.cleaned_data.get("licence_type", None)
@@ -344,8 +275,7 @@ class ScoreSetForm(forms.ModelForm):
                     _(
                         "Replaces field selection must be a member of the "
                         "selected experiment."
-                    )
-                )
+                    ))
         return scoreset
 
     def clean_scores_data(self):
@@ -594,8 +524,9 @@ class ScoreSetForm(forms.ModelForm):
 
         return cleaned_data
 
+    @transaction.atomic
     def save(self, commit=True):
-        super(ScoreSetForm, self).save(commit=commit)
+        super().save(commit=commit)
         if commit:
             self.process_and_save_all()
         else:
@@ -628,29 +559,6 @@ class ScoreSetForm(forms.ModelForm):
         self.instance.update_keywords(self.all_keywords())
         self.instance.save()
         return self.instance
-
-    def save_new_keywords(self):
-        """
-        Save new keywords that were created during the clean process.
-        """
-        if self.is_bound and self.is_valid():
-            for kw in self.new_keywords():
-                kw.save()
-
-    def new_keywords(self):
-        """
-        Return a list of keywords that were created during the clean process.
-        """
-        return self.fields["keywords"].new_instances
-
-    def all_keywords(self):
-        """
-        Return a list of all keywords found during the cleaning process
-        """
-        if self.is_bound and self.is_valid():
-            not_new = [kw for kw in self.cleaned_data.get("keywords", [])]
-            new = self.new_keywords()
-            return new + not_new
 
     @transaction.atomic
     def save_variants_and_set_dataset_columns(self):
