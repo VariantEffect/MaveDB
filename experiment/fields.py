@@ -28,6 +28,20 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
             raise ValueError("You must define 'to_field_name'.")
         self.klass = klass
         self.new_values = set()
+        self.new_instances = None
+
+    def save_new(self, commit=True):
+        self.create_new()
+        for instance in self.new_instances:
+            instance.save(commit=commit)
+        return self.new_instances
+
+    def create_new(self):
+        self.new_instances = [
+            self.klass(**{self.to_field_name: field_value})
+            for field_value in self.new_values
+        ]
+        return self.new_instances
 
     def is_new_value(self, value):
         """
