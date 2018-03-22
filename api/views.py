@@ -16,7 +16,7 @@ from .serializers import (
 
 from experiment.models import Experiment, ExperimentSet
 from experiment.models import ScoreSet
-from experiment.validators import Constants
+from experiment.constants import Constants
 from accounts.permissions import (
     user_is_anonymous
 )
