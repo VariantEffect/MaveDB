@@ -17,7 +17,7 @@ from main.utils.versioning import save_and_create_revision_if_tracked_changed
 from accounts.forms import send_admin_email
 from accounts.permissions import assign_user_as_instance_admin, PermissionTypes
 
-from .validators import Constants
+from experiment.constants import Constants
 from .fields import ModelSelectMultipleField as msmf
 from .models import Experiment, ExperimentSet, ScoreSet
 from .forms import ExperimentForm, ExperimentEditForm
@@ -25,13 +25,9 @@ from .forms import ScoreSetForm, ScoreSetEditForm
 from .forms import KeywordForm, TargetOrganismForm, ExternalAccessionForm
 
 
-
 SCORESET_FORM_PREFIX = "scoreset"
 KEYWORD_FORM_PREFIX = "keyword"
 KeywordFormSet = formset_factory(KeywordForm)
-
-
-
 
 
 class ExperimentDetailView(DetailView):
