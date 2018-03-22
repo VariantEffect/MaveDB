@@ -1,30 +1,38 @@
 # settings/base.py
 
 import os
-from .orcid_secrets import SOCIAL_AUTH_ORCID_KEY, SOCIAL_AUTH_ORCID_SECRET
-from .secret_key import SECRET_KEY
-from .log import LOGGING
+import json
 
-os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
+from django.core.exceptions import ImproperlyConfigured
+
+# Read the secrets file
+with open('secrets.json') as handle:
+    secrets = json.load(handle)
+
+
+def get_secret(setting, secrets=secrets):
+    """
+    Retrieve a named setting from the secrets dictionary read from the JSON.
+
+    Adapted from Two Scoops of Django, Example 5.21
+    """
+    try:
+        return secrets[setting]
+    except KeyError:
+        error_message = "Unable to retrieve setting: '{}'".format(setting)
+        raise ImproperlyConfigured(error_message)
+
+
+SECRET_KEY = get_secret('secret_key')
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LICENCE_DIR = BASE_DIR + '/licences/'
 
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-# social-auth settings
-# keys are stored in the untracked orcid_secrets.py file
-# SECURITY WARNING: keep the secret key below in production secret!
-# SOCIAL_AUTH_ORCID_KEY = os.environ.get("SOCIAL_AUTH_ORCID_KEY", '')
-# SOCIAL_AUTH_ORCID_SECRET = os.environ.get("SOCIAL_AUTH_ORCID_SECRET", '')
-
-USE_SOCIAL_AUTH = not DEBUG
-# USE_SOCIAL_AUTH = bool(SOCIAL_AUTH_ORCID_KEY) and \
-#    bool(SOCIAL_AUTH_ORCID_SECRET) and bool(ALLOWED_HOSTS)
-
+# Social auth settings for ORCID authentication
+SOCIAL_AUTH_ORCID_KEY = get_secret('orcid_key')
+SOCIAL_AUTH_ORCID_SECRET = get_secret('orcid_secret')
 SOCIAL_AUTH_USER_MODEL = 'auth.User'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/accounts/profile/"
 SOCIAL_AUTH_LOGIN_ERROR_URL = "/accounts/error/"
@@ -105,19 +113,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mavedb.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "mavedb",
-        "USER": "mave_admin",
-        "PASSWORD": "abc123",
-        "HOST": "localhost",
-        "PORT": "",
-    }
-}
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -135,16 +130,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-USE_I18N = True
-USE_L10N = True
-USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/

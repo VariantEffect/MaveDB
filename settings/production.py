@@ -2,12 +2,34 @@
 
 from .base import *
 
+DEBUG = False
+
+USE_SOCIAL_AUTH = True
+
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1',
                  'www.mavedb.org',]
 
+# Internationalization
+LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/Los_Angeles'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+# Database
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "mavedb",
+        "USER": get_secret('database_user'),
+        "PASSWORD": get_secret('database_password'),
+        "HOST": get_secret('database_host'),
+        "PORT": get_secret('database_port'),
+    }
+}
 
 # Set up logging
 LOGGING = {
