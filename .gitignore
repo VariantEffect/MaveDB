@@ -63,6 +63,5 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-secret_key.py
-orcid_secrets.py
-log.py
+# Ignore secrets
+settings/secrets.json
