@@ -23,19 +23,19 @@ from accounts.permissions import (
     make_all_groups_for_instance
 )
 
-from .validators import Constants
+from experiment.constants import Constants
 from .validators import MAVEDB_URN_MAX_LENGTH
 from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, MAVEDB_URN_NAMESPACE
 from .validators import (
-    valid_mavedb_urn_experimentset,
-    valid_mavedb_urn_experiment,
-    valid_mavedb_urn_scoreset,
-    valid_mavedb_urn_variant,
-    valid_mavedb_urn,
-    valid_wildtype_sequence,
-    valid_hgvs_string,
-    valid_scoreset_json,
-    valid_variant_json
+    validate_mavedb_urn_experimentset,
+    validate_mavedb_urn_experiment,
+    validate_mavedb_urn_scoreset,
+    validate_mavedb_urn_variant,
+    validate_mavedb_urn,
+    validate_wildtype_sequence,
+    validate_hgvs_string,
+    validate_scoreset_json,
+    validate_variant_json
 )
 
 from .validators import (
@@ -563,7 +563,7 @@ class ExperimentSet(DatasetModel):
     #                       Model fields
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
-        validators=[valid_mavedb_urn_experimentset],
+        validators=[validate_mavedb_urn_experimentset],
         **UrnModel.default_urn_kwargs,
     )
 
@@ -626,7 +626,7 @@ class Experiment(DatasetModel):
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
-        validators=[valid_mavedb_urn_experiment],
+        validators=[validate_mavedb_urn_experiment],
         **UrnModel.default_urn_kwargs,
     )
 
@@ -636,7 +636,8 @@ class Experiment(DatasetModel):
         null=True,
         default=None,
         blank=True,
-        verbose_name="Experiment Set",
+        related_name='experiments',
+        verbose_name="Experiment Set"
     )
 
     wt_sequence = models.TextField(
@@ -644,7 +645,7 @@ class Experiment(DatasetModel):
         blank=False,
         null=False,
         verbose_name="Wild type sequence",
-        validators=[valid_wildtype_sequence],
+        validators=[validate_wildtype_sequence],
     )
 
     target = models.CharField(
@@ -801,7 +802,7 @@ class ScoreSet(DatasetModel):
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
-        validators=[valid_mavedb_urn_scoreset],
+        validators=[validate_mavedb_urn_scoreset],
         **UrnModel.default_urn_kwargs,
     )
 
@@ -825,10 +826,10 @@ class ScoreSet(DatasetModel):
     dataset_columns = JSONField(
         verbose_name="Dataset columns",
         default=dict({
-            Constants.SCORES_KEY: [],
-            Constants.COUNTS_KEY: [],
+            Constants.score_columns: [],
+            Constants.count_columns: [],
         }),
-        validators=[valid_scoreset_json]
+        validators=[validate_scoreset_json]
     )
 
     replaces = models.OneToOneField(
@@ -843,6 +844,15 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if self.experiment is None:
+            self.experiment = Experiment.objects.create()
+
+        self.save()
+
     # TODO: add helper functions to check permision bit and author bits
     def create_urn(self):
         parent = self.experiment
@@ -857,42 +867,46 @@ class ScoreSet(DatasetModel):
         return urn
 
     def has_variants(self):
-        return self.variant_set.count() > 0
+        return self.variants.count() > 0
 
     def get_variants(self):
         if self.has_variants():
-            return self.variant_set.all()
+            return self.variants.all()
         else:
             return Variant.objects.none()
 
     def delete_variants(self):
-        self.variant_set.all().delete()
+        self.variants.all().delete()
         self.dataset_columns = dict({
-            Constants.SCORES_KEY: [], Constants.COUNTS_KEY: []
+            Constants.score_columns: [],
+            Constants.count_columns: [],
+            Constants.metadata_columns: []
         })
-        self.reset_variant_suffix()
         self.save()
 
-    def validate_variant_data(self, variant):
-        if sorted(variant.scores_columns) != sorted(self.scores_columns):
-            raise ValueError("Variant scores columns '{}' do not match "
-                             "ScoreSet columns '{}'.".format(
-                                 variant.scores_columns, self.scores_columns))
-        if sorted(variant.counts_columns) != sorted(self.counts_columns):
-            raise ValueError("Variant counts columns '{}' do not match "
-                             "ScoreSet columns '{}'.".format(
-                                 variant.counts_columns, self.counts_columns))
+    @property
+    def score_columns(self):
+        return self.dataset_columns[Constants.score_columns]
 
     @property
-    def scores_columns(self):
-        return self.dataset_columns[Constants.SCORES_KEY]
+    def count_columns(self):
+        return self.dataset_columns[Constants.count_columns]
 
     @property
-    def counts_columns(self):
-        return self.dataset_columns[Constants.COUNTS_KEY]
+    def metadata_columns(self):
+        return self.dataset_columns[Constants.metadata_columns]
 
-    def has_counts_dataset(self):
-        return not self.dataset_columns[Constants.COUNTS_KEY] == []
+    @property
+    def has_count_dataset(self):
+        return len(self.dataset_columns[Constants.count_columns]) > 0
+
+    @property
+    def has_score_dataset(self):
+        return len(self.dataset_columns[Constants.score_columns]) > 0
+
+    @property
+    def has_metadata(self):
+        return len(self.dataset_columns[Constants.metadata_columns]) > 0
 
     def has_replacement(self):
         return self.replaced_by is not None
@@ -934,7 +948,7 @@ class Variant(UrnModel):
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
-        validators=[valid_mavedb_urn_variant],
+        validators=[validate_mavedb_urn_variant],
         **UrnModel.default_urn_kwargs,
     )
 
@@ -942,12 +956,13 @@ class Variant(UrnModel):
         blank=False,
         null=False,
         default=None,
-        validators=[valid_hgvs_string],
+        validators=[validate_hgvs_string],
     )
 
     scoreset = models.ForeignKey(
         to=ScoreSet,
         on_delete=models.PROTECT,
+        related_name='variants',
         null=False,
         default=None,
     )
@@ -958,31 +973,36 @@ class Variant(UrnModel):
     data = JSONField(
         verbose_name="Data columns",
         default=dict({
-            Constants.SCORES_KEY: {},
-            Constants.COUNTS_KEY: {},
+            Constants.variant_score_data: {},
+            Constants.variant_count_data: {},
+            Constants.variant_metadata: {}
         }),
-        validators=[valid_variant_json],
+        validators=[validate_variant_json],
     )
 
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
     @property
-    def scores_columns(self):
-        return self.data[Constants.SCORES_KEY].keys()
+    def score_columns(self):
+        return list(self.data[Constants.variant_score_data].keys())
 
     @property
-    def counts_columns(self):
-        return self.data[Constants.COUNTS_KEY].keys()
+    def count_columns(self):
+        return list(self.data[Constants.variant_count_data].keys())
 
-    def get_ordered_scores_data(self):
-        columns = self.scoreset.scores_columns
-        data = [self.data[Constants.SCORES_KEY][key] for key in columns]
+    @property
+    def metadata_columns(self):
+        return list(self.data[Constants.variant_metadata].keys())
+
+    def get_ordered_score_data(self):
+        columns = self.scoreset.score_columns
+        data = [self.data[Constants.variant_score_data][key] for key in columns]
         return data
 
-    def get_ordered_counts_data(self):
-        columns = self.scoreset.counts_columns
-        data = [self.data[Constants.COUNTS_KEY][key] for key in columns]
+    def get_ordered_count_data(self):
+        columns = self.scoreset.count_columns
+        data = [self.data[Constants.variant_count_data][key] for key in columns]
         return data
 
 
@@ -1008,10 +1028,10 @@ def create_permission_groups_for_scoreset(sender, instance, **kwargs):
 def propagate_private_bit(sender, instance, **kwargs):
     experiment = instance.experiment
     experiment_is_private = all(
-        [s.private for s in experiment.scoreset_set.all()]
+        [s.private for s in experiment.scoresets.all()]
     )
     experiment_is_approved = any(
-        [s.approved for s in experiment.scoreset_set.all()]
+        [s.approved for s in experiment.scoresets.all()]
     )
     experiment.private = experiment_is_private
     experiment.approved = experiment_is_approved
@@ -1019,10 +1039,10 @@ def propagate_private_bit(sender, instance, **kwargs):
 
     experimentset = experiment.experimentset
     experimentset_is_private = all(
-        [e.private for e in experimentset.experiment_set.all()]
+        [e.private for e in experimentset.experiments.all()]
     )
     experimentset_is_approved = any(
-        [e.approved for e in experimentset.experiment_set.all()]
+        [e.approved for e in experimentset.experiments.all()]
     )
     experimentset.private = experimentset_is_private
     experimentset.approved = experimentset_is_approved
