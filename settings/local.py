@@ -32,29 +32,29 @@ DATABASES = {
 
 # Set up logging
 LOGGING = {
-   ‘version’: 1,
-   ‘disable_existing_loggers’: False,
-   ‘formatters’: {
-       ‘verbose’: {
-           ‘format’: ‘[%(levelname)s] %(asctime)s %(module)s %(message)s’
-       },
-       ‘simple’: {
-           ‘format’: ‘%(levelname)s %(message)s’
-       },
-   },
-   ‘handlers’: {
-       ‘file’: {
-           ‘level’: ‘WARNING’,
-           ‘class’: ‘logging.FileHandler’,
-           ‘filename’: ‘./info.log’,
-           ‘formatter’: ‘verbose’
-       },
-   },
-   ‘loggers’: {
-       ‘django’: {
-           ‘handlers’: [‘file’],
-           ‘level’: ‘WARNING’,
-           ‘propagate’: True
-       },
-   },
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[%(levelname)s] %(asctime)s %(module)s %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': './info.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'WARNING',
+            'propagate': True
+        },
+    },
 }
