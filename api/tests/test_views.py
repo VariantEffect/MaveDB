@@ -8,8 +8,11 @@ from accounts.permissions import (
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer
 )
-from experiment.models import Experiment, ExperimentSet
-from scoreset.models import ScoreSet, Variant, SCORES_KEY, COUNTS_KEY
+
+import dataset.constants as constants
+
+from dataset.models import Experiment, ExperimentSet, ScoreSet
+from variant.models import Variant
 
 
 from ..serializers import (
@@ -182,15 +185,15 @@ class TestScoreSetAPIViews(TestCase):
         scs = make_scoreset()
         scs.publish()
         scs.dataset_columns = {
-            SCORES_KEY: ["hgvs", "score"],
-            COUNTS_KEY: ["hgvs", "count"]
+            constants.score_columns: ["hgvs", "score"],
+            constants.count_columns: ["hgvs", "count"]
         }
         scs.save()
         var = Variant.objects.create(
             scoreset=scs, hgvs="test",
             data={
-                SCORES_KEY: {"hgvs": "test", "score": "1"},
-                COUNTS_KEY: {"hgvs": "test", "count": "1"}
+                constants.score_columns: {"hgvs": "test", "score": "1"},
+                constants.count_columns: {"hgvs": "test", "count": "1"}
             }
         )
         response = self.client.get(
@@ -205,15 +208,15 @@ class TestScoreSetAPIViews(TestCase):
         scs = make_scoreset()
         scs.publish()
         scs.dataset_columns = {
-            SCORES_KEY: ["hgvs", "score"],
-            COUNTS_KEY: ["hgvs", "count"]
+            constants.score_columns: ["hgvs", "score"],
+            constants.count_columns: ["hgvs", "count"]
         }
         scs.save()
         var = Variant.objects.create(
             scoreset=scs, hgvs="test",
             data={
-                SCORES_KEY: {"hgvs": "test", "score": "1"},
-                COUNTS_KEY: {"hgvs": "test", "count": "1"}
+                constants.score_columns: {"hgvs": "test", "score": "1"},
+                constants.count_columns: {"hgvs": "test", "count": "1"}
             }
         )
         response = self.client.get(

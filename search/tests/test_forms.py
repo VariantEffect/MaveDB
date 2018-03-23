@@ -2,9 +2,10 @@ from django.core.urlresolvers import reverse_lazy
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 
-from experiment.models import Keyword, ExternalIdentifier, TargetOrganism
-from experiment.models import Experiment
-from experiment.models import ScoreSet
+from metadata.models import Keyword, ExternalIdentifier
+from genome.models import TargetOrganism
+from dataset.models import Experiment
+from dataset.models import ScoreSet
 from accounts.permissions import assign_user_as_instance_admin
 
 from ..forms import SearchForm

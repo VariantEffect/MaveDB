@@ -7,7 +7,7 @@ from django.test import TransactionTestCase
 from django.db.models import ProtectedError
 
 from main.models import Keyword
-from experiment.models import Experiment, ExperimentSet
+from dataset.models import Experiment, ExperimentSet
 from ..models import ScoreSet, Variant
 from ..models import SCORES_KEY, COUNTS_KEY
 

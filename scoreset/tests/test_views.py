@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login
 
 from main.models import Keyword
-from experiment.models import Experiment
+from dataset.models import Experiment
 
 from accounts.permissions import (
     user_is_admin_for_instance,

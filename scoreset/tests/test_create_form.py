@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 
-from experiment.models import Experiment
+from dataset.models import Experiment
 from scoreset.models import ScoreSet, Variant
 from scoreset.forms import ScoreSetForm
 from scoreset.validators import Constants

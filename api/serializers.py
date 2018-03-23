@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from django.db.models import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from experiment.models import Experiment, ExperimentSet
-from experiment.models import ScoreSet
+from dataset.models import Experiment, ExperimentSet
+from dataset.models import ScoreSet
 
 from accounts.permissions import user_is_anonymous
 

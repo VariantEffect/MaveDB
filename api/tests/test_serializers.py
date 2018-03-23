@@ -6,8 +6,9 @@ from accounts.permissions import (
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer
 )
-from experiment.models import Experiment, ExperimentSet
-from scoreset.models import ScoreSet, SCORES_KEY, COUNTS_KEY
+
+import dataset.constants as constants
+from dataset.models import Experiment, ExperimentSet, ScoreSet
 
 from ..serializers import (
     ExperimentSerializer,
@@ -238,7 +239,8 @@ class TestScoreSetSerializer(TestCase):
     def test_correct_scores_columns(self):
         instance = make_scoreset()
         instance.dataset_columns = {
-            SCORES_KEY: ["hgvs", "score"], COUNTS_KEY: []
+            constants.score_columns: ["hgvs", "score"], 
+            constants.count_columns: []
         }
         instance.save()
         expected = ["hgvs", "score"]
@@ -249,7 +251,8 @@ class TestScoreSetSerializer(TestCase):
     def test_correct_counts_columns(self):
         instance = make_scoreset()
         instance.dataset_columns = {
-            SCORES_KEY: [], COUNTS_KEY: ["hgvs", "counts"]
+            constants.score_columns: [], 
+            constants.count_columns: ["hgvs", "counts"]
         }
         instance.save()
         expected = ["hgvs", "counts"]

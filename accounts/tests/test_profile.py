@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
-from experiment.models import ExperimentSet, Experiment
+from dataset.models import ExperimentSet, Experiment
 from scoreset.models import ScoreSet
 
 from ..models import Profile, user_is_anonymous

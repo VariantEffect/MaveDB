@@ -58,7 +58,7 @@ class GroupTypes:
 # Utilities
 # --------------------------------------------------------------------------- #
 def valid_model_instance(instance):
-    from experiment.models import Experiment, ExperimentSet, ScoreSet
+    from dataset.models import Experiment, ExperimentSet, ScoreSet
     if not hasattr(instance, 'urn'):
         return False
     if not getattr(instance, 'urn'):
@@ -128,7 +128,7 @@ GROUP_TYPE_CALLBACK = {
 
 
 def instances_for_user_with_group_permission(user, model, group_type):
-    from experiment.models import Experiment, ExperimentSet, ScoreSet
+    from dataset.models import Experiment, ExperimentSet, ScoreSet
 
     if user_is_anonymous(user):
         return []

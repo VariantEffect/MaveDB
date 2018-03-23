@@ -39,8 +39,8 @@ from accounts.permissions import (
     instances_for_user_with_group_permission
 )
 
-from experiment.models import Experiment, ExperimentSet
-from experiment.models import (
+from dataset.models import Experiment, ExperimentSet
+from dataset.models import (
     create_groups_for_experiment,
     create_groups_for_experimentset
 )

@@ -4,7 +4,7 @@ from django.http import QueryDict
 from django.core.exceptions import ValidationError
 from django.test import TestCase, TransactionTestCase
 
-from experiment.models import Experiment
+from dataset.models import Experiment
 from main.models import Keyword
 
 from ..models import ScoreSet, Variant

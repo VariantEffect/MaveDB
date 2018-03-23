@@ -14,7 +14,7 @@ from ..views import (
 )
 
 from main.models import ReferenceMapping
-from experiment.models import ExperimentSet, Experiment
+from dataset.models import ExperimentSet, Experiment
 from scoreset.models import ScoreSet
 from scoreset.validators import Constants
 from scoreset.tests.utility import make_score_count_files

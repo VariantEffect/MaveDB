@@ -4,9 +4,11 @@ from django.db.models import ObjectDoesNotExist
 
 from reversion.admin import VersionAdmin
 
-from experiment.models import Experiment, ExperimentSet
-from experiment.models import Keyword, ExternalIdentifier, TargetOrganism
-from experiment.models import ScoreSet, Variant
+from dataset.models import Experiment, ExperimentSet
+from metadata.models import Keyword, ExternalIdentifier
+from genome.models import TargetOrganism
+from dataset.models import ScoreSet
+from variant.models import Variant
 
 from .models import News, SiteInformation, Licence
 

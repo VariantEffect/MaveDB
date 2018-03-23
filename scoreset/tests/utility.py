@@ -3,8 +3,6 @@ from io import StringIO
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from ..validators import Constants
-
 
 def make_score_count_files(score_data=None, count_data=None):
     """

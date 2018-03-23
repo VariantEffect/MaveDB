@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from experiment.models import Experiment, ScoreSet
+from dataset.models import Experiment, ScoreSet
 from accounts.permissions import user_is_anonymous
 
 from .forms import SearchForm

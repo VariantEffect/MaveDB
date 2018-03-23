@@ -3,44 +3,34 @@ Views for accounts app.
 """
 
 import re
-import json
 import logging
-import reversion
 
 from django.conf import settings
 from django.apps import apps
 from django.db import transaction
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse_lazy
-from django.shortcuts import render, reverse, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 
 from django.contrib.auth import logout, get_user_model
 import django.contrib.auth.views as auth_views
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 
-from experiment.forms import ExperimentEditForm, ExperimentForm
-from experiment.forms import ScoreSetEditForm, ScoreSetForm
-from experiment.fields import ModelSelectMultipleField as msmf
-from experiment.validators import (
-    MAVEDB_EXPERIMENT_URN_PATTERN,
+from dataset.forms import ExperimentEditForm, ExperimentForm
+from dataset.forms import ScoreSetEditForm, ScoreSetForm
+from urn.validators import (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
-    MAVEDB_SCORESET_URN_PATTERN,
-    MAVEDB_VARIANT_URN_PATTERN
+    MAVEDB_EXPERIMENT_URN_PATTERN,
+    MAVEDB_SCORESET_URN_PATTERN
 )
 
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .permissions import (
     GroupTypes,
-    PermissionTypes,
     user_is_anonymous,
     user_is_admin_for_instance,
-    user_is_contributor_for_instance,
-    user_is_viewer_for_instance,
-    update_admin_list_for_instance,
-    update_contributor_list_for_instance,
-    update_viewer_list_for_instance
+    user_is_viewer_for_instance
 )
 
 from .forms import (
@@ -295,7 +285,7 @@ def handle_scoreset_edit_form(request, instance):
             form = ScoreSetForm.PartialFormFromRequest(request, instance)
 
         keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        keywords = [kw for kw in keywords]
         context["repop_keywords"] = ','.join(keywords)
         context["edit_form"] = form
 
@@ -337,11 +327,11 @@ def handle_experiment_edit_form(request, instance):
         # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
         keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords if msmf.is_word(kw)]
+        keywords = [kw for kw in keywords]
         e_accessions = request.POST.getlist("external_accessions")
-        e_accessions = [ea for ea in e_accessions if msmf.is_word(ea)]
+        e_accessions = [ea for ea in e_accessions]
         target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism if msmf.is_word(to)]
+        target_organism = [to for to in target_organism]
 
         # Set the context
         context["edit_form"] = form

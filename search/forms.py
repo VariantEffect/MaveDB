@@ -2,7 +2,7 @@
 import django.forms as forms
 
 from main.utils.query_parsing import parse_query, filter_empty
-from experiment.models import Experiment, ScoreSet
+from dataset.models import Experiment, ScoreSet
 
 
 class SearchForm(forms.Form):
