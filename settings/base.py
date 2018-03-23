@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_DIR = BASE_DIR + '/settings/'
 
 # Read the secrets file
-with open(SETTINGS_DIR + '/secrets.json') as handle:
+with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
     secrets = json.load(handle)
 
 
@@ -53,12 +53,18 @@ SOCIAL_AUTH_PIPELINE = [
 
 # Application definition
 INSTALLED_APPS = [
+    'metadata',
     'main',
+    'genome',
+    'urn',
+
+    'variant',
+    'dataset',
+
+    'search',
     'api',
     'accounts',
-    'experiment',
-    'scoreset',
-    'search',
+
     'guardian',
     'reversion',
     'social_django',
