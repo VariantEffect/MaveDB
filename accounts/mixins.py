@@ -2,7 +2,6 @@
 from django.contrib.auth.models import User
 
 from .permissions import (
-    GroupTypes,
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
     user_is_viewer_for_instance,

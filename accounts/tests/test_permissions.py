@@ -39,12 +39,8 @@ from accounts.permissions import (
     instances_for_user_with_group_permission
 )
 
-from dataset.models import Experiment, ExperimentSet
-from dataset.models import (
-    create_groups_for_experiment,
-    create_groups_for_experimentset
-)
-from scoreset.models import ScoreSet, Variant
+from dataset.models import Experiment, ExperimentSet, ScoreSet
+from variant.models import Variant
 
 
 User = get_user_model()
@@ -56,6 +52,7 @@ class UtilitiesTest(TransactionTestCase):
     def setUp(self):
         self.exps = ExperimentSet.objects.create()
         self.exp = Experiment.objects.create(target="test", wt_sequence="atcg")
+        print(self.exp.urn)
         self.scs = ScoreSet.objects.create(experiment=self.exp)
         self.var = Variant.objects.create(scoreset=self.scs, hgvs="test")
 
@@ -92,7 +89,7 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-admins'.format(self.instance.accession)
+            '{}-admins'.format(self.instance.urn)
         )
 
     def test_can_make_contributor_group_for_instance(self):
@@ -100,7 +97,7 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-contributors'.format(self.instance.accession)
+            '{}-contributors'.format(self.instance.urn)
         )
 
     def test_can_make_viewer_group_for_instance(self):
@@ -108,7 +105,7 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-viewers'.format(self.instance.accession)
+            '{}-viewers'.format(self.instance.urn)
         )
 
     def test_can_make_all_groups_for_instance(self):

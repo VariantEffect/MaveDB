@@ -3,7 +3,7 @@ This module defines stuff.
 """
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, AnonymousUser
+from django.contrib.auth.models import Group, AnonymousUser, Permission
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -22,6 +22,10 @@ class PermissionTypes:
     CAN_VIEW = "can_view"
     CAN_EDIT = "can_edit"
     CAN_MANAGE = "can_manage"
+
+    @classmethod
+    def all(cls):
+        return [cls.CAN_VIEW, cls.CAN_EDIT, cls.CAN_MANAGE]
 
 
 class GroupTypes:
@@ -83,17 +87,17 @@ def user_is_anonymous(user):
 
 def get_admin_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-admins'.format(instance.accession)
+        return '{}-admins'.format(instance.urn)
 
 
 def get_contributor_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-contributors'.format(instance.accession)
+        return '{}-contributors'.format(instance.urn)
 
 
 def get_viewer_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-viewers'.format(instance.accession)
+        return '{}-viewers'.format(instance.urn)
 
 
 def user_is_admin_for_instance(user, instance):
@@ -211,9 +215,10 @@ def make_all_groups_for_instance(instance):
 def assign_user_as_instance_admin(user, instance):
     if user_is_anonymous(user):
         return False
+
+    group_name = get_admin_group_name_for_instance(instance)
     try:
-        group_name = get_admin_group_name_for_instance(instance)
-        admin_group = Group.objects.get(name=group_name)
+        Group.objects.get(name=group_name)
     except ObjectDoesNotExist:
         make_admin_group_for_instance(instance)
 
@@ -228,9 +233,10 @@ def assign_user_as_instance_admin(user, instance):
 def assign_user_as_instance_contributor(user, instance):
     if user_is_anonymous(user):
         return False
+
+    group_name = get_contributor_group_name_for_instance(instance)
     try:
-        group_name = get_contributor_group_name_for_instance(instance)
-        contrib_group = Group.objects.get(name=group_name)
+        Group.objects.get(name=group_name)
     except ObjectDoesNotExist:
         make_contributor_group_for_instance(instance)
 
@@ -245,9 +251,10 @@ def assign_user_as_instance_contributor(user, instance):
 def assign_user_as_instance_viewer(user, instance):
     if user_is_anonymous(user):
         return False
+
+    group_name = get_viewer_group_name_for_instance(instance)
     try:
-        group_name = get_viewer_group_name_for_instance(instance)
-        viewer_group = Group.objects.get(name=group_name)
+        Group.objects.get(name=group_name)
     except ObjectDoesNotExist:
         make_viewer_group_for_instance(instance)
 

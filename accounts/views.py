@@ -42,9 +42,9 @@ from .forms import (
 
 User = get_user_model()
 logger = logging.getLogger(name="django")
-ExperimentSet = apps.get_model('experiment', 'ExperimentSet')
-Experiment = apps.get_model('experiment', 'Experiment')
-ScoreSet = apps.get_model('scoreset', 'ScoreSet')
+ExperimentSet = apps.get_model('dataset', 'ExperimentSet')
+Experiment = apps.get_model('dataset', 'Experiment')
+ScoreSet = apps.get_model('dataset', 'ScoreSet')
 
 
 # Utilities
