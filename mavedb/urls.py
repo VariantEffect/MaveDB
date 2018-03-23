@@ -33,12 +33,8 @@ urlpatterns = [
         include('accounts.urls', namespace='accounts'), name='accounts'
     ),
     url(
-        r'^experiment/',
-        include("experiment.urls", namespace="experiment"), name="experiment"
-    ),
-    url(
-        r'^scoreset/',
-        include("scoreset.urls", namespace="scoreset"), name="scoreset"
+        r'^dataset/',
+        include("dataset.urls", namespace="dataset"), name="dataset"
     ),
     url(
         r'^search/',
