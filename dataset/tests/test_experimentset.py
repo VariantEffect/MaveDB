@@ -1,7 +1,7 @@
 
 import datetime
 
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TransactionTestCase
@@ -27,19 +27,9 @@ class TestExperimentSet(TransactionTestCase):
         self.target = "target"
         self.wt_seq = "ATCG"
 
-    def make_experiment(self, acc=None, expset=None, save=True):
-        exp = Experiment(
-            accession=acc,
-            experimentset=expset,
-            target=self.target,
-            wt_sequence=self.wt_seq
-        )
-        if save:
-            exp.save()
-        return exp
-
     def test_new_experiment_is_assigned_all_permission_groups(self):
-        ExperimentSet.objects.create()
+        obj = ExperimentSet.objects.create()
+        print(obj)
         self.assertEqual(Group.objects.count(), 3)
 
     def test_publish_updates_published_and_last_edit_dates(self):
