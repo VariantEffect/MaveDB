@@ -23,7 +23,7 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
     }
 
     def __init__(self, klass, *args, **kwargs):
-        super(ModelSelectMultipleField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.to_field_name is None:
             raise ValueError("You must define 'to_field_name'.")
         self.klass = klass

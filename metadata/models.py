@@ -3,7 +3,6 @@ import datetime
 import idutils
 from django.db import models
 
-# Create your models here.
 from metadata.validators import (
     SRA_BIOPROJECT_RE, SRA_STUDY_RE,
     SRA_EXPERIMENT_RE, SRA_RUN_RE
