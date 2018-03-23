@@ -2,8 +2,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from dataset import constants as constants
-from dataset.models import ScoreSet
-from dataset.validators import validate_variant_json
+from variant.validators import validate_variant_json
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_variant
 
@@ -52,7 +51,7 @@ class Variant(UrnModel):
     )
 
     scoreset = models.ForeignKey(
-        to=ScoreSet,
+        to='dataset.ScoreSet',
         on_delete=models.PROTECT,
         related_name='variants',
         null=False,
