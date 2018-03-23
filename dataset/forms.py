@@ -31,8 +31,9 @@ from variant.models import Variant
 
 from .validators import (
     validate_scoreset_count_data_input, validate_scoreset_score_data_input,
-    validate_scoreset_json, validate_csv_extension, validate_variant_rows
+    validate_scoreset_json, validate_csv_extension
 )
+from variant.validators import validate_variant_rows
 
 
 class DatasetModelForm(forms.ModelForm):
@@ -66,25 +67,25 @@ class DatasetModelForm(forms.ModelForm):
             'method_text': forms.Textarea(attrs={"class": "form-control"}),
             'keywords': ModelSelectMultipleField(
                 klass=Keyword, to_field_name='text', required=False,
-                widget=forms.SelectMultiple(
+                queryset=None, widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             ),
             'sra_ids': ModelSelectMultipleField(
-                klass=Keyword, to_field_name='resource_accession', required=False,
-                widget=forms.SelectMultiple(
+                klass=SraIdentifier, to_field_name='resource_accession',
+                required=False, queryset=None, widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             ),
             'doi_ids': ModelSelectMultipleField(
-                klass=Keyword, to_field_name='resource_accession', required=False,
-                widget=forms.SelectMultiple(
+                klass=DoiIdentifier, to_field_name='resource_accession',
+                required=False, queryset=None, widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             ),
             'pmid_ids': ModelSelectMultipleField(
-                klass=Keyword, to_field_name='resource_accession', required=False,
-                widget=forms.SelectMultiple(
+                klass=PubmedIdentifier, to_field_name='resource_accession',
+                required=False, queryset=None, widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             )
@@ -175,7 +176,7 @@ class ExperimentForm(DatasetModelForm):
             'experimentset': forms.Select(attrs={"class": "form-control"}),
             'target_organism': ModelSelectMultipleField(
                 klass=TargetOrganism, to_field_name='resource_accession',
-                required=False, widget=forms.SelectMultiple(
+                required=False, queryset=None, widget=forms.SelectMultiple(
                     attrs={"class": "form-control select2 select2-token-select"}
                 )
             )
@@ -254,7 +255,7 @@ class ScoreSetForm(DatasetModelForm):
         model = ScoreSet
         fields = DatasetModelForm.Meta.fields + (
             'experiment',
-            'licence_type',
+            'licence',
             'replaces'
         )
         widgets = DatasetModelForm.Meta.widgets.update(**{
