@@ -1,4 +1,3 @@
-
 """
 Url patterns for the main database app.
 """
