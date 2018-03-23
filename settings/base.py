@@ -5,8 +5,12 @@ import json
 
 from django.core.exceptions import ImproperlyConfigured
 
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_DIR = BASE_DIR + '/settings/'
+
 # Read the secrets file
-with open('secrets.json') as handle:
+with open(SETTINGS_DIR + '/secrets.json') as handle:
     secrets = json.load(handle)
 
 
@@ -26,7 +30,6 @@ def get_secret(setting, secrets=secrets):
 SECRET_KEY = get_secret('secret_key')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LICENCE_DIR = BASE_DIR + '/licences/'
 
 # Social auth settings for ORCID authentication
