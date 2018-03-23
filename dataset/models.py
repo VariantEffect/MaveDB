@@ -114,11 +114,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     class Meta:
         abstract = True
         ordering = ['-creation_date']
-        permissions = (
-            (PermissionTypes.CAN_VIEW, "Can view"),
-            (PermissionTypes.CAN_EDIT, "Can edit"),
-            (PermissionTypes.CAN_MANAGE, "Can manage")
-        )
 
     # ---------------------------------------------------------------------- #
     #                       Model fields
@@ -209,11 +204,8 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # This will not work if manually setting urn.
-        # Replace this section with POST/PRE save signal.
         self.last_edit_date = datetime.date.today()
-        self.save()
+        super().save(*args, **kwargs)
 
     def update_last_edit_info(self, user):
         self.last_edit_date = datetime.date.today()
@@ -273,6 +265,11 @@ class ExperimentSet(DatasetModel):
     class Meta:
         verbose_name = "ExperimentSet"
         verbose_name_plural = "ExperimentSets"
+        permissions = (
+            (PermissionTypes.CAN_VIEW, "Can view"),
+            (PermissionTypes.CAN_EDIT, "Can edit"),
+            (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
 
     # ---------------------------------------------------------------------- #
     #                       Model fields
@@ -336,6 +333,11 @@ class Experiment(DatasetModel):
     class Meta:
         verbose_name = "Experiment"
         verbose_name_plural = "Experiments"
+        permissions = (
+            (PermissionTypes.CAN_VIEW, "Can view"),
+            (PermissionTypes.CAN_EDIT, "Can edit"),
+            (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
 
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
@@ -381,14 +383,10 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
         self.wt_sequence = self.wt_sequence.upper()
-
         if self.experimentset is None:
             self.experimentset = ExperimentSet.objects.create()
-
-        self.save()
+        super().save(*args, **kwargs)
 
     def create_urn(self):
         parent = self.experimentset
@@ -512,6 +510,11 @@ class ScoreSet(DatasetModel):
     class Meta:
         verbose_name = "ScoreSet"
         verbose_name_plural = "ScoreSets"
+        permissions = (
+            (PermissionTypes.CAN_VIEW, "Can view"),
+            (PermissionTypes.CAN_EDIT, "Can edit"),
+            (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
 
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
@@ -548,7 +551,7 @@ class ScoreSet(DatasetModel):
     )
 
     replaces = models.OneToOneField(
-        to='scoreset.ScoreSet',
+        to='dataset.ScoreSet',
         on_delete=models.DO_NOTHING,
         null=True,
         verbose_name="Replaces",
@@ -561,14 +564,10 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
         if self.experiment is None:
             self.experiment = Experiment.objects.create()
+        super().save(*args, **kwargs)
 
-        self.save()
-
-    # TODO: add helper functions to check permision bit and author bits
     def create_urn(self):
         parent = self.experiment
         child_value = parent.last_child_value + 1
