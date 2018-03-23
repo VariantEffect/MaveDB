@@ -50,7 +50,6 @@ class UrnModel(models.Model):
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-
         if self.urn is None:
             self.urn = self.create_urn()
             self.save()
