@@ -9,12 +9,13 @@ from django.core.validators import MinValueValidator
 
 from django.contrib.postgres.fields import JSONField
 from django.db import models, transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 
 from accounts.mixins import GroupPermissionMixin
 from accounts.permissions import (
     PermissionTypes,
-    make_all_groups_for_instance
+    create_all_groups_for_instance,
+    delete_all_groups_for_instance
 )
 
 import dataset.constants as constants
@@ -325,9 +326,10 @@ class Experiment(DatasetModel):
         "abstract_text",
         "method_text",
         "keywords",
-        "pmid_accessions",
-        "doi_accessions",
-        "sra_accessions",
+        "pmid_ids",
+        "doi_ids",
+        "sra_ids",
+        "target_organism"
     )
 
     class Meta:
@@ -369,7 +371,7 @@ class Experiment(DatasetModel):
         default=None,
         blank=False,
         null=False,
-        verbose_name="Target",
+        verbose_name="Target Gene",
         max_length=256,
     )
 
@@ -439,60 +441,13 @@ class ScoreSet(DatasetModel):
     experiment : `models.ForeignKey`, required.
         The experiment a scoreset is assciated with. Cannot be null.
 
-    creation_date : `models.DataField`
-        Data of instantiation in yyyy-mm-dd format.
-
-    last_edit_date : `models.DataField`
-        Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
-        is called.
-
-    publish_date : `models.DataField`
-        Data of instantiation in yyyy-mm-dd format. Updates when `publish` is
-        called.
-
-    created_by : `models.ForeignKey`
-        User the instance was created by.
-
-    last_edit_by : `models.ForeignKey`
-        User to make the latest change to the instnace.
-
-    licence_type : `models.ForeignKey`
+    licence : `models.ForeignKey`
         Licence type attached to the instance.
-
-    approved : `models.BooleanField`
-        The approved status, as seen by the database admin. Instances are
-        created by default as not approved and must be manually checked
-        before going live.
-
-    last_used_suffix : `models.IntegerField`
-        Min value of 0. Counts how many variants have been associated with
-        this dataset. Must be manually incremented everytime, but this might
-        change to a post_save signal
-
-    private : `models.BooleanField`
-        Whether the dataset should be private and viewable only by
-        those approved in the permissions.
 
     dataset_columns : `models.JSONField`
         A JSON instances with keys `scores` and `counts`. The values are
         lists of strings indicating the columns to be expected in the variants
         for this dataset.
-
-    abstract : `models.TextField`
-        A markdown text blob.
-
-    method_desc : `models.TextField`
-        A markdown text blob of the scoring method.
-
-    doi_id : `models.CharField`
-        The DOI for this scoreset if any.
-
-    metadata : `models.JSONField`
-        The free-form json metadata that might be associated with this
-        scoreset.
-
-    keywords : `models.ManyToManyField`
-        The keyword instances that are associated with this instance.
 
     replaces : `models.ForeignKey`
         Indicates a scoreset instances that replaces the current instance.
@@ -502,9 +457,9 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     # TODO: Update TRACKED_FIELDS in all classes to use inheritance
     TRACKED_FIELDS = (
-        "private", "approved", "abstract",
-        "method_desc", "doi_id", "keywords",
-        "licence_type"
+        "private", "approved", "abstract_text",
+        "method_text", "doi_ids", "sra_ids", "pmid_ids", "keywords",
+        "license", "dataset_columns", "replaces"
     )
 
     class Meta:
@@ -633,21 +588,21 @@ class ScoreSet(DatasetModel):
 
 
 # --------------------------------------------------------------------------- #
-#                               POST SAVE
+#                               Post Save
 # --------------------------------------------------------------------------- #
 @receiver(post_save, sender=ExperimentSet)
 def create_groups_for_experimentset(sender, instance, **kwargs):
-    make_all_groups_for_instance(instance)
+    create_all_groups_for_instance(instance)
 
 
 @receiver(post_save, sender=Experiment)
 def create_groups_for_experiment(sender, instance, **kwargs):
-    make_all_groups_for_instance(instance)
+    create_all_groups_for_instance(instance)
 
 
 @receiver(post_save, sender=ScoreSet)
 def create_permission_groups_for_scoreset(sender, instance, **kwargs):
-    make_all_groups_for_instance(instance)
+    create_all_groups_for_instance(instance)
 
 
 @receiver(post_save, sender=ScoreSet)
@@ -673,3 +628,23 @@ def propagate_private_bit(sender, instance, **kwargs):
     experimentset.private = experimentset_is_private
     experimentset.approved = experimentset_is_approved
     experimentset.save()
+
+
+# --------------------------------------------------------------------------- #
+#                            Post Delete
+# --------------------------------------------------------------------------- #
+@receiver(pre_delete, sender=ExperimentSet)
+def delete_groups_for_experimentset(sender, instance, **kwargs):
+    delete_all_groups_for_instance(instance)
+
+
+@receiver(pre_delete, sender=Experiment)
+def delete_groups_for_experiment(sender, instance, **kwargs):
+    delete_all_groups_for_instance(instance)
+
+
+@receiver(pre_delete, sender=ScoreSet)
+def delete_permission_groups_for_scoreset(sender, instance, **kwargs):
+    delete_all_groups_for_instance(instance)
+
+
