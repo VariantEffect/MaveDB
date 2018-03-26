@@ -24,13 +24,13 @@ from urn.validators import (
     MAVEDB_SCORESET_URN_PATTERN
 )
 
+from main.utils import is_null
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .permissions import (
     GroupTypes,
-    user_is_anonymous,
-    user_is_admin_for_instance,
-    user_is_viewer_for_instance
+    PermissionTypes,
+    user_is_anonymous
 )
 
 from .forms import (
@@ -49,7 +49,7 @@ ScoreSet = apps.get_model('dataset', 'ScoreSet')
 
 # Utilities
 # ------------------------------------------------------------------------- #
-def get_class_for_accession(accession):
+def get_class_from_urn(urn):
     """
     Returns the class matching the urn, if it's either
     an `ExperimentSet`, `Experiment` or `ScoreSet` otherwise it 
@@ -57,7 +57,7 @@ def get_class_for_accession(accession):
 
     Parameters
     ----------
-    accession : `str`
+    urn : `str`
         The urn for an instance
 
     Returns
@@ -65,11 +65,11 @@ def get_class_for_accession(accession):
     `cls` or `None`
         A class that can be instantiated, or None.
     """
-    if re.fullmatch(MAVEDB_EXPERIMENTSET_URN_PATTERN, accession):
+    if re.fullmatch(MAVEDB_EXPERIMENTSET_URN_PATTERN, urn):
         return ExperimentSet
-    elif re.fullmatch(MAVEDB_EXPERIMENT_URN_PATTERN, accession):
+    elif re.fullmatch(MAVEDB_EXPERIMENT_URN_PATTERN, urn):
         return Experiment
-    elif re.fullmatch(MAVEDB_SCORESET_URN_PATTERN, accession):
+    elif re.fullmatch(MAVEDB_SCORESET_URN_PATTERN, urn):
         return ScoreSet
     else:
         return None
@@ -125,6 +125,7 @@ def login_delegator(request):
     if settings.USE_SOCIAL_AUTH:
         return redirect("accounts:social:begin", "orcid")
     else:
+        print("debug login")
         return auth_views.LoginView.as_view()(request)
 
 
@@ -146,13 +147,13 @@ def profile_view(request):
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def manage_instance(request, accession):
+def manage_instance(request, urn):
     post_form = None
     context = {}
 
     try:
-        klass = get_class_for_accession(accession)
-        instance = get_object_or_404(klass, accession=accession)
+        klass = get_class_from_urn(urn)
+        instance = get_object_or_404(klass, urn=urn)
     except:
         response = render(request, 'main/404_not_found.html')
         response.status_code = 404
@@ -160,10 +161,8 @@ def manage_instance(request, accession):
 
     # 404 if there are no permissions instead of 403 to prevent
     # information leaking.
-    has_permission = [
-        user_is_admin_for_instance(request.user, instance),
-    ]
-    if not any(has_permission):
+    has_permission = request.user.has_perm(PermissionTypes.CAN_MANAGE, instance)
+    if not has_permission:
         response = render(request, 'main/403_forbidden.html')
         response.status_code = 403
         return response
@@ -207,7 +206,7 @@ def manage_instance(request, accession):
             post_form.process_user_list()
             instance.last_edit_by = request.user
             instance.save()
-            return redirect("accounts:manage_instance", instance.accession)
+            return redirect("accounts:manage_instance", instance.urn)
 
     # Replace the form that has changed. If it reaches this point,
     # it means there were errors in the form.
@@ -220,7 +219,7 @@ def manage_instance(request, accession):
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def edit_instance(request, accession):
+def edit_instance(request, urn):
     """
     This view takes uses the urn string to deduce the class belonging
     to that urn and then retrieves the appropriate instance or 404s.
@@ -234,24 +233,22 @@ def edit_instance(request, accession):
 
     Parameters
     ----------
-    accession : `str`
+    urn : `str`
         A string object representing the urn of a database instance
         of either `Experiment` or `ScoreSet`.
     """
     try:
-        klass = get_class_for_accession(accession)
+        klass = get_class_from_urn(urn)
         if klass not in [Experiment, ScoreSet]:
             raise TypeError("Can't edit class {}.".format(klass))
-        instance = get_object_or_404(klass, accession=accession)
+        instance = get_object_or_404(klass, urn=urn)
     except:
         response = render(request, 'main/404_not_found.html')
         response.status_code = 404
         return response
 
-    has_permission = [
-        user_is_admin_for_instance(request.user, instance),
-    ]
-    if not any(has_permission):
+    has_permission = request.user.has_perm(PermissionTypes.CAN_EDIT, instance)
+    if not has_permission:
         response = render(request, 'main/404_not_found.html')
         response.status_code = 404
         return response
@@ -263,8 +260,7 @@ def edit_instance(request, accession):
     else:
         logger.error(
             "Tried to process an edit form for an invalid type {}. Expecting "
-            " either `Experiment` or `ScoreSet`.".format(klass)
-        )
+            "either `Experiment` or `ScoreSet`.".format(klass))
         response = render(request, 'main/404_not_found.html')
         response.status_code = 404
         return response
@@ -273,35 +269,33 @@ def edit_instance(request, accession):
 @transaction.atomic
 def handle_scoreset_edit_form(request, instance):
     if not instance.private:
-        form = ScoreSetEditForm(instance=instance)
+        form = ScoreSetEditForm(user=request.user, instance=instance)
     else:
-        form = ScoreSetForm.PartialFormFromRequest(request, instance)
-
+        form = ScoreSetForm.from_request(request, instance)
     context = {'edit_form': form, 'instance': instance}
+
     if request.method == "POST":
         if not instance.private:
-            form = ScoreSetEditForm(request.POST, instance=instance)
+            form = ScoreSetEditForm(
+                request.POST, user=request.user, instance=instance)
         else:
-            form = ScoreSetForm.PartialFormFromRequest(request, instance)
-
-        keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords]
-        context["repop_keywords"] = ','.join(keywords)
-        context["edit_form"] = form
+            form = ScoreSetForm.from_request(request, instance)
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
             updated_instance.update_last_edit_info(request.user)
             save_and_create_revision_if_tracked_changed(
-                request.user, updated_instance
-            )
+                request.user, updated_instance)
             if request.POST.get("publish", None):
                 updated_instance.publish()
                 send_admin_email(request.user, updated_instance)
-
-            return redirect(
-                "accounts:edit_instance", updated_instance.accession
-            )
+            return redirect("accounts:edit_instance", updated_instance.urn)
+        else:
+            print(form.errors)
+            keywords = request.POST.getlist("keywords")
+            keywords = [kw for kw in keywords]
+            context["repop_keywords"] = ','.join(keywords)
+            context["edit_form"] = form
 
     return render(request, 'accounts/profile_edit.html', context)
 
@@ -309,52 +303,60 @@ def handle_scoreset_edit_form(request, instance):
 @transaction.atomic
 def handle_experiment_edit_form(request, instance):
     if not instance.private:
-        form = ExperimentEditForm(instance=instance)
+        form = ExperimentEditForm(user=request.user, instance=instance)
     else:
-        form = ExperimentForm.PartialFormFromRequest(request, instance)
+        form = ExperimentForm.from_request(request, instance)
 
     # Set up the initial base context
     context = {"edit_form": form, 'instance': instance, 'experiment': True}
 
-    # If you change the prefix arguments here, make sure to change them
-    # in base.js as well for the +/- buttons to work correctly.
+    # If you change the context arguments here, make sure to change them
+    # in base.js as well.
     if request.method == "POST":
         if not instance.private:
-            form = ExperimentEditForm(request.POST, instance=instance)
+            form = ExperimentEditForm(
+                request.POST, user=request.user, instance=instance)
         else:
-            form = ExperimentForm.PartialFormFromRequest(request, instance)
+            form = ExperimentForm.from_request(request, instance)
 
         # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
         keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords]
-        e_accessions = request.POST.getlist("external_accessions")
-        e_accessions = [ea for ea in e_accessions]
+        keywords = [kw for kw in keywords if not is_null(kw)]
+
+        sra_ids = request.POST.getlist("sra_ids")
+        sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
+
+        doi_ids = request.POST.getlist("doi_ids")
+        doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
+
+        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
+
         target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism]
+        target_organism = [to for to in target_organism if not is_null(to)]
 
         # Set the context
         context["edit_form"] = form
         context["repop_keywords"] = ','.join(keywords)
-        context["repop_external_accessions"] = ','.join(e_accessions)
+        context["repop_sra_identifiers"] = ','.join(sra_ids)
+        context["repop_doi_identifiers"] = ','.join(doi_ids)
+        context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
         context["repop_target_organism"] = ','.join(target_organism)
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
             updated_instance.update_last_edit_info(request.user)
             save_and_create_revision_if_tracked_changed(
-                request.user, updated_instance
-            )
-
+                request.user, updated_instance)
             return redirect(
-                "accounts:edit_instance", updated_instance.accession
-            )
+                "accounts:edit_instance", updated_instance.urn)
 
     return render(request, 'accounts/profile_edit.html', context)
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def view_instance(request, accession):
+def view_instance(request, urn):
     """
     This view takes uses the urn string to deduce the class belonging
     to that urn and then retrieves the appropriate instance or 404s.
@@ -364,38 +366,35 @@ def view_instance(request, accession):
 
     Parameters
     ----------
-    accession : `str`
+    urn : `str`
         A string object representing the urn of a database instance.
     """
     try:
-        klass = get_class_for_accession(accession)
-        instance = get_object_or_404(klass, accession=accession)
+        klass = get_class_from_urn(urn)
+        instance = get_object_or_404(klass, urn=urn)
     except:
         response = render(request, 'main/404_not_found.html')
         response.status_code = 404
         return response
 
-    has_permission = [
-        user_is_admin_for_instance(request.user, instance),
-        user_is_viewer_for_instance(request.user, instance)
-    ]
-    if not any(has_permission):
+    has_permission = request.user.has_perm(PermissionTypes.CAN_VIEW, instance)
+    if not has_permission:
         response = render(request, 'main/403_forbidden.html')
         response.status_code = 403
         return response
 
     if klass == Experiment:
-        direct_to = "experiment:experiment_detail"
+        direct_to = "dataset:experiment_detail"
     elif klass == ExperimentSet:
-        direct_to = "experiment:experimentset_detail"
+        direct_to = "dataset:experimentset_detail"
     elif klass == ScoreSet:
-        direct_to = "scoreset:scoreset_detail"
+        direct_to = "dataset:scoreset_detail"
     else:
         response = render(request, "main/404_not_found.html")
         response.status_code = 404
         return response
 
-    return redirect(direct_to, accession=instance.accession)
+    return redirect(direct_to, urn=instance.urn)
 
 
 # Registration views
