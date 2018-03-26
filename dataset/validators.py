@@ -106,7 +106,7 @@ def validate_scoreset_json(dict_):
                 params={"key": key, "type": type_}
             )
 
-        elif len(dict_[key]) == 0:
+        elif len(dict_[key]) == 0 and key == constants.score_columns:
             raise ValidationError(
                 ugettext("No header could be found for '%(key)s' dataset."),
                 params={"key": key}
