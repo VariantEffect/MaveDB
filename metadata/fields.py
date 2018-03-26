@@ -2,6 +2,8 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelMultipleChoiceField
 from django.utils.translation import ugettext as _
 
+from main.utils import is_null
+
 
 class ModelSelectMultipleField(ModelMultipleChoiceField):
     """
@@ -86,7 +88,7 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         # for this field use this line here instead.
         if isinstance(value, str):
             value = [value]
-        return super(ModelSelectMultipleField, self).clean(value)
+        return super().clean(value)
 
     def _check_values(self, value):
         """
@@ -116,16 +118,16 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
             values = frozenset(value)
         except TypeError:
             # list of lists isn't hashable, for example
-            raise ValidationError(
-                self.error_messages['list'],
-                code='list',
-            )
+            raise ValidationError(self.error_messages['list'], code='list')
         for value in values:
-            if self.is_new_value(value):
+            if is_null(value):
+                continue
+            elif self.is_new_value(value):
                 self.new_values.add(value)
             else:
                 existing.append(value)
-        return super(ModelSelectMultipleField)._check_values(existing)
+
+        return super()._check_values(existing)
 
 
 
