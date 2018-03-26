@@ -28,8 +28,10 @@ $('document').ready(function() {
     // Re-add any external_accession, keywords or target organism
     // back to failed form submission
     repopulateSelect("#id_keywords", "#keywords-to-add");
-    repopulateSelect("#id_external_accessions", "#accession-to-add");
-    repopulateSelect("#id_target_organism", "#organisms-to-add");
+    repopulateSelect("#id_sra_identifiers", "#sra-identifiers-to-add");
+    repopulateSelect("#id_doi_identifiers", "#doi-identifiers-to-add");
+    repopulateSelect("#id_pubmed_identifiers", "#pubmed-identifiers-to-add");
+    repopulateSelect("#id_target_organism", "#target-organisms-to-add");
 });
 
 // Ajax for markdown field preview
@@ -284,85 +286,3 @@ function validate_viewer_submit(e) {
     }
     return $("#viewer-form").submit();
 }
-
-// Formsets
-// ----------------------------------------------------------------------- //
-function reset_index(prefix) {
-    formset_tag = prefix + '-form-set';
-    form_idx_tag = formset_tag +
-                    " > #id_" +
-                    prefix.replace('#', '') +
-                    "-TOTAL_FORMS";
-
-    var form_idx = parseInt($(form_idx_tag).val());
-    element = prefix + "-formset-" + form_idx;
-    if ($(element).length === 0 && form_idx > 0) {
-        $(form_idx_tag).val(1);
-    }
-}
-
-function add_formset(prefix) {
-    formset_tag = prefix + '-form-set';
-    form_idx_tag = formset_tag +
-                    " > #id_" +
-                    prefix.replace('#', '') +
-                    "-TOTAL_FORMS";
-    template_form_tag = prefix + "-empty-form";
-    empty_set_tag = prefix + '-empty-set';
-
-    var form_idx = parseInt($(form_idx_tag).val());
-    if (form_idx < 0) {
-        form_idx = 0;
-    }
-
-    var item = $(template_form_tag).html().replace(/__prefix__/g, form_idx);
-    new_idx = form_idx === 0 ? form_idx : form_idx + 1;
-    item =
-        '<div id="' + prefix.replace("#", '') +
-            '-formset-' + (form_idx + 1) + '">' +
-        item +
-        '<hr></div>';
-
-    $(empty_set_tag).hide();
-    $(formset_tag).append(item);
-    $(form_idx_tag).val(form_idx + 1);
-}
-
-function remove_formset(prefix) {
-    formset_tag = prefix + '-form-set';
-    form_idx_tag = formset_tag +
-                    " > #id_" +
-                    prefix.replace('#', '') +
-                    "-TOTAL_FORMS";
-    template_form_tag = prefix + "-empty-form";
-    empty_set_tag = prefix + '-empty-set';
-
-    var form_idx = parseInt($(form_idx_tag).val());
-    element = prefix + "-formset-" + form_idx;
-
-    possible_elemet = prefix + "-formset-" + 1;
-    if (form_idx === 0 && $(possible_elemet).length > 0) {
-        $(possible_elemet).remove();
-        $(empty_set_tag).show();
-        $(form_idx_tag).val(0);
-    }
-    else {
-        $(element).remove();
-        if (form_idx - 1 <= 0) {
-            $(empty_set_tag).show();
-            $(form_idx_tag).val(0);
-        }
-        else {
-            $(form_idx_tag).val(form_idx - 1);
-        }
-    }
-}
-
-$('#add_reference_mapping').click(function () {
-    reset_index("#reference_mapping");
-    add_formset("#reference_mapping");
-});
-$('#remove_reference_mapping').click(function () {
-    reset_index("#reference_mapping");
-    remove_formset("#reference_mapping");
-});
