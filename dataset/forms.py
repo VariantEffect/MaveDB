@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 
 import django.forms as forms
 from django.db import transaction
@@ -62,48 +63,48 @@ class DatasetModelForm(forms.ModelForm):
             'doi_ids',
             'pmid_ids'
         )
-        widgets = {
-            'abstract_text': forms.Textarea(attrs={"class": "form-control"}),
-            'method_text': forms.Textarea(attrs={"class": "form-control"}),
-            'keywords': ModelSelectMultipleField(
-                klass=Keyword, to_field_name='text', required=False,
-                queryset=None, widget=forms.SelectMultiple(
-                    attrs={"class": "form-control select2 select2-token-select"}
-                )
-            ),
-            'sra_ids': ModelSelectMultipleField(
-                klass=SraIdentifier, to_field_name='resource_accession',
-                required=False, queryset=None, widget=forms.SelectMultiple(
-                    attrs={"class": "form-control select2 select2-token-select"}
-                )
-            ),
-            'doi_ids': ModelSelectMultipleField(
-                klass=DoiIdentifier, to_field_name='resource_accession',
-                required=False, queryset=None, widget=forms.SelectMultiple(
-                    attrs={"class": "form-control select2 select2-token-select"}
-                )
-            ),
-            'pmid_ids': ModelSelectMultipleField(
-                klass=PubmedIdentifier, to_field_name='resource_accession',
-                required=False, queryset=None, widget=forms.SelectMultiple(
-                    attrs={"class": "form-control select2 select2-token-select"}
-                )
-            )
-        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
+        self.fields['abstract_text'].widget = forms.Textarea(
+            attrs={"class": "form-control"}
+        )
+        self.fields['method_text'].widget = forms.Textarea(
+            attrs={"class": "form-control"}
+        )
+        self.fields['keywords'] = ModelSelectMultipleField(
+            klass=Keyword, to_field_name='text', required=False,
+            queryset=Keyword.objects.all(), widget=forms.SelectMultiple(
+                attrs={"class": "form-control select2 select2-token-select"}
+            )
+        )
+        self.fields['sra_ids'] = ModelSelectMultipleField(
+            klass=SraIdentifier, to_field_name='identifier',
+            required=False, queryset=SraIdentifier.objects.all(),
+            widget=forms.SelectMultiple(
+                attrs={"class": "form-control select2 select2-token-select"}
+            )
+        )
+        self.fields['doi_ids'] = ModelSelectMultipleField(
+            klass=DoiIdentifier, to_field_name='identifier',
+            required=False, queryset=DoiIdentifier.objects.all(),
+            widget=forms.SelectMultiple(
+                attrs={"class": "form-control select2 select2-token-select"}
+            )
+        )
+        self.fields['pmid_ids'] = ModelSelectMultipleField(
+            klass=PubmedIdentifier, to_field_name='identifier',
+            required=False, queryset=PubmedIdentifier.objects.all(),
+            widget=forms.SelectMultiple(
+                attrs={"class": "form-control select2 select2-token-select"}
+            )
+        )
         self.fields['keywords'].validators.append(validate_keyword_list)
         self.fields['sra_ids'].validators.append(validate_sra_list)
         self.fields['doi_ids'].validators.append(validate_doi_list)
         self.fields['pmid_ids'].validators.append(validate_pubmed_list)
-
-        self.fields["keywords"].queryset = Keyword.objects.all()
-        self.fields["sra_ids"].queryset = SraIdentifier.objects.all()
-        self.fields["doi_ids"].queryset = DoiIdentifier.objects.all()
-        self.fields["pmid_ids"].queryset = PubmedIdentifier.objects.all()
 
     def _clean_field_name(self, field_name):
         field = self.fields[field_name]
@@ -114,14 +115,14 @@ class DatasetModelForm(forms.ModelForm):
     def clean_keywords(self):
         return self._clean_field_name('keywords')
 
-    def clean_sra_identifiers(self):
-        return self._clean_field_name('sra_identifiers')
+    def clean_sra_ids(self):
+        return self._clean_field_name('sra_ids')
 
-    def clean_doi_identifiers(self):
-        return self._clean_field_name('doi_identifiers')
+    def clean_doi_ids(self):
+        return self._clean_field_name('doi_ids')
 
-    def clean_pubmed_identifiers(self):
-        return self._clean_field_name('pubmed_identifiers')
+    def clean_pmid_ids(self):
+        return self._clean_field_name('pmid_ids')
 
     def _save_m2m(self):
         # Save all instances before calling super() so that all new instances
@@ -152,9 +153,11 @@ class DatasetModelForm(forms.ModelForm):
     @classmethod
     def from_request(cls, request, instance):
         if request.method == "POST":
-            form = cls(data=request.POST, files=request.FILES, instance=instance)
+            form = cls(
+                user=request.user, data=request.POST,
+                files=request.FILES, instance=instance)
         else:
-            form = cls(instance=instance)
+            form = cls(user=request.user, instance=instance)
         return form
 
 
@@ -170,29 +173,34 @@ class ExperimentForm(DatasetModelForm):
             'wt_sequence',
             'target_organism',
         )
-        widgets = DatasetModelForm.Meta.widgets.update(**{
-            'wt_sequence': forms.Textarea(attrs={"class": "form-control"}),
-            'target': forms.TextInput(attrs={"class": "form-control"}),
-            'experimentset': forms.Select(attrs={"class": "form-control"}),
-            'target_organism': ModelSelectMultipleField(
-                klass=TargetOrganism, to_field_name='resource_accession',
-                required=False, queryset=None, widget=forms.SelectMultiple(
-                    attrs={"class": "form-control select2 select2-token-select"}
-                )
-            )
-        })
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields['experimentset'] = forms.ModelChoiceField(
+            queryset=None, required=False, widget=forms.Select(
+                attrs={"class": "form-control"})
+        )
+        self.fields['target_organism'] = ModelSelectMultipleField(
+            klass=TargetOrganism, to_field_name='text',
+            required=False, queryset=None, widget=forms.SelectMultiple(
+                attrs={"class": "form-control select2 select2-token-select"})
+        )
+        self.fields['wt_sequence'].widget = forms.Textarea(
+            attrs={"class": "form-control"})
+
+        # TODO: This will become a Foreign Key field when Target becomes a table
+        self.fields['target'].widget = forms.TextInput(
+            attrs={"class": "form-control"})
+
         self.fields["target"].validators.append(validate_target_gene)
         self.fields["target_organism"].validators.append(validate_target_organism)
         self.fields["wt_sequence"].validators.append(validate_wildtype_sequence)
+
+        self.fields["target_organism"].queryset = TargetOrganism.objects.all()
         # Populate the experimentset drop down with a list of experimentsets
         # that the user for this form has write access to.
-        self.fields["target_organism"].queryset = TargetOrganism.objects.all()
-        self.fields["experimentset"].queryset = \
-            self.user.profile.administrator_experimentsets() + \
-            self.user.profile.contributor_experimentsets()
+        self.set_experimentset_options()
 
     def clean_target_organism(self):
         return self._clean_field_name('target_organism')
@@ -214,10 +222,10 @@ class ExperimentForm(DatasetModelForm):
     def set_experimentset_options(self):
         if 'experimentset' in self.fields:
             choices = self.user.profile.administrator_experimentsets() + \
-                      self.user.profile.contributor_experimentsets()
+                      self.user.profile.author_experimentsets()
             choices_qs = ExperimentSet.objects.filter(
                 pk__in=set([i.pk for i in choices])).order_by("urn")
-            self.fields["experiment"].queryset = choices_qs
+            self.fields["experimentset"].queryset = choices_qs
 
     @classmethod
     def from_request(cls, request, instance):
@@ -258,11 +266,6 @@ class ScoreSetForm(DatasetModelForm):
             'licence',
             'replaces'
         )
-        widgets = DatasetModelForm.Meta.widgets.update(**{
-            "experiment": forms.Select(attrs={"class": "form-control"}),
-            "licence_type": forms.Select(attrs={"class": "form-control"}),
-            "replaces": forms.Select(attrs={"class": "form-control"}),
-        })
 
     score_data = forms.FileField(
         required=True, label="Variant score data (required)",
@@ -278,28 +281,38 @@ class ScoreSetForm(DatasetModelForm):
     def __init__(self, *args, **kwargs):
         super(ScoreSetForm, self).__init__(*args, **kwargs)
 
+        # This will be used later after score/count files have been read in
+        # to store the headers.
         self.dataset_columns = {
             constants.score_columns: [],
             constants.count_columns: [],
             constants.metadata_columns: []
         }
-        self.scores_json = {}
-        self.counts_json = {}
+
+        self.fields['experiment'] = forms.ModelChoiceField(
+            queryset=None, required=True, widget=forms.Select(
+                attrs={"class": "form-control"}))
+        self.fields['replaces'] = forms.ModelChoiceField(
+            queryset=None, required=False, widget=forms.Select(
+                attrs={"class": "form-control"}))
+        self.fields['licence'] = forms.ModelChoiceField(
+            queryset=Licence.objects.all(), required=False,
+            widget=forms.Select(
+                attrs={"class": "form-control"}))
 
         self.fields["replaces"].required = False
         self.set_replaces_options()
 
-        if "experiment" in self.fields:
-            self.set_experiment_options()
-            self.fields['experiment'].empty_label = 'Create new experiment'
+        self.set_experiment_options()
+        self.fields['experiment'].empty_label = 'Create new experiment'
 
-        self.fields["licence_type"].required = False
-        if not self.fields["licence_type"].initial:
-            self.fields["licence_type"].initial = Licence.get_default()
-        self.fields["licence_type"].empty_label = 'Default'
+        self.fields["licence"].required = False
+        if not self.fields["licence"].initial:
+            self.fields["licence"].initial = Licence.get_default()
+        self.fields["licence"].empty_label = 'Default'
 
-    def clean_licence_type(self):
-        licence = self.cleaned_data.get("licence_type", None)
+    def clean_licence(self):
+        licence = self.cleaned_data.get("licence", None)
         if not licence:
             licence = Licence.objects.get(short_name="CC BY-NC-SA 4.0")
         return licence
@@ -308,7 +321,7 @@ class ScoreSetForm(DatasetModelForm):
         scoreset = self.cleaned_data.get("replaces", None)
         experiment = self.cleaned_data.get("experiment", None)
         if scoreset is not None and experiment is not None:
-            if scoreset not in experiment.scoreset_set.all():
+            if scoreset not in experiment.scoresets.all():
                 raise ValidationError(
                     ugettext(
                         "Replaces field selection must be a member of the "
@@ -328,8 +341,10 @@ class ScoreSetForm(DatasetModelForm):
         #       Datatypes of rows match
         #       HGVS string is a valid hgvs string
         #       Hgvs appears more than once in rows
+        score_file = TextIOWrapper(score_file, encoding='utf-8')
         header, hgvs_score_map = validate_variant_rows(score_file)
         self.dataset_columns[constants.score_columns] = header
+        print(type(hgvs_score_map))
         return hgvs_score_map
 
     def clean_count_data(self):
@@ -344,8 +359,10 @@ class ScoreSetForm(DatasetModelForm):
         #       Datatypes of rows match
         #       HGVS string is a valid hgvs string
         #       Hgvs appears more than once in rows
+        count_file = TextIOWrapper(count_file, encoding='utf-8')
         header, hgvs_count_map = validate_variant_rows(count_file)
         self.dataset_columns[constants.count_columns] = header
+        print(type(hgvs_count_map))
         return hgvs_count_map
 
     def clean(self):
@@ -384,6 +401,7 @@ class ScoreSetForm(DatasetModelForm):
                 )
             )
 
+        # TODO: Handle the cases where count/meta data is not posted
         if has_score_data and has_count_data:
             # For every hgvs in scores but not in counts, fill in the
             # counts columns (if a counts dataset is supplied) with null values
@@ -400,7 +418,7 @@ class ScoreSetForm(DatasetModelForm):
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
         # The reverse is not always true.
-        if has_score_data or has_count_data:
+        if has_score_data and has_count_data:
             validate_scoreset_json(self.dataset_columns)
             variants = dict()
 
@@ -437,7 +455,7 @@ class ScoreSetForm(DatasetModelForm):
     def set_replaces_options(self):
         if 'replaces' in self.fields:
             choices = self.user.profile.administrator_scoresets() + \
-                self.user.profile.contributor_scoresets()
+                self.user.profile.author_scoresets()
             scoresets_qs = ScoreSet.objects.filter(
                 pk__in=set([i.pk for i in choices])).order_by("urn")
             self.fields["replaces"].queryset = scoresets_qs
@@ -445,10 +463,10 @@ class ScoreSetForm(DatasetModelForm):
     def set_experiment_options(self):
         if 'experiment' in self.fields:
             choices = self.user.profile.administrator_experiments() + \
-                self.user.profile.contributor_experiments()
+                self.user.profile.author_experiments()
             experiment_qs = Experiment.objects.filter(
                 pk__in=set([i.pk for i in choices])).order_by("urn")
-            self.fields["replaces"].queryset = experiment_qs
+            self.fields["experiment"].queryset = experiment_qs
 
     @classmethod
     def from_request(cls, request, instance):
@@ -473,6 +491,6 @@ class ScoreSetEditForm(ScoreSetForm):
         self.fields['scores_data'].required = False
         self.fields['counts_data'].required = False
         self.fields['replaces'].required = False
-        self.fields['licence_type'].required = False
+        self.fields['licence'].required = False
         self.fields.pop('experiment')
 
