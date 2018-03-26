@@ -19,8 +19,8 @@ Including another URLconf
 """
 
 from django.conf.urls import url, include
-from django.urls import reverse_lazy
-import django.contrib.auth.views as auth_views
+
+from dataset.constants import any_url_pattern
 
 from .views import registration_view, profile_view, log_user_out, login_error
 from .views import manage_instance, edit_instance, view_instance
@@ -43,27 +43,23 @@ urlpatterns = [
 
     # ------ Login and Logout
     url(r'^logout/$', log_user_out, name='logout'),
-    url(
-        r'login/$',
-        login_delegator,
-        name='login'
-    ),
+    url(r'login/$', login_delegator, name='login'),
 
     # ------ Profile
     url(r"^$", profile_view, name="index"),
     url(r"profile/$", profile_view, name="profile"),
     url(
-        r"profile/manage/(?P<urn>[A-Za-z]{3,4}\d+.*)/$",
+        r"profile/manage/(?P<urn>{})/$".format(any_url_pattern),
         manage_instance,
         name="manage_instance"
     ),
     url(
-        r"profile/edit/(?P<urn>[A-Za-z]{3,4}\d+.*)/$",
+        r"profile/edit/(?P<urn>{})/$".format(any_url_pattern),
         edit_instance,
         name="edit_instance"
     ),
     url(
-        r"profile/view/(?P<urn>[A-Za-z]{3,4}\d+.*)/$",
+        r"profile/view/(?P<urn>{})/$".format(any_url_pattern),
         view_instance,
         name="view_instance"
     )
