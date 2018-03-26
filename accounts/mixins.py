@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from .permissions import (
     user_is_admin_for_instance,
-    user_is_contributor_for_instance,
+    user_is_author_for_instance,
     user_is_viewer_for_instance,
     authors_for_instance
 )
@@ -16,13 +16,13 @@ class GroupPermissionMixin(object):
         admins = [u.pk for u in users if user_is_admin_for_instance(u, self)]
         return User.objects.filter(pk__in=admins)
 
-    def contributors(self):
+    def authors(self):
         users = User.objects.all()
-        contrib = [
+        authors = [
             u.pk for u in users
-            if user_is_contributor_for_instance(u, self)
+            if user_is_author_for_instance(u, self)
         ]
-        return User.objects.filter(pk__in=contrib).exclude(is_superuser=True)
+        return User.objects.filter(pk__in=authors).exclude(is_superuser=True)
 
     def viewers(self):
         users = User.objects.all()
