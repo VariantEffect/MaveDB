@@ -74,6 +74,18 @@ class Variant(UrnModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    def create_urn(self):
+        parent = self.scoreset
+        child_value = parent.last_child_value + 1
+
+        urn = "{}#{}".format(parent.urn, child_value)
+
+        # update parent
+        parent.last_child_value = child_value
+        parent.save()
+
+        return urn
+
     @property
     def score_columns(self):
         return list(self.data[constants.variant_score_data].keys())
