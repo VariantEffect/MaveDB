@@ -4,7 +4,7 @@
 <!-- Edit instance -->
 <div class="row" style="margin-top: 25px;">
 	<div class="col-md-10">
-		<h3> Edit entry {{ instance.accession }} </h3>
+		<h3> Edit entry {{ instance.urn }} </h3>
 		{% if instance.private %}
 		<p> 
 			This entry will remain fully editable until 
@@ -22,13 +22,15 @@
 		</p>
 		{% endif %}
 		<hr>
-		
+
 		<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
-		<div id="accession-to-add" hidden>{{ repop_external_accessions }}</div>
-		<div id="organisms-to-add" hidden>{{ repop_target_organism }}</div>
+		<div id="sra_identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
+    <div id="doi_identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
+    <div id="pubmed_identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
+		<div id="target-organisms-to-add" hidden>{{ repop_target_organism }}</div>
 
 		<form id="edit-form"
-					action="{% url 'accounts:edit_instance' instance.accession %}" 
+					action="{% url 'accounts:edit_instance' instance.urn %}" 
 					method="post" enctype="multipart/form-data">
 			{% csrf_token %}
 			{% if edit_form.non_field_errors %}

@@ -12,23 +12,23 @@
 		<ul style="list-style: none">
 			{% for instance in request.user.profile.administrator_instances %}
 				<div style="display: inline-flex">
-					<li> {{ instance.accession }} </li>
+					<li> {{ instance.urn }} </li>
 					<li style="padding-left:10px;">
-						<a href="{% url 'accounts:manage_instance' instance.accession %}">
+						<a href="{% url 'accounts:manage_instance' instance.urn %}">
 							Manage
 						</a>
 					</li>
 					<li style="padding-left:10px;"><b>&middot;</b></li>
-					{% if "EXPS" not in instance.accession %}
+					{% if "EXPS" not in instance.urn %}
 					<li style="padding-left:10px;">
-						<a href="{% url 'accounts:edit_instance' instance.accession %}">
+						<a href="{% url 'accounts:edit_instance' instance.urn %}">
 							Edit
 						</a>
 					</li>
 					<li style="padding-left:10px;"><b>&middot;</b></li>
 					{% endif %}
 					<li style="padding-left:10px;">
-						<a href="{% url 'accounts:view_instance' instance.accession %}">
+						<a href="{% url 'accounts:view_instance' instance.urn %}">
 							View
 						</a>
 					</li>
@@ -63,7 +63,7 @@
 		<ul style="list-style: none">
 			{% for instance in request.user.profile.viewer_instances %}
 				<div style="display: inline-flex">
-					<li> {{ instance.accession }} </li>
+					<li> {{ instance.urn }} </li>
 					<li style="padding-left:10px;"><b>&middot;</b></li>
 					<li style="padding-left:10px;">
 						<a href="">View</a>

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block profile_body %}
-<h3> {{ instance.accession }} </h3>
+<h3> {{ instance.urn }} </h3>
 
 <!-- Admin management -->
 <div class="row" style="margin-top: 25px;">
@@ -34,7 +34,7 @@
 
 		<h5> Add/Remove Administrators </h5><hr>
 		<form id="admin-form"
-					action="{% url 'accounts:manage_instance' instance.accession %}" 
+					action="{% url 'accounts:manage_instance' instance.urn %}" 
 					method="post">
 			{% csrf_token %}
 			<input type='hidden' name='administrators[]'/>
@@ -66,7 +66,7 @@
 	<div class="col-md-10">
 		<h5> Add/Remove Viewers </h5><hr>
 		<form id="viewer-form"
-					action="{% url 'accounts:manage_instance' instance.accession %}" 
+					action="{% url 'accounts:manage_instance' instance.urn %}" 
 					method="post">
 			{% csrf_token %}			
 			<input type='hidden' name='viewers[]'/>
