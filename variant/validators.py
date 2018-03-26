@@ -100,7 +100,7 @@ def validate_variant_rows(file, is_meta=False):
 
     Parameters
     ----------
-    file : :class:`io.FileIO`
+    file : :class:`io.TextIOWrapper`
         An open file handle in read mode.
 
     is_meta : bool, optional. Default: False
@@ -130,7 +130,8 @@ def validate_variant_rows(file, is_meta=False):
             )
 
         row = {
-            k.strip(): None if is_null(v) else v.strip() for k, v in row.items()
+            k.strip(): None if is_null(v) else v.strip()
+            for k, v in row.items()
         }
         if not isinstance(row[hgvs_col], str):
             raise ValidationError(
