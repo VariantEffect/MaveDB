@@ -11,6 +11,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from accounts.forms import send_admin_email
 from accounts.permissions import assign_user_as_instance_admin, PermissionTypes
 
+from main.utils import is_null
 from main.utils.pandoc import convert_md_to_html
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
@@ -62,7 +63,7 @@ class ExperimentDetailView(DetailView):
                 request, *args, **kwargs
             )
 
-    def get_object(self):
+    def get_object(self, queryset=None):
         accession = self.kwargs.get('urn', None)
         return get_object_or_404(Experiment, accession=accession)
 
@@ -108,46 +109,16 @@ class ExperimentSetDetailView(DetailView):
                 request, *args, **kwargs
             )
 
-    def get_object(self):
+    def get_object(self, queryset=None):
         accession = self.kwargs.get('urn', None)
         return get_object_or_404(ExperimentSet, accession=accession)
-
-
-def parse_mapping_formset(reference_mapping_formset):
-    """
-    Parses a `ReferenceMappingFormSet` into a list of non-commited
-    `ReferenceMapping` models. If the form is not valid for a particular
-    form, then `None` is appended to the list.
-
-    Parameters
-    ----------
-    reference_mapping_formset : `ReferenceMappingFormSet`
-        A bound ReferenceMappingFormSet instance.
-
-    Returns
-    -------
-    `list`
-        A list of instantiated models, but non-commited.
-    """
-    objects = []
-    for i, form in enumerate(reference_mapping_formset):
-        if form.is_valid():
-            if form.cleaned_data:
-                model = form.save(commit=False)
-                if model.datahash not in set(m.datahash for m in objects):
-                    objects.append(model)
-        else:
-            objects.append(None)
-    return objects
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
 def experiment_create_view(request):
     """
-    This view serves up four types of forms:
+    This view serves up the form:
         - `ExperimentForm` for the instantiation of an Experiment instnace.
-        - `ReferenceMappingFormSet` for the instantiation and linking of M2M
-          `ReferenceMapping` instnaces.
 
     A new experiment instance will only be created if all forms pass validation
     otherwise the forms with the appropriate errors will be served back. Upon
@@ -169,22 +140,32 @@ def experiment_create_view(request):
     context["experiment_form"] = experiment_form
 
     # If you change the prefix arguments here, make sure to change them
-    # in base.js as well for the +/- buttons to work correctly.
+    # in base.js as well.
     if request.method == "POST":
         # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
         keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords]
-        e_accessions = request.POST.getlist("external_accessions")
-        e_accessions = [ea for ea in e_accessions]
+        keywords = [kw for kw in keywords if not is_null(kw)]
+
+        sra_ids = request.POST.getlist("sra_ids")
+        sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
+
+        doi_ids = request.POST.getlist("doi_ids")
+        doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
+
+        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
+
         target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism]
+        target_organism = [to for to in target_organism if not is_null(to)]
 
         experiment_form = ExperimentForm(request.POST)
         experiment_form.fields["experimentset"].queryset = experimentsets
         context["experiment_form"] = experiment_form
         context["repop_keywords"] = ','.join(keywords)
-        context["repop_external_accessions"] = ','.join(e_accessions)
+        context["repop_sra_identifiers"] = ','.join(sra_ids)
+        context["repop_doi_identifiers"] = ','.join(doi_ids)
+        context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
         context["repop_target_organism"] = ','.join(target_organism)
 
         if not experiment_form.is_valid():
@@ -263,7 +244,7 @@ class ScoreSetDetailView(DetailView):
                 request, *args, **kwargs
             )
 
-    def get_object(self):
+    def get_object(self, queryset=None):
         accession = self.kwargs.get('urn', None)
         return get_object_or_404(ScoreSet, accession=accession)
 
@@ -323,7 +304,7 @@ class ScoreSetDetailView(DetailView):
         context["scores_page_range"] = page_range
         context["scores_variants"] = scores_variants
         context["scores_columns"] = \
-            context['scoreset'].dataset_columns[constants.SCORES_KEY]
+            context['scoreset'].dataset_columns[constants.score_columns]
 
         # Handle the case when there are too many pages for counts.
         index = counts_paginator.page_range.index(counts_variants.number)
@@ -334,7 +315,7 @@ class ScoreSetDetailView(DetailView):
         context["counts_page_range"] = page_range
         context["counts_variants"] = counts_variants
         context["counts_columns"] = \
-            context['scoreset'].dataset_columns[constants.COUNTS_KEY]
+            context['scoreset'].dataset_columns[constants.count_columns]
 
         context["scores_per_page"] = scores_per_page
         context["counts_per_page"] = counts_per_page
@@ -378,7 +359,8 @@ def download_scoreset_data(request, accession, dataset_key):
         response.status_code = 403
         return response
 
-    if not scoreset.has_counts_dataset() and dataset_key == constants.COUNTS_KEY:
+    if not scoreset.has_counts_dataset() and \
+            dataset_key == constants.count_columns:
         return StreamingHttpResponse("", content_type='text')
 
     variants = scoreset.variant_set.all().order_by("urn")
@@ -396,7 +378,8 @@ def download_scoreset_data(request, accession, dataset_key):
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def scoreset_create_view(request, came_from_new_experiment=False, e_accession=None):
+def scoreset_create_view(request, came_from_new_experiment=False,
+                         experiment_urn=None):
     """
     A view to create a new scoreset. Upon successs, this view will redirect
     to the newly created scoreset object.
@@ -419,11 +402,11 @@ def scoreset_create_view(request, came_from_new_experiment=False, e_accession=No
     scoreset_form.fields["replaces"].queryset = scoresets
 
     if came_from_new_experiment:
-        experiments = Experiment.objects.filter(accession=e_accession)
+        experiments = Experiment.objects.filter(accession=experiment_urn)
         scoreset_form.fields["experiment"].queryset = experiments
         context["scoreset_form"] = scoreset_form
         context["came_from_new_experiment"] = came_from_new_experiment
-        context["e_accession"] = e_accession
+        context["experiment_urn"] = experiment_urn
         return render(
             request,
             "scoreset/new_scoreset.html",
@@ -434,11 +417,11 @@ def scoreset_create_view(request, came_from_new_experiment=False, e_accession=No
     # or method description
     if request.is_ajax():
         data = {}
-        data['abstract'] = convert_md_to_html(
-            request.GET.get("abstract", "")
+        data['abstract_text'] = convert_md_to_html(
+            request.GET.get("abstract_text", "")
         )
-        data['method_desc'] = convert_md_to_html(
-            request.GET.get("method_desc", "")
+        data['method_text'] = convert_md_to_html(
+            request.GET.get("method_text", "")
         )
         return HttpResponse(json.dumps(data), content_type="application/json")
 
@@ -478,7 +461,7 @@ def scoreset_create_view(request, came_from_new_experiment=False, e_accession=No
 
         assign_user_as_instance_admin(user, scoreset)
         accession = scoreset.accession
-        return redirect("scoreset:scoreset_detail", accession=accession)
+        return redirect("dataset:scoreset_detail", accession=accession)
 
     else:
         context["scoreset_form"] = scoreset_form
