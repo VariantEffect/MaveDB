@@ -1,4 +1,3 @@
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
@@ -46,11 +45,11 @@ class Profile(models.Model):
                 return self.user.username
             else:
                 # support for mononyms
-                return self.user.first_name
+                return self.user.first_name.capitalize()
         else:
             return '{} {}'.format(
-                self.user.first_name,
-                self.user.last_name
+                self.user.first_name.capitalize(),
+                self.user.last_name.capitalize()
             )
 
     def get_short_name(self):
@@ -61,11 +60,11 @@ class Profile(models.Model):
                 return self.user.username
             else:
                 # support for mononyms
-                return self.user.first_name
+                return self.user.first_name.capitalize()
         else:
             return '{}, {}'.format(
-                self.user.last_name,
-                self.user.first_name[0]
+                self.user.last_name.capitalize(),
+                self.user.first_name[0].capitalize()
             )
 
     def __str__(self):
@@ -73,17 +72,17 @@ class Profile(models.Model):
 
     def experimentsets(self):
         return self.administrator_experimentsets() + \
-            self.contributor_experimentsets() + \
+            self.author_experimentsets() + \
             self.viewer_experimentsets()
 
     def experiments(self):
         return self.administrator_experiments() + \
-            self.contributor_experiments() + \
+            self.author_experiments() + \
             self.viewer_experiments()
 
     def scoresets(self):
         return self.administrator_scoresets() + \
-            self.contributor_scoresets() + \
+            self.author_scoresets() + \
             self.viewer_scoresets()
 
     def administrator_instances(self):
@@ -91,10 +90,10 @@ class Profile(models.Model):
             self.administrator_experiments() + \
             self.administrator_scoresets()
 
-    def contributor_instances(self):
-        return self.contributor_experimentsets() + \
-            self.contributor_experiments() + \
-            self.contributor_scoresets()
+    def author_instances(self):
+        return self.author_experimentsets() + \
+            self.author_experiments() + \
+            self.author_scoresets()
 
     def viewer_instances(self):
         return self.viewer_experimentsets() + \
@@ -110,11 +109,11 @@ class Profile(models.Model):
             group_type=GroupTypes.ADMIN
         )
 
-    def contributor_experimentsets(self):
+    def author_experimentsets(self):
         return instances_for_user_with_group_permission(
             user=self.user,
             model=ExperimentSet,
-            group_type=GroupTypes.CONTRIBUTOR
+            group_type=GroupTypes.AUTHOR
         )
 
     def viewer_experimentsets(self):
@@ -133,11 +132,11 @@ class Profile(models.Model):
             group_type=GroupTypes.ADMIN
         )
 
-    def contributor_experiments(self):
+    def author_experiments(self):
         return instances_for_user_with_group_permission(
             user=self.user,
             model=Experiment,
-            group_type=GroupTypes.CONTRIBUTOR
+            group_type=GroupTypes.AUTHOR
         )
 
     def viewer_experiments(self):
@@ -156,11 +155,11 @@ class Profile(models.Model):
             group_type=GroupTypes.ADMIN
         )
 
-    def contributor_scoresets(self):
+    def author_scoresets(self):
         return instances_for_user_with_group_permission(
             user=self.user,
             model=ScoreSet,
-            group_type=GroupTypes.CONTRIBUTOR
+            group_type=GroupTypes.AUTHOR
         )
 
     def viewer_scoresets(self):
