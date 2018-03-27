@@ -114,8 +114,8 @@ def validate_variant_rows(file, is_meta=False):
     """
     hgvs_col = constants.hgvs_column
     validate_hgvs = validate_hgvs_string
-    hgvs_json_map = None
-    header = None
+    hgvs_map = {}
+    header = []
     order = defaultdict(lambda: 2)
     order[hgvs_col] = 0
     order[constants.required_score_column] = 1
@@ -125,7 +125,7 @@ def validate_variant_rows(file, is_meta=False):
         # should have been run, so we are guaranteed the header is correct.
         if i == 0:
             header = list(sorted(row.keys(), key=lambda x: order[x]))
-            hgvs_json_map = defaultdict(
+            hgvs_map = defaultdict(
                 lambda: dict(**{c: None for c in header})
             )
 
@@ -166,13 +166,13 @@ def validate_variant_rows(file, is_meta=False):
                     )
 
         # Make sure the variant has been defined more than one time.
-        if hgvs_string in hgvs_json_map:
+        if hgvs_string in hgvs_map:
             raise ValidationError(
                 "Variant '%(hgvs)s' has been re-defined at index %(i)s. Input "
                 "cannot contain the same variant twice in different rows.",
                 params={'hgvs': hgvs_string, 'i': i}
             )
         else:
-            hgvs_json_map[hgvs_string] = row
+            hgvs_map[hgvs_string] = row
 
-    return header, hgvs_json_map
+    return header, hgvs_map
