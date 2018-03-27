@@ -256,60 +256,52 @@ class TestProfileEditInstanceView(TestCase):
         self.assertFalse(obj.private)
         self.assertFalse(obj.experiment.private)
         self.assertFalse(obj.experiment.experimentset.private)
-#
-#     def test_requires_login(self):
-#         obj = experiment()
-#         response = self.client.get(
-#             '/accounts/profile/edit/{}/'.format(obj.urn)
-#         )
-#         self.assertEqual(response.status_code, 302)
-#
-#     def test_can_defer_instance_type_from_urn(self):
-#         urn = experiment().urn
-#         self.assertEqual(get_class_from_urn(urn), Experiment)
-#
-#         urn = experimentset().urn
-#         self.assertEqual(get_class_from_urn(urn), ExperimentSet)
-#
-#         urn = scoreset().urn
-#         self.assertEqual(get_class_from_urn(urn), ScoreSet)
-#
-#         urn = "exp12012.1A"
-#         self.assertEqual(get_class_from_urn(urn), None)
-#
-#     def test_404_edit_an_experimentset(self):
-#         obj = experimentset()
-#         request = self.factory.get(
-#             '/accounts/profile/edit/{}/'.format(obj.urn)
-#         )
-#         request.user = self.alice
-#         response = edit_instance(request, urn=obj.urn)
-#         self.assertEqual(response.status_code, 404)
-#
-#     def test_published_scoreset_instance_returns_edit_only_mode_form(self):
-#         obj = scoreset()
-#         obj.private = False
-#         obj.save()
-#         assign_user_as_instance_admin(self.alice, obj)
-#         request = self.factory.get(
-#             '/accounts/profile/edit/{}/'.format(obj.urn)
-#         )
-#         request.user = self.alice
-#         response = edit_instance(request, urn=obj.urn)
-#         self.assertNotContains(response, 'Score data')
-#         self.assertNotContains(response, 'Count data')
-#
-#     def test_published_experiment_instance_returns_edit_only_mode_form(self):
-#         obj = experiment()
-#         obj.private = False
-#         obj.save()
-#         assign_user_as_instance_admin(self.alice, obj)
-#         request = self.factory.get(
-#             '/accounts/profile/edit/{}/'.format(obj.urn)
-#         )
-#         request.user = self.alice
-#         response = edit_instance(request, urn=obj.urn)
-#         self.assertNotContains(response, 'Target')
+
+    def test_requires_login(self):
+        obj = experiment()
+        response = self.client.get('/accounts/profile/edit/{}/'.format(obj.urn))
+        self.assertEqual(response.status_code, 302)
+
+    def test_can_defer_instance_type_from_urn(self):
+        urn = experiment().urn
+        self.assertEqual(get_class_from_urn(urn), Experiment)
+
+        urn = experimentset().urn
+        self.assertEqual(get_class_from_urn(urn), ExperimentSet)
+
+        urn = scoreset().urn
+        self.assertEqual(get_class_from_urn(urn), ScoreSet)
+
+        urn = "urn:mavedb:00000a"
+        self.assertEqual(get_class_from_urn(urn), None)
+
+    def test_404_edit_an_experimentset(self):
+        obj = experimentset()
+        request = self.factory.get('/accounts/profile/edit/{}/'.format(obj.urn))
+        request.user = self.alice
+        response = edit_instance(request, urn=obj.urn)
+        self.assertEqual(response.status_code, 404)
+
+    def test_published_scoreset_instance_returns_edit_only_mode_form(self):
+        obj = scoreset()
+        obj.private = False
+        obj.save()
+        assign_user_as_instance_admin(self.alice, obj)
+        request = self.factory.get('accounts/profile/edit/{}/'.format(obj.urn))
+        request.user = self.alice
+        response = edit_instance(request, urn=obj.urn)
+        self.assertNotContains(response, 'Score data')
+        self.assertNotContains(response, 'Count data')
+
+    def test_published_experiment_instance_returns_edit_only_mode_form(self):
+        obj = experiment()
+        obj.private = False
+        obj.save()
+        assign_user_as_instance_admin(self.alice, obj)
+        request = self.factory.get('/accounts/profile/edit/{}/'.format(obj.urn))
+        request.user = self.alice
+        response = edit_instance(request, urn=obj.urn)
+        self.assertNotContains(response, 'Target')
 
 
 class TestProfileViewInstanceView(TestCase):
