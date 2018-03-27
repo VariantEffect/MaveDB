@@ -75,29 +75,30 @@ class DatasetModelForm(forms.ModelForm):
             attrs={"class": "form-control"}
         )
         self.fields['keywords'] = ModelSelectMultipleField(
-            klass=Keyword, to_field_name='text', required=False,
+            klass=Keyword, to_field_name='text',
+            label='Keywords', required=False,
             queryset=Keyword.objects.all(), widget=forms.SelectMultiple(
                 attrs={"class": "form-control select2 select2-token-select"}
             )
         )
         self.fields['sra_ids'] = ModelSelectMultipleField(
             klass=SraIdentifier, to_field_name='identifier',
-            required=False, queryset=SraIdentifier.objects.all(),
-            widget=forms.SelectMultiple(
+            label='SRA Identifiers', required=False,
+            queryset=SraIdentifier.objects.all(), widget=forms.SelectMultiple(
                 attrs={"class": "form-control select2 select2-token-select"}
             )
         )
         self.fields['doi_ids'] = ModelSelectMultipleField(
             klass=DoiIdentifier, to_field_name='identifier',
-            required=False, queryset=DoiIdentifier.objects.all(),
-            widget=forms.SelectMultiple(
+            label='DOI Identifiers', required=False,
+            queryset=DoiIdentifier.objects.all(), widget=forms.SelectMultiple(
                 attrs={"class": "form-control select2 select2-token-select"}
             )
         )
         self.fields['pmid_ids'] = ModelSelectMultipleField(
             klass=PubmedIdentifier, to_field_name='identifier',
-            required=False, queryset=PubmedIdentifier.objects.all(),
-            widget=forms.SelectMultiple(
+            label='PubMed Identifiers', required=False,
+            queryset=PubmedIdentifier.objects.all(), widget=forms.SelectMultiple(
                 attrs={"class": "form-control select2 select2-token-select"}
             )
         )
@@ -130,14 +131,17 @@ class DatasetModelForm(forms.ModelForm):
         for m2m_field in self.M2M_FIELD_NAMES:
             if m2m_field in self.fields:
                 for instance in self.cleaned_data.get(m2m_field, []):
-                    instance.save(commit=True)
+                    instance.save()
                 self.instance.clear_m2m(m2m_field)
-        super()._save_m2m()
+        super()._save_m2m() # super() will create new m2m relationships
 
     # Make this atomic since new m2m instances will need to be saved.
     @transaction.atomic
     def save(self, commit=True):
         super().save(commit=commit)
+        if commit:
+            self.instance.save(user=self.user)
+        return self.instance
 
     def m2m_instances_for_field(self, field_name, return_new=True):
         if field_name not in self.fields:
@@ -210,8 +214,8 @@ class ExperimentForm(DatasetModelForm):
         # so that all new instances are in the database before m2m
         # relationships are created.
         if 'target_organism' in self.fields:
-            for instance in self.cleaned_data.get('target_organism', []):
-                instance.save(commit=True)
+            for instance in self.cleaned_data.get('target_organism'):
+                instance.save()
             self.instance.clear_m2m('target_organism')
         super()._save_m2m()
 
@@ -344,7 +348,6 @@ class ScoreSetForm(DatasetModelForm):
         score_file = TextIOWrapper(score_file, encoding='utf-8')
         header, hgvs_score_map = validate_variant_rows(score_file)
         self.dataset_columns[constants.score_columns] = header
-        print(type(hgvs_score_map))
         return hgvs_score_map
 
     def clean_count_data(self):
@@ -362,8 +365,16 @@ class ScoreSetForm(DatasetModelForm):
         count_file = TextIOWrapper(count_file, encoding='utf-8')
         header, hgvs_count_map = validate_variant_rows(count_file)
         self.dataset_columns[constants.count_columns] = header
-        print(type(hgvs_count_map))
         return hgvs_count_map
+
+    @staticmethod
+    def _fill_in_missing(hgvs_keys, mapping):
+        # This function has side-effects - it creates new keys in the default
+        # dict `mapping`.
+        for key in hgvs_keys:
+            _ = mapping[key]
+            mapping[key][constants.hgvs_column] = key
+        return mapping
 
     def clean(self):
         if self.errors:
@@ -372,11 +383,17 @@ class ScoreSetForm(DatasetModelForm):
             return super().clean()
 
         cleaned_data = super().clean()
-        scores_required = self.fields["score_data"].required
-        hgvs_score_map = cleaned_data.get("score_data")
-        hgvs_count_map = cleaned_data.get("count_data")
+        score_data_field = self.fields.get("score_data", None)
+        scores_required = False if not score_data_field else \
+            score_data_field.required
+
+        hgvs_score_map = cleaned_data.get("score_data", {})
+        hgvs_count_map = cleaned_data.get("count_data", {})
+        hgvs_meta_map = cleaned_data.get("meta_data", {})
+
         has_score_data = len(hgvs_score_map) > 0
         has_count_data = len(hgvs_count_map) > 0
+        has_meta_data = len(hgvs_meta_map) > 0
 
         # In edit mode, we have relaxed the requirement of uploading a score
         # dataset since one already exists.
@@ -392,39 +409,34 @@ class ScoreSetForm(DatasetModelForm):
         # an accompanying score dataset, this error will be thrown. We could
         # relax this but there is the potential that the user might upload
         # a new count dataset and forget to upload a new score dataset.
-        if has_count_data and not has_score_data:
+        if (has_count_data or has_meta_data) and not has_score_data:
             raise ValidationError(
                 ugettext(
                     "You must upload an accompanying score data file when "
-                    "uploading a new count data file, or replacing an existing "
-                    "count dataset."
+                    "uploading a new count/meta data file, or replacing an "
+                    "existing one."
                 )
             )
 
         # TODO: Handle the cases where count/meta data is not posted
-        if has_score_data and has_count_data:
+        if has_count_data:
             # For every hgvs in scores but not in counts, fill in the
             # counts columns (if a counts dataset is supplied) with null values
-            for hgvs, _ in hgvs_score_map.items():
-                _ = hgvs_count_map[hgvs] # create entry in the defaultdict
-                hgvs_count_map[hgvs][constants.hgvs_column] = hgvs
-
+            self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
             # For every hgvs in counts but not in scores, fill in the
             # scores columns with null values.
-            for hgvs, _ in hgvs_count_map.items():
-                _ = hgvs_score_map[hgvs] # create entry in the defaultdict
-                hgvs_score_map[hgvs][constants.hgvs_column] = hgvs
+            self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
 
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
         # The reverse is not always true.
-        if has_score_data and has_count_data:
+        if has_score_data:
             validate_scoreset_json(self.dataset_columns)
             variants = dict()
 
             for hgvs in hgvs_score_map.keys():
                 scores_json = hgvs_score_map[hgvs]
-                counts_json = hgvs_count_map[hgvs]
+                counts_json = hgvs_count_map[hgvs] if has_count_data else {}
                 data = {
                     constants.variant_score_data: scores_json,
                     constants.variant_count_data: counts_json,
@@ -438,19 +450,20 @@ class ScoreSetForm(DatasetModelForm):
         return cleaned_data
 
     def _save_m2m(self):
-        self.instance.delete_variants()
-        for variant in self.get_variants():
-            variant.save(commit=True)
-            self.instance.variants.add(variant)
+        variants = self.get_variants()
+        if variants: # No variants if in edit mode and no new files uploaded.
+            self.instance.delete_variants()
+            for _, variant in variants.items():
+                variant.save()
+                self.instance.variants.add(variant)
         super()._save_m2m()
 
     @transaction.atomic
     def save(self, commit=True):
-        super().save(commit=commit)
+        return super().save(commit=commit)
 
     def get_variants(self):
-        if self.is_bound and self.is_valid():
-            return self.cleaned_data['variants']
+        return self.cleaned_data.get('variants', {})
 
     def set_replaces_options(self):
         if 'replaces' in self.fields:
@@ -488,9 +501,8 @@ class ScoreSetEditForm(ScoreSetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.edit_mode = True
-        self.fields['scores_data'].required = False
-        self.fields['counts_data'].required = False
-        self.fields['replaces'].required = False
-        self.fields['licence'].required = False
         self.fields.pop('experiment')
-
+        self.fields.pop('score_data')
+        self.fields.pop('count_data')
+        self.fields.pop('licence')
+        self.fields.pop('replaces')
