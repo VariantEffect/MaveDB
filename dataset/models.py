@@ -195,10 +195,14 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
-    keywords = models.ManyToManyField(Keyword, blank=True)
-    sra_ids = models.ManyToManyField(SraIdentifier, blank=True)
-    doi_ids = models.ManyToManyField(DoiIdentifier, blank=True)
-    pmid_ids = models.ManyToManyField(PubmedIdentifier, blank=True)
+    keywords = models.ManyToManyField(
+        Keyword, blank=True, verbose_name='Keywords')
+    sra_ids = models.ManyToManyField(
+        SraIdentifier, blank=True, verbose_name='SRA Identifiers')
+    doi_ids = models.ManyToManyField(
+        DoiIdentifier, blank=True, verbose_name='DOI Identifiers')
+    pmid_ids = models.ManyToManyField(
+        PubmedIdentifier, blank=True, verbose_name='PubMed Identifiers')
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -206,17 +210,14 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     @transaction.atomic
     def save(self, *args, **kwargs):
         self.last_edit_date = datetime.date.today()
+        if 'user' in kwargs:
+            self.last_edit_by = kwargs.pop('user')
         super().save(*args, **kwargs)
 
-    def update_last_edit_info(self, user):
-        self.last_edit_date = datetime.date.today()
-        self.last_edit_by = user
-        self.save()
-
-    def publish(self):
+    def publish(self, user):
         self.private = False
         self.publish_date = datetime.date.today()
-        self.save()
+        self.save(user=user)
 
     def md_abstract(self):
         return pandoc.convert_md_to_html(self.abstract_text)
