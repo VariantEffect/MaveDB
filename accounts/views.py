@@ -283,15 +283,13 @@ def handle_scoreset_edit_form(request, instance):
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
-            updated_instance.update_last_edit_info(request.user)
-            save_and_create_revision_if_tracked_changed(
-                request.user, updated_instance)
+            # save_and_create_revision_if_tracked_changed(
+            #     request.user, updated_instance)
             if request.POST.get("publish", None):
-                updated_instance.publish()
+                updated_instance.publish(user=request.user)
                 send_admin_email(request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
         else:
-            print(form.errors)
             keywords = request.POST.getlist("keywords")
             keywords = [kw for kw in keywords]
             context["repop_keywords"] = ','.join(keywords)
@@ -346,11 +344,9 @@ def handle_experiment_edit_form(request, instance):
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
-            updated_instance.update_last_edit_info(request.user)
-            save_and_create_revision_if_tracked_changed(
-                request.user, updated_instance)
-            return redirect(
-                "accounts:edit_instance", updated_instance.urn)
+            # save_and_create_revision_if_tracked_changed(
+            #     request.user, updated_instance)
+            return redirect("accounts:edit_instance", updated_instance.urn)
 
     return render(request, 'accounts/profile_edit.html', context)
 
