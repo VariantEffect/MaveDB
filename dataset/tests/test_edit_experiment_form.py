@@ -5,7 +5,7 @@
 # from ..forms import ExperimentEditForm
 #
 #
-# class TestScoreSetEditForm(TestCase):
+# class TestExperimentEditForm(TestCase):
 #
 #     @staticmethod
 #     def experiment():

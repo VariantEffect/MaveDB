@@ -1,4 +1,3 @@
-
 import datetime
 
 from django.contrib.auth.models import Group, Permission
@@ -42,13 +41,6 @@ class TestExperimentSet(TransactionTestCase):
         exps = ExperimentSet.objects.create()
         exps.publish()
         self.assertFalse(exps.private)
-
-    def test_can_create_minimal_experimentset(self):
-        ExperimentSet.objects.create()
-        expset = ExperimentSet.objects.all()[0]
-        self.assertEqual(expset.pk, 1)
-        self.assertEqual(expset.accession, self.expset_accession_1)
-        self.assertEqual(expset.experiment_set.count(), 0)
 
     def test_autoassign_accession_in_experimentset(self):
         expset1 = ExperimentSet.objects.create()
