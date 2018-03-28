@@ -159,7 +159,7 @@ class SearchForm(forms.Form):
             selected = set()
             entries = model.objects.none()
             model_author_ls = [
-                (m.pk, m.get_authors_by_full_name())
+                (m.pk, m.get_contributors_by_full_name())
                 for m in model.objects.all()
             ]
 
