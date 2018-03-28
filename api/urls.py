@@ -1,6 +1,11 @@
 from django.conf.urls import url, include
 
 
+from dataset.constants import (
+    scoreset_url_pattern, experiment_url_pattern,
+    experimentset_url_pattern, any_url_pattern
+)
+
 from .views import (
     users_all, user_by_username,
     experimentset_all, experimentset_by_urn,
@@ -22,7 +27,7 @@ urlpatterns = [
         name="serialize_all_experimentsets"
     ),
     url(
-        r"get/experimentset/(?P<urn>(EXPS|exp)\d{6})/$",
+        r"get/experimentset/(?P<urn>{})/$".format(experimentset_url_pattern),
         experimentset_by_urn,
         name="serialize_experimentset"
     ),
@@ -33,7 +38,7 @@ urlpatterns = [
         name="serialize_all_experiments"
     ),
     url(
-        r"get/experiment/(?P<urn>(EXP|exp)\d{6}[A-Z]+)/$",
+        r"get/experiment/(?P<urn>{})/$".format(experiment_url_pattern),
         experiment_by_urn,
         name="serialize_experiment"
     ),
@@ -41,17 +46,17 @@ urlpatterns = [
     # --- #
     url(r"get/scoreset/all/$", scoresets_all, name="serialize_all_scoresets"),
     url(
-        r"get/scoreset/(?P<urn>(SCS|scs)\d{6}[A-Z]+.\d+)/$",
+        r"get/scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
         scoreset_by_urn,
         name="serialize_scoreset"
     ),
     url(
-        r"get/scoreset/(?P<urn>(SCS|scs)\d{6}[A-Z]+.\d+)/scores/$",
+        r"get/scoreset/(?P<urn>{})/scores/$".format(scoreset_url_pattern),
         scoreset_score_data,
         name="api_download_score_data"
     ),
     url(
-        r"get/scoreset/(?P<urn>(SCS|scs)\d{6}[A-Z]+.\d+)/counts/$",
+        r"get/scoreset/(?P<urn>{})/counts/$".format(scoreset_url_pattern),
         scoreset_count_data,
         name="api_download_count_data"
     )
