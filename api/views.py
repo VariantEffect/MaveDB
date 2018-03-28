@@ -21,6 +21,9 @@ from accounts.permissions import (
     user_is_anonymous
 )
 
+# TODO: Refactor the *_by_* and *_all into a single function with a klass
+# parameter to avoid code duplication.
+
 User = get_user_model()
 
 
@@ -146,7 +149,7 @@ def scoreset_score_data(request, urn):
         response.status_code = 404
         return response
 
-    variants = scoreset.variant_set.all().order_by("urn")
+    variants = scoreset.variants.all().order_by("urn")
     columns = scoreset.dataset_columns[constants.score_columns]
 
     def gen_repsonse():
@@ -173,10 +176,10 @@ def scoreset_count_data(request, urn):
         response.status_code = 404
         return response
 
-    if not scoreset.has_counts_dataset():
+    if not scoreset.has_count_dataset:
         return StreamingHttpResponse("", content_type='text')
 
-    variants = scoreset.variant_set.all().order_by("urn")
+    variants = scoreset.variants.all().order_by("urn")
     columns = scoreset.dataset_columns[constants.count_columns]
 
     def gen_repsonse():
