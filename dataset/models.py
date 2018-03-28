@@ -207,25 +207,70 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        self.last_edit_date = datetime.date.today()
-        if 'user' in kwargs:
-            self.last_edit_by = kwargs.pop('user')
-        super().save(*args, **kwargs)
+    def propagate_set_value(self, attr, value):
+        """
+        Private method for setting fields that also need to propagate upwards.
+        For example, setting publishing a scoreset should also set the private
+        bits on the parent experiment and experimentset.
 
-    def publish(self, user=None):
-        self.private = False
-        self.publish_date = datetime.date.today()
-        if user:
-            self.save(user=user)
+        Parameters
+        ----------
+        attr : str
+            Field name to set attribute of.
+        value : any
+            Value to set.
+        """
+        if hasattr(self, attr):
+            self.__setattr__(attr, value)
+        if hasattr(self, 'experiment'):
+            self.experiment.propagate_set_value(attr, value)
+        if hasattr(self, 'experimentset'):
+            self.experimentset.propagate_set_value(attr, value)
+
+    @transaction.atomic
+    def save(self, save_parents=False, *args, **kwargs):
+        self.last_edit_date = datetime.date.today()
+        super().save(*args, **kwargs)
+        if save_parents:
+            self.save_parents(*args, **kwargs)
+
+    def save_parents(self, *args, **kwargs):
+        if hasattr(self, 'experiment'):
+            self.experiment.save(*args, **kwargs)
+            self.experiment.save_parents(*args, **kwargs)
+        if hasattr(self, 'experimentset'):
+            self.experimentset.save(*args, **kwargs)
+
+    def publish(self, propagate=True):
+        if propagate:
+            self.propagate_set_value('private', False)
+            self.propagate_set_value('publish_date', datetime.date.today())
         else:
-            self.save()
+            self.private = False
+            self.publish_date = datetime.date.today()
+
+    def set_last_edit_by(self, user, propagate=False):
+        if propagate:
+            self.propagate_set_value('last_edit_by', user)
+        else:
+            self.last_edit_by = user
+
+    def set_created_by(self, user, propagate=False):
+        if propagate:
+            self.propagate_set_value('created_by', user)
+        else:
+            self.created_by = user
+
+    def approve(self, propagate=True):
+        if propagate:
+            self.propagate_set_value('approved', False)
+        else:
+            self.approved = False
 
     def md_abstract(self):
         return pandoc.convert_md_to_html(self.abstract_text)
 
-    def md_methods(self):
+    def md_method(self):
         return pandoc.convert_md_to_html(self.method_text)
 
     def add_keyword(self, keyword):
@@ -233,9 +278,10 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             raise TypeError("`keyword` must be a Keyword instance.")
         self.keywords.add(keyword)
 
-    def add_external_accession(self, instance):
+    def add_identifier(self, instance):
         if not isinstance(instance, ExternalIdentifier):
-            raise TypeError("`instance` must be an ExternalIdentifier instance.")
+            raise TypeError(
+                "`instance` must be an ExternalIdentifier instance.")
 
         if isinstance(instance, SraIdentifier):
             self.sra_ids.add(instance)
@@ -251,9 +297,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
-
-    def get_keywords(self):
-        return ', '.join([kw.text for kw in self.keywords.all()])
 
 
 @reversion.register()
@@ -631,31 +674,6 @@ def create_groups_for_experiment(sender, instance, **kwargs):
 @receiver(post_save, sender=ScoreSet)
 def create_permission_groups_for_scoreset(sender, instance, **kwargs):
     create_all_groups_for_instance(instance)
-
-
-@receiver(post_save, sender=ScoreSet)
-def propagate_private_bit(sender, instance, **kwargs):
-    experiment = instance.experiment
-    experiment_is_private = all(
-        [s.private for s in experiment.scoresets.all()]
-    )
-    experiment_is_approved = any(
-        [s.approved for s in experiment.scoresets.all()]
-    )
-    experiment.private = experiment_is_private
-    experiment.approved = experiment_is_approved
-    experiment.save()
-
-    experimentset = experiment.experimentset
-    experimentset_is_private = all(
-        [e.private for e in experimentset.experiments.all()]
-    )
-    experimentset_is_approved = any(
-        [e.approved for e in experimentset.experiments.all()]
-    )
-    experimentset.private = experimentset_is_private
-    experimentset.approved = experimentset_is_approved
-    experimentset.save()
 
 
 # --------------------------------------------------------------------------- #
