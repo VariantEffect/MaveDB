@@ -14,7 +14,7 @@ from ..views import (
 
 import dataset.constants as constants
 from dataset.models import ExperimentSet, Experiment, ScoreSet
-from scoreset.tests.utility import make_score_count_files
+from dataset.tests.utility import make_score_count_files
 
 from ..permissions import (
     assign_user_as_instance_admin,
@@ -257,9 +257,31 @@ class TestProfileEditInstanceView(TestCase):
         self.assertFalse(obj.experiment.private)
         self.assertFalse(obj.experiment.experimentset.private)
 
+    def test_publishing_propagates_last_edit_by(self):
+        obj = scoreset()
+        exp = Experiment.objects.create(wt_sequence='atcg', target='brca1')
+        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_admin(self.alice, exp)
+
+        data, _ = self.make_scores_test_data()
+        score_file, count_file = make_score_count_files()
+        data['score_data'] = score_file
+        data['count_data'] = count_file
+        data['experiment'] = exp.pk
+        data['publish'] = ['publish']
+        path = '/accounts/profile/edit/{}/'.format(obj.urn)
+        self.client.login(username="alice", password="secret_key")
+        self.client.post(path=path, data=data)
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.last_edit_by, self.alice)
+        self.assertEqual(obj.experiment.last_edit_by, self.alice)
+        self.assertEqual(obj.experiment.experimentset.last_edit_by, self.alice)
+
     def test_requires_login(self):
         obj = experiment()
-        response = self.client.get('/accounts/profile/edit/{}/'.format(obj.urn))
+        response = self.client.get(
+            '/accounts/profile/edit/{}/'.format(obj.urn))
         self.assertEqual(response.status_code, 302)
 
     def test_can_defer_instance_type_from_urn(self):
@@ -277,7 +299,8 @@ class TestProfileEditInstanceView(TestCase):
 
     def test_404_edit_an_experimentset(self):
         obj = experimentset()
-        request = self.factory.get('/accounts/profile/edit/{}/'.format(obj.urn))
+        request = self.factory.get(
+            '/accounts/profile/edit/{}/'.format(obj.urn))
         request.user = self.alice
         response = edit_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 404)
@@ -298,7 +321,8 @@ class TestProfileEditInstanceView(TestCase):
         obj.private = False
         obj.save()
         assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.get('/accounts/profile/edit/{}/'.format(obj.urn))
+        request = self.factory.get(
+            '/accounts/profile/edit/{}/'.format(obj.urn))
         request.user = self.alice
         response = edit_instance(request, urn=obj.urn)
         self.assertNotContains(response, 'Target')
