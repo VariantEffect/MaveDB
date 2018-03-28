@@ -286,7 +286,9 @@ def handle_scoreset_edit_form(request, instance):
             # save_and_create_revision_if_tracked_changed(
             #     request.user, updated_instance)
             if request.POST.get("publish", None):
-                updated_instance.publish(user=request.user)
+                updated_instance.publish(propagate=True)
+                updated_instance.set_last_edit_by(request.user, propagate=True)
+                updated_instance.save(save_parents=True)
                 send_admin_email(request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
         else:
@@ -393,7 +395,7 @@ def view_instance(request, urn):
     return redirect(direct_to, urn=instance.urn)
 
 
-# Registration views
+# Registration views [DEBUG MODE ONLY]
 # ------------------------------------------------------------------------- #
 def registration_view(request):
     form = RegistrationForm()
