@@ -278,7 +278,7 @@ class ExperimentSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_experimentset],
-        **UrnModel.default_urn_kwargs,
+        **UrnModel.default_urn_kwargs
     )
 
     # ---------------------------------------------------------------------- #
@@ -347,7 +347,7 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_experiment],
-        **UrnModel.default_urn_kwargs,
+        **UrnModel.default_urn_kwargs
     )
 
     experimentset = models.ForeignKey(
@@ -477,7 +477,7 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_scoreset],
-        **UrnModel.default_urn_kwargs,
+        **UrnModel.default_urn_kwargs
     )
 
     experiment = models.ForeignKey(

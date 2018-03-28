@@ -40,7 +40,7 @@ class Variant(UrnModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_variant],
-        **UrnModel.default_urn_kwargs,
+        **UrnModel.default_urn_kwargs
     )
 
     hgvs = models.TextField(

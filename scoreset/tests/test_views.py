@@ -14,7 +14,7 @@ from dataset.models import Experiment
 from accounts.permissions import (
     user_is_admin_for_instance,
     assign_user_as_instance_admin,
-    assign_user_as_instance_author,
+    assign_user_as_instance_contributor,
     assign_user_as_instance_viewer
 )
 
