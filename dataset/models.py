@@ -214,10 +214,13 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             self.last_edit_by = kwargs.pop('user')
         super().save(*args, **kwargs)
 
-    def publish(self, user):
+    def publish(self, user=None):
         self.private = False
         self.publish_date = datetime.date.today()
-        self.save(user=user)
+        if user:
+            self.save(user=user)
+        else:
+            self.save()
 
     def md_abstract(self):
         return pandoc.convert_md_to_html(self.abstract_text)
@@ -536,6 +539,8 @@ class ScoreSet(DatasetModel):
 
         return urn
 
+    # Variant related methods
+    # ---------------------------------------------------------------------- #
     def has_variants(self):
         return self.variants.count() > 0
 
@@ -554,6 +559,8 @@ class ScoreSet(DatasetModel):
         })
         self.save()
 
+    # JSON field related methods
+    # ---------------------------------------------------------------------- #
     @property
     def score_columns(self):
         return self.dataset_columns[constants.score_columns]
@@ -578,14 +585,34 @@ class ScoreSet(DatasetModel):
     def has_metadata(self):
         return len(self.dataset_columns[constants.metadata_columns]) > 0
 
+    # replaced_by/replaces chain traversal
+    # ---------------------------------------------------------------------- #
+    @property
     def has_replacement(self):
-        return self.replaced_by is not None
+        return hasattr(self, 'replaced_by')
 
-    def get_current_replacement(self):
+    @property
+    def replaces_previous(self):
+        return hasattr(self, 'replaces')
+
+    @property
+    def current_version(self):
         next_instance = self
-        while next_instance.has_replacement():
-            next_instance = next_instance.replaced_by
+        while next_instance.next_version is not None:
+            next_instance = next_instance.next_version
         return next_instance
+
+    @property
+    def next_version(self):
+        if self.has_replacement:
+            return self.replaced_by
+        return None
+
+    @property
+    def previous_version(self):
+        if self.replaces_previous:
+            return self.replaces
+        return None
 
 
 # --------------------------------------------------------------------------- #
