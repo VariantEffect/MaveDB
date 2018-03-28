@@ -109,7 +109,7 @@ class TestExperimentSetAPIViews(TestCase):
     def test_404_private_experimentset(self):
         exps = make_experimentset()
         response = self.client.get(
-            "/api/get/experimentset/{}/".format(exps.accession)
+            "/api/get/experimentset/{}/".format(exps.urn)
         )
         self.assertEqual(response.status_code, 404)
 
@@ -130,7 +130,7 @@ class TestExperimentAPIViews(TestCase):
     def test_404_private(self):
         instance = make_experiment()
         response = self.client.get(
-            "/api/get/experimentset/{}/".format(instance.accession)
+            "/api/get/experimentset/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
@@ -151,21 +151,21 @@ class TestScoreSetAPIViews(TestCase):
     def test_404_private(self):
         instance = make_scoreset()
         response = self.client.get(
-            "/api/get/scoreset/{}/".format(instance.accession)
+            "/api/get/scoreset/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
     def test_404_private_download_scores(self):
         instance = make_scoreset()
         response = self.client.get(
-            "/api/get/scoreset/{}/scores/".format(instance.accession)
+            "/api/get/scoreset/{}/scores/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
     def test_404_private_download_counts(self):
         instance = make_scoreset()
         response = self.client.get(
-            "/api/get/scoreset/{}/counts/".format(instance.accession)
+            "/api/get/scoreset/{}/counts/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
@@ -173,7 +173,7 @@ class TestScoreSetAPIViews(TestCase):
         instance = make_scoreset()
         instance.publish()
         response = self.client.get(
-            "/api/get/scoreset/{}/counts/".format(instance.accession)
+            "/api/get/scoreset/{}/counts/".format(instance.urn)
         )
         self.assertEqual(list(response.streaming_content), [])
 
@@ -197,7 +197,7 @@ class TestScoreSetAPIViews(TestCase):
             }
         )
         response = self.client.get(
-            "/api/get/scoreset/{}/scores/".format(scs.accession)
+            "/api/get/scoreset/{}/scores/".format(scs.urn)
         )
         self.assertEqual(
             list(response.streaming_content),
@@ -220,7 +220,7 @@ class TestScoreSetAPIViews(TestCase):
             }
         )
         response = self.client.get(
-            "/api/get/scoreset/{}/counts/".format(scs.accession)
+            "/api/get/scoreset/{}/counts/".format(scs.urn)
         )
         self.assertEqual(
             list(response.streaming_content),

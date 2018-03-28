@@ -35,7 +35,7 @@ def make_scoreset(experiment=None, replaces=None):
     if not experiment:
         experiment = make_experiment()
     scs = ScoreSet.objects.create(experiment=experiment, replaces=replaces)
-    scs.licence_type = Licence.get_default()
+    scs.licence = Licence.get_default()
     scs.save()
     return scs
 
@@ -44,19 +44,21 @@ class TestExperimentSetSerializer(TestCase):
 
     def test_can_correctly_serialize_instance(self):
         experiment = make_experiment()
-        experiment.publish()
         instance = experiment.experimentset
-        instance.publish()
+
         alice = User.objects.create(username="alice")
         bob = User.objects.create(username="bob")
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
+        experiment.publish(alice)
+        instance.publish(alice)
+
         serializer = ExperimentSetSerializer()
         expected = {
-            "authors": ["alice"],
-            "urn": instance.accession,
-            "experiments": [experiment.accession]
+            "contributors": ["alice"],
+            "urn": instance.urn,
+            "experiments": [experiment.urn]
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -72,8 +74,8 @@ class TestExperimentSetSerializer(TestCase):
 
         serializer = ExperimentSetSerializer()
         expected = {
-            "authors": ["alice"],
-            "urn": instance.accession,
+            "contributors": ["alice"],
+            "urn": instance.urn,
             "experiments": []
         }
         result = serializer.serialize(instance.pk)
@@ -102,13 +104,13 @@ class TestExperimentSetSerializer(TestCase):
         expected = {
             "experimentsets": [
                 {
-                    "authors": [],
-                    "urn": instances[0].accession,
+                    "contributors": [],
+                    "urn": instances[0].urn,
                     "experiments": []
                 },
                 {
-                    "authors": [],
-                    "urn": instances[1].accession,
+                    "contributors": [],
+                    "urn": instances[1].urn,
                     "experiments": []
                 }
             ]
@@ -122,19 +124,19 @@ class TestExperimentSerializer(TestCase):
     def test_can_correctly_serialize_instance(self):
         instance = make_experiment()
         scoreset_1 = make_scoreset(experiment=instance)
-        scoreset_1.publish()
 
         alice = User.objects.create(username="alice")
         bob = User.objects.create(username="bob")
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
+        scoreset_1.publish(alice)
         serializer = ExperimentSerializer()
         expected = {
-            "authors": ["alice"],
-            "experimentset": instance.experimentset.accession,
-            "urn": instance.accession,
-            "scoresets": [scoreset_1.accession]
+            "contributors": ["alice"],
+            "experimentset": instance.experimentset.urn,
+            "urn": instance.urn,
+            "scoresets": [scoreset_1.urn]
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -150,9 +152,9 @@ class TestExperimentSerializer(TestCase):
 
         serializer = ExperimentSerializer()
         expected = {
-            "authors": ["alice"],
-            "experimentset": instance.experimentset.accession,
-            "urn": instance.accession,
+            "contributors": ["alice"],
+            "experimentset": instance.experimentset.urn,
+            "urn": instance.urn,
             "scoresets": []
         }
         result = serializer.serialize(instance.pk)
@@ -179,7 +181,7 @@ class TestExperimentSerializer(TestCase):
         scoreset_2.publish()
 
         serializer = ExperimentSerializer()
-        expected = [scoreset_1.accession]
+        expected = [scoreset_1.urn]
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result['scoresets'])
 
@@ -193,15 +195,15 @@ class TestExperimentSerializer(TestCase):
         expected = {
             "experiments": [
                 {
-                    "authors": [],
-                    "urn": instances[0].accession,
-                    "experimentset": instances[0].experimentset.accession,
+                    "contributors": [],
+                    "urn": instances[0].urn,
+                    "experimentset": instances[0].experimentset.urn,
                     "scoresets": []
                 },
                 {
-                    "authors": [],
-                    "urn": instances[1].accession,
-                    "experimentset": instances[1].experimentset.accession,
+                    "contributors": [],
+                    "urn": instances[1].urn,
+                    "experimentset": instances[1].experimentset.urn,
                     "scoresets": []
                 }
             ]
@@ -215,13 +217,13 @@ class TestScoreSetSerializer(TestCase):
     def test_can_serialize_minimal_example(self):
         instance = make_scoreset()
         expected = {
-            "urn": instance.accession,
-            "authors": [],
-            "current_version": instance.accession,
-            "replaced_by": '',
-            "replaces": '',
+            "urn": instance.urn,
+            "contributors": [],
+            "current_version": instance.urn,
+            "replaced_by": None,
+            "replaces": None,
             "licence": [
-                instance.licence_type.short_name, instance.licence_type.link,
+                instance.licence.short_name, instance.licence.link,
             ],
             "score_columns": [],
             "count_columns": []
@@ -265,14 +267,14 @@ class TestScoreSetSerializer(TestCase):
         instance_2 = make_scoreset(instance_1.experiment, instance_1)
         instance_3 = make_scoreset(instance_2.experiment, instance_2)
 
-        expected = instance_3.accession
+        expected = instance_3.urn
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_1.pk)
         self.assertEqual(expected, result['current_version'])
 
-    def test_empty_string_no_replaced_by(self):
+    def test_value_is_null_when_no_next_version(self):
         instance = make_scoreset()
-        expected = ''
+        expected = None
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result['replaced_by'])
@@ -280,26 +282,25 @@ class TestScoreSetSerializer(TestCase):
     def test_correct_replaced_by(self):
         instance_1 = make_scoreset()
         instance_2 = make_scoreset(instance_1.experiment, instance_1)
-        expected = instance_2.accession
+        expected = instance_2.urn
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_1.pk)
         self.assertEqual(expected, result['replaced_by'])
 
-    def test_empty_string_no_replaces(self):
+    def test_value_is_null_when_no_previous_version(self):
         instance = make_scoreset()
         serializer = ScoreSetSerializer()
-        expected = ''
+        expected = None
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result['replaces'])
 
-    def test_correct_replaces(self):
+    def test_replaces_is_none_when_no_it_does_not_replace_any_instance(self):
         instance_1 = make_scoreset()
         instance_2 = make_scoreset(instance_1.experiment, instance_1)
 
-        expected = instance_1.accession
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_2.pk)
-        self.assertEqual(expected, result['replaces'])
+        self.assertEqual(instance_1.urn, result['replaces'])
 
 
 class TestUserSerializer(TestCase):
@@ -323,9 +324,9 @@ class TestUserSerializer(TestCase):
             "username": "alice",
             "first_name": "Alice",
             "last_name": "",
-            "experimentsets": [exps.accession],
-            "experiments": [exp.accession],
-            "scoresets": [scs.accession],
+            "experimentsets": [exps.urn],
+            "experiments": [exp.urn],
+            "scoresets": [scs.urn],
         }
         self.assertEqual(expected, result)
 
@@ -345,7 +346,7 @@ class TestUserSerializer(TestCase):
 
         serializer = UserSerializer()
         result = serializer.serialize(self.alice.pk)
-        expected = [instance_2.accession]
+        expected = [instance_2.urn]
         self.assertEqual(expected, result["experimentsets"])
 
     def test_can_filter_out_private_exp_admin_instances(self):
@@ -358,7 +359,7 @@ class TestUserSerializer(TestCase):
 
         serializer = UserSerializer()
         result = serializer.serialize(self.alice.pk)
-        expected = [instance_2.accession]
+        expected = [instance_2.urn]
         self.assertEqual(expected, result["experiments"])
 
     def test_can_filter_out_private_scs_admin_instances(self):
@@ -371,7 +372,7 @@ class TestUserSerializer(TestCase):
 
         serializer = UserSerializer()
         result = serializer.serialize(self.alice.pk)
-        expected = [instance_2.accession]
+        expected = [instance_2.urn]
         self.assertEqual(expected, result["scoresets"])
 
     def test_only_show_admin_experimentsets(self):
@@ -383,7 +384,7 @@ class TestUserSerializer(TestCase):
 
         serializer = UserSerializer()
         result = serializer.serialize(self.alice.pk, False)
-        expected = [instance_2.accession]
+        expected = [instance_2.urn]
         self.assertEqual(expected, result["experimentsets"])
 
     def test_only_show_admin_experiments(self):
@@ -395,7 +396,7 @@ class TestUserSerializer(TestCase):
 
         serializer = UserSerializer()
         result = serializer.serialize(self.alice.pk, False)
-        expected = [instance_2.accession]
+        expected = [instance_2.urn]
         self.assertEqual(expected, result["experiments"])
 
     def test_only_show_admin_scoresets(self):
@@ -407,5 +408,5 @@ class TestUserSerializer(TestCase):
 
         serializer = UserSerializer()
         result = serializer.serialize(self.alice.pk, False)
-        expected = [instance_2.accession]
+        expected = [instance_2.urn]
         self.assertEqual(expected, result["scoresets"])
