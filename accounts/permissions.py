@@ -62,14 +62,12 @@ class GroupTypes:
 # Utilities
 # --------------------------------------------------------------------------- #
 def valid_model_instance(instance):
-    from dataset.models import Experiment, ExperimentSet, ScoreSet
+    from dataset.models import DatasetModel
     if not hasattr(instance, 'urn'):
         return False
     if not getattr(instance, 'urn'):
         return False
-    if not isinstance(instance, Experiment) and \
-            not isinstance(instance, ExperimentSet) and \
-            not isinstance(instance, ScoreSet):
+    if not isinstance(instance, DatasetModel):
         return False
     return True
 
