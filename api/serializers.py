@@ -41,9 +41,9 @@ class ExperimentSetSerializer(Serializer):
 
         return {
             "urn": instance.urn,
-            "authors": instance.get_authors_by_username(string=False),
+            "contributors": instance.get_contributors_by_username(string=False),
             "experiments": [
-                e.urn for e in instance.experiment_set.all()
+                e.urn for e in instance.experiments.all()
                 if not (e.private and filter_private)
             ]
         }
@@ -69,11 +69,11 @@ class ExperimentSerializer(Serializer):
 
         return {
             "urn": instance.urn,
-            "authors": instance.get_authors_by_username(string=False),
+            "contributors": instance.get_contributors_by_username(string=False),
             "experimentset": instance.experimentset.urn,
             "scoresets": [
-                s.get_latest_version().urn
-                for s in instance.scoreset_set.all()
+                s.current_version.urn
+                for s in instance.scoresets.all()
                 if not (s.private and filter_private)
             ]
         }
@@ -97,22 +97,25 @@ class ScoreSetSerializer(Serializer):
         except ObjectDoesNotExist:
             return {}
 
-        replaced_by = instance.get_replaced_by()
-        replaces = instance.replaces
-        replaced_by = '' if not replaced_by else replaced_by.urn
-        replaces = '' if not replaces else replaces.urn
+        replaced_by = instance.next_version
+        replaced_by = None if not replaced_by else replaced_by.urn
+
+        replaces = instance.previous_version
+        replaces = None if not replaces else replaces.urn
 
         return {
             "urn": instance.urn,
-            "authors": instance.get_authors_by_username(string=False),
+            "contributors": instance.get_contributors_by_username(
+                string=False),
             "replaced_by": replaced_by,
             "replaces": replaces,
             "licence": [
-                instance.licence_type.short_name, instance.licence_type.link,
+                instance.licence.short_name,
+                instance.licence.link,
             ],
-            "current_version": instance.get_latest_version().urn,
-            "score_columns": instance.scores_columns,
-            "count_columns": instance.counts_columns
+            "current_version": instance.current_version.urn,
+            "score_columns": instance.score_columns,
+            "count_columns": instance.count_columns
         }
 
     def serialize_set(self, queryset):
