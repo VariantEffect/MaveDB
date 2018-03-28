@@ -133,14 +133,17 @@ class DatasetModelForm(forms.ModelForm):
                 for instance in self.cleaned_data.get(m2m_field, []):
                     instance.save()
                 self.instance.clear_m2m(m2m_field)
-        super()._save_m2m() # super() will create new m2m relationships
+        super()._save_m2m()  # super() will create new m2m relationships
 
     # Make this atomic since new m2m instances will need to be saved.
     @transaction.atomic
     def save(self, commit=True):
         super().save(commit=commit)
         if commit:
-            self.instance.save(user=self.user)
+            self.instance.set_last_edit_by(self.user)
+            if not hasattr(self, 'edit_mode'):
+                self.instance.set_created_by(self.user)
+            self.instance.save()
         return self.instance
 
     def m2m_instances_for_field(self, field_name, return_new=True):
@@ -193,13 +196,16 @@ class ExperimentForm(DatasetModelForm):
         self.fields['wt_sequence'].widget = forms.Textarea(
             attrs={"class": "form-control"})
 
-        # TODO: This will become a Foreign Key field when Target becomes a table
+        # TODO: This will become a Foreign Key field when
+        # Target becomes a table
         self.fields['target'].widget = forms.TextInput(
             attrs={"class": "form-control"})
 
         self.fields["target"].validators.append(validate_target_gene)
-        self.fields["target_organism"].validators.append(validate_target_organism)
-        self.fields["wt_sequence"].validators.append(validate_wildtype_sequence)
+        self.fields["target_organism"].validators.append(
+            validate_target_organism)
+        self.fields["wt_sequence"].validators.append(
+            validate_wildtype_sequence)
 
         self.fields["target_organism"].queryset = TargetOrganism.objects.all()
         # Populate the experimentset drop down with a list of experimentsets
@@ -245,6 +251,7 @@ class ExperimentEditForm(ExperimentForm):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.edit_mode = True
         self.fields.pop('target_organism')
         self.fields.pop('target')
         self.fields.pop('wt_sequence')
@@ -451,7 +458,7 @@ class ScoreSetForm(DatasetModelForm):
 
     def _save_m2m(self):
         variants = self.get_variants()
-        if variants: # No variants if in edit mode and no new files uploaded.
+        if variants:  # No variants if in edit mode and no new files uploaded.
             self.instance.delete_variants()
             for _, variant in variants.items():
                 variant.save()
