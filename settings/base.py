@@ -1,6 +1,7 @@
 # settings/base.py
 
 import os
+import sys
 import json
 
 from django.core.exceptions import ImproperlyConfigured
@@ -73,8 +74,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'mod_wsgi.server',
+    'django.contrib.staticfiles'
 ]
 
 AUTHENTICATION_BACKENDS = (

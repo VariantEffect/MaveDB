@@ -6,9 +6,10 @@ DEBUG = True
 
 USE_SOCIAL_AUTH = False
 
-os.environ.setdefault('PYPANDOC_PANDOC', '/anaconda/bin/pandoc')
+if sys.platform != 'win32':
+    os.environ.setdefault('PYPANDOC_PANDOC', '/anaconda/bin/pandoc')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
