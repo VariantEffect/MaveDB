@@ -19,7 +19,7 @@ from guardian.conf.settings import ANONYMOUS_USER_NAME
 from .permissions import (
     GroupTypes,
     update_admin_list_for_instance,
-    update_author_list_for_instance,
+    update_contributor_list_for_instance,
     update_viewer_list_for_instance,
     valid_model_instance,
     valid_group_type
@@ -80,7 +80,7 @@ class SelectUsersForm(forms.Form):
             if group == GroupTypes.ADMIN:
                 initial = [u.pk for u in instance.administrators()]
                 kwargs["initial"] = {"users": initial}
-            elif group == GroupTypes.AUTHOR:
+            elif group == GroupTypes.CONTRIBUTOR:
                 initial = [u.pk for u in instance.authors()]
                 kwargs["initial"] = {"users": initial}
             elif group == GroupTypes.VIEWER:
@@ -106,7 +106,7 @@ class SelectUsersForm(forms.Form):
                 )
 
         if users is not None:
-            if self.group in [GroupTypes.AUTHOR, GroupTypes.VIEWER]:
+            if self.group in [GroupTypes.CONTRIBUTOR, GroupTypes.VIEWER]:
                 admins = self.instance.administrators()
                 if admins.count() == 1 and admins[0] in users:
                     raise ValidationError(
@@ -126,8 +126,8 @@ class SelectUsersForm(forms.Form):
             users = self.clean().get("users", [])
             if self.group == GroupTypes.ADMIN:
                 update_admin_list_for_instance(users, self.instance)
-            elif self.group == GroupTypes.AUTHOR:
-                update_author_list_for_instance(users, self.instance)
+            elif self.group == GroupTypes.CONTRIBUTOR:
+                update_contributor_list_for_instance(users, self.instance)
             elif self.group == GroupTypes.VIEWER:
                 update_viewer_list_for_instance(users, self.instance)
 

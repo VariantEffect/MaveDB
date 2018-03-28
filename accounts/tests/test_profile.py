@@ -9,10 +9,10 @@ from dataset.models import ExperimentSet, Experiment, ScoreSet
 from ..models import Profile, user_is_anonymous
 from ..permissions import (
     assign_user_as_instance_admin,
-    assign_user_as_instance_author,
+    assign_user_as_instance_contributor,
     assign_user_as_instance_viewer,
     remove_user_as_instance_admin,
-    remove_user_as_instance_author,
+    remove_user_as_instance_contributor,
     remove_user_as_instance_viewer
 )
 
@@ -71,16 +71,16 @@ class TestUserProfile(TestCase):
     def test_can_get_all_experimentsets_user_is_admin_on(self):
         bob = User.objects.create(username="bob")
         assign_user_as_instance_admin(bob, self.exps_1)
-        assign_user_as_instance_author(bob, self.exps_2)
+        assign_user_as_instance_contributor(bob, self.exps_2)
         bobs_exps = bob.profile.administrator_experimentsets()
         self.assertEqual(len(bobs_exps), 1)
         self.assertEqual(bobs_exps[0], self.exps_1)
 
-    def test_can_get_all_experimentsets_user_is_author_on(self):
+    def test_can_get_all_experimentsets_user_is_contributor_on(self):
         bob = User.objects.create(username="bob")
-        assign_user_as_instance_author(bob, self.exps_1)
+        assign_user_as_instance_contributor(bob, self.exps_1)
         assign_user_as_instance_admin(bob, self.exps_2)
-        bobs_exps = bob.profile.author_experimentsets()
+        bobs_exps = bob.profile.contributor_experimentsets()
         self.assertEqual(len(bobs_exps), 1)
         self.assertEqual(bobs_exps[0], self.exps_1)
 
@@ -96,16 +96,16 @@ class TestUserProfile(TestCase):
     def test_can_get_all_experiments_user_is_admin_on(self):
         bob = User.objects.create(username="bob")
         assign_user_as_instance_admin(bob, self.exp_1)
-        assign_user_as_instance_author(bob, self.exp_2)
+        assign_user_as_instance_contributor(bob, self.exp_2)
         bobs_exp = bob.profile.administrator_experiments()
         self.assertEqual(len(bobs_exp), 1)
         self.assertEqual(bobs_exp[0], self.exp_1)
 
-    def test_can_get_all_experiments_user_is_author_on(self):
+    def test_can_get_all_experiments_user_is_contributor_on(self):
         bob = User.objects.create(username="bob")
-        assign_user_as_instance_author(bob, self.exp_1)
+        assign_user_as_instance_contributor(bob, self.exp_1)
         assign_user_as_instance_admin(bob, self.exp_2)
-        bobs_exp = bob.profile.author_experiments()
+        bobs_exp = bob.profile.contributor_experiments()
         self.assertEqual(len(bobs_exp), 1)
         self.assertEqual(bobs_exp[0], self.exp_1)
 
@@ -121,16 +121,16 @@ class TestUserProfile(TestCase):
     def test_can_get_all_scoresets_user_is_admin_on(self):
         bob = User.objects.create(username="bob")
         assign_user_as_instance_admin(bob, self.scs_1)
-        assign_user_as_instance_author(bob, self.scs_2)
+        assign_user_as_instance_contributor(bob, self.scs_2)
         bobs_scs = bob.profile.administrator_scoresets()
         self.assertEqual(len(bobs_scs), 1)
         self.assertEqual(bobs_scs[0], self.scs_1)
 
-    def test_can_get_all_scoresets_user_is_author_on(self):
+    def test_can_get_all_scoresets_user_is_contributor_on(self):
         bob = User.objects.create(username="bob")
-        assign_user_as_instance_author(bob, self.scs_1)
+        assign_user_as_instance_contributor(bob, self.scs_1)
         assign_user_as_instance_admin(bob, self.scs_2)
-        bobs_scs = bob.profile.author_scoresets()
+        bobs_scs = bob.profile.contributor_scoresets()
         self.assertEqual(len(bobs_scs), 1)
         self.assertEqual(bobs_scs[0], self.scs_1)
 
@@ -149,11 +149,11 @@ class TestUserProfile(TestCase):
         self.assertEqual(len(bob.profile.administrator_experimentsets()), 0)
         self.assertEqual(len(bob.profile.administrator_experiments()), 0)
 
-    def test_empty_list_not_author_on_anything(self):
+    def test_empty_list_not_contributor_on_anything(self):
         bob = User.objects.create(username="bob")
-        self.assertEqual(len(bob.profile.author_scoresets()), 0)
-        self.assertEqual(len(bob.profile.author_experimentsets()), 0)
-        self.assertEqual(len(bob.profile.author_experiments()), 0)
+        self.assertEqual(len(bob.profile.contributor_scoresets()), 0)
+        self.assertEqual(len(bob.profile.contributor_experimentsets()), 0)
+        self.assertEqual(len(bob.profile.contributor_experiments()), 0)
 
     def test_empty_list_not_viewer_on_anything(self):
         bob = User.objects.create(username="bob")
@@ -170,13 +170,13 @@ class TestUserProfile(TestCase):
         remove_user_as_instance_admin(bob, self.exps_1)
         self.assertEqual(len(bob.profile.administrator_experimentsets()), 0)
 
-    def test_can_remove_user_as_author(self):
+    def test_can_remove_user_as_contributor(self):
         bob = User.objects.create(username="bob")
-        assign_user_as_instance_author(bob, self.exps_1)
-        self.assertEqual(len(bob.profile.author_experimentsets()), 1)
+        assign_user_as_instance_contributor(bob, self.exps_1)
+        self.assertEqual(len(bob.profile.contributor_experimentsets()), 1)
 
-        remove_user_as_instance_author(bob, self.exps_1)
-        self.assertEqual(len(bob.profile.author_experimentsets()), 0)
+        remove_user_as_instance_contributor(bob, self.exps_1)
+        self.assertEqual(len(bob.profile.contributor_experimentsets()), 0)
 
     def test_can_remove_user_as_viewer(self):
         bob = User.objects.create(username="bob")

@@ -72,17 +72,17 @@ class Profile(models.Model):
 
     def experimentsets(self):
         return self.administrator_experimentsets() + \
-            self.author_experimentsets() + \
+            self.contributor_experimentsets() + \
             self.viewer_experimentsets()
 
     def experiments(self):
         return self.administrator_experiments() + \
-            self.author_experiments() + \
+            self.contributor_experiments() + \
             self.viewer_experiments()
 
     def scoresets(self):
         return self.administrator_scoresets() + \
-            self.author_scoresets() + \
+            self.contributor_scoresets() + \
             self.viewer_scoresets()
 
     def administrator_instances(self):
@@ -90,10 +90,10 @@ class Profile(models.Model):
             self.administrator_experiments() + \
             self.administrator_scoresets()
 
-    def author_instances(self):
-        return self.author_experimentsets() + \
-            self.author_experiments() + \
-            self.author_scoresets()
+    def contributor_instances(self):
+        return self.contributor_experimentsets() + \
+            self.contributor_experiments() + \
+            self.contributor_scoresets()
 
     def viewer_instances(self):
         return self.viewer_experimentsets() + \
@@ -109,11 +109,11 @@ class Profile(models.Model):
             group_type=GroupTypes.ADMIN
         )
 
-    def author_experimentsets(self):
+    def contributor_experimentsets(self):
         return instances_for_user_with_group_permission(
             user=self.user,
             model=ExperimentSet,
-            group_type=GroupTypes.AUTHOR
+            group_type=GroupTypes.CONTRIBUTOR
         )
 
     def viewer_experimentsets(self):
@@ -132,11 +132,11 @@ class Profile(models.Model):
             group_type=GroupTypes.ADMIN
         )
 
-    def author_experiments(self):
+    def contributor_experiments(self):
         return instances_for_user_with_group_permission(
             user=self.user,
             model=Experiment,
-            group_type=GroupTypes.AUTHOR
+            group_type=GroupTypes.CONTRIBUTOR
         )
 
     def viewer_experiments(self):
@@ -155,11 +155,11 @@ class Profile(models.Model):
             group_type=GroupTypes.ADMIN
         )
 
-    def author_scoresets(self):
+    def contributor_scoresets(self):
         return instances_for_user_with_group_permission(
             user=self.user,
             model=ScoreSet,
-            group_type=GroupTypes.AUTHOR
+            group_type=GroupTypes.CONTRIBUTOR
         )
 
     def viewer_scoresets(self):

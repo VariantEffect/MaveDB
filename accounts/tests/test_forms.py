@@ -1,4 +1,3 @@
-
 from django.http import QueryDict
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -10,10 +9,10 @@ from ..permissions import (
     GroupTypes,
     user_is_anonymous,
     user_is_admin_for_instance,
-    user_is_author_for_instance,
+    user_is_contributor_for_instance,
     user_is_viewer_for_instance,
     assign_user_as_instance_admin,
-    assign_user_as_instance_author,
+    assign_user_as_instance_contributor,
     assign_user_as_instance_viewer
 )
 
@@ -48,7 +47,7 @@ class TestSelectUsersForm(TestCase):
 
         form = SelectUsersForm(
             data={},
-            group=GroupTypes.AUTHOR,
+            group=GroupTypes.CONTRIBUTOR,
             instance=instance,
             required=False
         )
@@ -79,7 +78,7 @@ class TestSelectUsersForm(TestCase):
         assign_user_as_instance_admin(self.alice, instance)
         form = SelectUsersForm(
             data={"users": [self.alice.pk]},
-            group=GroupTypes.AUTHOR,
+            group=GroupTypes.CONTRIBUTOR,
             instance=instance,
             required=False
         )
@@ -100,12 +99,12 @@ class TestSelectUsersForm(TestCase):
         assign_user_as_instance_viewer(self.alice, instance)
         form = SelectUsersForm(
             data={"users": [self.alice.pk]},
-            group=GroupTypes.AUTHOR,
+            group=GroupTypes.CONTRIBUTOR,
             instance=instance,
             required=False
         )
         form.process_user_list()
-        self.assertTrue(user_is_author_for_instance(self.alice, instance))
+        self.assertTrue(user_is_contributor_for_instance(self.alice, instance))
 
     def test_anon_not_in_queryset(self):
         instance = Experiment.objects.create(target="test", wt_sequence="atcg")
