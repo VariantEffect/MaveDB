@@ -51,8 +51,8 @@ class TestExperimentSetSerializer(TestCase):
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
-        experiment.publish(alice)
-        instance.publish(alice)
+        experiment.publish(propagate=True)
+        experiment.save(save_parents=True)
 
         serializer = ExperimentSetSerializer()
         expected = {
@@ -130,7 +130,9 @@ class TestExperimentSerializer(TestCase):
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
-        scoreset_1.publish(alice)
+        scoreset_1.publish(propagate=True)
+        scoreset_1.save(save_parents=True)
+
         serializer = ExperimentSerializer()
         expected = {
             "contributors": ["alice"],
@@ -177,8 +179,12 @@ class TestExperimentSerializer(TestCase):
         instance = make_experiment()
         scoreset_1 = make_scoreset(experiment=instance)
         scoreset_2 = make_scoreset()  # not associated
-        scoreset_1.publish()
-        scoreset_2.publish()
+
+        scoreset_1.publish(propagate=True)
+        scoreset_1.save(save_parents=True)
+
+        scoreset_2.publish(propagate=True)
+        scoreset_2.save(save_parents=True)
 
         serializer = ExperimentSerializer()
         expected = [scoreset_1.urn]
@@ -339,7 +345,9 @@ class TestUserSerializer(TestCase):
     def test_can_filter_out_private_exps_admin_instances(self):
         instance_1 = make_experimentset()
         instance_2 = make_experimentset()
-        instance_2.publish()
+
+        instance_2.publish(propagate=True)
+        instance_2.save(save_parents=True)
 
         assign_user_as_instance_admin(self.alice, instance_1)
         assign_user_as_instance_admin(self.alice, instance_2)
@@ -352,7 +360,9 @@ class TestUserSerializer(TestCase):
     def test_can_filter_out_private_exp_admin_instances(self):
         instance_1 = make_experiment()
         instance_2 = make_experiment()
-        instance_2.publish()
+
+        instance_2.publish(propagate=True)
+        instance_2.save(save_parents=True)
 
         assign_user_as_instance_admin(self.alice, instance_1)
         assign_user_as_instance_admin(self.alice, instance_2)
@@ -365,7 +375,9 @@ class TestUserSerializer(TestCase):
     def test_can_filter_out_private_scs_admin_instances(self):
         instance_1 = make_scoreset()
         instance_2 = make_scoreset()
-        instance_2.publish()
+
+        instance_2.publish(propagate=True)
+        instance_2.save(save_parents=True)
 
         assign_user_as_instance_admin(self.alice, instance_1)
         assign_user_as_instance_admin(self.alice, instance_2)

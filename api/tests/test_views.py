@@ -1,12 +1,10 @@
 import json
 
 from django.test import TestCase
-from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
 
 from accounts.permissions import (
-    assign_user_as_instance_admin,
-    assign_user_as_instance_viewer
+    assign_user_as_instance_admin
 )
 
 import dataset.constants as constants
@@ -14,13 +12,6 @@ import dataset.constants as constants
 from dataset.models import Experiment, ExperimentSet, ScoreSet
 from variant.models import Variant
 
-
-from ..serializers import (
-    ExperimentSerializer,
-    ExperimentSetSerializer,
-    ScoreSetSerializer,
-    UserSerializer
-)
 
 User = get_user_model()
 
@@ -78,7 +69,9 @@ class TestUserAPIViews(TestCase):
         scs_2 = make_scoreset()
         assign_user_as_instance_admin(self.alice, scs_1)
         assign_user_as_instance_admin(self.alice, scs_2)
-        scs_2.publish()
+
+        scs_2.publish(propagate=True)
+        scs_2.save(save_parents=True)
 
         response = self.client.get("/api/get/user/alice/")
         result = json.loads(response.content.decode('utf-8'))
@@ -171,7 +164,8 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_empty_text_response_download_counts_but_has_no_counts(self):
         instance = make_scoreset()
-        instance.publish()
+        instance.publish(propagate=True)
+        instance.save(save_parents=True)
         response = self.client.get(
             "/api/get/scoreset/{}/counts/".format(instance.urn)
         )
@@ -183,7 +177,8 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_scores(self):
         scs = make_scoreset()
-        scs.publish()
+        scs.publish(propagate=True)
+        scs.save(save_parents=True)
         scs.dataset_columns = {
             constants.score_columns: ["hgvs", "score"],
             constants.count_columns: ["hgvs", "count"]
@@ -206,12 +201,12 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_counts(self):
         scs = make_scoreset()
-        scs.publish()
+        scs.publish(propagate=True)
         scs.dataset_columns = {
             constants.score_columns: ["hgvs", "score"],
             constants.count_columns: ["hgvs", "count"]
         }
-        scs.save()
+        scs.save(save_parents=True)
         var = Variant.objects.create(
             scoreset=scs, hgvs="test",
             data={

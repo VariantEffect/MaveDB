@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from dataset.models import Experiment, ExperimentSet
 from dataset.models import ScoreSet
 
-from accounts.permissions import user_is_anonymous
 
 User = get_user_model()
 
@@ -41,7 +40,8 @@ class ExperimentSetSerializer(Serializer):
 
         return {
             "urn": instance.urn,
-            "contributors": instance.get_contributors_by_username(string=False),
+            "contributors": instance.format_using_username(
+                group='editors', string=False),
             "experiments": [
                 e.urn for e in instance.experiments.all()
                 if not (e.private and filter_private)
@@ -69,7 +69,8 @@ class ExperimentSerializer(Serializer):
 
         return {
             "urn": instance.urn,
-            "contributors": instance.get_contributors_by_username(string=False),
+            "contributors": instance.format_using_username(
+                group='editors', string=False),
             "experimentset": instance.experimentset.urn,
             "scoresets": [
                 s.current_version.urn
@@ -105,8 +106,8 @@ class ScoreSetSerializer(Serializer):
 
         return {
             "urn": instance.urn,
-            "contributors": instance.get_contributors_by_username(
-                string=False),
+            "contributors": instance.format_using_username(
+                group='editors', string=False),
             "replaced_by": replaced_by,
             "replaces": replaces,
             "licence": [
