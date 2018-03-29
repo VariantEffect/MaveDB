@@ -38,13 +38,13 @@ class SelectUsersForm(forms.Form):
 
     Parameters
     ----------
-    group : `str`
-        A valid string from py:class:`GroupType`
+    group : str
+        A valid string from :class:`GroupType`
 
-    instance : `ExperimentSet`, `Experiment` or `ScoreSet`
+    instance : :class:`ExperimentSet`, :class:`Experiment` or :class:`ScoreSet`
         An instance for which the permissions are being altered.
 
-    required : `bool`, optional, default: `False`
+    required : bool, optional. Default: False
         Specify whether the form field should be required.abs
 
     Methods
@@ -81,7 +81,7 @@ class SelectUsersForm(forms.Form):
                 initial = [u.pk for u in instance.administrators()]
                 kwargs["initial"] = {"users": initial}
             elif group == GroupTypes.CONTRIBUTOR:
-                initial = [u.pk for u in instance.authors()]
+                initial = [u.pk for u in instance.contributors()]
                 kwargs["initial"] = {"users": initial}
             elif group == GroupTypes.VIEWER:
                 initial = [u.pk for u in instance.viewers()]
