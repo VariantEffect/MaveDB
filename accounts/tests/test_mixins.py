@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
-from dataset.models import ExperimentSet
+from dataset.models.experimentset import ExperimentSet
 
 from ..mixins import filter_su, filter_anon
 from ..permissions import (

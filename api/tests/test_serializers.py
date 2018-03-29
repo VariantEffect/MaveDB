@@ -8,7 +8,9 @@ from accounts.permissions import (
 )
 
 import dataset.constants as constants
-from dataset.models import Experiment, ExperimentSet, ScoreSet
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
 
 from ..serializers import (
     ExperimentSerializer,

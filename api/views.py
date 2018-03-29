@@ -1,11 +1,16 @@
-import json
-
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponse, Http404
+from django.http import Http404
 from django.http import StreamingHttpResponse, JsonResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
+
+from accounts.permissions import (
+    user_is_anonymous
+)
+
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
+import dataset.constants as constants
 
 from .serializers import (
     UserSerializer,
@@ -14,15 +19,6 @@ from .serializers import (
     ScoreSetSerializer
 )
 
-from dataset.models import Experiment, ExperimentSet
-from dataset.models import ScoreSet
-import dataset.constants as constants
-from accounts.permissions import (
-    user_is_anonymous
-)
-
-# TODO: Refactor the *_by_* and *_all into a single function with a klass
-# parameter to avoid code duplication.
 
 User = get_user_model()
 

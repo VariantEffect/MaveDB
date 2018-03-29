@@ -13,7 +13,9 @@ from ..views import (
 )
 
 import dataset.constants as constants
-from dataset.models import ExperimentSet, Experiment, ScoreSet
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
 from dataset.tests.utility import make_score_count_files
 
 from ..permissions import (

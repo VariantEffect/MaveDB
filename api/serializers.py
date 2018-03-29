@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 
 from django.db.models import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from dataset.models import Experiment, ExperimentSet
-from dataset.models import ScoreSet
+
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
 
 
 User = get_user_model()

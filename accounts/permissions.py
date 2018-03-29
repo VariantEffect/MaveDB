@@ -1,13 +1,12 @@
 """
 This module defines stuff.
 """
-
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, AnonymousUser, Permission
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
 
-from guardian.shortcuts import assign_perm, remove_perm
+from guardian.shortcuts import assign_perm
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 User = get_user_model()
@@ -62,7 +61,8 @@ class GroupTypes:
 # Utilities
 # --------------------------------------------------------------------------- #
 def valid_model_instance(instance):
-    from dataset.models import DatasetModel
+    from dataset.models.base import DatasetModel
+
     if not hasattr(instance, 'urn'):
         return False
     if not getattr(instance, 'urn'):
@@ -130,7 +130,9 @@ GROUP_TYPE_CALLBACK = {
 
 
 def instances_for_user_with_group_permission(user, model, group_type):
-    from dataset.models import Experiment, ExperimentSet, ScoreSet
+    from dataset.models.experimentset import ExperimentSet
+    from dataset.models.experiment import Experiment
+    from dataset.models.scoreset import ScoreSet
 
     if user_is_anonymous(user):
         return []

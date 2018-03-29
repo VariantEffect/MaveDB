@@ -1,18 +1,14 @@
-from django.http import QueryDict
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
-from dataset.models import Experiment
+from dataset.models.experiment import Experiment
 
 from ..forms import SelectUsersForm
 from ..permissions import (
     GroupTypes,
     user_is_anonymous,
-    user_is_admin_for_instance,
     user_is_contributor_for_instance,
-    user_is_viewer_for_instance,
     assign_user_as_instance_admin,
-    assign_user_as_instance_contributor,
     assign_user_as_instance_viewer
 )
 

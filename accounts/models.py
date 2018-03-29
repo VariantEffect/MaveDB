@@ -4,7 +4,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.html import format_html
 
-from dataset.models import ExperimentSet, Experiment, ScoreSet
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
 
 from .permissions import (
     GroupTypes,

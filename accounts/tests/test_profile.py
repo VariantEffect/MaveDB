@@ -1,10 +1,11 @@
-
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
-from dataset.models import ExperimentSet, Experiment, ScoreSet
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
 
 from ..models import Profile, user_is_anonymous
 from ..permissions import (

@@ -1,266 +1,27 @@
 from io import TextIOWrapper
 
-import django.forms as forms
-from django.db import transaction
+from django import forms as forms
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils.translation import ugettext
 
 from main.models import Licence
 
-from metadata.validators import (
-    validate_keyword_list, validate_pubmed_list,
-    validate_sra_list, validate_doi_list
-)
-from metadata.fields import ModelSelectMultipleField
-from metadata.models import (
-    Keyword, SraIdentifier,
-    DoiIdentifier, PubmedIdentifier
-)
-
-from genome.models import TargetOrganism
-from genome.validators import (
-    validate_target_organism,
-    validate_wildtype_sequence, 
-    validate_target_gene
-)
-
-import dataset.constants as constants
-
-from .models import DatasetModel
-from .models import Experiment, ScoreSet, ExperimentSet
 from variant.models import Variant
-
-from .validators import (
-    validate_scoreset_count_data_input, validate_scoreset_score_data_input,
-    validate_scoreset_json, validate_csv_extension
-)
 from variant.validators import validate_variant_rows
 
-
-class DatasetModelForm(forms.ModelForm):
-    """
-    Base form handling the fields present in :class:`.models.DatasetModel`
-
-    Parameters
-    ----------
-    user : :class:`User`
-        The user instance that this form is served to.
-    """
-    M2M_FIELD_NAMES = (
-        'keywords',
-        'sra_ids',
-        'doi_ids',
-        'pmid_ids'
-    )
-
-    class Meta:
-        model = DatasetModel
-        fields = (
-            'abstract_text',
-            'method_text',
-            'keywords',
-            'sra_ids',
-            'doi_ids',
-            'pmid_ids'
-        )
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-
-        self.fields['abstract_text'].widget = forms.Textarea(
-            attrs={"class": "form-control"}
-        )
-        self.fields['method_text'].widget = forms.Textarea(
-            attrs={"class": "form-control"}
-        )
-        self.fields['keywords'] = ModelSelectMultipleField(
-            klass=Keyword, to_field_name='text',
-            label='Keywords', required=False,
-            queryset=Keyword.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
-            )
-        )
-        self.fields['sra_ids'] = ModelSelectMultipleField(
-            klass=SraIdentifier, to_field_name='identifier',
-            label='SRA Identifiers', required=False,
-            queryset=SraIdentifier.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
-            )
-        )
-        self.fields['doi_ids'] = ModelSelectMultipleField(
-            klass=DoiIdentifier, to_field_name='identifier',
-            label='DOI Identifiers', required=False,
-            queryset=DoiIdentifier.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
-            )
-        )
-        self.fields['pmid_ids'] = ModelSelectMultipleField(
-            klass=PubmedIdentifier, to_field_name='identifier',
-            label='PubMed Identifiers', required=False,
-            queryset=PubmedIdentifier.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
-            )
-        )
-        self.fields['keywords'].validators.append(validate_keyword_list)
-        self.fields['sra_ids'].validators.append(validate_sra_list)
-        self.fields['doi_ids'].validators.append(validate_doi_list)
-        self.fields['pmid_ids'].validators.append(validate_pubmed_list)
-
-    def _clean_field_name(self, field_name):
-        field = self.fields[field_name]
-        cleaned_queryset = self.cleaned_data[field_name]
-        all_instances = list(cleaned_queryset.all()) + field.create_new()
-        return all_instances
-
-    def clean_keywords(self):
-        return self._clean_field_name('keywords')
-
-    def clean_sra_ids(self):
-        return self._clean_field_name('sra_ids')
-
-    def clean_doi_ids(self):
-        return self._clean_field_name('doi_ids')
-
-    def clean_pmid_ids(self):
-        return self._clean_field_name('pmid_ids')
-
-    def _save_m2m(self):
-        # Save all instances before calling super() so that all new instances
-        # are in the database before m2m relationships are created.
-        for m2m_field in self.M2M_FIELD_NAMES:
-            if m2m_field in self.fields:
-                for instance in self.cleaned_data.get(m2m_field, []):
-                    instance.save()
-                self.instance.clear_m2m(m2m_field)
-        super()._save_m2m()  # super() will create new m2m relationships
-
-    # Make this atomic since new m2m instances will need to be saved.
-    @transaction.atomic
-    def save(self, commit=True):
-        super().save(commit=commit)
-        if commit:
-            self.instance.set_last_edit_by(self.user)
-            if not hasattr(self, 'edit_mode'):
-                self.instance.set_created_by(self.user)
-            self.instance.save()
-        return self.instance
-
-    def m2m_instances_for_field(self, field_name, return_new=True):
-        if field_name not in self.fields:
-            raise ValueError(
-                '{} is not a field in this form.'.format(field_name)
-            )
-        existing_entries = [i for i in self.cleaned_data.get(field_name, [])]
-        if return_new:
-            new_entries = self.fields[field_name].new_instances
-            return existing_entries + new_entries
-        return existing_entries
-
-    @classmethod
-    def from_request(cls, request, instance):
-        if request.method == "POST":
-            form = cls(
-                user=request.user, data=request.POST,
-                files=request.FILES, instance=instance)
-        else:
-            form = cls(user=request.user, instance=instance)
-        return form
+from dataset import constants as constants
+from ..models.scoreset import ScoreSet
+from ..models.experiment import Experiment
+from ..forms.base import DatasetModelForm
+from ..validators import (
+    validate_scoreset_score_data_input,
+    validate_csv_extension,
+    validate_scoreset_count_data_input,
+    validate_scoreset_json
+)
 
 
-class ExperimentForm(DatasetModelForm):
-    """
-    Docstring
-    """
-    class Meta(DatasetModel.Meta):
-        model = Experiment
-        fields = DatasetModelForm.Meta.fields + (
-            'experimentset',
-            'target',
-            'wt_sequence',
-            'target_organism',
-        )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields['experimentset'] = forms.ModelChoiceField(
-            queryset=None, required=False, widget=forms.Select(
-                attrs={"class": "form-control"})
-        )
-        self.fields['target_organism'] = ModelSelectMultipleField(
-            klass=TargetOrganism, to_field_name='text',
-            required=False, queryset=None, widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"})
-        )
-        self.fields['wt_sequence'].widget = forms.Textarea(
-            attrs={"class": "form-control"})
-
-        # TODO: This will become a Foreign Key field when
-        # Target becomes a table
-        self.fields['target'].widget = forms.TextInput(
-            attrs={"class": "form-control"})
-
-        self.fields["target"].validators.append(validate_target_gene)
-        self.fields["target_organism"].validators.append(
-            validate_target_organism)
-        self.fields["wt_sequence"].validators.append(
-            validate_wildtype_sequence)
-
-        self.fields["target_organism"].queryset = TargetOrganism.objects.all()
-        # Populate the experimentset drop down with a list of experimentsets
-        # that the user for this form has write access to.
-        self.set_experimentset_options()
-
-    def clean_target_organism(self):
-        return self._clean_field_name('target_organism')
-
-    def _save_m2m(self):
-        # Save all target_organism instances before calling super()
-        # so that all new instances are in the database before m2m
-        # relationships are created.
-        if 'target_organism' in self.fields:
-            for instance in self.cleaned_data.get('target_organism'):
-                instance.save()
-            self.instance.clear_m2m('target_organism')
-        super()._save_m2m()
-
-    @transaction.atomic
-    def save(self, commit=True):
-        super().save(commit=commit)
-
-    def set_experimentset_options(self):
-        if 'experimentset' in self.fields:
-            choices = self.user.profile.administrator_experimentsets() + \
-                      self.user.profile.contributor_experimentsets()
-            choices_qs = ExperimentSet.objects.filter(
-                pk__in=set([i.pk for i in choices])).order_by("urn")
-            self.fields["experimentset"].queryset = choices_qs
-
-    @classmethod
-    def from_request(cls, request, instance):
-        form = super().from_request(request, instance)
-        form.set_experimentset_options()
-        return form
-
-
-class ExperimentEditForm(ExperimentForm):
-    """
-    A subset of `ExperimentForm` for editiing instances. Follows the same
-    logic as `ExperimentForm`
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.edit_mode = True
-        self.fields.pop('target_organism')
-        self.fields.pop('target')
-        self.fields.pop('wt_sequence')
-        self.fields.pop('experimentset')
-
-
-# --------------------------------------------------------------------------- #
-#                           ScoreSet Form
-# --------------------------------------------------------------------------- #
 class ScoreSetForm(DatasetModelForm):
     """
     This form is presented on the create new scoreset view. It contains

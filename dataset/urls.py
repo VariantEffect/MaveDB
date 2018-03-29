@@ -12,9 +12,11 @@ from .constants import (
     scoreset_url_pattern,
     variant_score_data, variant_count_data
 )
-from .views import (
-    ExperimentDetailView, ExperimentSetDetailView, ScoreSetDetailView,
-    experiment_create_view, scoreset_create_view, download_scoreset_data
+
+from .views.experimentset import ExperimentSetDetailView
+from .views.experiment import ExperimentDetailView, experiment_create_view
+from .views.scoreset import (
+    ScoreSetDetailView, scoreset_create_view, download_scoreset_data
 )
 
 download_scores = partial(download_scoreset_data, dataset_key=variant_score_data)

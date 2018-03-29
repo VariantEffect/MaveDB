@@ -1,7 +1,9 @@
 from django.contrib import admin
 from reversion.admin import VersionAdmin
 
-from .models import ExperimentSet, Experiment, ScoreSet
+from .models.experimentset import ExperimentSet
+from .models.experiment import Experiment
+from .models.scoreset import ScoreSet
 
 
 @admin.register(ExperimentSet)

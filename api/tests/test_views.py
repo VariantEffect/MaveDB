@@ -8,10 +8,11 @@ from accounts.permissions import (
 )
 
 import dataset.constants as constants
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
 
-from dataset.models import Experiment, ExperimentSet, ScoreSet
 from variant.models import Variant
-
 
 User = get_user_model()
 
