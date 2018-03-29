@@ -1,49 +1,113 @@
 import datetime
 
-from django.db import IntegrityError
-from django.db import models
-from django.test import TransactionTestCase
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 
-from metadata.models import (
-    Keyword, SraIdentifier, PubmedIdentifier, DoiIdentifier
+from accounts.factories import UserFactory
+
+from dataset.factories import ExperimentSetFactory, ScoreSetFactory
+from metadata.factories import (
+    KeywordFactory, DoiIdentifierFactory, SraIdentifierFactory,
+    PubmedIdentifierFactory
 )
-
-from ..models import DatasetModel, ExperimentSet
-
 
 User = get_user_model()
 
 
-class DatasetModelDriver(DatasetModel):
-    """Test driver for the abstract class :class:`DatasetModel`."""
-    def create_urn(self):
-        return '{}-{}'.format(self.URN_PREFIX, self.pk)
-
-
-class TestDatasetModel(TransactionTestCase):
-    reset_sequences = True
+class TestDatasetModel(TestCase):
 
     def test_save_updates_last_edit_date(self):
-        self.fail()
+        instance = ExperimentSetFactory()
+        time_now = datetime.date.today()
+        instance.save()
+        self.assertEqual(instance.last_edit_date, time_now)
 
-    def test_set_created_by_sets_updates_created_by(self):
-        self.fail()
+    def test_set_created_by_sets_updates_created_by_and_time_stamps(self):
+        user = UserFactory()
+        instance = ExperimentSetFactory()
+        instance.set_created_by(user)
+        instance.save()
+        self.assertEqual(instance.created_by, user)
+        self.assertEqual(instance.creation_date, datetime.date.today())
 
-    def test_set_last_edit_by_propagates_to_parents(self):
-        self.fail()
 
-    def test_publish_sets_private_to_false(self):
-        self.fail()
-
-    def test_typeerror_add_non_keyword_instance(self):
-        self.fail()
-
-    def test_typeerror_add_non_external_identifier_instance(self):
-        self.fail()
-
-    def test_clear_m2m_clears_m2m_relationships(self):
-        self.fail()
+    def test_publish_sets_private_to_false_and_sets_publish_date(self):
+        instance = ExperimentSetFactory()
+        instance.publish()
+        instance.save()
+        self.assertEqual(instance.private, False)
+        self.assertEqual(instance.publish_date, datetime.date.today())
 
     def test_approve_sets_approved_to_true(self):
-        self.fail()
+        instance = ExperimentSetFactory()
+        instance.approve()
+        instance.save()
+        self.assertEqual(instance.approved, True)
+
+    def test_typeerror_add_non_keyword_instance(self):
+        instance = ExperimentSetFactory()
+        with self.assertRaises(TypeError):
+            instance.add_keyword('')
+
+        instance.add_keyword(KeywordFactory())
+        self.assertEqual(instance.keywords.count(), 1)
+
+    def test_typeerror_add_non_external_identifier_instance(self):
+        instance = ExperimentSetFactory()
+        with self.assertRaises(TypeError):
+            instance.add_identifier(KeywordFactory())
+
+        instance.add_identifier(DoiIdentifierFactory())
+        self.assertEqual(instance.doi_ids.count(), 1)
+
+    def test_clear_m2m_clears_m2m_relationships(self):
+        instance = ExperimentSetFactory()
+        instance.add_identifier(DoiIdentifierFactory())
+        instance.add_identifier(SraIdentifierFactory())
+        instance.add_identifier(PubmedIdentifierFactory())
+
+        self.assertEqual(instance.doi_ids.count(), 1)
+        instance.clear_doi_ids()
+        self.assertEqual(instance.doi_ids.count(), 0)
+
+        self.assertEqual(instance.sra_ids.count(), 1)
+        instance.clear_sra_ids()
+        self.assertEqual(instance.sra_ids.count(), 0)
+
+        self.assertEqual(instance.pmid_ids.count(), 1)
+        instance.clear_pubmed_ids()
+        self.assertEqual(instance.pmid_ids.count(), 0)
+
+    def test_propagate_set_value_propagates_to_parents(self):
+        instance = ScoreSetFactory()
+        instance.propagate_set_value('private', False)
+
+        self.assertFalse(instance.private)
+        self.assertFalse(instance.experiment.private)
+        self.assertFalse(instance.experiment.experimentset.private)
+
+    def test_save_can_propagate(self):
+        instance = ScoreSetFactory()
+        instance.propagate_set_value('private', False)
+        instance.save(save_parents=False)
+
+        # Only scoreset should change since we return parent to their
+        # original data without saving.
+        instance.refresh_from_db()
+        instance.experiment.refresh_from_db()
+        instance.experiment.experimentset.refresh_from_db()
+        self.assertFalse(instance.private)
+        self.assertTrue(instance.experiment.private)
+        self.assertTrue(instance.experiment.experimentset.private)
+
+        instance.propagate_set_value('private', False)
+        instance.save(save_parents=True)
+
+        instance.refresh_from_db()
+        instance.experiment.refresh_from_db()
+        instance.experiment.experimentset.refresh_from_db()
+        self.assertFalse(instance.private)
+        self.assertFalse(instance.experiment.private)
+        self.assertFalse(instance.experiment.experimentset.private)
+
+
