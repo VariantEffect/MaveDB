@@ -308,7 +308,7 @@ class TestSearchForm(TestCase):
 
     ###
     def test_can_search_experiment_by_author_name(self):
-        key = 'authors'
+        key = 'contributors'
         alice = User.objects.create(
             username="0000", first_name="Alice", last_name="Bob"
         )
@@ -321,7 +321,7 @@ class TestSearchForm(TestCase):
         self.assertEqual(self.exp_1, instances[0])
 
     def test_can_search_experiment_by_author_orcid(self):
-        key = 'authors'
+        key = 'contributors'
         alice = User.objects.create(
             username="0000"
         )

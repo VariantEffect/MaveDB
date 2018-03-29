@@ -76,7 +76,7 @@ class SearchForm(forms.Form):
 
     def clean_authors(self):
         return filter_empty(
-            parse_query(self.cleaned_data.get("authors", ""))
+            parse_query(self.cleaned_data.get("contributors", ""))
         )
 
     def clean_metadata(self):
@@ -159,7 +159,7 @@ class SearchForm(forms.Form):
             selected = set()
             entries = model.objects.none()
             model_author_ls = [
-                (m.pk, m.get_contributors_by_full_name())
+                (m.pk, m.get_contributors_as_full_name())
                 for m in model.objects.all()
             ]
 
@@ -195,7 +195,7 @@ class SearchForm(forms.Form):
                 "keywords", None
             ) or search_all
             authors = self.cleaned_data.get(
-                "authors", None
+                "contributors", None
             ) or search_all
             accessions = self.cleaned_data.get(
                 "accessions", None
