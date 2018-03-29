@@ -233,9 +233,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def approve(self, propagate=True):
         if propagate:
-            self.propagate_set_value('approved', False)
+            self.propagate_set_value('approved', True)
         else:
-            self.approved = False
+            self.approved = True
 
     def md_abstract(self):
         return pandoc.convert_md_to_html(self.abstract_text)
@@ -267,3 +267,12 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
+
+    def clear_doi_ids(self):
+        self.clear_m2m('doi_ids')
+
+    def clear_sra_ids(self):
+        self.clear_m2m('sra_ids')
+
+    def clear_pubmed_ids(self):
+        self.clear_m2m('pmid_ids')

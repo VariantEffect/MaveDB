@@ -92,6 +92,7 @@ class ScoreSet(DatasetModel):
         to=Licence, on_delete=models.DO_NOTHING,
         verbose_name="Licence",
         related_name="attached_scoresets",
+        default=None,
         null=True,
         blank=True,
     )
@@ -121,6 +122,8 @@ class ScoreSet(DatasetModel):
     def save(self, *args, **kwargs):
         if self.experiment is None:
             self.experiment = Experiment.objects.create()
+        if self.licence is None:
+            self.licence = Licence.get_default()
         super().save(*args, **kwargs)
 
     def create_urn(self):
