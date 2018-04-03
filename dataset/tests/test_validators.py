@@ -9,13 +9,13 @@ from ..constants import (
 )
 from ..validators import (
     validate_scoreset_count_data_input,
-    validate_scoreset_json,
     validate_scoreset_score_data_input,
     validate_scoreset_meta_data_input,
     validate_at_least_two_columns,
     validate_has_hgvs_in_header,
     validate_header_contains_no_null_columns,
-    read_header_from_io
+    read_header_from_io,
+    validate_scoreset_json
 )
 
 
@@ -184,7 +184,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
     def test_validationerror_unexptected_columns(self):
         field = {
             'extra_column': [],
-            score_columns: ['hgvs', 'score'],
+            score_columns: ['score'],
             count_columns: [],
             metadata_columns: []
         }
@@ -193,7 +193,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
 
     def test_validationerror_values_not_lists(self):
         field = {
-            score_columns: {'hgvs', 'score'},
+            score_columns: ['score'],
             count_columns: {},
             metadata_columns: {}
         }
@@ -202,7 +202,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
 
     def test_validationerror_list_values_not_strings(self):
         field = {
-            score_columns: [b'hgvs', b'score'],
+            score_columns: [b'score'],
             count_columns: [],
             metadata_columns: []
         }
@@ -229,7 +229,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
 
         # count_columns missing
         field = {
-            score_columns: {'hgvs', 'score'},
+            score_columns: ['score'],
             metadata_columns: []
         }
         with self.assertRaises(ValidationError):
@@ -237,50 +237,18 @@ class TestValidateScoreSetJsonValidator(TestCase):
 
         # metadata_columns missing
         field = {
-            score_columns: {'hgvs', 'score'},
+            score_columns: ['score'],
             count_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
 
     def test_validationerror_missing_header_columns(self):
-        # score_columns columns missing 'hgvs'
-        field = {
-            score_columns: ['score'],
-            count_columns: [],
-            metadata_columns: []
-        }
-        with self.assertRaises(ValidationError):
-            validate_scoreset_json(field)
-
         # score_columns columns missing 'score'
         field = {
             score_columns: ['hgvs'],
             count_columns: [],
             metadata_columns: []
-        }
-        with self.assertRaises(ValidationError):
-            validate_scoreset_json(field)
-
-        # score_columns columns missing 'hgvs' and 'score'
-        field = {score_columns: [], count_columns: [], metadata_columns: []}
-        with self.assertRaises(ValidationError):
-            validate_scoreset_json(field)
-
-        # count_columns columns missing 'hgvs'
-        field = {
-            score_columns: ['hgvs', 'score'],
-            count_columns: ['count'],
-            metadata_columns: []
-        }
-        with self.assertRaises(ValidationError):
-            validate_scoreset_json(field)
-
-        # metadata_columns columns missing 'hgvs'
-        field = {
-            score_columns: ['hgvs', 'score'],
-            count_columns: [],
-            metadata_columns: ['meta']
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
