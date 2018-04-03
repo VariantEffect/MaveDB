@@ -1,5 +1,5 @@
+from django.db import models, transaction
 from django.contrib.postgres.fields import JSONField
-from django.db import models
 
 from dataset import constants as constants
 from variant.validators import validate_variant_json
@@ -74,6 +74,10 @@ class Variant(UrnModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
     def create_urn(self):
         parent = self.scoreset
         child_value = parent.last_child_value + 1
@@ -97,13 +101,3 @@ class Variant(UrnModel):
     @property
     def metadata_columns(self):
         return list(self.data[constants.variant_metadata].keys())
-
-    def get_ordered_score_data(self):
-        columns = self.scoreset.score_columns
-        data = [self.data[constants.variant_score_data][key] for key in columns]
-        return data
-
-    def get_ordered_count_data(self):
-        columns = self.scoreset.count_columns
-        data = [self.data[constants.variant_count_data][key] for key in columns]
-        return data
