@@ -9,6 +9,7 @@ from main.models import Licence
 
 from variant.models import Variant
 from variant.validators import validate_variant_rows
+from dataset.validators import validate_scoreset_json
 
 from dataset import constants as constants
 from ..models.scoreset import ScoreSet
@@ -17,8 +18,7 @@ from ..forms.base import DatasetModelForm
 from ..validators import (
     validate_scoreset_score_data_input,
     validate_csv_extension,
-    validate_scoreset_count_data_input,
-    validate_scoreset_json
+    validate_scoreset_count_data_input
 )
 
 
@@ -86,7 +86,7 @@ class ScoreSetForm(DatasetModelForm):
     def clean_licence(self):
         licence = self.cleaned_data.get("licence", None)
         if not licence:
-            licence = Licence.objects.get(short_name="CC BY-NC-SA 4.0")
+            licence = Licence.get_default()
         return licence
 
     def clean_replaces(self):
@@ -205,10 +205,11 @@ class ScoreSetForm(DatasetModelForm):
             for hgvs in hgvs_score_map.keys():
                 scores_json = hgvs_score_map[hgvs]
                 counts_json = hgvs_count_map[hgvs] if has_count_data else {}
+                meta_json = hgvs_meta_map[hgvs] if has_meta_data else {}
                 data = {
                     constants.variant_score_data: scores_json,
                     constants.variant_count_data: counts_json,
-                    constants.variant_metadata: {}
+                    constants.variant_metadata: meta_json
                 }
                 variant = Variant(scoreset=self.instance, hgvs=hgvs, data=data)
                 variants[hgvs] = variant
