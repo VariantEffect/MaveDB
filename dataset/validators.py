@@ -2,13 +2,14 @@ from django.utils.translation import ugettext
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
+from dataset import constants as constants
 from main.utils import is_null
-import dataset.constants as constants
 
 validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
 
 
-def read_header_from_io(file, label=None):
+def read_header_from_io(file, label=None, msg=None):
+    params = {}
     try:
         header_line = file.readline()
         if isinstance(header_line, bytes):
@@ -16,43 +17,48 @@ def read_header_from_io(file, label=None):
         file.seek(0)
         return [l.strip() for l in header_line.strip().split(',')]
     except Exception as e:
-        raise ValidationError(
-            ugettext(
+        if msg is None:
+            msg = (
                 "Encountered an error while reading %(label)s file header: "
-                "%(reason)s."),
-            params={'reason': str(e), 'label': label}
+                "%(reason)s."
+            )
+            params = {'reason': str(e), 'label': label}
+        raise ValidationError(msg, params=params)
+
+
+def validate_has_hgvs_in_header(header, label=None, msg=None):
+    params = {}
+    if msg is None:
+        msg = (
+            "%(label)s file is missing the required column '%(col)s'. "
+            "Columns are case-sensitive and must be comma delimited."
         )
-
-
-def validate_has_hgvs_in_header(header, label=None):
+        params = {'label': label, 'col': constants.hgvs_column}
     if constants.hgvs_column not in header:
-        raise ValidationError(
-            ugettext(
-                "%(label)s file is missing the required column '%(col)s'. "
-                "Columns are case-sensitive and must be comma delimited."
-            ),
-            params={'label': label, 'col': constants.hgvs_column}
-        )
+        raise ValidationError(msg, params=params)
 
 
-def validate_at_least_two_columns(header, label=None):
+def validate_at_least_two_columns(header, label=None, msg=None):
+    params = {}
+    if msg is None:
+        msg = "%(label)s file header must have at least 2 columns."
+        params = {'label': label}
     if len(header) < 2:
-        raise ValidationError(
-            ugettext("%(label)s file header must have at least 2 columns."),
-            params={'label': label}
-        )
+        raise ValidationError(msg, params=params)
 
 
-def validate_header_contains_no_null_columns(header, label=None):
+def validate_header_contains_no_null_columns(header, label=None, msg=None):
+    params = {}
     for i, value in enumerate(header):
         if is_null(value):
-            raise ValidationError(
-                ugettext(
+            if msg is None:
+                msg = (
                     "The header of your %(label)s file cannot contain "
                     "null values. Found null value '%(value)s' at "
-                    "position %(i)s."),
-                params={'value': value, 'i': i, 'label': label}
-            )
+                    "position %(i)s."
+                )
+                params = {'value': value, 'i': i, 'label': label}
+            raise ValidationError(msg, params)
 
 
 def validate_scoreset_score_data_input(file):
@@ -168,21 +174,6 @@ def validate_scoreset_json(dict_):
                         "score dataset."),
                     params={"col": constants.required_score_column}
                 )
-            if constants.hgvs_column not in columns:
-                raise ValidationError(
-                    ugettext(
-                        "Missing required column '%(col)s' for "
-                        "score dataset."),
-                    params={"col": constants.hgvs_column}
-                )
-
-        # Check columns contains hgvs if not empty.
-        if columns and constants.hgvs_column not in columns:
-            raise ValidationError(
-                ugettext(
-                    "Missing required column '%(col)s' for %(key)s dataset."),
-                params={"key": key, "col": constants.hgvs_column}
-            )
 
     # Check there are not unexptected columns supplied to the scoreset json
     # field.
