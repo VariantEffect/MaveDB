@@ -41,8 +41,6 @@ MAVEDB_ANY_URN_PATTERN = '|'.join([r'({pattern})'.format(pattern=p) for p in (
 MAVEDB_ANY_URN_RE = re.compile(MAVEDB_ANY_URN_PATTERN)
 
 
-
-
 def validate_mavedb_urn(urn):
     if not MAVEDB_ANY_URN_RE.match(urn):
         raise ValidationError(
