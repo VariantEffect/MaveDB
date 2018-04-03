@@ -21,7 +21,7 @@ from variant.models import Variant
 from dataset import constants as constants
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
-from ..validators import validate_scoreset_json
+from dataset.validators import validate_scoreset_json
 
 
 @reversion.register()
@@ -102,6 +102,7 @@ class ScoreSet(DatasetModel):
         default=dict({
             constants.score_columns: [],
             constants.count_columns: [],
+            constants.metadata_columns: [],
         }),
         validators=[validate_scoreset_json]
     )
