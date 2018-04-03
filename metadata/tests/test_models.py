@@ -1,79 +1,66 @@
 from django.db import IntegrityError
 from django.test import TestCase
 
-from dataset.models import Experiment, ScoreSet
+from dataset.factories import ExperimentFactory
 
 from ..models import Keyword, DoiIdentifier, SraIdentifier, PubmedIdentifier
+from ..factories import (
+    KeywordFactory, DoiIdentifierFactory,
+    PubmedIdentifierFactory, SraIdentifierFactory
+)
 
 
 class TestKeyword(TestCase):
 
     def setUp(self):
-        self.exp_1 = Experiment.objects.create(
-            target="brca1",
-            wt_sequence="ATCG")
-        self.exp_2 = Experiment.objects.create(
-            target="brca2",
-            wt_sequence="ATCG")
+        self.exp_1 = ExperimentFactory()
+        self.exp_2 = ExperimentFactory()
 
     def test_cannot_create_duplicates(self):
-        Keyword.objects.create(text="keyword 1")
+        keyword = KeywordFactory()
         with self.assertRaises(IntegrityError):
-            Keyword.objects.create(text="keyword 1")
+            KeywordFactory(text=keyword.text)
 
     def test_cannot_create_with_null_text(self):
         with self.assertRaises(IntegrityError):
-            Keyword.objects.create(text=None)
+            KeywordFactory(text=None)
 
     def test_can_associate_multiple_keywords_with_dataset(self):
-        kw1 = Keyword.objects.create(text="keyword 1")
-        kw2 = Keyword.objects.create(text="keyword 2")
-
+        kw1 = KeywordFactory()
+        kw2 = KeywordFactory()
         self.exp_1.keywords.add(kw1)
         self.exp_1.keywords.add(kw2)
-        self.exp_1.save()
-
-        self.assertEqual(
-            list(self.exp_1.keywords.order_by('text')),
-            [kw1, kw2]
-        )
+        self.assertEqual(self.exp_1.keywords.count(), 2)
 
     def test_can_associate_keyword_with_multiple_datasets(self):
-        kw1 = Keyword.objects.create(text="keyword 1")
-
+        kw1 = KeywordFactory()
         self.exp_1.keywords.add(kw1)
         self.exp_2.keywords.add(kw1)
-        self.exp_1.save()
-        self.exp_2.save()
-
-        self.assertEqual(
-            list(self.exp_1.keywords.order_by('-text')),
-            list(self.exp_2.keywords.order_by('-text')),
-        )
+        self.assertEqual(self.exp_1.keywords.count(), 1)
+        self.assertEqual(self.exp_2.keywords.count(), 1)
 
     def test_cant_add_duplicate_keywords_to_dataset(self):
-        kw1 = Keyword.objects.create(text="keyword 1")
-
+        kw1 = KeywordFactory()
         self.exp_1.keywords.add(kw1)
-        self.exp_1.save()
         self.exp_1.keywords.add(kw1)
-        self.exp_1.save()
-
         self.assertEqual(self.exp_1.keywords.count(), 1)
 
-    def test_delete_experiment_doesnt_delete_dataset(self):
-        kw1 = Keyword.objects.create(text="keyword 1")
+    def test_delete_experiment_doesnt_delete_kw(self):
+        kw1 = KeywordFactory()
         self.exp_1.keywords.add(kw1)
-        self.exp_1.save()
         self.exp_1.delete()
         self.assertEqual(Keyword.objects.count(), 1)
 
-    def test_delete_keyword_doesnt_delete_dataset(self):
-        kw1 = Keyword.objects.create(text="keyword 1")
+    def test_deleted_keyword_removed_from_experiment_keywords(self):
+        kw1 = KeywordFactory()
         self.exp_1.keywords.add(kw1)
         self.exp_1.save()
+        self.exp_1.refresh_from_db()
+        self.assertEqual(self.exp_1.keywords.count(), 1)
+
         kw1.delete()
-        self.assertEqual(Experiment.objects.count(), 2)
+        self.exp_1.save()
+        self.exp_1.refresh_from_db()
         self.assertEqual(self.exp_1.keywords.count(), 0)
 
 
