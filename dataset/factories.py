@@ -63,7 +63,7 @@ class ScoreSetFactory(DatasetModelFactory):
 
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = {
-        score_columns: [hgvs_column, required_score_column],
+        score_columns: [required_score_column],
         count_columns: [],
         metadata_columns: []
     }
