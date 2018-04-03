@@ -1,5 +1,4 @@
-from django.shortcuts import render, redirect
-from django.http import StreamingHttpResponse
+from django.shortcuts import render
 
 from .models import News, SiteInformation
 

@@ -1,8 +1,3 @@
-
-"""
-Testing suite for main app views
-"""
-
 from django.test import TestCase
 
 from ..models import News, SiteInformation

@@ -1,138 +1,115 @@
 
-from django.test import TestCase
-from django.db import IntegrityError
+import datetime
 
-from main.models import TargetOrganism
-from main.models import ReferenceMapping
-from dataset.models import Experiment
+from django.test import TransactionTestCase
+from django.core.exceptions import ValidationError
+
+from ..models import News
+from ..models import SiteInformation
 
 
-class TestTargetOrganism(TestCase):
+class TestNewsModel(TransactionTestCase):
+    """
+    Test that News items can be created, deleted and modified.
+    """
+    reset_sequences = True
 
-    def setUp(self):
-        self.exp_1 = Experiment.objects.create(
-            target="brca1", wt_sequence="ATCG"
+    def test_create_and_save_new_item(self):
+        item = News(text="Hello World!")
+        item.save()
+        self.assertEqual(News.objects.count(), 1)
+        self.assertEqual(News.objects.all()[0], item)
+
+    def test_message_property_displays_date_and_text(self):
+        message = "Hello World!"
+        date = datetime.date.today().replace(1985, 7, 10)
+        expected = "[{}]: {}".format(str(date), message)
+
+        item = News(text=message, date=date)
+        self.assertEqual(expected, item.message)
+
+    def test_DONT_allow_null_message(self):
+        item = News(text=None, date=datetime.date.today())
+        with self.assertRaises(ValidationError):
+            item.full_clean()
+
+    def test_DONT_allow_null_date(self):
+        item = News(text="Hello World", date=None)
+        with self.assertRaises(ValidationError):
+            item.full_clean()
+
+    def test_DONT_allow_non_YYYY_MM_DD_date_format(self):
+        item = News(text="Hello World", date=datetime.datetime.now())
+        with self.assertRaises(ValueError):
+            item.save()
+
+    def test_DONT_allow_a_blank_message(self):
+        item = News(text="")
+        with self.assertRaises(ValueError):
+            item.save()
+
+    def test_can_retrieve_all_news_items_in_date_order(self):
+        item_1 = News.objects.create(text="Hello World!")
+        item_2 = News.objects.create(text="Nice Weather!")
+        item_3 = News.objects.create(text="Nothing new to report!")
+
+        item_2.date += datetime.timedelta(days=1)
+        item_3.date += datetime.timedelta(days=2)
+
+        item_2.save()
+        item_3.save()
+
+        news_items = News.recent_news()
+        self.assertEqual(len(News.recent_news()), 3)
+        self.assertEqual(news_items[0], item_3)
+        self.assertEqual(news_items[1], item_2)
+        self.assertEqual(news_items[2], item_1)
+
+
+class SiteInformationModelTest(TransactionTestCase):
+    """
+    Test that a SiteInformation can be created, deleted and modified.
+    """
+
+    reset_sequences = True
+
+    def test_can_create_and_save_information(self):
+        info = SiteInformation.objects.create(
+            _about="This is MaveDB", _citation="This is a citation.")
+        self.assertEqual(SiteInformation.objects.count(), 1)
+        self.assertEqual(SiteInformation.objects.all()[0], info)
+
+    def test_can_only_have_one_item(self):
+        info_1 = SiteInformation.objects.create(
+            _about="This is MaveDB",
+            _citation="This is a citation.")
+        with self.assertRaises(ValueError):
+            info_2 = SiteInformation.objects.create(
+                _about="This is another MaveDB",
+                _citation="This is a another citation.")
+
+    def test_can_edit_and_save_existing_item(self):
+        info_1 = SiteInformation.objects.create(
+            _about="This is MaveDB",
+            _citation="This is a citation."
         )
-        self.exp_2 = Experiment.objects.create(
-            target="brca2", wt_sequence="ATCG"
-        )
 
-    def test_cannot_create_duplicates(self):
-        TargetOrganism.objects.create(text="hsa")
-        with self.assertRaises(IntegrityError):
-            TargetOrganism.objects.create(text="hsa")
+        info_1._about = "New about information."
+        info_1._citation = "New citation."
+        info_1.save()
+        self.assertIn("New about information.", info_1.about)
+        self.assertIn("New citation.", info_1.citation)
 
-    def test_can_associate_multiple_accessions_with_experiment(self):
-        obj1 = TargetOrganism.objects.create(text="hsa")
-        obj2 = TargetOrganism.objects.create(text="mus")
-
-        self.exp_1.target_organism.add(obj1)
-        self.exp_1.target_organism.add(obj2)
-        self.exp_1.save()
-
-        self.assertEqual(
-            list(self.exp_1.target_organism.order_by('text')), [obj1, obj2]
-        )
-
-    def test_can_associate_accessions_with_multiple_experiments(self):
-        obj1 = TargetOrganism.objects.create(text="hsa")
-
-        self.exp_1.target_organism.add(obj1)
-        self.exp_2.target_organism.add(obj1)
-        self.exp_1.save()
-        self.exp_2.save()
-
-        self.assertEqual(
-            list(self.exp_1.target_organism.order_by('-text')),
-            list(self.exp_2.target_organism.order_by('-text')),
-        )
-
-    def test_cant_add_duplicate_accessions_to_experiment(self):
-        obj1 = TargetOrganism.objects.create(text="hsa")
-
-        self.exp_1.target_organism.add(obj1)
-        self.exp_1.save()
-        self.exp_1.target_organism.add(obj1)
-        self.exp_1.save()
-
-        self.assertEqual(self.exp_1.target_organism.count(), 1)
-
-    def test_delete_experiment_doesnt_delete_accessions(self):
-        obj1 = TargetOrganism.objects.create(text="hsa")
-        self.exp_1.target_organism.add(obj1)
-        self.exp_1.save()
-        self.exp_1.delete()
-        self.assertEqual(TargetOrganism.objects.count(), 1)
-
-    def test_delete_accessions_doesnt_delete_experiment(self):
-        obj1 = TargetOrganism.objects.create(text="hsa")
-        self.exp_1.target_organism.add(obj1)
-        self.exp_1.save()
-        obj1.delete()
-        self.assertEqual(Experiment.objects.count(), 2)
-
-
-class TestReferenceMapping(TestCase):
-
-    def setUp(self):
-        self.exp_1 = Experiment.objects.create(
-            target="brca1", wt_sequence="ATCG"
-        )
-        self.exp_2 = Experiment.objects.create(
-            target="brca2", wt_sequence="ATCG"
-        )
-
-    def test_can_create_and_save_minimal_mapping(self):
-        mapping = ReferenceMapping.objects.create(
-            reference="some gene", experiment=self.exp_1,
-            target_start=0, target_end=10,
-            reference_start=1990, reference_end=3450
-        )
-        self.assertEqual(ReferenceMapping.objects.count(), 1)
-
-    def test_can_create_duplicate_mappings(self):
-        mapping_1 = ReferenceMapping.objects.create(
-            reference="some gene", experiment=self.exp_1,
-            target_start=0, target_end=10,
-            reference_start=1990, reference_end=3450
-        )
-        mapping_2 = ReferenceMapping.objects.create(
-            reference="some gene", experiment=self.exp_1,
-            target_start=0, target_end=10,
-            reference_start=1990, reference_end=3450
-        )
-        self.assertEqual(ReferenceMapping.objects.count(), 2)
-        m1, m2 = list(self.exp_1.referencemapping_set.all())
-        self.assertEqual(m1.datahash, m2.datahash)
-
-    def test_cannot_have_negative_target_start(self):
-        with self.assertRaises(IntegrityError):
-            ReferenceMapping.objects.create(
-                reference="some gene", experiment=self.exp_1,
-                target_start=-1, target_end=10,
-                reference_start=1000, reference_end=3450
+    def test_DONT_allow_null_about_text(self):
+        with self.assertRaises(ValueError):
+            SiteInformation.objects.create(
+                _about=None,
+                _citation="This is a citation."
             )
 
-    def test_cannot_have_negative_target_end(self):
-        with self.assertRaises(IntegrityError):
-            ReferenceMapping.objects.create(
-                reference="some gene", experiment=self.exp_1,
-                target_start=0, target_end=-1,
-                reference_start=1000, reference_end=3450
-            )
-
-    def test_cannot_have_negative_reference_start(self):
-        with self.assertRaises(IntegrityError):
-            ReferenceMapping.objects.create(
-                reference="some gene", experiment=self.exp_1,
-                target_start=0, target_end=10,
-                reference_start=-1000, reference_end=3450
-            )
-
-    def test_cannot_have_negative_reference_end(self):
-        with self.assertRaises(IntegrityError):
-            ReferenceMapping.objects.create(
-                reference="some gene", experiment=self.exp_1,
-                target_start=0, target_end=10,
-                reference_start=1000, reference_end=-3450
+    def test_DONT_allow_null_citation_text(self):
+        with self.assertRaises(ValueError):
+            SiteInformation.objects.create(
+                _about="This is MaveDB",
+                _citation=None
             )
