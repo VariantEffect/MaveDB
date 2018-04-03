@@ -8,7 +8,11 @@ from urn.validators import (
     MAVEDB_SCORESET_URN_PATTERN
 )
 
-nan_col_values = set(['nan', 'na', 'none', '', ' ', 'NaN', 'None', 'Na', 'NA'])
+nan_col_values = {
+    '', ' ',
+    'nan', 'na', 'none', 'null',
+    'NaN', 'None', 'Na', 'NA', 'NULL'
+}
 hgvs_column = "hgvs"
 score_columns = "score_columns"
 count_columns = "count_columns"
