@@ -12,6 +12,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import genome.validators
 import urn.validators
+import variant.validators
 
 
 class Migration(migrations.Migration):
@@ -92,7 +93,8 @@ class Migration(migrations.Migration):
                 ('abstract_text', models.TextField(blank=True, default='', verbose_name='Abstract')),
                 ('method_text', models.TextField(blank=True, default='', verbose_name='Method description')),
                 ('urn', models.CharField(blank=True, default=None, max_length=64, null=True, unique=True, validators=[urn.validators.validate_mavedb_urn_scoreset], verbose_name='URN')),
-                ('dataset_columns', django.contrib.postgres.fields.jsonb.JSONField(default={'count_columns': [], 'score_columns': []}, validators=[dataset.validators.validate_scoreset_json], verbose_name='Dataset columns')),
+                ('dataset_columns', django.contrib.postgres.fields.jsonb.JSONField(default={'count_columns': [], 'score_columns': []}, validators=[
+                    dataset.validators.validate_scoreset_json], verbose_name='Dataset columns')),
                 ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='last_created_scoreset', to=settings.AUTH_USER_MODEL, verbose_name='Created by')),
                 ('doi_ids', models.ManyToManyField(blank=True, to='metadata.DoiIdentifier')),
                 ('experiment', models.ForeignKey(default=None, on_delete=django.db.models.deletion.PROTECT, related_name='scoresets', to='dataset.Experiment', verbose_name='Experiment')),
