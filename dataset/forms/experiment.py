@@ -1,5 +1,6 @@
 from django import forms as forms
 from django.db import transaction
+from django.core.exceptions import ValidationError
 
 from genome.models import TargetOrganism
 from genome.validators import (
@@ -62,6 +63,15 @@ class ExperimentForm(DatasetModelForm):
     def clean_target_organism(self):
         return self._clean_field_name('target_organism')
 
+    def clean(self):
+        cleaned_data = super().clean()
+        experimentset = cleaned_data.get('experimentset', None)
+        if 'experimentset' in self.fields and self.instance.pk is not None:
+            if self.instance.experimentset != experimentset:
+                raise ValidationError(
+                    "MaveDB does not currently support changing a "
+                    "previously assigned Experiment Set.")
+
     def _save_m2m(self):
         # Save all target_organism instances before calling super()
         # so that all new instances are in the database before m2m
@@ -74,7 +84,7 @@ class ExperimentForm(DatasetModelForm):
 
     @transaction.atomic
     def save(self, commit=True):
-        super().save(commit=commit)
+        return super().save(commit=commit)
 
     def set_experimentset_options(self):
         if 'experimentset' in self.fields:
@@ -87,7 +97,11 @@ class ExperimentForm(DatasetModelForm):
     @classmethod
     def from_request(cls, request, instance):
         form = super().from_request(request, instance)
-        form.set_experimentset_options()
+        if 'experimentset' in form.fields:
+            choices_qs = ExperimentSet.objects.filter(
+                pk__in=[instance.experimentset.pk]).order_by("urn")
+            form.fields["experimentset"].queryset = choices_qs
+            form.fields["experimentset"].initial = instance.experimentset
         return form
 
 
@@ -97,6 +111,10 @@ class ExperimentEditForm(ExperimentForm):
     logic as `ExperimentForm`
     """
     def __init__(self, *args, **kwargs):
+        if 'instance' not in kwargs:
+            raise ValueError(
+                "An existing instance is required to instantiate "
+                "an edit form.")
         super().__init__(*args, **kwargs)
         self.edit_mode = True
         self.fields.pop('target_organism')
