@@ -141,18 +141,17 @@ class Experiment(DatasetModel):
         return urn
 
     def update_target_organism(self, target_organism):
-        if not target_organism:
-            return
+        if not isinstance(target_organism, TargetOrganism):
+            raise TypeError(
+                "`target_organism` must be a TargetOrganism instnace.")
         current = self.target_organism.first()
-        if isinstance(target_organism, list):
-            target_organism = target_organism[0]
         if current != target_organism:
             self.target_organism.remove(current)
             self.target_organism.add(target_organism)
 
     def get_target_organism(self):
         if self.target_organism.count():
-            return self.target_organism.all()[0].text
+            return self.target_organism.all()[0]
 
 
 # --------------------------------------------------------------------------- #
