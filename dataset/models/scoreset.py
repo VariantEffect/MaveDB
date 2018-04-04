@@ -61,6 +61,11 @@ class ScoreSet(DatasetModel):
         "method_text", "doi_ids", "sra_ids", "pmid_ids", "keywords",
         "license", "dataset_columns", "replaces"
     )
+    DEFAULT_DATASET = dict({
+        constants.score_columns: [constants.required_score_column],
+        constants.count_columns: [],
+        constants.metadata_columns: []
+    })
 
     class Meta:
         verbose_name = "ScoreSet"
@@ -99,11 +104,7 @@ class ScoreSet(DatasetModel):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns",
-        default=dict({
-            constants.score_columns: [],
-            constants.count_columns: [],
-            constants.metadata_columns: [],
-        }),
+        default=DEFAULT_DATASET,
         validators=[validate_scoreset_json]
     )
 
@@ -121,8 +122,6 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save(self, *args, **kwargs):
-        if self.experiment is None:
-            self.experiment = Experiment.objects.create()
         if self.licence is None:
             self.licence = Licence.get_default()
         super().save(*args, **kwargs)
@@ -141,22 +140,13 @@ class ScoreSet(DatasetModel):
 
     # Variant related methods
     # ---------------------------------------------------------------------- #
+    @property
     def has_variants(self):
         return self.variants.count() > 0
 
-    def get_variants(self):
-        if self.has_variants():
-            return self.variants.all()
-        else:
-            return Variant.objects.none()
-
     def delete_variants(self):
         self.variants.all().delete()
-        self.dataset_columns = dict({
-            constants.score_columns: [],
-            constants.count_columns: [],
-            constants.metadata_columns: []
-        })
+        self.dataset_columns = self.DEFAULT_DATASET
         self.save()
 
     # JSON field related methods
@@ -174,12 +164,12 @@ class ScoreSet(DatasetModel):
         return self.dataset_columns[constants.metadata_columns]
 
     @property
-    def has_count_dataset(self):
-        return len(self.dataset_columns[constants.count_columns]) > 0
-
-    @property
     def has_score_dataset(self):
         return len(self.dataset_columns[constants.score_columns]) > 0
+
+    @property
+    def has_count_dataset(self):
+        return len(self.dataset_columns[constants.count_columns]) > 0
 
     @property
     def has_metadata(self):
