@@ -1,7 +1,6 @@
 import datetime
 
 from django.db import models, IntegrityError, transaction
-from django.db.models.signals import pre_save, post_save
 
 
 class TargetOrganism(models.Model):
