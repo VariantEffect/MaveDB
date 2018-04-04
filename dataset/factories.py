@@ -62,10 +62,6 @@ class ScoreSetFactory(DatasetModelFactory):
         model = ScoreSet
 
     experiment = factory.SubFactory(ExperimentFactory)
-    dataset_columns = {
-        score_columns: [required_score_column],
-        count_columns: [],
-        metadata_columns: []
-    }
+    dataset_columns = ScoreSet.DEFAULT_DATASET
 
 
