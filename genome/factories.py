@@ -14,7 +14,7 @@ from factory.django import DjangoModelFactory
 from .models import TargetOrganism
 
 
-class TargetOrganismFactpry(DjangoModelFactory):
+class TargetOrganismFactory(DjangoModelFactory):
     """
     Factory for creating simple minimally instantiated :class:`TargetOrganism`
     instances.
