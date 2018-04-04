@@ -1,45 +1,61 @@
-# from django.http import QueryDict
-# from django.test import TestCase
-#
-# from ..models import Experiment
-# from ..forms import ExperimentEditForm
-#
-#
-# class TestExperimentEditForm(TestCase):
-#
-#     @staticmethod
-#     def experiment():
-#         return Experiment.objects.create(
-#             target="test", wt_sequence="ATCG"
-#         )
-#
-#     def test_can_instantiate_form_with_instance(self):
-#         instance = self.experiment()
-#         form = ExperimentEditForm({}, instance=instance)
-#         self.assertTrue(form.is_valid())
-#
-#     def test_can_save_new_data(self):
-#         instance = self.experiment()
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test"])
-#         post.setlist("external_accessions", ["test"])
-#         form = ExperimentEditForm(post, instance=instance)
-#         instance = form.save(commit=True)
-#         self.assertEqual(instance.keywords.count(), 1)
-#         self.assertEqual(instance.external_accessions.count(), 1)
-#
-#     def test_save_does_not_alter_other_fields(self):
-#         instance = self.experiment()
-#         post = QueryDict('', mutable=True)
-#         post.setlist("wt_sequence", 'gggg')
-#         form = ExperimentEditForm(post, instance=instance)
-#         instance = form.save(commit=True)
-#         self.assertEqual(instance.wt_sequence, 'ATCG')
-#
-#     def test_cannot_save_target_organism(self):
-#         instance = self.experiment()
-#         post = QueryDict('', mutable=True)
-#         post.setlist("target_organism", 'homo sapien')
-#         form = ExperimentEditForm(post, instance=instance)
-#         instance = form.save(commit=True)
-#         self.assertEqual(instance.target_organism.count(), 0)
+from django.http import QueryDict
+from django.test import TestCase
+
+from accounts.factories import UserFactory
+
+from ..factories import ExperimentFactory, ExperimentSetFactory
+from ..forms.experiment import ExperimentEditForm
+
+
+class TestExperimentEditForm(TestCase):
+    """
+    Test the functionality of the subclassed edit form.
+    """
+    def setUp(self):
+        self.user = UserFactory()
+
+    def test_empty_data_submission_is_valid(self):
+        obj = ExperimentFactory()
+        form = ExperimentEditForm(data={}, user=self.user, instance=obj)
+        self.assertTrue(form.is_valid())
+
+    def test_pops_target_organism(self):
+        obj = ExperimentFactory()
+        form = ExperimentEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('target_organism', form.fields)
+
+    def test_pops_target(self):
+        obj = ExperimentFactory()
+        form = ExperimentEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('target', form.fields)
+
+    def test_pops_wt_sequence(self):
+        obj = ExperimentFactory()
+        form = ExperimentEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('wt_sequence', form.fields)
+
+    def test_pops_experimentset(self):
+        obj = ExperimentFactory()
+        form = ExperimentEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('experimentset', form.fields)
+
+    def test_cannot_save_popped_field(self):
+        obj = ExperimentFactory()
+        old_target = obj.target
+        old_sequence = obj.wt_sequence
+        old_exps = obj.experimentset.pk
+
+        form = ExperimentEditForm(
+            data={
+                'target_organism': ['protein'],
+                'wt_sequence': 'aaaa',
+                'target': 'human',
+                'experimentset': 1
+            },
+            user=self.user, instance=obj
+        )
+        instance = form.save(commit=True)
+        self.assertEqual(instance.target_organism.count(), 0)
+        self.assertEqual(instance.target, old_target)
+        self.assertEqual(instance.wt_sequence, old_sequence)
+        self.assertEqual(instance.experimentset.pk, old_exps)
