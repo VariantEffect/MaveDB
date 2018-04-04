@@ -1,196 +1,85 @@
-
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from genome.models import TargetGene, TargetOrganism
+import dataset.constants as constants
 
+from ..factories import KeywordFactory
 from ..fields import ModelSelectMultipleField
-from ..models import Keyword, PubmedIdentifier ,DoiIdentifier, SraIdentifier
+from ..models import Keyword
 
 
 class TestModelSelectMultipleField(TestCase):
+    """
+    Tests the :class:`ModelSelectMultipleField` which handles being able
+    to select existing M2M relationships or create new ones, for example
+    if a user wishes to create a new keyword not in the database.
+    """
+    def tearDown(self):
+        Keyword.objects.all().delete()
 
-    @staticmethod
-    def create_n_instances(klass, text_ls):
-        instances = []
-        for text in set(text_ls):
-            instances.append(klass.objects.create(text=text))
-        return instances
-
-    def test_can_instantiate(self):
-        # test should not fail
+    def test_check_values_filters_out_null_values(self):
         field = ModelSelectMultipleField(
-            queryset=None,
-            required=False,
-            klass=Keyword,
-            text_key="text"
+            klass=Keyword, to_field_name='text',
+            queryset=Keyword.objects.none()
         )
+        for value in constants.nan_col_values:
+            existing = field._check_values([value])
+            self.assertEqual(existing.count(), 0)
+            self.assertEqual(len(field.new_values), 0)
 
-    def test_type_error_incorrect_class(self):
-        with self.assertRaises(TypeError):
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=ModelSelectMultipleField,
-                text_key="text"
-            )
-
-    def test_can_detect_valid_word(self):
+    def test_new_values_detected(self):
         field = ModelSelectMultipleField(
-            queryset=None,
-            required=False,
-            klass=Keyword,
-            text_key="text"
+            klass=Keyword, to_field_name='text',
+            queryset=Keyword.objects.none()
         )
-        self.assertTrue(field.is_word("a word"))
-        self.assertTrue(field.is_word("aword"))
-        self.assertTrue(field.is_word("1 1 1"))
-        self.assertTrue(field.is_word("Word 1 1 1"))
-        self.assertFalse(field.is_word("1"))
-        self.assertFalse(field.is_word(" 1 "))
-        self.assertFalse(field.is_word("1.3"))
-        self.assertFalse(field.is_word("1.3 "))
+        values = ['hello', 'world']
+        qs = field.clean(values)
+        self.assertEqual(qs.count(), 0)
+        self.assertEqual(len(field.new_values), 2)
+        self.assertEqual(len(field.new_instances), 0)
 
-    def test_can_clean_valid_pk_list(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instance = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = [str(kw.pk) for kw in instance]
-            qs = field.clean(values)
-            self.assertEqual(qs.count(), 3)
-            self.assertEqual(len(field.new_instances), 0)
-            self.assertEqual(klass.objects.count(), 3)
+    def test_new_value_not_created_if_exists_in_new_instances(self):
+        field = ModelSelectMultipleField(
+            klass=Keyword, to_field_name='text',
+            queryset=Keyword.objects.none()
+        )
+        field.new_instances = [Keyword(text='protein')]
+        qs = field.clean(['protein'])
+        self.assertEqual(qs.count(), 0)
+        self.assertEqual(len(field.new_instances), 1)
+        self.assertEqual(len(field.new_values), 0)
 
-    def test_error_invalid_pk_supplied(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instances = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = [str(kw.pk) for kw in instances] + ['99', '100']
-            with self.assertRaises(ValidationError):
-                field.clean(values)
+    def test_new_value_not_created_if_exists_in_new_values(self):
+        field = ModelSelectMultipleField(
+            klass=Keyword, to_field_name='text',
+            queryset=Keyword.objects.none()
+        )
+        field.new_values = ['protein']
+        qs = field.clean(['protein'])
+        self.assertEqual(qs.count(), 0)
+        self.assertEqual(len(field.new_instances), 0)
+        self.assertEqual(len(field.new_values), 1)
 
-    def test_invalid_pk_float_input(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = ["1.0"]
-            with self.assertRaises(ValidationError):
-                field.clean(values)
+    def test_existing_db_values_pass_on_to_super_check_values(self):
+        kw = KeywordFactory()
+        field = ModelSelectMultipleField(
+            klass=Keyword, to_field_name='text',
+            queryset=Keyword.objects.all()
+        )
+        qs = field._check_values([kw.text])
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(len(field.new_instances), 0)
+        self.assertEqual(len(field.new_values), 0)
 
-    def test_new_instances_created_if_supplied_as_word(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instances = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = [str(kw.pk) for kw in instances] + ['test4', 'test5']
-            qs = field.clean(values)
-            self.assertEqual(qs.count(), 3)
-            self.assertEqual(len(field.new_instances), 2)
+    def test_create_new_creates_new_instances(self):
+        field = ModelSelectMultipleField(
+            klass=Keyword, to_field_name='text',
+            queryset=Keyword.objects.none()
+        )
+        values = ['protein']
+        field.clean(values)
+        new = field.create_new()
+        self.assertEqual(new[0].text, values[0])
 
-    def test_duplicate_new_instances_not_created(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instances = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = [str(kw.pk) for kw in instances] + ['test4', 'test4']
-            qs = field.clean(values)
-            self.assertEqual(qs.count(), 3)
-            self.assertEqual(len(field.new_instances), 1)
-
-    def test_can_handle_duplicate_selection(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instances = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = [instances[0].pk] * 3
-            qs = field.clean(values)
-            self.assertEqual(qs.count(), 1)
-            self.assertEqual(len(field.new_instances), 0)
-
-    def test_can_create_selection_with_only_new_entries(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = ['test1', 'test2', 'test3']
-            qs = field.clean(values)
-            self.assertEqual(qs.count(), 0)
-            self.assertEqual(len(field.new_instances), 3)
-
-    def test_existing_text_not_added_to_new_instances(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instances = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = ["test1", "test4"]
-            qs = field.clean(values)
-            self.assertEqual(len(field.new_instances), 1)
-
-    def test_blank_input_ignored(self):
-        for klass in [Keyword, ExternalAccession, TargetOrganism]:
-            instances = self.create_n_instances(
-                klass, ['test1', 'test2', 'test3']
-            )
-            field = ModelSelectMultipleField(
-                queryset=None,
-                required=False,
-                klass=klass,
-                text_key="text"
-            )
-            field.queryset = klass.objects.all()
-            values = ['']
-            qs = field.clean(values)
-            self.assertEqual(len(field.new_instances), 0)
+        field.save_new()
+        self.assertEqual(Keyword.objects.count(), 1)
