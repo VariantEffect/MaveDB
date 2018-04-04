@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.forms import ModelMultipleChoiceField
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 
 from main.utils import is_null
 
@@ -30,12 +30,12 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
             raise ValueError("You must define 'to_field_name'.")
         self.klass = klass
         self.new_values = set()
-        self.new_instances = None
+        self.new_instances = []
 
-    def save_new(self, commit=True):
+    def save_new(self):
         self.create_new()
         for instance in self.new_instances:
-            instance.save(commit=commit)
+            instance.save()
         return self.new_instances
 
     def create_new(self):
@@ -45,11 +45,30 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         ]
         return self.new_instances
 
+    def _exists_in_new_instances(self, value):
+        value = str(value).strip()
+        exists_in_new = value in set([
+            getattr(inst, self.to_field_name)
+            for inst in self.new_instances
+        ])
+        return exists_in_new
+
+    def _exists_in_new_values(self, value):
+        value = str(value).strip()
+        exists_in_new = value in self.new_values
+        return exists_in_new
+
+    def _exists_in_db(self, value):
+        accession = str(value).strip()
+        exists_in_db = self.klass.objects.filter(
+            **{self.to_field_name: accession}
+        ).count() > 0
+        return exists_in_db
+
     def is_new_value(self, value):
         """
-        Creates the an instance with the urn `value` if it does not exist
-        in the database already. The value is considered new if it cannot be
-        found filtering by `to_field_name`.
+        Checks values existance against this fields own `new_values`,
+        `new_instances` and the database.
 
         Parameters
         ----------
@@ -62,15 +81,12 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
             Returns True if an instance already exists with the value for the
             field defined by `to_field_name`.
         """
-        accession = str(value).strip()
-        exists_in_db = self.klass.objects.filter(
-            **{self.to_field_name: accession}
-        ).count() > 0
-        exists_in_new = accession in set([
-            getattr(inst, self.to_field_name)
-            for inst in self.new_values
-        ])
-        return not (exists_in_db or exists_in_new)
+        is_new = not (
+            self._exists_in_db(value) |
+            self._exists_in_new_instances(value) |
+            self._exists_in_new_values(value)
+        )
+        return is_new
 
     def clean(self, value):
         """
@@ -122,12 +138,13 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         for value in values:
             if is_null(value):
                 continue
-            elif self.is_new_value(value):
+            pass_to_super = not (
+                self._exists_in_new_instances(value) |
+                self._exists_in_new_values(value)
+            )
+            if self.is_new_value(value):
                 self.new_values.add(value)
-            else:
+            elif pass_to_super:
                 existing.append(value)
 
         return super()._check_values(existing)
-
-
-
