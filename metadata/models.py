@@ -188,6 +188,7 @@ class PubmedIdentifier(ExternalIdentifier):
     )
 
     def format_reference_html(self):
+        # TODO: Write this.
         return ""
 
     def save(self, *args, **kwargs):
