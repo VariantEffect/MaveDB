@@ -30,7 +30,6 @@ class TestDatasetModel(TestCase):
         self.assertEqual(instance.created_by, user)
         self.assertEqual(instance.creation_date, datetime.date.today())
 
-
     def test_publish_sets_private_to_false_and_sets_publish_date(self):
         instance = ExperimentSetFactory()
         instance.publish()
