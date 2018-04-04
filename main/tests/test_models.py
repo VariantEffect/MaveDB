@@ -1,19 +1,16 @@
-
 import datetime
 
-from django.test import TransactionTestCase
+from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 from ..models import News
 from ..models import SiteInformation
 
 
-class TestNewsModel(TransactionTestCase):
+class TestNewsModel(TestCase):
     """
     Test that News items can be created, deleted and modified.
     """
-    reset_sequences = True
-
     def test_create_and_save_new_item(self):
         item = News(text="Hello World!")
         item.save()
@@ -66,13 +63,10 @@ class TestNewsModel(TransactionTestCase):
         self.assertEqual(news_items[2], item_1)
 
 
-class SiteInformationModelTest(TransactionTestCase):
+class SiteInformationModelTest(TestCase):
     """
     Test that a SiteInformation can be created, deleted and modified.
     """
-
-    reset_sequences = True
-
     def test_can_create_and_save_information(self):
         info = SiteInformation.objects.create(
             _about="This is MaveDB", _citation="This is a citation.")
