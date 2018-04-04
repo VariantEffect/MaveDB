@@ -127,7 +127,7 @@ def validate_variant_rows(file, is_meta=False):
 
     Parameters
     ----------
-    file : :class:`io.BytesIO`
+    file : :class:`io.FileIO`
         An open file handle in read mode.
 
     is_meta : bool, optional. Default: False
@@ -172,7 +172,10 @@ def validate_variant_rows(file, is_meta=False):
 
     # csv reader requires strings and the file is opened in bytes mode by
     # default by the django form.
-    lines = (line.decode('utf-8') for line in file.readlines())
+    lines = (
+        line.decode('utf-8') if isinstance(line, bytes) else line
+        for line in file.readlines()
+    )
     hgvs_map = defaultdict(lambda: dict(**{c: None for c in header}))
 
     for i, row in enumerate(csv.DictReader(lines, fieldnames=header)):
