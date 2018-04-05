@@ -6,10 +6,10 @@
 	<!-- Sidebar -->
 	<div class="sidebar col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary"
 			 style="min-height:80vh;width:200px !important;">
-		<h5> {{ experiment.accession }} </h5>
+		<h5> {{ experiment.urn }} </h5>
 		<p> 
 			Member of experiment set 
-			<a href="{% url 'experiment:experimentset_detail' experiment.experimentset.accession %}">
+			<a href="{% url 'dataset:experimentset_detail' experiment.parent.urn %}">
 				{{ experiment.experimentset }}
 			</a>
 		</p>
@@ -17,7 +17,6 @@
 	
 	<!-- Content -->
 	<div class="col-md-8 mx-3">
-
 		<!-- Tab/Pills menu -->
 		<ul class="nav nav-tabs" id="myTab" role="tablist">
 			<li class="nav-item">
@@ -27,10 +26,6 @@
 			<li class="nav-item">
 				<a class="nav-link" id="scoresets-tab" data-toggle="tab" href="#scoresets" 
 						role="tab" aria-controls="scoresets">Score Sets</a>
-			</li>
-			<li class="nav-item">
-					<a class="nav-link" id="refmaps-tab" data-toggle="tab" href="#refmaps" 
-						 role="tab" aria-controls="refmaps">Reference Maps</a>
 			</li>
 		</ul>
 
@@ -68,9 +63,9 @@
 					<br>
 					<span style="font-weight: 600;">Contributors:</span>
 						<span>
-							{% for user in experiment.get_author_models %}
+							{% for user in experiment.editors %}
 								{{ user.profile.get_full_name_hyperlink }}
-								{% if forloop.counter < experiment.get_author_models|length %},{% endif %}
+								{% if forloop.counter < experiment.editors|length %},{% endif %}
 							{% endfor %}
 						</span>
 					<br>	
@@ -100,60 +95,23 @@
 					<span style="font-weight: 600;">Keywords: </span>
 						<span>{{ experiment.get_keywords|default:"Not provided" }}</span>
 					<br>
-					<span style="font-weight: 600;">External accessions: </span>
-						<span>{{ experiment.get_other_accessions|default:"Not provided" }}</span>
+					<span style="font-weight: 600;">External urns: </span>
+						<span>{{ experiment.get_other_urns|default:"Not provided" }}</span>
 				</div>
 			</div> <!-- End information tab -->
-
-			<!-- Reference mapping tab -->
-			<div class="tab-pane fade show" id="refmaps" role="tabpanel" aria-labelledby="refmaps-tab">
-				<div class="container-fluid mt-4">
-					{% if not experiment.get_ref_mappings %}
-						<p> No maps have been specified for this experiment. </p>
-					{% else %}
-						<p class="mt-4">The following maps have been specified for this experiment: </p>
-						<div class="numeric-container container-fluid mt-2">
-							<table class="styled-table table table-hover">
-								<thead>
-									<tr>
-										<th>Reference</th>
-										<th>Is alternate</th>
-										<th>Target start</th>
-										<th>Target end</th>
-										<th>Reference start</th>
-										<th>Reference end</th>
-									</tr>
-								</thead>
-								<tbody>
-									{% for map in experiment.get_ref_mappings %}
-									<tr>
-										<td>{{ map.reference }}</td>
-										<td>{{ map.is_alternate }}</td>
-										<td>{{ map.target_start }}</td>
-										<td>{{ map.target_end }}</td>
-										<td>{{ map.reference_start }}</td>
-										<td>{{ map.reference_end }}</td>
-									</tr>			
-									{% endfor %}
-								</tbody>
-							</table>
-						</div>
-					{% endif %}
-				</div>
-			</div> <!-- End ref map tab -->
 
 			<!-- Scoreset tab -->
 			<div class="tab-pane fade show" id="scoresets" role="tabpanel" aria-labelledby="scoresets-tab">
 				<div class="container-fluid mt-4">
-					{% if not experiment.scoreset_set.all %}
+					{% if not experiment.children.all %}
 						<p> No scoresets have been associated with this experiment. </p>
 					{% else %}
-						<p> The following score sets are associated with this experiment: </p>
+						<p> The following score sets are associated with this dataset: </p>
 						<ul class="mt-2" style="list-style: none;">
-							{% for scoreset in experiment.scoreset_set.all %}
+							{% for scoreset in experiment.children.all %}
 							<li>
-								<a href="{% url 'scoreset:scoreset_detail' scoreset.accession %}">
-									{{ scoreset.accession }}
+								<a href="{% url 'dataset:scoreset_detail' scoreset.urn %}">
+									{{ scoreset.urn }}
 								</a>
 							</li>
 							{% endfor %}

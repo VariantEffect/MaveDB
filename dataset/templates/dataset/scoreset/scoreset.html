@@ -6,11 +6,11 @@
 	<!-- Sidebar -->
 	<div class="sidebar col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary" 
 			 style="min-height:80vh;width:200px !important;">
-		<h5> {{ scoreset.accession }} </h5>
+		<h5> {{ scoreset.urn }} </h5>
 		<p> 
 			Member of experiment
-			<a href="{% url 'experiment:experiment_detail' scoreset.experiment.accession %}">
-				{{ scoreset.experiment.accession }}
+			<a href="{% url 'experiment:experiment_detail' scoreset.experiment.urn %}">
+				{{ scoreset.experiment.urn }}
 			</a>
 		</p>
 	</div>
@@ -67,9 +67,9 @@
 					<br>
 					<span style="font-weight: 600;">Contributors:</span>
 						<span>
-							{% for user in scoreset.get_author_models %}
+							{% for user in scoreset.editors %}
 								{{ user.profile.get_full_name_hyperlink }}
-								{% if forloop.counter < scoreset.get_author_models|length %},{% endif %}
+								{% if forloop.counter < scoreset.editors|length %},{% endif %}
 							{% endfor %}
 						</span>					
 					<br>	
@@ -92,7 +92,7 @@
 					<span style="font-weight: 600;">Replaced by: </span>
 					<span>
 						{% if scoreset.replaced_by %}
-						<a href="{% url 'scoreset:scoreset_detail' scoreset.replaced_by.accession %}">
+						<a href="{% url 'dataset:scoreset_detail' scoreset.replaced_by.urn %}">
 							{{ scoreset.replaced_by }}
 						</a>
 						{% else %}
@@ -103,7 +103,7 @@
 					<span style="font-weight: 600;">Replaces: </span>
 					<span>
 						{% if scoreset.replaces %}
-						<a href="{% url 'scoreset:scoreset_detail' scoreset.replaces.accession %}">
+						<a href="{% url 'dataset:scoreset_detail' scoreset.replaces.urn %}">
 							{{ scoreset.replaces }}
 						</a>
 						{% else %}
@@ -124,7 +124,7 @@
 						{% if not preview %}
 						<div class="col-sm-1 col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
-								 href="{% url 'scoreset:scores_download' scoreset.accession %}">
+								 href="{% url 'dataset:scores_download' scoreset.urn %}">
 								Download
 							</a>
 						</div>
@@ -170,7 +170,8 @@
 									<form action="?scores-per-page=#scores" method="GET">
 										<div class="form-inline">
 											<label for="scores-per-page-select"> Variants per page </label>
-											<select class="ml-2" name="scores-per-page" id="scores-per-page-select" onchange="paginationSubmit('scores')">
+											<select class="ml-2" name="scores-per-page" id="scores-per-page-select"
+															onchange="paginationSubmit('scores')">
 												{% for i in per_page_selections %}
 													{% if i == scores_per_page %}
 														<option value={{i}} selected="">{{i}}</option>
@@ -250,7 +251,7 @@
 					{% else %}
 						<div class="col-sm-1 col-md-1">
 							<a class="download-btn btn btn-sm btn-outline-primary" 
-									href="{% url 'scoreset:counts_download' scoreset.accession %}">
+									href="{% url 'dataset:counts_download' scoreset.urn %}">
 								Download
 							</a>
 						</div>
@@ -288,7 +289,8 @@
 									<form action="?counts-per-page=#counts" method="GET">
 										<div class="form-inline">
 											<label for="counts-per-page-select"> Variants per page </label>
-											<select class="ml-2" name="counts-per-page" id="counts-per-page-select" onchange="paginationSubmit('counts')">
+											<select class="ml-2" name="counts-per-page" id="counts-per-page-select"
+                              onchange="paginationSubmit('counts')">
 												{% for i in per_page_selections %}
 													{% if i == counts_per_page %}
 														<option value={{i}} selected="">{{i}}</option>

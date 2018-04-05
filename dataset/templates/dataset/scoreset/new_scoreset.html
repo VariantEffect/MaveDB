@@ -8,7 +8,7 @@
 			Create new scoreset
 		</h3>
 		{% if came_from_new_experiment %}
-			<a href="{% url 'experiment:experiment_detail' e_accession %}"><h4 class="mt-4">Skip for now</h4></a>
+			<a href="{% url 'dataset:experiment_detail' experiment_urn %}"><h4 class="mt-4">Skip for now</h4></a>
 		{% endif %}
 		<p class="mt-4">
 			Please fill out the form to the right. All fields will remain editable until published.
@@ -17,7 +17,7 @@
 	</div>
 
 	<div class="col-md-8 mx-3">
-		<form action="{% url 'scoreset:scoreset_new' %}" method="POST" enctype="multipart/form-data">
+		<form action="{% url 'dataset:scoreset_new' %}" method="POST" enctype="multipart/form-data">
 			{% csrf_token %}
 			
 			{% if scoreset_form.non_field_errors %}
@@ -32,7 +32,10 @@
 			</div>
 			{% endif %}
 
-			<div id="keywords-to-add" hidden> {{ repop_keywords }} </div>
+			<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
+			<div id="sra-identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
+			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
+			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
 
 			<div class="model-form">
 				{% for field in scoreset_form %}

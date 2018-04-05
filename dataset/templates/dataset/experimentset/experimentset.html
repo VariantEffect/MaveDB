@@ -2,11 +2,10 @@
 
 {% block body %}
 <div class="row">
-	
 	<!-- Sidebar -->
 	<div class="sidebar col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary" 
 		 style="min-height:80vh;width:200px !important;">
-		<h5> {{ experimentset.accession }} </h5>
+		<h5> {{ experimentset.urn }} </h5>
 	</div>
 
 	<!-- Content -->
@@ -49,7 +48,7 @@
 						</span>	
 					<br>
 					<span style="font-weight: 600;">Contributors:</span>
-						<span>{{ experimentset.get_authors|default:"None" }}</span>
+						<span>{{ experimentset.contributors|default:"None" }}</span>
 				</div>
 			</div> <!-- End info tab -->
 			
@@ -62,10 +61,10 @@
 					{% else %}
 						The following experiments have been associated with this set:
 						<ul class="mt-2" style="list-style: none;">
-						{% for exp in experimentset.experiment_set.all %}
+						{% for exp in experimentset.children.all %}
 							<li>
-								<a href="{% url 'experiment:experiment_detail' exp.accession %}">
-									{{exp.accession}}
+								<a href="{% url 'dataset:experiment_detail' exp.urn %}">
+									{{exp.urn}}
 								</a>
 							</li>
 						{% endfor %}
