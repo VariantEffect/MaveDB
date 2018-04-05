@@ -133,7 +133,7 @@ class TestExperimentForm(TestCase):
         self.assertEqual(
             form.instance.experimentset.pk, data['experimentset'])
 
-    def test_from_request_locks_experimentset_to_instances(self):
+    def test_from_request_locks_experimentset_to_instance_experimentset(self):
         exp = ExperimentFactory()
         data = self.make_form_data(use_exps=False)
         data['experimentset'] = exp.experimentset.pk

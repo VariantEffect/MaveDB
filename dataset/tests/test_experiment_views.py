@@ -1,402 +1,319 @@
-# from django.core.urlresolvers import reverse_lazy
-# from django.http import HttpResponse, HttpResponseForbidden
-# from django.test import TestCase, TransactionTestCase, RequestFactory
-#
-# from django.contrib.auth import get_user_model
-# from django.contrib.auth import authenticate, login
-#
-# from accounts.permissions import (
-#     user_is_admin_for_instance,
-#     assign_user_as_instance_admin,
-#     assign_user_as_instance_viewer
-# )
-#
-# from metadata.models import Keyword, ExternalIdentifier
-#
-# from genome.models import (
-#     ReferenceGenome, TargetOrganism, TargetGene, WildTypeSequence
-# )
-#
-# from dataset.models import Experiment, ExperimentSet
-# from dataset.views import (
-#     ExperimentDetailView, ExperimentSetDetailView,
-#     experiment_create_view
-# )
-#
-#
-# class TestExperimentDetailView(TestCase):
-#     """
-#     Test that experiments are displayed correctly to the public.
-#     """
-#
-#     def setUp(self):
-#         # Every test needs access to the request factory.
-#         self.User = get_user_model()
-#         self.factory = RequestFactory()
-#
-#     def test_uses_correct_template(self):
-#         exp = Experiment.objects.create(
-#             target="test", wt_sequence="atcg", private=False
-#         )
-#         response = self.client.get('/experiment/{}/'.format(exp.accession))
-#         self.assertTemplateUsed(response, 'experiment/experiment.html')
-#
-#     def test_private_experiment_403_if_no_permission(self):
-#         exp = Experiment.objects.create(target="BRCA1", wt_sequence="ATCG")
-#         bob = self.User.objects.create_user(
-#             username='bob', password='top_secret'
-#         )
-#         request = self.factory.get('/experiment/')
-#         request.user = bob
-#         response = ExperimentDetailView.as_view()(
-#             request, accession=exp.accession)
-#         self.assertEqual(response.status_code, 403)
-#
-#     def test_403_uses_template(self):
-#         exp = Experiment.objects.create(target="BRCA1", wt_sequence="ATCG")
-#         response = self.client.get('/experiment/{}/'.format(exp.accession))
-#         self.assertTemplateUsed(response, 'main/403_forbidden.html')
-#
-#     def test_404_status_and_template_used_when_object_not_found(self):
-#         response = self.client.get('/experiment/{}/'.format("EXP999999A"))
-#         self.assertEqual(response.status_code, 404)
-#         self.assertTemplateUsed(response, 'main/404_not_found.html')
-#
-#     def test_private_experiment_rendered_if_user_can_view(self):
-#         exp = Experiment.objects.create(target="BRCA1", wt_sequence="ATCG")
-#         bob = self.User.objects.create_user(
-#             username='bob', password='top_secret'
-#         )
-#         assign_user_as_instance_viewer(bob, exp)
-#         request = self.factory.get('/experiment/')
-#         request.user = bob
-#         response = ExperimentDetailView.as_view()(
-#             request, accession=exp.accession)
-#         self.assertEqual(response.status_code, 200)
-#
-#
-# class TestCreateNewExperimentView(TestCase):
-#     """
-#     Test that the submission process does not allow invalid data through,
-#     and properly handles model creation.
-#     """
-#
-#     def setUp(self):
-#         # Every test needs access to the request factory.
-#         self.User = get_user_model()
-#         self.factory = RequestFactory()
-#         self.path = reverse_lazy("experiment:experiment_new")
-#         self.template = 'experiment/new_experiment.html'
-#         self.post_data = {
-#             'experimentset': [''],
-#             'private': ['on'],
-#             'target': [''],
-#             'target_organism': [''],
-#             'wt_sequence': [''],
-#             'abstract': [''],
-#             'method_desc': [''],
-#             'sra_id': [''],
-#             'doi_id': [''],
-#             'reference_mapping-TOTAL_FORMS': ['0'],
-#             'reference_mapping-INITIAL_FORMS': ['0'],
-#             'reference_mapping-MIN_NUM_FORMS': ['0'],
-#             'reference_mapping-MAX_NUM_FORMS': ['1000'],
-#             'reference_mapping-__prefix__-reference': [''],
-#             'reference_mapping-__prefix__-target_start': [''],
-#             'reference_mapping-__prefix__-target_end': [''],
-#             'reference_mapping-__prefix__-reference_start': [''],
-#             'reference_mapping-__prefix__-reference_end': [''],
-#             'submit': ['submit']
-#         }
-#
-#         self.username = "bob"
-#         self.password = "secret_key"
-#         self.bob = self.User.objects.create(username=self.username)
-#         self.bob.set_password(self.password)
-#         self.bob.save()
-#         self.client.logout()
-#
-#     def test_redirect_to_login_not_logged_in(self):
-#         response = self.client.get(self.path)
-#         self.assertEqual(response.status_code, 302)
-#
-#     def test_experimentset_options_are_restricted_to_admin_instances(self):
-#         data = self.post_data.copy()
-#         exps_1 = ExperimentSet.objects.create()
-#         exps_2 = ExperimentSet.objects.create()
-#         assign_user_as_instance_admin(self.bob, exps_1)
-#
-#         request = self.factory.get('/experiment/new/')
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertContains(response, exps_1.accession)
-#         self.assertNotContains(response, exps_2.accession)
-#
-#     def test_can_submit_and_create_experiment_when_forms_are_valid(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['target_organism'] = ["Homo sapiens"]
-#         data['keywords'] = ['test']
-#         data['external_accessions'] = ['test']
-#         data['reference_mapping-TOTAL_FORMS'] = ['1']
-#         data['reference_mapping-0-reference'] = ['reference']
-#         data['reference_mapping-0-is_alternate'] = ['off']
-#         data['reference_mapping-0-target_start'] = [0]
-#         data['reference_mapping-0-target_end'] = [10]
-#         data['reference_mapping-0-reference_start'] = [0]
-#         data['reference_mapping-0-reference_end'] = [10]
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(Keyword.objects.count(), 1)
-#         self.assertEqual(ExternalIdentifier.objects.count(), 1)
-#         self.assertEqual(TargetOrganism.objects.count(), 1)
-#         self.assertEqual(ReferenceGenome.objects.count(), 1)
-#
-#         e = Experiment.objects.all()[0]
-#         self.assertEqual(e.keywords.count(), 1)
-#         self.assertEqual(e.external_accessions.count(), 1)
-#         self.assertEqual(e.target_organism.count(), 1)
-#         self.assertEqual(ReferenceGenome.objects.all()[0].experiment.pk, e.pk)
-#
-#     def test_correct_tamplate_when_logged_in(self):
-#         self.client.login(
-#             username=self.username,
-#             password=self.password
-#         )
-#         response = self.client.get(self.path)
-#         self.assertTemplateUsed(response, self.template)
-#
-#     def test_invalid_form_does_not_redirect(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = ""  # required field missing
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(response.status_code, 200)
-#
-#         data['reference_mapping-TOTAL_FORMS'] = ['1']
-#         data['reference_mapping-0-reference'] = ['reference']
-#         data['wt_sequence'] = "atcg"
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(response.status_code, 200)
-#
-#     def test_only_links_preexisting_keyword_and_doesnt_create(self):
-#         data = self.post_data.copy()
-#         Keyword.objects.create(text='test1')
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['keywords'] = ['test1']
-#         request = self.factory.post(
-#             path=self.path,
-#             data=data
-#         )
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(Keyword.objects.count(), 1)
-#         self.assertEqual(Experiment.objects.all()[0].keywords.count(), 1)
-#
-#     def test_only_links_preexisting_target_organism_and_doesnt_create(self):
-#         data = self.post_data.copy()
-#         TargetOrganism.objects.create(text='Homo sapiens')
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#
-#         # Create first experiment
-#         data['target_organism'] = "Homo sapiens"
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#
-#         # Create second experiment with same target organism
-#         data['target_organism'] = "Homo sapiens"
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         e1, e2 = list(Experiment.objects.all())
-#         self.assertEqual(TargetOrganism.objects.count(), 1)
-#         self.assertEqual(
-#             e1.target_organism.all()[0].pk,
-#             e2.target_organism.all()[0].pk
-#         )
-#
-#     def test_only_links_preexisting_accession_and_doesnt_create(self):
-#         data = self.post_data.copy()
-#         ExternalIdentifier.objects.create(text='test1')
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['external_accessions'] = ["test1"]
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(ExternalIdentifier.objects.count(), 1)
-#         self.assertEqual(
-#             Experiment.objects.all()[0].external_accessions.count(), 1
-#         )
-#
-#     def test_multiple_ref_maps_will_be_created(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#
-#         data['reference_mapping-TOTAL_FORMS'] = ['2']
-#         data['reference_mapping-0-reference'] = ['reference']
-#         data['reference_mapping-0-is_alternate'] = ['off']
-#         data['reference_mapping-0-target_start'] = [0]
-#         data['reference_mapping-0-target_end'] = [10]
-#         data['reference_mapping-0-reference_start'] = [0]
-#         data['reference_mapping-0-reference_end'] = [10]
-#
-#         data['reference_mapping-1-reference'] = ['reference']
-#         data['reference_mapping-1-is_alternate'] = ['off']
-#         data['reference_mapping-1-target_start'] = [0]
-#         data['reference_mapping-1-target_end'] = [50]
-#         data['reference_mapping-1-reference_start'] = [0]
-#         data['reference_mapping-1-reference_end'] = [600]
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(ReferenceGenome.objects.count(), 2)
-#
-#     def test_only_keep_one_ref_map_if_duplicates_supplied(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#
-#         data['reference_mapping-TOTAL_FORMS'] = ['2']
-#         data['reference_mapping-0-reference'] = ['reference']
-#         data['reference_mapping-0-is_alternate'] = ['off']
-#         data['reference_mapping-0-target_start'] = [0]
-#         data['reference_mapping-0-target_end'] = [10]
-#         data['reference_mapping-0-reference_start'] = [0]
-#         data['reference_mapping-0-reference_end'] = [10]
-#
-#         data['reference_mapping-1-reference'] = ['reference']
-#         data['reference_mapping-1-is_alternate'] = ['off']
-#         data['reference_mapping-1-target_start'] = [0]
-#         data['reference_mapping-1-target_end'] = [10]
-#         data['reference_mapping-1-reference_start'] = [0]
-#         data['reference_mapping-1-reference_end'] = [10]
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(ReferenceGenome.objects.count(), 1)
-#
-#     def test_blank_keywords_not_created(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['keywords'] = ['']
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(Keyword.objects.count(), 0)
-#
-#     def test_blank_target_organism_not_created(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['target_organism'] = ""
-#         data['wt_sequence'] = "atcg"
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(TargetOrganism.objects.count(), 0)
-#
-#     def test_blank_external_accessions_not_created(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['external_accessions'] = ['']
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(ExternalIdentifier.objects.count(), 0)
-#
-#     def test_blank_ref_map_not_created(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['reference_mapping-TOTAL_FORMS'] = ['1']
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(ReferenceGenome.objects.count(), 0)
-#
-#     def test_experiment_created_with_current_user_as_admin(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         e = Experiment.objects.all()[0]
-#         self.assertTrue(user_is_admin_for_instance(self.bob, e))
-#
-#     def test_experimentset_created_with_current_user_as_admin(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         es = ExperimentSet.objects.all()[0]
-#         self.assertTrue(user_is_admin_for_instance(self.bob, es))
-#
-#     def test_selected_experimentset_does_not_add_user_as_admin(self):
-#         data = self.post_data.copy()
-#         es = ExperimentSet.objects.create()
-#         data['experimentset'] = es.pk
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertFalse(user_is_admin_for_instance(self.bob, es))
-#
-#     def test_can_create_new_keywords(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['keywords'] = ['test']
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(Keyword.objects.count(), 1)
-#
-#     def test_can_create_new_ext_accessions(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['wt_sequence'] = "atcg"
-#         data['external_accessions'] = ['test']
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(ExternalIdentifier.objects.count(), 1)
-#
-#     def test_can_create_new_target_orgs(self):
-#         data = self.post_data.copy()
-#         data['target'] = "brca1"
-#         data['target_organism'] = ['test']
-#         data['wt_sequence'] = "atcg"
-#
-#         request = self.factory.post(path=self.path, data=data)
-#         request.user = self.bob
-#         response = experiment_create_view(request)
-#         self.assertEqual(TargetOrganism.objects.count(), 1)
+from django.test import TestCase, RequestFactory
+from django.urls import reverse_lazy
+
+from accounts.factories import UserFactory
+from accounts.permissions import (
+    assign_user_as_instance_viewer,
+    assign_user_as_instance_admin,
+    assign_user_as_instance_contributor,
+    user_is_admin_for_instance
+)
+
+from genome.factories import TargetOrganismFactory
+from metadata.factories import (
+    SraIdentifierFactory, DoiIdentifierFactory,
+    PubmedIdentifierFactory, KeywordFactory
+)
+
+from ..models.experiment import Experiment
+from ..models.experimentset import ExperimentSet
+from ..factories import ExperimentFactory, ExperimentSetFactory
+from ..views.experiment import ExperimentDetailView, experiment_create_view
+
+
+class TestExperimentDetailView(TestCase):
+    """
+    Test that experiments are displayed correctly to the public.
+    """
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.template = 'dataset/experiment/experiment.html'
+        self.template_403 = 'main/403_forbidden.html'
+        self.template_404 = 'main/404_not_found.html'
+
+    def test_uses_correct_template(self):
+        obj = ExperimentFactory()
+        obj.publish()
+        obj.save()
+        response = self.client.get('/experiment/{}/'.format(obj.urn))
+        self.assertTemplateUsed(response, self.template)
+
+    def test_private_instance_will_403_if_no_permission(self):
+        user = UserFactory()
+        obj = ExperimentFactory()
+        request = self.factory.get('/experiment/{}/'.format(obj.urn))
+        request.user = user
+        response = ExperimentDetailView.as_view()(request, urn=obj.urn)
+        self.assertEqual(response.status_code, 403)
+
+    def test_403_uses_correct_template(self):
+        obj = ExperimentFactory()
+        response = self.client.get('/experiment/{}/'.format(obj.urn))
+        self.assertTemplateUsed(response, self.template_403)
+
+    def test_404_status_and_template_used_when_object_not_found(self):
+        obj = ExperimentFactory()
+        urn = obj.urn
+        obj.delete()
+        response = self.client.get('/experiment/{}/'.format(urn))
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/404_not_found.html')
+
+    def test_private_experiment_rendered_if_user_can_view(self):
+        user = UserFactory()
+        obj = ExperimentFactory()
+        assign_user_as_instance_viewer(user, obj)
+        request = self.factory.get('/experiment/{}/'.format(obj.urn))
+        request.user = user
+        response = ExperimentDetailView.as_view()(request, urn=obj.urn)
+        self.assertEqual(response.status_code, 200)
+
+
+class TestCreateNewExperimentView(TestCase):
+    """
+    Test that the submission process does not allow invalid data through,
+    and properly handles model creation.
+    """
+    def setUp(self):
+        # Every test needs access to the request factory.
+        self.factory = RequestFactory()
+        self.template = 'dataset/experiment/new_experiment.html'
+        self.template_403 = 'main/403_forbidden.html'
+        self.template_404 = 'main/404_not_found.html'
+        self.path = reverse_lazy("dataset:experiment_new")
+        self.post_data = {
+            'experimentset': [''],
+            'private': ['on'],
+            'target': [''],
+            'target_organism': [''],
+            'wt_sequence': [''],
+            'abstract_text': [''],
+            'method_text': [''],
+            'sra_ids': [''],
+            'doi_ids': [''],
+            'pmid_ids': [''],
+            'keywords': [''],
+            'submit': ['submit']
+        }
+        self.unencrypted_password = 'secret_key'
+        self.user = UserFactory(password=self.unencrypted_password)
+        self.user.set_password(self.unencrypted_password)
+        self.user.save()
+        self.client.logout()
+
+    def test_redirect_to_login_not_logged_in(self):
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 302)
+
+    def test_correct_tamplate_when_logged_in(self):
+        self.client.login(
+            username=self.user.username,
+            password=self.unencrypted_password
+        )
+        response = self.client.get(self.path)
+        self.assertTemplateUsed(response, self.template)
+
+    def test_invalid_form_does_not_redirect(self):
+        data = self.post_data
+        data['target'] = "brca1"
+        data['wt_sequence'] = ""  # Required field missing
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'error')
+
+    def test_form_will_post_with_valid_date(self):
+        data = self.post_data
+        data['wt_sequence'] = ['atcg']
+        data['target'] = ['brca1']
+        data['target_organism'] = ['human']
+        data['abstract_text'] = ['hello world']
+        data['method_text'] = ['foo bar']
+        data['keywords'] = ['protein', 'blue']
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        experiment = Experiment.objects.first()
+        self.assertEqual(experiment.wt_sequence, 'ATCG')
+        self.assertEqual(experiment.target, 'brca1')
+        self.assertEqual(experiment.target_organism.count(), 1)
+        self.assertEqual(experiment.target_organism.first().text, 'human')
+        self.assertEqual(experiment.keywords.count(), 2)
+        self.assertEqual(experiment.abstract_text, 'hello world')
+        self.assertEqual(experiment.method_text, 'foo bar')
+
+    def test_valid_submission_sets_created_by(self):
+        data = self.post_data
+        exps = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.user, exps)
+        data['experimentset'] = [exps.pk]
+        data['wt_sequence'] = ['atcg']
+        data['target'] = ['brca1']
+        data['target_organism'] = ['human']
+        data['abstract_text'] = ['hello world']
+        data['method_text'] = ['foo bar']
+        data['keywords'] = ['protein', 'blue']
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        experiment = Experiment.objects.first()
+        self.assertEqual(experiment.parent, exps)
+        self.assertEqual(experiment.created_by, self.user)
+        self.assertIsNone(experiment.parent.created_by, None)
+
+    def test_valid_submission_sets_last_edit_by(self):
+        data = self.post_data
+        exps = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.user, exps)
+        data['experimentset'] = [exps.pk]
+        data['wt_sequence'] = ['atcg']
+        data['target'] = ['brca1']
+        data['target_organism'] = ['human']
+        data['abstract_text'] = ['hello world']
+        data['method_text'] = ['foo bar']
+        data['keywords'] = ['protein', 'blue']
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        experiment = Experiment.objects.first()
+        self.assertEqual(experiment.parent, exps)
+        self.assertEqual(experiment.last_edit_by, self.user)
+        self.assertIsNone(experiment.parent.last_edit_by, None)
+
+    def test_valid_submission_sets_parent_created_by(self):
+        data = self.post_data
+        data['wt_sequence'] = ['atcg']
+        data['target'] = ['brca1']
+        data['target_organism'] = ['human']
+        data['abstract_text'] = ['hello world']
+        data['method_text'] = ['foo bar']
+        data['keywords'] = ['protein', 'blue']
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        experiment = Experiment.objects.first()
+        self.assertEqual(experiment.created_by, self.user)
+        self.assertEqual(experiment.parent.created_by, self.user)
+
+    def test_valid_submission_sets_parent_last_edit_by(self):
+        data = self.post_data
+        data['wt_sequence'] = ['atcg']
+        data['target'] = ['brca1']
+        data['target_organism'] = ['human']
+        data['abstract_text'] = ['hello world']
+        data['method_text'] = ['foo bar']
+        data['keywords'] = ['protein', 'blue']
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        experiment = Experiment.objects.first()
+        self.assertEqual(experiment.last_edit_by, self.user)
+        self.assertEqual(experiment.parent.last_edit_by, self.user)
+
+    def test_experiment_created_with_current_user_as_admin(self):
+        data = self.post_data.copy()
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        _ = experiment_create_view(request)
+        exp = Experiment.objects.all()[0]
+        self.assertTrue(user_is_admin_for_instance(self.user, exp))
+
+    def test_new_experimentset_created_with_current_user_as_admin(self):
+        data = self.post_data.copy()
+        data['target'] = "brca1"
+        data['wt_sequence'] = "atcg"
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        _ = experiment_create_view(request)
+        exps = ExperimentSet.objects.first()
+
+        self.assertTrue(user_is_admin_for_instance(self.user, exps))
+
+    def test_selected_experimentset_does_not_add_user_as_admin(self):
+        data = self.post_data.copy()
+        es = ExperimentSetFactory()
+        assign_user_as_instance_contributor(self.user, es)
+        data['experimentset'] = [es.pk]
+        data['target'] = ["brca1"]
+        data['wt_sequence'] = ["atcg"]
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        _ = experiment_create_view(request)
+
+        self.assertFalse(user_is_admin_for_instance(self.user, es))
+
+    def test_failed_submission_adds_keywords_to_context(self):
+        data = self.post_data.copy()
+        kw = KeywordFactory()
+        data['keywords'] = ['protein', kw.text]
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+
+        self.assertContains(response, 'protein')
+        self.assertContains(response, kw.text)
+
+    def test_failed_submission_adds_target_organism_to_context(self):
+        data = self.post_data.copy()
+        to = TargetOrganismFactory()
+        data['target_organism'] = ['human', to.text]
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        response = experiment_create_view(request)
+
+        self.assertContains(response, 'human')
+        self.assertContains(response, to.text)
+
+    def test_failed_submission_adds_extern_identifier_to_context(self):
+        fs = [
+            (SraIdentifierFactory, 'sra_ids'),
+            (PubmedIdentifierFactory, 'pmid_ids'),
+            (DoiIdentifierFactory, 'doi_ids')
+        ]
+        for factory, field in fs:
+            data = self.post_data.copy()
+            instance = factory()
+            data[field] = [instance.identifier]
+
+            request = self.factory.post(path=self.path, data=data)
+            request.user = self.user
+            response = experiment_create_view(request)
+
+            self.assertContains(response, instance.identifier)
+
+    def test_failed_submission_adds_new_extern_identifier_to_context(self):
+        fs = [
+            (SraIdentifierFactory, 'sra_ids'),
+            (PubmedIdentifierFactory, 'pmid_ids'),
+            (DoiIdentifierFactory, 'doi_ids')
+        ]
+        for factory, field in fs:
+            data = self.post_data.copy()
+            instance = factory()
+            value = instance.identifier
+            data[field] = [value]
+            instance.delete()
+
+            request = self.factory.post(path=self.path, data=data)
+            request.user = self.user
+            response = experiment_create_view(request)
+
+            self.assertContains(response, instance.identifier)

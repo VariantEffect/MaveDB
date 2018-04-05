@@ -116,3 +116,4 @@ class TestScoreSet(TestCase):
         })
         self.assertEqual(scs.dataset_columns, expected)
         self.assertEqual(scs.variants.count(), 0)
+        self.assertEqual(scs.last_child_value, 0)

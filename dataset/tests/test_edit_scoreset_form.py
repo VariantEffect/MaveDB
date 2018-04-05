@@ -1,132 +1,83 @@
-# from django.http import QueryDict
-# from django.test import TestCase, RequestFactory
-# from django.contrib.auth import get_user_model
-#
-# from variant.models import Variant
-# from main.models import Licence
-# from metadata.models import (
-#     Keyword, SraIdentifier, PubmedIdentifier, DoiIdentifier
-# )
-#
-# import dataset.constants as constants
-# from ..models import Experiment, ScoreSet, ExperimentSet
-# from ..forms import ScoreSetEditForm
-# from .utility import make_score_count_files
-#
-#
-# class TestScoreSetEditForm(TestCase):
-#
-#     def setUp(self):
-#         self.experiment = Experiment.objects.create(
-#             target="test", wt_sequence="ATCG"
-#         )
-#
-#     def test_can_instantiate_form_with_instance(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         form = ScoreSetEditForm({}, instance=instance)
-#         self.assertTrue(form.is_valid())
-#
-#     def test_can_save_non_keyword_fields(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         data = {
-#             "method_desc": "hello",
-#             "abstract": "world",
-#             "doi_id": "11111"
-#         }
-#         post = QueryDict('', mutable=True)
-#         post.update(data)
-#         form = ScoreSetEditForm(post, instance=instance)
-#         self.assertTrue(form.is_valid())
-#
-#         scs = form.save(commit=True)
-#         self.assertEqual(scs.method_desc, "hello")
-#         self.assertEqual(scs.abstract, "world")
-#         self.assertEqual(scs.doi_id, "11111")
-#
-#     def test_can_create_new_keywords(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test1", "test2"])
-#         form = ScoreSetEditForm(post, instance=instance)
-#         self.assertTrue(form.is_valid())
-#         self.assertEqual(len(form.new_keywords()), 2)
-#
-#     def test_can_find_existing_keywords(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         Keyword.objects.create(text="test1")
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test1", "test2"])
-#
-#         form = ScoreSetEditForm(post, instance=instance)
-#         self.assertTrue(form.is_valid())
-#         self.assertEqual(len(form.new_keywords()), 1)
-#         self.assertEqual(form.cleaned_data["keywords"].count(), 1)
-#
-#     def test_can_save_update(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test1", "test2"])
-#
-#         form = ScoreSetEditForm(post, instance=instance)
-#         scs = form.save(commit=True)
-#         self.assertEqual(Keyword.objects.count(), 2)
-#         self.assertEqual(scs.keywords.count(), 2)
-#
-#     def test_form_save_removes_keywords_not_present_in_submission(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         kw = Keyword.objects.create(text="test")
-#         instance.keywords.add(kw)
-#
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test2"])
-#
-#         form = ScoreSetEditForm(post, instance=instance)
-#         scs = form.save(commit=True)
-#         self.assertEqual(Keyword.objects.count(), 2)
-#         self.assertEqual(scs.keywords.count(), 1)
-#         self.assertEqual(scs.keywords.all()[0].text, "test2")
-#
-#     def test_commit_false_does_not_update_keywords(self):
-#         instance = ScoreSet.objects.create(experiment=self.experiment)
-#         kw = Keyword.objects.create(text="test")
-#         instance.keywords.add(kw)
-#
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test2"])
-#
-#         form = ScoreSetEditForm(post, instance=instance)
-#         scs = form.save(commit=False)
-#         self.assertEqual(Keyword.objects.count(), 1)
-#         self.assertEqual(scs.keywords.count(), 1)
-#         self.assertEqual(scs.keywords.all()[0].text, "test")
-#
-#         form.save_m2m()
-#         self.assertEqual(Keyword.objects.count(), 2)
-#         self.assertEqual(scs.keywords.count(), 1)
-#         self.assertEqual(scs.keywords.all()[0].text, "test2")
-#
-#     def test_save_does_not_alter_other_fields(self):
-#         instance = ScoreSet.objects.create(
-#             experiment=self.experiment,
-#             dataset_columns={
-#                 constants.variant_score_data: [constants.hgvs_column, "score"],
-#                 constants.variant_count_data: [constants.hgvs_column, "count"]
-#             }
-#         )
-#         variant = Variant.objects.create(
-#             scoreset=instance,
-#             hgvs="test",
-#             data={
-#                 constants.variant_score_data: {
-#                     constants.hgvs_column: "test", "score": 0.1},
-#                 constants.variant_count_data: {
-#                     constants.hgvs_column: "test", "count": 1.0},
-#             }
-#         )
-#
-#         post = QueryDict('', mutable=True)
-#         post.setlist("keywords", ["test"])
-#         form = ScoreSetEditForm(post, instance=instance)
-#         instance = form.save(commit=True)
-#         self.assertEqual(instance.variant_set.first(), variant)
-#         self.assertEqual(instance.keywords.count(), 1)
+from django.test import TestCase, RequestFactory
+
+from accounts.factories import UserFactory
+from accounts.permissions import assign_user_as_instance_admin
+from main.models import Licence
+from variant.factories import VariantFactory
+
+import dataset.constants as constants
+
+from ..factories import ExperimentFactory, ScoreSetFactory
+from ..forms.scoreset import ScoreSetEditForm
+
+from .utility import make_score_count_files
+
+
+class TestScoreSetEditForm(TestCase):
+    """
+    Tests functionality of the fields specific to the ScoreSetForm.
+    """
+    def setUp(self):
+        self.user = UserFactory()
+        self.factory = RequestFactory()
+
+    def make_post_data(self, score_data=None, count_data=None,
+                       make_exp=True):
+        """
+        Makes sample test input for instantiating the form to simulate
+        POST data from a view. By default creates an experiment and
+        assigns the class user as the administrator.
+
+        Parameters
+        ----------
+        score_data : str or None
+            The score file content in string format
+
+        count_data : str, boolean or None
+            The score file content in string format
+
+        make_exp : bool
+            If True, makes an experiment, otherwise leaves this as None
+        """
+        experiment = None
+        if make_exp:
+            experiment = ExperimentFactory()
+            assign_user_as_instance_admin(self.user, experiment)
+        data = {
+            "experiment": experiment.pk if experiment else None,
+        }
+        s_file, c_file = make_score_count_files(score_data, count_data)
+        files = {constants.variant_score_data: s_file}
+        if c_file is not None:
+            files[constants.variant_count_data] = c_file
+        return data, files
+
+    def test_empty_data_submission_is_valid(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertTrue(form.is_valid())
+
+    def test_cannot_save_popped_field(self):
+        exp = ExperimentFactory()
+        replaced = ScoreSetFactory(experiment=exp)
+        obj = ScoreSetFactory(replaces=replaced)
+        for i in range(5):
+            VariantFactory(scoreset=obj)
+
+        old_experiment = obj.experiment
+        old_licence = obj.licence
+        old_replaces = obj.previous_version
+        old_variants = obj.children
+
+        data, files = self.make_post_data()
+        data['licence'] = Licence.get_cc0()
+        data['replaces'] = ScoreSetFactory(experiment=exp).pk
+        form = ScoreSetEditForm(
+            data=data, files=files, user=self.user, instance=obj
+        )
+        instance = form.save(commit=True)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(instance.children.count(), old_variants.count())
+        self.assertEqual(instance.experiment, old_experiment)
+        self.assertEqual(instance.previous_version, old_replaces)
+        self.assertEqual(instance.licence, old_licence)
