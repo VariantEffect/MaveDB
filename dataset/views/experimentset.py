@@ -19,7 +19,7 @@ class ExperimentSetDetailView(DetailView):
         The urn of the `ExperimentSet` to render.
     """
     model = ExperimentSet
-    template_name = 'experiment/experimentset.html'
+    template_name = 'dataset/experimentset/experimentset.html'
     context_object_name = "experimentset"
 
     def dispatch(self, request, *args, **kwargs):
@@ -49,5 +49,5 @@ class ExperimentSetDetailView(DetailView):
             )
 
     def get_object(self, queryset=None):
-        accession = self.kwargs.get('urn', None)
-        return get_object_or_404(ExperimentSet, accession=accession)
+        urn = self.kwargs.get('urn', None)
+        return get_object_or_404(ExperimentSet, urn=urn)

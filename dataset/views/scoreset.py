@@ -10,6 +10,7 @@ from django.views.generic import DetailView
 from accounts.forms import send_admin_email
 from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 
+from main.utils import is_null
 from main.utils.pandoc import convert_md_to_html
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
@@ -55,8 +56,8 @@ class ScoreSetDetailView(DetailView):
             )
 
     def get_object(self, queryset=None):
-        accession = self.kwargs.get('urn', None)
-        return get_object_or_404(ScoreSet, accession=accession)
+        urn = self.kwargs.get('urn', None)
+        return get_object_or_404(ScoreSet, urn=urn)
 
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
@@ -134,7 +135,7 @@ class ScoreSetDetailView(DetailView):
         return context
 
 
-def download_scoreset_data(request, accession, dataset_key):
+def download_scoreset_data(request, urn, dataset_key):
     """
     This view returns the variant dataset in csv format for a specific
     `ScoreSet`. This will either be the 'scores' or 'counts' dataset, which
@@ -143,7 +144,7 @@ def download_scoreset_data(request, accession, dataset_key):
 
     Parameters
     ----------
-    accession : `str`
+    urn : `str`
         The `ScoreSet` urn which will be queried.
     dataset_key : `str`
         The type of dataset requested. Currently this is either 'scores' or
@@ -155,7 +156,7 @@ def download_scoreset_data(request, accession, dataset_key):
         A stream is returned to handle the case where the data is too large
         to send all at once.
     """
-    scoreset = get_object_or_404(ScoreSet, accession=accession)
+    scoreset = get_object_or_404(ScoreSet, urn=urn)
 
     has_permission = request.user.has_perm(
         PermissionTypes.CAN_VIEW, scoreset
@@ -170,10 +171,14 @@ def download_scoreset_data(request, accession, dataset_key):
         return response
 
     if not scoreset.has_counts_dataset() and \
-            dataset_key == constants.count_columns:
+            dataset_key == constants.variant_count_data:
+        return StreamingHttpResponse("", content_type='text')
+    
+    if not scoreset.has_metadata() and \
+            dataset_key == constants.variant_metadata:
         return StreamingHttpResponse("", content_type='text')
 
-    variants = scoreset.variant_set.all().order_by("urn")
+    variants = scoreset.children.all().order_by("urn")
     columns = scoreset.dataset_columns[dataset_key]
 
     def gen_repsonse():
@@ -199,34 +204,24 @@ def scoreset_create_view(request, came_from_new_experiment=False,
     expect everything to break horribly.
     """
     context = {}
-    scoreset_form = ScoreSetForm()
-
-    pks = [i.pk for i in request.user.profile.administrator_experiments()]
-    experiments = Experiment.objects.filter(
-        pk__in=set(pks)
-    ).order_by("urn")
-    scoreset_form.fields["experiment"].queryset = experiments
-
-    pks = [i.pk for i in request.user.profile.administrator_scoresets()]
-    scoresets = ScoreSet.objects.filter(pk__in=set(pks)).order_by("urn")
-    scoreset_form.fields["replaces"].queryset = scoresets
+    scoreset_form = ScoreSetForm(user=request.user)
 
     if came_from_new_experiment:
-        experiments = Experiment.objects.filter(accession=experiment_urn)
+        experiments = Experiment.objects.filter(urn=experiment_urn)
         scoreset_form.fields["experiment"].queryset = experiments
         context["scoreset_form"] = scoreset_form
         context["came_from_new_experiment"] = came_from_new_experiment
         context["experiment_urn"] = experiment_urn
         return render(
             request,
-            "scoreset/new_scoreset.html",
+            "dataset/scoreset/new_scoreset.html",
             context=context
         )
 
     # If the request is ajax, then it's for previewing the abstract
     # or method description
     if request.is_ajax():
-        data = {}
+        data = dict()
         data['abstract_text'] = convert_md_to_html(
             request.GET.get("abstract_text", "")
         )
@@ -236,47 +231,60 @@ def scoreset_create_view(request, came_from_new_experiment=False,
         return HttpResponse(json.dumps(data), content_type="application/json")
 
     if request.method == "POST":
-        # Get the new keywords so that we can return them for
-        # list repopulation if the form has errors.
+        # Get the new keywords/urn/target org so that we can return
+        # them for list repopulation if the form has errors.
         keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords]
+        keywords = [kw for kw in keywords if not is_null(kw)]
+
+        sra_ids = request.POST.getlist("sra_ids")
+        sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
+
+        doi_ids = request.POST.getlist("doi_ids")
+        doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
+
+        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
+
+        target_organism = request.POST.getlist("target_organism")
+        target_organism = [to for to in target_organism if not is_null(to)]
 
         scoreset_form = ScoreSetForm(data=request.POST, files=request.FILES)
-        scoreset_form.fields["experiment"].queryset = experiments
-        scoreset_form.fields["replaces"].queryset = scoresets
         context["repop_keywords"] = ','.join(keywords)
+        context["repop_sra_identifiers"] = ','.join(sra_ids)
+        context["repop_doi_identifiers"] = ','.join(doi_ids)
+        context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
+        context["repop_target_organism"] = ','.join(target_organism)
         context["scoreset_form"] = scoreset_form
 
-        if scoreset_form.is_valid():
-            scoreset = scoreset_form.save(commit=True)
-        else:
+        if not scoreset_form.is_valid():
             return render(
                 request,
-                "scoreset/new_scoreset.html",
+                "dataset/scoreset/new_scoreset.html",
                 context=context
             )
+        else:
+            scoreset = scoreset_form.save(commit=True)
+            # Save and update permissions. A user will not be added as an
+            # admin to the parent experiment. This must be done by the admin
+            # of said experiment.
+            if request.POST.get("publish", None):
+                scoreset.publish()
+                send_admin_email(request.user, scoreset)
 
-        # Save and update permissions. A user will not be added as an
-        # admin to the parent experiment. This must be done by the admin
-        # of said experiment.
-        if request.POST.get("publish", None):
-            scoreset.publish()
-            send_admin_email(request.user, scoreset)
+            user = request.user
+            scoreset.created_by = user
+            scoreset.last_edit_by = user
+            scoreset.update_last_edit_info(user)
+            save_and_create_revision_if_tracked_changed(user, scoreset)
 
-        user = request.user
-        scoreset.created_by = user
-        scoreset.last_edit_by = user
-        scoreset.update_last_edit_info(user)
-        save_and_create_revision_if_tracked_changed(user, scoreset)
-
-        assign_user_as_instance_admin(user, scoreset)
-        accession = scoreset.accession
-        return redirect("dataset:scoreset_detail", accession=accession)
+            assign_user_as_instance_admin(user, scoreset)
+            urn = scoreset.urn
+            return redirect("dataset:scoreset_detail", urn=urn)
 
     else:
         context["scoreset_form"] = scoreset_form
         return render(
             request,
-            "scoreset/new_scoreset.html",
+            "dataset/scoreset/new_scoreset.html",
             context=context
         )
