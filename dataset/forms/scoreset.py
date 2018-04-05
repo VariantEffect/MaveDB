@@ -8,8 +8,9 @@ from django.utils.translation import ugettext
 from main.models import Licence
 
 from variant.models import Variant
-from variant.validators import validate_variant_rows
-from dataset.validators import validate_scoreset_json
+from variant.validators import (
+    validate_variant_rows, validate_scoreset_columns_match_variant
+)
 
 from dataset import constants as constants
 from ..models.scoreset import ScoreSet
@@ -18,7 +19,8 @@ from ..forms.base import DatasetModelForm
 from ..validators import (
     validate_scoreset_score_data_input,
     validate_csv_extension,
-    validate_scoreset_count_data_input
+    validate_scoreset_count_data_input,
+    validate_scoreset_json
 )
 
 
@@ -40,12 +42,12 @@ class ScoreSetForm(DatasetModelForm):
         )
 
     score_data = forms.FileField(
-        required=True, label="Variant score data (required)",
+        required=False, label="Variant score data",
         validators=[validate_scoreset_score_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
     count_data = forms.FileField(
-        required=False, label="Variant count data (optional)",
+        required=False, label="Variant count data",
         validators=[validate_scoreset_count_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
@@ -76,7 +78,6 @@ class ScoreSetForm(DatasetModelForm):
         self.set_replaces_options()
 
         self.set_experiment_options()
-        self.fields['experiment'].empty_label = 'Create new experiment'
 
         self.fields["licence"].required = False
         if not self.fields["licence"].initial:
@@ -113,7 +114,6 @@ class ScoreSetForm(DatasetModelForm):
         #       Datatypes of rows match
         #       HGVS string is a valid hgvs string
         #       Hgvs appears more than once in rows
-        score_file = TextIOWrapper(score_file, encoding='utf-8')
         header, hgvs_score_map = validate_variant_rows(score_file)
         self.dataset_columns[constants.score_columns] = header
         return hgvs_score_map
@@ -130,7 +130,6 @@ class ScoreSetForm(DatasetModelForm):
         #       Datatypes of rows match
         #       HGVS string is a valid hgvs string
         #       Hgvs appears more than once in rows
-        count_file = TextIOWrapper(count_file, encoding='utf-8')
         header, hgvs_count_map = validate_variant_rows(count_file)
         self.dataset_columns[constants.count_columns] = header
         return hgvs_count_map
@@ -141,7 +140,6 @@ class ScoreSetForm(DatasetModelForm):
         # dict `mapping`.
         for key in hgvs_keys:
             _ = mapping[key]
-            mapping[key][constants.hgvs_column] = key
         return mapping
 
     def clean(self):
@@ -151,9 +149,18 @@ class ScoreSetForm(DatasetModelForm):
             return super().clean()
 
         cleaned_data = super().clean()
-        score_data_field = self.fields.get("score_data", None)
-        scores_required = False if not score_data_field else \
-            score_data_field.required
+
+        # Ensure the user is not attempting to change an experiment that
+        # has already been set
+        parent = cleaned_data.get('experiment', None)
+        if 'experiment' in self.fields and self.instance.pk is not None:
+            if self.instance.parent != parent:
+                raise ValidationError(
+                    "MaveDB does not currently support changing a "
+                    "previously assigned Experiment.")
+
+        # Indicates that a new scoreset is being created
+        scores_required = self.instance.pk is None
 
         hgvs_score_map = cleaned_data.get("score_data", {})
         hgvs_count_map = cleaned_data.get("count_data", {})
@@ -165,15 +172,13 @@ class ScoreSetForm(DatasetModelForm):
 
         # In edit mode, we have relaxed the requirement of uploading a score
         # dataset since one already exists.
-        if scores_required and not has_score_data and \
-                not hasattr(self, "edit_mode"):
+        if scores_required and not has_score_data:
             raise ValidationError(
                 ugettext(
-                    "Score data cannot be empty and must contain at "
-                    "least one row with non-null values"
+                    "You must upload a non-empty Score Data file."
                 )
             )
-        # In edit, mode if a user tries to submit a new count dataset without
+        # In edit mode if a user tries to submit a new count dataset without
         # an accompanying score dataset, this error will be thrown. We could
         # relax this but there is the potential that the user might upload
         # a new count dataset and forget to upload a new score dataset.
@@ -181,7 +186,7 @@ class ScoreSetForm(DatasetModelForm):
             raise ValidationError(
                 ugettext(
                     "You must upload an accompanying score data file when "
-                    "uploading a new count/meta data file, or replacing an "
+                    "uploading a new count/meta data file or replacing an "
                     "existing one."
                 )
             )
@@ -211,11 +216,12 @@ class ScoreSetForm(DatasetModelForm):
                     constants.variant_count_data: counts_json,
                     constants.variant_metadata: meta_json
                 }
-                variant = Variant(scoreset=self.instance, hgvs=hgvs, data=data)
+                validate_scoreset_columns_match_variant(
+                    self.dataset_columns, data)
+                variant = Variant(hgvs=hgvs, data=data)
                 variants[hgvs] = variant
 
             cleaned_data["variants"] = variants
-
         return cleaned_data
 
     def _save_m2m(self):
@@ -223,13 +229,17 @@ class ScoreSetForm(DatasetModelForm):
         if variants:  # No variants if in edit mode and no new files uploaded.
             self.instance.delete_variants()
             for _, variant in variants.items():
+                variant.scoreset = self.instance
                 variant.save()
                 self.instance.variants.add(variant)
         super()._save_m2m()
 
     @transaction.atomic
     def save(self, commit=True):
-        return super().save(commit=commit)
+        super().save(commit=commit)
+        self.instance.dataset_columns = self.dataset_columns
+        self.instance.save()
+        return self.instance
 
     def get_variants(self):
         return self.cleaned_data.get('variants', {})
@@ -254,7 +264,12 @@ class ScoreSetForm(DatasetModelForm):
     def from_request(cls, request, instance):
         form = super().from_request(request, instance)
         form.set_replaces_options()
-        form.set_experiment_options()
+        if 'experiment' in form.fields:
+            choices_qs = Experiment.objects.filter(
+                pk__in=[instance.experiment.pk]).order_by("urn")
+            form.fields["experiment"].queryset = choices_qs
+            form.fields["experiment"].initial = instance.experiment
+
         return form
 
 
