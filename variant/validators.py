@@ -36,14 +36,17 @@ RE_NONCODING = re.compile(
     "(?P<match>n\.(?P<pos>-?\d+)(?P<pre>[ACGT])>(?P<post>[ACGT]))")
 
 
-def validate_scoreset_columns_match_variant(scoreset, variant):
-    if sorted(scoreset.score_columns) != sorted(variant.score_columns):
+def validate_scoreset_columns_match_variant(dataset_columns, variant_data):
+    if sorted(dataset_columns[constants.score_columns]) != \
+            sorted(list(variant_data[constants.variant_score_data].keys())):
         raise ValidationError(
             "Variant score columns do not match parent's columns.")
-    if sorted(scoreset.count_columns) != sorted(variant.count_columns):
+    if sorted(dataset_columns[constants.count_columns]) != \
+            sorted(list(variant_data[constants.variant_count_data].keys())):
         raise ValidationError(
             "Variant count columns do not match parent's columns.")
-    if sorted(scoreset.metadata_columns) != sorted(variant.metadata_columns):
+    if sorted(dataset_columns[constants.metadata_columns]) != \
+            sorted(list(variant_data[constants.variant_metadata].keys())):
         raise ValidationError(
             "Variant metadata columns do not match parent's columns.")
 
@@ -150,7 +153,7 @@ def validate_variant_rows(file, is_meta=False):
 
     # Read header, validate and iterate one line since `read_header_from_io`
     # seeks back to the start.
-    header = read_header_from_io(file)
+    header = read_header_from_io(file, label='input')
     validate_has_hgvs_in_header(
         header,
         msg=(
@@ -188,7 +191,8 @@ def validate_variant_rows(file, is_meta=False):
                     "Row columns '%(row)s' do not match those found in the "
                     "header '%(header)s. "
                     "Check that multi-mutants and metadata columns/values "
-                    "containing commas are double quoted."
+                    "containing commas are double quoted and that rows columns"
+                    " match those in the header."
                 ),
                 params={'row': list(row.keys()), 'header': header}
             )

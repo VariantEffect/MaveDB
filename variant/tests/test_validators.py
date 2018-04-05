@@ -26,19 +26,22 @@ class TestValidateMatchingColumns(TestCase):
         variant = VariantFactory()
         with self.assertRaises(ValidationError):
             variant.data[constants.variant_score_data] = {}
-            validate_scoreset_columns_match_variant(variant.scoreset, variant)
+            validate_scoreset_columns_match_variant(
+                variant.scoreset.dataset_columns, variant.data)
 
     def test_validationerror_non_matching_meta_columns(self):
         variant = VariantFactory()
         with self.assertRaises(ValidationError):
             variant.data[constants.variant_metadata] = {'meta': 'variant'}
-            validate_scoreset_columns_match_variant(variant.scoreset, variant)
+            validate_scoreset_columns_match_variant(
+                variant.scoreset.dataset_columns, variant.data)
 
     def test_validationerror_non_matching_count_columns(self):
         variant = VariantFactory()
         with self.assertRaises(ValidationError):
             variant.data[constants.variant_count_data] = {'count': 1}
-            validate_scoreset_columns_match_variant(variant.scoreset, variant)
+            validate_scoreset_columns_match_variant(
+                variant.scoreset.dataset_columns, variant.data)
 
     def test_compares_sorted_columns(self):
         variant = VariantFactory()
@@ -47,7 +50,8 @@ class TestValidateMatchingColumns(TestCase):
         variant.scoreset.dataset_columns[constants.score_columns] = [
             constants.required_score_column, 'other']
         # This should pass
-        validate_scoreset_columns_match_variant(variant.scoreset, variant)
+        validate_scoreset_columns_match_variant(
+                variant.scoreset.dataset_columns, variant.data)
 
 
 class TestHGVSValidator(TestCase):
