@@ -1,5 +1,6 @@
 import datetime
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
@@ -15,6 +16,18 @@ from urn.models import UrnModel
 
 
 User = get_user_model()
+child_attr_map = {
+    'ExperimentSet': ('experiments', 'Experiment', 'dataset'),
+    'Experiment': ('scoresets', 'ScoreSet', 'dataset'),
+    'ScoreSet': ('variants', 'Variant', 'variant'),
+    'Variant': (None, None, None)
+}
+parent_attr_map = {
+    'ExperimentSet': None,
+    'Experiment': 'experimentset',
+    'ScoreSet': 'experiment',
+    'Variant': 'scoreset'
+}
 
 
 class DatasetModel(UrnModel, GroupPermissionMixin):
@@ -276,3 +289,26 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def clear_pubmed_ids(self):
         self.clear_m2m('pmid_ids')
+
+    def clear_keywords(self):
+        self.clear_m2m('keywords')
+
+    @property
+    def parent(self):
+        attr = parent_attr_map[self.__class__.__name__]
+        if hasattr(self, attr):
+            return getattr(self, attr)
+        else:
+            return None
+
+    @property
+    def children(self):
+        attr, model_name, app_label = child_attr_map[self.__class__.__name__]
+        if hasattr(self, attr):
+            return getattr(self, attr).all()
+        else:
+            if model_name is None:
+                return None
+            else:
+                model = apps.get_model(app_label, model_name=model_name)
+                return model.objects.none()
