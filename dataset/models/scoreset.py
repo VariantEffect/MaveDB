@@ -142,12 +142,14 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @property
     def has_variants(self):
-        return self.variants.count() > 0
+        return hasattr(self, 'variants') and self.variants.count() > 0
 
     def delete_variants(self):
-        self.variants.all().delete()
-        self.dataset_columns = self.DEFAULT_DATASET
-        self.save()
+        if self.has_variants:
+            self.variants.all().delete()
+            self.dataset_columns = self.DEFAULT_DATASET
+            self.last_child_value = 0
+            self.save()
 
     # JSON field related methods
     # ---------------------------------------------------------------------- #
