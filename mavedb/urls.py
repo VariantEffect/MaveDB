@@ -33,7 +33,7 @@ urlpatterns = [
         include('accounts.urls', namespace='accounts'), name='accounts'
     ),
     url(
-        r'^dataset/',
+        r'^',
         include("dataset.urls", namespace="dataset"), name="dataset"
     ),
     url(
