@@ -123,7 +123,7 @@ class DatasetModelForm(forms.ModelForm):
         super().save(commit=commit)
         if commit:
             self.instance.set_last_edit_by(self.user)
-            if not hasattr(self, 'edit_mode'):
+            if not hasattr(self, 'edit_mode') and not self.instance.created_by:
                 self.instance.set_created_by(self.user)
             self.instance.save()
         return self.instance
