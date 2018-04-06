@@ -16,12 +16,18 @@ from main.models import Licence
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
 
-from variant.models import Variant
-
 from dataset import constants as constants
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from dataset.validators import validate_scoreset_json
+
+
+def default_dataset():
+    return dict({
+        constants.score_columns: [constants.required_score_column],
+        constants.count_columns: [],
+        constants.metadata_columns: []
+    })
 
 
 @reversion.register()
@@ -61,11 +67,6 @@ class ScoreSet(DatasetModel):
         "method_text", "doi_ids", "sra_ids", "pmid_ids", "keywords",
         "license", "dataset_columns", "replaces"
     )
-    DEFAULT_DATASET = dict({
-        constants.score_columns: [constants.required_score_column],
-        constants.count_columns: [],
-        constants.metadata_columns: []
-    })
 
     class Meta:
         verbose_name = "ScoreSet"
@@ -104,7 +105,7 @@ class ScoreSet(DatasetModel):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns",
-        default=DEFAULT_DATASET,
+        default=default_dataset(),
         validators=[validate_scoreset_json]
     )
 
@@ -147,7 +148,7 @@ class ScoreSet(DatasetModel):
     def delete_variants(self):
         if self.has_variants:
             self.variants.all().delete()
-            self.dataset_columns = self.DEFAULT_DATASET
+            self.dataset_columns = default_dataset()
             self.last_child_value = 0
             self.save()
 
