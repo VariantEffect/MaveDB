@@ -198,3 +198,46 @@ class PubmedIdentifier(ExternalIdentifier):
         if self.pk is None:
             self.reference_html = self.format_reference_html()
         super().save(*args, **kwargs)
+
+
+class RefseqIdentifier(ExternalIdentifier):
+    """
+    An NCBI RefSeq accession number.
+    """
+    DATABASE_NAME = "RefSeq"
+
+    class Meta:
+        verbose_name = "RefSeq accession"
+        verbose_name_plural = "RefSeq accessions"
+
+    def format_url(self):
+        pass
+    
+
+class EnsemblIdentifier(ExternalIdentifier):
+    """
+    An Ensembl accession number.
+    """
+    DATABASE_NAME = "Ensembl"
+
+    class Meta:
+        verbose_name = "Ensembl accession"
+        verbose_name_plural = "Ensembl accessions"
+
+    def format_url(self):
+        pass
+    
+
+class UniprotIdentifier(ExternalIdentifier):
+    """
+    A UniProt accession number.
+    """
+    DATABASE_NAME = "UniProt"
+
+    class Meta:
+        verbose_name = "UniProt accession"
+        verbose_name_plural = "UniProt accessions"
+
+    def format_url(self):
+        pass
+    
