@@ -54,14 +54,16 @@ class ScoreSetForm(DatasetModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ScoreSetForm, self).__init__(*args, **kwargs)
-
-        # This will be used later after score/count files have been read in
-        # to store the headers.
-        self.dataset_columns = {
-            constants.score_columns: [],
-            constants.count_columns: [],
-            constants.metadata_columns: []
-        }
+        if self.instance.pk is not None:
+            self.dataset_columns = self.instance.dataset_columns.copy()
+        else:
+            # This will be used later after score/count files have been read in
+            # to store the headers.
+            self.dataset_columns = {
+                constants.score_columns: [],
+                constants.count_columns: [],
+                constants.metadata_columns: []
+            }
 
         self.fields['experiment'] = forms.ModelChoiceField(
             queryset=None, required=True, widget=forms.Select(
