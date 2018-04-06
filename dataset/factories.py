@@ -20,7 +20,7 @@ from dataset.constants import (
 from dataset.models.base import DatasetModel
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
-from dataset.models.scoreset import ScoreSet
+from dataset.models.scoreset import ScoreSet, default_dataset
 
 
 class DatasetModelFactory(DjangoModelFactory):
@@ -62,6 +62,6 @@ class ScoreSetFactory(DatasetModelFactory):
         model = ScoreSet
 
     experiment = factory.SubFactory(ExperimentFactory)
-    dataset_columns = ScoreSet.DEFAULT_DATASET
+    dataset_columns = default_dataset()
 
 

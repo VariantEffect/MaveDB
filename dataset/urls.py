@@ -2,37 +2,22 @@
 """
 Url patterns for the experiment database app.
 """
-from functools import partial
-
 from django.conf.urls import url
+
+from api.views import (
+    scoreset_metadata, scoreset_count_data, scoreset_score_data
+)
 
 from .constants import (
     experiment_url_pattern,
     experimentset_url_pattern,
     scoreset_url_pattern,
-    variant_score_data,
-    variant_count_data,
-    variant_metadata
 )
 
 from .views.experimentset import ExperimentSetDetailView
 from .views.experiment import ExperimentDetailView, experiment_create_view
-from .views.scoreset import (
-    ScoreSetDetailView, scoreset_create_view, download_scoreset_data
-)
+from .views.scoreset import ScoreSetDetailView, scoreset_create_view
 
-download_scores = partial(
-    download_scoreset_data,
-    dataset_key=variant_score_data
-)
-download_counts = partial(
-    download_scoreset_data,
-    dataset_key=variant_count_data
-)
-download_metadata = partial(
-    download_scoreset_data,
-    dataset_key=variant_metadata
-)
 
 urlpatterns = [
     url(
@@ -55,14 +40,14 @@ urlpatterns = [
     ),
     url(
         r'scoreset/(?P<urn>{})/score_data/$'.format(scoreset_url_pattern),
-        download_scores, name='scores_download'
+        scoreset_score_data, name='scores_download'
     ),
     url(
         r'scoreset/(?P<urn>{})/count_data/$'.format(scoreset_url_pattern),
-        download_counts, name='counts_download'
+        scoreset_count_data, name='counts_download'
     ),
     url(
         r'scoreset/(?P<urn>{})/metadata/$'.format(scoreset_url_pattern),
-        download_metadata, name='metadata_download'
+        scoreset_metadata, name='metadata_download'
     )
 ]

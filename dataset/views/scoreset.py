@@ -62,12 +62,12 @@ class ScoreSetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-        scores_variant_list = instance.variant_set.all().order_by("hgvs")
+        scores_variant_list = instance.children.all().order_by("hgvs")
 
-        if instance.has_counts_dataset():
-            counts_variant_list = instance.variant_set.all().order_by("hgvs")
+        if instance.has_count_dataset:
+            counts_variant_list = instance.children.all().order_by("hgvs")
         else:
-            counts_variant_list = instance.variant_set.none()
+            counts_variant_list = instance.children.none()
 
         try:
             counts_per_page = self.request.GET.get('counts-per-page', '')
@@ -135,63 +135,6 @@ class ScoreSetDetailView(DetailView):
         return context
 
 
-def download_scoreset_data(request, urn, dataset_key):
-    """
-    This view returns the variant dataset in csv format for a specific
-    `ScoreSet`. This will either be the 'scores' or 'counts' dataset, which
-    are the only two supported keys in a scoreset's `dataset_columns`
-    attributes.
-
-    Parameters
-    ----------
-    urn : `str`
-        The `ScoreSet` urn which will be queried.
-    dataset_key : `str`
-        The type of dataset requested. Currently this is either 'scores' or
-        'counts' as these are the only two supported datasets.
-
-    Returns
-    -------
-    `StreamingHttpResponse`
-        A stream is returned to handle the case where the data is too large
-        to send all at once.
-    """
-    scoreset = get_object_or_404(ScoreSet, urn=urn)
-
-    has_permission = request.user.has_perm(
-        PermissionTypes.CAN_VIEW, scoreset
-    )
-    if scoreset.private and not has_permission:
-        response = render(
-            request=request,
-            template_name="main/403_forbidden.html",
-            context={"instance": scoreset},
-        )
-        response.status_code = 403
-        return response
-
-    if not scoreset.has_counts_dataset() and \
-            dataset_key == constants.variant_count_data:
-        return StreamingHttpResponse("", content_type='text')
-    
-    if not scoreset.has_metadata() and \
-            dataset_key == constants.variant_metadata:
-        return StreamingHttpResponse("", content_type='text')
-
-    variants = scoreset.children.all().order_by("urn")
-    columns = scoreset.dataset_columns[dataset_key]
-
-    def gen_repsonse():
-        yield ','.join(columns) + '\n'
-        for var in variants:
-            data = []
-            for column_key in columns:
-                data.append(str(var.data[dataset_key][column_key]))
-            yield ','.join(data) + '\n'
-
-    return StreamingHttpResponse(gen_repsonse(), content_type='text')
-
-
 @login_required(login_url=reverse_lazy("accounts:login"))
 def scoreset_create_view(request, came_from_new_experiment=False,
                          experiment_urn=None):
@@ -219,7 +162,8 @@ def scoreset_create_view(request, came_from_new_experiment=False,
         )
 
     # If the request is ajax, then it's for previewing the abstract
-    # or method description
+    # or method description. This code is coupled with base.js. Changes
+    # here might break the javascript code.
     if request.is_ajax():
         data = dict()
         data['abstract_text'] = convert_md_to_html(
@@ -245,15 +189,12 @@ def scoreset_create_view(request, came_from_new_experiment=False,
         pubmed_ids = request.POST.getlist("pmid_ids")
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
-        target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism if not is_null(to)]
-
-        scoreset_form = ScoreSetForm(data=request.POST, files=request.FILES)
+        scoreset_form = ScoreSetForm(
+            user=request.user, data=request.POST, files=request.FILES)
         context["repop_keywords"] = ','.join(keywords)
         context["repop_sra_identifiers"] = ','.join(sra_ids)
         context["repop_doi_identifiers"] = ','.join(doi_ids)
         context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
-        context["repop_target_organism"] = ','.join(target_organism)
         context["scoreset_form"] = scoreset_form
 
         if not scoreset_form.is_valid():
@@ -263,24 +204,24 @@ def scoreset_create_view(request, came_from_new_experiment=False,
                 context=context
             )
         else:
+            user = request.user
             scoreset = scoreset_form.save(commit=True)
+            scoreset.set_created_by(user, propagate=False)
             # Save and update permissions. A user will not be added as an
             # admin to the parent experiment. This must be done by the admin
             # of said experiment.
             if request.POST.get("publish", None):
-                scoreset.publish()
+                scoreset.publish(propagate=True)
+                scoreset.set_last_edit_by(user, propagate=True)
+                scoreset.save(save_parents=True)
                 send_admin_email(request.user, scoreset)
-
-            user = request.user
-            scoreset.created_by = user
-            scoreset.last_edit_by = user
-            scoreset.update_last_edit_info(user)
-            save_and_create_revision_if_tracked_changed(user, scoreset)
+            else:
+                scoreset.set_last_edit_by(user, propagate=False)
+                scoreset.save(save_parents=False)
 
             assign_user_as_instance_admin(user, scoreset)
-            urn = scoreset.urn
-            return redirect("dataset:scoreset_detail", urn=urn)
-
+            save_and_create_revision_if_tracked_changed(user, scoreset)
+            return redirect("dataset:scoreset_detail", urn=scoreset.urn)
     else:
         context["scoreset_form"] = scoreset_form
         return render(

@@ -1,5 +1,7 @@
+import json
+
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpRequest
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
@@ -7,6 +9,7 @@ from django.views.generic import DetailView
 from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 
 from main.utils import is_null
+from main.utils.pandoc import convert_md_to_html
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
 
 from .scoreset import scoreset_create_view
@@ -79,6 +82,19 @@ def experiment_create_view(request):
     experiment_form = ExperimentForm(user=request.user)
     context["experiment_form"] = experiment_form
 
+    # If the request is ajax, then it's for previewing the abstract
+    # or method description. This code is coupled with base.js. Changes
+    # here might break the javascript code.
+    if request.is_ajax():
+        data = dict()
+        data['abstract_text'] = convert_md_to_html(
+            request.GET.get("abstract_text", "")
+        )
+        data['method_text'] = convert_md_to_html(
+            request.GET.get("method_text", "")
+        )
+        return HttpResponse(json.dumps(data), content_type="application/json")
+
     # If you change the prefix arguments here, make sure to change them
     # in base.js as well.
     if request.method == "POST":
@@ -122,14 +138,14 @@ def experiment_create_view(request):
             assign_user_as_instance_admin(user, experiment)
             experiment.set_created_by(user, propagate=False)
             experiment.set_last_edit_by(user, propagate=False)
-            experiment.save()
+            experiment.save(save_parents=False)
             save_and_create_revision_if_tracked_changed(user, experiment)
 
             if not request.POST['experimentset']:
                 assign_user_as_instance_admin(user, experiment.experimentset)
                 experiment.set_created_by(user, propagate=True)
                 experiment.set_last_edit_by(user, propagate=True)
-                experiment.save_parents()
+                experiment.save(save_parents=True)
                 save_and_create_revision_if_tracked_changed(
                     user, experiment.experimentset
                 )
