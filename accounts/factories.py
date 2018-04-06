@@ -12,42 +12,49 @@ with future maintainability.
 import factory.fuzzy
 from factory.django import DjangoModelFactory
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from django.contrib.auth.models import AnonymousUser
 
 from .models import Profile
 
 
-class AnonymousUserFactory:
+def AnonymousUserFactory():
     """
     Create an anonymous user from :class:`AnonymousUser`.
     """
-    def __call__(self, *args, **kwargs):
-        return AnonymousUser()
+    return AnonymousUser()
 
 
-class UserFactory(DjangoModelFactory):
+def UserFactory(username=None, password=None, first_name=None,
+                last_name=None):
     """
     Test fixture factory for the user class which sets username,
     first_name, last_name and password.
     """
-    class Meta:
-        model = get_user_model()
+    if username is None:
+        username = factory.fuzzy.FuzzyText(length=8).fuzz()
+    if password is None:
+        password = factory.fuzzy.FuzzyText(length=16).fuzz()
+    if first_name is None:
+        first_name = factory.fuzzy.FuzzyChoice(
+            ['Spike', 'Jet', 'Faye', 'Ed', 'Ein']).fuzz()
+    if last_name is None:
+        last_name = factory.fuzzy.FuzzyChoice(
+            ['Spiegel', 'Black', 'Valentine', 'Ed', 'Ein']).fuzz()
 
-    username = factory.fuzzy.FuzzyText(length=8)
-    password = factory.fuzzy.FuzzyText(length=16)
-    first_name = factory.fuzzy.FuzzyChoice(
-        ['Spike', 'Jet', 'Faye', 'Ed', 'Ein'])
-    last_name = factory.fuzzy.FuzzyChoice(
-        ['Spiegel', 'Black', 'Valentine', 'Ed', 'Ein'])
+    return User.objects.create(
+        username=username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name
+    )
 
 
-class ProfileFactory(DjangoModelFactory):
+def ProfileFactory(user=None):
     """
     Test fixture factory for creating a profile linked to a randomly
     genreated user.
     """
-    class Meta:
-        model = Profile
-
-    user = UserFactory()
+    if user is None:
+        user = UserFactory()
+    return Profile.objects.create(user=user)

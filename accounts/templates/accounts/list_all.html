@@ -26,7 +26,7 @@
 						{% else %}
 							{% for exps in user.profile.administrator_experimentsets %}
 								{% if not exps.private %}
-									<a href="{% url 'experiment:experimentset_detail' exps.urn %}">{{ exps.urn }}</a>
+									<a href="{% url 'dataset:experimentset_detail' exps.urn %}">{{ exps.urn }}</a>
 									{% if forloop.counter|add:1 < user.profile.administrator_experimentsets|length %},{% endif %}
 								{% endif %}
 							{% endfor %}
@@ -38,7 +38,7 @@
 						{% else %}
 							{% for exp in user.profile.administrator_experiments %}
 								{% if not exp.private %}
-									<a href="{% url 'experiment:experiment_detail' exp.urn %}">{{ exp.urn }}</a>
+									<a href="{% url 'dataset:experiment_detail' exp.urn %}">{{ exp.urn }}</a>
 									{% if forloop.counter|add:1 < user.profile.administrator_experiments|length %}
 									,
 									{% endif %}
@@ -52,7 +52,7 @@
 						{% else %}
 							{% for scs in user.profile.administrator_scoresets %}
 								{% if not scs.private %}
-									<a href="{% url 'scoreset:scoreset_detail' scs.urn %}">{{ scs.urn }}</a>
+									<a href="{% url 'dataset:scoreset_detail' scs.urn %}">{{ scs.urn }}</a>
 									{% if forloop.counter|add:1 < user.profile.administrator_scoresets|length %}
 									,
 									{% endif %}
