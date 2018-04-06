@@ -10,6 +10,7 @@ from main.models import Licence
 import dataset.constants as constants
 from variant.factories import VariantFactory
 
+from ..models.scoreset import default_dataset
 from ..factories import ScoreSetFactory
 
 
@@ -109,11 +110,8 @@ class TestScoreSet(TestCase):
         scs = ScoreSetFactory()
         _ = VariantFactory(scoreset=scs)
         scs.delete_variants()
-        expected = dict({
-            constants.score_columns: [constants.required_score_column],
-            constants.count_columns: [],
-            constants.metadata_columns: []
-        })
-        self.assertEqual(scs.dataset_columns, expected)
+        scs.save()
+
+        self.assertEqual(scs.dataset_columns, default_dataset())
         self.assertEqual(scs.variants.count(), 0)
         self.assertEqual(scs.last_child_value, 0)

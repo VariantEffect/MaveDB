@@ -123,7 +123,7 @@ class TestCreateNewExperimentView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'error')
 
-    def test_form_will_post_with_valid_date(self):
+    def test_form_will_post_with_valid_data(self):
         data = self.post_data
         data['wt_sequence'] = ['atcg']
         data['target'] = ['brca1']

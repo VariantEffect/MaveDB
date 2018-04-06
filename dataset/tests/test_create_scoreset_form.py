@@ -15,6 +15,7 @@ import dataset.constants as constants
 
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm
+from ..models.scoreset import ScoreSet, default_dataset
 
 from .utility import make_score_count_files
 
@@ -286,7 +287,7 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
 
-    def test_new_scores_replaces_deletes_variants(self):
+    def test_new_scores_deletes_variants(self):
         scs = ScoreSetFactory()
         for i in range(5):
             VariantFactory(scoreset=scs)
@@ -299,6 +300,7 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=scs)
         self.assertTrue(form.is_valid())
+
         form.save(commit=True)
 
         scs.refresh_from_db()

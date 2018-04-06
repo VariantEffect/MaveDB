@@ -9,7 +9,7 @@
 		<h5> {{ scoreset.urn }} </h5>
 		<p> 
 			Member of experiment
-			<a href="{% url 'experiment:experiment_detail' scoreset.experiment.urn %}">
+			<a href="{% url 'dataset:experiment_detail' scoreset.experiment.urn %}">
 				{{ scoreset.experiment.urn }}
 			</a>
 		</p>
@@ -74,12 +74,12 @@
 						</span>					
 					<br>	
 					<span style="font-weight: 600;">DOI:</span>
-						<span>{{ scoreset.doi_id|default:"Not provided" }}</span>	
+						<span>{{ scoreset.doi_ids.all|default:"Not provided" }}</span>
 					<br>
 					<span style="font-weight: 600;">Licence:</span>
 						<span>
 							<a href="{{ scoreset.licence_type.link }}">
-								{{ scoreset.licence_type.short_name }}
+								{{ scoreset.licence.short_name }}
 							</a>
 						</span>					
 					<br>
