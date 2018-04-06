@@ -75,7 +75,7 @@
 				<th>Contributors</th>
 				<th>Target Organism</th>
 				<th>Keywords</th>
-				<th>External accessions</th>
+				<th>External identifiers</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -89,12 +89,12 @@
 						<tr>
 							<td>
 								<a 
-									href="{% url 'experiment:experiment_detail' exp.accession %}">
-									{{ exp.accession }}
+									href="{% url 'dataset:experiment_detail' exp.urn %}">
+									{{ exp.urn }}
 								</a>
 							</td>
 							<td>{{ exp.target }}</td>
-							<td>{{ exp.get_authors }}</td>
+							<td>{{ exp.editors }}</td>
 							<td>
 								{% if exp.get_target_organism != 'None' %}
 									<em>{{ exp.get_target_organism }}</em>
@@ -103,22 +103,22 @@
 								{% endif %}
 							</td>
 							<td>{{ exp.get_keywords|default:"-" }}</td>
-							<td>{{ exp.get_other_accessions|default:"-" }}</td>
+							<td>{{ exp.get_other_urns|default:"-" }}</td>
 						</tr>
 					{% else %}
 						{% if exp in request.user.profile.experiments %}
 							<tr>
 								<td>
 									<a 
-										href="{% url 'experiment:experiment_detail' exp.accession %}">
-										{{ exp.accession }} [P]
+										href="{% url 'dataset:experiment_detail' exp.urn %}">
+										{{ exp.urn }} [P]
 									</a>
 								</td>
 								<td>{{ exp.target }}</td>
 								<td>{{ exp.get_authors }}</td>
 								<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
 								<td>{{ exp.get_keywords|default:"-" }}</td>
-								<td>{{ exp.get_other_accessions|default:"-" }}</td>
+								<td>{{ exp.get_other_urns|default:"-" }}</td>
 							</tr>
 						{% endif %}
 					{% endif %}

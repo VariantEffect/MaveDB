@@ -11,7 +11,7 @@ from .views import (
     experimentset_all, experimentset_by_urn,
     experiments_all, experiment_by_urn,
     scoresets_all, scoreset_by_urn,
-    scoreset_count_data, scoreset_score_data
+    scoreset_count_data, scoreset_score_data, scoreset_metadata
 )
 
 urlpatterns = [
@@ -59,5 +59,10 @@ urlpatterns = [
         r"get/scoreset/(?P<urn>{})/counts/$".format(scoreset_url_pattern),
         scoreset_count_data,
         name="api_download_count_data"
+    ),
+    url(
+        r"get/scoreset/(?P<urn>{})/meta/$".format(scoreset_url_pattern),
+        scoreset_metadata,
+        name="api_download_metadata"
     )
 ]

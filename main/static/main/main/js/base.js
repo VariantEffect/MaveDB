@@ -3,8 +3,9 @@ jQuery, $;
 
 // ORCID button in base.html
 function openORCID() {
-    var currentUrl = "accounts/login/";
-    window.location.assign(currentUrl);
+    var base_url = window.location.origin;
+    var login_path = base_url + "/accounts/login/";
+    window.location.assign(login_path);
     return false;
 }
 
@@ -28,9 +29,9 @@ $('document').ready(function() {
     // Re-add any external_accession, keywords or target organism
     // back to failed form submission
     repopulateSelect("#id_keywords", "#keywords-to-add");
-    repopulateSelect("#id_sra_identifiers", "#sra-identifiers-to-add");
-    repopulateSelect("#id_doi_identifiers", "#doi-identifiers-to-add");
-    repopulateSelect("#id_pubmed_identifiers", "#pubmed-identifiers-to-add");
+    repopulateSelect("#id_sra_ids", "#sra-identifiers-to-add");
+    repopulateSelect("#id_doi_ids", "#doi-identifiers-to-add");
+    repopulateSelect("#id_pmid_ids", "#pubmed-identifiers-to-add");
     repopulateSelect("#id_target_organism", "#target-organisms-to-add");
 });
 
@@ -38,14 +39,14 @@ $('document').ready(function() {
 $("#preview-abstract").click(function (e) {
     // First get whatever is in the form and send an ajax request
     // to convert it to markdown.
-    var abstract = $("#id_abstract").val();
+    var abstract = $("#id_abstract_text").val();
     $.ajax({
-        url: "/scoreset/new/",
+        url: window.location.pathname,
         type: "GET",
-        data: { "abstract": abstract },
+        data: { 'abstract_text': abstract },
         dataType: "json",
         success: function (data) {
-            abstract = data.abstract;
+            abstract = data['abstract_text'];
             $("#abstract-markdown-modal .modal-body").text("");
             $("#abstract-markdown-modal .modal-body").append(abstract);
         },
@@ -58,14 +59,15 @@ $("#preview-abstract").click(function (e) {
 $("#preview-method").click(function (e) {
     // First get whatever is in the form and send an ajax request
     // to convert it to markdown.
-    var method = $("#id_method_desc").val();
+    var method = $("#id_method_text").val();
     $.ajax({
-        url: "/scoreset/new/",
+        url: window.location.pathname,
         type: "GET",
-        data: { "method_desc": method },
+        data: { 'method_text': method },
         dataType: "json",
         success: function (data) {
-            method = data.method_desc;
+            console.log(data)
+            method = data['method_text'];
             $("#method-markdown-modal .modal-body").text("");
             $("#method-markdown-modal .modal-body").append(method);
         },

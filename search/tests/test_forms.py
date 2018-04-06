@@ -1,11 +1,13 @@
-from django.core.urlresolvers import reverse_lazy
-from django.test import TestCase, RequestFactory
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 
-from metadata.models import Keyword, ExternalIdentifier
-from genome.models import TargetOrganism
-from dataset.models import Experiment
-from dataset.models import ScoreSet
+from genome.factories import TargetOrganismFactory
+from metadata.factories import (
+    KeywordFactory, DoiIdentifierFactory, SraIdentifierFactory,
+    PubmedIdentifierFactory
+)
+
+from dataset.factories import ExperimentFactory
 from accounts.permissions import assign_user_as_instance_admin
 
 from ..forms import SearchForm
@@ -16,27 +18,18 @@ User = get_user_model()
 class TestSearchForm(TestCase):
 
     def setUp(self):
-        self.kw_1 = Keyword.objects.create(text="kw_1")
-        self.kw_2 = Keyword.objects.create(text="kw_2")
-        self.kw_3 = Keyword.objects.create(text="kw_3")
-        self.ext_accession_1 = ExternalIdentifier.objects.create(text="ea_1")
-        self.ext_accession_2 = ExternalIdentifier.objects.create(text="ea_2")
-        self.ext_accession_3 = ExternalIdentifier.objects.create(text="ea_3")
-        self.target_org_1 = TargetOrganism.objects.create(text="to_1")
-        self.target_org_2 = TargetOrganism.objects.create(text="to_2")
-        self.target_org_3 = TargetOrganism.objects.create(text="to_3")
+        self.kw_1 = KeywordFactory(text="kw_1")
+        self.kw_2 = KeywordFactory(text="kw_2")
+        self.kw_3 = KeywordFactory(text="kw_3")
+        self.target_org_1 = TargetOrganismFactory(text="to_1")
+        self.target_org_2 = TargetOrganismFactory(text="to_2")
+        self.target_org_3 = TargetOrganismFactory(text="to_3")
         self.target_1 = "experiment_1"
         self.target_2 = "experiment_2"
         self.target_3 = "experiment_3"
-        self.exp_1 = Experiment.objects.create(
-            target=self.target_1, wt_sequence='atcg'
-        )
-        self.exp_2 = Experiment.objects.create(
-            target=self.target_2, wt_sequence='atcg'
-        )
-        self.exp_3 = Experiment.objects.create(
-            target=self.target_3, wt_sequence='atcg'
-        )
+        self.exp_1 = ExperimentFactory(target=self.target_1, wt_sequence='atcg')
+        self.exp_2 = ExperimentFactory(target=self.target_2, wt_sequence='atcg')
+        self.exp_3 = ExperimentFactory(target=self.target_3, wt_sequence='atcg')
 
     def test_can_create_form_from_data(self):
         form = SearchForm(data={})
@@ -53,38 +46,38 @@ class TestSearchForm(TestCase):
     def test_form_splits_by_comma(self):
         # All fields use the same `parse_query` method so only need
         # to test one field
-        form = SearchForm(
-            data={"accessions": "one,two"})
-        form.is_valid()
+        form = SearchForm(data={"urns": "one,two"})
+        self.assertTrue(form.is_valid())
         self.assertEqual(
-            sorted(form.cleaned_data.get("accessions")),
+            sorted(form.cleaned_data.get("urns")),
             ['one', 'two']
         )
 
     def test_form_doesnt_split_quoted_text(self):
         # All fields use the same `parse_query` method so only need
         # to test one field
-        form = SearchForm(data={"accessions": "one,two,'three,four'"})
+        form = SearchForm(data={"urns": "one,two,'three,four'"})
         form.is_valid()
         self.assertEqual(
-            sorted(form.cleaned_data.get("accessions")),
+            sorted(form.cleaned_data.get("urns")),
             sorted(['one', 'two', 'three,four'])
         )
-        form = SearchForm(data={"accessions": 'one,two,"three,four"'})
+        form = SearchForm(data={"urns": 'one,two,"three,four"'})
         form.is_valid()
         self.assertEqual(
-            sorted(form.cleaned_data.get("accessions")),
+            sorted(form.cleaned_data.get("urns")),
             sorted(['one', 'two', 'three,four'])
         )
 
     def test_search_all_can_find_all_matches(self):
         key = 'search_all'
         self.exp_1.keywords.add(self.kw_1)
-        self.exp_2.abstract = "dna repair"
+        self.exp_2.abstract_text = "dna repair"
         self.exp_2.save()
-        form = SearchForm(data={key: '{},dna repair,a thing'.format(
-            self.kw_1.text)
-        })
+        form = SearchForm(
+            data={key: '{},dna repair,a thing'.format(
+                self.kw_1.text)
+            })
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 2)
@@ -97,8 +90,8 @@ class TestSearchForm(TestCase):
         })
         form.is_valid()
         instances = form.query_experiments()
-        self.assertEqual(instances.count(), 1)
         self.assertEqual(instances[0], self.exp_1)
+        self.assertEqual(instances.count(), 1)
 
     ###
     def test_can_search_experiment_by_keywords(self):
@@ -141,31 +134,36 @@ class TestSearchForm(TestCase):
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    ###
-    def test_can_search_experiment_by_ext_accession(self):
-        key = 'ext_accessions'
-        self.exp_1.external_accessions.add(self.ext_accession_1)
-        form = SearchForm(data={key: '{}'.format(self.ext_accession_1.text)})
+    # ###
+    def test_can_search_experiment_by_doi(self):
+        key = 'doi_ids'
+        identifier = DoiIdentifierFactory()
+        self.exp_1.doi_ids.add(identifier)
+        form = SearchForm(data={key: identifier.identifier})
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    def test_search_experiment_by_ext_accession_returns_empty_qs(self):
-        key = 'ext_accessions'
+    def test_search_experiment_by_doi_ids_returns_empty_qs(self):
+        key = 'doi_ids'
+        identifier1 = DoiIdentifierFactory(identifier='10.1016/j.cels.2018.01.015')
+        identifier2 = DoiIdentifierFactory(identifier='10.1016/j.jmb.2018.02.009')
         form = SearchForm(data={key: '{},{}'.format(
-            self.ext_accession_2.text, self.ext_accession_3.text)
+            identifier1.identifier, identifier2.identifier)
         })
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 0)
 
-    def test_experiment_ext_accession_search_can_return_multiple_results(self):
-        key = 'ext_accessions'
-        self.exp_1.external_accessions.add(self.ext_accession_1)
-        self.exp_2.external_accessions.add(self.ext_accession_2)
+    def test_experiment_doi_ids_search_can_return_multiple_results(self):
+        key = 'doi_ids'
+        identifier1 = DoiIdentifierFactory(identifier='10.1016/j.cels.2018.01.015')
+        identifier2 = DoiIdentifierFactory(identifier='10.1016/j.jmb.2018.02.009')
+        self.exp_1.doi_ids.add(identifier1)
+        self.exp_2.doi_ids.add(identifier2)
         form = SearchForm(data={key: '{},{}'.format(
-            self.ext_accession_1.text, self.ext_accession_2.text)
+            identifier1.identifier, identifier2.identifier)
         })
         form.is_valid()
         instances = form.query_experiments()
@@ -173,18 +171,19 @@ class TestSearchForm(TestCase):
         self.assertEqual(self.exp_1, instances[0])
         self.assertEqual(self.exp_2, instances[1])
 
-    def test_experiment_ext_accession_search_is_case_insensitive(self):
-        key = 'ext_accessions'
-        self.exp_1.external_accessions.add(self.ext_accession_1)
+    def test_experiment_doi_ids_search_is_case_insensitive(self):
+        key = 'doi_ids'
+        identifier1 = DoiIdentifierFactory()
+        self.exp_1.doi_ids.add(identifier1)
         form = SearchForm(data={key: '{}'.format(
-            self.ext_accession_1.text.upper())}
+            identifier1.identifier.upper())}
         )
         form.is_valid()
         instances = form.query_experiments()
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    ###
+    # ###
     def test_can_search_experiment_by_target(self):
         key = 'targets'
         form = SearchForm(data={key: self.target_1})
@@ -221,7 +220,7 @@ class TestSearchForm(TestCase):
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    ###
+    # ###
     def test_can_search_experiment_by_target_organism(self):
         key = 'target_organisms'
         self.exp_1.target_organism.add(self.target_org_1)
@@ -264,11 +263,11 @@ class TestSearchForm(TestCase):
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    ###
+    # ###
     def test_can_search_experiment_by_metadata(self):
         key = 'metadata'
-        self.exp_1.abstract = "DNA repair"
-        self.exp_2.method_desc = "DNA repair"
+        self.exp_1.abstract_text = "DNA repair"
+        self.exp_2.method_text = "DNA repair"
         self.exp_1.save()
         self.exp_2.save()
         form = SearchForm(data={key: "DNA repair"})
@@ -285,8 +284,8 @@ class TestSearchForm(TestCase):
 
     def test_experiment_metadata_search_can_return_multiple_results(self):
         key = 'metadata'
-        self.exp_1.abstract = "DNA repair"
-        self.exp_2.method_desc = "the great mitochondria war"
+        self.exp_1.abstract_text = "DNA repair"
+        self.exp_2.method_text = "the great mitochondria war"
         self.exp_1.save()
         self.exp_2.save()
         form = SearchForm(data={key: 'DNA repair,the great mitochondria war'})
@@ -298,7 +297,7 @@ class TestSearchForm(TestCase):
 
     def test_experiment_metadata_search_is_case_insensitive(self):
         key = 'metadata'
-        self.exp_1.abstract = "DNA repair"
+        self.exp_1.abstract_text = "DNA repair"
         self.exp_1.save()
         form = SearchForm(data={key: 'DNA REPAIR'})
         form.is_valid()
@@ -306,8 +305,8 @@ class TestSearchForm(TestCase):
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    ###
-    def test_can_search_experiment_by_author_name(self):
+    # ###
+    def test_can_search_experiment_by_contributor_name(self):
         key = 'contributors'
         alice = User.objects.create(
             username="0000", first_name="Alice", last_name="Bob"
@@ -320,11 +319,9 @@ class TestSearchForm(TestCase):
         self.assertEqual(instances.count(), 1)
         self.assertEqual(self.exp_1, instances[0])
 
-    def test_can_search_experiment_by_author_orcid(self):
+    def test_can_search_experiment_by_contributor_orcid(self):
         key = 'contributors'
-        alice = User.objects.create(
-            username="0000"
-        )
+        alice = User.objects.create(username="0000")
         assign_user_as_instance_admin(alice, self.exp_1)
         form = SearchForm(data={key: '0000'})
         form.is_valid()

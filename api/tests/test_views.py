@@ -8,30 +8,13 @@ from accounts.permissions import (
 )
 
 import dataset.constants as constants
-from dataset.models.experimentset import ExperimentSet
-from dataset.models.experiment import Experiment
-from dataset.models.scoreset import ScoreSet
+from dataset.factories import (
+    ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
+)
 
-from variant.models import Variant
+from variant.factories import VariantFactory
 
 User = get_user_model()
-
-
-def make_experimentset():
-    return ExperimentSet.objects.create()
-
-
-def make_experiment(experimentset=None):
-    return Experiment.objects.create(
-        experimentset=experimentset,
-        target="test", wt_sequence="AT"
-    )
-
-
-def make_scoreset(experiment=None, replaces=None):
-    if not experiment:
-        experiment = make_experiment()
-    return ScoreSet.objects.create(experiment=experiment, replaces=replaces)
 
 
 class TestUserAPIViews(TestCase):
@@ -66,8 +49,8 @@ class TestUserAPIViews(TestCase):
         self.assertEqual(expected, result)
 
     def test_filters_out_private_entries(self):
-        scs_1 = make_scoreset()
-        scs_2 = make_scoreset()
+        scs_1 = ScoreSetFactory()
+        scs_2 = ScoreSetFactory()
         assign_user_as_instance_admin(self.alice, scs_1)
         assign_user_as_instance_admin(self.alice, scs_2)
 
@@ -94,14 +77,14 @@ class TestUserAPIViews(TestCase):
 class TestExperimentSetAPIViews(TestCase):
 
     def test_filters_out_private(self):
-        exps = make_experimentset()
+        exps = ExperimentSetFactory()
         response = self.client.get("/api/get/experimentset/all/")
         result = json.loads(response.content.decode('utf-8'))
         expected = {"experimentsets": []}
         self.assertEqual(expected, result)
 
     def test_404_private_experimentset(self):
-        exps = make_experimentset()
+        exps = ExperimentSetFactory()
         response = self.client.get(
             "/api/get/experimentset/{}/".format(exps.urn)
         )
@@ -115,14 +98,14 @@ class TestExperimentSetAPIViews(TestCase):
 class TestExperimentAPIViews(TestCase):
 
     def test_filters_out_private(self):
-        instance = make_experiment()
+        instance = ExperimentFactory()
         response = self.client.get("/api/get/experiment/all/")
         result = json.loads(response.content.decode('utf-8'))
         expected = {"experiments": []}
         self.assertEqual(expected, result)
 
     def test_404_private(self):
-        instance = make_experiment()
+        instance = ExperimentFactory()
         response = self.client.get(
             "/api/get/experimentset/{}/".format(instance.urn)
         )
@@ -136,35 +119,42 @@ class TestExperimentAPIViews(TestCase):
 class TestScoreSetAPIViews(TestCase):
 
     def test_filters_out_private(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         response = self.client.get("/api/get/scoreset/all/")
         result = json.loads(response.content.decode('utf-8'))
         expected = {"scoresets": []}
         self.assertEqual(expected, result)
 
     def test_404_private(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         response = self.client.get(
             "/api/get/scoreset/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
     def test_404_private_download_scores(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         response = self.client.get(
             "/api/get/scoreset/{}/scores/".format(instance.urn)
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/403_forbidden.html')
 
     def test_404_private_download_counts(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         response = self.client.get(
             "/api/get/scoreset/{}/counts/".format(instance.urn)
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/403_forbidden.html')
+
+    def test_404_private_download_meta(self):
+        instance = ScoreSetFactory()
+        response = self.client.get(
+            "/api/get/scoreset/{}/metadata/".format(instance.urn)
+        )
+        self.assertTemplateUsed(response, 'main/403_forbidden.html')
 
     def test_empty_text_response_download_counts_but_has_no_counts(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         instance.publish(propagate=True)
         instance.save(save_parents=True)
         response = self.client.get(
@@ -177,19 +167,19 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_can_download_scores(self):
-        scs = make_scoreset()
+        scs = ScoreSetFactory()
         scs.publish(propagate=True)
         scs.save(save_parents=True)
         scs.dataset_columns = {
-            constants.score_columns: ["hgvs", "score"],
-            constants.count_columns: ["hgvs", "count"]
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count"]
         }
         scs.save()
-        var = Variant.objects.create(
+        _ = VariantFactory(
             scoreset=scs, hgvs="test",
             data={
-                constants.score_columns: {"hgvs": "test", "score": "1"},
-                constants.count_columns: {"hgvs": "test", "count": "1"}
+                constants.variant_score_data: {"score": "1"},
+                constants.variant_count_data: {"count": "1"}
             }
         )
         response = self.client.get(
@@ -197,22 +187,22 @@ class TestScoreSetAPIViews(TestCase):
         )
         self.assertEqual(
             list(response.streaming_content),
-            [b'hgvs,score\n', b'test,1\n']
+            [b'hgvs,score\n', b'"test",1\n']
         )
 
     def test_can_download_counts(self):
-        scs = make_scoreset()
+        scs = ScoreSetFactory()
         scs.publish(propagate=True)
         scs.dataset_columns = {
-            constants.score_columns: ["hgvs", "score"],
-            constants.count_columns: ["hgvs", "count"]
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count"]
         }
         scs.save(save_parents=True)
-        var = Variant.objects.create(
+        _ = VariantFactory(
             scoreset=scs, hgvs="test",
             data={
-                constants.score_columns: {"hgvs": "test", "score": "1"},
-                constants.count_columns: {"hgvs": "test", "count": "1"}
+                constants.variant_score_data: {"score": "1"},
+                constants.variant_count_data: {"count": "1"}
             }
         )
         response = self.client.get(
@@ -220,5 +210,5 @@ class TestScoreSetAPIViews(TestCase):
         )
         self.assertEqual(
             list(response.streaming_content),
-            [b'hgvs,count\n', b'test,1\n']
+            [b'hgvs,count\n', b'"test",1\n']
         )

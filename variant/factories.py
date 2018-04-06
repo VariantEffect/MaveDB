@@ -14,7 +14,7 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 import dataset.constants as constants
-from dataset.models.scoreset import ScoreSet
+from dataset.models.scoreset import ScoreSet, default_dataset
 from dataset.factories import ScoreSetFactory
 
 from .models import Variant
@@ -40,7 +40,7 @@ class VariantFactory(DjangoModelFactory):
     hgvs = factory.fuzzy.FuzzyChoice(sample_hgvs)
     data = {
         constants.variant_score_data: {
-            ScoreSet.DEFAULT_DATASET[constants.score_columns][0]: 1.0},
+            default_dataset()[constants.score_columns][0]: 1.0},
         constants.variant_count_data: {},
         constants.variant_metadata: {}
     }

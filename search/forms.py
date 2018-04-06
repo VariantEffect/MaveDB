@@ -7,57 +7,79 @@ from main.utils.query_parsing import parse_query, filter_empty
 
 
 class SearchForm(forms.Form):
-    accessions = forms.CharField(
-        max_length=None, label="Accessions", required=False,
+    urns = forms.CharField(
+        max_length=None, label="Urns", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
         )
     )
-    ext_accessions = forms.CharField(
-        max_length=None, label="External Accessions", required=False,
+    doi_ids = forms.CharField(
+        max_length=None, label="DOI", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
+        )
+    )
+    sra_ids = forms.CharField(
+        max_length=None, label="SRA", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
+        )
+    )
+    pmid_ids = forms.CharField(
+        max_length=None, label="PubMed", required=False,
+        widget=forms.widgets.TextInput(
+            attrs={"class": "form-control"}
         )
     )
     keywords = forms.CharField(
         max_length=None, label="Keywords", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
         )
     )
     targets = forms.CharField(
         max_length=None, label="Target", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
         )
     )
     target_organisms = forms.CharField(
         max_length=None, label="Target Organism", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
         )
     )
-    authors = forms.CharField(
+    contributors = forms.CharField(
         max_length=None, label="Contributors", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
         )
     )
     metadata = forms.CharField(
         max_length=None, label="Metadata", required=False,
         widget=forms.widgets.TextInput(
-            attrs={"class": "form-control", "placeholder": "Comma delimited"}
+            attrs={"class": "form-control"}
         )
     )
 
-    def clean_accessions(self):
+    def clean_urns(self):
         return filter_empty(
-            parse_query(self.cleaned_data.get("accessions", ""))
+            parse_query(self.cleaned_data.get("urns", ""))
         )
 
-    def clean_ext_accessions(self):
+    def clean_doi_ids(self):
         return filter_empty(
-            parse_query(self.cleaned_data.get("ext_accessions", ""))
+            parse_query(self.cleaned_data.get("doi_ids", ""))
+        )
+
+    def clean_sra_ids(self):
+        return filter_empty(
+            parse_query(self.cleaned_data.get("sra_ids", ""))
+        )
+
+    def clean_pmid_ids(self):
+        return filter_empty(
+            parse_query(self.cleaned_data.get("pmid_ids", ""))
         )
 
     def clean_keywords(self):
@@ -75,7 +97,7 @@ class SearchForm(forms.Form):
             parse_query(self.cleaned_data.get("target_organisms", ""))
         )
 
-    def clean_authors(self):
+    def clean_contributors(self):
         return filter_empty(
             parse_query(self.cleaned_data.get("contributors", ""))
         )
@@ -107,12 +129,12 @@ class SearchForm(forms.Form):
             return model.objects.filter(pk__in=entries)
         return None
 
-    def search_by_accession(self, model, accessions):
-        if accessions:
+    def search_by_urn(self, model, urns):
+        if urns:
             entries = model.objects.none()
-            for accession in accessions:
+            for urn in urns:
                 entries |= model.objects.all().filter(
-                    accession__iexact=accession
+                    urn__iexact=urn
                 )
             return entries
         return None
@@ -132,9 +154,9 @@ class SearchForm(forms.Form):
             entries = model.objects.none()
             for tag in metadata_tags:
                 entries |= model.objects.all().filter(
-                    abstract__icontains=tag)
+                    abstract_text__icontains=tag)
                 entries |= model.objects.all().filter(
-                    method_desc__icontains=tag
+                    method_text__icontains=tag
                 )
             return entries
         return None
@@ -155,32 +177,36 @@ class SearchForm(forms.Form):
             return entries
         return None
 
-    def search_by_authors(self, model, authors):
-        if authors:
+    def search_by_contributors(self, model, contributors):
+        if contributors:
             selected = set()
             entries = model.objects.none()
-            model_author_ls = [
-                (m.pk, m.get_contributors_as_full_name())
+            model_contributors_ls = [
+                (m.pk, m.format_using_full_name('editors', string=True))
+                for m in model.objects.all()
+            ]
+            model_contributors_ls += [
+                (m.pk, m.format_using_username('editors', string=True))
                 for m in model.objects.all()
             ]
 
-            for author in authors:
-                for pk, model_authors in model_author_ls:
-                    if model_authors.lower().find(author.lower()) > -1:
+            for c in contributors:
+                for pk, model_contributors in model_contributors_ls:
+                    if model_contributors.lower().find(c.lower()) > -1:
                         selected.add(pk)
 
             entries |= model.objects.all().filter(pk__in=selected)
             return entries
         return None
 
-    def search_by_external_accession(self, ext_accessions):
-        if ext_accessions:
+    def search_by_external_identifier(self, ext_ids, field_name):
+        if ext_ids:
             entries = []
-            queried_exas = set([exa.lower() for exa in ext_accessions])
+            queried_exas = set([exa.lower() for exa in ext_ids])
             for instance in Experiment.objects.all():
                 instance_exas = set([
-                    exa.text.lower()
-                    for exa in instance.external_accessions.all()
+                    exa.identifier.lower()
+                    for exa in getattr(instance, field_name).all()
                 ])
                 if queried_exas & instance_exas:
                     entries.append(instance.pk)
@@ -198,8 +224,8 @@ class SearchForm(forms.Form):
             authors = self.cleaned_data.get(
                 "contributors", None
             ) or search_all
-            accessions = self.cleaned_data.get(
-                "accessions", None
+            urns = self.cleaned_data.get(
+                "urns", None
             ) or search_all
             metadata_tags = self.cleaned_data.get(
                 "metadata", None
@@ -207,28 +233,36 @@ class SearchForm(forms.Form):
             targets = self.cleaned_data.get(
                 "targets", None
             ) or search_all
-            ext_accessions = self.cleaned_data.get(
-                "ext_accessions", None
+            doi_ids = self.cleaned_data.get(
+                "doi_ids", None
+            ) or search_all
+            sra_ids = self.cleaned_data.get(
+                "sra_ids", None
+            ) or search_all
+            pmid_ids = self.cleaned_data.get(
+                "pmid_ids", None
             ) or search_all
             target_organisms = self.cleaned_data.get(
                 "target_organisms", None
             ) or search_all
 
             keyword_hits = self.search_by_keyword(model, keywords)
-            accessions_hits = self.search_by_accession(model, accessions)
+            urns_hits = self.search_by_urn(model, urns)
             metadata_hits = self.search_by_metadata(model, metadata_tags)
-            author_hits = self.search_by_authors(model, authors)
+            author_hits = self.search_by_contributors(model, authors)
 
             if model == Experiment:
                 targets_hits = self.search_by_target(model, targets)
-                ext_accessions_hits = self.search_by_external_accession(
-                    ext_accessions
-                )
+                doi_ids_hits = self.search_by_external_identifier(doi_ids, 'doi_ids')
+                sra_ids_hits = self.search_by_external_identifier(sra_ids, 'sra_ids')
+                pmid_ids_hits = self.search_by_external_identifier(pmid_ids, 'pmid_ids')
                 target_organism_hits = self.search_by_target_organism(
                     target_organisms
                 )
             else:
-                ext_accessions_hits = None
+                doi_ids_hits = None
+                sra_ids_hits = None
+                pmid_ids_hits = None
                 target_organism_hits = None
                 targets_hits = None
 
@@ -249,11 +283,11 @@ class SearchForm(forms.Form):
                 else:
                     instances |= author_hits
 
-            if accessions_hits is not None:
+            if urns_hits is not None:
                 if not union_search:
-                    instances &= accessions_hits
+                    instances &= urns_hits
                 else:
-                    instances |= accessions_hits
+                    instances |= urns_hits
 
             if targets_hits is not None:
                 if not union_search:
@@ -267,11 +301,23 @@ class SearchForm(forms.Form):
                 else:
                     instances |= metadata_hits
 
-            if ext_accessions_hits is not None:
+            if doi_ids_hits is not None:
                 if not union_search:
-                    instances &= ext_accessions_hits
+                    instances &= doi_ids_hits
                 else:
-                    instances |= ext_accessions_hits
+                    instances |= doi_ids_hits
+
+            if sra_ids_hits is not None:
+                if not union_search:
+                    instances &= sra_ids_hits
+                else:
+                    instances |= sra_ids_hits
+
+            if pmid_ids_hits is not None:
+                if not union_search:
+                    instances &= pmid_ids_hits
+                else:
+                    instances |= pmid_ids_hits
 
             if target_organism_hits is not None:
                 if not union_search:

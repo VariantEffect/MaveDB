@@ -1,16 +1,15 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
 
-from main.models import Licence
+from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer
 )
 
 import dataset.constants as constants
-from dataset.models.experimentset import ExperimentSet
-from dataset.models.experiment import Experiment
-from dataset.models.scoreset import ScoreSet
+from dataset.factories import (
+    ExperimentFactory, ExperimentSetFactory, ScoreSetFactory
+)
 
 from ..serializers import (
     ExperimentSerializer,
@@ -19,37 +18,18 @@ from ..serializers import (
     UserSerializer
 )
 
-User = get_user_model()
-
-
-def make_experimentset():
-    return ExperimentSet.objects.create()
-
-
-def make_experiment(experimentset=None):
-    return Experiment.objects.create(
-        experimentset=experimentset,
-        target="test", wt_sequence="AT"
-    )
-
-
-def make_scoreset(experiment=None, replaces=None):
-    if not experiment:
-        experiment = make_experiment()
-    scs = ScoreSet.objects.create(experiment=experiment, replaces=replaces)
-    scs.licence = Licence.get_default()
-    scs.save()
-    return scs
-
 
 class TestExperimentSetSerializer(TestCase):
-
+    """
+    Tests that the serializer for an :class:`ExperimentSet` outputs the correct
+    json data.
+    """
     def test_can_correctly_serialize_instance(self):
-        experiment = make_experiment()
+        experiment = ExperimentFactory()
         instance = experiment.experimentset
 
-        alice = User.objects.create(username="alice")
-        bob = User.objects.create(username="bob")
+        alice = UserFactory(username="alice")
+        bob = UserFactory(username="bob")
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
@@ -66,11 +46,11 @@ class TestExperimentSetSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_can_filter_out_private(self):
-        experiment = make_experiment()
+        experiment = ExperimentFactory()
         instance = experiment.experimentset
 
-        alice = User.objects.create(username="alice")
-        bob = User.objects.create(username="bob")
+        alice = UserFactory(username="alice")
+        bob = UserFactory(username="bob")
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
@@ -90,7 +70,7 @@ class TestExperimentSetSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_empty_list_no_experiments(self):
-        instance = make_experimentset()
+        instance = ExperimentSetFactory()
         serializer = ExperimentSetSerializer()
         expected = []
         result = serializer.serialize(instance.pk)
@@ -98,10 +78,9 @@ class TestExperimentSetSerializer(TestCase):
 
     def test_can_serialize_queryset(self):
         instances = [
-            make_experimentset(),
-            make_experimentset()
+            ExperimentSetFactory(),
+            ExperimentSetFactory()
         ]
-        instances = ExperimentSet.objects.all()
         serializer = ExperimentSetSerializer()
         expected = {
             "experimentsets": [
@@ -122,13 +101,16 @@ class TestExperimentSetSerializer(TestCase):
 
 
 class TestExperimentSerializer(TestCase):
-
+    """
+    Tests that the serializer for an :class:`Experiment` outputs the correct
+    json data.
+    """
     def test_can_correctly_serialize_instance(self):
-        instance = make_experiment()
-        scoreset_1 = make_scoreset(experiment=instance)
+        instance = ExperimentFactory()
+        scoreset_1 = ScoreSetFactory(experiment=instance)
 
-        alice = User.objects.create(username="alice")
-        bob = User.objects.create(username="bob")
+        alice = UserFactory(username="alice")
+        bob = UserFactory(username="bob")
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
@@ -146,11 +128,11 @@ class TestExperimentSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_can_filter_out_private(self):
-        instance = make_experiment()
-        scoreset_1 = make_scoreset(experiment=instance)
+        instance = ExperimentFactory()
+        scoreset_1 = ScoreSetFactory(experiment=instance)
 
-        alice = User.objects.create(username="alice")
-        bob = User.objects.create(username="bob")
+        alice = UserFactory(username="alice")
+        bob = UserFactory(username="bob")
         assign_user_as_instance_admin(alice, instance)
         assign_user_as_instance_viewer(bob, instance)
 
@@ -165,7 +147,7 @@ class TestExperimentSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_empty_scoreset_list_no_scoresets(self):
-        instance = make_experiment()
+        instance = ExperimentFactory()
         serializer = ExperimentSerializer()
         expected = []
         result = serializer.serialize(instance.pk)
@@ -178,9 +160,9 @@ class TestExperimentSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_returns_correct_scoresets(self):
-        instance = make_experiment()
-        scoreset_1 = make_scoreset(experiment=instance)
-        scoreset_2 = make_scoreset()  # not associated
+        instance = ExperimentFactory()
+        scoreset_1 = ScoreSetFactory(experiment=instance)
+        scoreset_2 = ScoreSetFactory()  # not associated
 
         scoreset_1.publish(propagate=True)
         scoreset_1.save(save_parents=True)
@@ -195,10 +177,9 @@ class TestExperimentSerializer(TestCase):
 
     def test_can_serialize_queryset(self):
         instances = [
-            make_experiment(),
-            make_experiment()
+            ExperimentFactory(),
+            ExperimentFactory()
         ]
-        instances = Experiment.objects.all()
         serializer = ExperimentSerializer()
         expected = {
             "experiments": [
@@ -221,9 +202,12 @@ class TestExperimentSerializer(TestCase):
 
 
 class TestScoreSetSerializer(TestCase):
-
+    """
+    Tests that the serializer for an :class:`ScoreSet` outputs the correct
+    json data.
+    """
     def test_can_serialize_minimal_example(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         expected = {
             "urn": instance.urn,
             "contributors": [],
@@ -233,7 +217,7 @@ class TestScoreSetSerializer(TestCase):
             "licence": [
                 instance.licence.short_name, instance.licence.link,
             ],
-            "score_columns": [],
+            "score_columns": [constants.required_score_column],
             "count_columns": []
         }
         serializer = ScoreSetSerializer()
@@ -247,7 +231,7 @@ class TestScoreSetSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_correct_scores_columns(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         instance.dataset_columns = {
             constants.score_columns: ["hgvs", "score"], 
             constants.count_columns: []
@@ -259,7 +243,7 @@ class TestScoreSetSerializer(TestCase):
         self.assertEqual(expected, result["score_columns"])
 
     def test_correct_counts_columns(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         instance.dataset_columns = {
             constants.score_columns: [], 
             constants.count_columns: ["hgvs", "counts"]
@@ -271,9 +255,11 @@ class TestScoreSetSerializer(TestCase):
         self.assertEqual(expected, result["count_columns"])
 
     def test_current_version_traverses_and_links_to_newest(self):
-        instance_1 = make_scoreset()
-        instance_2 = make_scoreset(instance_1.experiment, instance_1)
-        instance_3 = make_scoreset(instance_2.experiment, instance_2)
+        instance_1 = ScoreSetFactory()
+        instance_2 = ScoreSetFactory(
+            experiment=instance_1.experiment, replaces=instance_1)
+        instance_3 = ScoreSetFactory(
+            experiment=instance_2.experiment, replaces=instance_2)
 
         expected = instance_3.urn
         serializer = ScoreSetSerializer()
@@ -281,30 +267,32 @@ class TestScoreSetSerializer(TestCase):
         self.assertEqual(expected, result['current_version'])
 
     def test_value_is_null_when_no_next_version(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         expected = None
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result['replaced_by'])
 
     def test_correct_replaced_by(self):
-        instance_1 = make_scoreset()
-        instance_2 = make_scoreset(instance_1.experiment, instance_1)
+        instance_1 = ScoreSetFactory()
+        instance_2 = ScoreSetFactory(
+            experiment=instance_1.experiment, replaces=instance_1)
         expected = instance_2.urn
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_1.pk)
         self.assertEqual(expected, result['replaced_by'])
 
     def test_value_is_null_when_no_previous_version(self):
-        instance = make_scoreset()
+        instance = ScoreSetFactory()
         serializer = ScoreSetSerializer()
         expected = None
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result['replaces'])
 
     def test_replaces_is_none_when_no_it_does_not_replace_any_instance(self):
-        instance_1 = make_scoreset()
-        instance_2 = make_scoreset(instance_1.experiment, instance_1)
+        instance_1 = ScoreSetFactory()
+        instance_2 = ScoreSetFactory(
+            experiment=instance_1.experiment, replaces=instance_1)
 
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_2.pk)
@@ -312,15 +300,19 @@ class TestScoreSetSerializer(TestCase):
 
 
 class TestUserSerializer(TestCase):
-
+    """
+    Tests that the serializer for an :class:`User` outputs the correct
+    json data.
+    """
     def setUp(self):
-        self.alice = User.objects.create(username="alice", first_name="Alice")
-        self.bob = User.objects.create(username="bob")
+        self.alice = UserFactory(
+            username="alice", last_name='Ed', first_name="Alice")
+        self.bob = UserFactory(username="bob")
 
     def test_can_serialize_minimal_example(self):
-        exps = make_experimentset()
-        exp = make_experiment(exps)
-        scs = make_scoreset(exp)
+        exps = ExperimentSetFactory()
+        exp = ExperimentFactory(experimentset=exps)
+        scs = ScoreSetFactory(experiment=exp)
 
         assign_user_as_instance_admin(self.alice, exps)
         assign_user_as_instance_admin(self.alice, exp)
@@ -331,7 +323,7 @@ class TestUserSerializer(TestCase):
         expected = {
             "username": "alice",
             "first_name": "Alice",
-            "last_name": "",
+            "last_name": "Ed",
             "experimentsets": [exps.urn],
             "experiments": [exp.urn],
             "scoresets": [scs.urn],
@@ -345,8 +337,8 @@ class TestUserSerializer(TestCase):
         self.assertEqual(expected, result)
 
     def test_can_filter_out_private_exps_admin_instances(self):
-        instance_1 = make_experimentset()
-        instance_2 = make_experimentset()
+        instance_1 = ExperimentSetFactory()
+        instance_2 = ExperimentSetFactory()
 
         instance_2.publish(propagate=True)
         instance_2.save(save_parents=True)
@@ -360,8 +352,8 @@ class TestUserSerializer(TestCase):
         self.assertEqual(expected, result["experimentsets"])
 
     def test_can_filter_out_private_exp_admin_instances(self):
-        instance_1 = make_experiment()
-        instance_2 = make_experiment()
+        instance_1 = ExperimentFactory()
+        instance_2 = ExperimentFactory()
 
         instance_2.publish(propagate=True)
         instance_2.save(save_parents=True)
@@ -375,8 +367,8 @@ class TestUserSerializer(TestCase):
         self.assertEqual(expected, result["experiments"])
 
     def test_can_filter_out_private_scs_admin_instances(self):
-        instance_1 = make_scoreset()
-        instance_2 = make_scoreset()
+        instance_1 = ScoreSetFactory()
+        instance_2 = ScoreSetFactory()
 
         instance_2.publish(propagate=True)
         instance_2.save(save_parents=True)
@@ -390,8 +382,8 @@ class TestUserSerializer(TestCase):
         self.assertEqual(expected, result["scoresets"])
 
     def test_only_show_admin_experimentsets(self):
-        instance_1 = make_experimentset()
-        instance_2 = make_experimentset()
+        instance_1 = ExperimentSetFactory()
+        instance_2 = ExperimentSetFactory()
 
         assign_user_as_instance_viewer(self.alice, instance_1)
         assign_user_as_instance_admin(self.alice, instance_2)
@@ -402,8 +394,8 @@ class TestUserSerializer(TestCase):
         self.assertEqual(expected, result["experimentsets"])
 
     def test_only_show_admin_experiments(self):
-        instance_1 = make_experiment()
-        instance_2 = make_experiment()
+        instance_1 = ExperimentFactory()
+        instance_2 = ExperimentFactory()
 
         assign_user_as_instance_viewer(self.alice, instance_1)
         assign_user_as_instance_admin(self.alice, instance_2)
@@ -414,8 +406,8 @@ class TestUserSerializer(TestCase):
         self.assertEqual(expected, result["experiments"])
 
     def test_only_show_admin_scoresets(self):
-        instance_1 = make_scoreset()
-        instance_2 = make_scoreset()
+        instance_1 = ScoreSetFactory()
+        instance_2 = ScoreSetFactory()
 
         assign_user_as_instance_viewer(self.alice, instance_1)
         assign_user_as_instance_admin(self.alice, instance_2)
