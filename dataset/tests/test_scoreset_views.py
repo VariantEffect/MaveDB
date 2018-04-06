@@ -1,53 +1,53 @@
-#
-# from django.core import mail
-# from django.core.urlresolvers import reverse_lazy
-# from django.http import HttpResponse, HttpResponseForbidden
-# from django.test import TestCase, TransactionTestCase, RequestFactory
-# from django.test.client import Client
-#
-# from django.contrib.auth import get_user_model
-# from django.contrib.auth import authenticate, login
-#
-# from main.models import Keyword
-# from dataset.models import Experiment
-#
-# from accounts.permissions import (
-#     user_is_admin_for_instance,
-#     assign_user_as_instance_admin,
-#     assign_user_as_instance_contributor,
-#     assign_user_as_instance_viewer
-# )
-#
-# from scoreset.models import ScoreSet, Variant
-# from scoreset.views import (
-#     ScoreSetDetailView, scoreset_create_view,
-#     download_scoreset_data
-# )
-#
-# from .utility import make_score_count_files
-#
-#
-# class TestScoreSetSetDetailView(TestCase):
-#     """
-#     Test that experimentsets are displayed correctly to the public.
-#     """
-#
-#     def setUp(self):
-#         # Every test needs access to the request factory.
-#         self.User = get_user_model()
-#         self.factory = RequestFactory()
-#         self.exp = Experiment.objects.create(target="test", wt_sequence="AT")
-#
-#     def test_404_status_and_template_used_when_object_not_found(self):
-#         response = self.client.get('/scoreset/{}/'.format("SCS999999A.1"))
-#         self.assertEqual(response.status_code, 404)
-#         self.assertTemplateUsed(response, 'main/404_not_found.html')
-#
-#     def test_uses_correct_template(self):
-#         obj = ScoreSet.objects.create(experiment=self.exp, private=False)
-#         response = self.client.get('/scoreset/{}/'.format(obj.accession))
-#         self.assertTemplateUsed(response, 'scoreset/scoreset.html')
-#
+from django.core import mail
+from django.core.urlresolvers import reverse_lazy
+from django.test import TestCase, RequestFactory
+
+from accounts.factories import UserFactory
+from accounts.permissions import (
+    assign_user_as_instance_viewer,
+    assign_user_as_instance_contributor,
+    assign_user_as_instance_admin,
+    user_is_admin_for_instance
+)
+
+from metadata.factories import (
+    KeywordFactory, PubmedIdentifierFactory, DoiIdentifierFactory,
+    SraIdentifierFactory
+)
+
+from variant.factories import VariantFactory
+
+import dataset.constants as constants
+from ..factories import ScoreSetFactory, ExperimentFactory
+from ..models.scoreset import ScoreSet
+from ..views.scoreset import (
+    ScoreSetDetailView, scoreset_create_view,
+    download_scoreset_data
+)
+
+from .utility import make_score_count_files
+
+
+class TestScoreSetSetDetailView(TestCase):
+    """
+    Test that experimentsets are displayed correctly to the public.
+    """
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.template = 'dataset/scoreset/scoreset.html'
+        self.template_403 = 'main/403_forbidden.html'
+        self.template_404 = 'main/404_not_found.html'
+
+    def test_404_status_and_template_used_when_object_not_found(self):
+        response = self.client.get('/scoreset/{}/'.format("SCS999999A.1"))
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'main/404_not_found.html')
+
+    def test_uses_correct_template(self):
+        obj = ScoreSetFactory()
+        response = self.client.get('/scoreset/{}/'.format(obj.accession))
+        self.assertTemplateUsed(response, 'scoreset/scoreset.html')
+
 #     def test_private_scoreset_403_if_no_permission(self):
 #         obj = ScoreSet.objects.create(experiment=self.exp, private=True)
 #         bob = self.User.objects.create_user(

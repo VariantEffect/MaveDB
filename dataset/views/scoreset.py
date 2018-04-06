@@ -26,7 +26,7 @@ class ScoreSetDetailView(DetailView):
     layout.
     """
     model = ScoreSet
-    template_name = 'scoreset/scoreset.html'
+    template_name = 'dataset/scoreset/scoreset.html'
     context_object_name = "scoreset"
 
     def dispatch(self, request, *args, **kwargs):
