@@ -1,23 +1,18 @@
 from django.core import mail
 from django.core.urlresolvers import reverse_lazy
 from django.test import TestCase, RequestFactory
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
-from ..views import (
-    manage_instance,
-    edit_instance,
-    profile_view,
-    view_instance,
-    get_class_from_urn
-)
-
+from dataset.tests.utility import make_score_count_files
 import dataset.constants as constants
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
-from dataset.tests.utility import make_score_count_files
+from dataset.factories import (
+    ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
+)
 
+from ..factories import UserFactory, AnonymousUserFactory, ProfileFactory
 from ..permissions import (
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer,
@@ -27,33 +22,24 @@ from ..permissions import (
     user_is_admin_for_instance,
     user_is_viewer_for_instance
 )
-
-
-User = get_user_model()
-
-
-def experimentset():
-    return ExperimentSet.objects.create()
-
-
-def experiment():
-    return Experiment.objects.create(target="test", wt_sequence="AT")
-
-
-def scoreset():
-    return ScoreSet.objects.create(
-        experiment=Experiment.objects.create(
-            target="test", wt_sequence="AT"
-        )
-    )
+from ..views import (
+    manage_instance,
+    edit_instance,
+    profile_view,
+    view_instance,
+    get_class_from_urn
+)
 
 
 class TestProfileHomeView(TestCase):
-
+    """
+    Test the home view loads the correct template and requires a login.
+    """
     def setUp(self):
         self.path = reverse_lazy("accounts:profile")
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
+        self.template = 'accounts/profile_home.html'
+        self.alice = UserFactory(username="alice")
 
     def test_requires_login(self):
         response = self.client.get(self.path)
@@ -61,15 +47,17 @@ class TestProfileHomeView(TestCase):
 
 
 class TestProfileManageInstanceView(TestCase):
-
+    """
+    Test
+    """
     def setUp(self):
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice", password="secret")
-        self.bob = User.objects.create(username="bob", password="secret")
+        self.alice = UserFactory(username="alice", password="secret")
+        self.bob = UserFactory(username="bob", password="secret")
         self.client.logout()
 
     def test_requires_login(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         request = self.factory.get(
             '/accounts/profile/manage/{}/'.format(obj.urn))
         request.user = AnonymousUser()
@@ -77,7 +65,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_403_if_user_does_not_have_manage_permissions(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_viewer(self.alice, obj)
         request = self.factory.get(
             '/accounts/profile/manage/{}/'.format(obj.urn))
@@ -92,7 +80,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_404_if_instance_not_found(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_viewer(self.alice, obj)
         obj.delete()
         request = self.factory.get(
@@ -102,7 +90,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_removes_existing_admin(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.urn),
@@ -117,7 +105,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertTrue(user_is_admin_for_instance(self.bob, obj))
 
     def test_appends_new_admin(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.urn),
@@ -132,7 +120,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertTrue(user_is_viewer_for_instance(self.bob, obj))
 
     def test_redirects_to_manage_page_valid_submission(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.urn),
@@ -146,7 +134,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_returns_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.urn),
@@ -160,7 +148,7 @@ class TestProfileManageInstanceView(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_returns_viewer_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
             path='/accounts/profile/manage/{}/'.format(obj.urn),
@@ -177,12 +165,11 @@ class TestProfileManageInstanceView(TestCase):
 class TestProfileEditInstanceView(TestCase):
 
     def setUp(self):
-        self.path = reverse_lazy("accounts:edit_instance")
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
+        self.alice = UserFactory(username="alice")
         self.alice.set_password("secret_key")
         self.alice.save()
-        self.bob = User.objects.create(username="bob")
+        self.bob = UserFactory(username="bob")
         self.base_post_data = {
             'keywords': [''],
             'sra_ids': [''],
@@ -191,6 +178,13 @@ class TestProfileEditInstanceView(TestCase):
             'submit': ['submit'],
             'publish': ['']
         }
+        self.user = UserFactory()
+        self.username = self.user.username
+        self.unencrypted_password = 'secret_key'
+        self.user.set_password(self.unencrypted_password)
+        self.user.save()
+        self.client.login(
+            username=self.username, password=self.unencrypted_password)
 
     def make_scores_test_data(self, scores_data=None, counts_data=None):
         data = self.base_post_data.copy()
@@ -201,7 +195,7 @@ class TestProfileEditInstanceView(TestCase):
         return data, files
 
     def test_404_object_not_found(self):
-        obj = experiment()
+        obj = ExperimentFactory()
         urn = obj.urn
         assign_user_as_instance_viewer(self.alice, obj)
         request = self.factory.get('/accounts/profile/edit/{}/'.format(urn))
@@ -212,35 +206,32 @@ class TestProfileEditInstanceView(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_publish_button_sends_admin_emails(self):
-        admin = User.objects.create(username="admin", email="admin@admin.com")
-        admin.is_superuser = True
-        admin.save()
-
-        obj = scoreset()
-        exp = Experiment.objects.create(wt_sequence='atcg', target='brca1')
+        user = UserFactory()
+        user.is_superuser = True
+        user.email = "admin@admin.com"
+        user.save()
+        
+        obj = ScoreSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_admin(self.alice, exp)
-
         data, _ = self.make_scores_test_data()
-        score_file, count_file = make_score_count_files()
-        data['score_data'] = score_file
-        data['count_data'] = count_file
-        data['experiment'] = exp.pk
         data['publish'] = ['publish']
+
         path = '/accounts/profile/edit/{}/'.format(obj.urn)
-        self.client.login(username="alice", password="secret_key")
-        self.client.post(path=path, data=data)
+        request = self.factory.post(path=path, data=data)
+        request.user = self.user
+        response = edit_instance(request, obj.urn)
+        print(response.content)
 
         obj.refresh_from_db()
         self.assertEqual(len(mail.outbox), 1)
 
     def test_publishing_sets_child_and_parents_to_public(self):
-        admin = User.objects.create(username="admin", email="admin@admin.com")
+        admin = UserFactory(username="admin", email="admin@admin.com")
         admin.is_superuser = True
         admin.save()
 
-        obj = scoreset()
-        exp = Experiment.objects.create(wt_sequence='atcg', target='brca1')
+        obj = ScoreSetFactory()
+        exp = ExperimentFactory(wt_sequence='atcg', target='brca1')
         assign_user_as_instance_admin(self.alice, obj)
         assign_user_as_instance_admin(self.alice, exp)
 
@@ -260,8 +251,8 @@ class TestProfileEditInstanceView(TestCase):
         self.assertFalse(obj.experiment.experimentset.private)
 
     def test_publishing_propagates_last_edit_by(self):
-        obj = scoreset()
-        exp = Experiment.objects.create(wt_sequence='atcg', target='brca1')
+        obj = ScoreSetFactory()
+        exp = ExperimentFactory(wt_sequence='atcg', target='brca1')
         assign_user_as_instance_admin(self.alice, obj)
         assign_user_as_instance_admin(self.alice, exp)
 
@@ -281,26 +272,27 @@ class TestProfileEditInstanceView(TestCase):
         self.assertEqual(obj.experiment.experimentset.last_edit_by, self.alice)
 
     def test_requires_login(self):
-        obj = experiment()
+        self.client.logout()
+        obj = ExperimentFactory()
         response = self.client.get(
             '/accounts/profile/edit/{}/'.format(obj.urn))
         self.assertEqual(response.status_code, 302)
 
     def test_can_defer_instance_type_from_urn(self):
-        urn = experiment().urn
+        urn = ExperimentFactory().urn
         self.assertEqual(get_class_from_urn(urn), Experiment)
 
-        urn = experimentset().urn
+        urn = ExperimentSetFactory().urn
         self.assertEqual(get_class_from_urn(urn), ExperimentSet)
 
-        urn = scoreset().urn
+        urn = ScoreSetFactory().urn
         self.assertEqual(get_class_from_urn(urn), ScoreSet)
 
         urn = "urn:mavedb:00000a"
         self.assertEqual(get_class_from_urn(urn), None)
 
-    def test_404_edit_an_experimentset(self):
-        obj = experimentset()
+    def test_404_edit_an_ExperimentSetFactory(self):
+        obj = ExperimentSetFactory()
         request = self.factory.get(
             '/accounts/profile/edit/{}/'.format(obj.urn))
         request.user = self.alice
@@ -308,7 +300,7 @@ class TestProfileEditInstanceView(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_published_scoreset_instance_returns_edit_only_mode_form(self):
-        obj = scoreset()
+        obj = ScoreSetFactory()
         obj.private = False
         obj.save()
         assign_user_as_instance_admin(self.alice, obj)
@@ -319,7 +311,7 @@ class TestProfileEditInstanceView(TestCase):
         self.assertNotContains(response, 'Count data')
 
     def test_published_experiment_instance_returns_edit_only_mode_form(self):
-        obj = experiment()
+        obj = ExperimentFactory()
         obj.private = False
         obj.save()
         assign_user_as_instance_admin(self.alice, obj)
@@ -335,25 +327,25 @@ class TestProfileViewInstanceView(TestCase):
     def setUp(self):
         self.path = reverse_lazy("accounts:view_instance")
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
-        self.bob = User.objects.create(username="bob")
+        self.alice = UserFactory(username="alice")
+        self.bob = UserFactory(username="bob")
 
     def test_requires_login(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         request = self.factory.get('/accounts/profile/view/{}/'.format(obj.urn))
         request.user = AnonymousUser()
         response = view_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 302)
 
     def test_403_if_no_permissions(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         request = self.factory.get('/accounts/profile/view/{}/'.format(obj.urn))
         request.user = self.alice
         response = view_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 403)
 
     def test_404_if_obj_not_found(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         urn = obj.urn
         assign_user_as_instance_viewer(self.alice, obj)
         obj.delete()

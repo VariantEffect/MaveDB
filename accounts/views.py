@@ -282,6 +282,31 @@ def handle_scoreset_edit_form(request, instance):
         else:
             form = ScoreSetForm.from_request(request, instance)
 
+        # Get the new keywords/urn/target org so that we can return
+        # them for list repopulation if the form has errors.
+        keywords = request.POST.getlist("keywords")
+        keywords = [kw for kw in keywords if not is_null(kw)]
+
+        sra_ids = request.POST.getlist("sra_ids")
+        sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
+
+        doi_ids = request.POST.getlist("doi_ids")
+        doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
+
+        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
+
+        target_organism = request.POST.getlist("target_organism")
+        target_organism = [to for to in target_organism if not is_null(to)]
+
+        # Set the context
+        context["edit_form"] = form
+        context["repop_keywords"] = ','.join(keywords)
+        context["repop_sra_identifiers"] = ','.join(sra_ids)
+        context["repop_doi_identifiers"] = ','.join(doi_ids)
+        context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
+        context["repop_target_organism"] = ','.join(target_organism)
+
         if form.is_valid():
             updated_instance = form.save(commit=True)
             # save_and_create_revision_if_tracked_changed(
@@ -292,11 +317,6 @@ def handle_scoreset_edit_form(request, instance):
                 updated_instance.save(save_parents=True)
                 send_admin_email(request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
-        else:
-            keywords = request.POST.getlist("keywords")
-            keywords = [kw for kw in keywords]
-            context["repop_keywords"] = ','.join(keywords)
-            context["edit_form"] = form
 
     return render(request, 'accounts/profile_edit.html', context)
 

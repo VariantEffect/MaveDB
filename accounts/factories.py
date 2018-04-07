@@ -26,11 +26,13 @@ def AnonymousUserFactory():
 
 
 def UserFactory(username=None, password=None, first_name=None,
-                last_name=None):
+                last_name=None, email=None):
     """
     Test fixture factory for the user class which sets username,
     first_name, last_name and password.
     """
+    if email is None:
+        email = "test@mavedb.com"
     if username is None:
         username = factory.fuzzy.FuzzyText(length=8).fuzz()
     if password is None:
@@ -46,7 +48,8 @@ def UserFactory(username=None, password=None, first_name=None,
         username=username,
         password=password,
         first_name=first_name,
-        last_name=last_name
+        last_name=last_name,
+        email=email
     )
 
 
