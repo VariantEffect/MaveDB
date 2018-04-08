@@ -1,0 +1,47 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+<div class="row">
+
+  <div class="model-detail col-10">
+    <h1>{{ instance.urn }}</h1>
+
+    {% if instance.class_name != "experimentset" %}
+    <hr>
+    <p><strong>Abstract:</strong> {{ instance.abstract_text|default: "Not available" }} </p>
+    {% endif %}
+
+    {% if instance.class_name != "experimentset"%}
+    <hr>
+    <p><strong>Method:</strong> {{ instance.method_text|default: "Not available" }} </p>
+    {% endif %}
+
+    <hr>
+    <p><strong>Created by:</strong> instance.created_by.profile.get_full_name_hyperlink </p>
+    <p><strong>Created on:</strong> instance.creation_date </p>
+    <p><strong>Last edited by:</strong> instance.last_edit_by.profile.get_full_name_hyperlink </p>
+    <p><strong>Last edited on:</strong> instance.last_edit_date </p>
+    <p><strong>Made publically availble on:</strong> instance.publish_date </p>
+    <p><strong>Contributors:</strong> </p>
+    <ul>
+      {% for contributor in instance.editors %}
+      <li> contributor.profile.get_full_name_hyperlink </li>
+      {% endfor %}
+    </ul>
+
+    {% if instance.class_name != "experimentset" %}
+    <hr>
+    <p><strong>Keywords:</strong>{% for kw in instance.keywords.all %} {{kw.text}} {% endfor %} </p>
+    <p><strong>DOIs Identifiers:</strong>{% for doi in instance.doi_ids.all %} {{doi.url}} {% endfor %} </p>
+    <p><strong>SRAs Identifiers:</strong>{% for sra in instance.sra_ids.all %} {{sra.url}} {% endfor %} </p>
+    <p><strong>PubMed Identifiers:</strong>{% for pmid in instance.pmid_ids.all %} {{pmid.url}} {% endfor %} </p>
+    {% endif %}
+
+    {% block dataset_body %}
+        <!-- Main template body block -->
+    {% endblock %}
+
+  </div>
+
+</div>
+{% endblock body %}

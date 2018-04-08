@@ -1,127 +1,32 @@
-{% extends "main/base.html" %}
+{% extends "dataset/base/base.html" %}
 
-{% block body %}
-<div class="row">
-	
-	<!-- Sidebar -->
-	<div class="sidebar col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary"
-			 style="min-height:80vh;width:200px !important;">
-		<h5> {{ experiment.urn }} </h5>
-		<p> 
-			Member of experiment set 
-			<a href="{% url 'dataset:experimentset_detail' experiment.parent.urn %}">
-				{{ experiment.experimentset }}
-			</a>
-		</p>
-	</div>
-	
-	<!-- Content -->
-	<div class="col-md-8 mx-3">
-		<!-- Tab/Pills menu -->
-		<ul class="nav nav-tabs" id="myTab" role="tablist">
-			<li class="nav-item">
-				<a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" 
-						role="tab" aria-controls="info" aria-expanded="true">Information</a>
-			</li>
-			<li class="nav-item">
-				<a class="nav-link" id="scoresets-tab" data-toggle="tab" href="#scoresets" 
-						role="tab" aria-controls="scoresets">Score Sets</a>
-			</li>
-		</ul>
+{% block dataset_body %}
 
-		<!-- Tab/Pills content -->
-		<div class="tab-content" id="myTabContent">
-			
-			<!-- Information tab -->
-			<div class="tab-pane fade show active" id="info" role="tabpanel" 
-					 aria-labelledby="info-tab">
-				<div class="container-fluid mt-4">
-					<h3> Abstract </h3>
-					<p> {{ experiment.md_abstract|safe|escape|default:"Not provided" }} </p>
-					<hr>
-					
-					<h3> Method description </h3>
-					<p> {{ experiment.md_method_desc|safe|escape|default:"Not provided" }} </p>
-					<hr>
-					
-					<h3> Publication information </h3>
-					<span style="font-weight: 600;">Created on:</span>
-						<span>{{ experiment.creation_date }}</span>
-					<br>
-					<span style="font-weight: 600;">Created by:</span>
-						<span>
-							{{ experiment.created_by.profile.get_full_name_hyperlink }}
-						</span>
-					<br>
-					<span style="font-weight: 600;">Last edited on:</span>
-						<span>{{ experiment.last_edit_date|default:"None" }}</span>
-					<br>
-					<span style="font-weight: 600;">Last edited by:</span>
-						<span>
-							{{ experiment.last_edit_by.profile.get_full_name_hyperlink}}
-						</span>					
-					<br>
-					<span style="font-weight: 600;">Contributors:</span>
-						<span>
-							{% for user in experiment.editors %}
-								{{ user.profile.get_full_name_hyperlink }}
-								{% if forloop.counter < experiment.editors|length %},{% endif %}
-							{% endfor %}
-						</span>
-					<br>	
-					<span style="font-weight: 600;">DOI:</span>
-						<span>{{ experiment.doi_id|default:"Not provided" }}</span>
-					<br>
-					<span style="font-weight: 600;">SRA:</span>
-						<span>{{ experiment.sra_id|default:"Not provided" }}</span>
-					<br>
-					<hr>
-			
-					<h3> Experiment information </h3>
-					<span style="font-weight: 600;">Target: </span>
-						<span>{{ experiment.target }}</span>
-					<br>
-					<span style="font-weight: 600;">Target organism: </span>
-						{% if experiment.get_target_organism != 'None' %}
-							<em>{{ experiment.get_target_organism }}</em>
-						{% else %}
-							Not provided
-						{% endif %}
-					<br>
-					<div style="word-wrap: break-word; word-break: break-all;">
-						<span style="font-weight: 600">Wild type sequence: </span>
-							<span>{{ experiment.wt_sequence }}</span>
-					</div>
-					<span style="font-weight: 600;">Keywords: </span>
-						<span>{{ experiment.get_keywords|default:"Not provided" }}</span>
-					<br>
-					<span style="font-weight: 600;">External urns: </span>
-						<span>{{ experiment.get_other_urns|default:"Not provided" }}</span>
-				</div>
-			</div> <!-- End information tab -->
+<div style="margin-left:20px;margin-top:20px">
 
-			<!-- Scoreset tab -->
-			<div class="tab-pane fade show" id="scoresets" role="tabpanel" aria-labelledby="scoresets-tab">
-				<div class="container-fluid mt-4">
-					{% if not experiment.children.all %}
-						<p> No scoresets have been associated with this experiment. </p>
-					{% else %}
-						<p> The following score sets are associated with this dataset: </p>
-						<ul class="mt-2" style="list-style: none;">
-							{% for scoreset in experiment.children.all %}
-							<li>
-								<a href="{% url 'dataset:scoreset_detail' scoreset.urn %}">
-									{{ scoreset.urn }}
-								</a>
-							</li>
-							{% endfor %}
-						</ul>
-					{% endif %}
-				</div>
-			</div> <!-- End scoreset tab -->
-		
-		</div> <!-- End tab content -->
-	
-	</div> <!-- End column -->
-</div> <!-- End row -->
-{% endblock body %}
+  <hr>
+  <h4> Information </h4>
+  <p><strong>Target:</strong>instance.target</p>
+  <p><strong>Wildtype Sequence:</strong>instance.wt_sequence</p>
+  <p><strong>Target Organism:</strong>instance.get_target_organism</p>
+
+  <h4>Score Sets</h4>
+  {% if instance.children.count %}
+    {% for child in instance.children %}
+    <hr>
+    <p><strong>Urn:</strong>
+      <a href="{% url 'dataset:scoreset_detail' child.urn %}">
+        {{ child.urn }}
+      </a>
+    </p>
+    <p class="text-muted">
+      {{ child.abstract_text|default: "Abstract not available" }}
+    </p>
+    {% endfor %}
+  {% else %}
+    <hr>
+    <p class="text-muted">No Score sets have been associated with this experiment.</p>
+  {% endif %}
+
+</div>
+{% endblock %}
