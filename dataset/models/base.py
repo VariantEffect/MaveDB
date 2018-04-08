@@ -99,6 +99,10 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         abstract = True
         ordering = ['-creation_date']
 
+    @classmethod
+    def class_name(cls):
+        return cls.__name__.lower()
+
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
@@ -216,6 +220,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         super().save(*args, **kwargs)
         if save_parents:
             self.save_parents(*args, **kwargs)
+
+    def create_urn(self):
+        raise NotImplementedError()
 
     def save_parents(self, *args, **kwargs):
         if hasattr(self, 'experiment'):
