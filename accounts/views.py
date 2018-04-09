@@ -4,10 +4,10 @@ Views for accounts app.
 
 import re
 import logging
+import json
 
 from django.conf import settings
 from django.apps import apps
-from django.db import transaction
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,6 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 import django.contrib.auth.views as auth_views
 from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 from dataset.forms.experiment import ExperimentEditForm, ExperimentForm
 from dataset.forms.scoreset import ScoreSetEditForm, ScoreSetForm
@@ -27,6 +28,7 @@ from urn.validators import (
 
 from main.utils import is_null
 from main.utils.versioning import save_and_create_revision_if_tracked_changed
+from main.utils.pandoc import convert_md_to_html
 
 from .permissions import (
     GroupTypes,
@@ -267,13 +269,25 @@ def edit_instance(request, urn):
         return response
 
 
-@transaction.atomic
 def handle_scoreset_edit_form(request, instance):
     if not instance.private:
         form = ScoreSetEditForm(user=request.user, instance=instance)
     else:
         form = ScoreSetForm.from_request(request, instance)
     context = {'edit_form': form, 'instance': instance}
+
+    # If the request is ajax, then it's for previewing the abstract
+    # or method description. This code is coupled with base.js. Changes
+    # here might break the javascript code.
+    if request.is_ajax():
+        data = dict()
+        data['abstract_text'] = convert_md_to_html(
+            request.GET.get("abstract_text", "")
+        )
+        data['method_text'] = convert_md_to_html(
+            request.GET.get("method_text", "")
+        )
+        return HttpResponse(json.dumps(data), content_type="application/json")
 
     if request.method == "POST":
         if not instance.private:
@@ -315,13 +329,14 @@ def handle_scoreset_edit_form(request, instance):
                 updated_instance.publish(propagate=True)
                 updated_instance.set_last_edit_by(request.user, propagate=True)
                 updated_instance.save(save_parents=True)
+                save_and_create_revision_if_tracked_changed(
+                    request.user, updated_instance)
                 send_admin_email(request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
 
     return render(request, 'accounts/profile_edit.html', context)
 
 
-@transaction.atomic
 def handle_experiment_edit_form(request, instance):
     if not instance.private:
         form = ExperimentEditForm(user=request.user, instance=instance)
@@ -330,6 +345,19 @@ def handle_experiment_edit_form(request, instance):
 
     # Set up the initial base context
     context = {"edit_form": form, 'instance': instance, 'experiment': True}
+
+    # If the request is ajax, then it's for previewing the abstract
+    # or method description. This code is coupled with base.js. Changes
+    # here might break the javascript code.
+    if request.is_ajax():
+        data = dict()
+        data['abstract_text'] = convert_md_to_html(
+            request.GET.get("abstract_text", "")
+        )
+        data['method_text'] = convert_md_to_html(
+            request.GET.get("method_text", "")
+        )
+        return HttpResponse(json.dumps(data), content_type="application/json")
 
     # If you change the context arguments here, make sure to change them
     # in base.js as well.
@@ -367,8 +395,8 @@ def handle_experiment_edit_form(request, instance):
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
-            # save_and_create_revision_if_tracked_changed(
-            #     request.user, updated_instance)
+            save_and_create_revision_if_tracked_changed(
+                request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
 
     return render(request, 'accounts/profile_edit.html', context)
