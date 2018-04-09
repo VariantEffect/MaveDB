@@ -131,7 +131,10 @@ class TestExperimentSerializer(TestCase):
             "keywords": [],
             "doi_ids": {},
             "sra_ids": {},
-            "pm_ids": {}
+            "pm_ids": {},
+            "wt_sequence": instance.get_wt_sequence(),
+            "target": instance.get_target_name(),
+            "target_organism": instance.get_target_organism_name()
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -155,7 +158,10 @@ class TestExperimentSerializer(TestCase):
             "keywords": [],
             "doi_ids": {},
             "sra_ids": {},
-            "pm_ids": {}
+            "pm_ids": {},
+            "wt_sequence": instance.get_wt_sequence(),
+            "target": instance.get_target_name(),
+            "target_organism": instance.get_target_organism_name()
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -206,7 +212,10 @@ class TestExperimentSerializer(TestCase):
                     "keywords": [],
                     "doi_ids": {},
                     "sra_ids": {},
-                    "pm_ids": {}
+                    "pm_ids": {},
+                    "wt_sequence": instances[0].get_wt_sequence(),
+                    "target": instances[0].get_target_name(),
+                    "target_organism": instances[0].get_target_organism_name()
                 },
                 {
                     "contributors": [],
@@ -217,7 +226,10 @@ class TestExperimentSerializer(TestCase):
                     "keywords": [],
                     "doi_ids": {},
                     "sra_ids": {},
-                    "pm_ids": {}
+                    "pm_ids": {},
+                    "wt_sequence": instances[1].get_wt_sequence(),
+                    "target": instances[1].get_target_name(),
+                    "target_organism": instances[1].get_target_organism_name()
                 }
             ]
         }

@@ -90,6 +90,9 @@ class ExperimentSerializer(Serializer):
 
         dict_ = {
             "urn": instance.urn,
+            "wt_sequence": instance.get_wt_sequence(),
+            "target": instance.get_target_name(),
+            "target_organism": instance.get_target_organism_name(),
             "contributors": instance.format_using_username(
                 group='editors', string=False),
             "experimentset": instance.experimentset.urn,
