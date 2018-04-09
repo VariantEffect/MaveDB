@@ -90,7 +90,7 @@ class SelectUsersForm(forms.Form):
         super(SelectUsersForm, self).__init__(*args, **kwargs)
         self.fields["users"].queryset = User.objects.exclude(
             username=ANONYMOUS_USER_NAME
-        ).exclude(is_superuser=True)
+        )
         self.fields["users"].required = required
         self.group = group
         self.instance = instance
