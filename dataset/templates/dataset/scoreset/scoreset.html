@@ -4,7 +4,7 @@
   <h2 id="target" class="underline left-align section-heading"> Target </h2>
   <p><strong>Target:</strong> {{ instance.parent.target }}</p>
   <p><strong>Wildtype Sequence:</strong> {{ instance.parent.wt_sequence }}</p>
-  <p><strong>Target Organism:</strong> {{ instance.parent.get_target_organism|default:"Unspecified" }}</p>
+  <p><strong>Target Organism:</strong> {{ instance.parent.get_target_organism_name|default:"Unspecified" }}</p>
 {% endblock %}
 
 {% block child_list %}

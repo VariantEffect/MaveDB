@@ -76,7 +76,7 @@ class TestExperiment(TestCase):
         exp.update_target_organism(new)
         exp.save()
         exp.refresh_from_db()
-        self.assertEqual(exp.get_target_organism(), new)
+        self.assertEqual(exp.get_target_organism_name(), new.text)
         self.assertEqual(exp.target_organism.count(), 1)
 
     def test_typeerror_target_organism_not_target_organism_instance(self):

@@ -149,9 +149,17 @@ class Experiment(DatasetModel):
             self.target_organism.remove(current)
             self.target_organism.add(target_organism)
 
-    def get_target_organism(self):
+    def get_target_organism_name(self):
         if self.target_organism.count():
-            return self.target_organism.all()[0]
+            return self.target_organism.first().text
+        else:
+            return None
+
+    def get_wt_sequence(self):
+        return self.wt_sequence
+
+    def get_target_name(self):
+        return self.target
 
 
 # --------------------------------------------------------------------------- #
