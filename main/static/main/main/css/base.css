@@ -2,6 +2,7 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif !important;
+    border-radius: 0px !important;
     /* border: 1px solid red !important; */
 }
 
@@ -51,6 +52,9 @@ input[type=number] {
     color: white !important;
 }
 
+ul {
+    list-style-type: square;
+}
 
 /* General, navbar and footer Link Styling
 ----------------------------------- */
@@ -337,4 +341,58 @@ table {
 	margin: 0 .5em 0 0;
 	padding: 0;
 	float: left;
+}
+
+
+/* DetailView css
+---------------------------------------- */
+.right-align {
+    text-align: right;
+}
+.left-align {
+    text-align: left;
+}
+.centered {
+    text-align: center;
+}
+.underline {
+    border-bottom: 2px solid rgba(0,0,0,.1);
+}
+
+
+/* DetailView css
+---------------------------------------- */
+.sidenav a {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 20px;
+    display: block;
+}
+
+.child-list-abstract {
+    margin-left:20px !important;
+    margin-top:20px;
+}
+.urn-item-link {
+    display: black;
+}
+
+.entry-card {
+    margin: 1rem 1rem;
+    padding: 10px 10px 10px 10px;
+    border: 1px solid lightslategray;
+    box-shadow: 1px 2px 5px #ccc;
+}
+.entry-card:hover {
+    border-color: black;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;
+    -ms-transition: 0.5s;
+    transition: border-color 0.1s ease-in-out
+}
+
+.section-heading {
+    padding: 15px;
+    color: lightslategray;
+    font-weight: lighter;
 }

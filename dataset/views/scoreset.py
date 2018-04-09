@@ -27,7 +27,7 @@ class ScoreSetDetailView(DetailView):
     """
     model = ScoreSet
     template_name = 'dataset/scoreset/scoreset.html'
-    context_object_name = "scoreset"
+    context_object_name = "instance"
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -115,7 +115,7 @@ class ScoreSetDetailView(DetailView):
         context["scores_page_range"] = page_range
         context["scores_variants"] = scores_variants
         context["scores_columns"] = \
-            context['scoreset'].dataset_columns[constants.score_columns]
+            context['instance'].dataset_columns[constants.score_columns]
 
         # Handle the case when there are too many pages for counts.
         index = counts_paginator.page_range.index(counts_variants.number)
@@ -126,7 +126,7 @@ class ScoreSetDetailView(DetailView):
         context["counts_page_range"] = page_range
         context["counts_variants"] = counts_variants
         context["counts_columns"] = \
-            context['scoreset'].dataset_columns[constants.count_columns]
+            context['instance'].dataset_columns[constants.count_columns]
 
         context["scores_per_page"] = scores_per_page
         context["counts_per_page"] = counts_per_page

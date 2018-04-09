@@ -1,47 +1,131 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-<div class="row">
+<div class="right-align">
+  <h1><span class="underline">{{ instance.urn|upper }}</span></h1>
+  <p class="text-muted">
+    Created <a href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a>
+    &middot;
+    Last updated <a href="{{instance.last_edit_by.profile.get_orcid_url}}">{{instance.last_edit_date}}</a>
+    &middot;
+    {% if instance.private %}
+      Private entry
+    {% else %}
+      Published {{ instance.publish_date }}
+    {% endif %}
+    <br>
+    {% if instance.class_name == "experiment" %}
+      Member of <a href="{% url 'dataset:experimentset_detail' instance.parent.urn %}">{{instance.parent}}</a>
+    {% endif %}
+    {% if instance.class_name == "scoreset" %}
+      Member of <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a><br>
+      {% if instance.previous_version %}
+        Previous version: <a href="{% url 'dataset:scoreset_detail' instance.previous_version.urn %}">{{instance.previous_version}}</a><br>
+      {% endif %}
+      Current version: <a href="{% url 'dataset:scoreset_detail' instance.current_version.urn %}">{{instance.current_version}}</a>
+    {% endif %}
+  </p>
+</div>
 
-  <div class="model-detail col-10">
-    <h1>{{ instance.urn }}</h1>
+<div class="row">
+  <div class="sidenav col-2">
+    {% if instance.class_name != "experimentset" %}
+      <a href="#abstract">Abstract</a>
+      <a href="#method">Method</a>
+    {% endif %}
+
+    {% if instance.class_name == "experiment" %}
+      <a href="#target">Target</a>
+    {% endif %}
 
     {% if instance.class_name != "experimentset" %}
-    <hr>
-    <p><strong>Abstract:</strong> {{ instance.abstract_text|default: "Not available" }} </p>
+      <a href="#metadata">Metadata</a>
+      <a href="#references">References</a>
     {% endif %}
 
+    <a href="#contributors">Contributors</a>
+
+    {% if instance.class_name == "experimentset" %}
+      <a href="#experiments">Experiments</a>
+    {% endif %}
+
+    {% if instance.class_name == "experiment" %}
+      <a href="#scoresets">Score Sets</a>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
+      <a href="#variants">Variants</a>
+    {% endif %}
+
+  </div>
+
+  <div class="model-detail col-10">
+    <!-- Renders markdown abstract text -->
+    {% if instance.class_name != "experimentset" %}
+      <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
+      {% if not instance.abstract_text %}
+        <p class="text-muted">No abstract has been provided for this entry.</p>
+      {% else %}
+        <p>{{ instance.md_abstract|safe}}</p>
+      {% endif %}
+    {% endif %}
+
+    <!-- Renders markdown method text -->
     {% if instance.class_name != "experimentset"%}
-    <hr>
-    <p><strong>Method:</strong> {{ instance.method_text|default: "Not available" }} </p>
+      <h2 id="method" class="underline left-align section-heading">Method</h2>
+      {% if not instance.method_text %}
+        <p class="text-muted">No method has been provided for this entry.</p>
+      {% else %}
+        <p>{{ instance.md_method|safe}}</p>
+      {% endif %}
     {% endif %}
 
-    <hr>
-    <p><strong>Created by:</strong> instance.created_by.profile.get_full_name_hyperlink </p>
-    <p><strong>Created on:</strong> instance.creation_date </p>
-    <p><strong>Last edited by:</strong> instance.last_edit_by.profile.get_full_name_hyperlink </p>
-    <p><strong>Last edited on:</strong> instance.last_edit_date </p>
-    <p><strong>Made publically availble on:</strong> instance.publish_date </p>
-    <p><strong>Contributors:</strong> </p>
+    {% block target %}
+    <!-- Block for placing experiment target information -->
+    {% endblock %}
+
+    {% if instance.class_name != "experimentset" %}
+      <!-- Renders External Identifier urls -->
+      <h2 id="metadata" class="underline left-align section-heading">Metadata</h2>
+      {% if instance.keywords.count %}
+        <p><strong>Keywords:</strong>{% for kw in instance.keywords.all %} {{kw.text}} {% endfor %} </p>
+      {% else %}
+        <p><strong>Keywords:</strong> No associated keywords </p>
+      {% endif %}
+
+      {% if instance.doi_ids.count %}
+        <p><strong>DOI Identifiers:</strong>{% for doi in instance.doi_ids.all %} {{doi.url}} {% endfor %} </p>
+      {% else %}
+        <p><strong>DOI Identifiers:</strong> No associated DOIs </p>
+      {% endif %}
+
+      {% if instance.sra_ids.count %}
+        <p><strong>SRA Identifiers:</strong>{% for sra in instance.sra_ids.all %} {{sra.url}} {% endfor %} </p>
+      {% else %}
+        <p><strong>SRA Identifiers:</strong> No associated SRAs </p>
+      {% endif %}
+
+      <!-- Renders PubMed references -->
+      <h2 id="references" class="underline left-align section-heading">References</h2>
+      {% if instance.pmid_ids.count %}
+        <p><strong>PubMed Identifiers:</strong>{% for pmid in instance.pmid_ids.all %} {{pmid.url}} {% endfor %} </p>
+      {% else %}
+        <p><strong>PubMed Identifiers:</strong> No associated publications </p>
+      {% endif %}
+    {% endif %}
+
+     <!-- Renders contributors as ORCID url-->
+    <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
     <ul>
       {% for contributor in instance.editors %}
-      <li> contributor.profile.get_full_name_hyperlink </li>
+      <li> {{ contributor.profile.get_full_name_hyperlink }}</li>
       {% endfor %}
     </ul>
 
-    {% if instance.class_name != "experimentset" %}
-    <hr>
-    <p><strong>Keywords:</strong>{% for kw in instance.keywords.all %} {{kw.text}} {% endfor %} </p>
-    <p><strong>DOIs Identifiers:</strong>{% for doi in instance.doi_ids.all %} {{doi.url}} {% endfor %} </p>
-    <p><strong>SRAs Identifiers:</strong>{% for sra in instance.sra_ids.all %} {{sra.url}} {% endfor %} </p>
-    <p><strong>PubMed Identifiers:</strong>{% for pmid in instance.pmid_ids.all %} {{pmid.url}} {% endfor %} </p>
-    {% endif %}
-
-    {% block dataset_body %}
+    {% block child_list %}
         <!-- Main template body block -->
     {% endblock %}
 
   </div>
-
 </div>
 {% endblock body %}

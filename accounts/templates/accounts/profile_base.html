@@ -4,71 +4,13 @@
 <div class="row">
 	
 	<!-- Sidebar -->
-  <div class="sidebar col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">	
-		<ul style="list-style: none; margin-left: -15px;">
-			<h5>
-				Experiment Sets 
-				<a href="{% url 'dataset:experiment_new' %}">+</a>
-			</h5>
-			{% if request.user.profile.experimentsets %}
-				{% for model in request.user.profile.experimentsets %}
-					<li>
-						<a href="{% url 'dataset:experimentset_detail' model.urn %}">
-							{{ model.urn }}
-						</a>
-					</li>
-				{% endfor %}
-			{% else %}
-				<p style='margin-left:2px;'>
-					You don't have access to any experiment sets.
-				</p>
-			{% endif %}
-		</ul>
-		<hr>
-		
-		<ul style="list-style: none; margin-left: -15px;">
-				<h5>
-					Experiments
-					<a href="{% url 'dataset:experiment_new' %}">+</a>
-				</h5>
-				{% if request.user.profile.experiments %}
-					{% for model in request.user.profile.experiments %}
-						<li>
-							<a href="{% url 'dataset:experiment_detail' model.urn %}">
-								{{ model.urn }}
-							</a>
-						</li>
-					{% endfor %}
-				{% else %}
-					<p style='margin-left:2px;'>
-						You don't have access to any experiments.
-					</p>
-				{% endif %}
-			</ul>
-			<hr>
-		</ul>
-		
-		<ul style="list-style: none; margin-left: -15px;">
-			<h5>
-				Score Sets
-				<a href="{% url 'dataset:scoreset_new' %}">+</a>
-			</h5>
-			{% if request.user.profile.scoresets %}
-				{% for model in request.user.profile.scoresets %}
-					<li>
-						<a href="{% url 'dataset:scoreset_detail' model.urn %}">
-							{{ model.urn }}
-						</a>
-					</li>
-				{% endfor %}			
-			{% else %}
-				<p style='margin-left:2px;'>You don't have access to any score sets.</p>
-			{% endif %}
-		</ul>
+  <div class="sidenav col-2">
+    <a href="{% url 'dataset:experiment_new' %}">Create new experiment</a>
+    <a href="{% url 'dataset:scoreset_new' %}">Create new score set</a>
 	</div>
 		
 	<!-- Content -->
-	<div class="col-md-8 mx-3">
+	<div class="col-8">
 		{% block profile_body %}
 			<!-- Main content for profile view -->
 		{% endblock profile_body %}

@@ -30,7 +30,7 @@ class ExperimentDetailView(DetailView):
     """
     model = Experiment
     template_name = 'dataset/experiment/experiment.html'
-    context_object_name = "experiment"
+    context_object_name = "instance"
 
     def dispatch(self, request, *args, **kwargs):
         try:

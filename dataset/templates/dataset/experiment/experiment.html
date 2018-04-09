@@ -1,32 +1,30 @@
 {% extends "dataset/base/base.html" %}
 
-{% block dataset_body %}
+{% block target %}
+  <h2 id="target" class="underline left-align section-heading"> Target </h2>
+  <p><strong>Target:</strong> {{ instance.target }}</p>
+  <p><strong>Wildtype Sequence:</strong> {{ instance.wt_sequence }}</p>
+  <p><strong>Target Organism:</strong> {{ instance.get_target_organism|default:"Unspecified" }}</p>
+{% endblock %}
 
-<div style="margin-left:20px;margin-top:20px">
-
-  <hr>
-  <h4> Information </h4>
-  <p><strong>Target:</strong>instance.target</p>
-  <p><strong>Wildtype Sequence:</strong>instance.wt_sequence</p>
-  <p><strong>Target Organism:</strong>instance.get_target_organism</p>
-
-  <h4>Score Sets</h4>
+{% block child_list %}
+  <h2 id='scoresets' class="underline left-align section-heading">Score Sets</h2>
   {% if instance.children.count %}
     {% for child in instance.children %}
-    <hr>
-    <p><strong>Urn:</strong>
-      <a href="{% url 'dataset:scoreset_detail' child.urn %}">
-        {{ child.urn }}
-      </a>
-    </p>
-    <p class="text-muted">
-      {{ child.abstract_text|default: "Abstract not available" }}
-    </p>
+    <ul>
+      <li class="child-list-item">
+        <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
+          <p class="urn-item-link">{{ child.urn }}</p>
+        </a>
+        {% if child.abstract_text %}
+          <p class="child-list-abstract">{{ child.md_abstract|safe }}</p>
+        {% else %}
+          <p class="text-muted">No abstract has been provided for this entry.</p>
+        {% endif %}
+      </li>
+    </ul>
     {% endfor %}
   {% else %}
-    <hr>
     <p class="text-muted">No Score sets have been associated with this experiment.</p>
   {% endif %}
-
-</div>
 {% endblock %}

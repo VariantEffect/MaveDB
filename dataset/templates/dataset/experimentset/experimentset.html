@@ -1,22 +1,23 @@
 {% extends "dataset/base/base.html" %}
 
-{% block dataset_body %}
-
-<div style="margin-left:20px;margin-top:20px">
-
-  <h4>Experiments</h4>
-
-  {% for child in instance.children %}
-  <hr>
-  <p><strong>Urn:</strong>
-    <a href="{% url 'dataset:experiment_detail' child.urn %}">
-      {{ child.urn }}
-    </a>
-  </p>
-  <p class="text-muted">
-    {{ child.abstract_text|default: "Abstract not available" }}
-  </p>
-  {% endfor %}
-
-</div>
+{% block child_list %}
+  <h2 id='scoresets' class="underline left-align section-heading">Experiments</h2>
+  {% if instance.children.count %}
+    {% for child in instance.children %}
+    <ul>
+      <li class="child-list-item">
+        <a style="display:block;" href="{% url 'dataset:experiment_detail' child.urn %}">
+          <p class="urn-item-link">{{ child.urn }}</p>
+        </a>
+        {% if child.abstract_text %}
+          <p class="child-list-abstract">{{ child.md_abstract|safe }}</p>
+        {% else %}
+          <p class="text-muted">No abstract has been provided for this entry.</p>
+        {% endif %}
+      </li>
+    </ul>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No experiments have been associated with this set.</p>
+  {% endif %}
 {% endblock %}

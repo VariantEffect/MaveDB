@@ -7,93 +7,91 @@
 
 <!-- Instances that user is a ADMIN for -->
 <div id="admin-instances">
-	<h5> Administrator on </h5>
-	{% if request.user.profile.administrator_instances %}
+	<h5> Editable entries </h5>
+	{% if request.user.profile.editable_instances %}
 		<ul style="list-style: none">
-			{% for instance in request.user.profile.administrator_instances %}
-				<div style="display: inline-flex">
-					<li> {{ instance.urn }} </li>
-					<li style="padding-left:10px;">
-						<a href="{% url 'accounts:manage_instance' instance.urn %}">
-							Manage
-						</a>
-					</li>
-					<li style="padding-left:10px;"><b>&middot;</b></li>
-					{% if "EXPS" not in instance.urn %}
-					<li style="padding-left:10px;">
-						<a href="{% url 'accounts:edit_instance' instance.urn %}">
-							Edit
-						</a>
-					</li>
-					<li style="padding-left:10px;"><b>&middot;</b></li>
-					{% endif %}
-					<li style="padding-left:10px;">
-						<a href="{% url 'accounts:view_instance' instance.urn %}">
-							View
-						</a>
-					</li>
-				</div>
-				<!-- Information -->
-				<ul style="list-style: none">
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Last edited on: </label>
-							<div>{{ instance.last_edit_date }}<div>
-						</div>
-					</li>
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Private: </label>
-							<div> {{ instance.private }} <div>
-						</div>
-					</li>
-				</ul>
+			{% for instance in request.user.profile.editable_instances %}
+
+        <div class="entry-card">
+          <div style="display: inline-flex">
+            <li> <a href="{% url 'accounts:view_instance' instance.urn %}">{{instance.urn}}</a> </li>
+            <li style="padding-left:10px;"><b>&middot;</b></li>
+
+            {% if request.user in instance.administrators %}
+              <li style="padding-left:10px;">
+                <a href="{% url 'accounts:manage_instance' instance.urn %}">
+                  Manage
+                </a>
+              </li>
+            {% endif %}
+
+            {% if instance.class_name != 'experimentset' %}
+            <li style="padding-left:10px;"><b>&middot;</b></li>
+            <li style="padding-left:10px;">
+              <a href="{% url 'accounts:edit_instance' instance.urn %}">
+                Edit
+              </a>
+            </li>
+            {% endif %}
+          </div>
+
+          <!-- Information -->
+          <ul style="list-style: none">
+            <li>
+              <div style="display: inline-flex">
+                <label style="margin-right:5px;">Last edited on: </label>
+                <div>{{ instance.last_edit_date }}</div>
+              </div>
+            </li>
+            <li>
+              <div style="display: inline-flex">
+                <label style="margin-right:5px;">Private: </label>
+                <div> {{ instance.private }} </div>
+              </div>
+            </li>
+          </ul>
+        </div>
 			{% endfor %}
 		</ul>
 	{% else %}
-		<p> You are not tagged as an administrator on any entries. </p>
+		<p class="text-muted"> You are not an administrator/contributor on any entries </p>
 	{% endif %}
 	<hr>
 </div>
 
 <!-- Instances that are VIEW ONLY for user -->
 <div id="view-only-instances">
-	<h5> View only on </h5>
+	<h5> View only entries </h5>
 	{% if request.user.profile.viewer_instances %}
 		<ul style="list-style: none">
 			{% for instance in request.user.profile.viewer_instances %}
-				<div style="display: inline-flex">
-					<li> {{ instance.urn }} </li>
-					<li style="padding-left:10px;"><b>&middot;</b></li>
-					<li style="padding-left:10px;">
-						<a href="">View</a>
-					</li>
-				</div>
-				<!-- Information -->
-				<ul style="list-style: none">
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Last edited on: </label>
-							<div>{{ instance.last_edit_date }}<div>
-						</div>
-					</li>
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Private: </label>
-							<div> {{ instance.private }} <div>
-						</div>
-					</li>
-					<li>
-						<div style="display: inline-flex">
-							<label style="margin-right:5px;">Approved: </label>
-							<div> {{ instance.approved }} <div>
-						</div>
-					</li>
-				</ul>
+
+        <div class="entry-card">
+          <div style="display: inline-flex">
+            <li> <a href="{% url 'accounts:view_instance' instance.urn %}">{{instance.urn}}</a> </li>
+          </div>
+
+          <!-- Information -->
+          <ul style="list-style: none">
+            <li>
+              <div style="display: inline-flex">
+                <label style="margin-right:5px;">Last edited on: </label>
+                <div>{{ instance.last_edit_date }}<div>
+              </div>
+            </li>
+            <li>
+              <div style="display: inline-flex">
+                <label style="margin-right:5px;">Private: </label>
+                <div> {{ instance.private }} </div>
+              </div>
+            </li>
+          </ul>
+
+        </div>
 			{% endfor %}
 		</ul>
 	{% else %}
-		<p> You are not tagged as a viewer only on any entries. </p>
+		<p class="text-muted"> You have no view only entries </p>
 	{% endif %}
 </div>
 	
