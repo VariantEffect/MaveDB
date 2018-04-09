@@ -144,7 +144,7 @@ class SearchForm(forms.Form):
             entries = model.objects.none()
             for target in targets:
                 entries |= model.objects.all().filter(
-                    target__iexact=target
+                    target__icontains=target
                 )
             return entries
         return None
