@@ -11,6 +11,24 @@ from dataset.models.scoreset import ScoreSet
 User = get_user_model()
 
 
+def add_metadata(dict_, instance):
+    if isinstance(instance, ExperimentSet):
+        dict_['model_type'] = instance.class_name()
+    else:
+        dict_['keywords'] = [kw.text for kw in instance.keywords.all()]
+        dict_['doi_ids'] = {
+            doi.identifier: {'url': doi.url} for doi in instance.doi_ids.all()
+        }
+        dict_['sra_ids'] = {
+            sra.identifier: {'url': sra.url} for sra in instance.doi_ids.all()
+        }
+        dict_['pm_ids'] = {
+            pm.identifier: {'url': pm.url} for pm in instance.pmid_ids.all()
+        }
+        dict_['model_type'] = instance.class_name()
+    return dict_
+
+
 class Serializer(ABC):
     """
     Base abstract class representing the functionality
@@ -40,7 +58,7 @@ class ExperimentSetSerializer(Serializer):
         except ObjectDoesNotExist:
             return {}
 
-        return {
+        dict_ = {
             "urn": instance.urn,
             "contributors": instance.format_using_username(
                 group='editors', string=False),
@@ -49,6 +67,7 @@ class ExperimentSetSerializer(Serializer):
                 if not (e.private and filter_private)
             ]
         }
+        return add_metadata(dict_, instance)
 
     def serialize_set(self, queryset, filter_private=True):
         return {
@@ -69,7 +88,7 @@ class ExperimentSerializer(Serializer):
         except ObjectDoesNotExist:
             return {}
 
-        return {
+        dict_ = {
             "urn": instance.urn,
             "contributors": instance.format_using_username(
                 group='editors', string=False),
@@ -80,6 +99,7 @@ class ExperimentSerializer(Serializer):
                 if not (s.private and filter_private)
             ]
         }
+        return add_metadata(dict_, instance)
 
     def serialize_set(self, queryset, filter_private=True):
         return {
@@ -100,18 +120,18 @@ class ScoreSetSerializer(Serializer):
         except ObjectDoesNotExist:
             return {}
 
-        replaced_by = instance.next_version
-        replaced_by = None if not replaced_by else replaced_by.urn
+        next_version = instance.next_version
+        next_version = None if not next_version else next_version.urn
 
-        replaces = instance.previous_version
-        replaces = None if not replaces else replaces.urn
+        previous_version = instance.previous_version
+        previous_version = None if not previous_version else previous_version.urn
 
-        return {
+        dict_ = {
             "urn": instance.urn,
             "contributors": instance.format_using_username(
                 group='editors', string=False),
-            "replaced_by": replaced_by,
-            "replaces": replaces,
+            "next_version": next_version,
+            "previous_version": previous_version,
             "licence": [
                 instance.licence.short_name,
                 instance.licence.link,
@@ -120,6 +140,7 @@ class ScoreSetSerializer(Serializer):
             "score_columns": instance.score_columns,
             "count_columns": instance.count_columns
         }
+        return add_metadata(dict_, instance)
 
     def serialize_set(self, queryset):
         return {

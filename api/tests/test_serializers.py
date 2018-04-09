@@ -40,7 +40,8 @@ class TestExperimentSetSerializer(TestCase):
         expected = {
             "contributors": ["alice"],
             "urn": instance.urn,
-            "experiments": [experiment.urn]
+            "experiments": [experiment.urn],
+            "model_type": instance.class_name()
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -58,7 +59,8 @@ class TestExperimentSetSerializer(TestCase):
         expected = {
             "contributors": ["alice"],
             "urn": instance.urn,
-            "experiments": []
+            "experiments": [],
+            "model_type": instance.class_name()
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -87,12 +89,14 @@ class TestExperimentSetSerializer(TestCase):
                 {
                     "contributors": [],
                     "urn": instances[0].urn,
-                    "experiments": []
+                    "experiments": [],
+                    "model_type": instances[0].class_name()
                 },
                 {
                     "contributors": [],
                     "urn": instances[1].urn,
-                    "experiments": []
+                    "experiments": [],
+                    "model_type": instances[1].class_name()
                 }
             ]
         }
@@ -122,7 +126,12 @@ class TestExperimentSerializer(TestCase):
             "contributors": ["alice"],
             "experimentset": instance.experimentset.urn,
             "urn": instance.urn,
-            "scoresets": [scoreset_1.urn]
+            "scoresets": [scoreset_1.urn],
+            "model_type": instance.class_name(),
+            "keywords": [],
+            "doi_ids": {},
+            "sra_ids": {},
+            "pm_ids": {}
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -141,7 +150,12 @@ class TestExperimentSerializer(TestCase):
             "contributors": ["alice"],
             "experimentset": instance.experimentset.urn,
             "urn": instance.urn,
-            "scoresets": []
+            "scoresets": [],
+            "model_type": instance.class_name(),
+            "keywords": [],
+            "doi_ids": {},
+            "sra_ids": {},
+            "pm_ids": {}
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -187,13 +201,23 @@ class TestExperimentSerializer(TestCase):
                     "contributors": [],
                     "urn": instances[0].urn,
                     "experimentset": instances[0].experimentset.urn,
-                    "scoresets": []
+                    "scoresets": [],
+                    "model_type": instances[0].class_name(),
+                    "keywords": [],
+                    "doi_ids": {},
+                    "sra_ids": {},
+                    "pm_ids": {}
                 },
                 {
                     "contributors": [],
                     "urn": instances[1].urn,
                     "experimentset": instances[1].experimentset.urn,
-                    "scoresets": []
+                    "scoresets": [],
+                    "model_type": instances[1].class_name(),
+                    "keywords": [],
+                    "doi_ids": {},
+                    "sra_ids": {},
+                    "pm_ids": {}
                 }
             ]
         }
@@ -212,13 +236,18 @@ class TestScoreSetSerializer(TestCase):
             "urn": instance.urn,
             "contributors": [],
             "current_version": instance.urn,
-            "replaced_by": None,
-            "replaces": None,
+            "next_version": None,
+            "previous_version": None,
             "licence": [
                 instance.licence.short_name, instance.licence.link,
             ],
             "score_columns": [constants.required_score_column],
-            "count_columns": []
+            "count_columns": [],
+            "model_type": instance.class_name(),
+            "keywords": [],
+            "doi_ids": {},
+            "sra_ids": {},
+            "pm_ids": {}
         }
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance.pk)
@@ -271,32 +300,32 @@ class TestScoreSetSerializer(TestCase):
         expected = None
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance.pk)
-        self.assertEqual(expected, result['replaced_by'])
+        self.assertEqual(expected, result['next_version'])
 
-    def test_correct_replaced_by(self):
+    def test_correct_next_version(self):
         instance_1 = ScoreSetFactory()
         instance_2 = ScoreSetFactory(
             experiment=instance_1.experiment, replaces=instance_1)
         expected = instance_2.urn
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_1.pk)
-        self.assertEqual(expected, result['replaced_by'])
+        self.assertEqual(expected, result['next_version'])
 
     def test_value_is_null_when_no_previous_version(self):
         instance = ScoreSetFactory()
         serializer = ScoreSetSerializer()
         expected = None
         result = serializer.serialize(instance.pk)
-        self.assertEqual(expected, result['replaces'])
+        self.assertEqual(expected, result['previous_version'])
 
-    def test_replaces_is_none_when_no_it_does_not_replace_any_instance(self):
+    def test_previous_version_is_none_when_no_it_does_not_replace_any_instance(self):
         instance_1 = ScoreSetFactory()
         instance_2 = ScoreSetFactory(
             experiment=instance_1.experiment, replaces=instance_1)
 
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance_2.pk)
-        self.assertEqual(instance_1.urn, result['replaces'])
+        self.assertEqual(instance_1.urn, result['previous_version'])
 
 
 class TestUserSerializer(TestCase):
