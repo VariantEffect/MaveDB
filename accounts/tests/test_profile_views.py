@@ -59,7 +59,7 @@ class TestProfileManageInstanceView(TestCase):
     def test_requires_login(self):
         obj = ExperimentSetFactory()
         request = self.factory.get(
-            '/accounts/profile/manage/{}/'.format(obj.urn))
+            '/profile/manage/{}/'.format(obj.urn))
         request.user = AnonymousUser()
         response = view_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 302)
@@ -68,13 +68,13 @@ class TestProfileManageInstanceView(TestCase):
         obj = ExperimentSetFactory()
         assign_user_as_instance_viewer(self.alice, obj)
         request = self.factory.get(
-            '/accounts/profile/manage/{}/'.format(obj.urn))
+            '/profile/manage/{}/'.format(obj.urn))
         request.user = self.alice
         response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 403)
 
     def test_404_if_klass_cannot_be_inferred_from_urn(self):
-        request = self.factory.get('/accounts/profile/manage/NOT_ACCESSION/')
+        request = self.factory.get('/profile/manage/NOT_ACCESSION/')
         request.user = self.alice
         response = manage_instance(request, urn='NOT_ACCESSION')
         self.assertEqual(response.status_code, 404)
@@ -84,7 +84,7 @@ class TestProfileManageInstanceView(TestCase):
         assign_user_as_instance_viewer(self.alice, obj)
         obj.delete()
         request = self.factory.get(
-            '/accounts/profile/manage/{}/'.format(obj.urn))
+            '/profile/manage/{}/'.format(obj.urn))
         request.user = self.alice
         response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 404)
@@ -93,7 +93,7 @@ class TestProfileManageInstanceView(TestCase):
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.urn),
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
                 "administrators[]": [self.bob.pk],
                 "administrator_management-users": [self.bob.pk]
@@ -108,7 +108,7 @@ class TestProfileManageInstanceView(TestCase):
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.urn),
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
                 "viewers[]": [self.bob.pk],
                 "viewer_management-users": [self.bob.pk]
@@ -123,7 +123,7 @@ class TestProfileManageInstanceView(TestCase):
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.urn),
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
                 "administrators[]": [self.alice.pk, self.bob.pk],
                 "administrator_management-users": [self.alice.pk, self.bob.pk]
@@ -137,7 +137,7 @@ class TestProfileManageInstanceView(TestCase):
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.urn),
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
                 "administrators[]": [10000],
                 "administrator_management-users": [10000]
@@ -151,7 +151,7 @@ class TestProfileManageInstanceView(TestCase):
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
         request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.urn),
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
                 "viewers[]": [10000],
                 "viewer_management-users": [10000]
@@ -166,10 +166,6 @@ class TestProfileEditInstanceView(TestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
-        self.alice = UserFactory(username="alice")
-        self.alice.set_password("secret_key")
-        self.alice.save()
-        self.bob = UserFactory(username="bob")
         self.base_post_data = {
             'keywords': [''],
             'sra_ids': [''],
@@ -197,9 +193,9 @@ class TestProfileEditInstanceView(TestCase):
     def test_404_object_not_found(self):
         obj = ExperimentFactory()
         urn = obj.urn
-        assign_user_as_instance_viewer(self.alice, obj)
-        request = self.factory.get('/accounts/profile/edit/{}/'.format(urn))
-        request.user = self.alice
+        assign_user_as_instance_viewer(self.user, obj)
+        request = self.factory.get('/profile/edit/{}/'.format(urn))
+        request.user = self.user
         obj.delete()
 
         response = edit_instance(request, urn=urn)
@@ -212,70 +208,61 @@ class TestProfileEditInstanceView(TestCase):
         user.save()
         
         obj = ScoreSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_admin(self.user, obj)
+        assign_user_as_instance_admin(self.user, obj.parent)
         data, _ = self.make_scores_test_data()
         data['publish'] = ['publish']
+        data['experiment'] = [obj.parent.pk]
 
-        path = '/accounts/profile/edit/{}/'.format(obj.urn)
+        path = '/profile/edit/{}/'.format(obj.urn)
         request = self.factory.post(path=path, data=data)
         request.user = self.user
-        response = edit_instance(request, obj.urn)
-        print(response.content)
-
-        obj.refresh_from_db()
+        _ = edit_instance(request, obj.urn)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_publishing_sets_child_and_parents_to_public(self):
-        admin = UserFactory(username="admin", email="admin@admin.com")
-        admin.is_superuser = True
-        admin.save()
-
         obj = ScoreSetFactory()
-        exp = ExperimentFactory(wt_sequence='atcg', target='brca1')
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_admin(self.alice, exp)
+        assign_user_as_instance_admin(self.user, obj)
+        assign_user_as_instance_admin(self.user, obj.parent)
 
         data, _ = self.make_scores_test_data()
-        score_file, count_file = make_score_count_files()
-        data['score_data'] = score_file
-        data['count_data'] = count_file
-        data['experiment'] = exp.pk
+        data['experiment'] = [obj.parent.pk]
         data['publish'] = ['publish']
-        path = '/accounts/profile/edit/{}/'.format(obj.urn)
-        self.client.login(username="alice", password="secret_key")
-        self.client.post(path=path, data=data)
 
-        obj.refresh_from_db()
+        path = '/profile/edit/{}/'.format(obj.urn)
+        request = self.factory.post(path=path, data=data)
+        request.user = self.user
+        _ = edit_instance(request, obj.urn)
+
+        obj = ScoreSet.objects.get(urn=obj.urn)
         self.assertFalse(obj.private)
-        self.assertFalse(obj.experiment.private)
-        self.assertFalse(obj.experiment.experimentset.private)
+        self.assertFalse(obj.parent.private)
+        self.assertFalse(obj.parent.parent.private)
 
     def test_publishing_propagates_last_edit_by(self):
         obj = ScoreSetFactory()
-        exp = ExperimentFactory(wt_sequence='atcg', target='brca1')
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_admin(self.alice, exp)
+        assign_user_as_instance_admin(self.user, obj)
+        assign_user_as_instance_admin(self.user, obj.parent)
 
         data, _ = self.make_scores_test_data()
-        score_file, count_file = make_score_count_files()
-        data['score_data'] = score_file
-        data['count_data'] = count_file
-        data['experiment'] = exp.pk
+        data['experiment'] = [obj.parent.pk]
         data['publish'] = ['publish']
-        path = '/accounts/profile/edit/{}/'.format(obj.urn)
-        self.client.login(username="alice", password="secret_key")
-        self.client.post(path=path, data=data)
 
-        obj.refresh_from_db()
-        self.assertEqual(obj.last_edit_by, self.alice)
-        self.assertEqual(obj.experiment.last_edit_by, self.alice)
-        self.assertEqual(obj.experiment.experimentset.last_edit_by, self.alice)
+        path = '/profile/edit/{}/'.format(obj.urn)
+        request = self.factory.post(path=path, data=data)
+        request.user = self.user
+        _ = edit_instance(request, obj.urn)
+
+        obj = ScoreSet.objects.get(urn=obj.urn)
+        self.assertEqual(obj.last_edit_by, self.user)
+        self.assertEqual(obj.experiment.last_edit_by, self.user)
+        self.assertEqual(obj.experiment.experimentset.last_edit_by, self.user)
 
     def test_requires_login(self):
         self.client.logout()
         obj = ExperimentFactory()
         response = self.client.get(
-            '/accounts/profile/edit/{}/'.format(obj.urn))
+            '/profile/edit/{}/'.format(obj.urn))
         self.assertEqual(response.status_code, 302)
 
     def test_can_defer_instance_type_from_urn(self):
@@ -294,8 +281,8 @@ class TestProfileEditInstanceView(TestCase):
     def test_404_edit_an_ExperimentSetFactory(self):
         obj = ExperimentSetFactory()
         request = self.factory.get(
-            '/accounts/profile/edit/{}/'.format(obj.urn))
-        request.user = self.alice
+            '/profile/edit/{}/'.format(obj.urn))
+        request.user = self.user
         response = edit_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 404)
 
@@ -303,9 +290,9 @@ class TestProfileEditInstanceView(TestCase):
         obj = ScoreSetFactory()
         obj.private = False
         obj.save()
-        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_admin(self.user, obj)
         request = self.factory.get('accounts/profile/edit/{}/'.format(obj.urn))
-        request.user = self.alice
+        request.user = self.user
         response = edit_instance(request, urn=obj.urn)
         self.assertNotContains(response, 'Score data')
         self.assertNotContains(response, 'Count data')
@@ -314,12 +301,28 @@ class TestProfileEditInstanceView(TestCase):
         obj = ExperimentFactory()
         obj.private = False
         obj.save()
-        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_admin(self.user, obj)
         request = self.factory.get(
-            '/accounts/profile/edit/{}/'.format(obj.urn))
-        request.user = self.alice
+            '/profile/edit/{}/'.format(obj.urn))
+        request.user = self.user
         response = edit_instance(request, urn=obj.urn)
         self.assertNotContains(response, 'Target')
+
+    def test_ajax_submission_returns_json_response(self):
+        data = dict()
+        data['abstract_text'] = "# Hello world"
+        data['method_text'] = "## foo bar"
+
+        obj = ScoreSetFactory()
+        assign_user_as_instance_admin(self.user, obj)
+        path = '/profile/edit/{}/'.format(obj.urn)
+        request = self.factory.post(
+            path=path, data=data,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        request.user = self.user
+        response = edit_instance(request, urn=obj.urn)
+        self.assertContains(response, 'pandoc')
 
 
 class TestProfileViewInstanceView(TestCase):
@@ -332,14 +335,14 @@ class TestProfileViewInstanceView(TestCase):
 
     def test_requires_login(self):
         obj = ExperimentSetFactory()
-        request = self.factory.get('/accounts/profile/view/{}/'.format(obj.urn))
+        request = self.factory.get('/profile/view/{}/'.format(obj.urn))
         request.user = AnonymousUser()
         response = view_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 302)
 
     def test_403_if_no_permissions(self):
         obj = ExperimentSetFactory()
-        request = self.factory.get('/accounts/profile/view/{}/'.format(obj.urn))
+        request = self.factory.get('/profile/view/{}/'.format(obj.urn))
         request.user = self.alice
         response = view_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 403)
@@ -350,7 +353,7 @@ class TestProfileViewInstanceView(TestCase):
         assign_user_as_instance_viewer(self.alice, obj)
         obj.delete()
 
-        request = self.factory.get('/accounts/profile/view/{}/'.format(urn))
+        request = self.factory.get('/profile/view/{}/'.format(urn))
         request.user = self.alice
         response = view_instance(request, urn=urn)
         self.assertEqual(response.status_code, 404)

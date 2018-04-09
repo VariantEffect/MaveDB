@@ -135,6 +135,12 @@ class Profile(models.Model):
     def __str__(self):
         return "{}_profile".format(self.user.username)
 
+    def editable_instances(self):
+        """
+        Return a list of instances the user has the 'CAN_EDIT' permission for.
+        """
+        return self.contributor_instances() + self.administrator_instances()
+
     def experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user is assoicated
