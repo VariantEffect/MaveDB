@@ -369,6 +369,17 @@ table {
     display: block;
 }
 
+.sidenav-list-item {
+    list-style-type: none;
+    padding-right: 200px !important;
+}
+
+.sidenav-list-item a {
+    font-size: 16px;
+    text-decoration: none;
+    display: block;
+}
+
 .child-list-abstract {
     margin-left:20px !important;
     margin-top:20px;
