@@ -29,6 +29,8 @@
 
 <div class="row">
   <div class="sidenav col-2">
+    <a href="#contributors">Contributors</a>
+
     {% if instance.class_name != "experimentset" %}
       <a href="#abstract">Abstract</a>
       <a href="#method">Method</a>
@@ -43,8 +45,6 @@
       <a href="#references">References</a>
     {% endif %}
 
-    <a href="#contributors">Contributors</a>
-
     {% if instance.class_name == "experimentset" %}
       <a href="#experiments">Experiments</a>
     {% endif %}
@@ -54,12 +54,23 @@
     {% endif %}
 
     {% if instance.class_name == "scoreset" %}
-      <a href="#variants">Variants</a>
+      <a href="">Preview</a>
+        <a class="sidenav-list-item" href="#">Scores</a>
+        <a class="sidenav-list-item" href="#">Counts</a>
+        <a class="sidenav-list-item" href="#">Metadata</a>
     {% endif %}
 
   </div>
 
   <div class="model-detail col-10">
+     <!-- Renders contributors as ORCID url-->
+    <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
+    <ul>
+      {% for contributor in instance.editors %}
+      <li> {{ contributor.profile.get_full_name_hyperlink }}</li>
+      {% endfor %}
+    </ul>
+
     <!-- Renders markdown abstract text -->
     {% if instance.class_name != "experimentset" %}
       <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
@@ -113,14 +124,6 @@
         <p><strong>PubMed Identifiers:</strong> No associated publications </p>
       {% endif %}
     {% endif %}
-
-     <!-- Renders contributors as ORCID url-->
-    <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
-    <ul>
-      {% for contributor in instance.editors %}
-      <li> {{ contributor.profile.get_full_name_hyperlink }}</li>
-      {% endfor %}
-    </ul>
 
     {% block child_list %}
         <!-- Main template body block -->
