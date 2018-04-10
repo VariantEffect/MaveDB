@@ -2,7 +2,7 @@ from django import forms as forms
 from django.db import transaction
 from django.core.exceptions import ValidationError
 
-from genome.models import TargetOrganism
+from genome.models import TargetGene
 from genome.validators import (
     validate_target_gene,
     validate_target_organism,

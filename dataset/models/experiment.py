@@ -11,7 +11,7 @@ from accounts.permissions import (
     delete_all_groups_for_instance
 )
 
-from genome.models import TargetOrganism
+from genome.models import TargetGene
 from genome.validators import validate_wildtype_sequence
 
 from urn.models import UrnModel
@@ -60,7 +60,7 @@ class Experiment(DatasetModel):
         "pmid_ids",
         "doi_ids",
         "sra_ids",
-        "target_organism"
+        "targets"
     )
 
     class Meta:
@@ -90,33 +90,16 @@ class Experiment(DatasetModel):
         verbose_name="Experiment Set"
     )
 
-    wt_sequence = models.TextField(
-        default=None,
-        blank=False,
-        null=False,
-        verbose_name="Wild type sequence",
-        validators=[validate_wildtype_sequence],
-    )
-
-    target = models.CharField(
-        default=None,
-        blank=False,
-        null=False,
-        verbose_name="Target Gene",
-        max_length=256,
-    )
-
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
-    target_organism = models.ManyToManyField(TargetOrganism, blank=True)
+    targets = models.ManyToManyField(TargetGene, blank=False)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save(self, *args, **kwargs):
-        self.wt_sequence = self.wt_sequence.upper()
         if self.experimentset is None:
             self.experimentset = ExperimentSet.objects.create()
         super().save(*args, **kwargs)
@@ -140,15 +123,6 @@ class Experiment(DatasetModel):
 
         return urn
 
-    def update_target_organism(self, target_organism):
-        if not isinstance(target_organism, TargetOrganism):
-            raise TypeError(
-                "`target_organism` must be a TargetOrganism instnace.")
-        current = self.target_organism.first()
-        if current != target_organism:
-            self.target_organism.remove(current)
-            self.target_organism.add(target_organism)
-
     def get_target_organism_name(self):
         if self.target_organism.count():
             return self.target_organism.first().text
@@ -158,8 +132,11 @@ class Experiment(DatasetModel):
     def get_wt_sequence(self):
         return self.wt_sequence
 
-    def get_target_name(self):
-        return self.target
+    def get_targets(self):
+        return self.targets.all()
+
+    def get_target_names(self):
+        return [t.get_name() for t in self.get_targets()]
 
 
 # --------------------------------------------------------------------------- #
