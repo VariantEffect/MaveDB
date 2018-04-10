@@ -3,13 +3,15 @@ import datetime
 import idutils
 from django.db import models
 
+from core.models import TimeStampedModel
+
 from metadata.validators import (
     SRA_BIOPROJECT_RE, SRA_STUDY_RE,
     SRA_EXPERIMENT_RE, SRA_RUN_RE
 )
 
 
-class Keyword(models.Model):
+class Keyword(TimeStampedModel):
     """
     This class represents a keyword that can be associated with an
     experiment or scoreset.
@@ -42,7 +44,7 @@ class Keyword(models.Model):
         return self.text
 
 
-class ExternalIdentifier(models.Model):
+class ExternalIdentifier(TimeStampedModel):
     """
     This class represents a textual representation of an identifier from an
     external database that can be associated with a target in an experiment.
@@ -82,14 +84,21 @@ class ExternalIdentifier(models.Model):
         null=False,
         default=None,
         max_length=256,
-        verbose_name='Database name'
+        verbose_name='Database name',
+    )
+    dbversion = models.CharField(
+        blank=True,
+        null=True,
+        default=None,
+        max_length=256,
+        verbose_name="Database version",
     )
     url = models.URLField(
         blank=True,
         null=True,
         default=None,
         max_length=256,
-        verbose_name='Identifier URL'
+        verbose_name='Identifier URL',
     )
 
     class Meta:
