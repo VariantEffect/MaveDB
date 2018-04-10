@@ -1,18 +1,19 @@
 import logging
-import datetime
 import os.path
 
 from django.conf import settings
 from django.db import models
 from django.db.models import ObjectDoesNotExist
 
-from .utils.pandoc import convert_md_to_html
+from core.models import TimeStampedModel
+
+from core.utilities.pandoc import convert_md_to_html
 
 
 logger = logging.getLogger("django")
 
 
-class News(models.Model):
+class News(TimeStampedModel):
     """
     The news model represents an singular piece of news presented in a
     site announcement fashion. News items are sorted by creation date.
@@ -21,26 +22,23 @@ class News(models.Model):
     ----------
     text : `models.TextField`
         The content of the news item.abs
-    data : `models.DateField`
-        The date of creation in yyyy-mm-dd format.
     """
     text = models.TextField(default="default news.", blank=False)
-    date = models.DateField(blank=False, default=datetime.date.today)
 
     class Meta:
-        ordering = ['-date']
+        ordering = ['-modified_date']
         verbose_name_plural = "News items"
         verbose_name = "News item"
 
     def __str__(self):
-        return '[{}]: {}'.format(str(self.date), self.text)
+        return '[{}]: {}'.format(str(self.modified_date), self.text)
 
     @staticmethod
     def recent_news():
         """
         Return the 10 most recently published news items.
         """
-        return News.objects.order_by("-date")[0: 10]
+        return News.objects.order_by("-modified_date")[0: 10]
 
     @property
     def message(self):
@@ -54,18 +52,10 @@ class News(models.Model):
             raise ValueError("A null message is not allowed.")
         elif not self.text.strip():
             raise ValueError("A blank message is not allowed.")
-
-        if self.date is None:
-            raise ValueError("A null date is not allowed.")
-        try:
-            datetime.datetime.strptime(str(self.date), '%Y-%m-%d')
-        except ValueError:
-            raise ValueError("Incorrect data format, should be YYYY-MM-DD")
-        else:
-            super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
 
-class SiteInformation(models.Model):
+class SiteInformation(TimeStampedModel):
     """
     SiteInformation contains all static content of the webapp such as the
     about, citation, documentation etc. This may be replaced with flatpages
@@ -154,26 +144,8 @@ class SiteInformation(models.Model):
         else:
             return existing[0].pk == self.pk
 
-    def save(self, *args, **kwargs):
-        if self._about is None:
-            raise ValueError("A null 'about' is not allowed.")
-        if self._citation is None:
-            raise ValueError("A null 'citation' is not allowed.")
-        if self._usage_guide is None:
-            raise ValueError("A null 'usage_guide' is not allowed.")
-        if self._documentation is None:
-            raise ValueError("A null 'documentation' is not allowed.")
-        if self._terms is None:
-            raise ValueError("A null 'terms' is not allowed.")
-        if self._privacy is None:
-            raise ValueError("A null 'privacy' is not allowed.")
-        if not self.can_save():
-            raise ValueError("This is a singleton table. Cannot add entry.")
-        else:
-            super().save(*args, **kwargs)
 
-
-class Licence(models.Model):
+class Licence(TimeStampedModel):
     """
     This class models represents the licence associated with a
     scoreset.
@@ -229,6 +201,12 @@ class Licence(models.Model):
 
     def get_legal_code(self):
         return self.legal_code
+
+    def get_long_name(self):
+        return self.long_name
+
+    def get_short_name(self):
+        return self.short_name
 
     # not currently used
     # additional validation to make sure link is valid?
