@@ -3,7 +3,7 @@ import idutils
 
 from django.core.exceptions import ValidationError
 
-from main.utils import is_null
+from core.utilities import is_null
 
 SRA_BIOPROJECT_PATTERN = r'^PRJNA\d+$'
 SRA_BIOPROJECT_RE = re.compile(SRA_BIOPROJECT_PATTERN)

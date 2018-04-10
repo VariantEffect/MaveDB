@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
 from dataset import constants as constants
-from main.utils import is_null
+from core.utilities import is_null
 
 validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
 

@@ -3,7 +3,7 @@ import django.forms as forms
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
 
-from main.utils.query_parsing import parse_query, filter_empty
+from core.utilities.query_parsing import parse_query, filter_empty
 
 
 class SearchForm(forms.Form):

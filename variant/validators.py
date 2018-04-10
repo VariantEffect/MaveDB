@@ -14,7 +14,7 @@ from dataset.validators import (
     validate_header_contains_no_null_columns
 )
 
-from main.utils import is_null
+from core.utilities import is_null
 
 # Matches a single amino acid substitution in HGVS_ format.
 RE_PROTEIN = re.compile(

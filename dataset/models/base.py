@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator
 from django.db import models, transaction
 
 from accounts.mixins import GroupPermissionMixin
-from main.utils import pandoc as pandoc
+from core.utilities import pandoc as pandoc
 from metadata.models import (
     Keyword, SraIdentifier, DoiIdentifier,
     PubmedIdentifier, ExternalIdentifier

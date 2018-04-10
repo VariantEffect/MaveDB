@@ -2,15 +2,15 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpRequest, HttpResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
 
 from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 
-from main.utils import is_null
-from main.utils.pandoc import convert_md_to_html
-from main.utils.versioning import save_and_create_revision_if_tracked_changed
+from core.utilities import is_null
+from core.utilities.pandoc import convert_md_to_html
+from core.utilities.versioning import save_and_create_revision_if_tracked_changed
 
 from .scoreset import scoreset_create_view
 from ..forms.experiment import ExperimentForm

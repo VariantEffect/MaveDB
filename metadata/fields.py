@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelMultipleChoiceField
 from django.utils.translation import ugettext_lazy as _
 
-from main.utils import is_null
+from core.utilities import is_null
 
 
 class ModelSelectMultipleField(ModelMultipleChoiceField):

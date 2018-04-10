@@ -26,9 +26,9 @@ from urn.validators import (
     MAVEDB_SCORESET_URN_PATTERN
 )
 
-from main.utils import is_null
-from main.utils.versioning import save_and_create_revision_if_tracked_changed
-from main.utils.pandoc import convert_md_to_html
+from core.utilities import is_null
+from core.utilities.versioning import save_and_create_revision_if_tracked_changed
+from core.utilities.pandoc import convert_md_to_html
 
 from .permissions import (
     GroupTypes,
