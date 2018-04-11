@@ -41,7 +41,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     creation_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format.
 
-    last_edit_date : `models.DataField`
+    modification_date : `models.DataField`
         Data of instantiation in yyyy-mm-dd format. Updates everytime `save`
         is called.
 
@@ -52,7 +52,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     created_by : `models.ForeignKey`
         User the instance was created by.
 
-    last_edit_by : `models.ForeignKey`
+    modified_by : `models.ForeignKey`
         User to make the latest change to the instance.
 
     approved : `models.BooleanField`
@@ -77,6 +77,12 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     method_text : `models.TextField`
         A markdown text blob for the methods description.
+
+    short_description : `models.CharField`
+        A short plain text description.
+
+    short_title : `models.CharField`
+        A short plain title.
 
     keywords : `models.ManyToManyField`
         Associated `Keyword` objects for this entry.
@@ -106,20 +112,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
-    creation_date = models.DateField(
-        blank=False,
-        null=False,
-        default=datetime.date.today,
-        verbose_name="Created on",
-    )
-
-    last_edit_date = models.DateField(
-        blank=False,
-        null=False,
-        default=datetime.date.today,
-        verbose_name="Last edited on",
-    )
-
     publish_date = models.DateField(
         blank=False,
         null=True,
@@ -127,7 +119,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         verbose_name="Published on",
     )
 
-    last_edit_by = models.ForeignKey(
+    modified_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
@@ -178,6 +170,18 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         default="",
         verbose_name="Method description"
     )
+    short_description = models.CharField(
+        blank=False,
+        default="",
+        verbose_name="Short description",
+        max_length=512
+    )
+    short_title = models.TextField(
+        blank=False,
+        default="",
+        verbose_name="Short title",
+        max_length=256
+    )
 
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
@@ -216,10 +220,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     @transaction.atomic
     def save(self, save_parents=False, *args, **kwargs):
-        self.last_edit_date = datetime.date.today()
-        super().save(*args, **kwargs)
         if save_parents:
             self.save_parents(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def create_urn(self):
         raise NotImplementedError()
@@ -239,11 +242,11 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             self.private = False
             self.publish_date = datetime.date.today()
 
-    def set_last_edit_by(self, user, propagate=False):
+    def set_modified_by(self, user, propagate=False):
         if propagate:
-            self.propagate_set_value('last_edit_by', user)
+            self.propagate_set_value('modified_by', user)
         else:
-            self.last_edit_by = user
+            self.modified_by = user
 
     def set_created_by(self, user, propagate=False):
         if propagate:
@@ -262,6 +265,12 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def md_method(self):
         return pandoc.convert_md_to_html(self.method_text)
+
+    def get_title(self):
+        return self.short_title
+
+    def get_description(self):
+        return self.short_description
 
     def add_keyword(self, keyword):
         if not isinstance(keyword, Keyword):
