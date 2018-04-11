@@ -12,15 +12,16 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 from main.models import Licence
+from genome.factories import TargetGeneFactory
 
-from dataset.constants import (
+from .constants import (
     score_columns, count_columns, metadata_columns,
     hgvs_column, required_score_column
 )
-from dataset.models.base import DatasetModel
-from dataset.models.experimentset import ExperimentSet
-from dataset.models.experiment import Experiment
-from dataset.models.scoreset import ScoreSet, default_dataset
+from .models.base import DatasetModel
+from .models.experimentset import ExperimentSet
+from .models.experiment import Experiment
+from .models.scoreset import ScoreSet, default_dataset
 
 
 class DatasetModelFactory(DjangoModelFactory):
@@ -30,8 +31,10 @@ class DatasetModelFactory(DjangoModelFactory):
     class Meta:
         model = DatasetModel
 
-    method_text = factory.fuzzy.FuzzyText(length=100)
-    abstract_text = factory.fuzzy.FuzzyText(length=100)
+    method_text = factory.fuzzy.FuzzyText(length=500)
+    abstract_text = factory.fuzzy.FuzzyText(length=500)
+    short_title = factory.fuzzy.FuzzyText(length=64)
+    short_description = factory.fuzzy.FuzzyText(length=256)
 
 
 class ExperimentSetFactory(DatasetModelFactory):
@@ -49,8 +52,6 @@ class ExperimentFactory(DatasetModelFactory):
     class Meta:
         model = Experiment
 
-    target = 'BRCA1'
-    wt_sequence = factory.fuzzy.FuzzyText(length=50, chars='ATCG')
     experimentset = factory.SubFactory(ExperimentSetFactory)
 
 
@@ -63,5 +64,4 @@ class ScoreSetFactory(DatasetModelFactory):
 
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
-
-
+    target = factory.SubFactory(TargetGeneFactory)

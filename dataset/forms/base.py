@@ -34,12 +34,24 @@ class DatasetModelForm(forms.ModelForm):
         'doi_ids',
         'pmid_ids'
     )
+    FIELD_ORDER = (
+        'short_title',
+        'short_description',
+        'abstract_text',
+        'method_text',
+        'keywords',
+        'doi_ids',
+        'sra_ids',
+        'pmid_ids',
+    )
 
     class Meta:
         model = DatasetModel
         fields = (
             'abstract_text',
             'method_text',
+            "short_description",
+            "short_title",
             'keywords',
             'sra_ids',
             'doi_ids',
@@ -50,6 +62,12 @@ class DatasetModelForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
+        self.fields['short_title'].widget = forms.TextInput(
+            attrs={"class": "form-control"}
+        )
+        self.fields['short_description'].widget = forms.Textarea(
+            attrs={"class": "form-control", 'cols': "40", 'rows': "4"}
+        )
         self.fields['abstract_text'].widget = forms.Textarea(
             attrs={"class": "form-control"}
         )
@@ -122,7 +140,7 @@ class DatasetModelForm(forms.ModelForm):
     def save(self, commit=True):
         super().save(commit=commit)
         if commit:
-            self.instance.set_last_edit_by(self.user)
+            self.instance.set_modified_by(self.user)
             if not hasattr(self, 'edit_mode') and not self.instance.created_by:
                 self.instance.set_created_by(self.user)
             self.instance.save()

@@ -7,6 +7,15 @@ from django.utils.translation import ugettext
 
 from main.models import Licence
 
+from metadata.fields import ModelSelectMultipleField
+
+from genome.models import TargetGene
+from genome.validators import (
+    validate_target_gene,
+    validate_target_organism,
+    validate_wildtype_sequence
+)
+
 from variant.models import Variant
 from variant.validators import (
     validate_variant_rows, validate_scoreset_columns_match_variant
@@ -38,7 +47,8 @@ class ScoreSetForm(DatasetModelForm):
         fields = DatasetModelForm.Meta.fields + (
             'experiment',
             'licence',
-            'replaces'
+            'replaces',
+            'target'
         )
 
     score_data = forms.FileField(
@@ -53,7 +63,10 @@ class ScoreSetForm(DatasetModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        super(ScoreSetForm, self).__init__(*args, **kwargs)
+        self.field_order = ('experiment', 'replaces', 'licence', 'target') + \
+                      self.FIELD_ORDER
+        super().__init__(*args, **kwargs)
+
         if self.instance.pk is not None:
             self.dataset_columns = self.instance.dataset_columns.copy()
         else:
