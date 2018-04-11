@@ -16,11 +16,11 @@ class TimeStampedModel(models.Model):
         default=datetime.date.today,
         verbose_name='Creation date'
     )
-    modified_date = models.DateField(
+    modification_date = models.DateField(
         default=datetime.date.today,
         verbose_name='Modification date'
     )
 
     def save(self, *args, **kwargs):
-        self.modified_date = datetime.date.today()
+        self.modification_date = datetime.date.today()
         return super().save(*args, **kwargs)
