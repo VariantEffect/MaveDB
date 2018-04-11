@@ -10,7 +10,9 @@ from accounts.mixins import GroupPermissionMixin
 from core.utilities import pandoc as pandoc
 from metadata.models import (
     Keyword, SraIdentifier, DoiIdentifier,
-    PubmedIdentifier, ExternalIdentifier
+    PubmedIdentifier, ExternalIdentifier,
+    EnsemblIdentifier, UniprotIdentifier,
+    RefseqIdentifier
 )
 from urn.models import UrnModel
 
@@ -101,6 +103,16 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         NCBI PubMed identifiers (https://www.ncbi.nlm.nih.gov/pubmed). These
         will be formatted and displayed as publications.
     """
+    M2M_FIELD_NAMES = (
+        'keywords',
+        'doi_ids',
+        'ensembl_ids',
+        'pmid_ids',
+        'refseq_ids',
+        'sra_ids',
+        'uniprot_ids',
+    )
+
     class Meta:
         abstract = True
         ordering = ['-creation_date']
@@ -194,6 +206,12 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         DoiIdentifier, blank=True, verbose_name='DOI Identifiers')
     pmid_ids = models.ManyToManyField(
         PubmedIdentifier, blank=True, verbose_name='PubMed Identifiers')
+    refseq_ids = models.ManyToManyField(
+        RefseqIdentifier, blank=True, verbose_name='RefSeq Identifiers')
+    ensembl_ids = models.ManyToManyField(
+        EnsemblIdentifier, blank=True, verbose_name='Ensembl Identifiers')
+    uniprot_ids = models.ManyToManyField(
+        UniprotIdentifier, blank=True, verbose_name='UniProt Identifiers')
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -288,23 +306,20 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             self.pmid_ids.add(instance)
         elif isinstance(instance, DoiIdentifier):
             self.doi_ids.add(instance)
+        elif isinstance(instance, EnsemblIdentifier):
+            self.ensembl_ids.add(instance)
+        elif isinstance(instance, RefseqIdentifier):
+            self.refseq_ids.add(instance)
+        elif isinstance(instance, UniprotIdentifier):
+            self.uniprot_ids.add(instance)
         else:
             raise TypeError(
-                "Unsupported class `{}` for `instance`.".format(
+                "Missing case for class `{}`.".format(
                     type(instance).__name__
                 ))
 
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
-
-    def clear_doi_ids(self):
-        self.clear_m2m('doi_ids')
-
-    def clear_sra_ids(self):
-        self.clear_m2m('sra_ids')
-
-    def clear_pubmed_ids(self):
-        self.clear_m2m('pmid_ids')
 
     def clear_keywords(self):
         self.clear_m2m('keywords')

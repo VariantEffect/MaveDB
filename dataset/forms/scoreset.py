@@ -7,14 +7,7 @@ from django.utils.translation import ugettext
 
 from main.models import Licence
 
-from metadata.fields import ModelSelectMultipleField
-
 from genome.models import TargetGene
-from genome.validators import (
-    validate_target_gene,
-    validate_target_organism,
-    validate_wildtype_sequence
-)
 
 from variant.models import Variant
 from variant.validators import (

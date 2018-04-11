@@ -28,12 +28,6 @@ class DatasetModelForm(forms.ModelForm):
     user : :class:`User`
         The user instance that this form is served to.
     """
-    M2M_FIELD_NAMES = (
-        'keywords',
-        'sra_ids',
-        'doi_ids',
-        'pmid_ids'
-    )
     FIELD_ORDER = (
         'short_title',
         'short_description',
@@ -41,8 +35,8 @@ class DatasetModelForm(forms.ModelForm):
         'method_text',
         'keywords',
         'doi_ids',
-        'sra_ids',
         'pmid_ids',
+        'sra_ids',
     )
 
     class Meta:
@@ -53,9 +47,9 @@ class DatasetModelForm(forms.ModelForm):
             "short_description",
             "short_title",
             'keywords',
-            'sra_ids',
             'doi_ids',
-            'pmid_ids'
+            'pmid_ids',
+            'sra_ids',
         )
 
     def __init__(self, *args, **kwargs):
@@ -128,7 +122,7 @@ class DatasetModelForm(forms.ModelForm):
     def _save_m2m(self):
         # Save all instances before calling super() so that all new instances
         # are in the database before m2m relationships are created.
-        for m2m_field in self.M2M_FIELD_NAMES:
+        for m2m_field in DatasetModel.M2M_FIELD_NAMES:
             if m2m_field in self.fields:
                 for instance in self.cleaned_data.get(m2m_field, []):
                     instance.save()
