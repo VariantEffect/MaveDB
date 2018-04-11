@@ -1,0 +1,60 @@
+digraph {
+    subgraph clusterUrnApp {
+        label="URN App";
+        UrnModel;
+    }
+    subgraph clusterDatasetApp {
+        label="Dataset App";
+        DatasetModel;
+        ExperimentSet;
+        Experiment;
+        ScoreSet;
+        DatasetModel -> ExperimentSet;
+        DatasetModel -> Experiment;
+        DatasetModel -> ScoreSet;
+    }
+    subgraph clusterVariantApp {
+        label="Variant App";
+        Variant;
+    }
+    subgraph clusterMetadataApp {
+        label="Metadata App";
+        Keyword;
+        ExternalIdentifier;
+        SraIdentifier;
+        DoiIdentifier;
+        PubmedIdentifier;
+        RefseqIdentifier;
+        EnsemblIdentifier;
+        UniprotIdentifier;
+        PdbIdentifier;
+        ExternalIdentifier -> SraIdentifier;
+        ExternalIdentifier -> DoiIdentifier;
+        ExternalIdentifier -> PubmedIdentifier;
+        ExternalIdentifier -> RefseqIdentifier;
+        ExternalIdentifier -> EnsemblIdentifier;
+        ExternalIdentifier -> UniprotIdentifier;
+        ExternalIdentifier -> PdbIdentifier;
+    }
+    subgraph clusterTargetApp {
+        label="Target App";
+        Target;
+        Annotation;
+        Interval;
+        Genome;
+        Target -> Annotation [style=dotted];
+        Annotation -> Genome [style=dotted];
+    }
+    UrnModel -> DatasetModel;
+    UrnModel -> Variant;
+    DatasetModel -> Keyword [style=dotted];
+    DatasetModel -> SraIdentifier [style=dotted];
+    DatasetModel -> DoiIdentifier [style=dotted];
+    DatasetModel -> PubmedIdentifier [style=dotted];
+    Target -> RefseqIdentifier [style=dotted];
+    Target -> EnsemblIdentifier [style=dotted];
+    Target -> UniprotIdentifier [style=dotted];
+    Target -> PdbIdentifier [style=dotted];
+    Experiment -> Target [style=dotted];
+    
+}
