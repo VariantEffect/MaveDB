@@ -35,17 +35,6 @@ class Experiment(DatasetModel):
     experimentset : `models.ForeignKey`.
         The experimentset is instance assciated with. New `ExperimentSet` is
         created if this is not provided.
-
-    target : `models.CharField`
-        The gene target this experiment examines.
-
-    wt_sequence : `models.CharField`
-        The wild type DNA sequence that is related to the `target`. Will
-        be converted to upper-case upon instantiation.
-
-    target_organism : `models.ManyToManyField`
-        The `TargetOrganism` instance that the target comes from. There should
-        only be one associated per `Experiment` instance.
     """
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
@@ -56,6 +45,8 @@ class Experiment(DatasetModel):
         "approved",
         "abstract_text",
         "method_text",
+        "short_description",
+        "short_title",
         "keywords",
         "pmid_ids",
         "doi_ids",
@@ -123,17 +114,9 @@ class Experiment(DatasetModel):
 
         return urn
 
-    def get_target_organism_name(self):
-        if self.target_organism.count():
-            return self.target_organism.first().text
-        else:
-            return None
-
-    def get_wt_sequence(self):
-        return self.wt_sequence
-
     def get_targets(self):
-        return self.targets.all()
+        target_pks = set([child.get_target().pk for child in self.children])
+        return TargetGene.objects.filter(pk__in=target_pks)
 
     def get_target_names(self):
         return [t.get_name() for t in self.get_targets()]
