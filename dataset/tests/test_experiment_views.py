@@ -9,7 +9,6 @@ from accounts.permissions import (
     user_is_admin_for_instance
 )
 
-from genome.factories import TargetOrganismFactory
 from metadata.factories import (
     SraIdentifierFactory, DoiIdentifierFactory,
     PubmedIdentifierFactory, KeywordFactory
@@ -84,9 +83,6 @@ class TestCreateNewExperimentView(TestCase):
         self.post_data = {
             'experimentset': [''],
             'private': ['on'],
-            'target': [''],
-            'target_organism': [''],
-            'wt_sequence': [''],
             'abstract_text': [''],
             'method_text': [''],
             'sra_ids': [''],
@@ -125,9 +121,6 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_form_will_post_with_valid_data(self):
         data = self.post_data
-        data['wt_sequence'] = ['atcg']
-        data['target'] = ['brca1']
-        data['target_organism'] = ['human']
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
@@ -137,10 +130,6 @@ class TestCreateNewExperimentView(TestCase):
         self.assertEqual(response.status_code, 200)
 
         experiment = Experiment.objects.first()
-        self.assertEqual(experiment.wt_sequence, 'ATCG')
-        self.assertEqual(experiment.target, 'brca1')
-        self.assertEqual(experiment.target_organism.count(), 1)
-        self.assertEqual(experiment.target_organism.first().text, 'human')
         self.assertEqual(experiment.keywords.count(), 2)
         self.assertEqual(experiment.abstract_text, 'hello world')
         self.assertEqual(experiment.method_text, 'foo bar')
@@ -150,9 +139,6 @@ class TestCreateNewExperimentView(TestCase):
         exps = ExperimentSetFactory()
         assign_user_as_instance_admin(self.user, exps)
         data['experimentset'] = [exps.pk]
-        data['wt_sequence'] = ['atcg']
-        data['target'] = ['brca1']
-        data['target_organism'] = ['human']
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
@@ -166,14 +152,11 @@ class TestCreateNewExperimentView(TestCase):
         self.assertEqual(experiment.created_by, self.user)
         self.assertIsNone(experiment.parent.created_by, None)
 
-    def test_valid_submission_sets_last_edit_by(self):
+    def test_valid_submission_sets_modified_by(self):
         data = self.post_data
         exps = ExperimentSetFactory()
         assign_user_as_instance_admin(self.user, exps)
         data['experimentset'] = [exps.pk]
-        data['wt_sequence'] = ['atcg']
-        data['target'] = ['brca1']
-        data['target_organism'] = ['human']
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
@@ -184,14 +167,11 @@ class TestCreateNewExperimentView(TestCase):
 
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.parent, exps)
-        self.assertEqual(experiment.last_edit_by, self.user)
-        self.assertIsNone(experiment.parent.last_edit_by, None)
+        self.assertEqual(experiment.modified_by, self.user)
+        self.assertIsNone(experiment.parent.modified_by, None)
 
     def test_valid_submission_sets_parent_created_by(self):
         data = self.post_data
-        data['wt_sequence'] = ['atcg']
-        data['target'] = ['brca1']
-        data['target_organism'] = ['human']
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
@@ -204,11 +184,8 @@ class TestCreateNewExperimentView(TestCase):
         self.assertEqual(experiment.created_by, self.user)
         self.assertEqual(experiment.parent.created_by, self.user)
 
-    def test_valid_submission_sets_parent_last_edit_by(self):
+    def test_valid_submission_sets_parent_modified_by(self):
         data = self.post_data
-        data['wt_sequence'] = ['atcg']
-        data['target'] = ['brca1']
-        data['target_organism'] = ['human']
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
@@ -218,14 +195,11 @@ class TestCreateNewExperimentView(TestCase):
         self.assertEqual(response.status_code, 200)
 
         experiment = Experiment.objects.first()
-        self.assertEqual(experiment.last_edit_by, self.user)
-        self.assertEqual(experiment.parent.last_edit_by, self.user)
+        self.assertEqual(experiment.modified_by, self.user)
+        self.assertEqual(experiment.parent.modified_by, self.user)
 
     def test_experiment_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
-        data['target'] = "brca1"
-        data['wt_sequence'] = "atcg"
-
         request = self.factory.post(path=self.path, data=data)
         request.user = self.user
         _ = experiment_create_view(request)
@@ -234,9 +208,6 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_new_experimentset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
-        data['target'] = "brca1"
-        data['wt_sequence'] = "atcg"
-
         request = self.factory.post(path=self.path, data=data)
         request.user = self.user
         _ = experiment_create_view(request)
@@ -249,9 +220,6 @@ class TestCreateNewExperimentView(TestCase):
         es = ExperimentSetFactory()
         assign_user_as_instance_contributor(self.user, es)
         data['experimentset'] = [es.pk]
-        data['target'] = ["brca1"]
-        data['wt_sequence'] = ["atcg"]
-
         request = self.factory.post(path=self.path, data=data)
         request.user = self.user
         _ = experiment_create_view(request)
@@ -269,18 +237,6 @@ class TestCreateNewExperimentView(TestCase):
 
         self.assertContains(response, 'protein')
         self.assertContains(response, kw.text)
-
-    def test_failed_submission_adds_target_organism_to_context(self):
-        data = self.post_data.copy()
-        to = TargetOrganismFactory()
-        data['target_organism'] = ['human', to.text]
-
-        request = self.factory.post(path=self.path, data=data)
-        request.user = self.user
-        response = experiment_create_view(request)
-
-        self.assertContains(response, 'human')
-        self.assertContains(response, to.text)
 
     def test_failed_submission_adds_extern_identifier_to_context(self):
         fs = [

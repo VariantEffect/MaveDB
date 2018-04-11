@@ -18,11 +18,11 @@ class TestExperiment(TestCase):
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
 
-    def test_publish_updates_published_and_last_edit_dates(self):
+    def test_publish_updates_published_and_modification_dates(self):
         exp = ExperimentFactory()
         exp.publish()
         self.assertEqual(exp.publish_date, datetime.date.today())
-        self.assertEqual(exp.last_edit_date, datetime.date.today())
+        self.assertEqual(exp.modification_date, datetime.date.today())
 
     def test_publish_updates_private_to_false(self):
         exp = ExperimentFactory()
@@ -52,14 +52,6 @@ class TestExperiment(TestCase):
         with self.assertRaises(IntegrityError):
             ExperimentFactory(urn=obj.urn)
 
-    def test_cannot_create_experiment_null_target(self):
-        with self.assertRaises(IntegrityError):
-            ExperimentFactory(target=None)
-
-    def test_cannot_create_experiment_null_wt_seq(self):
-        with self.assertRaises(AttributeError):
-            ExperimentFactory(wt_sequence=None)
-
     def test_experiment_not_approved_and_private_by_default(self):
         exp = ExperimentFactory()
         self.assertFalse(exp.approved)
@@ -78,11 +70,6 @@ class TestExperiment(TestCase):
         exp.refresh_from_db()
         self.assertEqual(exp.get_target_organism_name(), new.text)
         self.assertEqual(exp.target_organism.count(), 1)
-
-    def test_typeerror_target_organism_not_target_organism_instance(self):
-        exp = ExperimentFactory()
-        with self.assertRaises(TypeError):
-            exp.update_target_organism('Mouse')
 
     def test_creates_experimentset_if_none_when_saved(self):
         exp = ExperimentFactory(experimentset=None)  # invokes save

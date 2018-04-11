@@ -16,32 +16,24 @@ from ..models.experimentset import ExperimentSet
 class TestExperimentForm(TestCase):
     """
     Test that the `ExperimentForm` object is able to raise the appropriate
-    `ValidationError` on fields such as experimentset and wt_sequence.
+    `ValidationError` on fields such as experimentset.
     """
     def setUp(self):
         self.user = UserFactory()
         self.factory = RequestFactory()
 
     @staticmethod
-    def make_form_data(target='BRCA1', wt_sequence='ATCG', use_exps=False):
+    def make_form_data(use_exps=False):
         """
         Makes sample test input for instantiating the form to simulate
         POST data from a view.
 
         Parameters
         ----------
-        target : str or None
-            The gene target
-
-        wt_sequence : str or None
-            The wildtype sequence
-
         use_exps : bool
             If True, experimentset is set to None
         """
         data = {
-            "target": target,
-            "wt_sequence": wt_sequence,
             "experimentset": (
                 None if not use_exps else ExperimentSetFactory().pk
             )
@@ -55,48 +47,11 @@ class TestExperimentForm(TestCase):
         self.assertEqual(Experiment.objects.count(), 1)
         self.assertEqual(ExperimentSet.objects.count(), 1)
 
-    def test_not_valid_empty_target(self):
-        data = self.make_form_data(target='')
-        form = ExperimentForm(user=self.user, data=data)
-        self.assertFalse(form.is_valid())
-
-        data = self.make_form_data(target=None)
-        form = ExperimentForm(user=self.user, data=data)
-        self.assertFalse(form.is_valid())
-
-    def test_not_valid_empty_wildtype(self):
-        data = self.make_form_data(wt_sequence='')
-        form = ExperimentForm(user=self.user, data=data)
-        self.assertFalse(form.is_valid())
-
-        data = self.make_form_data(wt_sequence=None)
-        form = ExperimentForm(user=self.user, data=data)
-        self.assertFalse(form.is_valid())
-
-    def test_not_valid_non_dna_wildtype(self):
-        data = self.make_form_data(wt_sequence='not dna')
-        form = ExperimentForm(user=self.user, data=data)
-        self.assertFalse(form.is_valid())
-
     def test_not_valid_experimentset_not_found(self):
         data = self.make_form_data()
         data["experimentset"] = "blah"
         form = ExperimentForm(user=self.user, data=data)
         self.assertFalse(form.is_valid())
-
-    def test_can_create_new_target_organisms(self):
-        data = self.make_form_data()
-        data["target_organism"] = "human"
-        form = ExperimentForm(user=self.user, data=data)
-        instance = form.save(commit=True)
-        self.assertEqual(instance.target_organism.count(), 1)
-
-    def test_does_not_save_duplicated_target_organisms(self):
-        data = self.make_form_data()
-        data['target_organism'] = ['human', 'human']
-        form = ExperimentForm(user=self.user, data=data)
-        instance = form.save(commit=True)
-        self.assertEqual(instance.target_organism.count(), 1)
 
     def test_admin_experimentset_appear_in_options(self):
         obj1 = ExperimentSetFactory()
@@ -128,8 +83,6 @@ class TestExperimentForm(TestCase):
         request.user = self.user
         form = ExperimentForm.from_request(request, exp)
         form.save(commit=True)
-        self.assertEqual(
-            form.instance.wt_sequence, data['wt_sequence'])
         self.assertEqual(
             form.instance.experimentset.pk, data['experimentset'])
 

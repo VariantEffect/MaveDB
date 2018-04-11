@@ -273,7 +273,7 @@ class TestCreateNewScoreSetView(TestCase):
         self.assertContains(response, 'protein')
         self.assertContains(response, kw.text)
 
-    def test_publish_propagates_last_edit_by(self):
+    def test_publish_propagates_modified_by(self):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_admin(self.user, exp1)
@@ -286,9 +286,9 @@ class TestCreateNewScoreSetView(TestCase):
         _ = scoreset_create_view(request)
 
         scs = ScoreSet.objects.all()[0]
-        self.assertEqual(scs.last_edit_by, self.user)
-        self.assertEqual(scs.parent.last_edit_by, self.user)
-        self.assertEqual(scs.parent.parent.last_edit_by, self.user)
+        self.assertEqual(scs.modified_by, self.user)
+        self.assertEqual(scs.parent.modified_by, self.user)
+        self.assertEqual(scs.parent.parent.modified_by, self.user)
 
     def test_publish_propagates_private_as_false(self):
         data = self.post_data.copy()
@@ -340,9 +340,9 @@ class TestCreateNewScoreSetView(TestCase):
         self.assertNotEqual(scs.parent.created_by, scs.created_by)
         self.assertNotEqual(scs.parent.parent.created_by, scs.created_by)
 
-        self.assertEqual(scs.last_edit_by, self.user)
-        self.assertNotEqual(scs.parent.last_edit_by, scs.last_edit_by)
-        self.assertNotEqual(scs.parent.parent.last_edit_by, scs.last_edit_by)
+        self.assertEqual(scs.modified_by, self.user)
+        self.assertNotEqual(scs.parent.modified_by, scs.modified_by)
+        self.assertNotEqual(scs.parent.parent.modified_by, scs.modified_by)
 
     def test_does_not_add_user_as_admin_to_selected_parent(self):
         data = self.post_data.copy()

@@ -26,11 +26,11 @@ class TestExperimentSet(TestCase):
         obj.delete()
         self.assertEqual(Group.objects.count(), 0)
 
-    def test_publish_updates_published_and_last_edit_dates(self):
+    def test_publish_updates_published_and_modification_dates(self):
         exps = ExperimentSetFactory()
         exps.publish()
         self.assertEqual(exps.publish_date, datetime.date.today())
-        self.assertEqual(exps.last_edit_date, datetime.date.today())
+        self.assertEqual(exps.modification_date, datetime.date.today())
 
     def test_publish_updates_private_to_false(self):
         exps = ExperimentSetFactory()

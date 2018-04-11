@@ -16,11 +16,11 @@ User = get_user_model()
 
 class TestDatasetModel(TestCase):
 
-    def test_save_updates_last_edit_date(self):
+    def test_save_updates_modification_date(self):
         instance = ExperimentSetFactory()
         time_now = datetime.date.today()
         instance.save()
-        self.assertEqual(instance.last_edit_date, time_now)
+        self.assertEqual(instance.modification_date, time_now)
 
     def test_set_created_by_sets_updates_created_by_and_time_stamps(self):
         user = UserFactory()

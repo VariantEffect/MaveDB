@@ -130,11 +130,11 @@ class TestDataSetModelForm(TestCase):
                 form.m2m_instances_for_field(attr)[0], new
             )
 
-    def test_save_updates_last_edit_by(self):
+    def test_save_updates_modified_by(self):
         obj = ExperimentSetFactory()
         form = DatasetModelForm({}, user=self.user, instance=obj)
         form.save(commit=True)
-        self.assertEqual(obj.last_edit_by, self.user)
+        self.assertEqual(obj.modified_by, self.user)
 
     def test_will_not_override_created_by(self):
         obj = ExperimentSetFactory()

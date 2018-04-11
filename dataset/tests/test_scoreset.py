@@ -21,11 +21,11 @@ class TestScoreSet(TestCase):
     :py:class:`Variant` objects. We will test correctness of creation,
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
-    def test_publish_updates_published_and_last_edit_dates(self):
+    def test_publish_updates_published_and_modification_dates(self):
         scs = ScoreSetFactory()
         scs.publish()
         self.assertEqual(scs.publish_date, datetime.date.today())
-        self.assertEqual(scs.last_edit_date, datetime.date.today())
+        self.assertEqual(scs.modification_date, datetime.date.today())
 
     def test_publish_updates_private_to_false(self):
         scs = ScoreSetFactory()
