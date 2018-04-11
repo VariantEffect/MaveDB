@@ -48,7 +48,7 @@ class ScoreSetForm(DatasetModelForm):
             'experiment',
             'licence',
             'replaces',
-            'target'
+            'target',
         )
 
     score_data = forms.FileField(
@@ -81,6 +81,9 @@ class ScoreSetForm(DatasetModelForm):
         self.fields['experiment'] = forms.ModelChoiceField(
             queryset=None, required=True, widget=forms.Select(
                 attrs={"class": "form-control"}))
+        self.fields['target'] = forms.ModelChoiceField(
+            queryset=None, required=True, widget=forms.Select(
+                attrs={"class": "form-control"}))
         self.fields['replaces'] = forms.ModelChoiceField(
             queryset=None, required=False, widget=forms.Select(
                 attrs={"class": "form-control"}))
@@ -91,6 +94,8 @@ class ScoreSetForm(DatasetModelForm):
 
         self.fields["replaces"].required = False
         self.set_replaces_options()
+
+        self.fields['target'].queryset = TargetGene.objects.all()
 
         self.set_experiment_options()
 
