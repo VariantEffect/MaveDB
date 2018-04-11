@@ -148,13 +148,13 @@ class Annotation(TimeStampedModel):
         return self.genome
 
     def get_genome_name(self):
-        return self.genome.get_short_name()
+        return self.get_genome().get_short_name()
 
     def get_genome_species(self):
-        return self.genome.get_species_name()
+        return self.get_genome().get_species_name()
 
     def format_genome_spcies(self):
-        return self.genome.format_species_name_html()
+        return self.get_genome().format_species_name_html()
 
     def get_intervals(self):
         return self.intervals.all()
@@ -163,7 +163,7 @@ class Annotation(TimeStampedModel):
         return self.get_intervals().count()
 
     def is_primary_annotation(self):
-        return self.genome.is_primary_genome()
+        return self.get_genome().is_primary_genome()
 
 
 class ReferenceGenome(TimeStampedModel):
@@ -247,7 +247,7 @@ class ReferenceGenome(TimeStampedModel):
         return None
 
     def get_short_name(self):
-        return self.short_name.lower()
+        return self.short_name
 
     def get_species_name(self):
         return self.species_name
@@ -301,6 +301,17 @@ class Interval(TimeStampedModel):
                 chr=self.get_chromosome(), strand=self.get_strand()
             )
         )
+
+    def __eq__(self, other):
+        this = (
+            self.start, self.end,
+            self.chromosome.lower(), self.get_strand()
+        )
+        other = (
+            other.start, other.end,
+            other.chromosome.lower(), other.get_strand()
+        )
+        return this == other
 
     start = models.PositiveIntegerField(
         default=None,
