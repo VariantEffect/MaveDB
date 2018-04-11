@@ -1,10 +1,24 @@
 {% extends "dataset/base/base.html" %}
 
 {% block target %}
-  <h2 id="target" class="underline left-align section-heading"> Target </h2>
-  <p><strong>Target:</strong> {{ instance.target }}</p>
-  <p><strong>Wildtype Sequence:</strong> {{ instance.wt_sequence }}</p>
-  <p><strong>Target Organism:</strong> {{ instance.get_target_organism_name|default:"Unspecified" }}</p>
+  <h2 id="targets" class="underline left-align section-heading"> Targets </h2>
+  {% if instance.get_targets.count %}
+    <p class="text-muted">Multiple targets have been scored for this experiment: </p>
+    {% for target in instance.get_targets.all %}
+      <a href="{% url 'dataset:scoreset_detail' target.scoreset.urn %}">
+        <div class="target-card">
+          <p><strong>Target:</strong> {{ target.get_name }}</p>
+          <p><strong>Species:</strong> {{ target.get_primary_reference.format_species_name_html|safe }}</p>
+          <p><strong>Wildtype Sequence:</strong> {{ target.get_target_sequence }}</p>
+          {% if forloop.counter < instance.get_targets.count %}
+            <hr>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No targets have been scored for this experiment.</p>
+  {% endif %}
 {% endblock %}
 
 {% block child_list %}
@@ -14,13 +28,9 @@
     <ul>
       <li class="child-list-item">
         <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
-          <p class="urn-item-link">{{ child.urn }}</p>
+          <p class="urn-item-link">{{ child.get_title }}</p>
         </a>
-        {% if child.abstract_text %}
-          <p class="child-list-abstract">{{ child.md_abstract|safe }}</p>
-        {% else %}
-          <p class="text-muted">No abstract has been provided for this entry.</p>
-        {% endif %}
+        <p class="child-list-description">{{ child.get_description }}</p>
       </li>
     </ul>
     {% endfor %}

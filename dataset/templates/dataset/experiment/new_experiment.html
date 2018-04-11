@@ -28,8 +28,7 @@
 			<div id="sra-identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
 			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
 			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
-			<div id="organisms-to-add" hidden>{{ repop_target_organism }}</div>
-			
+
 			<!-- Model form rendering -->
 			<div class="model-form">
 				{% for field in experiment_form %}
@@ -61,11 +60,11 @@
 								{{ field.errors }}
 						</div>
 						{% endif %}
-						<br>
+            <br>
 						{{ field }}
 					</div>
 				{% endfor %}
-			<br><hr> <!-- End model form rendering -->
+			<hr> <!-- End model form rendering -->
 
 			<input class="btn btn-outline-dark" style="width: 200px;" type="submit"
              name="submit" value="Submit" />

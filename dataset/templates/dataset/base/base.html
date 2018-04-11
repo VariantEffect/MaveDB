@@ -2,11 +2,11 @@
 
 {% block body %}
 <div class="right-align">
-  <h1><span class="underline">{{ instance.urn|upper }}</span></h1>
+  <h1><span class="underline">{{ instance.get_display_urn }}</span></h1>
   <p class="text-muted">
     Created <a href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a>
     &middot;
-    Last updated <a href="{{instance.last_edit_by.profile.get_orcid_url}}">{{instance.last_edit_date}}</a>
+    Last updated <a href="{{instance.modified_by.profile.get_orcid_url}}">{{instance.modification_date}}</a>
     &middot;
     {% if instance.private %}
       Private entry
@@ -37,6 +37,10 @@
     {% endif %}
 
     {% if instance.class_name == "experiment" %}
+      <a href="#targets">Targets</a>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
       <a href="#target">Target</a>
     {% endif %}
 
@@ -105,23 +109,23 @@
       {% endif %}
 
       {% if instance.doi_ids.count %}
-        <p><strong>DOI Identifiers:</strong>{% for doi in instance.doi_ids.all %} {{doi.url}} {% endfor %} </p>
+        <p><strong>DOI:</strong>{% for doi in instance.doi_ids.all %} {{doi.url}} {% endfor %} </p>
       {% else %}
-        <p><strong>DOI Identifiers:</strong> No associated DOIs </p>
+        <p><strong>DOI:</strong> No associated DOIs </p>
       {% endif %}
 
       {% if instance.sra_ids.count %}
-        <p><strong>SRA Identifiers:</strong>{% for sra in instance.sra_ids.all %} {{sra.url}} {% endfor %} </p>
+        <p><strong>SRA:</strong>{% for sra in instance.sra_ids.all %} {{sra.url}} {% endfor %} </p>
       {% else %}
-        <p><strong>SRA Identifiers:</strong> No associated SRAs </p>
+        <p><strong>SRA:</strong> No associated SRAs </p>
       {% endif %}
 
       <!-- Renders PubMed references -->
       <h2 id="references" class="underline left-align section-heading">References</h2>
       {% if instance.pmid_ids.count %}
-        <p><strong>PubMed Identifiers:</strong>{% for pmid in instance.pmid_ids.all %} {{pmid.url}} {% endfor %} </p>
+        <p><strong>PubMed:</strong>{% for pmid in instance.pmid_ids.all %} {{pmid.url}} {% endfor %} </p>
       {% else %}
-        <p><strong>PubMed Identifiers:</strong> No associated publications </p>
+        <p><strong>PubMed:</strong> No associated publications </p>
       {% endif %}
     {% endif %}
 
