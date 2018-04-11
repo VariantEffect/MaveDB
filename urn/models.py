@@ -1,11 +1,12 @@
 from django.db import models, transaction
 
-# Create your models here.
+from core.models import TimeStampedModel
+
 from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, \
     MAVEDB_URN_MAX_LENGTH, MAVEDB_URN_NAMESPACE
 
 
-class UrnModel(models.Model):
+class UrnModel(TimeStampedModel):
     """
     Abstract class for all entries in MAVEDB that have a URN.
 
@@ -45,14 +46,20 @@ class UrnModel(models.Model):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def __str__(self):
-        return str(self.urn)
+        return str(self.get_display_urn())
 
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.urn is None:
+            # This needs access to the PK so the instance must be saved first
+            # and then saved again.
             self.urn = self.create_urn()
             self.save()
 
     def create_urn(self):
         raise NotImplementedError()
+
+    def get_display_urn(self):
+        if self.urn:
+            return self.urn
