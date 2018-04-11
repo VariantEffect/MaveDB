@@ -11,6 +11,8 @@ from accounts.permissions import (
     delete_all_groups_for_instance
 )
 
+from genome.models import TargetGene
+
 from main.models import Licence
 
 from urn.models import UrnModel
@@ -19,7 +21,7 @@ from urn.validators import validate_mavedb_urn_scoreset
 from dataset import constants as constants
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
-from dataset.validators import validate_scoreset_json
+from ..validators import validate_scoreset_json
 
 
 def default_dataset():
@@ -50,6 +52,9 @@ class ScoreSet(DatasetModel):
     licence : `models.ForeignKey`
         Licence type attached to the instance.
 
+    target : 'models.ForeignKey`:
+        The target gene of the scored variants.
+
     dataset_columns : `models.JSONField`
         A JSON instances with keys `scores` and `counts`. The values are
         lists of strings indicating the columns to be expected in the variants
@@ -65,7 +70,8 @@ class ScoreSet(DatasetModel):
     TRACKED_FIELDS = (
         "private", "approved", "abstract_text",
         "method_text", "doi_ids", "sra_ids", "pmid_ids", "keywords",
-        "license", "dataset_columns", "replaces"
+        "license", "dataset_columns", "replaces", "short_description",
+        "short_title",
     )
 
     class Meta:
@@ -91,7 +97,16 @@ class ScoreSet(DatasetModel):
         null=False,
         default=None,
         verbose_name='Experiment',
-        related_name='scoresets'
+        related_name='scoresets',
+    )
+
+    target = models.OneToOneField(
+        to=TargetGene,
+        on_delete=models.PROTECT,
+        null=False,
+        default=None,
+        verbose_name='Target gene',
+        related_name='scoreset'
     )
 
     licence = models.ForeignKey(
@@ -106,7 +121,7 @@ class ScoreSet(DatasetModel):
     dataset_columns = JSONField(
         verbose_name="Dataset columns",
         default=default_dataset(),
-        validators=[validate_scoreset_json]
+        validators=[validate_scoreset_json],
     )
 
     replaces = models.OneToOneField(
@@ -151,6 +166,10 @@ class ScoreSet(DatasetModel):
             self.dataset_columns = default_dataset()
             self.last_child_value = 0
             self.save()
+
+    def get_target(self):
+        return self.target
+
 
     # JSON field related methods
     # ---------------------------------------------------------------------- #
