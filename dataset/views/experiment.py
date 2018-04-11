@@ -137,14 +137,14 @@ def experiment_create_view(request):
             user = request.user
             assign_user_as_instance_admin(user, experiment)
             experiment.set_created_by(user, propagate=False)
-            experiment.set_last_edit_by(user, propagate=False)
+            experiment.set_modified_by(user, propagate=False)
             experiment.save(save_parents=False)
             save_and_create_revision_if_tracked_changed(user, experiment)
 
             if not request.POST['experimentset']:
                 assign_user_as_instance_admin(user, experiment.experimentset)
                 experiment.set_created_by(user, propagate=True)
-                experiment.set_last_edit_by(user, propagate=True)
+                experiment.set_modified_by(user, propagate=True)
                 experiment.save(save_parents=True)
                 save_and_create_revision_if_tracked_changed(
                     user, experiment.experimentset

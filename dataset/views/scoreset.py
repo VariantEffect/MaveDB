@@ -212,11 +212,11 @@ def scoreset_create_view(request, came_from_new_experiment=False,
             # of said experiment.
             if request.POST.get("publish", None):
                 scoreset.publish(propagate=True)
-                scoreset.set_last_edit_by(user, propagate=True)
+                scoreset.set_modified_by(user, propagate=True)
                 scoreset.save(save_parents=True)
                 send_admin_email(request.user, scoreset)
             else:
-                scoreset.set_last_edit_by(user, propagate=False)
+                scoreset.set_modified_by(user, propagate=False)
                 scoreset.save(save_parents=False)
 
             assign_user_as_instance_admin(user, scoreset)
