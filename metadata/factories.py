@@ -12,7 +12,10 @@ with future maintainability.
 import factory.fuzzy
 from factory.django import DjangoModelFactory
 
-from .models import Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier
+from .models import (
+    Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier,
+    UniprotIdentifier, EnsemblIdentifier, RefseqIdentifier
+)
 
 
 class KeywordFactory(DjangoModelFactory):
@@ -66,3 +69,51 @@ class PubmedIdentifierFactory(DjangoModelFactory):
     identifier = factory.fuzzy.FuzzyChoice([
         '29086305', '29103961', '29269382', '29415752', '29525204'
     ])
+
+
+class UniprotIdentifierFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`UniprotIdentifier` instances with a random
+    identifier choice.
+    """
+
+    class Meta:
+        model = UniprotIdentifier
+
+    identifier = factory.fuzzy.FuzzyChoice([
+        'P00533', 'P01133', 'P19174', 'P30530', 'Q7L2J0', 'Q8N163'
+    ])
+
+
+class RefseqIdentifierFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`RefseqIdentifier` instances with a random
+    identifier choice.
+    """
+
+    class Meta:
+        model = RefseqIdentifier
+
+    identifier = factory.fuzzy.FuzzyChoice([
+        'WP_107309473.1', 'NP_001349131.1',
+        'NR_155436.1', 'NR_155453.1',
+        'NR_155470.1', 'YP_009472129.1'
+    ])
+
+
+class EnsemblIdentifierFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`RefseqIdentifier` instances with a random
+    identifier choice.
+    """
+
+    class Meta:
+        model = EnsemblIdentifier
+
+    identifier = factory.fuzzy.FuzzyChoice([
+        'ENSG00000010404', 'ENSG00000267816',
+        'ENSG00000143384', 'ENSG00000198001',
+        'ENSG00000006062', 'ENSG00000172936',
+        'GRCh37.p13', 'GRCh38.p12'
+    ])
+    db_version = '92.13'

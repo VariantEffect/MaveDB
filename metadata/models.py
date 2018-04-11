@@ -1,7 +1,8 @@
 import datetime
-
 import idutils
+
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 
 from core.models import TimeStampedModel
 
@@ -51,9 +52,6 @@ class ExternalIdentifier(TimeStampedModel):
 
     Parameters
     ----------
-    creation_date : `models.DateField`
-        The date of instantiation.
-
     identifier : `models.TextField`
         The free-form textual representation of the identifier from another
         database.
@@ -61,16 +59,15 @@ class ExternalIdentifier(TimeStampedModel):
     dbname : `models.TextField`
         The name of the external database.
 
+    dbversion : `models.CharField`
+        The database version identifier.
+
     url : `models.URLField`
         The URL for the resource in the other database. Optional.
     """
     DATABASE_NAME = None
     IDUTILS_SCHEME = None
 
-    creation_date = models.DateField(
-        blank=False,
-        default=datetime.date.today
-    )
     identifier = models.CharField(
         blank=False,
         null=False,
@@ -249,4 +246,3 @@ class UniprotIdentifier(ExternalIdentifier):
 
     def format_url(self):
         pass
-    
