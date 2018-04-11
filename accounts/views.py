@@ -310,16 +310,12 @@ def handle_scoreset_edit_form(request, instance):
         pubmed_ids = request.POST.getlist("pmid_ids")
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
-        target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism if not is_null(to)]
-
         # Set the context
         context["edit_form"] = form
         context["repop_keywords"] = ','.join(keywords)
         context["repop_sra_identifiers"] = ','.join(sra_ids)
         context["repop_doi_identifiers"] = ','.join(doi_ids)
         context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
-        context["repop_target_organism"] = ','.join(target_organism)
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
@@ -327,7 +323,7 @@ def handle_scoreset_edit_form(request, instance):
             #     request.user, updated_instance)
             if request.POST.get("publish", None):
                 updated_instance.publish(propagate=True)
-                updated_instance.set_last_edit_by(request.user, propagate=True)
+                updated_instance.set_modified_by(request.user, propagate=True)
                 updated_instance.save(save_parents=True)
                 save_and_create_revision_if_tracked_changed(
                     request.user, updated_instance)
@@ -382,16 +378,12 @@ def handle_experiment_edit_form(request, instance):
         pubmed_ids = request.POST.getlist("pmid_ids")
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
-        target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism if not is_null(to)]
-
         # Set the context
         context["edit_form"] = form
         context["repop_keywords"] = ','.join(keywords)
         context["repop_sra_identifiers"] = ','.join(sra_ids)
         context["repop_doi_identifiers"] = ','.join(doi_ids)
         context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
-        context["repop_target_organism"] = ','.join(target_organism)
 
         if form.is_valid():
             updated_instance = form.save(commit=True)

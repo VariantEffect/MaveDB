@@ -4,6 +4,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.html import format_html
 
+from core.models import TimeStampedModel
+
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
@@ -15,7 +17,7 @@ from .permissions import (
 )
 
 
-class Profile(models.Model):
+class Profile(TimeStampedModel):
     """
     A Profile is associated with a user. It contains helper functions
     which can be used to format the users details like orcid url, name, and

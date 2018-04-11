@@ -12,7 +12,7 @@
 		<ul style="list-style: none">
 			{% for instance in request.user.profile.editable_instances %}
 
-        <div class="entry-card">
+        <div class="entry-card hover-card">
           <div style="display: inline-flex">
             <li> <a href="{% url 'accounts:view_instance' instance.urn %}">{{instance.urn}}</a> </li>
             <li style="padding-left:10px;"><b>&middot;</b></li>
@@ -66,7 +66,7 @@
 		<ul style="list-style: none">
 			{% for instance in request.user.profile.viewer_instances %}
 
-        <div class="entry-card">
+        <div class="entry-card hover-card">
           <div style="display: inline-flex">
             <li> <a href="{% url 'accounts:view_instance' instance.urn %}">{{instance.urn}}</a> </li>
           </div>
