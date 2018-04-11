@@ -2,7 +2,6 @@ import datetime
 import idutils
 
 from django.db import models
-from django.contrib.contenttypes.fields import GenericRelation
 
 from core.models import TimeStampedModel
 

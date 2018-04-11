@@ -53,6 +53,29 @@ def validate_doi_identifier(identifier):
             params={"id": identifier}
         )
 
+def validate_ensembl_identifier(identifier):
+    if not identifier:
+        raise ValidationError(
+            "%(id)s is not a valid Ensembl identifier.",
+            params={"id": identifier}
+        )
+
+
+def validate_uniprot_identifier(identifier):
+    if not identifier:
+        raise ValidationError(
+            "%(id)s is not a valid UniProt identifier.",
+            params={"id": identifier}
+        )
+
+
+def validate_refseq_identifier(identifier):
+    if not identifier:
+        raise ValidationError(
+            "%(id)s is not a valid RefSeq identifier.",
+            params={"id": identifier}
+        )
+
 
 def validate_keyword_list(values):
     for value in values:
@@ -76,3 +99,21 @@ def validate_doi_list(values):
     for value in values:
         if not is_null(value):
             validate_doi_identifier(value)
+
+
+def validate_ensembl_list(values):
+    for value in values:
+        if not is_null(value):
+            validate_ensembl_list(value)
+
+
+def validate_refseq_list(values):
+    for value in values:
+        if not is_null(value):
+            validate_refseq_list(value)
+
+
+def validate_uniprot_list(values):
+    for value in values:
+        if not is_null(value):
+            validate_uniprot_identifier(value)
