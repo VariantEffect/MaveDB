@@ -380,7 +380,7 @@ table {
     display: block;
 }
 
-.child-list-abstract {
+.child-list-description {
     margin-left:20px !important;
     margin-top:20px;
 }
@@ -388,13 +388,11 @@ table {
     display: black;
 }
 
-.entry-card {
-    margin: 1rem 1rem;
-    padding: 10px 10px 10px 10px;
+
+.hover-card {
     border: 1px solid lightslategray;
-    box-shadow: 1px 2px 5px #ccc;
 }
-.entry-card:hover {
+.hover-card:hover {
     border-color: black;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;
@@ -402,8 +400,26 @@ table {
     transition: border-color 0.1s ease-in-out
 }
 
+.entry-card {
+    margin: 1rem 1rem;
+    padding: 10px 10px 10px 10px;
+    box-shadow: 1px 2px 5px #ccc;
+}
+
 .section-heading {
     padding: 15px;
     color: lightslategray;
     font-weight: lighter;
+}
+
+.target-card {
+    padding-left: 10px;
+    color: black !important;
+}
+.target-card:hover {
+    color: lightslategray !important;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;
+    -ms-transition: 0.5s;
+    transition: color 0.1s ease-in-out
 }

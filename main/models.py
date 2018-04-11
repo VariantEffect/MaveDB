@@ -26,19 +26,19 @@ class News(TimeStampedModel):
     text = models.TextField(default="default news.", blank=False)
 
     class Meta:
-        ordering = ['-modified_date']
+        ordering = ['-modification_date']
         verbose_name_plural = "News items"
         verbose_name = "News item"
 
     def __str__(self):
-        return '[{}]: {}'.format(str(self.modified_date), self.text)
+        return '[{}]: {}'.format(str(self.modification_date), self.text)
 
     @staticmethod
     def recent_news():
         """
         Return the 10 most recently published news items.
         """
-        return News.objects.order_by("-modified_date")[0: 10]
+        return News.objects.order_by("-modification_date")[0: 10]
 
     @property
     def message(self):

@@ -10,6 +10,7 @@ function openORCID() {
 }
 
 
+
 $('document').ready(function() {
     // Initialise select2
     $('.select2').select2();
