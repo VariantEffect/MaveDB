@@ -28,9 +28,6 @@ from .views import login_delegator, list_all_users_and_their_data
 
 
 urlpatterns = [
-    # --- User list
-    url(r"list/$", list_all_users_and_their_data, name="list_accounts"),
-
     # ------ Register
     url(r"register/$", registration_view, name="register"),
 

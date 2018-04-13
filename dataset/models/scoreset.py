@@ -100,10 +100,10 @@ class ScoreSet(DatasetModel):
         related_name='scoresets',
     )
 
-    target = models.OneToOneField(
+    target = models.ForeignKey(
         to=TargetGene,
         on_delete=models.PROTECT,
-        null=False,
+        null=True,
         default=None,
         verbose_name='Target gene',
         related_name='scoreset'
@@ -169,7 +169,6 @@ class ScoreSet(DatasetModel):
 
     def get_target(self):
         return self.target
-
 
     # JSON field related methods
     # ---------------------------------------------------------------------- #

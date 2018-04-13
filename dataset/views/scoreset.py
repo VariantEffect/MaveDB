@@ -1,23 +1,65 @@
 import json
+from braces.views import AjaxResponseMixin, LoginRequiredMixin
+from nested_formset import nestedformset_factory
 
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.views.generic import DetailView
+from django.core.urlresolvers import reverse, reverse_lazy
+from django.views.generic import DetailView, CreateView
 
 from accounts.forms import send_admin_email
 from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 
+from core.views import MultipleFormsView
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
-from core.utilities.versioning import save_and_create_revision_if_tracked_changed
+from core.utilities.versioning import (
+    save_and_create_revision_if_tracked_changed
+)
+
+from genome.forms import NestedAnnotationFormSet
 
 from dataset import constants as constants
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
 from ..forms.scoreset import ScoreSetForm
+
+
+class ScoreSetCreateView(MultipleFormsView,
+                         AjaxResponseMixin,
+                         LoginRequiredMixin):
+    """
+    This view handles the rendering/submission/validation loop of two forms:
+        - :class:`ScoreSetForm`
+        - :class:`NestedAnnotationFormSet`
+
+    The ScoreSet form defines the selection of a
+    :class:`genome.models.TargetGene`, or the creation of a new one.
+    For this target gene, at a series of annotations can be defined, each
+    with their own series of intervals.
+    """
+
+    template_name = 'dataset/scoreset/scoreset_new.html'
+    login_url = reverse_lazy('accounts:login')
+    form_classes = {
+        'scoreset': ScoreSetForm,
+        'annotations': NestedAnnotationFormSet
+    }
+
+    def get_success_url(self, form_name=None):
+        return reverse('dataset:scoreset_detail', args=(self.scoreset.urn,))
+
+    def scoreset_form_valid(self, form):
+        self.scoreset = form.save(commit=True)
+
+    def get_ajax(self, request, *args, **kwargs):
+        """User submits a GET request for previewing abstract/method."""
+        pass
+
+    def post_ajax(self, request, *args, **kwargs):
+        """User submits a POST request when the target is changed."""
+        pass
 
 
 class ScoreSetDetailView(DetailView):
@@ -62,76 +104,14 @@ class ScoreSetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-        scores_variant_list = instance.children.all().order_by("hgvs")
-
-        if instance.has_count_dataset:
-            counts_variant_list = instance.children.all().order_by("hgvs")
-        else:
-            counts_variant_list = instance.children.none()
-
-        try:
-            counts_per_page = self.request.GET.get('counts-per-page', '')
-            counts_per_page = int(counts_per_page)
-        except:
-            counts_per_page = 20
-
-        try:
-            scores_per_page = self.request.GET.get('scores-per-page', '')
-            scores_per_page = int(scores_per_page)
-        except:
-            scores_per_page = 20
-
-        scores_paginator = Paginator(
-            scores_variant_list, per_page=scores_per_page)
-        counts_paginator = Paginator(
-            counts_variant_list, per_page=counts_per_page)
-
-        try:
-            scores_page = self.request.GET.get('scores-page', None)
-            scores_variants = scores_paginator.page(scores_page)
-        except PageNotAnInteger:
-            scores_page = 1
-            scores_variants = scores_paginator.page(scores_page)
-        except EmptyPage:
-            scores_page = scores_paginator.num_pages
-            scores_variants = scores_paginator.page(scores_page)
-
-        try:
-            counts_page = self.request.GET.get('counts-page', None)
-            counts_variants = counts_paginator.page(counts_page)
-        except PageNotAnInteger:
-            counts_page = 1
-            counts_variants = counts_paginator.page(counts_page)
-        except EmptyPage:
-            counts_page = counts_paginator.num_pages
-            counts_variants = counts_paginator.page(counts_page)
-
-        # Handle the case when there are too many pages for scores.
-        index = scores_paginator.page_range.index(scores_variants.number)
-        max_index = len(scores_paginator.page_range)
-        start_index = index - 5 if index >= 5 else 0
-        end_index = index + 5 if index <= max_index - 5 else max_index
-        page_range = scores_paginator.page_range[start_index:end_index]
-        context["scores_page_range"] = page_range
-        context["scores_variants"] = scores_variants
-        context["scores_columns"] = \
-            context['instance'].dataset_columns[constants.score_columns]
-
-        # Handle the case when there are too many pages for counts.
-        index = counts_paginator.page_range.index(counts_variants.number)
-        max_index = len(counts_paginator.page_range)
-        start_index = index - 5 if index >= 5 else 0
-        end_index = index + 5 if index <= max_index - 5 else max_index
-        page_range = counts_paginator.page_range[start_index:end_index]
-        context["counts_page_range"] = page_range
-        context["counts_variants"] = counts_variants
+        variants = instance.children.all().order_by("hgvs")[:10]
+        context["variants"] = variants
+        context["score_columns"] = \
+            instance.dataset_columns[constants.score_columns]
         context["counts_columns"] = \
-            context['instance'].dataset_columns[constants.count_columns]
-
-        context["scores_per_page"] = scores_per_page
-        context["counts_per_page"] = counts_per_page
-        context["per_page_selections"] = [20, 50, 100]
-
+            instance.dataset_columns[constants.count_columns]
+        context["metadata_columns"] = \
+            instance.dataset_columns[constants.metadata_columns]
         return context
 
 
@@ -197,13 +177,16 @@ def scoreset_create_view(request, came_from_new_experiment=False,
         context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
         context["scoreset_form"] = scoreset_form
 
+        print("Validating...")
         if not scoreset_form.is_valid():
+            print("Failed...")
             return render(
                 request,
                 "dataset/scoreset/new_scoreset.html",
                 context=context
             )
         else:
+            print("Saving...")
             user = request.user
             scoreset = scoreset_form.save(commit=True)
             scoreset.set_created_by(user, propagate=False)

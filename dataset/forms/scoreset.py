@@ -83,7 +83,7 @@ class ScoreSetForm(DatasetModelForm):
         self.fields['licence'] = forms.ModelChoiceField(
             queryset=Licence.objects.all(), required=False,
             widget=forms.Select(
-                attrs={"class": "form-control"}))
+                attrs={"class": "form-control "}))
 
         self.fields["replaces"].required = False
         self.set_replaces_options()
@@ -241,6 +241,9 @@ class ScoreSetForm(DatasetModelForm):
         variants = self.get_variants()
         if variants:  # No variants if in edit mode and no new files uploaded.
             self.instance.delete_variants()
+            Variant.objects.bulk_create(
+
+            )
             for _, variant in variants.items():
                 variant.scoreset = self.instance
                 variant.save()

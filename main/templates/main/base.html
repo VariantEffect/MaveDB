@@ -14,11 +14,15 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
     <!-- Bootstrap -->
-    <link rel="stylesheet" href="{% static 'main/bootstrap4b/css/bootstrap.min.css' %}"> 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
     <!-- tocbot -->
-    <link href="{% static 'main/tocbot/css/tocbot.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.3.0/tocbot.css"
+          rel="stylesheet">
     <!-- Select2 -->
-    <link href="{% static 'main/select2/css/select2.min.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css"
+          rel="stylesheet" />
     <!-- custom css -->
     <link href="{% static 'main/main/css/base.css' %}" rel="stylesheet">
     <!-- favicon -->
@@ -34,7 +38,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title" id="modelTitleId">Abstract</h4>
+            <h4 class="modal-title">Abstract</h4>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -51,7 +55,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title" id="modelTitleId">Method description</h4>
+            <h4 class="modal-title">Method description</h4>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -88,10 +92,7 @@
             <li class="nav-item">
               <a class="nav-link" href="{% url 'search:search' %}">Search</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'accounts:list_accounts' %}">Users</a>
-            </li>
-            <li class="nav-item">
+             <li class="nav-item">
               <a class="nav-link" href="{% url 'main:documentation'%}">Documentation</a>
             </li>
             {% if user.is_authenticated %}
@@ -174,37 +175,37 @@
           </div>   
         </ul>       
       </nav>
-      </div>
     </div>
-  
-  <!-- Scripts -->
-  <!-- Ask user confirmation to remove themself as an instance admin -->
-  <!-- This needs to be here in order to record the user pk from django -->
-  <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
-  <!-- JQuery/JQuery UI -->
-  <script type="text/javascript"
-          src="https://code.jquery.com/jquery-3.2.1.min.js"
-          integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-          crossorigin="anonymous"></script>
-  <script type="text/javascript" 
-          src="{% static 'main/jquery/js/jquery-ui.min.js' %}"></script>
-  <!-- Popper.js/Bootstrap -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" 
-          integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" 
-          crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" 
-          integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" 
-          crossorigin="anonymous"></script>
-  <!-- Tocbot -->
-  <script type="text/javascript" 
-          src="{% static 'main/tocbot/js/tocbot.js' %}"></script>
-  <script type="text/javascript"  
-          src="{% static 'main/main/js/init_tocbot.js' %}"></script>
-  <!-- Select2 -->
-  <script type="text/javascript"  
-          src="{% static 'main/select2/js/select2.min.js' %}"></script>         
-  <!-- Cutom -->
-  <script type="text/javascript"  
-          src="{% static 'main/main/js/base.js' %}"></script>
+
+    <!-- Scripts -->
+    <!-- Ask user confirmation to remove themself as an instance admin -->
+    <!-- This needs to be here in order to record the user pk from django -->
+    <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
+
+    <!-- JQuery/JQuery UI -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+			  crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+			  integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+			  crossorigin="anonymous"></script>
+
+    <!-- Popper.js/Bootstrap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+
+    <!-- Tocbot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.3.0/tocbot.min.js"></script>
+    <script src="{% static 'main/main/js/init_tocbot.js' %}"></script>
+
+    <!-- Select2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+
+    <!-- Cutom -->
+    <script src="{% static 'main/main/js/base.js' %}"></script>
   </body>
 </html>

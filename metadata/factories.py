@@ -116,4 +116,4 @@ class EnsemblIdentifierFactory(DjangoModelFactory):
         'ENSG00000006062', 'ENSG00000172936',
         'GRCh37.p13', 'GRCh38.p12'
     ])
-    db_version = '92.13'
+    dbversion = '92.13'
