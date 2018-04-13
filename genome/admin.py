@@ -5,7 +5,7 @@ from .models import (
 )
 
 admin.site.register(TargetGene)
-admin.site.register(ReferenceGenome)
 admin.site.register(WildTypeSequence)
 admin.site.register(Annotation)
+admin.site.register(ReferenceGenome)
 admin.site.register(Interval)
