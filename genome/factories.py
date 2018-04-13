@@ -20,7 +20,6 @@ from .models import (
     Interval
 )
 
-
 strand_choices = (
     Interval.STRAND_CHOICES[0][0], Interval.STRAND_CHOICES[1][0]
 )
@@ -38,20 +37,6 @@ class WildTypeSequenceFactory(DjangoModelFactory):
     sequence = factory.fuzzy.FuzzyText(length=50, chars='ATCG')
 
 
-class IntervalFactory(DjangoModelFactory):
-    """
-    Creates an :class:`Interval` with randomly generated start, stop, chr
-    and strand.
-    """
-    class Meta:
-        model = Interval
-
-    start = 1
-    end = factory.fuzzy.FuzzyInteger(low=1)
-    chromosome = factory.fuzzy.FuzzyText(prefix='chr', length=1, chars=chr_chars)
-    strand = factory.fuzzy.FuzzyChoice(choices=strand_choices)
-
-
 class ReferenceGenomeFactory(DjangoModelFactory):
     """
     Creates a primary :class:`ReferenceGenome` instance with random
@@ -60,35 +45,11 @@ class ReferenceGenomeFactory(DjangoModelFactory):
     class Meta:
         model = ReferenceGenome
 
-    short_name = factory.fuzzy.FuzzyChoice(['hg38'])
+    short_name = factory.fuzzy.FuzzyChoice(['hg38', 'hg37', 'hg36'])
     species_name = factory.fuzzy.FuzzyChoice(['Homo spaiens'])
     is_primary = True
-
-
-class AnnotationFactory(DjangoModelFactory):
-    """
-    Creates an :class:`Annotation` instance with a :class:`ReferenceGenome`
-    relation and a set of 3 randomly generated :class:`Interval`
-    instnaces.
-    """
-    class Meta:
-        model = Annotation
-
-    genome = factory.SubFactory(ReferenceGenomeFactory)
-
-    @factory.post_generation
-    def intervals(self, create, extracted, **kwargs):
-        if not create:
-            # No instance created so do nothing.
-            return
-        elif not extracted:
-            # No intervals were passed in, created 3 random ones.
-            for i in range(3):
-                self.intervals.add(IntervalFactory())
-        elif extracted:
-            # A list of intervals were passed in, add them.
-            for interval in extracted:
-                self.intervals.add(interval)
+    ensembl_id = None
+    refseq_id = None
 
 
 class TargetGeneFactory(DjangoModelFactory):
@@ -102,16 +63,31 @@ class TargetGeneFactory(DjangoModelFactory):
     name = factory.fuzzy.FuzzyChoice(['BRCA1', 'JAK', 'STAT', 'MAPK'])
     wt_sequence = factory.SubFactory(WildTypeSequenceFactory)
 
-    @factory.post_generation
-    def annotations(self, create, extracted, **kwargs):
-        if not create:
-            # No instance created so do nothing.
-            return
-        elif not extracted:
-            # No annotations were passed in, created 3 random ones.
-            for i in range(3):
-                self.annotations.add(AnnotationFactory())
-        elif extracted:
-            # A list of annotations were passed in, add them.
-            for annotation in extracted:
-                self.annotations.add(annotation)
+
+class AnnotationFactory(DjangoModelFactory):
+    """
+    Creates an :class:`Annotation` instance with a :class:`ReferenceGenome`
+    relation and a set of 3 randomly generated :class:`Interval`
+    instnaces.
+    """
+    class Meta:
+        model = Annotation
+
+    genome = factory.SubFactory(ReferenceGenomeFactory)
+    target = factory.SubFactory(TargetGeneFactory)
+
+
+class IntervalFactory(DjangoModelFactory):
+    """
+    Creates an :class:`Interval` with randomly generated start, stop, chr
+    and strand.
+    """
+    class Meta:
+        model = Interval
+
+    start = 1
+    end = factory.fuzzy.FuzzyInteger(low=1, high=1000)
+    chromosome = factory.fuzzy.FuzzyText(
+        prefix='chr', length=1, chars=chr_chars)
+    strand = factory.fuzzy.FuzzyChoice(choices=strand_choices)
+    annotation = factory.SubFactory(AnnotationFactory)
