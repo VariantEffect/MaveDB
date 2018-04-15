@@ -336,6 +336,7 @@ def handle_scoreset_edit_form(request, instance):
             form = ScoreSetEditForm(
                 request.POST, user=request.user, instance=instance)
             valid = form.is_valid()
+            context["edit_form"] = form
         else:
             target_form = TargetGeneForm(
                 user=request.user, data=request.POST, instance=targetgene)
@@ -344,6 +345,12 @@ def handle_scoreset_edit_form(request, instance):
             interval_form = IntervalForm(
                 data=request.POST, instance=intervals[0])
             form = ScoreSetForm.from_request(request, instance)
+
+            context["edit_form"] = form
+            context["target_form"] = target_form
+            context["annotation_form"] = annotation_form
+            context["interval_form"] = interval_form
+
             valid = all([
                 form.is_valid(),
                 target_form.is_valid(),
@@ -366,7 +373,6 @@ def handle_scoreset_edit_form(request, instance):
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
         # Set the context
-        context["edit_form"] = form
         context["repop_keywords"] = ','.join(keywords)
         context["repop_sra_identifiers"] = ','.join(sra_ids)
         context["repop_doi_identifiers"] = ','.join(doi_ids)
