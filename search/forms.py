@@ -37,26 +37,20 @@ class SearchForm(forms.Form):
             attrs={"class": "form-control"}
         )
     )
-    targets = forms.CharField(
-        max_length=None, label="Target", required=False,
-        widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
-        )
-    )
-    target_organisms = forms.CharField(
-        max_length=None, label="Target Organism", required=False,
-        widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
-        )
-    )
+    # targets = forms.CharField(
+    #     max_length=None, label="Target", required=False,
+    #     widget=forms.widgets.TextInput(
+    #         attrs={"class": "form-control"}
+    #     )
+    # )
+    # target_organisms = forms.CharField(
+    #     max_length=None, label="Target Organism", required=False,
+    #     widget=forms.widgets.TextInput(
+    #         attrs={"class": "form-control"}
+    #     )
+    # )
     contributors = forms.CharField(
         max_length=None, label="Contributors", required=False,
-        widget=forms.widgets.TextInput(
-            attrs={"class": "form-control"}
-        )
-    )
-    metadata = forms.CharField(
-        max_length=None, label="Metadata", required=False,
         widget=forms.widgets.TextInput(
             attrs={"class": "form-control"}
         )
@@ -100,11 +94,6 @@ class SearchForm(forms.Form):
     def clean_contributors(self):
         return filter_empty(
             parse_query(self.cleaned_data.get("contributors", ""))
-        )
-
-    def clean_metadata(self):
-        return filter_empty(
-            parse_query(self.cleaned_data.get("metadata", ""))
         )
 
     def clean(self):

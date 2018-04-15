@@ -1,10 +1,9 @@
 from django import forms as forms
-from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.core.exceptions import ValidationError
-
-from nested_formset import (
-    BaseNestedFormset, BaseNestedModelForm, nestedformset_factory
+from django.forms.models import (
+    BaseInlineFormSet, modelformset_factory, inlineformset_factory,
+    BaseModelFormSet, formset_factory
 )
+from django.core.exceptions import ValidationError
 
 from .validators import (
     validate_interval_start_lteq_end,
@@ -50,20 +49,53 @@ class TargetGeneForm(forms.ModelForm):
         widget=forms.Textarea(attrs={'class': BOOTSTRAP_CLASS}),
         validators=[validate_wildtype_sequence],
         error_messages={
-            'required': 'You must supply a wild-type sequence for your target.'
+            'required':
+                'You must supply a wild-type sequence for your target.'
         },
+    )
+    target = forms.ModelChoiceField(
+        label='Existing target', required=False,
+        help_text='Autofill the fields below using an existing target.',
+        queryset=None,
+        widget=forms.Select(
+            attrs={"class": "form-control"})
     )
 
     def __init__(self, *args, **kwargs):
-        self.field_order = ('name', 'wt_sequence')
+        self.field_order = ('target', 'name', 'wt_sequence')
+        self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
+
+        instance = kwargs.get('instance', None)
+        if instance:
+            self.fields['wt_sequence'].initial = instance.get_wt_sequence()
+
+        self.set_target_gene_options()
 
         self.fields['name'].label = 'Target name'
         self.fields['name'].validators = [validate_gene_name]
-        self.fields['name'].widget = forms.Textarea(
+        self.fields['name'].widget = forms.TextInput(
             attrs={'class': BOOTSTRAP_CLASS})
         self.fields['name'].error_messages.update(
             {'required': 'You must supply a name for your target.'})
+
+    def set_target_gene_options(self):
+        if 'target' in self.fields:
+            choices = set()
+            targets = TargetGene.objects.all()
+            user_scoresets = self.user.profile.administrator_scoresets() + \
+                             self.user.profile.contributor_scoresets() + \
+                             self.user.profile.viewer_scoresets()
+            for target in targets:
+                scoreset = target.scoreset
+                if scoreset.private and scoreset in user_scoresets:
+                    choices.add(scoreset.pk)
+                elif not scoreset.private:
+                    choices.add(scoreset.pk)
+
+            targets_qs = TargetGene.objects.filter(
+                pk__in=choices).order_by("name")
+            self.fields["target"].queryset = targets_qs
 
     def save(self, commit=True):
         if commit:
@@ -82,7 +114,7 @@ class TargetGeneForm(forms.ModelForm):
 
 # Annotation
 # ------------------------------------------------------------------------ #
-class AnnotationForm(BaseNestedModelForm):
+class AnnotationForm(forms.ModelForm):
     """
     The annotation form
 
@@ -120,6 +152,12 @@ class AnnotationForm(BaseNestedModelForm):
             is_primary=self.cleaned_data.get('is_primary'),
         )
 
+    def clean_genome(self):
+        genome = self.cleaned_data.get('genome', None)
+        if not genome:
+            raise ValidationError("You must select a valid reference genome.")
+        return genome
+
     def save(self, commit=True):
         genome = self.cleaned_data['genome']
         instance = super().save(commit=commit)
@@ -128,7 +166,7 @@ class AnnotationForm(BaseNestedModelForm):
         return instance
 
 
-class AnnotationFormSet(BaseNestedFormset):
+class AnnotationFormSet(BaseInlineFormSet):
     """
     Formset for handling the case where you have parent-child-grandchild
     relationship which needs to be repeated multiple times.
@@ -188,19 +226,14 @@ class IntervalForm(forms.ModelForm):
             validate_interval_start_lteq_end(start, end)
             return cleaned_data
 
-    def save(self, commit=True):
-        annotation = self.cleaned_data['annotation']
-        instance = super().save(commit=commit)
-        instance.set_annotation(annotation)
-        instance.save()
-        return instance
 
-
-class IntervalFormSet(BaseInlineFormSet):
+class IntervalFormSet(BaseModelFormSet):
     """
     Formset which will validate multiple intervals against each other
     to ensure uniqueness.
     """
+    model = Interval
+
     def has_errors(self):
         if isinstance(self.errors, list):
             return any(len(dict_) for dict_ in self.errors)
@@ -210,6 +243,7 @@ class IntervalFormSet(BaseInlineFormSet):
     def clean(self):
         if not self.has_errors():
             intervals = [form.dummy_instance() for form in self.forms]
+            print(intervals)
             if not intervals:
                 raise ValidationError(
                     "You must specify at least one interval for each "
@@ -218,18 +252,7 @@ class IntervalFormSet(BaseInlineFormSet):
             validate_unique_intervals(intervals)
 
 
-NestedAnnotationFormSet = nestedformset_factory(
-    TargetGene,
-    Annotation,
-    form=AnnotationForm,
-    formset=AnnotationFormSet,
-    fields=('genome', 'is_primary',),
-    extra=0, min_num=1, validate_min=True,
-    nested_formset=inlineformset_factory(
-        Annotation,
-        Interval,
-        form=IntervalForm,
-        formset=IntervalFormSet,
-        extra=0, min_num=1, validate_min=True,
-    )
+AnnotationIntervalFormSet = formset_factory(
+    form=IntervalForm, formset=IntervalFormSet,
+    extra=0, min_num=1, validate_min=1, can_delete=False
 )

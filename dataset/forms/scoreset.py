@@ -1,4 +1,4 @@
-from io import TextIOWrapper
+from collections import OrderedDict
 
 from django import forms as forms
 from django.core.exceptions import ValidationError
@@ -41,7 +41,6 @@ class ScoreSetForm(DatasetModelForm):
             'experiment',
             'licence',
             'replaces',
-            'target',
         )
 
     score_data = forms.FileField(
@@ -56,7 +55,7 @@ class ScoreSetForm(DatasetModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.field_order = ('experiment', 'replaces', 'licence', 'target') + \
+        self.field_order = ('experiment', 'replaces', 'licence',) + \
                       self.FIELD_ORDER
         super().__init__(*args, **kwargs)
 
@@ -74,9 +73,6 @@ class ScoreSetForm(DatasetModelForm):
         self.fields['experiment'] = forms.ModelChoiceField(
             queryset=None, required=True, widget=forms.Select(
                 attrs={"class": "form-control"}))
-        self.fields['target'] = forms.ModelChoiceField(
-            queryset=None, required=True, widget=forms.Select(
-                attrs={"class": "form-control"}))
         self.fields['replaces'] = forms.ModelChoiceField(
             queryset=None, required=False, widget=forms.Select(
                 attrs={"class": "form-control"}))
@@ -87,9 +83,6 @@ class ScoreSetForm(DatasetModelForm):
 
         self.fields["replaces"].required = False
         self.set_replaces_options()
-
-        self.fields['target'].queryset = TargetGene.objects.all()
-
         self.set_experiment_options()
 
         self.fields["licence"].required = False
@@ -218,7 +211,7 @@ class ScoreSetForm(DatasetModelForm):
         # The reverse is not always true.
         if has_score_data:
             validate_scoreset_json(self.dataset_columns)
-            variants = dict()
+            variants = OrderedDict()
 
             for hgvs in hgvs_score_map.keys():
                 scores_json = hgvs_score_map[hgvs]
@@ -237,17 +230,14 @@ class ScoreSetForm(DatasetModelForm):
             cleaned_data["variants"] = variants
         return cleaned_data
 
+    @transaction.atomic
     def _save_m2m(self):
         variants = self.get_variants()
         if variants:  # No variants if in edit mode and no new files uploaded.
             self.instance.delete_variants()
-            Variant.objects.bulk_create(
-
-            )
-            for _, variant in variants.items():
-                variant.scoreset = self.instance
-                variant.save()
-                self.instance.variants.add(variant)
+            variant_kwargs_list = [
+                {'hgvs': v.hgvs, 'data': v.data} for _, v in variants.items()]
+            Variant.bulk_create(self.instance, variant_kwargs_list)
         super()._save_m2m()
 
     @transaction.atomic

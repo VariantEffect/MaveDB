@@ -12,7 +12,6 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 from main.models import Licence
-from genome.factories import TargetGeneFactory
 
 from .constants import (
     score_columns, count_columns, metadata_columns,
@@ -35,6 +34,7 @@ class DatasetModelFactory(DjangoModelFactory):
     abstract_text = factory.fuzzy.FuzzyText(length=500)
     short_title = factory.fuzzy.FuzzyText(length=64)
     short_description = factory.fuzzy.FuzzyText(length=256)
+    private = False
 
 
 class ExperimentSetFactory(DatasetModelFactory):
@@ -64,4 +64,3 @@ class ScoreSetFactory(DatasetModelFactory):
 
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
-    target = factory.SubFactory(TargetGeneFactory)

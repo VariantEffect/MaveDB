@@ -90,15 +90,20 @@ class ExperimentSerializer(Serializer):
 
         dict_ = {
             "urn": instance.urn,
-            "targets": instance.get_target_names(),
+            "targets": {
+                targetgene.get_name(): targetgene.serialise()
+                for targetgene in instance.get_targets()
+                if not (targetgene.scoreset.private and filter_private)
+            },
             "contributors": instance.format_using_username(
-                group='editors', string=False),
+                group='editors', string=False
+            ),
             "experimentset": instance.experimentset.urn,
             "scoresets": [
                 s.current_version.urn
                 for s in instance.scoresets.all()
                 if not (s.private and filter_private)
-            ]
+            ],
         }
         return add_metadata(dict_, instance)
 
@@ -130,7 +135,9 @@ class ScoreSetSerializer(Serializer):
         dict_ = {
             "urn": instance.urn,
             "contributors": instance.format_using_username(
-                group='editors', string=False),
+                group='editors', string=False
+            ),
+            'target': instance.get_target().serialise(),
             "next_version": next_version,
             "previous_version": previous_version,
             "licence": [

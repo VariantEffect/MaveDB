@@ -70,7 +70,7 @@ class ScoreSet(DatasetModel):
     TRACKED_FIELDS = (
         "private", "approved", "abstract_text",
         "method_text", "doi_ids", "sra_ids", "pmid_ids", "keywords",
-        "license", "dataset_columns", "replaces", "short_description",
+        "licence", "dataset_columns", "replaces", "short_description",
         "short_title",
     )
 
@@ -98,15 +98,6 @@ class ScoreSet(DatasetModel):
         default=None,
         verbose_name='Experiment',
         related_name='scoresets',
-    )
-
-    target = models.ForeignKey(
-        to=TargetGene,
-        on_delete=models.PROTECT,
-        null=True,
-        default=None,
-        verbose_name='Target gene',
-        related_name='scoreset'
     )
 
     licence = models.ForeignKey(

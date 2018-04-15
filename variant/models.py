@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.db import models, transaction
 from django.contrib.postgres.fields import JSONField
 
@@ -77,6 +79,30 @@ class Variant(UrnModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+    @classmethod
+    @transaction.atomic
+    def bulk_create(cls, parent, variant_kwargs_list, batch_size=None):
+        num_variants = len(list(variant_kwargs_list))
+        variant_urns = Variant.bulk_create_urns(num_variants, parent)
+        variants = (
+            Variant(urn=urn, scoreset=parent, **kwargs)
+            for urn, kwargs in zip(variant_urns, variant_kwargs_list)
+        )
+        cls.objects.bulk_create(variants, batch_size=batch_size)
+        parent.save()
+        return parent.variants.count()
+
+    @staticmethod
+    def bulk_create_urns(n, parent):
+        start_value = parent.last_child_value
+        parent_urn = parent.urn
+        child_urns = [
+            "{}#{}".format(parent_urn, start_value + (i + 1))
+            for i in range(n)
+        ]
+        parent.last_child_value += n
+        return child_urns
 
     def create_urn(self):
         parent = self.scoreset

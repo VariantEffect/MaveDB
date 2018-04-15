@@ -20,6 +20,11 @@ from django.http import HttpResponse
 from dataset.forms.experiment import ExperimentEditForm, ExperimentForm
 from dataset.forms.scoreset import ScoreSetEditForm, ScoreSetForm
 
+from genome.models import TargetGene
+from genome.forms import (
+    TargetGeneForm, AnnotationForm, IntervalForm, AnnotationIntervalFormSet
+)
+
 from urn.validators import (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
     MAVEDB_EXPERIMENT_URN_PATTERN,
@@ -272,29 +277,79 @@ def edit_instance(request, urn):
 def handle_scoreset_edit_form(request, instance):
     if not instance.private:
         form = ScoreSetEditForm(user=request.user, instance=instance)
+        context = {'edit_form': form, 'instance': instance}
+
     else:
+        scoreset = instance
         form = ScoreSetForm.from_request(request, instance)
-    context = {'edit_form': form, 'instance': instance}
+        targetgene = scoreset.get_target()
+        target_form = TargetGeneForm(user=request.user, instance=targetgene)
+
+        # TODO: Multiple annotations/intervals
+        annotation = targetgene.get_annotations().first()
+        annotation_form = AnnotationForm(instance=annotation)
+        intervals = annotation.get_intervals()
+        interval_form = IntervalForm(instance=intervals[0])
+        context = {
+            'edit_form': form, 'instance': instance,
+            'target_form': target_form, 'annotation_form': annotation_form,
+            'interval_form': interval_form
+        }
 
     # If the request is ajax, then it's for previewing the abstract
     # or method description. This code is coupled with base.js. Changes
     # here might break the javascript code.
     if request.is_ajax():
-        data = dict()
-        data['abstract_text'] = convert_md_to_html(
-            request.GET.get("abstract_text", "")
-        )
-        data['method_text'] = convert_md_to_html(
-            request.GET.get("method_text", "")
-        )
-        return HttpResponse(json.dumps(data), content_type="application/json")
+        markdown = request.GET.get("markdown", False)
+        if not markdown:
+            target_id = request.GET.get("targetId", "")
+            try:
+                targetgene = TargetGene.objects.get(pk=target_id)
+                annotation = targetgene.get_annotations().first()
+                genome = annotation.get_genome()
+                interval = annotation.get_intervals().first()
+                data = {
+                    'targetName': targetgene.get_name(),
+                    'wildTypeSequence': targetgene.get_wt_sequence(),
+                    'referenceGenome': genome.id,
+                    'isPrimary': annotation.is_primary_annotation(),
+                    'intervalStart': interval.get_start(),
+                    'intervalEnd': interval.get_end(),
+                    'chromosome': interval.get_chromosome(),
+                    'strand': interval.get_strand()
+                }
+            except AttributeError as e:
+                data = {}
+        else:
+            data = {
+                "abstractText": convert_md_to_html(
+                    request.GET.get("abstractText", "")),
+                "methodText": convert_md_to_html(
+                    request.GET.get("methodText", ""))
+            }
+
+        return HttpResponse(
+            json.dumps(data), content_type="application/json")
 
     if request.method == "POST":
         if not instance.private:
             form = ScoreSetEditForm(
                 request.POST, user=request.user, instance=instance)
+            valid = form.is_valid()
         else:
+            target_form = TargetGeneForm(
+                user=request.user, data=request.POST, instance=targetgene)
+            annotation_form = AnnotationForm(
+                data=request.POST, instance=annotation)
+            interval_form = IntervalForm(
+                data=request.POST, instance=intervals[0])
             form = ScoreSetForm.from_request(request, instance)
+            valid = all([
+                form.is_valid(),
+                target_form.is_valid(),
+                annotation_form.is_valid(),
+                interval_form.is_valid()
+            ])
 
         # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
@@ -317,8 +372,25 @@ def handle_scoreset_edit_form(request, instance):
         context["repop_doi_identifiers"] = ','.join(doi_ids)
         context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
 
-        if form.is_valid():
-            updated_instance = form.save(commit=True)
+        if valid:
+            if instance.private:
+                updated_instance = form.save(commit=True)
+                targetgene = target_form.save(commit=True)
+                annotation = annotation_form.save(commit=True)
+                interval = interval_form.save(commit=True)
+
+                # Don't change the ordering of saves. It will break the
+                # relationships if you do.
+                for i in [interval]:
+                    i.annotation = annotation
+                    i.save()
+                annotation.target = targetgene
+                annotation.save()
+                targetgene.scoreset = updated_instance
+                targetgene.save()
+            else:
+                updated_instance = form.save(commit=True)
+
             # save_and_create_revision_if_tracked_changed(
             #     request.user, updated_instance)
             if request.POST.get("publish", None):
@@ -347,11 +419,11 @@ def handle_experiment_edit_form(request, instance):
     # here might break the javascript code.
     if request.is_ajax():
         data = dict()
-        data['abstract_text'] = convert_md_to_html(
-            request.GET.get("abstract_text", "")
+        data['abstractText'] = convert_md_to_html(
+            request.GET.get("abstractText", "")
         )
-        data['method_text'] = convert_md_to_html(
-            request.GET.get("method_text", "")
+        data['methodText'] = convert_md_to_html(
+            request.GET.get("methodText", "")
         )
         return HttpResponse(json.dumps(data), content_type="application/json")
 

@@ -35,7 +35,7 @@ class TargetGene(TimeStampedModel):
         verbose_name_plural = "Target Genes"
 
     def __str__(self):
-        return self.name
+        return '{} | {}'.format(self.name, self.get_scoreset_urn())
 
     name = models.CharField(
         blank=False,
@@ -44,6 +44,14 @@ class TargetGene(TimeStampedModel):
         verbose_name='Target name',
         max_length=256,
         validators=[validate_gene_name]
+    )
+
+    scoreset = models.OneToOneField(
+        to='dataset.ScoreSet',
+        on_delete=models.CASCADE,
+        null=True,
+        default=None,
+        related_name='target'
     )
 
     wt_sequence = models.ForeignKey(
@@ -56,6 +64,10 @@ class TargetGene(TimeStampedModel):
 
     def get_name(self):
         return self.name
+
+    def get_scoreset_urn(self):
+        if self.scoreset:
+            return self.scoreset.urn
 
     def has_wt_sequence(self):
         """Returns True if a wt_sequence instance has been associated."""
@@ -85,18 +97,18 @@ class TargetGene(TimeStampedModel):
         genome_pks = set(a.genome.pk for a in self.get_annotations())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
 
-    def get_primary_reference(self):
-        return self.get_reference_genomes(
-        ).filter(
-            is_primary=True
-        ).order_by(
-            'short_name'
-        ).first()
-
     def reference_mapping(self):
         return {
             annotation.get_genome_name(): annotation.serialise()
             for annotation in self.get_annotations()
+        }
+
+    def serialise(self):
+        return {
+            'name': self.name,
+            'scoreset': self.scoreset.urn,
+            'wt_sequence': self.wt_sequence.get_sequence(),
+            'annotations': [a.serialise() for a in self.annotations.all()]
         }
 
 
@@ -158,9 +170,15 @@ class Annotation(TimeStampedModel):
         """
         return self.target
 
-    def has_genome(self):
-        """Returns True if a genome instance has been associated."""
-        return hasattr(self, 'genome') and self.genome is not None
+    def set_target(self, target):
+        """
+        Sets the target for this instnace.
+        """
+        if not isinstance(target, TargetGene):
+            raise TypeError("Found {}, expected {}.".format(
+                type(target).__name__, TargetGene.__name__
+            ))
+        self.target = target
 
     def get_genome(self):
         """
@@ -170,8 +188,7 @@ class Annotation(TimeStampedModel):
         -------
         :class:`ReferenceGenome`
         """
-        if self.has_genome():
-            return self.genome
+        return self.genome
 
     def set_genome(self, genome):
         """
@@ -238,7 +255,6 @@ class Annotation(TimeStampedModel):
 
     def serialise(self):
         return {
-            'target': self.get_target().get_name(),
             'primary': self.is_primary_annotation(),
             'reference': self.get_genome().serialise(),
             'intervals': [i.serialise() for i in self.get_intervals()]

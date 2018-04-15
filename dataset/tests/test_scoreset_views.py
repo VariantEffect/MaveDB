@@ -383,7 +383,6 @@ class TestCreateNewScoreSetView(TestCase):
         request = self.factory.get(path=self.path)
         request.user = self.user
         request.FILES.update(self.files)
-        response = scoreset_create_view(
-            request, came_from_new_experiment=True, experiment_urn=exp1.urn)
+        response = scoreset_create_view(request, experiment_urn=exp1.urn)
         self.assertContains(response, exp1.urn)
         self.assertNotContains(response, exp2.urn)

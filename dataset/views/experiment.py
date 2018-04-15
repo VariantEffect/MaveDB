@@ -150,11 +150,7 @@ def experiment_create_view(request):
                     user, experiment.experimentset
                 )
 
-            return scoreset_create_view(
-                request,
-                came_from_new_experiment=True,
-                experiment_urn=experiment.urn
-            )
+            return scoreset_create_view(request, experiment_urn=experiment.urn)
     else:
         return render(
             request,

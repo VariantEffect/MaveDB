@@ -58,10 +58,8 @@ INSTALLED_APPS = [
     'main',
     'genome',
     'urn',
-
     'variant',
     'dataset',
-
     'search',
     'api',
     'accounts',
@@ -69,6 +67,7 @@ INSTALLED_APPS = [
     'guardian',
     'reversion',
     'social_django',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

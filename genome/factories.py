@@ -12,6 +12,8 @@ import string
 import factory.fuzzy
 from factory.django import DjangoModelFactory
 
+from dataset.factories import ScoreSetFactory
+
 from .models import (
     TargetGene,
     WildTypeSequence,
@@ -47,7 +49,6 @@ class ReferenceGenomeFactory(DjangoModelFactory):
 
     short_name = factory.fuzzy.FuzzyChoice(['hg38', 'hg37', 'hg36'])
     species_name = factory.fuzzy.FuzzyChoice(['Homo spaiens'])
-    is_primary = True
     ensembl_id = None
     refseq_id = None
 
@@ -62,6 +63,7 @@ class TargetGeneFactory(DjangoModelFactory):
 
     name = factory.fuzzy.FuzzyChoice(['BRCA1', 'JAK', 'STAT', 'MAPK'])
     wt_sequence = factory.SubFactory(WildTypeSequenceFactory)
+    scoreset = factory.SubFactory(ScoreSetFactory)
 
 
 class AnnotationFactory(DjangoModelFactory):
@@ -75,6 +77,7 @@ class AnnotationFactory(DjangoModelFactory):
 
     genome = factory.SubFactory(ReferenceGenomeFactory)
     target = factory.SubFactory(TargetGeneFactory)
+    is_primary = True
 
 
 class IntervalFactory(DjangoModelFactory):
