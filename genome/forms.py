@@ -152,6 +152,10 @@ class AnnotationForm(forms.ModelForm):
             is_primary=self.cleaned_data.get('is_primary'),
         )
 
+    def clean_is_primary(self):
+        # TODO: Remove this once formsets are working
+        return True
+
     def clean_genome(self):
         genome = self.cleaned_data.get('genome', None)
         if not genome:
