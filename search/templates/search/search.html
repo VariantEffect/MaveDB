@@ -70,12 +70,10 @@
 	<table id="search-table" class="styled-table table table-hover paginated">
 		<thead>
 			<tr>
-				<th>Accession</th>
-				<th>Target</th>
+				<th>Urn</th>
 				<th>Contributors</th>
-				<th>Target Organism</th>
+				<th>Target</th>
 				<th>Keywords</th>
-				<th>External identifiers</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -93,17 +91,13 @@
 									{{ exp.urn }}
 								</a>
 							</td>
-							<td>{{ exp.target }}</td>
-							<td>{{ exp.editors }}</td>
 							<td>
-								{% if exp.get_target_organism_name != 'None' %}
-									<em>{{ exp.get_target_organism_name }}</em>
-								{% else %}
-									-
-								{% endif %}
+                {% for c in exp.editors %}
+							    {{ c.get_full_name_hyperlink }}
+                {% endfor %}
 							</td>
-							<td>{{ exp.get_keywords|default:"-" }}</td>
-							<td>{{ exp.get_other_urns|default:"-" }}</td>
+							<td>{{ exp.get_target_names|join:", " }}</td>
+							<td>{{ exp.get_keywords|default:"-"|join:", " }}</td>
 						</tr>
 					{% else %}
 						{% if exp in request.user.profile.experiments %}
@@ -114,11 +108,13 @@
 										{{ exp.urn }} [P]
 									</a>
 								</td>
-								<td>{{ exp.target }}</td>
-								<td>{{ exp.get_authors }}</td>
-								<td><em>{{ exp.get_target_organism_name|default:"-" }}</em></td>
-								<td>{{ exp.get_keywords|default:"-" }}</td>
-								<td>{{ exp.get_other_urns|default:"-" }}</td>
+                <td>
+                  {% for c in exp.editors %}
+                    {{ c.get_full_name_hyperlink }}
+                  {% endfor %}
+							  </td>
+								<td>{{ exp.get_target_names|join:", " }}</td>
+								<td>{{ exp.get_keywords|default:"-"|join:", " }}</td>
 							</tr>
 						{% endif %}
 					{% endif %}

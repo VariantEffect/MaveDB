@@ -3,13 +3,17 @@
 {% block target %}
   <h2 id="targets" class="underline left-align section-heading"> Targets </h2>
   {% if instance.get_targets.count %}
-    <p class="text-muted">Multiple targets have been scored for this experiment: </p>
+    {% if instance.get_targets.count > 1%}
+      <p class="text-muted">Multiple targets have been scored for this experiment: </p>
+    {% else %}
+      <p class="text-muted">A single target has been scored for this experiment: </p>
+    {% endif %}
     {% for target in instance.get_targets.all %}
       <a href="{% url 'dataset:scoreset_detail' target.scoreset.urn %}">
         <div class="target-card">
           <p><strong>Target:</strong> {{ target.get_name }}</p>
-          <p><strong>Species:</strong> {{ target.get_primary_reference.format_species_name_html|safe }}</p>
-          <p><strong>Wildtype Sequence:</strong> {{ target.get_target_sequence }}</p>
+          <p><strong>Species:</strong> {{ target.get_reference_genomes.first.format_species_name_html|safe }}</p>
+          <p><strong>Wildtype Sequence:</strong> {{ target.get_wt_sequence }}</p>
           {% if forloop.counter < instance.get_targets.count %}
             <hr>
           {% endif %}

@@ -1,25 +1,24 @@
-// Forward declare jQuery's `$` symbol
+// Forward declare jQuery"s `$` symbol
+"use strict";
 jQuery, $;
 
 // ORCID button in base.html
 function openORCID() {
-    var base_url = window.location.origin;
-    var login_path = base_url + "/accounts/login/";
-    window.location.assign(login_path);
+    var baseUrl = window.location.origin;
+    var loginPath = baseUrl + "/accounts/login/";
+    window.location.assign(loginPath);
     return false;
 }
 
-
-
-$('document').ready(function() {
+$("document").ready(function() {
     // Initialise select2
-    $('.select2').select2();
+    $(".select2").select2();
     $(".select2-token-select").select2({
         tags: true,
-        tokenSeparators: [',']
+        tokenSeparators: [","]
     });
 
-    currentUrl = window.location.toString();
+    var currentUrl = window.location.toString();
     if (currentUrl.endsWith("#counts")) {
         $("#counts-tab").click();
     }
@@ -36,6 +35,8 @@ $('document').ready(function() {
     repopulateSelect("#id_target_organism", "#target-organisms-to-add");
 });
 
+
+
 // Ajax for markdown field preview
 $("#preview-abstract").click(function (e) {
     // First get whatever is in the form and send an ajax request
@@ -44,19 +45,21 @@ $("#preview-abstract").click(function (e) {
     $.ajax({
         url: window.location.pathname,
         type: "GET",
-        data: { 'abstract_text': abstract },
+        data: { "abstractText": abstract, "markdown": true},
         dataType: "json",
         success: function (data) {
-            abstract = data['abstract_text'];
-            $("#abstract-markdown-modal .modal-body").text("");
-            $("#abstract-markdown-modal .modal-body").append(abstract);
+            abstract = data.abstractText;
+            $("#abstract-markdown-modal .modal-body")
+                .text("")
+                .append(abstract);
         },
-        error : function(xhr,errmsg,err) {
+        error : function(xhr, errmsg, err) {
             console.log(xhr.status + ": " + xhr.responseText);
         }
     });
     return true;
 });
+
 $("#preview-method").click(function (e) {
     // First get whatever is in the form and send an ajax request
     // to convert it to markdown.
@@ -64,13 +67,13 @@ $("#preview-method").click(function (e) {
     $.ajax({
         url: window.location.pathname,
         type: "GET",
-        data: { 'method_text': method },
+        data: { "methodText": method, "markdown": true },
         dataType: "json",
         success: function (data) {
-            console.log(data)
-            method = data['method_text'];
-            $("#method-markdown-modal .modal-body").text("");
-            $("#method-markdown-modal .modal-body").append(method);
+            method = data.methodText;
+            $("#abstract-markdown-modal .modal-body")
+                .text("")
+                .append(method);
         },
         error : function(xhr,errmsg,err) {
             console.log(xhr.status + ": " + xhr.responseText);
@@ -79,16 +82,15 @@ $("#preview-method").click(function (e) {
     return true;
 });
 
-
 // Re-add any external_accession, keywords or target organism
 // back to failed form submission
 function repopulateSelect(selectId, listId) {
-    ls = $(listId).text();
+    var ls = $(listId).text();
     if (ls !== undefined) {
-        ls = ls.trim().split(',');
+        ls = ls.trim().split(",");
         $.each(ls, function (index, value) {
             if (value !== "") {
-                $(selectId).append($('<option/>', {
+                $(selectId).append($("<option/>", {
                     value: value,
                     text: value,
                     selected: true
@@ -99,128 +101,14 @@ function repopulateSelect(selectId, listId) {
 }
 
 
-// Pagination submission
-// dataType: 'scores', 'counts' or 'search'
-// selectObj: select object
-function paginationSubmit(dataType, clickedLink) {
-    var scoresSelect = $("#scores-per-page-select")[0];
-    var countsSelect = $("#counts-per-page-select")[0];
-    var searchSelect = $("#per-page-select")[0];
-
-    var scoresPageLink = $(".scores-active")[0];
-    var countsPageLink = $(".counts-active")[0];
-    var searchPageLink = $(".search-active")[0];
-
-    var scoresPageNum;
-    var countsPageNum;
-    var searchPageNum;
-    if (scoresPageLink !== undefined) {
-        scoresPageNum = parseInt(scoresPageLink.innerHTML);
-    }
-    if (countsPageLink !== undefined) {
-        countsPageNum = parseInt(countsPageLink.innerHTML);
-    }
-    if (searchPageLink !== undefined) {
-        searchPageNum = parseInt(searchPageLink.innerHTML);
-    }
-
-    if (clickedLink !== undefined) {
-        var nextPageNum;
-        var previousPageNum;
-        if (clickedLink.childNodes[1] !== undefined) {
-            nextPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
-            previousPageNum = parseInt(clickedLink.childNodes[1].innerHTML);
-        }
-
-        if (dataType === "scores") {
-            scoresPageNum = parseInt(clickedLink.innerHTML);
-            if (nextPageNum !== undefined) {
-                scoresPageNum = nextPageNum;
-            }
-            else if (previousPageNum !== undefined) {
-                scoresPageNum = previousPageNum;
-            }
-        }
-        else if (dataType === "counts") {
-            countsPageNum = parseInt(clickedLink.innerHTML);
-            if (nextPageNum !== undefined) {
-                countsPageNum = nextPageNum;
-            }
-            else if (previousPageNum !== undefined) {
-                countsPageNum = previousPageNum;
-            }
-        }
-        else if (dataType === "search") {
-            searchPageNum = parseInt(clickedLink.innerHTML);
-            if (nextPageNum !== undefined) {
-                searchPageNum = nextPageNum;
-            }
-            else if (previousPageNum !== undefined) {
-                searchPageNum = previousPageNum;
-            }
-        }
-    }
-
-    var scoresPerPage;
-    var countsPerPage;
-    var searchPerPage;
-    if (scoresSelect !== undefined) {
-        scoresPerPage = parseInt(
-            scoresSelect.options[scoresSelect.selectedIndex].value
-        );
-    }
-    if (countsSelect !== undefined) {
-        countsPerPage = parseInt(
-            countsSelect.options[countsSelect.selectedIndex].value
-        );
-    }
-    if (searchSelect !== undefined) {
-        searchPerPage = parseInt(
-            searchSelect.options[searchSelect.selectedIndex].value
-        );
-    }
-
-    var base = window.location.toString().split("#")[0].split("?")[0];
-    var url = base;
-    if (dataType !== "search") {
-        if (scoresPerPage !== undefined) {
-            url += "?scores-per-page=" + scoresPerPage;
-        }
-        if (countsPerPage !== undefined) {
-            url += "&counts-per-page=" + countsPerPage;
-        }
-        if (scoresPageNum !== undefined) {
-            url += "&scores-page=" + scoresPageNum;
-        }
-        if (countsPageNum !== undefined) {
-            url += "&counts-page=" + countsPageNum;
-        }
-        url += "#" + dataType;
-    }
-    else {
-        if (searchPerPage !== undefined) {
-            url += "?per-page=" + searchPerPage;
-        }
-        if (searchPageNum !== undefined) {
-            url += "&page=" + searchPageNum;
-        }
-    }
-
-    window.location.assign(url);
-    return false;
-}
-
-
 // Check Publish is ok with user
 $("#publish").click(function (event) {
     var saidYes = confirm(
-        'WARNING! Proceeding will freeze your upload and limit which fields can be edited. ' +
-        
-        'If this score set is part of a private experiment, this experiment ' +
-        'will also be published and frozen. ' + 
-        
-        'Please make sure you have read the documentation before proceeding. ' +
-        'This action cannot be undone. Would you like to proceed?'
+        "WARNING! Proceeding will freeze your upload and limit which fields " +
+        "can be edited. If this score set is part of a private experiment, " +
+        "this experiment will also be published and frozen. " +
+        "Please make sure you have read the documentation before proceeding." +
+        " This action cannot be undone. Would you like to proceed?"
     );
     return saidYes;
 });
@@ -228,18 +116,18 @@ $("#publish").click(function (event) {
 
 // Check management form submission
 // ----------------------------------------------------------------------- //
-// `userPk` is a global defined in base.html using Django's templating system.
+// `userPk` is a global defined in base.html using Django"s templating system.
 
 function askConfirmation() {
     var saidYes = confirm(
-        'This assignment will remove you as an administartor. If you ' +
-        'continue, you will no longer be able to access this page. ' +
-        'Are you sure?'
+        "This assignment will remove you as an administartor. If you " +
+        "continue, you will no longer be able to access this page. " +
+        "Are you sure?"
     );
     return saidYes;
 }
 
-function validate_admin_submit(e) {
+function validateAdminSubmit(e) {
     var aSelected = $("#admin-form > div > select option:selected");
     var aSelectedPks = aSelected.map(function() {
         return parseInt(this.value);
@@ -256,7 +144,7 @@ function validate_admin_submit(e) {
     return $("#admin-form").submit();
   }
 
-function validate_contrib_submit(e) {
+function validateContribSubmit(e) {
     var cSelected = $("#contrib-form > div > select option:selected");
     var cSelectedPks = cSelected.map(function() {
         return parseInt(this.value);
@@ -273,7 +161,7 @@ function validate_contrib_submit(e) {
     return $("#contrib-form").submit();
 }
 
-function validate_viewer_submit(e) {
+function validateViewerSubmit(e) {
     var vSelected = $("#viewer-form > div > select option:selected");
     var vSelectedPks = vSelected.map(function() {
         return parseInt(this.value);
@@ -289,3 +177,82 @@ function validate_viewer_submit(e) {
     }
     return $("#viewer-form").submit();
 }
+
+$("#id_target").on("change", function() {
+    // First get whatever is in the form and send an ajax request
+    // to convert it to markdown.
+    var id = this.value;
+    if (parseInt(id)) {
+        $.ajax({
+            url: window.location.pathname,
+            type: "GET",
+            data: {"targetId": id},
+            dataType: "json",
+            success: function (data) {
+                var targetName = data.targetName;
+                var wildTypeSequence = data.wildTypeSequence;
+                var referenceGenome = data.referenceGenome;
+                var isPrimary = data.isPrimary;
+                var intervalStart = data.intervalStart;
+                var intervalEnd = data.intervalEnd;
+                var chromosome = data.chromosome;
+                var strand = data.strand;
+
+                console.log(targetName);
+                console.log(wildTypeSequence);
+                console.log(referenceGenome);
+                console.log(isPrimary);
+                console.log(intervalStart);
+                console.log(intervalEnd);
+                console.log(chromosome);
+                console.log(strand);
+
+                if (targetName) {
+                    $("#id_name").val(targetName);
+                } else {
+                    $("#id_name").val("");
+                }
+                if (wildTypeSequence) {
+                    $("#id_wt_sequence").val(wildTypeSequence);
+                } else {
+                    $("#id_wt_sequence").val("");
+                }
+                if (referenceGenome) {
+                    $("#id_genome").val(referenceGenome);
+                } else {
+                    $("#id_genome").val("");
+                }
+                if (isPrimary) {
+                    $("#id_is_primary").prop('checked', isPrimary);
+                } else {
+                    $("#id_is_primary").prop('checked', false);
+                }
+                if (intervalStart) {
+                    $("#id_start").val(intervalStart);
+                } else {
+                    $("#id_start").val("");
+                }
+                if (intervalEnd) {
+                    $("#id_end").val(intervalEnd);
+                } else {
+                    $("#id_end").val("");
+                }
+                if (chromosome) {
+                    $("#id_chromosome").val(chromosome);
+                } else {
+                    $("#id_chromosome").val("");
+                }
+                if (strand) {
+                    $("#id_strand").val(strand);
+                } else {
+                    $("#id_strand").val('F');
+                }
+            },
+            error: function (xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+        return true;
+    }
+    return false;
+});

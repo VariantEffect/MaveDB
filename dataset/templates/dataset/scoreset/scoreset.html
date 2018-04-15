@@ -2,9 +2,9 @@
 
 {% block target %}
   <h2 id="target" class="underline left-align section-heading"> Target </h2>
-  <p><strong>Target:</strong> {{ instance.parent.target }}</p>
-  <p><strong>Wildtype Sequence:</strong> {{ instance.parent.wt_sequence }}</p>
-  <p><strong>Target Organism:</strong> {{ instance.parent.get_target_organism_name|default:"Unspecified" }}</p>
+  <p><strong>Target:</strong> {{ instance.target }}</p>
+  <p><strong>Wildtype Sequence:</strong> {{ instance.target.get_wt_sequence }}</p>
+  <p><strong>Target Organism:</strong> {{ instance.target.get_reference_genomes.first.format_species_name_html|default:"Unspecified"|safe }}</p>
 {% endblock %}
 
 {% block child_list %}

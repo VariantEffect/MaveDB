@@ -2,15 +2,14 @@
 ----------------------------------- */
 * {
     font-family: 'Raleway', sans-serif !important;
-    border-radius: 0px !important;
+    border-radius: 0 !important;
     /* border: 1px solid red !important; */
 }
 
 * {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
-    -ms-box-sizing: border-box;
-    box-sizing: border-box;
+;    box-sizing: border-box;
 }
 
 body {
@@ -63,8 +62,7 @@ a {
     text-decoration: none !important;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
-    -ms-transition: 0.5s;
-    transition: color 0.5s ease-in-out, 
+    transition: color 0.5s ease-in-out;
 }
 a:hover {
     color: #222 !important;
@@ -73,8 +71,7 @@ a:hover {
 .nav-item > a {
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
-    -ms-transition: 0.5s;
-    transition: color 0.5s ease-in-out, 
+    transition: color 0.5s ease-in-out,
                 border-top-color 0.5s ease-in-out,
                 border-bottom-color 0.5s ease-in-out;
     border-top: 1px solid transparent;
@@ -100,7 +97,7 @@ table {
 .numeric-container,
 .table-container {
     border: 2px solid #AFC8FA;
-    padding: 0px 0.25px 0.25px 1px;
+    padding: 0 0.25px 0.25px 1px;
     display: block;
     overflow-x: auto;
     white-space: nowrap;
@@ -228,7 +225,7 @@ table {
     }
     .sidebar {
         min-height: auto !important;
-        border: 0px !important;
+        border: 0 !important;
     }
 } 
 
@@ -236,8 +233,7 @@ table {
     color: #222 !important;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
-    -ms-transition: 0.5s;
-    transition: color 0.5s ease-in-out, 
+    transition: color 0.5s ease-in-out;
 }
 
 .toc-link:hover {
@@ -272,7 +268,7 @@ table {
 }
 .pagination > li > a.start {
     border: 1px solid #999999;
-    border-right: 0px solid #999999;
+    border-right: 0 solid #999999;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
 }
@@ -293,7 +289,6 @@ table {
     
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
-    -ms-transition: 0.5s;
     transition: color 0.5s ease-in-out
 }
 .pagination > li > a:hover {
@@ -385,7 +380,7 @@ table {
     margin-top:20px;
 }
 .urn-item-link {
-    display: black;
+    display: block;
 }
 
 
@@ -396,7 +391,6 @@ table {
     border-color: black;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;
-    -ms-transition: 0.5s;
     transition: border-color 0.1s ease-in-out
 }
 
@@ -420,6 +414,5 @@ table {
     color: lightslategray !important;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;
-    -ms-transition: 0.5s;
     transition: color 0.1s ease-in-out
 }
