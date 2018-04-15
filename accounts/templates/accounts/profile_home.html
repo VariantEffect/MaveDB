@@ -14,7 +14,9 @@
 
         <div class="entry-card hover-card">
           <div style="display: inline-flex">
-            <li> <a href="{% url 'accounts:view_instance' instance.urn %}">{{instance.urn}}</a> </li>
+            <li> <a href="{% url 'accounts:view_instance' instance.urn %}">
+              {{instance.urn}}</a>
+            </li>
             <li style="padding-left:10px;"><b>&middot;</b></li>
 
             {% if request.user in instance.administrators %}
@@ -54,7 +56,9 @@
 			{% endfor %}
 		</ul>
 	{% else %}
-		<p class="text-muted"> You are not an administrator/contributor on any entries </p>
+		<p class="text-muted">
+      You are not an administrator/contributor on any entries
+    </p>
 	{% endif %}
 	<hr>
 </div>
@@ -68,7 +72,9 @@
 
         <div class="entry-card hover-card">
           <div style="display: inline-flex">
-            <li> <a href="{% url 'accounts:view_instance' instance.urn %}">{{instance.urn}}</a> </li>
+            <a href="{% url 'accounts:view_instance' instance.urn %}">
+              {{instance.urn}}
+            </a>
           </div>
 
           <!-- Information -->
@@ -76,7 +82,7 @@
             <li>
               <div style="display: inline-flex">
                 <label style="margin-right:5px;">Last edited on: </label>
-                <div>{{ instance.last_edit_date }}<div>
+                <div>{{ instance.last_edit_date }}</div>
               </div>
             </li>
             <li>

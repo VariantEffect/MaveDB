@@ -27,24 +27,28 @@
 		<div id="sra_identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
     <div id="doi_identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
     <div id="pubmed_identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
-		<div id="target-organisms-to-add" hidden>{{ repop_target_organism }}</div>
 
 		<form id="edit-form"
 					action="{% url 'accounts:edit_instance' instance.urn %}" 
 					method="post" enctype="multipart/form-data">
 			{% csrf_token %}
-			{% if edit_form.non_field_errors %}
-				<div class="alert alert-danger alert-dismissible fade show" role="alert">
-					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>	
-					<h4> Oh no! </h4>
-					<p> There were some errors with your submission </p>
-					<hr>
-					<p>{{ edit_form.non_field_errors }}</p>
-				</div>
+
+      {% if edit_form.non_field_errors or target_form.non_field_errors or annotation_form.non_field_errors or interval_formset.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4> Oh no! </h4>
+          <p> There were some errors with your submission </p>
+          <hr>
+          <p>{{ edit_form.non_field_errors }}</p>
+          <p>{{ target_form.non_field_errors }}</p>
+          <p>{{ annotation_form.non_field_errors }}</p>
+          <p>{{ interval_formset.non_field_errors }}</p>
+        </div>
 			{% endif %}
-			{% for field in edit_form %}
+
+      {% for field in edit_form %}
 				<div class="form-group">
 					<label for="{{ field.id_for_label }}">
 						{{ field.label }}{% if field.field.required %}*{% endif %}
@@ -100,66 +104,154 @@
 				</div>
 			{% endfor %}
 
-			{% if experiment and instance.private %}
-				<!-- Formset rendering -->
-				<hr>
-				<div class="reference_mapping-forms">
-					<h4> Reference maps 
-						<input class="btn btn-sm btn-outline-dark" type="button" value="+" id="add_reference_mapping">
-						<input class="btn btn-sm btn-outline-dark" type="button" value="-" id="remove_reference_mapping">
-					</h4>
-					<div id="reference_mapping-form-set">
-						{{ reference_mapping_formset.management_form }}
-						<div id='reference_mapping-empty-set' style="display:none;">
-							<p>I'll add reference maps later.<p><hr>
-						</div>
-						{% for form in reference_mapping_formset %}
-							<div id="reference_mapping-formset-{{ forloop.counter }}">
-								{% for field in form %}
-									<div class="form-group">
-										<label for="{{ field.id_for_label }}">
-											{{ field.label }}{% if field.field.required %}*{% endif %}
-										</label>
-										{% if field.errors %}
-											<div class="alert alert-danger alert-dismissible fade show" role="alert">
-												<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-													<span aria-hidden="true">&times;</span>
-												</button>	
-												{{ field.errors }}
-											</div>
-										{% endif %}
-										<br>
-										{{ field }}
-									</div>
-								{% endfor %}
-							<hr>
-							</div>
-						{% endfor %}
-					</div>
-				</div> <!-- End formset rendering -->			
-				
-				<!-- Empty formset for add/minus buttons -->
-				<div id="reference_mapping-empty-form" style="display:none">
-					{% for field in reference_mapping_formset.empty_form %}
-						<div class="form-group">
-							<label for="{{ field.id_for_label }}">
-								{{ field.label }}{% if field.field.required %}*{% endif %}
-							</label>
-							{% if field.errors %}
-								<div class="alert alert-danger alert-dismissible fade show" role="alert">
-									<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-										<span aria-hidden="true">&times;</span>
-									</button>		
-									{{ field.errors }}
-								</div>
-							{% endif %}
-							<br>
-							{{ field }}
-						</div>
-					{% endfor %}
-				</div>
-				<br>
-			{% endif %}
+      {% if instance.private and instance.class_name == 'scoreset' %}
+        <hr>
+        <div class="model-form">
+          <h3>Target Gene</h3>
+          {% for field in target_form %}
+            <div class="form-group">
+              <label for="{{ field.id_for_label }}">
+                {{ field.label }}{% if field.field.required %}*{% endif %}
+              </label>
+              {% if field.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                  {{ field.errors }}
+                </div>
+              {% endif %}
+              <br>
+              {{ field }}
+            </div>
+          {% endfor %}
+
+          <hr>
+          <h4>Reference</h4>
+            {% for field in annotation_form %}
+              <div class="form-group">
+                <label for="{{ field.id_for_label }}" style="padding-right:10px">
+                  {{ field.label }}{% if field.field.required %}*{% endif %}
+                </label>
+                {% if field.errors %}
+                  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                    {{ field.errors }}
+                  </div>
+                {% endif %}
+                <br>
+                {{ field }}
+              </div>
+            {% endfor %}
+          <hr>
+
+          <h5>Annotations</h5>
+          <table class="table">
+            {% if interval_form.non_field_errors %}
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+                {{ interval_form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <thead>
+            <tr>
+              {% for field in interval_form.visible_fields %}
+                  <th>{{ field.label|capfirst }}{% if field.field.required %}*{% endif %}</th>
+              {% endfor %}
+            </tr>
+            </thead>
+
+            <tr class="formset_row">
+              {% for field in interval_form.visible_fields %}
+                <td>
+                  {# Include the hidden fields in the form #}
+                  {% if forloop.first %}
+                      {% for hidden in interval_form.hidden_fields %}
+                          {{ hidden }}
+                      {% endfor %}
+                  {% endif %}
+                  {% if field.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                      {{ field.errors.as_ul }}
+                    </div>
+                  {% endif %}
+                  {{ field }}
+                </td>
+              {% endfor %}
+            </tr>
+          </table>
+        </div>
+        <hr>
+      {% endif %}
+
+{#			{% if experiment and instance.private %}#}
+{#				<!-- Formset rendering -->#}
+{#				<hr>#}
+{#				<div class="reference_mapping-forms">#}
+{#					<h4> Reference maps #}
+{#						<input class="btn btn-sm btn-outline-dark" type="button" value="+" id="add_reference_mapping">#}
+{#						<input class="btn btn-sm btn-outline-dark" type="button" value="-" id="remove_reference_mapping">#}
+{#					</h4>#}
+{#					<div id="reference_mapping-form-set">#}
+{#						{{ reference_mapping_formset.management_form }}#}
+{#						<div id='reference_mapping-empty-set' style="display:none;">#}
+{#							<p>I'll add reference maps later.<p><hr>#}
+{#						</div>#}
+{#						{% for form in reference_mapping_formset %}#}
+{#							<div id="reference_mapping-formset-{{ forloop.counter }}">#}
+{#								{% for field in form %}#}
+{#									<div class="form-group">#}
+{#										<label for="{{ field.id_for_label }}">#}
+{#											{{ field.label }}{% if field.field.required %}*{% endif %}#}
+{#										</label>#}
+{#										{% if field.errors %}#}
+{#											<div class="alert alert-danger alert-dismissible fade show" role="alert">#}
+{#												<button type="button" class="close" data-dismiss="alert" aria-label="Close">#}
+{#													<span aria-hidden="true">&times;</span>#}
+{#												</button>	#}
+{#												{{ field.errors }}#}
+{#											</div>#}
+{#										{% endif %}#}
+{#										<br>#}
+{#										{{ field }}#}
+{#									</div>#}
+{#								{% endfor %}#}
+{#							<hr>#}
+{#							</div>#}
+{#						{% endfor %}#}
+{#					</div>#}
+{#				</div> <!-- End formset rendering -->			#}
+{#				#}
+{#				<!-- Empty formset for add/minus buttons -->#}
+{#				<div id="reference_mapping-empty-form" style="display:none">#}
+{#					{% for field in reference_mapping_formset.empty_form %}#}
+{#						<div class="form-group">#}
+{#							<label for="{{ field.id_for_label }}">#}
+{#								{{ field.label }}{% if field.field.required %}*{% endif %}#}
+{#							</label>#}
+{#							{% if field.errors %}#}
+{#								<div class="alert alert-danger alert-dismissible fade show" role="alert">#}
+{#									<button type="button" class="close" data-dismiss="alert" aria-label="Close">#}
+{#										<span aria-hidden="true">&times;</span>#}
+{#									</button>		#}
+{#									{{ field.errors }}#}
+{#								</div>#}
+{#							{% endif %}#}
+{#							<br>#}
+{#							{{ field }}#}
+{#						</div>#}
+{#					{% endfor %}#}
+{#				</div>#}
+{#				<br>#}
+{#			{% endif %}#}
 
 			<div style="width:100%;margin-top:5px;">
 				<input class="btn btn-outline-dark" type="submit" value="Save" name="save"
