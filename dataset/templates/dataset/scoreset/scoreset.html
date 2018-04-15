@@ -2,7 +2,7 @@
 
 {% block target %}
   <h2 id="target" class="underline left-align section-heading"> Target </h2>
-  <p><strong>Target:</strong> {{ instance.target }}</p>
+  <p><strong>Target:</strong> {{ instance.target.get_name }}</p>
   <p><strong>Wildtype Sequence:</strong> {{ instance.target.get_wt_sequence }}</p>
   <p><strong>Target Organism:</strong> {{ instance.target.get_reference_genomes.first.format_species_name_html|default:"Unspecified"|safe }}</p>
 {% endblock %}
