@@ -199,19 +199,26 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
     keywords = models.ManyToManyField(
-        Keyword, blank=True, verbose_name='Keywords')
+        Keyword, blank=True,
+        verbose_name='Keywords', related_name='%(class)s',)
     sra_ids = models.ManyToManyField(
-        SraIdentifier, blank=True, verbose_name='SRA Identifiers')
+        SraIdentifier, blank=True,
+        verbose_name='SRA Identifiers', related_name='%(class)ss',)
     doi_ids = models.ManyToManyField(
-        DoiIdentifier, blank=True, verbose_name='DOI Identifiers')
+        DoiIdentifier, blank=True,
+        verbose_name='DOI Identifiers', related_name='%(class)ss',)
     pmid_ids = models.ManyToManyField(
-        PubmedIdentifier, blank=True, verbose_name='PubMed Identifiers')
+        PubmedIdentifier, blank=True,
+        verbose_name='PubMed Identifiers', related_name='%(class)ss',)
     refseq_ids = models.ManyToManyField(
-        RefseqIdentifier, blank=True, verbose_name='RefSeq Identifiers')
+        RefseqIdentifier, blank=True,
+        verbose_name='RefSeq Identifiers', related_name='%(class)ss',)
     ensembl_ids = models.ManyToManyField(
-        EnsemblIdentifier, blank=True, verbose_name='Ensembl Identifiers')
+        EnsemblIdentifier, blank=True,
+        verbose_name='Ensembl Identifiers', related_name='%(class)ss',)
     uniprot_ids = models.ManyToManyField(
-        UniprotIdentifier, blank=True, verbose_name='UniProt Identifiers')
+        UniprotIdentifier, blank=True,
+        verbose_name='UniProt Identifiers', related_name='%(class)ss',)
 
     # ---------------------------------------------------------------------- #
     #                       Methods

@@ -159,21 +159,26 @@ class ScoreSet(DatasetModel):
             self.save()
 
     def get_target(self):
+        if not hasattr(self, 'target'):
+            return None
         return self.target
 
     # JSON field related methods
     # ---------------------------------------------------------------------- #
+    def _add_hgvs(self, ls):
+        return [constants.hgvs_column] + ls
+
     @property
     def score_columns(self):
-        return self.dataset_columns[constants.score_columns]
+        return self._add_hgvs(self.dataset_columns[constants.score_columns])
 
     @property
     def count_columns(self):
-        return self.dataset_columns[constants.count_columns]
+        return self._add_hgvs(self.dataset_columns[constants.count_columns])
 
     @property
     def metadata_columns(self):
-        return self.dataset_columns[constants.metadata_columns]
+        return self._add_hgvs(self.dataset_columns[constants.metadata_columns])
 
     @property
     def has_score_dataset(self):

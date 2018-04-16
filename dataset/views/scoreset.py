@@ -1,6 +1,5 @@
 import json
 from braces.views import AjaxResponseMixin, LoginRequiredMixin
-from formtools.wizard.views import WizardView
 
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseRedirect
@@ -18,9 +17,10 @@ from core.utilities.versioning import (
     save_and_create_revision_if_tracked_changed
 )
 
-from genome.models import TargetGene, Annotation, Interval, ReferenceGenome
+from genome.models import TargetGene
 from genome.forms import (
-    IntervalForm, TargetGeneForm, AnnotationForm, AnnotationIntervalFormSet
+    IntervalForm, TargetGeneForm, AnnotationForm,
+    AnnotationFormSet, IntervalFormSet
 )
 
 from dataset import constants as constants
@@ -73,12 +73,9 @@ class ScoreSetDetailView(DetailView):
         instance = self.get_object()
         variants = instance.children.all().order_by("hgvs")[:10]
         context["variants"] = variants
-        context["score_columns"] = \
-            instance.dataset_columns[constants.score_columns]
-        context["counts_columns"] = \
-            instance.dataset_columns[constants.count_columns]
-        context["metadata_columns"] = \
-            instance.dataset_columns[constants.metadata_columns]
+        context["score_columns"] = instance.score_columns
+        context["count_columns"] = instance.count_columns
+        context["metadata_columns"] = instance.metadata_columns
         return context
 
 
@@ -123,11 +120,11 @@ def scoreset_create_view(request, experiment_urn=None):
             try:
                 targetgene = TargetGene.objects.get(pk=target_id)
                 annotation = targetgene.get_annotations().first()
-                genome = annotation.get_genome()
+                genome = annotation.get_reference_genome()
                 interval = annotation.get_intervals().first()
                 data = {
                     'targetName': targetgene.get_name(),
-                    'wildTypeSequence': targetgene.get_wt_sequence(),
+                    'wildTypeSequence': targetgene.get_wt_sequence_string(),
                     'referenceGenome': genome.id,
                     'isPrimary': annotation.is_primary_annotation(),
                     'intervalStart': interval.get_start(),
@@ -135,7 +132,7 @@ def scoreset_create_view(request, experiment_urn=None):
                     'chromosome': interval.get_chromosome(),
                     'strand': interval.get_strand()
                 }
-            except AttributeError as e:
+            except (AttributeError, ValueError) as e:
                 data = {}
         else:
             data = {
@@ -151,8 +148,6 @@ def scoreset_create_view(request, experiment_urn=None):
     if request.method == "POST":
         # Get the new keywords/urn/target org so that we can return
         # them for list repopulation if the form has errors.
-        print(request.POST)
-
         keywords = request.POST.getlist("keywords")
         keywords = [kw for kw in keywords if not is_null(kw)]
 
@@ -215,6 +210,7 @@ def scoreset_create_view(request, experiment_urn=None):
                 annotation.target = targetgene
                 annotation.save()
                 targetgene.scoreset = scoreset
+                targetgene.get_wt_sequence().save()
                 targetgene.save()
 
                 scoreset.set_created_by(user, propagate=False)

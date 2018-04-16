@@ -87,11 +87,11 @@ def experiment_create_view(request):
     # here might break the javascript code.
     if request.is_ajax():
         data = dict()
-        data['abstract_text'] = convert_md_to_html(
-            request.GET.get("abstract_text", "")
+        data['abstractText'] = convert_md_to_html(
+            request.GET.get("abstractText", "")
         )
-        data['method_text'] = convert_md_to_html(
-            request.GET.get("method_text", "")
+        data['methodText'] = convert_md_to_html(
+            request.GET.get("methodText", "")
         )
         return HttpResponse(json.dumps(data), content_type="application/json")
 

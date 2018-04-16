@@ -1,6 +1,5 @@
 from django.db import models, transaction
 from django.db.models import QuerySet
-from django.utils.translation import ugettext_lazy as _
 
 from core.models import TimeStampedModel
 from metadata.models import (
@@ -20,13 +19,22 @@ class TargetGene(TimeStampedModel):
     and a collection of annotations relating the gene to reference genomes,
     which can be from different species.
 
+    The fields `wt_sequence` and `scoreset` are allowed
+    to be saved as `None` to allow complex form handling but this *should*
+    be transient within the view-validate-commit form upload loop.
+
     Parameters
     ----------
-    wt_sequence : :class:`models.ForeignKey`
+    wt_sequence : `models.OneToOneField`
         An instance of :class:`WildTypeSequence` defining the wildtype sequence
         of this target gene.
 
-    name : :class:`models.CharField`
+    scoreset : `models.OneToOneField`
+        One to one relationship associating this target with a scoreset. If
+        this scoreset is deleted, the target and associated annotations/intervals
+        will also be deleted.
+
+    name : `models.CharField`
         The name of the target gene.
     """
     class Meta:
@@ -35,7 +43,10 @@ class TargetGene(TimeStampedModel):
         verbose_name_plural = "Target Genes"
 
     def __str__(self):
-        return '{} | {}'.format(self.name, self.get_scoreset_urn())
+        if self.get_scoreset_urn() is None:
+            return self.name
+        else:
+            return '{} | {}'.format(self.name, self.get_scoreset_urn())
 
     name = models.CharField(
         blank=False,
@@ -43,7 +54,7 @@ class TargetGene(TimeStampedModel):
         default=None,
         verbose_name='Target name',
         max_length=256,
-        validators=[validate_gene_name]
+        validators=[validate_gene_name],
     )
 
     scoreset = models.OneToOneField(
@@ -51,63 +62,174 @@ class TargetGene(TimeStampedModel):
         on_delete=models.CASCADE,
         null=True,
         default=None,
-        related_name='target'
+        related_name='target',
     )
 
-    wt_sequence = models.ForeignKey(
+    wt_sequence = models.OneToOneField(
         to='genome.WildTypeSequence',
         blank=True,
         null=True,
         default=None,
-        verbose_name='Wildtype Sequence'
+        verbose_name='Wild-type Sequence',
+        related_name='attached_target',
     )
 
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        if hasattr(self, '_previous_wt_sequence'):
+            if self._previous_wt_sequence is not None:
+                WildTypeSequence.objects.get(
+                    pk=self._previous_wt_sequence).delete()
+                self._previous_wt_sequence = None
+        super().save(*args, **kwargs)
+
     def get_name(self):
+        """
+        Returns the string name of this target.
+
+        Returns
+        -------
+        `str`
+            The name of this target.
+        """
         return self.name
 
     def get_scoreset_urn(self):
+        """
+        Returns the URN of the associated :class:`dataset.models.scoreset.ScoreSet`
+        if it exists, otherwise None.
+
+        Returns
+        -------
+        `str`, optional.
+            URN or None if no scoreset is attached.
+        """
         if self.scoreset:
             return self.scoreset.urn
 
-    def has_wt_sequence(self):
-        """Returns True if a wt_sequence instance has been associated."""
-        return hasattr(self, 'wt_sequence') and self.wt_sequence is not None
+    def get_wt_sequence_string(self):
+        """
+        Returns the wildtype sequence of nucleotides of the associated
+        :class:`WildTypeSequence` if it exists, otherwise None.
 
-    def get_wt_sequence(self):
-        if self.has_wt_sequence():
+        Returns
+        -------
+        `str`, optional.
+            Wild-type sequence string or None if no instance is attached.
+        """
+        if self.wt_sequence:
             return self.wt_sequence.get_sequence()
 
+    def get_wt_sequence(self):
+        """
+        Returns the :class:`WildTypeSequence` instance if it exists,
+        otherwise None.
+
+        Returns
+        -------
+        :class:`WildTypeSequence`, optional.
+            Wild-type sequence string or None if no instance is attached.
+        """
+        return self.wt_sequence
+
     def set_wt_sequence(self, sequence):
-        if not isinstance(sequence, WildTypeSequence):
-            raise TypeError("Found {}, expected {}.".format(
+        """
+        Sets the `wt_sequence` instance to `sequence`. Saving these changes
+        is the responsibility of the caller.
+
+        Parameters
+        ----------
+        sequence : :class:`WildTypeSequence`
+            Associates this instance with the supplied :class:`WildTypeSequence`
+            instance.
+        """
+        if isinstance(sequence, WildTypeSequence):
+            if self.wt_sequence:
+                self._previous_wt_sequence = self.wt_sequence.pk
+            self.wt_sequence = sequence
+        elif isinstance(sequence, str):
+            validate_wildtype_sequence(sequence)
+            if self.wt_sequence is None:
+                raise AttributeError(
+                    "No wild-type sequence instance is attached.")
+            self.wt_sequence.sequence = sequence.upper()
+        else:
+            raise TypeError("Found {}, expected {} or str.".format(
                 type(sequence).__name__, WildTypeSequence.__name__
             ))
-        self.wt_sequence = sequence
 
     def annotation_count(self):
+        """
+        Returns the count of attached :class:`Annotation` instances.
+
+        Returns
+        -------
+        `int`
+            Count of attached :class:`Annotation` instances.
+        """
         return self.annotations.count()
 
-    def has_annotations(self):
-        return self.annotation_count() > 0
-
     def get_annotations(self):
+        """
+        Returns the `QuerySet` of attached :class:`Annotation` instances. This
+        may be empty.
+
+        Returns
+        -------
+        `QuerySet`
+            The set of attached :class:`Annotation` instances.
+        """
         return self.annotations.all()
 
     def get_reference_genomes(self):
+        """
+        Returns the :class:`ReferenceGenome` instances from the attached
+        :class:`Annotation` instances.
+
+        Returns
+        -------
+        `QuerySet`
+            A set of :class:`ReferenceGenome` instances extracted from
+            any attached :class:`Annotation` instances.
+        """
         genome_pks = set(a.genome.pk for a in self.get_annotations())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
 
     def reference_mapping(self):
+        """
+        Returns a serialised `dict` of all attached annotations. The keys
+        are the :class:`ReferenceGenome` names and the values are the serialised
+        :class:`Annotation` instances.
+
+        Returns
+        -------
+        `dict`
+            The serialsed :class:`Annotation` instances.
+        """
         return {
-            annotation.get_genome_name(): annotation.serialise()
+            annotation.get_reference_genome_name(): annotation.serialise()
             for annotation in self.get_annotations()
         }
 
     def serialise(self):
+        """Returns a serialised `dict` of this instance's fields. Recurses the
+        serialisation for relational fields.
+
+        The `dict` instance will have the keys:
+            - `name`
+            - `scoreset`
+            - `wt_sequence`
+            - `annotations`
+
+        Returns
+        -------
+        `dict`
+            The serialised data of this instance.
+        """
         return {
             'name': self.name,
-            'scoreset': self.scoreset.urn,
-            'wt_sequence': self.wt_sequence.get_sequence(),
+            'scoreset': None if not self.scoreset else self.scoreset.urn,
+            'wt_sequence': self.get_wt_sequence_string(),
             'annotations': [a.serialise() for a in self.annotations.all()]
         }
 
@@ -118,13 +240,21 @@ class Annotation(TimeStampedModel):
     are to be used to define how a :class:`TargetGene` maps to a particular
     reference genome.
 
+    The fields `genome` and `target` are allowed to be saved as `None` to allow
+    complex form handling but this *should* be transient within the
+    view-validate-commit form upload loop.
+
     Parameters
     ----------
-    genome : :class:`models.ForeignKey`
+    genome : `models.ForeignKey`
         The genome instance this annotation refers to.
 
-    target : `ForeignField`
+    target : `models.ForeignField`
         An instance of :class:`TargetGene` this instance is associated with.
+
+    is_primary : `models.BooleanField`
+        If True, indicates that this annotation refers to the genome from which
+        the associated `target` comes from.
     """
     class Meta:
         verbose_name = "Annotation"
@@ -132,7 +262,7 @@ class Annotation(TimeStampedModel):
 
     def __str__(self):
         return 'Annotation(genome={}, primary={})'.format(
-            self.get_genome_name(), self.is_primary_annotation())
+            self.get_reference_genome_name(), self.is_primary_annotation())
 
     genome = models.ForeignKey(
         to='genome.ReferenceGenome',
@@ -140,7 +270,7 @@ class Annotation(TimeStampedModel):
         null=True,
         default=None,
         verbose_name='Reference genome',
-        related_name='annotations'
+        related_name='annotations',
     )
 
     target = models.ForeignKey(
@@ -157,10 +287,10 @@ class Annotation(TimeStampedModel):
         blank=True,
         null=False,
         default=False,
-        verbose_name='Primary'
+        verbose_name='Primary',
     )
 
-    def get_target(self):
+    def get_target_gene(self):
         """
         Returns the target associated with this annotation otherwise None.
 
@@ -170,9 +300,16 @@ class Annotation(TimeStampedModel):
         """
         return self.target
 
-    def set_target(self, target):
+    def set_target_gene(self, target):
         """
-        Sets the target for this instnace.
+        Sets the target for this instnace. Saving changes is left as the
+        responsibility of the caller.
+
+        Parameters
+        ----------
+        target : :class:`TargetGene`
+            Associates this instance with the supplied :class:`TargetGene`
+            instance.
         """
         if not isinstance(target, TargetGene):
             raise TypeError("Found {}, expected {}.".format(
@@ -180,19 +317,28 @@ class Annotation(TimeStampedModel):
             ))
         self.target = target
 
-    def get_genome(self):
+    def get_reference_genome(self):
         """
-        Return the associated genome for this annotation.
+        Return the associated genome for this annotation if it exists.
 
         Returns
         -------
-        :class:`ReferenceGenome`
+        :class:`ReferenceGenome`, optional.
+            The :class:`ReferenceGenome` instance if one is attached, otherwise
+            `None`.
         """
         return self.genome
 
-    def set_genome(self, genome):
+    def set_reference_genome(self, genome):
         """
-        Set the reference genome to `value`
+        Set the reference genome to `genome`. Saving changes is left as the
+        responsibility of the caller.
+
+        Parameters
+        ----------
+        genome : :class:`ReferenceGenome`
+            Associates this instance with the supplied :class:`ReferenceGenome`
+            instance.
         """
         if not isinstance(genome, ReferenceGenome):
             raise TypeError("Found {}, expected {}.".format(
@@ -200,28 +346,40 @@ class Annotation(TimeStampedModel):
             ))
         self.genome = genome
 
-    def get_genome_name(self):
+    def get_reference_genome_name(self):
         """
         Return the string name of genome associated with this annotation.
         """
-        if self.get_genome():
-            return self.get_genome().get_short_name()
+        if self.get_reference_genome():
+            return self.get_reference_genome().get_short_name()
 
-    def get_genome_species(self):
+    def get_reference_genome_species(self):
         """
         Return the string species name of genome associated with this
         annotation.
-        """
-        if self.get_genome():
-            return self.get_genome().get_species_name()
 
-    def format_genome_species(self):
+        Returns
+        -------
+        `str`, optional.
+            The attached genome's species or None if there is no attached
+            genome.
+        """
+        if self.get_reference_genome():
+            return self.get_reference_genome().get_species_name()
+
+    def format_reference_genome_species_html(self):
         """
         Return a HTML string formatting the associated genomes species name
         using italics and capitalisation.
+
+        Returns
+        -------
+        `str`, optional.
+            Formats the species name by enclosing captialised name if
+            HTML italics tags. Use with `|safe` in templates.
         """
-        if self.get_genome():
-            return self.get_genome().format_species_name_html()
+        if self.get_reference_genome():
+            return self.get_reference_genome().format_species_name_html()
 
     def get_intervals(self):
         """
@@ -230,42 +388,52 @@ class Annotation(TimeStampedModel):
 
         Returns
         -------
-        :class:`QuerySet`
+        `QuerySet`
+            The `QuerySet` of intervals attached to this instance.
         """
         return self.intervals.all()
 
-    def has_intervals(self):
-        """
-        Returns True if this instance has associated intervals.
-        """
-        return self.get_intervals().count() > 0
-
     def set_is_primary(self, primary=True):
         """
-        Sets the primary status as `primary`.
+        Sets the primary status as `primary`. Saving changes is left as the
+        responsibility of the caller.
         """
         self.is_primary = primary
 
     def is_primary_annotation(self):
         """
         Returns True if the associated :class:`ReferenceGenome` is marked
-        as primary
+        as primary.
         """
         return self.is_primary
 
     def serialise(self):
+        """
+        Returns a serialised `dict` of this instance's fields. Recurses the
+        serialisation for relational fields.
+
+        The `dict` instance will have the keys:
+            - `primary`
+            - `reference`
+            - `intervals`
+
+        Returns
+        -------
+        `dict`
+            The serialised data of this instance.
+        """
+        ref_genome = self.get_reference_genome()
         return {
             'primary': self.is_primary_annotation(),
-            'reference': self.get_genome().serialise(),
+            'reference_genome': None if not ref_genome else ref_genome.serialise(),
             'intervals': [i.serialise() for i in self.get_intervals()]
         }
 
 
 class ReferenceGenome(TimeStampedModel):
     """
-    The `ReferenceGenome` specifies fields describing a specific genome (name,
-    species, identifier) along with book-keeping fields such as a URL to
-    a `Ensembl` entry and a version/release descriptor.
+    The :class:`ReferenceGenome` specifies fields describing a specific genome
+    in terms of a short name, species and various external identifiers.
 
     Parameters
     ----------
@@ -295,7 +463,7 @@ class ReferenceGenome(TimeStampedModel):
         default=None,
         verbose_name='Name',
         max_length=256,
-        validators=[validate_genome_short_name]
+        validators=[validate_genome_short_name],
     )
     species_name = models.CharField(
         blank=False,
@@ -303,7 +471,7 @@ class ReferenceGenome(TimeStampedModel):
         default=None,
         verbose_name='Species',
         max_length=256,
-        validators=[validate_species_name]
+        validators=[validate_species_name],
     )
 
     # Potential ExternalIdentifiers that may be linked.
@@ -313,6 +481,7 @@ class ReferenceGenome(TimeStampedModel):
         null=True,
         default=None,
         verbose_name='Ensembl identifier',
+        related_name='attached_%(class)ss',
     )
     refseq_id = models.ForeignKey(
         to=RefseqIdentifier,
@@ -320,6 +489,7 @@ class ReferenceGenome(TimeStampedModel):
         null=True,
         default=None,
         verbose_name='RefSeq identifier',
+        related_name='attached_%(class)ss',
     )
 
     def get_identifier_url(self):
@@ -348,28 +518,97 @@ class ReferenceGenome(TimeStampedModel):
         return None
 
     def get_refseq_id(self):
+        """
+        Returns the :class:`RefseqIdentifier` if there is one attached,
+        otherwise `None`.
+
+        Returns
+        -------
+        :class:`RefseqIdentifier`, optional.
+            The :class:`RefseqIdentifier` identifier if one is attached,
+            otherwise None.
+        """
         return self.refseq_id
 
     def get_ensembl_id(self):
+        """
+        Returns the :class:`EnsemblIdentifier` if there is one attached,
+        otherwise `None`.
+
+        Returns
+        -------
+        :class:`EnsemblIdentifier`, optional.
+            The :class:`EnsemblIdentifier` identifier if one is attached,
+            otherwise None.
+        """
         return self.ensembl_id
 
     def get_short_name(self):
+        """
+        The short name identifier of this genome, usually following
+        the format <species_abbreviation><version> for example 'hg37'.
+
+        Returns
+        -------
+        `str`
+            The short name identifier of this genome, usually following
+            the format <species_abbreviation><version> for example 'hg37'.
+        """
         return self.short_name
 
     def get_species_name(self):
+        """
+        The scientific name of the species this genome comes from.
+
+        Returns
+        -------
+        `str`
+            The scientific species name.
+        """
         return self.species_name
 
     def format_species_name_html(self):
+        """
+        Return a HTML string formatting the associated genomes species name
+        using italics and capitalisation.
+
+        Returns
+        -------
+        `str`, optional.
+            Formats the species name by enclosing captialised name if
+            HTML italics tags. Use with `|safe` in templates.
+        """
         return "<i>{}</i>".format(self.get_species_name().capitalize())
 
     def serialise(self):
+        """
+        Returns a serialised `dict` of this instance's fields. Recurses the
+        serialisation for relational fields.
+
+        The `dict` instance will have the keys:
+            - `name`
+            - `species`
+            - `external_identifier`
+
+        Returns
+        -------
+        `dict`
+            The serialised data of this instance.
+        """
+        ensembl_id = self.get_ensembl_id()
+        refseq_id = self.get_refseq_id()
         return {
-            'name': self.get_short_name(),
-            'species': self.get_species_name(),
-            'external_identifier': {
-                'dbname': self.get_identifier_database(),
-                'identifier': self.get_identifier(),
-                'url': self.get_identifier_url()
+            'short_name': self.get_short_name(),
+            'species_name': self.get_species_name(),
+            'external_identifiers': {
+                'refseq': {
+                    'identifier': None if not refseq_id else refseq_id.identifier,
+                    'url': None if not refseq_id else refseq_id.url
+                },
+                'ensembl': {
+                    'identifier': None if not ensembl_id else ensembl_id.identifier,
+                    'url': None if not ensembl_id else ensembl_id.url
+                },
             },
         }
 
@@ -397,14 +636,14 @@ class Interval(TimeStampedModel):
         An annotation instance that this interval is associated with.
     """
     STRAND_CHOICES = (
-        ('F', 'Forward'),  # (database value, verbose value)
+        ('F', 'Forward'),  # (database value, verbose value used in UI)
         ('R', 'Reverse')
     )
 
     class Meta:
         ordering = ['start']
-        verbose_name = "Reference Interval"
-        verbose_name_plural = "Reference Intervals"
+        verbose_name = "Reference interval"
+        verbose_name_plural = "Reference intervals"
 
     def __str__(self):
         return (
@@ -415,9 +654,64 @@ class Interval(TimeStampedModel):
             )
         )
 
-    # Don't use __eq__ for Django models. This might break Django
+    start = models.PositiveIntegerField(
+        default=None,
+        null=False,
+        blank=False,
+        verbose_name='Start',
+        validators=[min_start_validator],
+    )
+    end = models.PositiveIntegerField(
+        default=None,
+        null=False,
+        blank=False,
+        verbose_name='End (inclusive)',
+        validators=[min_end_validator],
+    )
+    chromosome = models.CharField(
+        default=None,
+        null=False,
+        blank=False,
+        verbose_name='Chromosome identifier',
+        max_length=32,
+        validators=[validate_chromosome],
+    )
+    strand = models.CharField(
+        default=None,
+        null=False,
+        blank=False,
+        verbose_name='Strand',
+        choices=STRAND_CHOICES,
+        max_length=1,
+        validators=[validate_strand],
+    )
+    annotation = models.ForeignKey(
+        to=Annotation,
+        default=None,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='intervals',
+    )
+
+    # Don't overload the __eq__ for Django models. This might break Django
     # internals for forms/views etc.
     def equals(self, other):
+        """
+        Compares two intervals based on `start`, `end`, lowercase `chromosome`
+        and `strand`.
+
+        Parameters
+        ----------
+        other : :class:`Interval`
+            The interval to compare this instance to.
+
+        Returns
+        -------
+        `bool`
+            True if the intervals are the same based on `start`, `end`,
+            lowercase `chromosome` and `strand`.
+        """
         this = (
             self.start, self.end,
             self.chromosome.lower(), self.get_strand()
@@ -428,67 +722,101 @@ class Interval(TimeStampedModel):
         )
         return this == other
 
-    start = models.PositiveIntegerField(
-        default=None,
-        null=False,
-        blank=False,
-        verbose_name='Start',
-        validators=[min_start_validator]
-    )
-    end = models.PositiveIntegerField(
-        default=None,
-        null=False,
-        blank=False,
-        verbose_name='End (inclusive)',
-        validators=[min_end_validator]
-    )
-    chromosome = models.CharField(
-        default=None,
-        null=False,
-        blank=False,
-        verbose_name='Chromosome identifier',
-        max_length=32,
-        validators=[validate_chromosome]
-    )
-    strand = models.CharField(
-        default=None,
-        null=False,
-        blank=False,
-        verbose_name='Strand',
-        choices=STRAND_CHOICES,
-        max_length=1,
-        validators=[validate_strand]
-    )
-    annotation = models.ForeignKey(
-        to=Annotation,
-        default=None,
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name='intervals'
-    )
-
     def get_start(self, offset=0):
+        """
+        Returns the start index added to an `offset`.
+
+        Parameters
+        ----------
+        offset : `int`
+            The offset to add to the starting index.
+
+        Returns
+        -------
+        `int`
+            The start index added to the offset.
+        """
         return self.start + offset
 
     def get_end(self, offset=0):
+        """
+        Returns the end index added to an `offset`.
+
+        Parameters
+        ----------
+        offset : `int`
+            The offset to add to the starting index.
+
+        Returns
+        -------
+        `int`
+            The end index added to the offset.
+        """
         return self.end + offset
 
     def get_chromosome(self):
+        """
+        Returns the chromosome identifier this interval is specified for.
+
+        Returns
+        -------
+        `str`
+            Returns the chromosome identifier this interval is specified for.
+        """
         return self.chromosome
 
     def get_strand(self):
+        """
+        Returns the strand identifier this interval is specified for. Either
+        'F' for 'Forward' and 'R' for 'Reverse'.
+
+        Returns
+        -------
+        `str`
+            Returns 'F' for 'Forward' and 'R' for 'Reverse'.
+        """
         return self.strand.upper()
 
     def get_annotation(self):
-        if hasattr(self, 'annotation'):
-            return self.annotation
-        return None
+        """
+        Returns the :class:`Annotation` this instance is attached to, otherwise
+        `None`.
+
+        Returns
+        -------
+        :class:`Annotation`, optional.
+            The :class:`Annotation` this instance is attached to, otherwise
+            `None`.
+        """
+        return self.annotation
 
     def set_annotation(self, annotation):
+        """
+        Attaches this interval to `annotation`. Saving is the responsibility
+        of the user.
+
+        Parameters
+        ----------
+        annotation : :class:`Annotation`
+            The :class:`Annotation` to attach this interval to.
+        """
         self.annotation = annotation
 
     def serialise(self):
+        """
+        Returns a serialised `dict` of this instance's fields.
+
+        The `dict` instance will have the keys:
+            - `start`
+            - `end`
+            - `chromosome`
+            - `strand`
+
+        Returns
+        -------
+        `dict`
+            The serialised data of this instance.
+        """
         return {
             'start': self.get_start(),
             'end': self.get_end(),
@@ -508,8 +836,8 @@ class WildTypeSequence(TimeStampedModel):
         be converted to upper-case upon instantiation.
     """
     class Meta:
-        verbose_name = "Wild Type Sequence"
-        verbose_name_plural = "Wild Type Sequences"
+        verbose_name = "Wild-type sequence"
+        verbose_name_plural = "Wild-type sequences"
 
     def __str__(self):
         return self.get_sequence()
@@ -518,17 +846,36 @@ class WildTypeSequence(TimeStampedModel):
         default=None,
         blank=False,
         null=False,
-        verbose_name="Wildtype sequence",
+        verbose_name="Wild-type sequence",
         validators=[validate_wildtype_sequence],
     )
-
-    def get_sequence(self):
-        return self.sequence.upper()
 
     def save(self, *args, **kwargs):
         if self.sequence is not None:
             self.sequence = self.sequence.upper()
         super().save(*args, **kwargs)
 
+    def get_sequence(self):
+        """
+        Returns the nucleotide sequence.
+
+        Returns
+        -------
+        `str`
+            The nucleotide sequence.
+        """
+        return self.sequence.upper()
+
     def serialise(self):
+        """
+        Returns a serialised `dict` of this instance's fields.
+
+        The `dict` instance will have the keys:
+            - `sequence`
+
+        Returns
+        -------
+        `dict`
+            The serialised data of this instance.
+        """
         return {'sequence': self.get_sequence()}

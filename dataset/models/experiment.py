@@ -115,7 +115,10 @@ class Experiment(DatasetModel):
         return urn
 
     def get_targets(self):
-        target_pks = set([child.get_target().pk for child in self.children])
+        target_pks = set([
+            child.get_target().pk for child in self.children
+            if child.get_target()]
+        )
         return TargetGene.objects.filter(pk__in=target_pks)
 
     def get_target_names(self):

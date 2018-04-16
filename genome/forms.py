@@ -1,4 +1,5 @@
 from django import forms as forms
+from django.db import transaction
 from django.forms.models import (
     BaseInlineFormSet, modelformset_factory, inlineformset_factory,
     BaseModelFormSet, formset_factory
@@ -67,8 +68,12 @@ class TargetGeneForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         instance = kwargs.get('instance', None)
+        self.existing_wt_sequence = None
+        self.wt_sequence = None
         if instance:
-            self.fields['wt_sequence'].initial = instance.get_wt_sequence()
+            self.fields['wt_sequence'].initial = \
+                instance.get_wt_sequence_string()
+            self.existing_wt_sequence = instance.get_wt_sequence()
 
         self.set_target_gene_options()
 
@@ -97,18 +102,28 @@ class TargetGeneForm(forms.ModelForm):
                 pk__in=choices).order_by("name")
             self.fields["target"].queryset = targets_qs
 
+    @transaction.atomic
     def save(self, commit=True):
-        if commit:
-            self.wt_sequence.save()
-            self.instance.wt_sequence = self.wt_sequence
         instance = super().save(commit=commit)
+        if instance.get_wt_sequence():
+            instance.set_wt_sequence(self.wt_sequence)
+        else:
+            wt_sequence = WildTypeSequence(sequence=self.wt_sequence)
+            instance.set_wt_sequence(wt_sequence)
+
+        if commit:
+            instance.get_wt_sequence().save()
+            instance.save()
+
         return instance
 
     def clean(self):
         cleaned_data = super().clean()
         if not self.errors:
-            wt_sequence = cleaned_data['wt_sequence']
-            self.wt_sequence = WildTypeSequence(sequence=wt_sequence)
+            wt_sequence = cleaned_data.get('wt_sequence', None)
+            if not wt_sequence:
+                raise ValidationError("You must supply a wild-type sequence.")
+            self.wt_sequence = wt_sequence
         return cleaned_data
 
 
@@ -162,23 +177,14 @@ class AnnotationForm(forms.ModelForm):
             raise ValidationError("You must select a valid reference genome.")
         return genome
 
-    def save(self, commit=True):
-        genome = self.cleaned_data['genome']
-        instance = super().save(commit=commit)
-        instance.set_genome(genome)
-        instance.save()
-        return instance
 
-
-class AnnotationFormSet(BaseInlineFormSet):
+class BaseAnnotationFormSet(BaseModelFormSet):
     """
-    Formset for handling the case where you have parent-child-grandchild
-    relationship which needs to be repeated multiple times.
-
-    Example:
-        A target has multiple annotations and an annotation has multiple
-        intervals.
+    Formset for handling the validation of :class:`Annotation` instances
+    against each other.
     """
+    model = Annotation
+
     def has_errors(self):
         if isinstance(self.errors, list):
             return any(len(dict_) for dict_ in self.errors)
@@ -191,6 +197,12 @@ class AnnotationFormSet(BaseInlineFormSet):
             validate_at_least_one_annotation(annotations)
             validate_annotation_has_unique_reference_genome(annotations)
             validate_one_primary_annotation(annotations)
+
+
+AnnotationFormSet = modelformset_factory(
+    model=Annotation, form=AnnotationForm, formset=BaseAnnotationFormSet,
+    extra=5, can_delete=False, validate_min=1, min_num=1
+)
 
 
 # Interval
@@ -207,7 +219,7 @@ class IntervalForm(forms.ModelForm):
         self.field_order = ('start', 'end', 'chromosome', 'strand')
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.required = True
+            field.widget.required = False
             field.widget.attrs.update({'class': BOOTSTRAP_CLASS})
 
     def dummy_instance(self):
@@ -225,13 +237,19 @@ class IntervalForm(forms.ModelForm):
         if self.errors:
             return cleaned_data
         else:
-            start = cleaned_data['start']
-            end = cleaned_data['end']
+            start = cleaned_data.get('start', None)
+            end = cleaned_data.get('end', None)
+            chromosome = cleaned_data.get('chromosome', None)
+            strand = cleaned_data.get('strand', None)
+            if any([v is None for v in [start, end, chromosome, strand]]):
+                raise ValidationError(
+                    "You must specify all or no fields of an interval."
+                )
             validate_interval_start_lteq_end(start, end)
             return cleaned_data
 
 
-class IntervalFormSet(BaseModelFormSet):
+class BaseIntervalFormSet(BaseModelFormSet):
     """
     Formset which will validate multiple intervals against each other
     to ensure uniqueness.
@@ -247,7 +265,6 @@ class IntervalFormSet(BaseModelFormSet):
     def clean(self):
         if not self.has_errors():
             intervals = [form.dummy_instance() for form in self.forms]
-            print(intervals)
             if not intervals:
                 raise ValidationError(
                     "You must specify at least one interval for each "
@@ -256,7 +273,7 @@ class IntervalFormSet(BaseModelFormSet):
             validate_unique_intervals(intervals)
 
 
-AnnotationIntervalFormSet = formset_factory(
-    form=IntervalForm, formset=IntervalFormSet,
-    extra=0, min_num=1, validate_min=1, can_delete=False
+IntervalFormSet = modelformset_factory(
+    model=Interval, form=IntervalForm, formset=BaseIntervalFormSet,
+    extra=5, can_delete=False, validate_min=1, min_num=1
 )

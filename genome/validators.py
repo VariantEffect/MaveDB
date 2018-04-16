@@ -40,7 +40,9 @@ def validate_interval_start_lteq_end(start, end):
 
 def validate_interval_is_not_a_duplicate(interval, intervals):
     for existing in intervals:
-        if existing == interval:
+        if existing is interval:
+            continue
+        elif existing.equals(interval):
             raise ValidationError(
                 "You can not specify the same interval twice."
             )
@@ -63,7 +65,7 @@ def validate_unique_intervals(intervals):
         for interval2 in intervals:
             if interval1 is interval2:
                 continue
-            if interval1.equals(interval2):
+            elif interval1.equals(interval2):
                 raise ValidationError(
                     "You can not specify the same interval twice."
                 )
@@ -102,7 +104,7 @@ def validate_genome_short_name(value):
 # Annotation
 # ------------------------------------------------------------------------- #
 def validate_annotation_has_unique_reference_genome(annotations):
-    genomes = set([str(a.get_genome_name()).lower() for a in annotations])
+    genomes = set([str(a.get_reference_genome_name()).lower() for a in annotations])
     if len(genomes) < len(annotations):
         raise ValidationError(
             "Each target annotation must be for a different reference genome."
