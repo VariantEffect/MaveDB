@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'guardian',
     'reversion',
     'social_django',
+    'django_extensions',
 
     'django.contrib.admin',
     'django.contrib.auth',
