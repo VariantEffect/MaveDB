@@ -93,7 +93,8 @@ class ExperimentSerializer(Serializer):
             "targets": {
                 targetgene.get_name(): targetgene.serialise()
                 for targetgene in instance.get_targets()
-                if not (targetgene.scoreset.private and filter_private)
+                if (targetgene is not None) and \
+                   not (targetgene.scoreset.private and filter_private)
             },
             "contributors": instance.format_using_username(
                 group='editors', string=False
@@ -108,11 +109,12 @@ class ExperimentSerializer(Serializer):
         return add_metadata(dict_, instance)
 
     def serialize_set(self, queryset, filter_private=True):
-        return {
+        data = {
             "experiments": [
                 self.serialize(exp.pk, filter_private) for exp in queryset
             ]
         }
+        return data
 
 
 class ScoreSetSerializer(Serializer):
@@ -131,13 +133,14 @@ class ScoreSetSerializer(Serializer):
 
         previous_version = instance.previous_version
         previous_version = None if not previous_version else previous_version.urn
+        target = instance.get_target()
 
         dict_ = {
             "urn": instance.urn,
             "contributors": instance.format_using_username(
                 group='editors', string=False
             ),
-            'target': instance.get_target().serialise(),
+            'target': None if target is None else target.serialise(),
             "next_version": next_version,
             "previous_version": previous_version,
             "licence": [

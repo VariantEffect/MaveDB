@@ -1,7 +1,3 @@
-"""
-Views for accounts app.
-"""
-
 import re
 import logging
 import json
@@ -22,7 +18,8 @@ from dataset.forms.scoreset import ScoreSetEditForm, ScoreSetForm
 
 from genome.models import TargetGene
 from genome.forms import (
-    TargetGeneForm, AnnotationForm, IntervalForm, AnnotationIntervalFormSet
+    TargetGeneForm, AnnotationForm, IntervalForm,
+    IntervalFormSet, AnnotationFormSet
 )
 
 from urn.validators import (
@@ -32,8 +29,10 @@ from urn.validators import (
 )
 
 from core.utilities import is_null
-from core.utilities.versioning import save_and_create_revision_if_tracked_changed
 from core.utilities.pandoc import convert_md_to_html
+from core.utilities.versioning import (
+    save_and_create_revision_if_tracked_changed
+)
 
 from .permissions import (
     GroupTypes,
@@ -306,11 +305,11 @@ def handle_scoreset_edit_form(request, instance):
             try:
                 targetgene = TargetGene.objects.get(pk=target_id)
                 annotation = targetgene.get_annotations().first()
-                genome = annotation.get_genome()
+                genome = annotation.get_reference_genome()
                 interval = annotation.get_intervals().first()
                 data = {
                     'targetName': targetgene.get_name(),
-                    'wildTypeSequence': targetgene.get_wt_sequence(),
+                    'wildTypeSequence': targetgene.get_wt_sequence_string(),
                     'referenceGenome': genome.id,
                     'isPrimary': annotation.is_primary_annotation(),
                     'intervalStart': interval.get_start(),
