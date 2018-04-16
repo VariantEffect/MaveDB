@@ -26,14 +26,14 @@ class TestExperimentSetDetailView(TestCase):
 
     def test_private_instance_will_403_if_no_permission(self):
         user = UserFactory()
-        obj = ExperimentSetFactory()
+        obj = ExperimentSetFactory(private=True)
         request = self.factory.get('/experimentset/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 403)
 
     def test_403_uses_correct_template(self):
-        obj = ExperimentSetFactory()
+        obj = ExperimentSetFactory(private=True)
         response = self.client.get('/experimentset/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template_403)
 
@@ -47,7 +47,7 @@ class TestExperimentSetDetailView(TestCase):
 
     def test_private_experiment_rendered_if_user_can_view(self):
         user = UserFactory()
-        obj = ExperimentSetFactory()
+        obj = ExperimentSetFactory(private=True)
         assign_user_as_instance_viewer(user, obj)
         request = self.factory.get('/experimentset/{}/'.format(obj.urn))
         request.user = user

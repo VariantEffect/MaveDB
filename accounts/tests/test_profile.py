@@ -25,12 +25,8 @@ class TestUserProfile(TestCase):
     def setUp(self):
         self.exps_1 = ExperimentSet.objects.create()
         self.exps_2 = ExperimentSet.objects.create()
-        self.exp_1 = Experiment.objects.create(
-            target="test1", wt_sequence='atcg'
-        )
-        self.exp_2 = Experiment.objects.create(
-            target="test1", wt_sequence='atcg'
-        )
+        self.exp_1 = Experiment.objects.create()
+        self.exp_2 = Experiment.objects.create()
         self.scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
         self.scs_2 = ScoreSet.objects.create(experiment=self.exp_2)
 

@@ -10,7 +10,7 @@ from main.models import Licence
 import dataset.constants as constants
 from variant.factories import VariantFactory
 
-from ..models.scoreset import default_dataset
+from ..models.scoreset import default_dataset, ScoreSet
 from ..factories import ScoreSetFactory
 
 
@@ -64,7 +64,7 @@ class TestScoreSet(TestCase):
         self.assertEqual(obj.licence, Licence.get_default())
 
     def test_scoreset_not_approved_and_private_by_default(self):
-        scs = ScoreSetFactory()
+        scs = ScoreSet()
         self.assertFalse(scs.approved)
         self.assertTrue(scs.private)
 

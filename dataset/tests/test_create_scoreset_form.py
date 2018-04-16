@@ -51,6 +51,8 @@ class TestScoreSetForm(TestCase):
             experiment = ExperimentFactory()
             assign_user_as_instance_admin(self.user, experiment)
         data = {
+            'short_description': 'experiment',
+            'short_title': 'title',
             "experiment": experiment.pk if experiment else None,
         }
         s_file, c_file = make_score_count_files(score_data, count_data)

@@ -66,15 +66,15 @@ class TestDatasetModel(TestCase):
         instance.add_identifier(PubmedIdentifierFactory())
 
         self.assertEqual(instance.doi_ids.count(), 1)
-        instance.clear_doi_ids()
+        instance.doi_ids.clear()
         self.assertEqual(instance.doi_ids.count(), 0)
 
         self.assertEqual(instance.sra_ids.count(), 1)
-        instance.clear_sra_ids()
+        instance.sra_ids.clear()
         self.assertEqual(instance.sra_ids.count(), 0)
 
         self.assertEqual(instance.pmid_ids.count(), 1)
-        instance.clear_pubmed_ids()
+        instance.pmid_ids.clear()
         self.assertEqual(instance.pmid_ids.count(), 0)
 
     def test_propagate_set_value_propagates_to_parents(self):
@@ -87,6 +87,9 @@ class TestDatasetModel(TestCase):
 
     def test_save_can_propagate(self):
         instance = ScoreSetFactory()
+        instance.propagate_set_value('private', True)
+        instance.save(save_parents=True)
+
         instance.propagate_set_value('private', False)
         instance.save(save_parents=False)
 

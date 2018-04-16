@@ -12,6 +12,8 @@ from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
 
+from genome.factories import ReferenceGenomeFactory, IntervalFactory
+
 from ..factories import UserFactory, AnonymousUserFactory, ProfileFactory
 from ..permissions import (
     assign_user_as_instance_admin,
@@ -170,6 +172,8 @@ class TestProfileEditInstanceView(TestCase):
             'keywords': [''],
             'sra_ids': [''],
             'doi_ids': [''],
+            'short_description': ['a thing'],
+            'short_title': ['title'],
             'pmid_ids': [''],
             'submit': ['submit'],
             'publish': ['']
@@ -239,14 +243,33 @@ class TestProfileEditInstanceView(TestCase):
         self.assertFalse(obj.parent.private)
         self.assertFalse(obj.parent.parent.private)
 
-    def test_publishing_propagates_last_edit_by(self):
+    def test_publishing_propagates_modified_by(self):
         obj = ScoreSetFactory()
+        interval = IntervalFactory()
+        interval.annotation.target.scoreset = obj
+        interval.annotation.target.save()
+
+        ref = ReferenceGenomeFactory()
+
+        obj.propagate_set_value('private', True)
+        obj.save(save_parents=True)
+
         assign_user_as_instance_admin(self.user, obj)
         assign_user_as_instance_admin(self.user, obj.parent)
 
         data, _ = self.make_scores_test_data()
         data['experiment'] = [obj.parent.pk]
         data['publish'] = ['publish']
+        data.update(**{
+            'start': [1],
+            'end': [2],
+            'chromosome': ['chrX'],
+            'strand': ['F'],
+            'genome': [ref.pk],
+            'is_primary': True,
+            'wt_sequence': 'atcg',
+            'name': 'BRCA1',
+        })
 
         path = '/profile/edit/{}/'.format(obj.urn)
         request = self.factory.post(path=path, data=data)
@@ -254,9 +277,9 @@ class TestProfileEditInstanceView(TestCase):
         _ = edit_instance(request, obj.urn)
 
         obj = ScoreSet.objects.get(urn=obj.urn)
-        self.assertEqual(obj.last_edit_by, self.user)
-        self.assertEqual(obj.experiment.last_edit_by, self.user)
-        self.assertEqual(obj.experiment.experimentset.last_edit_by, self.user)
+        self.assertEqual(obj.modified_by, self.user)
+        self.assertEqual(obj.experiment.modified_by, self.user)
+        self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
 
     def test_requires_login(self):
         self.client.logout()
@@ -310,13 +333,14 @@ class TestProfileEditInstanceView(TestCase):
 
     def test_ajax_submission_returns_json_response(self):
         data = dict()
-        data['abstract_text'] = "# Hello world"
-        data['method_text'] = "## foo bar"
+        data['abstractText'] = "# Hello world"
+        data['methodText'] = "## foo bar"
+        data['markdown'] = [True]
 
         obj = ScoreSetFactory()
         assign_user_as_instance_admin(self.user, obj)
         path = '/profile/edit/{}/'.format(obj.urn)
-        request = self.factory.post(
+        request = self.factory.get(
             path=path, data=data,
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
+from dataset.factories import ExperimentFactory
 from dataset.models.experiment import Experiment
 
 from ..forms import SelectUsersForm
@@ -22,7 +23,7 @@ class TestSelectUsersForm(TestCase):
         self.bob = User.objects.create(username="bob")
 
     def test_can_admin_form_invalid_blank_data(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         form = SelectUsersForm(
             data={},
             group=GroupTypes.ADMIN,
@@ -32,7 +33,7 @@ class TestSelectUsersForm(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_can_non_admin_form_valid_blank_data(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         form = SelectUsersForm(
             data={},
             group=GroupTypes.VIEWER,
@@ -50,7 +51,7 @@ class TestSelectUsersForm(TestCase):
         self.assertTrue(form.is_valid())
 
     def test_error_not_supported_group_type(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         with self.assertRaises(ValueError):
             SelectUsersForm(
                 data={},
@@ -60,7 +61,7 @@ class TestSelectUsersForm(TestCase):
             )
 
     def test_validation_error_cannot_assign_empty_admin_list(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         form = SelectUsersForm(
             data={"users": []},
             group=GroupTypes.ADMIN,
@@ -70,7 +71,7 @@ class TestSelectUsersForm(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_validation_error_cannot_reassign_only_admin(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         assign_user_as_instance_admin(self.alice, instance)
         form = SelectUsersForm(
             data={"users": [self.alice.pk]},
@@ -81,7 +82,7 @@ class TestSelectUsersForm(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_can_set_required_field_param_inside_init(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         form = SelectUsersForm(
             data={},
             group=GroupTypes.VIEWER,
@@ -91,7 +92,7 @@ class TestSelectUsersForm(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_can_successfully_reasign_members(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         assign_user_as_instance_viewer(self.alice, instance)
         form = SelectUsersForm(
             data={"users": [self.alice.pk]},
@@ -103,7 +104,7 @@ class TestSelectUsersForm(TestCase):
         self.assertTrue(user_is_contributor_for_instance(self.alice, instance))
 
     def test_anon_not_in_queryset(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         form = SelectUsersForm(
             data={},
             group=GroupTypes.VIEWER,
@@ -116,7 +117,7 @@ class TestSelectUsersForm(TestCase):
         )
 
     def test_superusers_not_in_query_list(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         form = SelectUsersForm(
             data={},
             group=GroupTypes.VIEWER,
@@ -127,7 +128,7 @@ class TestSelectUsersForm(TestCase):
         self.assertTrue(all([not u.is_superuser for u in qs]))
 
     def test_can_set_initial_selected_users_from_instance(self):
-        instance = Experiment.objects.create(target="test", wt_sequence="atcg")
+        instance = ExperimentFactory()
         assign_user_as_instance_admin(self.alice, instance)
         form = SelectUsersForm(
             data={},

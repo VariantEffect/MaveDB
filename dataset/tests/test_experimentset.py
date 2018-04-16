@@ -5,6 +5,7 @@ from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 
+from ..models.experimentset import ExperimentSet
 from ..factories import ExperimentSetFactory, ExperimentFactory
 
 
@@ -50,7 +51,7 @@ class TestExperimentSet(TestCase):
             ExperimentSetFactory(urn=obj.urn)
 
     def test_experimentset_not_approved_and_private_by_default(self):
-        obj = ExperimentSetFactory()
+        obj = ExperimentSet()
         self.assertFalse(obj.approved)
         self.assertTrue(obj.private)
 

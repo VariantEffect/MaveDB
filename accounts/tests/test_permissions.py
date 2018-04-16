@@ -57,8 +57,7 @@ class UtilitiesTest(TransactionTestCase):
 
     def setUp(self):
         self.exps = ExperimentSet.objects.create()
-        self.exp = Experiment.objects.create(
-            target="brca1", wt_sequence="atcg", experimentset=self.exps)
+        self.exp = Experiment.objects.create(experimentset=self.exps)
         self.scs = ScoreSet.objects.create(experiment=self.exp)
         self.var = Variant.objects.create(scoreset=self.scs, hgvs="test")
 

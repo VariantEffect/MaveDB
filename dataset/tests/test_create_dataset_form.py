@@ -19,11 +19,15 @@ class TestDataSetModelForm(TestCase):
     """
     def setUp(self):
         self.user = UserFactory()
+        self.data = {
+            'short_description': 'experimentset',
+            'short_title': 'title',
+        }
 
     def test_will_create_new_keywords(self):
-        data = {"keywords": ['protein']}
+        self.data.update(**{"keywords": ['protein']})
         obj = ExperimentSetFactory()
-        form = DatasetModelForm(data, user=self.user, instance=obj)
+        form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
         obj = form.save(commit=True)
         self.assertEqual(obj.keywords.first().text, 'protein')
 
@@ -35,22 +39,22 @@ class TestDataSetModelForm(TestCase):
         ]
         for factory, attr in fs:
             m2m = factory()
-            data = {attr: [m2m.identifier]}
+            self.data.update(**{attr: [m2m.identifier]})
             m2m.delete()  # delete instance from db so it's new
 
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data, user=self.user, instance=obj)
+            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
             obj = form.save(commit=True)
             self.assertEqual(
                 getattr(obj, attr).first().identifier,
-                data[attr][0]
+                self.data[attr][0]
             )
 
     def test_will_associate_existing_keywords(self):
         kw = KeywordFactory()
-        data = {"keywords": [kw.text]}
+        self.data.update(**{"keywords": [kw.text]})
         obj = ExperimentSetFactory()
-        form = DatasetModelForm(data, user=self.user, instance=obj)
+        form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
         obj = form.save(commit=True)
         self.assertEqual(obj.keywords.first().text, kw.text)
 
@@ -62,21 +66,21 @@ class TestDataSetModelForm(TestCase):
         ]
         for factory, attr in fs:
             m2m = factory()
-            data = {attr: [m2m.identifier]}
+            self.data.update(**{attr: [m2m.identifier]})
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data, user=self.user, instance=obj)
+            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
             obj = form.save(commit=True)
             self.assertEqual(
                 getattr(obj, attr).first().identifier,
-                data[attr][0]
+                self.data[attr][0]
             )
 
     def test_will_clear_existing_keywords(self):
         kw = KeywordFactory()
-        data = {"keywords": [kw.text]}
+        self.data.update(**{"keywords": [kw.text]})
         obj = ExperimentSetFactory()
         obj.keywords.add(KeywordFactory())
-        form = DatasetModelForm(data, user=self.user, instance=obj)
+        form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
         obj = form.save(commit=True)
         self.assertEqual(obj.keywords.first().text, kw.text)
 
@@ -87,11 +91,11 @@ class TestDataSetModelForm(TestCase):
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, attr in fs:
-            data = {attr: []}
+            self.data.update(**{attr: []})
             obj = ExperimentSetFactory()
             getattr(obj, attr).add(factory())
             self.assertEqual(getattr(obj, attr).count(), 1)
-            form = DatasetModelForm(data, user=self.user, instance=obj)
+            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
             obj = form.save(commit=True)
             self.assertEqual(getattr(obj, attr).count(), 0)
 
@@ -103,15 +107,15 @@ class TestDataSetModelForm(TestCase):
         ]
         for factory, attr in fs:
             new = factory()
-            data = {attr: [new.identifier]}
+            self.data.update(**{attr: [new.identifier]})
             new.delete()  # delete instance from db so it's new
 
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data, user=self.user, instance=obj)
+            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
             self.assertTrue(form.is_valid())
             self.assertEqual(
                 form.m2m_instances_for_field(attr, True)[0].identifier,
-                data[attr][0]
+                self.data[attr][0]
             )
 
     def test_m2m_instances_for_field_returns_existing_instances(self):
@@ -122,9 +126,9 @@ class TestDataSetModelForm(TestCase):
         ]
         for factory, attr in fs:
             new = factory()
-            data = {attr: [new.identifier]}
+            self.data.update(**{attr: [new.identifier]})
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data, user=self.user, instance=obj)
+            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
             self.assertTrue(form.is_valid())
             self.assertEqual(
                 form.m2m_instances_for_field(attr)[0], new
@@ -132,7 +136,7 @@ class TestDataSetModelForm(TestCase):
 
     def test_save_updates_modified_by(self):
         obj = ExperimentSetFactory()
-        form = DatasetModelForm({}, user=self.user, instance=obj)
+        form = DatasetModelForm(self.data, user=self.user, instance=obj)
         form.save(commit=True)
         self.assertEqual(obj.modified_by, self.user)
 
@@ -140,21 +144,21 @@ class TestDataSetModelForm(TestCase):
         obj = ExperimentSetFactory()
         obj.created_by = self.user
         obj.save()
-        form = DatasetModelForm({}, user=UserFactory(), instance=obj)
+        form = DatasetModelForm(self.data, user=UserFactory(), instance=obj)
         form.save(commit=True)
         self.assertEqual(obj.created_by, self.user)
 
     def test_save_updates_created_by(self):
         obj = ExperimentSetFactory()
-        form = DatasetModelForm({}, user=self.user, instance=obj)
+        form = DatasetModelForm(self.data, user=self.user, instance=obj)
         form.save(commit=True)
         self.assertEqual(obj.created_by, self.user)
 
     def test_can_overwrite_abstract_text(self):
         obj = ExperimentSetFactory()
         old_abs = obj.abstract_text
-        form = DatasetModelForm({
-            'abstract_text': "hello world"}, user=self.user, instance=obj)
+        self.data.update(**{'abstract_text': 'hello'})
+        form = DatasetModelForm(self.data, user=self.user, instance=obj)
         form.save(commit=True)
         obj.refresh_from_db()
         self.assertNotEqual(old_abs, obj.abstract_text)
@@ -162,8 +166,8 @@ class TestDataSetModelForm(TestCase):
     def test_can_overwrite_method_text(self):
         obj = ExperimentSetFactory()
         old = obj.method_text
-        form = DatasetModelForm({
-            'method_text': "hello world"}, user=self.user, instance=obj)
+        self.data.update(**{'method_text': "hello world"})
+        form = DatasetModelForm(self.data, user=self.user, instance=obj)
         form.save(commit=True)
         obj.refresh_from_db()
         self.assertNotEqual(old, obj.method_text)

@@ -7,7 +7,6 @@ from metadata.factories import (
 )
 
 from ..factories import (
-    TargetGeneFactory,
     AnnotationFactory,
     ReferenceGenomeFactory,
     IntervalFactory
@@ -60,14 +59,17 @@ class TestIntervalValidators(TestCase):
 
     def test_ve_duplicate_interval_chromosome_case_ignored(self):
         interval = IntervalFactory()
-        intervals = [IntervalFactory(
-            start=interval.start,
-            end=interval.end,
-            chromosome=interval.chromosome.upper(),
-            strand=interval.strand
-        )]
+        intervals = [
+            IntervalFactory(
+                start=interval.start,
+                end=interval.end,
+                chromosome=interval.chromosome.upper(),
+                strand=interval.strand
+            ),
+            interval
+        ]
         with self.assertRaises(ValidationError):
-            validate_interval_is_not_a_duplicate(interval, intervals)
+            validate_unique_intervals(intervals)
 
     def test_ve_strand_not_in_choices(self):
         with self.assertRaises(ValidationError):
@@ -168,13 +170,13 @@ class TestAnnotationValidators(TestCase):
     def test_ve_annotation_does_not_have_a_unique_genome(self):
         annotation1 = AnnotationFactory()
         annotation2 = AnnotationFactory(
-            genome=annotation1.get_genome(),
-            target=annotation1.get_target()
+            genome=annotation1.get_reference_genome(),
+            target=annotation1.get_target_gene()
         )
-        annotations = [annotation2]
         with self.assertRaises(ValidationError):
             validate_annotation_has_unique_reference_genome(
-                annotation1, annotations)
+                [annotation1, annotation2]
+            )
 
     def test_ve_duplicate_intervals_in_list(self):
         interval = IntervalFactory()
@@ -200,8 +202,8 @@ class TestAnnotationValidators(TestCase):
         annotation = AnnotationFactory()
         validate_one_primary_annotation([annotation])  # passes
 
-        annotation.get_genome().set_is_primary(primary=False)
-        annotation.get_genome().save()
+        annotation.set_is_primary(primary=False)
+        annotation.save()
         with self.assertRaises(ValidationError):
             validate_one_primary_annotation([annotation])
 

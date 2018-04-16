@@ -5,10 +5,9 @@ from django.db import IntegrityError
 from django.db.models import ProtectedError
 from django.test import TestCase
 
-from genome.factories import TargetOrganismFactory
-
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..models.experimentset import ExperimentSet
+from ..models.experiment import Experiment
 
 class TestExperiment(TestCase):
     """
@@ -53,7 +52,7 @@ class TestExperiment(TestCase):
             ExperimentFactory(urn=obj.urn)
 
     def test_experiment_not_approved_and_private_by_default(self):
-        exp = ExperimentFactory()
+        exp = Experiment()
         self.assertFalse(exp.approved)
         self.assertTrue(exp.private)
 
@@ -61,15 +60,6 @@ class TestExperiment(TestCase):
         scs = ScoreSetFactory()
         with self.assertRaises(ProtectedError):
             scs.experiment.delete()
-
-    def test_update_target_organism(self):
-        exp = ExperimentFactory()
-        new = TargetOrganismFactory()
-        exp.update_target_organism(new)
-        exp.save()
-        exp.refresh_from_db()
-        self.assertEqual(exp.get_target_organism_name(), new.text)
-        self.assertEqual(exp.target_organism.count(), 1)
 
     def test_creates_experimentset_if_none_when_saved(self):
         exp = ExperimentFactory(experimentset=None)  # invokes save

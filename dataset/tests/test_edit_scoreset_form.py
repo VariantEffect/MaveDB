@@ -44,6 +44,8 @@ class TestScoreSetEditForm(TestCase):
             experiment = ExperimentFactory()
             assign_user_as_instance_admin(self.user, experiment)
         data = {
+            'short_description': 'experiment',
+            'short_title': 'title',
             "experiment": experiment.pk if experiment else None,
         }
         s_file, c_file = make_score_count_files(score_data, count_data)
@@ -52,10 +54,10 @@ class TestScoreSetEditForm(TestCase):
             files[constants.variant_count_data] = c_file
         return data, files
 
-    def test_empty_data_submission_is_valid(self):
+    def test_empty_data_submission_is_invalid(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertTrue(form.is_valid())
+        self.assertFalse(form.is_valid())
 
     def test_cannot_save_popped_field(self):
         exp = ExperimentFactory()

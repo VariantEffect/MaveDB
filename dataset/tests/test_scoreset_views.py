@@ -10,6 +10,9 @@ from accounts.permissions import (
     user_is_admin_for_instance
 )
 
+from genome.models import WildTypeSequence, TargetGene
+from genome.factories import ReferenceGenomeFactory
+
 from metadata.factories import (
     KeywordFactory, PubmedIdentifierFactory, DoiIdentifierFactory,
     SraIdentifierFactory
@@ -52,14 +55,14 @@ class TestScoreSetSetDetailView(TestCase):
 
     def test_private_instance_will_403_if_no_permission(self):
         user = UserFactory()
-        obj = ScoreSetFactory()
+        obj = ScoreSetFactory(private=True)
         request = self.factory.get('/scoreset/{}/'.format(obj.urn))
         request.user = user
         response = ScoreSetDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 403)
 
     def test_403_uses_correct_template(self):
-        obj = ScoreSetFactory()
+        obj = ScoreSetFactory(private=True)
         response = self.client.get('/scoreset/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template_403)
 
@@ -74,14 +77,14 @@ class TestScoreSetSetDetailView(TestCase):
 
     def test_variants_are_in_response(self):
         self.fail("Fix variant table rendering")
-        scs = ScoreSetFactory()
-        var = VariantFactory(scoreset=scs)
-        scs.publish()
-        scs.save()
-        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
-        request.user = UserFactory()
-        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
-        self.assertContains(response, var.hgvs)
+        # scs = ScoreSetFactory()
+        # var = VariantFactory(scoreset=scs)
+        # scs.publish()
+        # scs.save()
+        # request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        # request.user = UserFactory()
+        # response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        # self.assertContains(response, var.hgvs)
 
 
 class TestCreateNewScoreSetView(TestCase):
@@ -93,12 +96,15 @@ class TestCreateNewScoreSetView(TestCase):
         self.factory = RequestFactory()
         self.path = reverse_lazy("dataset:scoreset_new")
         self.template = 'dataset/scoreset/new_scoreset.html'
+        self.ref = ReferenceGenomeFactory()
 
         score_file, _ = make_score_count_files()
         self.post_data = {
             'experiment': [''],
             'replaces': [''],
             'private': ['on'],
+            'short_description': 'an entry',
+            'short_title': 'title',
             'abstract_text': [''],
             'method_text': [''],
             'sra_ids': [''],
@@ -106,6 +112,14 @@ class TestCreateNewScoreSetView(TestCase):
             'pmid_ids': [''],
             'keywords': [''],
             'submit': ['submit'],
+            'start': [1],
+            'end': [2],
+            'chromosome': ['chrX'],
+            'strand': ['F'],
+            'genome': [self.ref.pk],
+            'is_primary': True,
+            'wt_sequence': 'atcg',
+            'name': 'BRCA1',
             "publish": ['']
         }
         self.files = {constants.variant_score_data: score_file}
@@ -127,6 +141,36 @@ class TestCreateNewScoreSetView(TestCase):
         )
         response = self.client.get(self.path)
         self.assertTemplateUsed(response, self.template)
+
+    def test_annotation_and_intervals_created(self):
+        data = self.post_data.copy()
+        exp1 = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, exp1)
+        data['experiment'] = [exp1.pk]
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = scoreset_create_view(request)
+
+        # Redirects to scoreset_detail
+        self.assertEqual(response.status_code, 302)
+
+        scoreset = ScoreSet.objects.order_by("-urn").first()
+        self.assertIsNotNone(scoreset.get_target())
+        targetgene = scoreset.get_target()
+
+        annotation = targetgene.get_annotations().first()
+        genome = annotation.get_reference_genome()
+        interval = annotation.get_intervals().first()
+
+        self.assertEqual(genome.get_short_name(), self.ref.get_short_name())
+        self.assertEqual(genome.get_species_name(), self.ref.get_species_name())
+
+        self.assertEqual(
+            interval.serialise(),
+            {'start': 1, 'end': 2, 'chromosome': 'chrX', 'strand': 'F'}
+        )
 
     def test_experiment_options_are_restricted_to_admin_instances(self):
         exp1 = ExperimentFactory()
@@ -363,10 +407,11 @@ class TestCreateNewScoreSetView(TestCase):
 
     def test_ajax_submission_returns_json_response(self):
         data = self.post_data.copy()
-        data['abstract_text'] = "# Hello world"
-        data['method_text'] = "## foo bar"
+        data['abstractText'] = "# Hello world"
+        data['methodText'] = "## foo bar"
+        data['markdown'] = [True]
 
-        request = self.factory.post(
+        request = self.factory.get(
             path=self.path, data=data,
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )

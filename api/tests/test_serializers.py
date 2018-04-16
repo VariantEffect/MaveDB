@@ -6,6 +6,8 @@ from accounts.permissions import (
     assign_user_as_instance_viewer
 )
 
+from genome.factories import IntervalFactory
+
 import dataset.constants as constants
 from dataset.factories import (
     ExperimentFactory, ExperimentSetFactory, ScoreSetFactory
@@ -109,9 +111,14 @@ class TestExperimentSerializer(TestCase):
     Tests that the serializer for an :class:`Experiment` outputs the correct
     json data.
     """
+    def setUp(self):
+        self.target = IntervalFactory().annotation.get_target_gene()
+
     def test_can_correctly_serialize_instance(self):
         instance = ExperimentFactory()
         scoreset_1 = ScoreSetFactory(experiment=instance)
+        self.target.scoreset = scoreset_1
+        self.target.save()
 
         alice = UserFactory(username="alice")
         bob = UserFactory(username="bob")
@@ -132,14 +139,16 @@ class TestExperimentSerializer(TestCase):
             "doi_ids": {},
             "sra_ids": {},
             "pm_ids": {},
-            "targets": instance.get_target_names()
+            "targets": {self.target.get_name(): self.target.serialise()}
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
 
-    def test_can_filter_out_private(self):
+    def test_can_filter_out_private_scoresets_and_target(self):
         instance = ExperimentFactory()
         scoreset_1 = ScoreSetFactory(experiment=instance)
+        self.target.scoreset = scoreset_1
+        self.target.save()
 
         alice = UserFactory(username="alice")
         bob = UserFactory(username="bob")
@@ -151,13 +160,13 @@ class TestExperimentSerializer(TestCase):
             "contributors": ["alice"],
             "experimentset": instance.experimentset.urn,
             "urn": instance.urn,
-            "scoresets": [],
+            "scoresets": [],  # private and no permissions
             "model_type": instance.class_name(),
             "keywords": [],
             "doi_ids": {},
             "sra_ids": {},
             "pm_ids": {},
-            "targets": instance.get_target_names()
+            "targets": {}  # assoicated with private scoreset
         }
         result = serializer.serialize(instance.pk)
         self.assertEqual(expected, result)
@@ -209,7 +218,7 @@ class TestExperimentSerializer(TestCase):
                     "doi_ids": {},
                     "sra_ids": {},
                     "pm_ids": {},
-                    "targets": instances[0].get_target_names()
+                    "targets": {}
                 },
                 {
                     "contributors": [],
@@ -221,7 +230,7 @@ class TestExperimentSerializer(TestCase):
                     "doi_ids": {},
                     "sra_ids": {},
                     "pm_ids": {},
-                    "targets": instances[1].get_target_names()
+                    "targets": {}
                 }
             ]
         }
@@ -234,8 +243,14 @@ class TestScoreSetSerializer(TestCase):
     Tests that the serializer for an :class:`ScoreSet` outputs the correct
     json data.
     """
+    def setUp(self):
+        self.target = IntervalFactory().annotation.get_target_gene()
+
     def test_can_serialize_minimal_example(self):
         instance = ScoreSetFactory()
+        self.target.scoreset = instance
+        self.target.save()
+
         expected = {
             "urn": instance.urn,
             "contributors": [],
@@ -251,7 +266,8 @@ class TestScoreSetSerializer(TestCase):
             "keywords": [],
             "doi_ids": {},
             "sra_ids": {},
-            "pm_ids": {}
+            "pm_ids": {},
+            'target': self.target.serialise(),
         }
         serializer = ScoreSetSerializer()
         result = serializer.serialize(instance.pk)

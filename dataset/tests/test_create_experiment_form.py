@@ -34,6 +34,8 @@ class TestExperimentForm(TestCase):
             If True, experimentset is set to None
         """
         data = {
+            'short_description': 'experiment',
+            'short_title': 'title',
             "experimentset": (
                 None if not use_exps else ExperimentSetFactory().pk
             )

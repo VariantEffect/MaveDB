@@ -39,14 +39,14 @@ class TestExperimentDetailView(TestCase):
 
     def test_private_instance_will_403_if_no_permission(self):
         user = UserFactory()
-        obj = ExperimentFactory()
+        obj = ExperimentFactory(private=True)
         request = self.factory.get('/experiment/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 403)
 
     def test_403_uses_correct_template(self):
-        obj = ExperimentFactory()
+        obj = ExperimentFactory(private=True)
         response = self.client.get('/experiment/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template_403)
 
@@ -85,6 +85,8 @@ class TestCreateNewExperimentView(TestCase):
             'private': ['on'],
             'abstract_text': [''],
             'method_text': [''],
+            'short_description': ['experiment'],
+            'short_title': ['title'],
             'sra_ids': [''],
             'doi_ids': [''],
             'pmid_ids': [''],
@@ -112,7 +114,7 @@ class TestCreateNewExperimentView(TestCase):
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data
         data['target'] = "brca1"
-        data['wt_sequence'] = ""  # Required field missing
+        data['short_title'] = ""  # Required field missing
         request = self.factory.post(path=self.path, data=data)
         request.user = self.user
         response = experiment_create_view(request)
