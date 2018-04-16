@@ -34,7 +34,7 @@ class DatasetModelFactory(DjangoModelFactory):
     abstract_text = factory.fuzzy.FuzzyText(length=500)
     short_title = factory.fuzzy.FuzzyText(length=64)
     short_description = factory.fuzzy.FuzzyText(length=256)
-    private = False
+    private = True
 
 
 class ExperimentSetFactory(DatasetModelFactory):
