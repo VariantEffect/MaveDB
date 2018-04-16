@@ -71,7 +71,7 @@ $("#preview-method").click(function (e) {
         dataType: "json",
         success: function (data) {
             method = data.methodText;
-            $("#abstract-markdown-modal .modal-body")
+            $("#method-markdown-modal .modal-body")
                 .text("")
                 .append(method);
         },

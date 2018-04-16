@@ -71,10 +71,10 @@
 		<thead>
 			<tr>
 				<th>Urn</th>
-				<th>Contributors</th>
-				<th>Target</th>
-				<th>Keywords</th>
-			</tr>
+				<th>Short description</th>
+        <th>Target name</th>
+        <th>Contributors</th>
+      </tr>
 		</thead>
 		<tbody>
 			{% if not has_data %}
@@ -91,13 +91,13 @@
 									{{ exp.urn }}
 								</a>
 							</td>
+							<td>{{ exp.short_description|default:"-" }}</td>
+							<td>{{ exp.get_target_names|join:", " }}</td>
 							<td>
                 {% for c in exp.editors %}
-							    {{ c.get_full_name_hyperlink }}
+							    {{ c.profile.get_full_name_hyperlink }}
                 {% endfor %}
 							</td>
-							<td>{{ exp.get_target_names|join:", " }}</td>
-							<td>{{ exp.get_keywords|default:"-"|join:", " }}</td>
 						</tr>
 					{% else %}
 						{% if exp in request.user.profile.experiments %}

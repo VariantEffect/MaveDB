@@ -3,12 +3,169 @@
 {% block target %}
   <h2 id="target" class="underline left-align section-heading"> Target </h2>
   <p><strong>Target:</strong> {{ instance.target.get_name }}</p>
-  <p><strong>Wildtype Sequence:</strong> {{ instance.target.get_wt_sequence }}</p>
+  <p><strong>Wildtype Sequence:</strong> {{ instance.target.get_wt_sequence_string }}</p>
   <p><strong>Target Organism:</strong> {{ instance.target.get_reference_genomes.first.format_species_name_html|default:"Unspecified"|safe }}</p>
 {% endblock %}
 
 {% block child_list %}
-<h2 id="variants" class="underline right-align">
-  Variants
-</h2>
+  <h2 id="variants" class="underline left-align section-heading"> Variants </h2>
+<!-- Tab/Pills menu -->
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link" id="scores-tab" data-toggle="tab" href="#scores"
+       role="tab" aria-controls="scores">Scores</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="counts-tab" data-toggle="tab" href="#counts"
+       role="tab" aria-controls="counts">Counts</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="meta-tab" data-toggle="tab" href="#meta"
+       role="tab" aria-controls="meta">Metadata</a>
+  </li>
+</ul>
+
+<div class="tab-content" id="myTabContent">
+  <!-- Scores data tab -->
+  <div class="tab-pane fade show active" id="scores" role="tabpanel" aria-labelledby="scores-tab">
+    <div class="container-fluid mt-4">
+
+      <div class="row mt-1 mb-3">						
+        <div class="cold-sm-6 col-md-6">
+          <h3 style="margin: 0;">Scores dataset</h3>
+        </div>
+        <div class="col-sm-1 col-md-1">
+          <a class="download-btn btn btn-sm btn-outline-primary" 
+             href="{% url 'dataset:scores_download' instance.urn %}">
+            Download
+          </a>
+        </div>
+      </div>
+
+      {% if not score_columns|length > 1 %}
+        <p class="text-muted"> No counts data available.</p>
+      {% else %}
+        <div id="scores-table-container" class="numeric-container container-fluid">
+          <table id="scores-table" class="styled-table table table-hover">
+            <thead>
+              <tr>
+                {% for column in score_columns %}
+                  <th> {{column}} </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for var in variants %}
+                <tr>
+                  {% for data in var.score_data %}
+                    {% if forloop.counter >= 2 %}
+                      <td> {{ data|floatformat:"-4" }} </td>
+                    {% else %}
+                      <td> {{ data }} </td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}				
+    </div>
+  </div> <!-- End scores data tab -->
+
+  <!-- counts data tab -->
+  <div class="tab-pane fade" id="counts" role="tabpanel" aria-labelledby="counts-tab">
+    <div class="container-fluid mt-4">
+
+      <div class="row mt-1 mb-3">
+        <div class="cold-sm-6 col-md-6">
+          <h3 style="margin: 0;">Counts dataset</h3>
+        </div>
+        <div class="col-sm-1 col-md-1">
+          <a class="download-btn btn btn-sm btn-outline-primary"
+             href="{% url 'dataset:counts_download' instance.urn %}">
+            Download
+          </a>
+        </div>
+      </div>
+
+      {% if not count_columns|length > 1 %}
+        <p class="text-muted"> No counts data available.</p>
+      {% else %}
+        <div id="scores-table-container" class="numeric-container container-fluid">
+          <table id="scores-table" class="styled-table table table-hover">
+            <thead>
+              <tr>
+                {% for column in counts_columns %}
+                  <th> {{column}} </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for var in variants %}
+                <tr>
+                  {% for data in var.count_data %}
+                    {% if forloop.counter >= 2 %}
+                      <td> {{ data|floatformat:"-4" }} </td>
+                    {% else %}
+                      <td> {{ data }} </td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div> <!-- End count data tab -->
+
+  <!-- counts data tab -->
+  <div class="tab-pane fade" id="meta" role="tabpanel" aria-labelledby="meta-tab">
+    <div class="container-fluid mt-4">
+
+      <div class="row mt-1 mb-3">
+        <div class="cold-sm-6 col-md-6">
+          <h3 style="margin: 0;">Metadata dataset</h3>
+        </div>
+        <div class="col-sm-1 col-md-1">
+          <a class="download-btn btn btn-sm btn-outline-primary"
+             href="{% url 'dataset:metadata_download' instance.urn %}">
+            Download
+          </a>
+        </div>
+      </div>
+
+      {% if not metadata_columns|length > 1 %}
+        <p class="text-muted"> No metadata available.</p>
+      {% else %}
+        <div id="scores-table-container" class="numeric-container container-fluid">
+          <table id="scores-table" class="styled-table table table-hover">
+            <thead>
+              <tr>
+                {% for column in metadata_columns %}
+                  <th> {{column}} </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for var in variants %}
+                <tr>
+                  {% for data in var.meta_data %}
+                    {% if forloop.counter >= 2 %}
+                      <td> {{ data|floatformat:"-4" }} </td>
+                    {% else %}
+                      <td> {{ data }} </td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div> <!-- End count data tab -->
+
+</div> <!-- End tab/pills content -->
 {% endblock %}
