@@ -118,12 +118,39 @@ class Variant(UrnModel):
 
     @property
     def score_columns(self):
-        return list(self.data[constants.variant_score_data].keys())
+        return [constants.hgvs_column]+ \
+               list(self.data[constants.variant_score_data].keys())
+
+    @property
+    def score_data(self):
+        for column in self.scoreset.score_columns:
+            if column == constants.hgvs_column:
+                yield self.hgvs
+            else:
+                yield self.data[constants.variant_score_data][column]
 
     @property
     def count_columns(self):
-        return list(self.data[constants.variant_count_data].keys())
+        return [constants.hgvs_column] + \
+               list(self.data[constants.variant_count_data].keys())
+
+    @property
+    def count_data(self):
+        for column in self.scoreset.count_columns:
+            if column == constants.hgvs_column:
+                yield self.hgvs
+            else:
+                yield self.data[constants.variant_count_data][column]
 
     @property
     def metadata_columns(self):
-        return list(self.data[constants.variant_metadata].keys())
+        return [constants.hgvs_column] + \
+               list(self.data[constants.variant_metadata].keys())
+
+    @property
+    def meta_data(self):
+        for column in self.scoreset.metadata_columns:
+            if column == constants.hgvs_column:
+                yield self.hgvs
+            else:
+                yield self.data[constants.variant_metadata][column]
