@@ -29,13 +29,13 @@ class DatasetModelForm(forms.ModelForm):
         The user instance that this form is served to.
     """
     FIELD_ORDER = (
-        'short_title',
+        'title',
         'short_description',
         'abstract_text',
         'method_text',
         'keywords',
         'doi_ids',
-        'pmid_ids',
+        'pubmed_ids',
         'sra_ids',
     )
 
@@ -45,10 +45,10 @@ class DatasetModelForm(forms.ModelForm):
             'abstract_text',
             'method_text',
             "short_description",
-            "short_title",
+            "title",
             'keywords',
             'doi_ids',
-            'pmid_ids',
+            'pubmed_ids',
             'sra_ids',
         )
 
@@ -56,7 +56,7 @@ class DatasetModelForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
-        self.fields['short_title'].widget = forms.TextInput(
+        self.fields['title'].widget = forms.TextInput(
             attrs={"class": "form-control"}
         )
         self.fields['short_description'].widget = forms.Textarea(
@@ -89,7 +89,7 @@ class DatasetModelForm(forms.ModelForm):
                 attrs={"class": "form-control select2 select2-token-select"}
             )
         )
-        self.fields['pmid_ids'] = ModelSelectMultipleField(
+        self.fields['pubmed_ids'] = ModelSelectMultipleField(
             klass=PubmedIdentifier, to_field_name='identifier',
             label='PubMed Identifiers', required=False,
             queryset=PubmedIdentifier.objects.all(), widget=forms.SelectMultiple(
@@ -99,7 +99,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields['keywords'].validators.append(validate_keyword_list)
         self.fields['sra_ids'].validators.append(validate_sra_list)
         self.fields['doi_ids'].validators.append(validate_doi_list)
-        self.fields['pmid_ids'].validators.append(validate_pubmed_list)
+        self.fields['pubmed_ids'].validators.append(validate_pubmed_list)
 
     def _clean_field_name(self, field_name):
         field = self.fields[field_name]
@@ -116,8 +116,8 @@ class DatasetModelForm(forms.ModelForm):
     def clean_doi_ids(self):
         return self._clean_field_name('doi_ids')
 
-    def clean_pmid_ids(self):
-        return self._clean_field_name('pmid_ids')
+    def clean_pubmed_ids(self):
+        return self._clean_field_name('pubmed_ids')
 
     def _save_m2m(self):
         # Save all instances before calling super() so that all new instances
