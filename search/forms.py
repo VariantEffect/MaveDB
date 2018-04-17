@@ -73,7 +73,7 @@ class SearchForm(forms.Form):
 
     def clean_pmid_ids(self):
         return filter_empty(
-            parse_query(self.cleaned_data.get("pmid_ids", ""))
+            parse_query(self.cleaned_data.get("pubmed_ids", ""))
         )
 
     def clean_keywords(self):
@@ -229,7 +229,7 @@ class SearchForm(forms.Form):
                 "sra_ids", None
             ) or search_all
             pmid_ids = self.cleaned_data.get(
-                "pmid_ids", None
+                "pubmed_ids", None
             ) or search_all
             target_organisms = self.cleaned_data.get(
                 "target_organisms", None
@@ -244,7 +244,7 @@ class SearchForm(forms.Form):
                 targets_hits = self.search_by_target(model, targets)
                 doi_ids_hits = self.search_by_external_identifier(doi_ids, 'doi_ids')
                 sra_ids_hits = self.search_by_external_identifier(sra_ids, 'sra_ids')
-                pmid_ids_hits = self.search_by_external_identifier(pmid_ids, 'pmid_ids')
+                pmid_ids_hits = self.search_by_external_identifier(pmid_ids, 'pubmed_ids')
                 target_organism_hits = self.search_by_target_organism(
                     target_organisms
                 )

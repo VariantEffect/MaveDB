@@ -20,7 +20,7 @@ def search_view(request):
         experiments = [e for e in experiments if not e.private]
         has_data = len(experiments) > 0
     else:
-        users_experiments = request.user.profile.experiments()
+        users_experiments = request.user.profile.contributor_experiments()
         private_experiments = [
             e for e in experiments if e.private and e in users_experiments
         ]
@@ -45,7 +45,7 @@ def search_view(request):
     experiments = paginator.page(page_num)
     context = {
         "form": form,
-        "experiments": experiments,
+        "contributor_experiments": experiments,
         "has_data": has_data,
         "per_page": per_page,
         "page_num": page_num,
