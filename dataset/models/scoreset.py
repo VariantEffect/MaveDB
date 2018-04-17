@@ -69,9 +69,9 @@ class ScoreSet(DatasetModel):
     # TODO: Update TRACKED_FIELDS in all classes to use inheritance
     TRACKED_FIELDS = (
         "private", "approved", "abstract_text",
-        "method_text", "doi_ids", "sra_ids", "pmid_ids", "keywords",
+        "method_text", "doi_ids", "sra_ids", "pubmed_ids", "keywords",
         "licence", "dataset_columns", "replaces", "short_description",
-        "short_title",
+        "title",
     )
 
     class Meta:
@@ -220,6 +220,28 @@ class ScoreSet(DatasetModel):
         if self.replaces_previous:
             return self.replaces
         return None
+
+    def serialise(self, filter_private=True):
+        data = super().serialise()
+
+        next_version = self.next_version
+        next_version = None if not next_version else next_version.urn
+        previous_version = self.previous_version
+        previous_version = None if not previous_version else previous_version.urn
+        target = self.get_target()
+
+        data.update(**{
+            'target': None if target is None else target.serialise(),
+            "next_version": next_version,
+            "previous_version": previous_version,
+            "licence": [self.licence.short_name, self.licence.link],
+            "current_version": self.current_version.urn,
+            "score_columns": self.score_columns,
+            "count_columns": self.count_columns,
+            "meta_columns": self.metadata_columns
+        })
+
+        return data
 
 
 # --------------------------------------------------------------------------- #

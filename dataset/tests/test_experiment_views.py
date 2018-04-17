@@ -5,7 +5,7 @@ from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_viewer,
     assign_user_as_instance_admin,
-    assign_user_as_instance_contributor,
+    assign_user_as_instance_editor,
     user_is_admin_for_instance
 )
 
@@ -86,10 +86,10 @@ class TestCreateNewExperimentView(TestCase):
             'abstract_text': [''],
             'method_text': [''],
             'short_description': ['experiment'],
-            'short_title': ['title'],
+            'title': ['title'],
             'sra_ids': [''],
             'doi_ids': [''],
-            'pmid_ids': [''],
+            'pubmed_ids': [''],
             'keywords': [''],
             'submit': ['submit']
         }
@@ -114,7 +114,7 @@ class TestCreateNewExperimentView(TestCase):
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data
         data['target'] = "brca1"
-        data['short_title'] = ""  # Required field missing
+        data['title'] = ""  # Required field missing
         request = self.factory.post(path=self.path, data=data)
         request.user = self.user
         response = experiment_create_view(request)
@@ -220,7 +220,7 @@ class TestCreateNewExperimentView(TestCase):
     def test_selected_experimentset_does_not_add_user_as_admin(self):
         data = self.post_data.copy()
         es = ExperimentSetFactory()
-        assign_user_as_instance_contributor(self.user, es)
+        assign_user_as_instance_editor(self.user, es)
         data['experimentset'] = [es.pk]
         request = self.factory.post(path=self.path, data=data)
         request.user = self.user
@@ -243,7 +243,7 @@ class TestCreateNewExperimentView(TestCase):
     def test_failed_submission_adds_extern_identifier_to_context(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, field in fs:
@@ -260,7 +260,7 @@ class TestCreateNewExperimentView(TestCase):
     def test_failed_submission_adds_new_extern_identifier_to_context(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, field in fs:

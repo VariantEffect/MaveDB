@@ -83,8 +83,8 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     short_description : `models.CharField`
         A short plain text description.
 
-    short_title : `models.CharField`
-        A short plain title.
+    title : `models.CharField`
+        A short plain text title.
 
     keywords : `models.ManyToManyField`
         Associated `Keyword` objects for this entry.
@@ -98,7 +98,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         Digital Object Identifiers (https://www.doi.org). These are intended to
         be used for data objects rather than publications.
 
-    pmid_ids : `models.ManyToManyField`
+    pubmed_ids : `models.ManyToManyField`
         Associated `ExternalIdentifier` objects for this entry that map to
         NCBI PubMed identifiers (https://www.ncbi.nlm.nih.gov/pubmed). These
         will be formatted and displayed as publications.
@@ -107,10 +107,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         'keywords',
         'doi_ids',
         'ensembl_ids',
-        'pmid_ids',
+        'pubmed_ids',
         'refseq_ids',
         'sra_ids',
-        'uniprot_ids',
     )
 
     class Meta:
@@ -188,7 +187,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         verbose_name="Short description",
         max_length=512
     )
-    short_title = models.TextField(
+    title = models.TextField(
         blank=False,
         default="",
         verbose_name="Short title",
@@ -200,25 +199,20 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     # ---------------------------------------------------------------------- #
     keywords = models.ManyToManyField(
         Keyword, blank=True,
-        verbose_name='Keywords', related_name='%(class)s',)
+        verbose_name='Keywords',
+        related_name='associated_%(class)ss',)
     sra_ids = models.ManyToManyField(
         SraIdentifier, blank=True,
-        verbose_name='SRA Identifiers', related_name='%(class)ss',)
+        verbose_name='SRA Identifiers',
+        related_name='associated_%(class)ss',)
     doi_ids = models.ManyToManyField(
         DoiIdentifier, blank=True,
-        verbose_name='DOI Identifiers', related_name='%(class)ss',)
-    pmid_ids = models.ManyToManyField(
+        verbose_name='DOI Identifiers',
+        related_name='associated_%(class)ss',)
+    pubmed_ids = models.ManyToManyField(
         PubmedIdentifier, blank=True,
-        verbose_name='PubMed Identifiers', related_name='%(class)ss',)
-    refseq_ids = models.ManyToManyField(
-        RefseqIdentifier, blank=True,
-        verbose_name='RefSeq Identifiers', related_name='%(class)ss',)
-    ensembl_ids = models.ManyToManyField(
-        EnsemblIdentifier, blank=True,
-        verbose_name='Ensembl Identifiers', related_name='%(class)ss',)
-    uniprot_ids = models.ManyToManyField(
-        UniprotIdentifier, blank=True,
-        verbose_name='UniProt Identifiers', related_name='%(class)ss',)
+        verbose_name='PubMed Identifiers',
+        related_name='associated_%(class)ss',)
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -292,7 +286,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         return pandoc.convert_md_to_html(self.method_text)
 
     def get_title(self):
-        return self.short_title
+        return self.title
 
     def get_description(self):
         return self.short_description
@@ -310,15 +304,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         if isinstance(instance, SraIdentifier):
             self.sra_ids.add(instance)
         elif isinstance(instance, PubmedIdentifier):
-            self.pmid_ids.add(instance)
+            self.pubmed_ids.add(instance)
         elif isinstance(instance, DoiIdentifier):
             self.doi_ids.add(instance)
-        elif isinstance(instance, EnsemblIdentifier):
-            self.ensembl_ids.add(instance)
-        elif isinstance(instance, RefseqIdentifier):
-            self.refseq_ids.add(instance)
-        elif isinstance(instance, UniprotIdentifier):
-            self.uniprot_ids.add(instance)
         else:
             raise TypeError(
                 "Missing case for class `{}`.".format(
@@ -350,3 +338,46 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             else:
                 model = apps.get_model(app_label, model_name=model_name)
                 return model.objects.none()
+
+    def serialise(self, filter_private=True):
+        data = {
+            'urn': self.urn,
+            'creation_date': str(self.creation_date),
+            'modification_date': str(self.modification_date),
+            'model_type': self.class_name(),
+            'abstract_text': self.abstract_text,
+            'method_text': self.method_text,
+            'description': self.get_description(),
+            'title': self.get_title(),
+        }
+
+        data['keywords'] = [kw.text for kw in self.keywords.all()]
+        data['doi_ids'] = {
+            i.identifier: i.serialise() for i in self.doi_ids.all()}
+        data['sra_ids'] = {
+            i.identifier: i.serialise() for i in self.sra_ids.all()}
+        data['pubmed_ids'] = {
+            i.identifier: i.serialise() for i in self.pubmed_ids.all()}
+
+        children_attr_key = child_attr_map.get(self.class_name())
+        if children_attr_key not in (None, 'variants'):
+            data[children_attr_key] = [
+                c.urn for c in self.children.all()
+                if not (c.private and filter_private)
+            ]
+
+        parent_attr_key = parent_attr_map.get(self.class_name())
+        if parent_attr_key not in (None, 'experimentset'):
+            data[parent_attr_key] = self.parent.urn
+
+        data["contributors"] = [
+            {
+                'orcid': user.username,
+                'credit_name': user.profile.get_credit_name(),
+                'given_name': user.first_name,
+                'family_name': user.last_name,
+            }
+            for user in self.contributors()
+        ]
+
+        return data

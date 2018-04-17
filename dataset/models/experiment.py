@@ -46,9 +46,9 @@ class Experiment(DatasetModel):
         "abstract_text",
         "method_text",
         "short_description",
-        "short_title",
+        "title",
         "keywords",
-        "pmid_ids",
+        "pubmed_ids",
         "doi_ids",
         "sra_ids",
         "targets"
@@ -123,6 +123,15 @@ class Experiment(DatasetModel):
 
     def get_target_names(self):
         return [t.get_name() for t in self.get_targets()]
+
+    def serialise(self, filter_private=True):
+        data = super().serialise()
+        data['targets'] = {
+            targetgene.get_name(): targetgene.serialise()
+            for targetgene in self.get_targets()
+            if (targetgene is not None) and \
+               not (targetgene.scoreset.private and filter_private)
+        }
 
 
 # --------------------------------------------------------------------------- #

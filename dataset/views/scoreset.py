@@ -157,7 +157,7 @@ def scoreset_create_view(request, experiment_urn=None):
         doi_ids = request.POST.getlist("doi_ids")
         doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
 
-        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = request.POST.getlist("pubmed_ids")
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
         # Setup the forms with the POST data. Keys for other forms

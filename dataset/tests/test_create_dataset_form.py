@@ -21,7 +21,7 @@ class TestDataSetModelForm(TestCase):
         self.user = UserFactory()
         self.data = {
             'short_description': 'experimentset',
-            'short_title': 'title',
+            'title': 'title',
         }
 
     def test_will_create_new_keywords(self):
@@ -34,7 +34,7 @@ class TestDataSetModelForm(TestCase):
     def test_will_create_new_identifiers(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, attr in fs:
@@ -61,7 +61,7 @@ class TestDataSetModelForm(TestCase):
     def test_will_associate_existing_identifiers(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, attr in fs:
@@ -87,7 +87,7 @@ class TestDataSetModelForm(TestCase):
     def test_will_clear_existing_identifiers(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, attr in fs:
@@ -102,7 +102,7 @@ class TestDataSetModelForm(TestCase):
     def test_m2m_instances_for_field_returns_new_instances(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, attr in fs:
@@ -121,7 +121,7 @@ class TestDataSetModelForm(TestCase):
     def test_m2m_instances_for_field_returns_existing_instances(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, attr in fs:

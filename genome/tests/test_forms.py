@@ -3,7 +3,7 @@ from django.test import TestCase
 from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_admin,
-    assign_user_as_instance_contributor,
+    assign_user_as_instance_editor,
     assign_user_as_instance_viewer
 )
 
@@ -156,7 +156,7 @@ class TestTargetGeneForm(TestCase):
         form = TargetGeneForm(user=self.user)
         self.assertEqual(form.fields['target'].queryset.count(), 1)
 
-        assign_user_as_instance_contributor(self.user, instance.scoreset)
+        assign_user_as_instance_editor(self.user, instance.scoreset)
         form = TargetGeneForm(user=self.user)
         self.assertEqual(form.fields['target'].queryset.count(), 1)
 

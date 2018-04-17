@@ -88,9 +88,7 @@ class TargetGeneForm(forms.ModelForm):
         if 'target' in self.fields:
             choices = set()
             targets = TargetGene.objects.all()
-            user_scoresets = self.user.profile.administrator_scoresets() + \
-                             self.user.profile.contributor_scoresets() + \
-                             self.user.profile.viewer_scoresets()
+            user_scoresets = self.user.profile.contributor_scoresets()
             for target in targets:
                 scoreset = target.scoreset
                 if scoreset.private and scoreset in user_scoresets:

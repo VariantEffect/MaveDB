@@ -1,4 +1,4 @@
-from django.db import models, transaction
+from django.db import models
 from django.db.models import QuerySet
 
 from core.models import TimeStampedModel
@@ -71,17 +71,32 @@ class TargetGene(TimeStampedModel):
         null=True,
         default=None,
         verbose_name='Wild-type Sequence',
-        related_name='attached_target',
+        related_name='target',
     )
 
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        if hasattr(self, '_previous_wt_sequence'):
-            if self._previous_wt_sequence is not None:
-                WildTypeSequence.objects.get(
-                    pk=self._previous_wt_sequence).delete()
-                self._previous_wt_sequence = None
-        super().save(*args, **kwargs)
+    # External Identifiers
+    # ----------------------------------------------------------------------- #
+    uniprot_id = models.ForeignKey(
+        to='metadata.UniprotIdentifier',
+        on_delete=models.DO_NOTHING,
+        null=True,
+        default=None,
+        related_name='associated_%(class)ss',
+    )
+    ensembl_id = models.ForeignKey(
+        to='metadata.EnsemblIdentifier',
+        on_delete=models.DO_NOTHING,
+        null=True,
+        default=None,
+        related_name='associated_%(class)ss',
+    )
+    refseq_id = models.ForeignKey(
+        to='metadata.RefseqIdentifier',
+        on_delete=models.DO_NOTHING,
+        null=True,
+        default=None,
+        related_name='associated_%(class)ss',
+    )
 
     def get_name(self):
         """
@@ -143,20 +158,11 @@ class TargetGene(TimeStampedModel):
             Associates this instance with the supplied :class:`WildTypeSequence`
             instance.
         """
-        if isinstance(sequence, WildTypeSequence):
-            if self.wt_sequence:
-                self._previous_wt_sequence = self.wt_sequence.pk
-            self.wt_sequence = sequence
-        elif isinstance(sequence, str):
-            validate_wildtype_sequence(sequence)
-            if self.wt_sequence is None:
-                raise AttributeError(
-                    "No wild-type sequence instance is attached.")
-            self.wt_sequence.sequence = sequence.upper()
-        else:
+        if not isinstance(sequence, WildTypeSequence):
             raise TypeError("Found {}, expected {} or str.".format(
                 type(sequence).__name__, WildTypeSequence.__name__
             ))
+        self.wt_sequence = sequence
 
     def annotation_count(self):
         """
@@ -195,22 +201,6 @@ class TargetGene(TimeStampedModel):
         genome_pks = set(a.genome.pk for a in self.get_annotations())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
 
-    def reference_mapping(self):
-        """
-        Returns a serialised `dict` of all attached annotations. The keys
-        are the :class:`ReferenceGenome` names and the values are the serialised
-        :class:`Annotation` instances.
-
-        Returns
-        -------
-        `dict`
-            The serialsed :class:`Annotation` instances.
-        """
-        return {
-            annotation.get_reference_genome_name(): annotation.serialise()
-            for annotation in self.get_annotations()
-        }
-
     def serialise(self):
         """Returns a serialised `dict` of this instance's fields. Recurses the
         serialisation for relational fields.
@@ -220,17 +210,27 @@ class TargetGene(TimeStampedModel):
             - `scoreset`
             - `wt_sequence`
             - `annotations`
+            - `external_identifiers`
 
         Returns
         -------
         `dict`
             The serialised data of this instance.
         """
+        ensembl_id = self.ensembl_id
+        refseq_id = self.refseq_id
+        uniprot_id = self.uniprot_id
+
         return {
             'name': self.name,
             'scoreset': None if not self.scoreset else self.scoreset.urn,
             'wt_sequence': self.get_wt_sequence_string(),
-            'annotations': [a.serialise() for a in self.annotations.all()]
+            'annotations': [a.serialise() for a in self.annotations.all()],
+            'external_identifiers': {
+                'refseq': None if not refseq_id else refseq_id.serialise(),
+                'ensembl': None if not ensembl_id else ensembl_id.serialise(),
+                'uniprot': None if not uniprot_id else uniprot_id.serialise()
+            }
         }
 
 
@@ -270,11 +270,10 @@ class Annotation(TimeStampedModel):
         null=True,
         default=None,
         verbose_name='Reference genome',
-        related_name='annotations',
     )
 
     target = models.ForeignKey(
-        to=TargetGene,
+        to='genome.TargetGene',
         blank=True,
         null=True,
         default=None,
@@ -476,20 +475,20 @@ class ReferenceGenome(TimeStampedModel):
 
     # Potential ExternalIdentifiers that may be linked.
     ensembl_id = models.ForeignKey(
-        to=EnsemblIdentifier,
+        to='metadata.EnsemblIdentifier',
         blank=True,
         null=True,
         default=None,
         verbose_name='Ensembl identifier',
-        related_name='attached_%(class)ss',
+        related_name='associated_%(class)ss',
     )
     refseq_id = models.ForeignKey(
-        to=RefseqIdentifier,
+        to='metadata.RefseqIdentifier',
         blank=True,
         null=True,
         default=None,
         verbose_name='RefSeq identifier',
-        related_name='attached_%(class)ss',
+        related_name='associated_%(class)ss',
     )
 
     def get_identifier_url(self):
@@ -597,19 +596,14 @@ class ReferenceGenome(TimeStampedModel):
         """
         ensembl_id = self.get_ensembl_id()
         refseq_id = self.get_refseq_id()
+
         return {
             'short_name': self.get_short_name(),
             'species_name': self.get_species_name(),
             'external_identifiers': {
-                'refseq': {
-                    'identifier': None if not refseq_id else refseq_id.identifier,
-                    'url': None if not refseq_id else refseq_id.url
-                },
-                'ensembl': {
-                    'identifier': None if not ensembl_id else ensembl_id.identifier,
-                    'url': None if not ensembl_id else ensembl_id.url
-                },
-            },
+                'refseq': None if not refseq_id else refseq_id.serialise(),
+                'ensembl': None if not ensembl_id else ensembl_id.serialise()
+            }
         }
 
 
@@ -686,7 +680,7 @@ class Interval(TimeStampedModel):
         validators=[validate_strand],
     )
     annotation = models.ForeignKey(
-        to=Annotation,
+        to='genome.Annotation',
         default=None,
         blank=True,
         null=True,

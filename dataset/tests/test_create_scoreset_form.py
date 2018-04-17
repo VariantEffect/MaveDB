@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_viewer,
-    assign_user_as_instance_contributor,
+    assign_user_as_instance_editor,
     assign_user_as_instance_admin
 )
 from main.models import Licence
@@ -52,7 +52,7 @@ class TestScoreSetForm(TestCase):
             assign_user_as_instance_admin(self.user, experiment)
         data = {
             'short_description': 'experiment',
-            'short_title': 'title',
+            'title': 'title',
             "experiment": experiment.pk if experiment else None,
         }
         s_file, c_file = make_score_count_files(score_data, count_data)
@@ -117,12 +117,12 @@ class TestScoreSetForm(TestCase):
             form.fields['experiment'].queryset.first().pk,
             data['experiment'])
 
-    def test_contributor_experiments_appear_in_options(self):
+    def test_editor_experiments_appear_in_options(self):
         data, files = self.make_post_data(make_exp=False)
         obj1 = ExperimentFactory()
         _ = ExperimentFactory()
 
-        assign_user_as_instance_contributor(self.user, obj1)
+        assign_user_as_instance_editor(self.user, obj1)
         data['experiment'] = obj1.pk
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['experiment'].queryset.count(), 1)
@@ -151,13 +151,13 @@ class TestScoreSetForm(TestCase):
         self.assertEqual(
             form.fields['replaces'].queryset.first().pk, scs.pk)
 
-    def test_contributor_scoresets_appear_in_replaces_options(self):
+    def test_editor_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()
         scs = ScoreSetFactory(experiment=exp)
         _ = ScoreSetFactory(experiment=exp)
-        assign_user_as_instance_contributor(self.user, exp)
-        assign_user_as_instance_contributor(self.user, scs)
+        assign_user_as_instance_editor(self.user, exp)
+        assign_user_as_instance_editor(self.user, scs)
 
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['replaces'].queryset.count(), 1)

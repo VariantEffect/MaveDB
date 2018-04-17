@@ -73,9 +73,9 @@ class TestDatasetModel(TestCase):
         instance.sra_ids.clear()
         self.assertEqual(instance.sra_ids.count(), 0)
 
-        self.assertEqual(instance.pmid_ids.count(), 1)
-        instance.pmid_ids.clear()
-        self.assertEqual(instance.pmid_ids.count(), 0)
+        self.assertEqual(instance.pubmed_ids.count(), 1)
+        instance.pubmed_ids.clear()
+        self.assertEqual(instance.pubmed_ids.count(), 0)
 
     def test_propagate_set_value_propagates_to_parents(self):
         instance = ScoreSetFactory()

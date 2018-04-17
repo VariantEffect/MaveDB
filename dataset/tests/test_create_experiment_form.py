@@ -3,7 +3,7 @@ from django.test import TestCase, RequestFactory
 from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_admin,
-    assign_user_as_instance_contributor,
+    assign_user_as_instance_editor,
     assign_user_as_instance_viewer
 )
 
@@ -35,7 +35,7 @@ class TestExperimentForm(TestCase):
         """
         data = {
             'short_description': 'experiment',
-            'short_title': 'title',
+            'title': 'title',
             "experimentset": (
                 None if not use_exps else ExperimentSetFactory().pk
             )
@@ -63,10 +63,10 @@ class TestExperimentForm(TestCase):
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
         self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)
 
-    def test_contributor_experimentset_appear_in_options(self):
+    def test_editor_experimentset_appear_in_options(self):
         obj1 = ExperimentSetFactory()
         _ = ExperimentSetFactory()
-        assign_user_as_instance_contributor(self.user, obj1)
+        assign_user_as_instance_editor(self.user, obj1)
         form = ExperimentForm(user=self.user)
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
         self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)

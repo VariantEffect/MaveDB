@@ -5,7 +5,7 @@ from django.test import TestCase, RequestFactory
 from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_viewer,
-    assign_user_as_instance_contributor,
+    assign_user_as_instance_editor,
     assign_user_as_instance_admin,
     user_is_admin_for_instance
 )
@@ -76,15 +76,14 @@ class TestScoreSetSetDetailView(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_variants_are_in_response(self):
-        self.fail("Fix variant table rendering")
-        # scs = ScoreSetFactory()
-        # var = VariantFactory(scoreset=scs)
-        # scs.publish()
-        # scs.save()
-        # request = self.factory.get('/scoreset/{}/'.format(scs.urn))
-        # request.user = UserFactory()
-        # response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
-        # self.assertContains(response, var.hgvs)
+        scs = ScoreSetFactory()
+        var = VariantFactory(scoreset=scs)
+        scs.publish()
+        scs.save()
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertContains(response, var.hgvs)
 
 
 class TestCreateNewScoreSetView(TestCase):
@@ -104,12 +103,12 @@ class TestCreateNewScoreSetView(TestCase):
             'replaces': [''],
             'private': ['on'],
             'short_description': 'an entry',
-            'short_title': 'title',
+            'title': 'title',
             'abstract_text': [''],
             'method_text': [''],
             'sra_ids': [''],
             'doi_ids': [''],
-            'pmid_ids': [''],
+            'pubmed_ids': [''],
             'keywords': [''],
             'submit': ['submit'],
             'start': [1],
@@ -272,7 +271,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_failed_submission_adds_extern_identifier_to_context(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, field in fs:
@@ -289,7 +288,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_failed_submission_adds_new_extern_identifier_to_context(self):
         fs = [
             (SraIdentifierFactory, 'sra_ids'),
-            (PubmedIdentifierFactory, 'pmid_ids'),
+            (PubmedIdentifierFactory, 'pubmed_ids'),
             (DoiIdentifierFactory, 'doi_ids')
         ]
         for factory, field in fs:
@@ -391,7 +390,7 @@ class TestCreateNewScoreSetView(TestCase):
     def test_does_not_add_user_as_admin_to_selected_parent(self):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
-        assign_user_as_instance_contributor(self.user, exp1)
+        assign_user_as_instance_editor(self.user, exp1)
         data['experiment'] = [exp1.pk]
         data['publish'] = ['publish']
 
@@ -422,8 +421,8 @@ class TestCreateNewScoreSetView(TestCase):
     def test_came_from_experiment_locks_experiment_choice(self):
         exp1 = ExperimentFactory()
         exp2 = ExperimentFactory()
-        assign_user_as_instance_contributor(self.user, exp1)
-        assign_user_as_instance_contributor(self.user, exp2)
+        assign_user_as_instance_editor(self.user, exp1)
+        assign_user_as_instance_editor(self.user, exp2)
 
         request = self.factory.get(path=self.path)
         request.user = self.user

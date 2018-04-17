@@ -43,6 +43,10 @@ class Keyword(TimeStampedModel):
     def __str__(self):
         return self.text
 
+    def get_associated(self, model):
+        attr = 'associated_{}s'.format(model)
+        return getattr(self, attr).all()
+
 
 class ExternalIdentifier(TimeStampedModel):
     """
@@ -123,6 +127,60 @@ class ExternalIdentifier(TimeStampedModel):
             self.url = self.format_url()
             self.dbname = self.DATABASE_NAME
         super().save(*args, **kwargs)
+
+    def serialise(self):
+        return {
+            'dbname': self.dbname,
+            'identifier': self.identifier,
+            'url': self.url
+        }
+
+    def get_associated(self, model):
+        attr = 'associated_{}s'.format(model)
+        return getattr(self, attr).all()
+
+
+class AnnotationOffset(models.Model):
+    """
+    An offset value unique to an AnnotationIdentifier and a
+    TargetGene.
+    """
+    offset = models.PositiveIntegerField(
+        blank=True,
+        null=False,
+        default=1,
+        verbose_name='Wild-type offset'
+    )
+
+
+class AnnotationIdentifier(ExternalIdentifier):
+    """
+    Abstract class representing an identifier which also requires the specification
+    of an offset. Used to calculate the position that target starts at
+     within the annotation sequence (ammino acid, nucleotide).
+    """
+    class Meta(ExternalIdentifier.Meta):
+        abstract = True
+
+    annotation_offset = models.OneToOneField(
+        to=AnnotationOffset,
+        blank=True,
+        null=True,
+        default=None,
+        verbose_name='Wild-type offset',
+    )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.annotation_offset is None:
+            self.annotation_offset = AnnotationOffset()
+            self.annotation_offset.save()
+            self.save()
+
+    def serialise(self):
+        data = super().serialise()
+        data['offset'] = self.annotation_offset.offset
+        return data
 
 
 class SraIdentifier(ExternalIdentifier):
@@ -205,7 +263,7 @@ class PubmedIdentifier(ExternalIdentifier):
         super().save(*args, **kwargs)
 
 
-class RefseqIdentifier(ExternalIdentifier):
+class RefseqIdentifier(AnnotationIdentifier):
     """
     An NCBI RefSeq accession number.
     """
@@ -219,7 +277,7 @@ class RefseqIdentifier(ExternalIdentifier):
         pass
     
 
-class EnsemblIdentifier(ExternalIdentifier):
+class EnsemblIdentifier(AnnotationIdentifier):
     """
     An Ensembl accession number.
     """
@@ -233,7 +291,7 @@ class EnsemblIdentifier(ExternalIdentifier):
         pass
     
 
-class UniprotIdentifier(ExternalIdentifier):
+class UniprotIdentifier(AnnotationIdentifier):
     """
     A UniProt accession number.
     """

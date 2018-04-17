@@ -19,7 +19,7 @@ class TestExperimentEditForm(TestCase):
         """
         data = {
             'short_description': 'experiment',
-            'short_title': 'title',
+            'title': 'title',
         }
         return data
 
