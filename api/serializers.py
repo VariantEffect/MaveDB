@@ -62,8 +62,8 @@ class ExperimentSetSerializer(Serializer):
             "urn": instance.urn,
             "contributors": instance.format_using_username(
                 group='editors', string=False),
-            "experiments": [
-                e.urn for e in instance.experiments.all()
+            "contributor_experiments": [
+                e.urn for e in instance.contributor_experiments.all()
                 if not (e.private and filter_private)
             ]
         }
@@ -71,7 +71,7 @@ class ExperimentSetSerializer(Serializer):
 
     def serialize_set(self, queryset, filter_private=True):
         return {
-            "experimentsets": [
+            "contributor_experimentsets": [
                 self.serialize(exps.pk, filter_private) for exps in queryset
             ]
         }
@@ -102,7 +102,7 @@ class ExperimentSerializer(Serializer):
             "experimentset": instance.experimentset.urn,
             "scoresets": [
                 s.current_version.urn
-                for s in instance.scoresets.all()
+                for s in instance.contributor_scoresets.all()
                 if not (s.private and filter_private)
             ],
         }
@@ -110,7 +110,7 @@ class ExperimentSerializer(Serializer):
 
     def serialize_set(self, queryset, filter_private=True):
         data = {
-            "experiments": [
+            "contributor_experiments": [
                 self.serialize(exp.pk, filter_private) for exp in queryset
             ]
         }
@@ -155,7 +155,7 @@ class ScoreSetSerializer(Serializer):
 
     def serialize_set(self, queryset):
         return {
-            "scoresets": [self.serialize(s.pk) for s in queryset]
+            "contributor_scoresets": [self.serialize(s.pk) for s in queryset]
         }
 
 
@@ -175,15 +175,15 @@ class UserSerializer(Serializer):
             "username": user.username,
             "first_name": user.first_name,
             "last_name": user.last_name,
-            "experimentsets": [
+            "contributor_experimentsets": [
                 i.urn for i in profile.administrator_experimentsets()
                 if not (i.private and filter_private)
             ],
-            "experiments": [
+            "contributor_experiments": [
                 i.urn for i in profile.administrator_experiments()
                 if not (i.private and filter_private)
             ],
-            "scoresets": [
+            "contributor_scoresets": [
                 i.urn for i in profile.administrator_scoresets()
                 if not (i.private and filter_private)
             ]

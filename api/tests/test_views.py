@@ -32,17 +32,17 @@ class TestUserAPIViews(TestCase):
                     "username": "alice",
                     "first_name": "",
                     "last_name": "",
-                    'experimentsets': [],
-                    'experiments': [],
-                    'scoresets': []
+                    'contributor_experimentsets': [],
+                    'contributor_experiments': [],
+                    'contributor_scoresets': []
                 },
                 {
                     "username": "bob",
                     "first_name": "",
                     "last_name": "",
-                    'experimentsets': [],
-                    'experiments': [],
-                    'scoresets': []
+                    'contributor_experimentsets': [],
+                    'contributor_experiments': [],
+                    'contributor_scoresets': []
                 }
             ]
         }
@@ -63,9 +63,9 @@ class TestUserAPIViews(TestCase):
             "username": "alice",
             "first_name": "",
             "last_name": "",
-            'experimentsets': [],
-            'experiments': [],
-            'scoresets': [scs_2.urn]
+            'contributor_experimentsets': [],
+            'contributor_experiments': [],
+            'contributor_scoresets': [scs_2.urn]
         }
         self.assertEqual(expected, result)
 
@@ -80,7 +80,7 @@ class TestExperimentSetAPIViews(TestCase):
         exps = ExperimentSetFactory()
         response = self.client.get("/api/get/experimentset/all/")
         result = json.loads(response.content.decode('utf-8'))
-        expected = {"experimentsets": []}
+        expected = {"contributor_experimentsets": []}
         self.assertEqual(expected, result)
 
     def test_404_private_experimentset(self):
@@ -101,7 +101,7 @@ class TestExperimentAPIViews(TestCase):
         instance = ExperimentFactory()
         response = self.client.get("/api/get/experiment/all/")
         result = json.loads(response.content.decode('utf-8'))
-        expected = {"experiments": []}
+        expected = {"contributor_experiments": []}
         self.assertEqual(expected, result)
 
     def test_404_private(self):
@@ -122,7 +122,7 @@ class TestScoreSetAPIViews(TestCase):
         instance = ScoreSetFactory()
         response = self.client.get("/api/get/scoreset/all/")
         result = json.loads(response.content.decode('utf-8'))
-        expected = {"scoresets": []}
+        expected = {"contributor_scoresets": []}
         self.assertEqual(expected, result)
 
     def test_404_private(self):
