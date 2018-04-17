@@ -34,6 +34,7 @@ SECRET_KEY = get_secret('secret_key')
 LICENCE_DIR = BASE_DIR + '/licences/'
 
 # Social auth settings for ORCID authentication
+SOCIAL_AUTH_ORCID_PROFILE_EXTRA_PARAMS = {'credit-name': 'credit_name'}
 SOCIAL_AUTH_ORCID_KEY = get_secret('orcid_key')
 SOCIAL_AUTH_ORCID_SECRET = get_secret('orcid_secret')
 SOCIAL_AUTH_USER_MODEL = 'auth.User'
@@ -48,9 +49,13 @@ SOCIAL_AUTH_PIPELINE = [
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
+    # adds credit-name as credit_name to extra data in the social auth
+    # profile model
+    # 'core.pipeline.load_extra_data',
     'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
 ]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -68,6 +73,7 @@ INSTALLED_APPS = [
     'reversion',
     'social_django',
     'django_extensions',
+    'widget_tweaks',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -167,4 +173,3 @@ EMAIL_USE_SSL = False
 # Reply-to email for user emails
 # REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')
 REPLY_TO_EMAIL = "alan.rubin@wehi.edu.au"
-
