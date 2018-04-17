@@ -10,7 +10,7 @@
 	<h5> Editable entries </h5>
 	{% if request.user.profile.editable_instances %}
 		<ul style="list-style: none">
-			{% for instance in request.user.profile.editable_instances %}
+			{% for instance in request.user.profile.administrator_instances %}
 
         <div class="entry-card hover-card">
           <div style="display: inline-flex">

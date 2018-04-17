@@ -31,7 +31,7 @@ $("document").ready(function() {
     repopulateSelect("#id_keywords", "#keywords-to-add");
     repopulateSelect("#id_sra_ids", "#sra-identifiers-to-add");
     repopulateSelect("#id_doi_ids", "#doi-identifiers-to-add");
-    repopulateSelect("#id_pmid_ids", "#pubmed-identifiers-to-add");
+    repopulateSelect("#id_pubmed_ids", "#pubmed-identifiers-to-add");
     repopulateSelect("#id_target_organism", "#target-organisms-to-add");
 });
 

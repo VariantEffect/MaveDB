@@ -67,8 +67,8 @@
      <!-- Renders contributors as ORCID url-->
     <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
     <ul>
-      {% for contributor in instance.editors %}
-      <li> {{ contributor.profile.get_full_name_hyperlink }}</li>
+      {% for contributor in instance.contributors %}
+      <li> {{ contributor.profile.get_credit_name_hyperlink }}</li>
       {% endfor %}
     </ul>
 
