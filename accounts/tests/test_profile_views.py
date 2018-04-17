@@ -12,7 +12,9 @@ from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
 
-from genome.factories import ReferenceGenomeFactory, IntervalFactory
+from genome.factories import (
+    ReferenceGenomeFactory, IntervalFactory
+)
 
 from ..factories import UserFactory, AnonymousUserFactory, ProfileFactory
 from ..permissions import (
@@ -49,9 +51,6 @@ class TestProfileHomeView(TestCase):
 
 
 class TestProfileManageInstanceView(TestCase):
-    """
-    Test
-    """
     def setUp(self):
         self.factory = RequestFactory()
         self.alice = UserFactory(username="alice", password="secret")
@@ -168,13 +167,22 @@ class TestProfileEditInstanceView(TestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
+        self.ref = ReferenceGenomeFactory()
         self.base_post_data = {
             'keywords': [''],
             'sra_ids': [''],
             'doi_ids': [''],
             'short_description': ['a thing'],
-            'short_title': ['title'],
-            'pmid_ids': [''],
+            'title': ['title'],
+            'pubmed_ids': [''],
+            'start': [1],
+            'end': [2],
+            'chromosome': ['chrX'],
+            'strand': ['F'],
+            'genome': [self.ref.pk],
+            'is_primary': True,
+            'wt_sequence': 'atcg',
+            'name': 'BRCA1',
             'submit': ['submit'],
             'publish': ['']
         }
@@ -212,6 +220,10 @@ class TestProfileEditInstanceView(TestCase):
         user.save()
         
         obj = ScoreSetFactory()
+        interval = IntervalFactory()
+        interval.annotation.target.scoreset = obj
+        interval.annotation.target.save()
+
         assign_user_as_instance_admin(self.user, obj)
         assign_user_as_instance_admin(self.user, obj.parent)
         data, _ = self.make_scores_test_data()
@@ -226,6 +238,10 @@ class TestProfileEditInstanceView(TestCase):
 
     def test_publishing_sets_child_and_parents_to_public(self):
         obj = ScoreSetFactory()
+        interval = IntervalFactory()
+        interval.annotation.target.scoreset = obj
+        interval.annotation.target.save()
+
         assign_user_as_instance_admin(self.user, obj)
         assign_user_as_instance_admin(self.user, obj.parent)
 
@@ -338,6 +354,10 @@ class TestProfileEditInstanceView(TestCase):
         data['markdown'] = [True]
 
         obj = ScoreSetFactory()
+        interval = IntervalFactory()
+        interval.annotation.target.scoreset = obj
+        interval.annotation.target.save()
+
         assign_user_as_instance_admin(self.user, obj)
         path = '/profile/edit/{}/'.format(obj.urn)
         request = self.factory.get(

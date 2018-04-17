@@ -6,7 +6,7 @@ from dataset.models.experimentset import ExperimentSet
 
 from ..mixins import filter_su, filter_anon
 from ..permissions import (
-    assign_user_as_instance_admin, assign_user_as_instance_contributor,
+    assign_user_as_instance_admin, assign_user_as_instance_editor,
     assign_user_as_instance_viewer
 )
 
@@ -30,15 +30,15 @@ class TestGroupPermisionMixin(TestCase):
 
     def test_administrators_returns_admins_only(self):
         assign_user_as_instance_admin(self.alice, self.instance_a)
-        assign_user_as_instance_contributor(self.bob, self.instance_a)
+        assign_user_as_instance_editor(self.bob, self.instance_a)
         result = self.instance_a.administrators()
         expected = [self.alice]
         self.assertEqual(expected, list(result.all()))
 
-    def test_contributors_returns_contributors_only(self):
-        assign_user_as_instance_contributor(self.alice, self.instance_a)
+    def test_editors_returns_editors_only(self):
+        assign_user_as_instance_editor(self.alice, self.instance_a)
         assign_user_as_instance_admin(self.bob, self.instance_a)
-        result = self.instance_a.contributors()
+        result = self.instance_a.editors()
         expected = [self.alice]
         self.assertEqual(expected, list(result.all()))
 
@@ -49,58 +49,14 @@ class TestGroupPermisionMixin(TestCase):
         expected = [self.alice]
         self.assertEqual(expected, list(result.all()))
 
-    def test_editors_returns_admins_and_contributors(self):
+    def test_contributors_returns_admins_editors_and_viewers(self):
+        jimmy = User.objects.create(username='jimmy', password='secret_key')
         assign_user_as_instance_admin(self.alice, self.instance_a)
-        assign_user_as_instance_contributor(self.bob, self.instance_a)
-        result = self.instance_a.editors()
-        expected = [self.alice, self.bob]
+        assign_user_as_instance_editor(self.bob, self.instance_a)
+        assign_user_as_instance_viewer(jimmy, self.instance_a)
+        result = self.instance_a.contributors()
+        expected = [self.alice, self.bob, jimmy]
         self.assertEqual(expected, list(result.all()))
-
-    def _format_as_returns_mononym_when_no_last_name(self):
-        assign_user_as_instance_admin(self.alice, self.instance_a)
-        self.alice.first_name = 'Alice'
-
-        result = self.instance_a.format_using_full_name(group='administrators')
-        expected = [self.alice.first_name]
-        self.assertEqual(result, expected)
-
-        result = self.instance_a.format_using_short_name(group='administrators')
-        expected = [self.alice.first_name]
-        self.assertEqual(result, expected)
-
-    def test_format_as_returns_short_name(self):
-        assign_user_as_instance_admin(self.alice, self.instance_a)
-        self.alice.first_name = 'Alice'
-        self.alice.last_name = 'Daniels'
-        self.alice.save()
-
-        result = self.instance_a.format_using_short_name(group='administrators')
-        expected = [self.alice.get_short_name()]
-        self.assertEqual(result, expected)
-
-    def test_format_as_returns_full_name(self):
-        assign_user_as_instance_admin(self.alice, self.instance_a)
-        self.alice.first_name = 'Alice'
-        self.alice.last_name = 'Daniels'
-        self.alice.save()
-
-        result = self.instance_a.format_using_full_name(group='administrators')
-        expected = [self.alice.get_full_name()]
-        self.assertEqual(result, expected)
-
-    def test_format_as_returns_usernames(self):
-        assign_user_as_instance_admin(self.alice, self.instance_a)
-        result = self.instance_a.format_using_username(group='administrators')
-        expected = [self.alice.username]
-        self.assertEqual(result, expected)
-
-    def test_format_comma_separates(self):
-        assign_user_as_instance_admin(self.alice, self.instance_a)
-        assign_user_as_instance_admin(self.bob, self.instance_a)
-        result = self.instance_a.format_using_username(
-            group='administrators', string=True)
-        expected = ', '.join([self.alice.username, self.bob.username])
-        self.assertEqual(result, expected)
 
     def test_filter_superuser_removes_superusers(self):
         self.alice.is_superuser = True
@@ -115,5 +71,6 @@ class TestGroupPermisionMixin(TestCase):
             [], filter_anon([AnonymousUser()])
         )
         self.assertEqual(
-            [self.alice, self.bob], list(filter_anon(User.objects.all()))
+            [self.alice, self.bob],
+            list(filter_anon(User.objects.all()))
         )

@@ -82,57 +82,12 @@ def get_class_from_urn(urn):
         return None
 
 
-# List Users
-# ------------------------------------------------------------------------- #
-def list_all_users_and_their_data(request):
-    users = [
-        user for user in User.objects.all()
-        if not (user_is_anonymous(user) or user.is_superuser)
-    ]
-
-    # Filter out users that are not associated with any public datasets
-    users = [
-        user for user in users
-        if any(not i.private for i in user.profile.administrator_instances())
-    ]
-
-    # Handle the pagination request options
-    try:
-        per_page = request.GET.get('per-page', 25)
-        per_page = int(per_page)
-        paginator = Paginator(users, per_page=per_page)
-    except (PageNotAnInteger, ValueError, EmptyPage):
-        per_page = 25
-        paginator = Paginator(users, per_page=per_page)
-
-    try:
-        page_num = request.GET.get('page', 1)
-        users = paginator.page(page_num)
-    except PageNotAnInteger:
-        page_num = 1
-        users = paginator.page(page_num)
-    except EmptyPage:
-        page_num = paginator.num_pages
-        users = paginator.page(page_num)
-
-    context = {
-        "users": users,
-        "per_page": per_page,
-        "page_num": page_num,
-        "per_page_selections": [25, 50, 100]
-    }
-    return render(
-        request, "accounts/list_all.html", context
-    )
-
-
 # Profile views
 # ------------------------------------------------------------------------- #
 def login_delegator(request):
     if settings.USE_SOCIAL_AUTH:
         return redirect("accounts:social:begin", "orcid")
     else:
-        print("debug login")
         return auth_views.LoginView.as_view()(request)
 
 
@@ -368,7 +323,7 @@ def handle_scoreset_edit_form(request, instance):
         doi_ids = request.POST.getlist("doi_ids")
         doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
 
-        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = request.POST.getlist("pubmed_ids")
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
         # Set the context
@@ -452,7 +407,7 @@ def handle_experiment_edit_form(request, instance):
         doi_ids = request.POST.getlist("doi_ids")
         doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
 
-        pubmed_ids = request.POST.getlist("pmid_ids")
+        pubmed_ids = request.POST.getlist("pubmed_ids")
         pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
 
         # Set the context

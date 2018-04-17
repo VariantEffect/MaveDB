@@ -24,7 +24,7 @@ from dataset.constants import any_url_pattern
 
 from .views import registration_view, profile_view, log_user_out, login_error
 from .views import manage_instance, edit_instance, view_instance
-from .views import login_delegator, list_all_users_and_their_data
+from .views import login_delegator
 
 
 urlpatterns = [

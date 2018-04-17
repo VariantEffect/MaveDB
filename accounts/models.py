@@ -1,3 +1,5 @@
+from social_django.models import UserSocialAuth
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
@@ -62,7 +64,31 @@ class Profile(TimeStampedModel):
             return None
         else:
             return 'https://orcid.org/{}'.format(self.user.username)
-    
+
+    def get_credit_name_hyperlink(self):
+        """
+        Returns the credit-name formatted as a hyperlink tag referencing the
+        ORCID url otherwise full name if it cannot be found.
+
+        Returns
+        -------
+        `str`
+            Returns 'anonymous user' if the user is anon, otherwise a
+            <a/> tag with the user's full name as the inner HTML.
+
+        Returns
+        -------
+        `str`
+            Returns 'anonymous user' if the user is anon, otherwise a
+            <a/> tag with the user's credit-name as the inner HTML.
+        """
+        if self.is_anon():
+            return 'anonymous user'
+        else:
+            return format_html('<a href="{url}">{name}</a>'.format(
+                url=self.get_orcid_url(),
+                name=self.get_credit_name()))
+
     def get_full_name_hyperlink(self):
         """
         Returns the full name formatted as a hyperlink tag referencing the
@@ -80,6 +106,29 @@ class Profile(TimeStampedModel):
             return format_html('<a href="{url}">{name}</a>'.format(
                 url=self.get_orcid_url(),
                 name=self.get_full_name()))
+
+    def get_credit_name(self):
+        """
+        Returns the users credit name if one exists for this user, otherwise
+        calls :func:`get_full_name`.
+
+        Returns
+        -------
+        `str`
+            Credit-name, the result of :func:`get_full_name` or None if the user
+            is anon.
+        """
+        if self.is_anon():
+            return None
+
+        social_auth = UserSocialAuth.get_social_auth_for_user(self.user)
+        if not isinstance(social_auth, UserSocialAuth):
+            return self.get_full_name()
+        else:
+            credit_name = social_auth.extra_data.get('credit_name', "")
+            if not credit_name:
+                return self.get_full_name()
+            return credit_name
 
     def get_full_name(self):
         """
@@ -137,39 +186,57 @@ class Profile(TimeStampedModel):
     def __str__(self):
         return "{}_profile".format(self.user.username)
 
-    def editable_instances(self):
-        """
-        Return a list of instances the user has the 'CAN_EDIT' permission for.
-        """
-        return self.contributor_instances() + self.administrator_instances()
+    @staticmethod
+    def _iterable_to_queryset(iterable, klass):
+        pks = set([i.pk for i in iterable])
+        return klass.objects.filter(pk__in=pks).order_by('urn')
 
-    def experimentsets(self):
+    # Contributor
+    # ----------------------------------------------------------------------- #
+    def contributor_instances(self):
         """
-        Return a list of :class:`ExperimentSet` instances the user is assoicated
-        with.
+        Return a list of :class:`DatasetModel` instances the user is a
+        contributor for (view, edit, or admin).
         """
-        return self.administrator_experimentsets() + \
-            self.contributor_experimentsets() + \
+        return self.contributor_experimentsets() + \
+            self.contributor_experiments() + \
+            self.contributor_scoresets()
+
+    def contributor_experimentsets(self):
+        """
+        Return a list of :class:`ExperimentSet` instances the user
+        contributes to.
+        """
+        instances = self.administrator_experimentsets() + \
+            self.editor_experimentsets() + \
             self.viewer_experimentsets()
 
-    def experiments(self):
-        """
-        Return a list of :class:`Experiment` instances the user is assoicated
-        with.
-        """
-        return self.administrator_experiments() + \
-            self.contributor_experiments() + \
-            self.viewer_experiments()
+        return list(self._iterable_to_queryset(instances, ExperimentSet).all())
 
-    def scoresets(self):
+    def contributor_experiments(self):
         """
-        Return a list of :class:`ScoreSet` instances the user is assoicated
-        with.
+        Return a list of :class:`Experiment` instances the user
+        contributes to.
         """
-        return self.administrator_scoresets() + \
-            self.contributor_scoresets() + \
-            self.viewer_scoresets()
+        instances = self.administrator_experiments() + \
+                    self.editor_experiments() + \
+                    self.viewer_experiments()
 
+        return list(self._iterable_to_queryset(instances, Experiment).all())
+
+    def contributor_scoresets(self):
+        """
+        Return a list of :class:`ScoreSet` instances the user
+        contributes to.
+        """
+        instances = self.administrator_scoresets() + \
+                    self.editor_scoresets() + \
+                    self.viewer_scoresets()
+
+        return list(self._iterable_to_queryset(instances, ScoreSet).all())
+
+    # Administrator
+    # ----------------------------------------------------------------------- #
     def administrator_instances(self):
         """
         Return a list of :class:`DatasetModel` instances the user is an admin
@@ -179,26 +246,6 @@ class Profile(TimeStampedModel):
             self.administrator_experiments() + \
             self.administrator_scoresets()
 
-    def contributor_instances(self):
-        """
-        Return a list of :class:`DatasetModel` instances the user is a
-        contributor for.
-        """
-        return self.contributor_experimentsets() + \
-            self.contributor_experiments() + \
-            self.contributor_scoresets()
-
-    def viewer_instances(self):
-        """
-        Return a list of :class:`DatasetModel` instances the user is a viewer
-        for.
-        """
-        return self.viewer_experimentsets() + \
-            self.viewer_experiments() + \
-            self.viewer_scoresets()
-
-    # ExperimentSet access
-    # ---------------------------------------------------------------------- #
     def administrator_experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user
@@ -210,16 +257,82 @@ class Profile(TimeStampedModel):
             group_type=GroupTypes.ADMIN
         )
 
-    def contributor_experimentsets(self):
+    def administrator_experiments(self):
+        """
+        Return a list of :class:`Experiment` instances the user
+        administrates.
+        """
+        return instances_for_user_with_group_permission(
+            user=self.user,
+            model=Experiment,
+            group_type=GroupTypes.ADMIN
+        )
+
+    def administrator_scoresets(self):
+        """
+        Return a list of :class:`Experiment` instances the user
+        administrates.
+        """
+        return instances_for_user_with_group_permission(
+            user=self.user,
+            model=ScoreSet,
+            group_type=GroupTypes.ADMIN
+        )
+
+    # Editor
+    # ---------------------------------------------------------------------- #
+    def editor_instances(self):
+        """
+        Return a list of :class:`DatasetModel` instances the user is a viewer
+        for.
+        """
+        return self.editor_experimentsets() + \
+               self.editor_experiments() + \
+               self.editor_scoresets()
+
+    def editor_experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user
-        contributes to.
+        can only view.
         """
         return instances_for_user_with_group_permission(
             user=self.user,
             model=ExperimentSet,
-            group_type=GroupTypes.CONTRIBUTOR
+            group_type=GroupTypes.EDITOR
         )
+
+    def editor_experiments(self):
+        """
+        Return a list of :class:`Experiment` instances the user
+        can only view.
+        """
+        return instances_for_user_with_group_permission(
+            user=self.user,
+            model=Experiment,
+            group_type=GroupTypes.EDITOR
+        )
+
+    def editor_scoresets(self):
+        """
+        Return a list of :class:`ScoreSet` instances the user
+        can only view.
+        """
+        return instances_for_user_with_group_permission(
+            user=self.user,
+            model=ScoreSet,
+            group_type=GroupTypes.EDITOR
+        )
+
+    # Viewer
+    # ---------------------------------------------------------------------- #
+    def viewer_instances(self):
+        """
+        Return a list of :class:`DatasetModel` instances the user is a viewer
+        for.
+        """
+        return self.viewer_experimentsets() + \
+            self.viewer_experiments() + \
+            self.viewer_scoresets()
 
     def viewer_experimentsets(self):
         """
@@ -232,30 +345,6 @@ class Profile(TimeStampedModel):
             group_type=GroupTypes.VIEWER
         )
 
-    # Experiment access
-    # ---------------------------------------------------------------------- #
-    def administrator_experiments(self):
-        """
-        Return a list of :class:`Experiment` instances the user
-        administrates.
-        """
-        return instances_for_user_with_group_permission(
-            user=self.user,
-            model=Experiment,
-            group_type=GroupTypes.ADMIN
-        )
-
-    def contributor_experiments(self):
-        """
-        Return a list of :class:`Experiment` instances the user
-        contributes to.
-        """
-        return instances_for_user_with_group_permission(
-            user=self.user,
-            model=Experiment,
-            group_type=GroupTypes.CONTRIBUTOR
-        )
-
     def viewer_experiments(self):
         """
         Return a list of :class:`Experiment` instances the user
@@ -265,30 +354,6 @@ class Profile(TimeStampedModel):
             user=self.user,
             model=Experiment,
             group_type=GroupTypes.VIEWER
-        )
-
-    # ScoreSet access
-    # ---------------------------------------------------------------------- #
-    def administrator_scoresets(self):
-        """
-        Return a list of :class:`Experiment` instances the user
-        administrates.
-        """
-        return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ScoreSet,
-            group_type=GroupTypes.ADMIN
-        )
-
-    def contributor_scoresets(self):
-        """
-        Return a list of :class:`ScoreSet` instances the user
-        contributes to.
-        """
-        return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ScoreSet,
-            group_type=GroupTypes.CONTRIBUTOR
         )
 
     def viewer_scoresets(self):

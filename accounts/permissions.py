@@ -1,6 +1,3 @@
-"""
-This module defines stuff.
-"""
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import AnonymousUser
@@ -32,23 +29,23 @@ class GroupTypes:
     A static utility class for defining permission groups for instances such 
     as `ExperimentSet`, `Experiment` and `ScoreSet`.
     """
-    VIEWER = "viewer"
-    CONTRIBUTOR = "contributor"
     ADMIN = "administrator"
+    EDITOR = "editor"
+    VIEWER = "viewer"
 
     @staticmethod
     def admin_permissions():
         return [
             PermissionTypes.CAN_VIEW,
             PermissionTypes.CAN_EDIT,
-            PermissionTypes.CAN_MANAGE
+            PermissionTypes.CAN_MANAGE,
         ]
 
     @staticmethod
-    def contributor_permissions():
+    def editor_permissions():
         return [
+            PermissionTypes.CAN_EDIT,
             PermissionTypes.CAN_VIEW,
-            PermissionTypes.CAN_EDIT
         ]
 
     @staticmethod
@@ -74,7 +71,7 @@ def valid_model_instance(instance):
 
 def valid_group_type(group):
     return group in {
-        GroupTypes.ADMIN, GroupTypes.CONTRIBUTOR, GroupTypes.VIEWER
+        GroupTypes.ADMIN, GroupTypes.EDITOR, GroupTypes.VIEWER
     }
 
 
@@ -88,9 +85,9 @@ def get_admin_group_name_for_instance(instance):
         return '{}-{}'.format(instance.urn, GroupTypes.ADMIN)
 
 
-def get_contributor_group_name_for_instance(instance):
+def get_editor_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.CONTRIBUTOR)
+        return '{}-{}'.format(instance.urn, GroupTypes.EDITOR)
 
 
 def get_viewer_group_name_for_instance(instance):
@@ -105,14 +102,12 @@ def user_is_admin_for_instance(user, instance):
     else:
         return False
 
-
-def user_is_contributor_for_instance(user, instance):
-    group_name = get_contributor_group_name_for_instance(instance)
+def user_editor_for_instance(user, instance):
+    group_name = get_editor_group_name_for_instance(instance)
     if group_name is not None:
         return group_name in set([g.name for g in user.groups.all()])
     else:
         return False
-
 
 def user_is_viewer_for_instance(user, instance):
     group_name = get_viewer_group_name_for_instance(instance)
@@ -121,11 +116,15 @@ def user_is_viewer_for_instance(user, instance):
     else:
         return False
 
+def user_is_contributor_for_instance(user, instance):
+    return user_is_admin_for_instance(user, instance) or \
+           user_editor_for_instance(user, instance) or \
+           user_is_viewer_for_instance(user, instance)
 
 GROUP_TYPE_CALLBACK = {
     GroupTypes.ADMIN: user_is_admin_for_instance,
-    GroupTypes.CONTRIBUTOR: user_is_contributor_for_instance,
-    GroupTypes.VIEWER: user_is_viewer_for_instance
+    GroupTypes.EDITOR: user_editor_for_instance,
+    GroupTypes.VIEWER: user_is_viewer_for_instance,
 }
 
 
@@ -159,9 +158,7 @@ def contributors_for_instance(instance):
         raise TypeError("Invalid type supplied {}".format(type(instance)))
     users = User.objects.all()
     for u in users:
-        if user_is_admin_for_instance(u, instance):
-            author_pks.add(u.pk)
-        elif user_is_contributor_for_instance(u, instance):
+        if user_is_contributor_for_instance(u, instance):
             author_pks.add(u.pk)
     return User.objects.filter(pk__in=author_pks)
 
@@ -179,12 +176,12 @@ def create_admin_group_for_instance(instance):
         return Group.objects.get(name=name)
 
 
-def create_contributor_group_for_instance(instance):
+def create_editor_group_for_instance(instance):
     if valid_model_instance(instance):
-        name = get_contributor_group_name_for_instance(instance)
+        name = get_editor_group_name_for_instance(instance)
         if not Group.objects.filter(name=name).exists():
             group = Group.objects.create(name=name)
-            for permission in GroupTypes.contributor_permissions():
+            for permission in GroupTypes.editor_permissions():
                 assign_perm(permission, group, instance)
             return group
         return Group.objects.get(name=name)
@@ -204,7 +201,7 @@ def create_viewer_group_for_instance(instance):
 def create_all_groups_for_instance(instance):
     if valid_model_instance(instance):
         g1 = create_admin_group_for_instance(instance)
-        g2 = create_contributor_group_for_instance(instance)
+        g2 = create_editor_group_for_instance(instance)
         g3 = create_viewer_group_for_instance(instance)
         return g1, g2, g3
 
@@ -220,9 +217,9 @@ def delete_admin_group_for_instance(instance):
             return name
 
 
-def delete_contributor_group_for_instance(instance):
+def delete_editor_group_for_instance(instance):
     if valid_model_instance(instance):
-        name = get_contributor_group_name_for_instance(instance)
+        name = get_editor_group_name_for_instance(instance)
         if Group.objects.filter(name=name).exists():
             group = Group.objects.get(name=name)
             group.delete()
@@ -241,7 +238,7 @@ def delete_viewer_group_for_instance(instance):
 def delete_all_groups_for_instance(instance):
     if valid_model_instance(instance):
         admin_name = delete_admin_group_for_instance(instance)
-        author_name = delete_contributor_group_for_instance(instance)
+        author_name = delete_editor_group_for_instance(instance)
         viewer_name = delete_viewer_group_for_instance(instance)
         return admin_name, author_name, viewer_name
 
@@ -260,22 +257,22 @@ def assign_user_as_instance_admin(user, instance):
         create_admin_group_for_instance(instance)
 
     admin_group = Group.objects.get(name=group_name)
-    remove_user_as_instance_contributor(user, instance)
+    remove_user_as_instance_editor(user, instance)
     remove_user_as_instance_viewer(user, instance)
     user.groups.add(admin_group)
     user.save()
     return True
 
 
-def assign_user_as_instance_contributor(user, instance):
+def assign_user_as_instance_editor(user, instance):
     if user_is_anonymous(user):
         return False
 
-    group_name = get_contributor_group_name_for_instance(instance)
+    group_name = get_editor_group_name_for_instance(instance)
     try:
         Group.objects.get(name=group_name)
     except ObjectDoesNotExist:
-        create_contributor_group_for_instance(instance)
+        create_editor_group_for_instance(instance)
 
     author_group = Group.objects.get(name=group_name)
     remove_user_as_instance_admin(user, instance)
@@ -297,7 +294,7 @@ def assign_user_as_instance_viewer(user, instance):
 
     viewer_group = Group.objects.get(name=group_name)
     remove_user_as_instance_admin(user, instance)
-    remove_user_as_instance_contributor(user, instance)
+    remove_user_as_instance_editor(user, instance)
     user.groups.add(viewer_group)
     user.save()
     return True
@@ -316,9 +313,9 @@ def remove_user_as_instance_admin(user, instance):
         return False
 
 
-def remove_user_as_instance_contributor(user, instance):
+def remove_user_as_instance_editor(user, instance):
     try:
-        group_name = get_contributor_group_name_for_instance(instance)
+        group_name = get_editor_group_name_for_instance(instance)
         author_group = Group.objects.get(name=group_name)
         user.groups.remove(author_group)
         user.save()
@@ -349,13 +346,13 @@ def update_admin_list_for_instance(users, instance):
         assign_user_as_instance_admin(user, instance)
 
 
-def update_contributor_list_for_instance(users, instance):
+def update_editor_list_for_instance(users, instance):
     site_users = User.objects.all()
     for user in site_users:
         if user not in users:
-            remove_user_as_instance_contributor(user, instance)
+            remove_user_as_instance_editor(user, instance)
     for user in users:
-        assign_user_as_instance_contributor(user, instance)
+        assign_user_as_instance_editor(user, instance)
 
 
 def update_viewer_list_for_instance(users, instance):

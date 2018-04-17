@@ -44,7 +44,7 @@ class TestSelectUsersForm(TestCase):
 
         form = SelectUsersForm(
             data={},
-            group=GroupTypes.CONTRIBUTOR,
+            group=GroupTypes.EDITOR,
             instance=instance,
             required=False
         )
@@ -75,7 +75,7 @@ class TestSelectUsersForm(TestCase):
         assign_user_as_instance_admin(self.alice, instance)
         form = SelectUsersForm(
             data={"users": [self.alice.pk]},
-            group=GroupTypes.CONTRIBUTOR,
+            group=GroupTypes.EDITOR,
             instance=instance,
             required=False
         )
@@ -96,7 +96,7 @@ class TestSelectUsersForm(TestCase):
         assign_user_as_instance_viewer(self.alice, instance)
         form = SelectUsersForm(
             data={"users": [self.alice.pk]},
-            group=GroupTypes.CONTRIBUTOR,
+            group=GroupTypes.EDITOR,
             instance=instance,
             required=False
         )

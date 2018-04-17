@@ -1,4 +1,3 @@
-
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
@@ -6,6 +5,7 @@ from .permissions import (
     user_is_anonymous,
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
+    user_editor_for_instance,
     user_is_viewer_for_instance,
 )
 
@@ -31,36 +31,6 @@ class GroupPermissionMixin(object):
     allows access to the users assigned to each group for a particular
     instance.
     """
-    def _format_as(self, group, string, format_=None):
-        """
-        Format the users assigned to `group` by using their full name or
-        username.
-
-        Parameters
-        ----------
-        group : str, choices are {'administrators', 'contributors', 'viewers'}
-            The string attribute of the function to call.
-
-        string : bool
-            If True, will comma separate users for 'group'
-
-        format_ : str, choices: {'short', 'username', None, 'full'} . Default: None
-            How the users should be formatted.
-
-        Returns
-        -------
-        `list`
-            A list of users by username or full name.
-        """
-        users = getattr(self, group)()
-        if format_ == "username":
-            users = [u.username for u in users]
-        elif format_ == "full":
-            users = [u.get_full_name() for u in users]
-        elif format_ == "short":
-            users = [u.get_short_name() for u in users]
-        return ', '.join(users) if string else users
-
     def administrators(self):
         """
         Returns a :class:`QuerySet` of administrators for an instance.
@@ -102,8 +72,7 @@ class GroupPermissionMixin(object):
         """
         editors = [
             u.pk for u in User.objects.all()
-            if user_is_contributor_for_instance(u, self) or \
-            user_is_admin_for_instance(u, self)
+            if user_editor_for_instance(u, self)
         ]
         return filter_anon(User.objects.filter(pk__in=editors))
 
@@ -119,22 +88,3 @@ class GroupPermissionMixin(object):
         users = User.objects.all()
         viewers = [u.pk for u in users if user_is_viewer_for_instance(u, self)]
         return filter_anon(User.objects.filter(pk__in=viewers))
-
-    def format_using_full_name(self, group, string=False):
-        """
-        Returns users in permission group `group` for this instnace.
-        """
-        return self._format_as(group, string=string, format_='full')
-
-    def format_using_short_name(self, group, string=False):
-        """
-        Returns users in permission group `group` for this instnace.
-        """
-        return self._format_as(group, string=string, format_='short')
-
-    def format_using_username(self, group, string=False):
-        """
-        Returns users in permission group `group` for this instnace.
-        """
-        return self._format_as(group, string=string, format_='username')
-
