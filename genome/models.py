@@ -2,9 +2,6 @@ from django.db import models
 from django.db.models import QuerySet
 
 from core.models import TimeStampedModel
-from metadata.models import (
-    EnsemblIdentifier, RefseqIdentifier
-)
 
 from .validators import (
     validate_wildtype_sequence, min_start_validator,
@@ -43,10 +40,7 @@ class TargetGene(TimeStampedModel):
         verbose_name_plural = "Target Genes"
 
     def __str__(self):
-        if self.get_scoreset_urn() is None:
-            return self.name
-        else:
-            return '{} | {}'.format(self.name, self.get_scoreset_urn())
+        return self.get_name()
 
     name = models.CharField(
         blank=False,
@@ -60,15 +54,16 @@ class TargetGene(TimeStampedModel):
     scoreset = models.OneToOneField(
         to='dataset.ScoreSet',
         on_delete=models.CASCADE,
-        null=True,
+        null=False,
         default=None,
+        blank=False,
         related_name='target',
     )
 
     wt_sequence = models.OneToOneField(
         to='genome.WildTypeSequence',
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
         default=None,
         verbose_name='Wild-type Sequence',
         related_name='target',
@@ -76,25 +71,28 @@ class TargetGene(TimeStampedModel):
 
     # External Identifiers
     # ----------------------------------------------------------------------- #
-    uniprot_id = models.ForeignKey(
+    uniprot_id = models.OneToOneField(
         to='metadata.UniprotIdentifier',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True,
         default=None,
+        blank=True,
         related_name='associated_%(class)ss',
     )
-    ensembl_id = models.ForeignKey(
+    ensembl_id = models.OneToOneField(
         to='metadata.EnsemblIdentifier',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True,
         default=None,
+        blank=True,
         related_name='associated_%(class)ss',
     )
-    refseq_id = models.ForeignKey(
+    refseq_id = models.OneToOneField(
         to='metadata.RefseqIdentifier',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True,
         default=None,
+        blank=True,
         related_name='associated_%(class)ss',
     )
 
@@ -108,6 +106,12 @@ class TargetGene(TimeStampedModel):
             The name of this target.
         """
         return self.name
+
+    def get_unique_name(self):
+        """
+        Returns the `name` concatenated with the associated scoreset urn.
+        """
+        return '{} | {}'.format(self.name, self.get_scoreset_urn())
 
     def get_scoreset_urn(self):
         """
@@ -166,37 +170,37 @@ class TargetGene(TimeStampedModel):
 
     def annotation_count(self):
         """
-        Returns the count of attached :class:`Annotation` instances.
+        Returns the count of attached :class:`ReferenceMap` instances.
 
         Returns
         -------
         `int`
-            Count of attached :class:`Annotation` instances.
+            Count of attached :class:`ReferenceMap` instances.
         """
         return self.annotations.count()
 
     def get_annotations(self):
         """
-        Returns the `QuerySet` of attached :class:`Annotation` instances. This
+        Returns the `QuerySet` of attached :class:`ReferenceMap` instances. This
         may be empty.
 
         Returns
         -------
         `QuerySet`
-            The set of attached :class:`Annotation` instances.
+            The set of attached :class:`ReferenceMap` instances.
         """
         return self.annotations.all()
 
     def get_reference_genomes(self):
         """
         Returns the :class:`ReferenceGenome` instances from the attached
-        :class:`Annotation` instances.
+        :class:`ReferenceMap` instances.
 
         Returns
         -------
         `QuerySet`
             A set of :class:`ReferenceGenome` instances extracted from
-            any attached :class:`Annotation` instances.
+            any attached :class:`ReferenceMap` instances.
         """
         genome_pks = set(a.genome.pk for a in self.get_annotations())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
@@ -234,7 +238,7 @@ class TargetGene(TimeStampedModel):
         }
 
 
-class Annotation(TimeStampedModel):
+class ReferenceMap(TimeStampedModel):
     """
     Annotations define a collection of intervals within reference genome, which
     are to be used to define how a :class:`TargetGene` maps to a particular
@@ -247,38 +251,40 @@ class Annotation(TimeStampedModel):
     Parameters
     ----------
     genome : `models.ForeignKey`
-        The genome instance this annotation refers to.
+        The genome instance this reference_map refers to.
 
     target : `models.ForeignField`
         An instance of :class:`TargetGene` this instance is associated with.
 
     is_primary : `models.BooleanField`
-        If True, indicates that this annotation refers to the genome from which
+        If True, indicates that this reference_map refers to the genome from which
         the associated `target` comes from.
     """
     class Meta:
-        verbose_name = "Annotation"
-        verbose_name_plural = "Annotations"
+        verbose_name = "Reference map"
+        verbose_name_plural = "Reference maps"
 
     def __str__(self):
-        return 'Annotation(genome={}, primary={})'.format(
+        return 'ReferenceMap(genome={}, primary={})'.format(
             self.get_reference_genome_name(), self.is_primary_annotation())
 
     genome = models.ForeignKey(
         to='genome.ReferenceGenome',
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
         default=None,
+        on_delete=models.SET_NULL,
         verbose_name='Reference genome',
+        related_name='associated_reference_maps',
     )
 
     target = models.ForeignKey(
         to='genome.TargetGene',
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
         default=None,
         verbose_name='Target',
-        related_name='annotations',
+        related_name='reference_maps',
         on_delete=models.CASCADE,
     )
 
@@ -291,7 +297,7 @@ class Annotation(TimeStampedModel):
 
     def get_target_gene(self):
         """
-        Returns the target associated with this annotation otherwise None.
+        Returns the target associated with this reference_map otherwise None.
 
         Returns
         -------
@@ -318,7 +324,7 @@ class Annotation(TimeStampedModel):
 
     def get_reference_genome(self):
         """
-        Return the associated genome for this annotation if it exists.
+        Return the associated genome for this reference_map if it exists.
 
         Returns
         -------
@@ -347,7 +353,7 @@ class Annotation(TimeStampedModel):
 
     def get_reference_genome_name(self):
         """
-        Return the string name of genome associated with this annotation.
+        Return the string name of genome associated with this reference_map.
         """
         if self.get_reference_genome():
             return self.get_reference_genome().get_short_name()
@@ -355,7 +361,7 @@ class Annotation(TimeStampedModel):
     def get_reference_genome_species(self):
         """
         Return the string species name of genome associated with this
-        annotation.
+        reference_map.
 
         Returns
         -------
@@ -479,6 +485,7 @@ class ReferenceGenome(TimeStampedModel):
         blank=True,
         null=True,
         default=None,
+        on_delete=models.SET_NULL,
         verbose_name='Ensembl identifier',
         related_name='associated_%(class)ss',
     )
@@ -487,6 +494,7 @@ class ReferenceGenome(TimeStampedModel):
         blank=True,
         null=True,
         default=None,
+        on_delete=models.SET_NULL,
         verbose_name='RefSeq identifier',
         related_name='associated_%(class)ss',
     )
@@ -626,8 +634,8 @@ class Interval(TimeStampedModel):
     strand : `CharField, choices: {'F', 'R'}
         The strand this interval is defined with respect to.
 
-    annotation : `ForeignKey`
-        An annotation instance that this interval is associated with.
+    reference_map : `ForeignKey`
+        An reference_map instance that this interval is associated with.
     """
     STRAND_CHOICES = (
         ('F', 'Forward'),  # (database value, verbose value used in UI)
@@ -679,11 +687,11 @@ class Interval(TimeStampedModel):
         max_length=1,
         validators=[validate_strand],
     )
-    annotation = models.ForeignKey(
-        to='genome.Annotation',
+    reference_map = models.ForeignKey(
+        to='genome.ReferenceMap',
         default=None,
-        blank=True,
-        null=True,
+        blank=False,
+        null=None,
         on_delete=models.CASCADE,
         related_name='intervals',
     )
@@ -773,28 +781,28 @@ class Interval(TimeStampedModel):
 
     def get_annotation(self):
         """
-        Returns the :class:`Annotation` this instance is attached to, otherwise
+        Returns the :class:`ReferenceMap` this instance is attached to, otherwise
         `None`.
 
         Returns
         -------
-        :class:`Annotation`, optional.
-            The :class:`Annotation` this instance is attached to, otherwise
+        :class:`ReferenceMap`, optional.
+            The :class:`ReferenceMap` this instance is attached to, otherwise
             `None`.
         """
-        return self.annotation
+        return self.reference_map
 
     def set_annotation(self, annotation):
         """
-        Attaches this interval to `annotation`. Saving is the responsibility
+        Attaches this interval to `reference_map`. Saving is the responsibility
         of the user.
 
         Parameters
         ----------
-        annotation : :class:`Annotation`
+        annotation : :class:`ReferenceMap`
             The :class:`Annotation` to attach this interval to.
         """
-        self.annotation = annotation
+        self.reference_map = annotation
 
     def serialise(self):
         """
