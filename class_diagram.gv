@@ -39,11 +39,11 @@ digraph {
     subgraph clusterTargetApp {
         label="Target App";
         Target;
-        Annotation;
+        ReferenceMap;
         Interval;
         Genome;
-        Target -> Annotation [style=dotted];
-        Annotation -> Genome [style=dotted];
+        Target -> ReferenceMap [style=dotted];
+        ReferenceMap -> Genome [style=dotted];
     }
     UrnModel -> DatasetModel;
     UrnModel -> Variant;
