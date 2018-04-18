@@ -221,8 +221,8 @@ class TestProfileEditInstanceView(TestCase):
         
         obj = ScoreSetFactory()
         interval = IntervalFactory()
-        interval.annotation.target.scoreset = obj
-        interval.annotation.target.save()
+        interval.reference_map.target.scoreset = obj
+        interval.reference_map.target.save()
 
         assign_user_as_instance_admin(self.user, obj)
         assign_user_as_instance_admin(self.user, obj.parent)
@@ -239,8 +239,8 @@ class TestProfileEditInstanceView(TestCase):
     def test_publishing_sets_child_and_parents_to_public(self):
         obj = ScoreSetFactory()
         interval = IntervalFactory()
-        interval.annotation.target.scoreset = obj
-        interval.annotation.target.save()
+        interval.reference_map.target.scoreset = obj
+        interval.reference_map.target.save()
 
         assign_user_as_instance_admin(self.user, obj)
         assign_user_as_instance_admin(self.user, obj.parent)
@@ -262,8 +262,8 @@ class TestProfileEditInstanceView(TestCase):
     def test_publishing_propagates_modified_by(self):
         obj = ScoreSetFactory()
         interval = IntervalFactory()
-        interval.annotation.target.scoreset = obj
-        interval.annotation.target.save()
+        interval.reference_map.target.scoreset = obj
+        interval.reference_map.target.save()
 
         ref = ReferenceGenomeFactory()
 
@@ -355,8 +355,8 @@ class TestProfileEditInstanceView(TestCase):
 
         obj = ScoreSetFactory()
         interval = IntervalFactory()
-        interval.annotation.target.scoreset = obj
-        interval.annotation.target.save()
+        interval.reference_map.target.scoreset = obj
+        interval.reference_map.target.save()
 
         assign_user_as_instance_admin(self.user, obj)
         path = '/profile/edit/{}/'.format(obj.urn)
