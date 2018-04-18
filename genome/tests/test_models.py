@@ -8,7 +8,7 @@ from metadata.factories import (
 from ..models import WildTypeSequence
 from ..factories import (
     TargetGeneFactory,
-    AnnotationFactory,
+    ReferenceMapFactory,
     ReferenceGenomeFactory,
     IntervalFactory,
     WildTypeSequenceFactory
@@ -139,26 +139,26 @@ class TestReferenceGenomeModel(TestCase):
 
 class TestAnnotationModel(TestCase):
     """
-    Tests instance and class methods for :class:`Annotation`
+    Tests instance and class methods for :class:`ReferenceMap`
     """
     def test_set_is_primary_does_not_save_annotation(self):
-        ann = AnnotationFactory()
+        ann = ReferenceMapFactory()
         ann.set_is_primary(False)
         ann.refresh_from_db()
         self.assertEqual(ann.is_primary_annotation(), True)
 
     def test_does_not_have_genome_if_genome_is_none(self):
-        ann = AnnotationFactory()
+        ann = ReferenceMapFactory()
         ann.genome = None
         ann.save()
         self.assertIsNone(ann.get_reference_genome())
 
     def test_can_get_intervals_when_there_are_no_associations(self):
-        ann = AnnotationFactory()
+        ann = ReferenceMapFactory()
         self.assertIsNotNone(ann.get_intervals())
 
     def test_empty_list_no_intervals_in_serialisation(self):
-        ann = AnnotationFactory()
+        ann = ReferenceMapFactory()
         dict_ = ann.serialise()
         expected = {
             'intervals': [],
@@ -168,13 +168,13 @@ class TestAnnotationModel(TestCase):
         self.assertEqual(expected, dict_)
 
     def test_list_of_serialised_intervals_if_associations_exist(self):
-        annotation = AnnotationFactory()
+        annotation = ReferenceMapFactory()
         interval = IntervalFactory(annotation=annotation)
         dict_ = annotation.serialise()
         self.assertEqual(dict_['intervals'], [interval.serialise()])
 
     def test_reference_genome_none_if_no_association(self):
-        ann = AnnotationFactory(genome=None)
+        ann = ReferenceMapFactory(genome=None)
         dict_ = ann.serialise()
         self.assertIsNone(dict_['reference_genome'])
 
@@ -225,7 +225,7 @@ class TestTargetGene(TestCase):
         target = TargetGeneFactory()
         self.assertEqual(target.get_reference_genomes().count(), 0)
 
-        AnnotationFactory(target=target)
+        ReferenceMapFactory(target=target)
         self.assertEqual(target.get_reference_genomes().count(), 1)
 
     def test_wt_seq_is_none_in_serialisation_if_no_association(self):
@@ -234,6 +234,6 @@ class TestTargetGene(TestCase):
 
     def test_empty_list_annotations_if_no_associations(self):
         target = TargetGeneFactory()
-        annotation = AnnotationFactory(target=target)
+        annotation = ReferenceMapFactory(target=target)
         dict_ = target.serialise()
         self.assertEqual(dict_['annotations'], [annotation.serialise()])

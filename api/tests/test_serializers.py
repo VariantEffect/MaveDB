@@ -112,7 +112,7 @@ class TestExperimentSerializer(TestCase):
     json data.
     """
     def setUp(self):
-        self.target = IntervalFactory().annotation.get_target_gene()
+        self.target = IntervalFactory().reference_map.get_target_gene()
 
     def test_can_correctly_serialize_instance(self):
         instance = ExperimentFactory()
@@ -244,7 +244,7 @@ class TestScoreSetSerializer(TestCase):
     json data.
     """
     def setUp(self):
-        self.target = IntervalFactory().annotation.get_target_gene()
+        self.target = IntervalFactory().reference_map.get_target_gene()
 
     def test_can_serialize_minimal_example(self):
         instance = ScoreSetFactory()

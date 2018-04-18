@@ -156,7 +156,7 @@ class Licence(TimeStampedModel):
         The long name of the licence.
     short_name : `models.CharField`
         The short name of the licence.
-    text : `models.TextField`
+    legal_code : `models.TextField`
         The actual blob licence text.
     link : `models.URLField`
         The link to the licence.

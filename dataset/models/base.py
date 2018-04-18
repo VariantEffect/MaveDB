@@ -106,9 +106,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     M2M_FIELD_NAMES = (
         'keywords',
         'doi_ids',
-        'ensembl_ids',
         'pubmed_ids',
-        'refseq_ids',
         'sra_ids',
     )
 

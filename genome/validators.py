@@ -3,7 +3,7 @@ Validator functions for the fields of the following classes:
     WildTypeSequence
     ReferenceGenome
     TargetGene
-    Annotation
+    ReferenceMap
     Interval
 
 Most validators should validate one specific field, unless fields need
@@ -101,13 +101,13 @@ def validate_genome_short_name(value):
         raise ValidationError("Genome short name must not be null.")
 
 
-# Annotation
+# ReferenceMap
 # ------------------------------------------------------------------------- #
 def validate_annotation_has_unique_reference_genome(annotations):
     genomes = set([str(a.get_reference_genome_name()).lower() for a in annotations])
     if len(genomes) < len(annotations):
         raise ValidationError(
-            "Each target annotation must be for a different reference genome."
+            "Each target reference_map must be for a different reference genome."
         )
 
 
@@ -115,14 +115,14 @@ def validate_annotation_has_at_least_one_interval(annotation):
     if not annotation.get_intervals().count():
         raise ValidationError(
             "You must specify at least one interval for each reference "
-            "annotation."
+            "reference_map."
         )
 
 
 def validate_at_least_one_annotation(annotations):
     if not annotations:
         raise ValidationError(
-            "A target must have at least one reference annotation."
+            "A target must have at least one reference reference_map."
         )
 
 
@@ -131,7 +131,7 @@ def validate_one_primary_annotation(annotations):
     if primary_count > 1 or primary_count < 1:
         raise ValidationError(
             (
-                "A target must have one primary reference annotation."
+                "A target must have one primary reference reference_map."
             )
         )
 

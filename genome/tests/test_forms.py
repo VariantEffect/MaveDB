@@ -9,10 +9,10 @@ from accounts.permissions import (
 
 from dataset.constants import nan_col_values
 
-from ..models import Annotation, Interval, WildTypeSequence
+from ..models import ReferenceMap, Interval, WildTypeSequence
 from ..factories import (
     TargetGeneFactory,
-    AnnotationFactory,
+    ReferenceMapFactory,
     ReferenceGenomeFactory,
     IntervalFactory
 )
@@ -94,7 +94,7 @@ class TestAnnotationForm(TestCase):
 
     def test_updates_existing(self):
         ref = ReferenceGenomeFactory()
-        instance = AnnotationFactory()
+        instance = ReferenceMapFactory()
         data = {'genome': ref.pk, 'is_primary': True}
         form = AnnotationForm(data=data, instance=instance)
         instance = form.save(commit=True)

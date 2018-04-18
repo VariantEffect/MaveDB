@@ -7,7 +7,7 @@ from metadata.factories import (
 )
 
 from ..factories import (
-    AnnotationFactory,
+    ReferenceMapFactory,
     ReferenceGenomeFactory,
     IntervalFactory
 )
@@ -161,15 +161,15 @@ class TestReferenceGenomeValidators(TestCase):
 
 class TestAnnotationValidators(TestCase):
     """
-    Tests validators asscociated with :class:`Annotation`:
+    Tests validators asscociated with :class:`ReferenceMap`:
 
         - validate_annotation_has_unique_reference_genome
         - validate_annotation_has_at_least_one_interval
         - validate_unique_intervals
     """
     def test_ve_annotation_does_not_have_a_unique_genome(self):
-        annotation1 = AnnotationFactory()
-        annotation2 = AnnotationFactory(
+        annotation1 = ReferenceMapFactory()
+        annotation2 = ReferenceMapFactory(
             genome=annotation1.get_reference_genome(),
             target=annotation1.get_target_gene()
         )
@@ -190,16 +190,16 @@ class TestAnnotationValidators(TestCase):
             validate_unique_intervals(intervals)
 
     def test_ve_no_intervals_associated_with_annotation(self):
-        annotation = AnnotationFactory()
+        annotation = ReferenceMapFactory()
         IntervalFactory(annotation=annotation)
         validate_annotation_has_at_least_one_interval(annotation)  # passes
 
-        annotation = AnnotationFactory()
+        annotation = ReferenceMapFactory()
         with self.assertRaises(ValidationError):
             validate_annotation_has_at_least_one_interval(annotation)
 
     def test_ve_missing_primary_annotation(self):
-        annotation = AnnotationFactory()
+        annotation = ReferenceMapFactory()
         validate_one_primary_annotation([annotation])  # passes
 
         annotation.set_is_primary(primary=False)
@@ -208,8 +208,8 @@ class TestAnnotationValidators(TestCase):
             validate_one_primary_annotation([annotation])
 
     def test_ve_target_has_two_primary_annotations(self):
-        annotation1 = AnnotationFactory()
-        annotation2 = AnnotationFactory()
+        annotation1 = ReferenceMapFactory()
+        annotation2 = ReferenceMapFactory()
         with self.assertRaises(ValidationError):
             validate_one_primary_annotation([annotation2, annotation1])
 

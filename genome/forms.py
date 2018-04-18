@@ -18,7 +18,7 @@ from .validators import (
 
 from .models import (
     TargetGene,
-    Annotation,
+    ReferenceMap,
     ReferenceGenome,
     Interval,
     WildTypeSequence,
@@ -125,11 +125,11 @@ class TargetGeneForm(forms.ModelForm):
         return cleaned_data
 
 
-# Annotation
+# ReferenceMap
 # ------------------------------------------------------------------------ #
 class AnnotationForm(forms.ModelForm):
     """
-    The annotation form
+    The reference_map form
 
     Parameters
     ----------
@@ -139,10 +139,10 @@ class AnnotationForm(forms.ModelForm):
         references.
 
     intervals : `tuple`
-        A tuple of valid intervals to associate with the annotation.
+        A tuple of valid intervals to associate with the reference_map.
     """
     class Meta:
-        model = Annotation
+        model = ReferenceMap
         fields = ('is_primary', 'genome',)
 
     def __init__(self, *args, **kwargs):
@@ -160,7 +160,7 @@ class AnnotationForm(forms.ModelForm):
     def dummy_instance(self):
         if self.errors:
             return None
-        return Annotation(
+        return ReferenceMap(
             genome=self.cleaned_data.get('genome'),
             is_primary=self.cleaned_data.get('is_primary'),
         )
@@ -178,10 +178,10 @@ class AnnotationForm(forms.ModelForm):
 
 class BaseAnnotationFormSet(BaseModelFormSet):
     """
-    Formset for handling the validation of :class:`Annotation` instances
+    Formset for handling the validation of :class:`ReferenceMap` instances
     against each other.
     """
-    model = Annotation
+    model = ReferenceMap
 
     def has_errors(self):
         if isinstance(self.errors, list):
@@ -198,7 +198,7 @@ class BaseAnnotationFormSet(BaseModelFormSet):
 
 
 AnnotationFormSet = modelformset_factory(
-    model=Annotation, form=AnnotationForm, formset=BaseAnnotationFormSet,
+    model=ReferenceMap, form=AnnotationForm, formset=BaseAnnotationFormSet,
     extra=5, can_delete=False, validate_min=1, min_num=1
 )
 
@@ -266,7 +266,7 @@ class BaseIntervalFormSet(BaseModelFormSet):
             if not intervals:
                 raise ValidationError(
                     "You must specify at least one interval for each "
-                    "reference annotation."
+                    "reference reference_map."
                 )
             validate_unique_intervals(intervals)
 

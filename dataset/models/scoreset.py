@@ -11,8 +11,6 @@ from accounts.permissions import (
     delete_all_groups_for_instance
 )
 
-from genome.models import TargetGene
-
 from main.models import Licence
 
 from urn.models import UrnModel
@@ -150,6 +148,10 @@ class ScoreSet(DatasetModel):
     @property
     def has_variants(self):
         return hasattr(self, 'variants') and self.variants.count() > 0
+
+    @property
+    def variant_count(self):
+        return self.variants.count()
 
     def delete_variants(self):
         if self.has_variants:
