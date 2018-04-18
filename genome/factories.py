@@ -13,13 +13,16 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 from dataset.factories import ScoreSetFactory
+from metadata.factories import (
+    RefseqIdentifierFactory, EnsemblIdentifierFactory
+)
 
 from .models import (
     TargetGene,
     WildTypeSequence,
-    Annotation,
+    ReferenceMap,
     ReferenceGenome,
-    Interval
+    Interval,
 )
 
 strand_choices = (
@@ -49,8 +52,8 @@ class ReferenceGenomeFactory(DjangoModelFactory):
 
     short_name = factory.fuzzy.FuzzyChoice(['hg38', 'hg37', 'hg36'])
     species_name = factory.fuzzy.FuzzyChoice(['Homo spaiens'])
-    ensembl_id = None
-    refseq_id = None
+    ensembl_id = factory.SubFactory(EnsemblIdentifierFactory)
+    refseq_id = factory.SubFactory(RefseqIdentifierFactory)
 
 
 class TargetGeneFactory(DjangoModelFactory):
@@ -61,19 +64,22 @@ class TargetGeneFactory(DjangoModelFactory):
     class Meta:
         model = TargetGene
 
+    scoreset = factory.SubFactory(ScoreSetFactory)
     name = factory.fuzzy.FuzzyChoice(['BRCA1', 'JAK', 'STAT', 'MAPK'])
     wt_sequence = factory.SubFactory(WildTypeSequenceFactory)
-    scoreset = factory.SubFactory(ScoreSetFactory)
+    ensembl_id = None
+    refseq_id = None
+    uniprot_id = None
 
 
-class AnnotationFactory(DjangoModelFactory):
+class ReferenceMapFactory(DjangoModelFactory):
     """
-    Creates an :class:`Annotation` instance with a :class:`ReferenceGenome`
+    Creates an :class:`ReferenceMap` instance with a :class:`ReferenceGenome`
     relation and a set of 3 randomly generated :class:`Interval`
     instnaces.
     """
     class Meta:
-        model = Annotation
+        model = ReferenceMap
 
     genome = factory.SubFactory(ReferenceGenomeFactory)
     target = factory.SubFactory(TargetGeneFactory)
@@ -93,4 +99,4 @@ class IntervalFactory(DjangoModelFactory):
     chromosome = factory.fuzzy.FuzzyText(
         prefix='chr', length=1, chars=chr_chars)
     strand = factory.fuzzy.FuzzyChoice(choices=strand_choices)
-    annotation = factory.SubFactory(AnnotationFactory)
+    reference_map = factory.SubFactory(ReferenceMapFactory)

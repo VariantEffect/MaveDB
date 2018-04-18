@@ -14,7 +14,8 @@ from factory.django import DjangoModelFactory
 
 from .models import (
     Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier,
-    UniprotIdentifier, EnsemblIdentifier, RefseqIdentifier
+    UniprotIdentifier, EnsemblIdentifier, RefseqIdentifier,
+    UniprotOffset, RefseqOffset, EnsemblOffset, AnnotationOffset
 )
 
 
@@ -117,3 +118,61 @@ class EnsemblIdentifierFactory(DjangoModelFactory):
         'GRCh37.p13', 'GRCh38.p12'
     ])
     dbversion = '92.13'
+
+
+# AnnotationOffsets
+# --------------------------------------------------------------------------- #
+class AnnotationOffsetFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`AnnotationOffset` instances with a random
+    identifier accession, target and offset.
+    """
+    class Meta:
+        model = AnnotationOffset
+
+    offset = factory.fuzzy.FuzzyInteger(low=0, high=1000)
+
+
+class UniprotOffsetFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`UniprotOffset` instances with a random
+    identifier accession, target and offset.
+    """
+    class Meta:
+        model = UniprotOffset
+
+    identifier = factory.SubFactory(UniprotIdentifierFactory)
+    target = factory.SubFactory(
+        factory='genome.factories.TargetGeneFactory',
+        uniprot_id=factory.SelfAttribute('..identifier')
+    )
+
+
+class RefseqOffsetFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`RefseqOffset` instances with a random
+    identifier accession, target and offset.
+    """
+    class Meta:
+        model = RefseqOffset
+
+    identifier = factory.SubFactory(RefseqIdentifierFactory)
+    target = factory.SubFactory(
+        factory='genome.factories.TargetGeneFactory',
+        refseq_id=factory.SelfAttribute('..identifier')
+    )
+
+
+class EnsemblOffsetFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`EnsemblOffset` instances with a random
+    identifier accession, target and offset.
+    """
+    class Meta:
+        model = EnsemblOffset
+
+    identifier = factory.SubFactory(EnsemblIdentifierFactory)
+    target = factory.SubFactory(
+        factory='genome.factories.TargetGeneFactory',
+        ensembl_id=factory.SelfAttribute('..identifier')
+    )

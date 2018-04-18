@@ -58,29 +58,3 @@ class ScoreSetFactory(DatasetModelFactory):
 
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
-
-    @factory.post_generation
-    def target(self, create, extracted, **kwargs):
-        from genome.factories import (
-            IntervalFactory, AnnotationFactory, TargetGeneFactory
-        )
-
-        if not create:
-             return
-
-        if extracted:
-            extracted.scoreset = self
-            extracted.save()
-        elif 'target' in kwargs:
-            kwargs['target'].scoreset = self
-            kwargs['target'].save()
-        else:
-            target = TargetGeneFactory(scoreset=None)
-            annotation = AnnotationFactory(target=target)
-            annotation.save()
-
-            interval = IntervalFactory(annotation=annotation)
-            interval.save()
-
-            target.scoreset = self
-            target.scoreset.save()
