@@ -273,7 +273,7 @@ class ReferenceMap(TimeStampedModel):
         blank=False,
         null=False,
         default=None,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         verbose_name='Reference genome',
         related_name='associated_reference_maps',
     )
