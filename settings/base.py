@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'social_django',
     'django_extensions',
     'widget_tweaks',
+    'rest_framework',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -151,9 +152,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'static'))
 DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 
-# Redirect to home URL after login (Default redirects to /accounts/profile/)
-LOGIN_REDIRECT_URL = '/accounts/profile/'
-LOGOUT_REDIRECT_URL = '/accounts/profile/'
+# Redirect to home URL after login (Default redirects to /profile/)
+LOGIN_REDIRECT_URL = '/profile/'
+LOGOUT_REDIRECT_URL = '/profile/'
 
 # DEBUG email server, set to something proper when DEBUG = FALSE
 DEFAULT_FROM_EMAIL = "mavedb@mavedb.org"
