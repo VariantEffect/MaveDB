@@ -1,10 +1,45 @@
-# MAVE DB installation notes
+# MAVEDB installation notes
 
-MAVE DB is Django website with Postgres as the backend. Its purpose is to allow 
+MAVEDB is Django website with Postgres as the backend. Its purpose is to allow 
 researchers to deposit and retrieve deep mutational scanning datasets. This file 
-provides step-by-step instructions for installing MAVE DB starting with the 
+provides step-by-step instructions for installing MAVEDB starting with the 
 `CentOS-6.9-x86_64-minimal.iso` downloaded from 
-[CentOS.org](http://isoredirect.centos.org/centos/6/isos/x86_64/). 
+[CentOS.org](http://isoredirect.centos.org/centos/6/isos/x86_64/). To set up 
+MAVEDB on an Amazon EC2 instance, use the 
+[Centos 6 HVM image](https://aws.amazon.com/marketplace/pp/B00A6KUVBW) from the
+AWS marketplace.
+
+## Notes on networking
+
+Users running CentOS 6 in VirtualBox or a similar VM setup may find that the 
+network interface is not enabled by default. See the 
+[CentOS wiki](https://wiki.centos.org/FAQ/CentOS6#head-b67e85d98f0e9f1b599358105c551632c6ff7c90) 
+for detailed instructions on enabling `eth0`.
+
+Users running in a local VM or who want to rely on AWS security groups may want 
+to disable all `iptables` firewall rules using the following script:
+
+    #!/bin/bash
+    
+    # Script to clear all firewall rules for iptables and accept all traffic
+    # Based on https://www.digitalocean.com/community/tutorials/how-to-list-and-delete-iptables-firewall-rules
+    
+    # Set the default policies for each of the built-in chains to ACCEPT
+    
+    sudo iptables -P INPUT ACCEPT
+    sudo iptables -P FORWARD ACCEPT
+    sudo iptables -P OUTPUT ACCEPT
+    
+    # Flush the nat and mangle tables, flush all chains (-F), and delete all non-default chains (-X):
+    
+    sudo iptables -t nat -F
+    sudo iptables -t mangle -F
+    sudo iptables -F
+    sudo iptables -X
+    
+    # Save changes
+    sudo service iptables save
+
 
 ## Updating yum and adding basic dependencies
 
@@ -59,14 +94,16 @@ up and started the server.
     sudo chkconfig postgresql-9.6 on
     sudo service postgresql-9.6 start
 
-Next, I log in as the postgres user and added the database at the prompt.
+Next, log in as the postgres user and added the database at the prompt.
 
     sudo su - postgres
     psql
 
 The following commands create the database and the user Django is expecting. The 
-`mave_admin` user name and credentials are specified in the project's 
-`settings.py` file.
+`mave_admin` user name and credentials are specified in the settings file 
+located in the `mavedb/settings/` directory. Choose or create the correct 
+settings file for the deployment type (e.g. `mavedb/settings/local.py` for a 
+local install).
 
     CREATE DATABASE mavedb;
     CREATE USER mave_admin WITH PASSWORD 'abc123';
@@ -90,7 +127,7 @@ The latest version of `pandoc` that was available through `yum` is 1.9 and it
 doesn't support some of the features we need. This step builds `pandoc` from 
 source using `stack`. The `--flag pandoc:embed_data_files` option creates a 
 relocatable binary with the default templates included. The last command moves 
-the executable, and the `.stack-work` directory can be deleted.
+the executable, and the `.stack-work` directory can be deleted to save space.
 
     wget -qO- https://get.haskellstack.org/ | sh
     wget https://hackage.haskell.org/package/pandoc-1.19.2.1/pandoc-1.19.2.1.tar.gz
@@ -100,9 +137,12 @@ the executable, and the `.stack-work` directory can be deleted.
     stack build --flag pandoc:embed_data_files
     mv .stack-work/install/x86_64-linux-gmp4/lts-7.14/8.0.1/bin/pandoc /usr/local/bin/
 
-This was by far the most time consuming part of the whole process.
+This was by far the most time consuming part of the whole process. Users on a 
+low-memory EC2 instance will not have enough memory to build `pandoc`, but it 
+can be copied from another system if it was built with 
+`--flag pandoc:embed_data_files`.
 
-## Setting up the MAVE DB virtual environment
+## Setting up the MAVEDB virtual environment
 
 Having installed all the dependencies, we can create and activate the Python 
 virtual environment and install dependencies.
@@ -114,7 +154,7 @@ virtual environment and install dependencies.
 
 # Documentation updated for AWS up to this point
 
-## Installing MAVE DB
+## Installing MAVEDB
 
 Next I downloaded the source code for the project (note: this is in a private 
 GitHub repository) and set up the database. Database login details are stored 
@@ -143,14 +183,3 @@ following command can successfully start the server after a reboot.
         --working-directory mavedb \
         --url-alias /static mavedb/static \
         --application-type module mavedb.wsgi
-
-## Other items
-
-I had to modify the firewall settings using `iptables` but I omitted those 
-details here. 
-
-One thing I haven't implemented is adding password-protection on the whole 
-server through `.htaccess` files or using Apache settings. Since I wasn't sure 
-what method of controlling access to the whole site while it's in development 
-would be best, I haven't tried to implement a solution at this point.
-
