@@ -3,6 +3,8 @@ import idutils
 
 from django.db import models
 
+import genome.models as genome_models
+
 from core.models import TimeStampedModel
 
 from metadata.validators import (
@@ -139,50 +141,6 @@ class ExternalIdentifier(TimeStampedModel):
         attr = 'associated_{}s'.format(model)
         return getattr(self, attr).all()
 
-
-class AnnotationOffset(models.Model):
-    """
-    An offset value unique to an AnnotationIdentifier and a
-    TargetGene.
-    """
-    offset = models.PositiveIntegerField(
-        blank=True,
-        null=False,
-        default=1,
-        verbose_name='Wild-type offset'
-    )
-
-
-class AnnotationIdentifier(ExternalIdentifier):
-    """
-    Abstract class representing an identifier which also requires the specification
-    of an offset. Used to calculate the position that target starts at
-     within the annotation sequence (ammino acid, nucleotide).
-    """
-    class Meta(ExternalIdentifier.Meta):
-        abstract = True
-
-    annotation_offset = models.OneToOneField(
-        to=AnnotationOffset,
-        blank=True,
-        null=True,
-        default=None,
-        verbose_name='Wild-type offset',
-    )
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.annotation_offset is None:
-            self.annotation_offset = AnnotationOffset()
-            self.annotation_offset.save()
-            self.save()
-
-    def serialise(self):
-        data = super().serialise()
-        data['offset'] = self.annotation_offset.offset
-        return data
-
-
 class SraIdentifier(ExternalIdentifier):
     """
     An SRA identifier.
@@ -263,7 +221,7 @@ class PubmedIdentifier(ExternalIdentifier):
         super().save(*args, **kwargs)
 
 
-class RefseqIdentifier(AnnotationIdentifier):
+class RefseqIdentifier(ExternalIdentifier):
     """
     An NCBI RefSeq accession number.
     """
@@ -275,9 +233,9 @@ class RefseqIdentifier(AnnotationIdentifier):
 
     def format_url(self):
         pass
-    
 
-class EnsemblIdentifier(AnnotationIdentifier):
+
+class EnsemblIdentifier(ExternalIdentifier):
     """
     An Ensembl accession number.
     """
@@ -291,7 +249,7 @@ class EnsemblIdentifier(AnnotationIdentifier):
         pass
     
 
-class UniprotIdentifier(AnnotationIdentifier):
+class UniprotIdentifier(ExternalIdentifier):
     """
     A UniProt accession number.
     """
@@ -303,3 +261,85 @@ class UniprotIdentifier(AnnotationIdentifier):
 
     def format_url(self):
         pass
+
+
+# Offsets
+# --------------------------------------------------------------------------- #
+class AnnotationOffset(models.Model):
+    """
+    An offset value unique to an :class:`ExternalIdentifier` and a
+    :class:`TargetGene`.
+    """
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return "{}Offset(target={}, identifier={}, offset={})".format(
+            self.identifier_db, self.target, self.identifier, self.offset
+        )
+
+    offset = models.PositiveIntegerField(
+        blank=True,
+        null=False,
+        default=0,
+        verbose_name='Wild-type offset'
+    )
+    target = models.OneToOneField(
+        to=genome_models.TargetGene,
+        on_delete=models.CASCADE,
+        default=None,
+        null=False,
+        verbose_name='Target gene',
+        related_name='%(class)s',
+    )
+
+    @property
+    def identifier_db(self):
+        if self.target:
+            return self.identifier.dbname
+        return None
+
+
+class UniprotOffset(AnnotationOffset):
+    """
+    An offset value unique to an :class:`UniprotIdentifier` and a
+    :class:`TargetGene`.
+    """
+    identifier = models.OneToOneField(
+        to=UniprotIdentifier,
+        on_delete=models.CASCADE,
+        default=None,
+        null=False,
+        verbose_name='UniProt identifier',
+        related_name='offset',
+    )
+
+
+class RefseqOffset(AnnotationOffset):
+    """
+    An offset value unique to an :class:`RefseqIdentifier` and a
+    :class:`TargetGene`.
+    """
+    identifier = models.OneToOneField(
+        to=RefseqIdentifier,
+        on_delete=models.CASCADE,
+        default=None,
+        null=False,
+        verbose_name='RefSeq identifier',
+        related_name='offset',
+    )
+
+
+class EnsemblOffset(AnnotationOffset):
+    """
+    An offset value unique to an :class:`EnsemblIdentifier` and a
+    :class:`TargetGene`.
+    """
+    identifier = models.OneToOneField(
+        to=EnsemblIdentifier,
+        on_delete=models.CASCADE,
+        default=None,
+        null=False,
+        verbose_name='Ensembl identifier',
+        related_name='offset',
+    )
