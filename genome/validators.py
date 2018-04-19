@@ -51,7 +51,7 @@ def validate_interval_is_not_a_duplicate(interval, intervals):
 def validate_strand(value):
     if value not in ('+', '-'):
         raise ValidationError(
-            "Interval strand must be either 'Forward' or 'Reverse'")
+            "Interval strand must be either '+' or '-'")
 
 
 def validate_chromosome(value):
