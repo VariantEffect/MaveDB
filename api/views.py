@@ -1,135 +1,144 @@
+from rest_framework import viewsets
+
 from django.contrib.auth import get_user_model
 from django.http import Http404
-from django.http import StreamingHttpResponse, JsonResponse
-from django.shortcuts import render, get_object_or_404
-
-from accounts.permissions import (
-    user_is_anonymous, PermissionTypes
-)
+from django.http import StreamingHttpResponse
+from django.shortcuts import get_object_or_404
 
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
 import dataset.constants as constants
-
-from .serializers import (
+from dataset.serializers import (
     UserSerializer,
     ExperimentSetSerializer,
     ExperimentSerializer,
-    ScoreSetSerializer
+    ScoreSetSerializer,
 )
 
+from .mixins import DatasetModelFilterMixin
 
 User = get_user_model()
 
 
-# Users
-# -------------------------------------------------------------------- #
-def users_all(request):
-    serializer = UserSerializer()
-    users = [
-        user for user in User.objects.all()
-        if not (user_is_anonymous(user) or user.is_superuser)
-    ]
-    data = serializer.serialize_set(users)
-    return JsonResponse(data)
+class DatasetModelViewSet(DatasetModelFilterMixin,
+                          viewsets.ReadOnlyModelViewSet):
+
+    def get_queryset(self, use_list=True):
+        queryset = super().get_queryset()
+        questions = self.make_q_object_list()
+        q = self.join_func(questions)
+        return queryset.filter(q)
+
+    def list(self, request, *args, **kwargs):
+        return_list = False
+        if 'return_list' in kwargs:
+            return_list = kwargs.pop('return_list')
+        if return_list:
+            return [i.urn for i in self.get_queryset()]
+        else:
+            return super().list(request, *args, **kwargs)
 
 
-def user_by_username(request, username):
-    try:
-        user = get_object_or_404(User, username=username)
-    except Http404:
-        response = render(
-            request=request,
-            template_name="main/404_not_found.html"
-        )
-        response.status_code = 404
-        return response
-
-    serializer = UserSerializer()
-    data = serializer.serialize(user.pk)
-    return JsonResponse(data)
+class ExperimentSetViewset(DatasetModelViewSet):
+    queryset = ExperimentSet.objects.filter(private=False)
+    serializer_class = ExperimentSetSerializer
+    lookup_field = 'urn'
 
 
-# ExperimentSets
-# -------------------------------------------------------------------- #
-def experimentset_all(request):
-    serializer = ExperimentSetSerializer()
-    objects = ExperimentSet.objects.filter(private=False)
-    data = serializer.serialize_set(objects)
-    return JsonResponse(data)
+class ExperimentViewset(DatasetModelViewSet):
+    queryset = Experiment.objects.filter(private=False)
+    serializer_class = ExperimentSerializer
+    lookup_field = 'urn'
+
+    def filter_targets(self, query_key=None):
+        field_name = 'scoresets__target__name'
+        filter_type = 'iexact'
+        query_key = query_key or 'target'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def make_q_object_list(self):
+        questions = super().make_q_object_list()
+        questions += [self.filter_targets(self.key)]
+        return questions
 
 
-def experimentset_by_urn(request, urn):
-    try:
-        obj = get_object_or_404(ExperimentSet, urn=urn)
-        if obj.private:
-            raise Http404()
-    except Http404:
-        response = render(
-            request=request,
-            template_name="main/404_not_found.html"
-        )
-        response.status_code = 404
-        return response
+class ScoreSetViewset(DatasetModelViewSet):
+    queryset = ScoreSet.objects.filter(private=False)
+    serializer_class = ScoreSetSerializer
+    lookup_field = 'urn'
 
-    serializer = ExperimentSetSerializer()
-    data = serializer.serialize(obj.pk)
-    return JsonResponse(data)
+    def filter_organism(self, query_key=None):
+        field_name = 'target__reference_maps__genome__species_name'
+        filter_type = 'iexact'
+        query_key = query_key or 'organism'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def filter_target(self, query_key=None):
+        field_name = 'target__name'
+        filter_type = 'iexact'
+        query_key = query_key or 'target'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def filter_target_sequence(self, query_key=None):
+        field_name = 'target__wt_sequence__sequence'
+        filter_type = 'iexact'
+        query_key = query_key or 'sequence'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def filter_reference_genome(self, query_key=None):
+        field_name = 'target__reference_maps__genome__short_name'
+        filter_type = 'iexact'
+        query_key = query_key or 'reference'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def filter_reference_genome_identifier(self, query_key=None):
+        field_name_1 = 'target__reference_maps__genome__refseq_id__identifier'
+        field_name_2 = 'target__reference_maps__genome__ensembl_id__identifier'
+        filter_type = 'iexact'
+        query_key = query_key or 'reference_accession'
+        return self.or_join_qs([
+            self.search_to_q(query_key, field_name_1, filter_type),
+            self.search_to_q(query_key, field_name_2, filter_type),
+        ])
+
+    def filter_target_uniprot(self, query_key=None):
+        field_name = 'target__uniprot_id__identifier'
+        filter_type = 'iexact'
+        query_key = query_key or 'uniprot'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def filter_target_refseq(self, query_key=None):
+        field_name = 'target__refseq_id__identifier'
+        filter_type = 'iexact'
+        query_key = query_key or 'refseq'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def filter_target_ensembl(self, query_key=None):
+        field_name = 'target__ensembl_id__identifier'
+        filter_type = 'iexact'
+        query_key = query_key or 'ensembl'
+        return self.search_to_q(query_key, field_name, filter_type)
+
+    def make_q_object_list(self):
+        questions = super().make_q_object_list()
+        questions += [
+            self.filter_organism(self.key),
+            self.filter_target(self.key),
+            self.filter_target_sequence(self.key),
+            self.filter_reference_genome(self.key),
+            self.filter_reference_genome_identifier(self.key),
+            self.filter_target_uniprot(self.key),
+            self.filter_target_ensembl(self.key),
+            self.filter_target_refseq(self.key),
+        ]
+        return questions
 
 
-# Experiments
-# -------------------------------------------------------------------- #
-def experiments_all(request):
-    serializer = ExperimentSerializer()
-    objects = Experiment.objects.filter(private=False)
-    data = serializer.serialize_set(objects)
-    return JsonResponse(data)
-
-
-def experiment_by_urn(request, urn):
-    try:
-        obj = get_object_or_404(Experiment, urn=urn)
-        if obj.private:
-            raise Http404()
-    except Http404:
-        response = render(
-            request=request,
-            template_name="main/404_not_found.html"
-        )
-        response.status_code = 404
-        return response
-
-    serializer = ExperimentSerializer()
-    data = serializer.serialize(obj.pk)
-    return JsonResponse(data)
-
-
-# Scoresets
-# -------------------------------------------------------------------- #
-def scoresets_all(request):
-    serializer = ScoreSetSerializer()
-    objects = ScoreSet.objects.filter(private=False)
-    data = serializer.serialize_set(objects)
-    return JsonResponse(data)
-
-
-def scoreset_by_urn(request, urn):
-    try:
-        obj = get_object_or_404(ScoreSet, urn=urn)
-        if obj.private:
-            raise Http404()
-    except Http404:
-        response = render(
-            request=request,
-            template_name="main/404_not_found.html"
-        )
-        response.status_code = 404
-        return response
-
-    serializer = ScoreSetSerializer()
-    data = serializer.serialize(obj.pk)
-    return JsonResponse(data)
+class UserViewset(viewsets.ReadOnlyModelViewSet):
+    queryset = User.objects.exclude(username='AnonymousUser')
+    serializer_class = UserSerializer
+    lookup_field = 'username'
 
 
 def download_variant_data(request, urn, dataset_column):
@@ -156,27 +165,14 @@ def download_variant_data(request, urn, dataset_column):
     if dataset_column not in constants.valid_dataset_columns:
         raise ValueError("{} is not a valid variant data key.".format(
             dataset_column))
-    try:
-        scoreset = get_object_or_404(ScoreSet, urn=urn)
-        has_permission = request.user.has_perm(
-            PermissionTypes.CAN_VIEW, scoreset)
 
-        if scoreset.private and not has_permission:
-            response = render(
-                request=request,
-                template_name="main/403_forbidden.html",
-                context={"instance": scoreset},
-            )
-            response.status_code = 403
-            return response
+    scoreset = get_object_or_404(ScoreSet, urn=urn)
+    if scoreset.private:
+        raise Http404()
 
-    except Http404:
-        response = render(
-            request=request,
-            template_name="main/404_not_found.html"
-        )
-        response.status_code = 404
-        return response
+    if dataset_column == constants.score_columns and \
+            not scoreset.has_score_dataset:
+        return StreamingHttpResponse("", content_type='text')
 
     if dataset_column == constants.count_columns and \
             not scoreset.has_count_dataset:
