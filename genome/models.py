@@ -557,8 +557,8 @@ class Interval(TimeStampedModel):
         An reference_map instance that this interval is associated with.
     """
     STRAND_CHOICES = (
-        ('F', 'Forward'),  # (database value, verbose value used in UI)
-        ('R', 'Reverse')
+        ('+', '+'),  # (database value, verbose value used in UI)
+        ('-', '-')
     )
 
     class Meta:
