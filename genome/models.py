@@ -13,7 +13,7 @@ from .validators import (
 class TargetGene(TimeStampedModel):
     """
     Models a target gene, defining the wild-type sequence, a free-text name
-    and a collection of annotations relating the gene to reference genomes,
+    and a collection of reference_maps relating the gene to reference genomes,
     which can be from different species.
 
     The fields `wt_sequence` and `scoreset` are allowed
@@ -28,7 +28,7 @@ class TargetGene(TimeStampedModel):
 
     scoreset : `models.OneToOneField`
         One to one relationship associating this target with a scoreset. If
-        this scoreset is deleted, the target and associated annotations/intervals
+        this scoreset is deleted, the target and associated reference_maps/intervals
         will also be deleted.
 
     name : `models.CharField`
@@ -168,7 +168,7 @@ class TargetGene(TimeStampedModel):
             ))
         self.wt_sequence = sequence
 
-    def annotation_count(self):
+    def reference_map_count(self):
         """
         Returns the count of attached :class:`ReferenceMap` instances.
 
@@ -177,9 +177,9 @@ class TargetGene(TimeStampedModel):
         `int`
             Count of attached :class:`ReferenceMap` instances.
         """
-        return self.annotations.count()
+        return self.reference_maps.count()
 
-    def get_annotations(self):
+    def get_reference_maps(self):
         """
         Returns the `QuerySet` of attached :class:`ReferenceMap` instances. This
         may be empty.
@@ -189,7 +189,7 @@ class TargetGene(TimeStampedModel):
         `QuerySet`
             The set of attached :class:`ReferenceMap` instances.
         """
-        return self.annotations.all()
+        return self.reference_maps.all()
 
     def get_reference_genomes(self):
         """
@@ -202,40 +202,8 @@ class TargetGene(TimeStampedModel):
             A set of :class:`ReferenceGenome` instances extracted from
             any attached :class:`ReferenceMap` instances.
         """
-        genome_pks = set(a.genome.pk for a in self.get_annotations())
+        genome_pks = set(a.genome.pk for a in self.get_reference_maps())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
-
-    def serialise(self):
-        """Returns a serialised `dict` of this instance's fields. Recurses the
-        serialisation for relational fields.
-
-        The `dict` instance will have the keys:
-            - `name`
-            - `scoreset`
-            - `wt_sequence`
-            - `annotations`
-            - `external_identifiers`
-
-        Returns
-        -------
-        `dict`
-            The serialised data of this instance.
-        """
-        ensembl_id = self.ensembl_id
-        refseq_id = self.refseq_id
-        uniprot_id = self.uniprot_id
-
-        return {
-            'name': self.name,
-            'scoreset': None if not self.scoreset else self.scoreset.urn,
-            'wt_sequence': self.get_wt_sequence_string(),
-            'annotations': [a.serialise() for a in self.annotations.all()],
-            'external_identifiers': {
-                'refseq': None if not refseq_id else refseq_id.serialise(),
-                'ensembl': None if not ensembl_id else ensembl_id.serialise(),
-                'uniprot': None if not uniprot_id else uniprot_id.serialise()
-            }
-        }
 
 
 class ReferenceMap(TimeStampedModel):
@@ -266,7 +234,7 @@ class ReferenceMap(TimeStampedModel):
 
     def __str__(self):
         return 'ReferenceMap(genome={}, primary={})'.format(
-            self.get_reference_genome_name(), self.is_primary_annotation())
+            self.get_reference_genome_name(), self.is_primary_reference_map())
 
     genome = models.ForeignKey(
         to='genome.ReferenceGenome',
@@ -405,34 +373,12 @@ class ReferenceMap(TimeStampedModel):
         """
         self.is_primary = primary
 
-    def is_primary_annotation(self):
+    def is_primary_reference_map(self):
         """
         Returns True if the associated :class:`ReferenceGenome` is marked
         as primary.
         """
         return self.is_primary
-
-    def serialise(self):
-        """
-        Returns a serialised `dict` of this instance's fields. Recurses the
-        serialisation for relational fields.
-
-        The `dict` instance will have the keys:
-            - `primary`
-            - `reference`
-            - `intervals`
-
-        Returns
-        -------
-        `dict`
-            The serialised data of this instance.
-        """
-        ref_genome = self.get_reference_genome()
-        return {
-            'primary': self.is_primary_annotation(),
-            'reference_genome': None if not ref_genome else ref_genome.serialise(),
-            'intervals': [i.serialise() for i in self.get_intervals()]
-        }
 
 
 class ReferenceGenome(TimeStampedModel):
@@ -586,33 +532,6 @@ class ReferenceGenome(TimeStampedModel):
             HTML italics tags. Use with `|safe` in templates.
         """
         return "<i>{}</i>".format(self.get_species_name().capitalize())
-
-    def serialise(self):
-        """
-        Returns a serialised `dict` of this instance's fields. Recurses the
-        serialisation for relational fields.
-
-        The `dict` instance will have the keys:
-            - `name`
-            - `species`
-            - `external_identifier`
-
-        Returns
-        -------
-        `dict`
-            The serialised data of this instance.
-        """
-        ensembl_id = self.get_ensembl_id()
-        refseq_id = self.get_refseq_id()
-
-        return {
-            'short_name': self.get_short_name(),
-            'species_name': self.get_species_name(),
-            'external_identifiers': {
-                'refseq': None if not refseq_id else refseq_id.serialise(),
-                'ensembl': None if not ensembl_id else ensembl_id.serialise()
-            }
-        }
 
 
 class Interval(TimeStampedModel):
@@ -779,7 +698,7 @@ class Interval(TimeStampedModel):
         """
         return self.strand.upper()
 
-    def get_annotation(self):
+    def get_reference_map(self):
         """
         Returns the :class:`ReferenceMap` this instance is attached to, otherwise
         `None`.
@@ -792,39 +711,17 @@ class Interval(TimeStampedModel):
         """
         return self.reference_map
 
-    def set_annotation(self, annotation):
+    def set_reference_map(self, reference_map):
         """
         Attaches this interval to `reference_map`. Saving is the responsibility
         of the user.
 
         Parameters
         ----------
-        annotation : :class:`ReferenceMap`
+        reference_map : :class:`ReferenceMap`
             The :class:`Annotation` to attach this interval to.
         """
-        self.reference_map = annotation
-
-    def serialise(self):
-        """
-        Returns a serialised `dict` of this instance's fields.
-
-        The `dict` instance will have the keys:
-            - `start`
-            - `end`
-            - `chromosome`
-            - `strand`
-
-        Returns
-        -------
-        `dict`
-            The serialised data of this instance.
-        """
-        return {
-            'start': self.get_start(),
-            'end': self.get_end(),
-            'chromosome': self.get_chromosome(),
-            'strand': self.get_strand()
-        }
+        self.reference_map = reference_map
 
 
 class WildTypeSequence(TimeStampedModel):
@@ -867,17 +764,3 @@ class WildTypeSequence(TimeStampedModel):
             The nucleotide sequence.
         """
         return self.sequence.upper()
-
-    def serialise(self):
-        """
-        Returns a serialised `dict` of this instance's fields.
-
-        The `dict` instance will have the keys:
-            - `sequence`
-
-        Returns
-        -------
-        `dict`
-            The serialised data of this instance.
-        """
-        return {'sequence': self.get_sequence()}
