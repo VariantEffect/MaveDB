@@ -235,6 +235,24 @@ class Profile(TimeStampedModel):
 
         return list(self._iterable_to_queryset(instances, ScoreSet).all())
 
+    def public_contributor_experimentsets(self):
+        return list(self._iterable_to_queryset(
+            self.contributor_experimentsets(),
+            klass=ExperimentSet,
+        ).filter(private=False))
+
+    def public_contributor_experiments(self):
+        return list(self._iterable_to_queryset(
+            self.contributor_experiments(),
+            klass=Experiment,
+        ).filter(private=False))
+
+    def public_contributor_scoresets(self):
+        return list(self._iterable_to_queryset(
+            self.contributor_scoresets(),
+            klass=ScoreSet,
+        ).filter(private=False))
+
     # Administrator
     # ----------------------------------------------------------------------- #
     def administrator_instances(self):
