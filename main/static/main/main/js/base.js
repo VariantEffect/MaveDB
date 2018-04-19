@@ -18,14 +18,6 @@ $("document").ready(function() {
         tokenSeparators: [","]
     });
 
-    var currentUrl = window.location.toString();
-    if (currentUrl.endsWith("#counts")) {
-        $("#counts-tab").click();
-    }
-    if (currentUrl.endsWith("#scores")) {
-        $("#scores-tab").click();
-    }
-
     // Re-add any external_accession, keywords or target organism
     // back to failed form submission
     repopulateSelect("#id_keywords", "#keywords-to-add");
@@ -34,7 +26,6 @@ $("document").ready(function() {
     repopulateSelect("#id_pubmed_ids", "#pubmed-identifiers-to-add");
     repopulateSelect("#id_target_organism", "#target-organisms-to-add");
 });
-
 
 
 // Ajax for markdown field preview
@@ -144,21 +135,21 @@ function validateAdminSubmit(e) {
     return $("#admin-form").submit();
   }
 
-function validateContribSubmit(e) {
-    var cSelected = $("#contrib-form > div > select option:selected");
-    var cSelectedPks = cSelected.map(function() {
+function validateEditorSubmit(e) {
+    var eSelected = $("#editor-form > div > select option:selected");
+    var eSelectedPks = eSelected.map(function() {
         return parseInt(this.value);
     });
 
-    var willRemoveSelfAsAdmin = cSelectedPks.index(userPk) >= 0;
+    var willRemoveSelfAsAdmin = eSelectedPks.index(userPk) >= 0;
     if(willRemoveSelfAsAdmin) {
         var submit = askConfirmation();
         if(submit) {
-            return $("#contrib-form").submit();
+            return $("#editor-form").submit();
         }
         return false;
     }
-    return $("#contrib-form").submit();
+    return $("#editor-form").submit();
 }
 
 function validateViewerSubmit(e) {
@@ -178,6 +169,9 @@ function validateViewerSubmit(e) {
     return $("#viewer-form").submit();
 }
 
+
+// Dynaimic target selection
+// ------------------------------------------------------------------------ //
 $("#id_target").on("change", function() {
     // First get whatever is in the form and send an ajax request
     // to convert it to markdown.
@@ -255,4 +249,96 @@ $("#id_target").on("change", function() {
         return true;
     }
     return false;
+});
+
+
+// Formsets
+// ----------------------------------------------------------------------- //
+function reset_index(prefix) {
+    var formset_tag = prefix + '-form-set';
+    var form_idx_tag = formset_tag +
+                    " > #id_" +
+                    prefix.replace('#', '') +
+                    "-TOTAL_FORMS";
+
+    var form_idx = parseInt($(form_idx_tag).val());
+    var element = prefix + "-formset-" + form_idx;
+    if ($(element).length === 0 && form_idx > 0) {
+        $(form_idx_tag).val(1);
+    }
+}
+
+function add_formset(prefix) {
+    var formset_tag = prefix + '-form-set';
+    var form_idx_tag = formset_tag +
+                    " > #id_" +
+                    prefix.replace('#', '') +
+                    "-TOTAL_FORMS";
+    var template_form_tag = prefix + "-empty-form";
+    var empty_set_tag = prefix + '-empty-set';
+
+    var form_idx = parseInt($(form_idx_tag).val());
+    if (form_idx < 0) {
+        form_idx = 0;
+    }
+
+    var item = $(template_form_tag).html().replace(/__prefix__/g, form_idx);
+    var new_idx = form_idx === 0 ? form_idx : form_idx + 1;
+    item =
+        '<div id="' + prefix.replace("#", '') +
+            '-formset-' + (form_idx + 1) + '">' +
+        item +
+        '<hr></div>';
+
+    $(empty_set_tag).hide();
+    $(formset_tag).append(item);
+    $(form_idx_tag).val(form_idx + 1);
+}
+
+function remove_formset(prefix) {
+    var formset_tag = prefix + '-form-set';
+    var form_idx_tag = formset_tag +
+                    " > #id_" +
+                    prefix.replace('#', '') +
+                    "-TOTAL_FORMS";
+    var template_form_tag = prefix + "-empty-form";
+    var empty_set_tag = prefix + '-empty-set';
+
+    var form_idx = parseInt($(form_idx_tag).val());
+    var element = prefix + "-formset-" + form_idx;
+
+    var possible_elemet = prefix + "-formset-" + 1;
+    if (form_idx === 0 && $(possible_elemet).length > 0) {
+        $(possible_elemet).remove();
+        $(empty_set_tag).show();
+        $(form_idx_tag).val(0);
+    }
+    else {
+        $(element).remove();
+        if (form_idx - 1 <= 0) {
+            $(empty_set_tag).show();
+            $(form_idx_tag).val(0);
+        }
+        else {
+            $(form_idx_tag).val(form_idx - 1);
+        }
+    }
+}
+
+$("#add_reference_map").click(function () {
+    reset_index("#reference_map");
+    add_formset("#reference_map");
+});
+$("#remove_reference_map").click(function () {
+    reset_index("#reference_map");
+    remove_formset("#reference_map");
+});
+
+$("#add_interval").click(function () {
+    reset_index("#interval");
+    add_formset("#interval");
+});
+$("#remove_interval").click(function () {
+    reset_index("#interval");
+    remove_formset("#interval");
 });
