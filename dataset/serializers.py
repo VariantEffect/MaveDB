@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
 from core.serializers import TimeStampedModelSerializer
+
+from main.serializers import LicenceSerializer
+from accounts.serializers import UserSerializer
+
 from genome.serializers import TargetGeneSerializer
 from metadata.serializers import (
     KeywordSerializer, SraIdentifierSerializer,
@@ -19,17 +23,21 @@ class DatasetModelSerializer(TimeStampedModelSerializer):
     sra_ids = SraIdentifierSerializer(many=True)
     doi_ids = DoiIdentifierSerializer(many=True)
     pubmed_ids = PubmedIdentifierSerializer(many=True)
+    contributors = UserSerializer(many=True)
+    licence = LicenceSerializer(many=False)
+    created_by = serializers.StringRelatedField(many=False)
+    modified_by = serializers.StringRelatedField(many=False)
 
     class Meta(TimeStampedModelSerializer.Meta):
         model = DatasetModel
         fields = TimeStampedModelSerializer.Meta.fields + (
-            'urn', 'publish_date', 'created_by', 'modified_by', 'private',
+            'urn', 'publish_date', 'created_by', 'modified_by',
             'extra_metadata', 'abstract_text', 'method_text',
             'short_description', 'title', 'keywords', 'sra_ids', 'doi_ids',
-            'pubmed_ids',
+            'pubmed_ids', 'contributors',
         )
         read_only_fields = fields
-        write_only_fields = ()
+        lookup_field = 'urn'
 
 
 class ScoreSetSerializer(DatasetModelSerializer):
