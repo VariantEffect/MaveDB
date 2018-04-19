@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'widget_tweaks',
     'rest_framework',
+    'django_filters',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -174,3 +175,18 @@ EMAIL_USE_SSL = False
 # Reply-to email for user emails
 # REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')
 REPLY_TO_EMAIL = "alan.rubin@wehi.edu.au"
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day'
+    },
+}
