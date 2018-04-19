@@ -52,12 +52,3 @@ def UserFactory(username=None, password=None, first_name=None,
         email=email
     )
 
-
-def ProfileFactory(user=None):
-    """
-    Test fixture factory for creating a profile linked to a randomly
-    genreated user.
-    """
-    if user is None:
-        user = UserFactory()
-    return Profile.objects.create(user=user)

@@ -20,13 +20,21 @@ class ReferenceGenomeSerializer(serializers.ModelSerializer):
     Serializes fields of :class:`ReferenceGenome`. Currently read only and
     will recurse on :class:`ExternalIdentifiers`.
     """
-    ensembl_id = EnsemblIdentifierSerializer(many=False)
-    refseq_id = RefseqIdentifierSerializer(many=False)
+    ensembl = EnsemblIdentifierSerializer(source='ensembl_id', many=False)
+    refseq = RefseqIdentifierSerializer(source='refseq_id', many=False)
 
     class Meta:
         model = ReferenceGenome
-        fields = ('short_name', 'species_name', 'ensembl_id', 'refseq_id',)
+        fields = ('short_name', 'species_name', 'ensembl', 'refseq',)
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if 'ensembl' in rep:
+            rep['ensembl'].pop('offset')
+        if 'refseq' in rep:
+            rep['refseq'].pop('offset')
+        return rep
 
 
 class IntervalSerializer(serializers.ModelSerializer):
@@ -71,16 +79,16 @@ class TargetGeneSerializer(serializers.ModelSerializer):
     scoreset = serializers.StringRelatedField(many=False)
     reference_maps = ReferenceMapSerializer(many=True)
     wt_sequence = WildTypeSequenceSerializer(many=False)
-    uniprot_id = UniprotIdentifierSerializer(many=False)
-    ensembl_id = EnsemblIdentifierSerializer(many=False)
-    refseq_id = RefseqIdentifierSerializer(many=False)
+    uniprot = UniprotIdentifierSerializer(source='uniprot_id', many=False)
+    ensembl = EnsemblIdentifierSerializer(source='refseq_id', many=False)
+    refseq = RefseqIdentifierSerializer(source='refseq_id', many=False)
 
     class Meta:
         model = TargetGene
         depth = 2
         fields = (
-            'name', 'wt_sequence', 'uniprot_id',
-            'ensembl_id', 'refseq_id', 'reference_maps',
+            'name', 'wt_sequence', 'uniprot',
+            'ensembl', 'refseq', 'reference_maps',
             'scoreset',
         )
         read_only_fields = fields
