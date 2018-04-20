@@ -1,4 +1,5 @@
 import logging
+import datetime
 import os.path
 
 from django.conf import settings
@@ -64,26 +65,32 @@ class SiteInformation(TimeStampedModel):
 
     Parameters
     ----------
-    _about : `models.TextField`
-        The `about` markdown text.
-    _citation : `models.TextField`
-        The citation for researches to use.
-    _usage_guide : `models.TextField`
-        A basic guide on how to use the website and api.
-    _documentation : `models.TextField`
-        API documentation
-    _terms : `models.TextField`
-        The terms and conditions text blob.
-    _privacy : `models.TextField`
+    about : `TextField`
+       The `about` markdown text.
+    citation : `TextField`
+       The citation for researches to use.
+    md_usage_guide : `TextField`
+       A basic guide on how to use the website and api.
+    documentation : `TextField`
+       API documentation
+    terms : `TextField`
+       The terms and conditions text blob.
+    privacy : `TextField`
         The privacy text blob.
+    version : `CharField`
+        MaveDB release version.
+    version_date : `DateTimeField`
+        MaveDB version release date.
     """
-    _about = models.TextField(default="", blank=True)
-    _citation = models.TextField(default="", blank=True)
-    _usage_guide = models.TextField(default="", blank=True)
-    _documentation = models.TextField(default="", blank=True)
-    _terms = models.TextField(default="", blank=True)
-    _privacy = models.TextField(default="", blank=True)
-    _email = models.EmailField(default="", blank=True)
+    about = models.TextField(default="", blank=True)
+    citation = models.TextField(default="", blank=True)
+    usage_guide = models.TextField(default="", blank=True)
+    documentation = models.TextField(default="", blank=True)
+    terms = models.TextField(default="", blank=True)
+    privacy = models.TextField(default="", blank=True)
+    email = models.EmailField(default="", blank=True)
+    version = models.CharField(default="1", blank=True)
+    version_date = models.DateField(default=datetime.date.today)
 
     class Meta:
         verbose_name_plural = "Site Information"
@@ -100,33 +107,39 @@ class SiteInformation(TimeStampedModel):
         except IndexError:
             return SiteInformation()
 
-    @property
-    def about(self):
-        return convert_md_to_html(self._about)
+    def md_about(self):
+        return convert_md_to_html(self.about)
+
+    def md_citation(self):
+        return convert_md_to_html(self.citation)
 
     @property
-    def citation(self):
-        return convert_md_to_html(self._citation)
+    def md_usage_guide(self):
+        return convert_md_to_html(self.usage_guide)
 
     @property
-    def usage_guide(self):
-        return convert_md_to_html(self._usage_guide)
+    def md_documentation(self):
+        return convert_md_to_html(self.documentation)
 
     @property
-    def documentation(self):
-        return convert_md_to_html(self._documentation)
+    def md_terms(self):
+        return convert_md_to_html(self.terms)
 
     @property
-    def terms(self):
-        return convert_md_to_html(self._terms)
+    def md_privacy(self):
+        return convert_md_to_html(self.privacy)
 
     @property
-    def privacy(self):
-        return convert_md_to_html(self._privacy)
+    def contact_email(self):
+        return self.email
 
     @property
-    def email(self):
-        return self._email
+    def release_version(self):
+        return self.version
+
+    @property
+    def release_date(self):
+        return self.version_date
 
     def can_save(self):
         """
@@ -138,11 +151,10 @@ class SiteInformation(TimeStampedModel):
         -------
         `bool`
         """
-        existing = SiteInformation.objects.all()
-        if len(existing) < 1:
+        existing = SiteInformation.objects.first()
+        if existing is None:
             return True
-        else:
-            return existing[0].pk == self.pk
+        return self.pk == existing.pk
 
 
 class Licence(TimeStampedModel):
