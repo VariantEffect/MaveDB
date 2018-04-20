@@ -31,7 +31,8 @@ def get_secret(setting, secrets=secrets):
 SECRET_KEY = get_secret('secret_key')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-LICENCE_DIR = BASE_DIR + '/licences/'
+LICENCE_DIR = BASE_DIR + '/data/main/'
+GENOME_DIR = BASE_DIR + '/data/genome/'
 
 # Social auth settings for ORCID authentication
 SOCIAL_AUTH_ORCID_PROFILE_EXTRA_PARAMS = {'credit-name': 'credit_name'}

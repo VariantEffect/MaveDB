@@ -34,13 +34,12 @@ digraph {
         ExternalIdentifier -> RefseqIdentifier;
         ExternalIdentifier -> EnsemblIdentifier;
         ExternalIdentifier -> UniprotIdentifier;
-        ExternalIdentifier -> PdbIdentifier;
     }
     subgraph clusterTargetApp {
         label="Target App";
         Target;
         ReferenceMap;
-        Interval;
+        GenomicInterval;
         Genome;
         Target -> ReferenceMap [style=dotted];
         ReferenceMap -> Genome [style=dotted];
