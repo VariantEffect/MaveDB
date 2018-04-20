@@ -344,6 +344,7 @@ def update_admin_list_for_instance(users, instance):
             remove_user_as_instance_admin(user, instance)
     for user in users:
         assign_user_as_instance_admin(user, instance)
+    assign_superusers_as_admin(instance)
 
 
 def update_editor_list_for_instance(users, instance):
@@ -362,3 +363,9 @@ def update_viewer_list_for_instance(users, instance):
             remove_user_as_instance_viewer(user, instance)
     for user in users:
         assign_user_as_instance_viewer(user, instance)
+
+
+def assign_superusers_as_admin(instance):
+    sus = User.objects.filter(is_superuser=True)
+    for su in sus:
+        assign_user_as_instance_admin(su, instance)
