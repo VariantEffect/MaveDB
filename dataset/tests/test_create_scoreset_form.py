@@ -131,12 +131,12 @@ class TestScoreSetForm(TestCase):
             data['experiment']
         )
 
-    def test_viewer_experiments_do_not_appear_in_options(self):
+    def test_viewer_experiments_appear_in_options(self):
         data, files = self.make_post_data(make_exp=False)
         obj1 = ExperimentFactory()
         assign_user_as_instance_viewer(self.user, obj1)
         form = ScoreSetForm(data=data, files=files, user=self.user)
-        self.assertEqual(form.fields['experiment'].queryset.count(), 0)
+        self.assertEqual(form.fields['experiment'].queryset.count(), 1)
 
     def test_admin_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)

@@ -77,13 +77,25 @@ class TestScoreSetSetDetailView(TestCase):
 
     def test_variants_are_in_response(self):
         scs = ScoreSetFactory()
-        var = VariantFactory(scoreset=scs)
-        scs.publish()
+        scs.dataset_columns = {
+            constants.score_columns: ["score"],
+            constants.count_columns: [],
+            constants.metadata_columns: [],
+        }
         scs.save()
+        var = VariantFactory(
+            scoreset=scs,
+            data={
+                constants.variant_score_data: {"score": "1"},
+            }
+        )
+        scs.publish(propagate=True)
+        scs.save(save_parents=True)
         request = self.factory.get('/scoreset/{}/'.format(scs.urn))
         request.user = UserFactory()
         response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
-        self.assertContains(response, var.hgvs)
+        # Remove '>' because it gets escaped.
+        self.assertContains(response, var.hgvs[:-2])
 
 
 class TestCreateNewScoreSetView(TestCase):
@@ -114,7 +126,7 @@ class TestCreateNewScoreSetView(TestCase):
             'start': [1],
             'end': [2],
             'chromosome': ['chrX'],
-            'strand': ['F'],
+            'strand': ['+'],
             'genome': [self.ref.pk],
             'is_primary': True,
             'wt_sequence': 'atcg',
@@ -141,7 +153,7 @@ class TestCreateNewScoreSetView(TestCase):
         response = self.client.get(self.path)
         self.assertTemplateUsed(response, self.template)
 
-    def test_annotation_and_intervals_created(self):
+    def test_reference_map_and_intervals_created(self):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_admin(self.user, exp1)
@@ -159,16 +171,19 @@ class TestCreateNewScoreSetView(TestCase):
         self.assertIsNotNone(scoreset.get_target())
         targetgene = scoreset.get_target()
 
-        annotation = targetgene.get_annotations().first()
-        genome = annotation.get_reference_genome()
-        interval = annotation.get_intervals().first()
+        reference_map = targetgene.get_reference_maps().first()
+        genome = reference_map.get_reference_genome()
+        interval = reference_map.get_intervals().first()
 
         self.assertEqual(genome.get_short_name(), self.ref.get_short_name())
         self.assertEqual(genome.get_species_name(), self.ref.get_species_name())
 
         self.assertEqual(
-            interval.serialise(),
-            {'start': 1, 'end': 2, 'chromosome': 'chrX', 'strand': 'F'}
+            {
+                'start': interval.start, 'end': interval.end,
+                'chromosome': interval.chromosome, 'strand': interval.strand
+            },
+            {'start': 1, 'end': 2, 'chromosome': 'chrX', 'strand': '+'}
         )
 
     def test_experiment_options_are_restricted_to_admin_instances(self):
@@ -430,3 +445,29 @@ class TestCreateNewScoreSetView(TestCase):
         response = scoreset_create_view(request, experiment_urn=exp1.urn)
         self.assertContains(response, exp1.urn)
         self.assertNotContains(response, exp2.urn)
+
+    def test_create_sets_superusers_as_admins(self):
+        su = UserFactory()
+        su.is_superuser = True
+        su.save()
+
+        data = self.post_data.copy()
+        exp1 = ExperimentFactory()
+        scs1 = ScoreSetFactory(experiment=exp1)
+        assign_user_as_instance_admin(self.user, scs1)
+        assign_user_as_instance_admin(self.user, exp1)
+        data['experiment'] = [exp1.pk]
+
+        request = self.factory.post(path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = scoreset_create_view(request)
+
+        # Redirects to scoreset_detail
+        self.assertEqual(response.status_code, 302)
+
+        scoreset = ScoreSet.objects.first()
+        user_is_admin_for_instance(scoreset, su)
+        user_is_admin_for_instance(scoreset.experiment, su)
+        user_is_admin_for_instance(scoreset.experiment.experimentset, su)
+        

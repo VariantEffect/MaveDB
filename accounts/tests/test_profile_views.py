@@ -13,23 +13,19 @@ from dataset.factories import (
 )
 
 from genome.factories import (
-    ReferenceGenomeFactory, IntervalFactory
+    ReferenceGenomeFactory, GenomicIntervalFactory
 )
 
-from ..factories import UserFactory, AnonymousUserFactory, ProfileFactory
+from ..factories import UserFactory
 from ..permissions import (
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer,
-    remove_user_as_instance_admin,
-    remove_user_as_instance_viewer,
-    instances_for_user_with_group_permission,
     user_is_admin_for_instance,
     user_is_viewer_for_instance
 )
 from ..views import (
     manage_instance,
     edit_instance,
-    profile_view,
     view_instance,
     get_class_from_urn
 )
@@ -178,7 +174,7 @@ class TestProfileEditInstanceView(TestCase):
             'start': [1],
             'end': [2],
             'chromosome': ['chrX'],
-            'strand': ['F'],
+            'strand': ['+'],
             'genome': [self.ref.pk],
             'is_primary': True,
             'wt_sequence': 'atcg',
@@ -220,7 +216,7 @@ class TestProfileEditInstanceView(TestCase):
         user.save()
         
         obj = ScoreSetFactory()
-        interval = IntervalFactory()
+        interval = GenomicIntervalFactory()
         interval.reference_map.target.scoreset = obj
         interval.reference_map.target.save()
 
@@ -238,7 +234,7 @@ class TestProfileEditInstanceView(TestCase):
 
     def test_publishing_sets_child_and_parents_to_public(self):
         obj = ScoreSetFactory()
-        interval = IntervalFactory()
+        interval = GenomicIntervalFactory()
         interval.reference_map.target.scoreset = obj
         interval.reference_map.target.save()
 
@@ -261,7 +257,7 @@ class TestProfileEditInstanceView(TestCase):
 
     def test_publishing_propagates_modified_by(self):
         obj = ScoreSetFactory()
-        interval = IntervalFactory()
+        interval = GenomicIntervalFactory()
         interval.reference_map.target.scoreset = obj
         interval.reference_map.target.save()
 
@@ -280,7 +276,7 @@ class TestProfileEditInstanceView(TestCase):
             'start': [1],
             'end': [2],
             'chromosome': ['chrX'],
-            'strand': ['F'],
+            'strand': ['+'],
             'genome': [ref.pk],
             'is_primary': True,
             'wt_sequence': 'atcg',
@@ -354,7 +350,7 @@ class TestProfileEditInstanceView(TestCase):
         data['markdown'] = [True]
 
         obj = ScoreSetFactory()
-        interval = IntervalFactory()
+        interval = GenomicIntervalFactory()
         interval.reference_map.target.scoreset = obj
         interval.reference_map.target.save()
 

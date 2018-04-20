@@ -68,7 +68,7 @@ class TestKeyword(TestCase):
     def test_cannot_create_duplicates(self):
         keyword = KeywordFactory()
         with self.assertRaises(IntegrityError):
-            KeywordFactory(text=keyword.text)
+            Keyword(text=keyword.text).save()
 
     def test_cannot_create_with_null_text(self):
         with self.assertRaises(IntegrityError):

@@ -6,7 +6,7 @@
 #     assign_user_as_instance_viewer
 # )
 #
-# from genome.factories import IntervalFactory
+# from genome.factories import GenomicIntervalFactory
 #
 # import dataset.constants as constants
 # from dataset.factories import (
@@ -112,7 +112,7 @@
 #     json data.
 #     """
 #     def setUp(self):
-#         self.target = IntervalFactory().reference_map.get_target_gene()
+#         self.target = GenomicIntervalFactory().reference_map.get_target_gene()
 #
 #     def test_can_correctly_serialize_instance(self):
 #         instance = ExperimentFactory()
@@ -244,7 +244,7 @@
 #     json data.
 #     """
 #     def setUp(self):
-#         self.target = IntervalFactory().reference_map.get_target_gene()
+#         self.target = GenomicIntervalFactory().reference_map.get_target_gene()
 #
 #     def test_can_serialize_minimal_example(self):
 #         instance = ScoreSetFactory()

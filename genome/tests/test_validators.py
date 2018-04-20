@@ -9,7 +9,7 @@ from metadata.factories import (
 from ..factories import (
     ReferenceMapFactory,
     ReferenceGenomeFactory,
-    IntervalFactory
+    GenomicIntervalFactory
 )
 from ..validators import (
     validate_interval_start_lteq_end,
@@ -46,9 +46,9 @@ class TestIntervalValidators(TestCase):
         validate_interval_start_lteq_end(start=1, end=1)
 
     def test_ve_duplicate_interval_chromosome_case_ignored(self):
-        interval = IntervalFactory()
+        interval = GenomicIntervalFactory()
         intervals = [
-            IntervalFactory(
+            GenomicIntervalFactory(
                 start=interval.start,
                 end=interval.end,
                 chromosome=interval.chromosome.upper(),
@@ -73,8 +73,8 @@ class TestIntervalValidators(TestCase):
             validate_strand('Reverse')
 
         # Should pass
-        validate_strand('F')
-        validate_strand('R')
+        validate_strand('+')
+        validate_strand('-')
 
     def test_ve_null_chr(self):
         for v in nan_col_values:
@@ -136,7 +136,7 @@ class TestReferenceGenomeValidators(TestCase):
     def test_passes_reference_genome_has_one__external_identifiers(self):
         ens_id = EnsemblIdentifierFactory()
         rs_id = RefseqIdentifierFactory()
-        referencegenome = ReferenceGenomeFactory()
+        referencegenome = ReferenceGenomeFactory(refseq_id=None)
         referencegenome.ensembl_id = ens_id
         referencegenome.save()
         validate_reference_genome_has_one_external_identifier(referencegenome)
@@ -147,7 +147,7 @@ class TestReferenceGenomeValidators(TestCase):
         validate_reference_genome_has_one_external_identifier(referencegenome)
 
 
-class TestAnnotationValidators(TestCase):
+class TestReferenceMapValidators(TestCase):
     """
     Tests validators asscociated with :class:`ReferenceMap`:
 
@@ -167,8 +167,8 @@ class TestAnnotationValidators(TestCase):
             )
 
     def test_ve_duplicate_intervals_in_list(self):
-        interval = IntervalFactory()
-        intervals = [IntervalFactory(
+        interval = GenomicIntervalFactory()
+        intervals = [GenomicIntervalFactory(
             start=interval.start,
             end=interval.end,
             chromosome=interval.chromosome,
@@ -179,7 +179,7 @@ class TestAnnotationValidators(TestCase):
 
     def test_ve_no_intervals_associated_with_reference_map(self):
         reference_map = ReferenceMapFactory()
-        IntervalFactory(reference_map=reference_map)
+        GenomicIntervalFactory(reference_map=reference_map)
         validate_map_has_at_least_one_interval(reference_map)  # passes
 
         reference_map = ReferenceMapFactory()

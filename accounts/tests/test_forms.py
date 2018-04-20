@@ -2,7 +2,6 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 from dataset.factories import ExperimentFactory
-from dataset.models.experiment import Experiment
 
 from ..forms import SelectUsersForm
 from ..permissions import (
@@ -25,6 +24,7 @@ class TestSelectUsersForm(TestCase):
     def test_can_admin_form_invalid_blank_data(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.ADMIN,
             instance=instance,
@@ -35,6 +35,7 @@ class TestSelectUsersForm(TestCase):
     def test_can_non_admin_form_valid_blank_data(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
@@ -43,6 +44,7 @@ class TestSelectUsersForm(TestCase):
         self.assertTrue(form.is_valid())
 
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.EDITOR,
             instance=instance,
@@ -54,6 +56,7 @@ class TestSelectUsersForm(TestCase):
         instance = ExperimentFactory()
         with self.assertRaises(ValueError):
             SelectUsersForm(
+			user=self.alice,
                 data={},
                 group="not a group type",
                 instance=instance,
@@ -63,6 +66,7 @@ class TestSelectUsersForm(TestCase):
     def test_validation_error_cannot_assign_empty_admin_list(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
+			user=self.alice,
             data={"users": []},
             group=GroupTypes.ADMIN,
             instance=instance,
@@ -74,6 +78,7 @@ class TestSelectUsersForm(TestCase):
         instance = ExperimentFactory()
         assign_user_as_instance_admin(self.alice, instance)
         form = SelectUsersForm(
+			user=self.alice,
             data={"users": [self.alice.pk]},
             group=GroupTypes.EDITOR,
             instance=instance,
@@ -84,6 +89,7 @@ class TestSelectUsersForm(TestCase):
     def test_can_set_required_field_param_inside_init(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
@@ -95,6 +101,7 @@ class TestSelectUsersForm(TestCase):
         instance = ExperimentFactory()
         assign_user_as_instance_viewer(self.alice, instance)
         form = SelectUsersForm(
+			user=self.alice,
             data={"users": [self.alice.pk]},
             group=GroupTypes.EDITOR,
             instance=instance,
@@ -106,6 +113,7 @@ class TestSelectUsersForm(TestCase):
     def test_anon_not_in_queryset(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
@@ -119,6 +127,7 @@ class TestSelectUsersForm(TestCase):
     def test_superusers_not_in_query_list(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
@@ -131,9 +140,37 @@ class TestSelectUsersForm(TestCase):
         instance = ExperimentFactory()
         assign_user_as_instance_admin(self.alice, instance)
         form = SelectUsersForm(
+			user=self.alice,
             data={},
             group=GroupTypes.ADMIN,
             instance=instance,
             required=False
         )
         self.assertTrue(self.alice.pk in form.initial["users"])
+
+    def test_validation_error_IGNORED_superuser_reassign_only_admin(self):
+            instance = ExperimentFactory()
+            assign_user_as_instance_admin(self.alice, instance)
+            self.alice.is_superuser = True
+            self.alice.save()
+            form = SelectUsersForm(
+                user=self.alice,
+                data={"users": [self.alice.pk]},
+                group=GroupTypes.EDITOR,
+                instance=instance,
+                required=False
+            )
+            self.assertTrue(form.is_valid())
+
+    def test_validation_error_IGNORED_superuser_assign_empty_admin_list(self):
+        instance = ExperimentFactory()
+        self.alice.is_superuser = True
+        self.alice.save()
+        form = SelectUsersForm(
+            user=self.alice,
+            data={"users": []},
+            group=GroupTypes.ADMIN,
+            instance=instance,
+            required=False
+        )
+        self.assertTrue(form.is_valid())

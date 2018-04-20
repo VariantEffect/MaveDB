@@ -26,18 +26,18 @@ class HomePageTest(TestCase):
         self.assertEquals(response.context['news_items'].count(), 0)
         self.assertNotContains(response, 'id="news-item-')
 
-    def test_about_site_info_displays(self):
+    def testabout_site_info_displays(self):
         site_info = SiteInformation.objects.create(
-            _about="This is the about text.",
-            _citation="This is the citation text."
+            about="This is the about text.",
+            citation="This is the citation text."
         )
         response = self.client.get('/')
         self.assertContains(response, site_info.about)
 
-    def test_citation_site_info_displays(self):
+    def testcitation_site_info_displays(self):
         site_info = SiteInformation.objects.create(
-            _about="This is the about text.",
-            _citation="This is the citation text."
+            about="This is the about text.",
+            citation="This is the citation text."
         )
         response = self.client.get('/')
         self.assertContains(response, site_info.citation)
