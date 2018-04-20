@@ -29,8 +29,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "mavedb",
-        "USER": "mave_admin",
-        "PASSWORD": "abc123",
+        "USER": get_secret('database_user'),
+        "PASSWORD": get_secret('database_password'),
         "HOST": "localhost",
         "PORT": "",
     }
