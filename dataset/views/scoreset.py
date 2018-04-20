@@ -18,12 +18,8 @@ from core.utilities.versioning import (
 )
 
 from genome.models import TargetGene
-from genome.forms import (
-    GenomicIntervalForm, TargetGeneForm, AnnotationForm,
-    AnnotationFormSet, IntervalFormSet
-)
+from genome.forms import GenomicIntervalForm, TargetGeneForm, AnnotationForm
 
-from dataset import constants as constants
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
 from ..forms.scoreset import ScoreSetForm

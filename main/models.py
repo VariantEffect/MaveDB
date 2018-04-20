@@ -89,7 +89,7 @@ class SiteInformation(TimeStampedModel):
     terms = models.TextField(default="", blank=True)
     privacy = models.TextField(default="", blank=True)
     email = models.EmailField(default="", blank=True)
-    version = models.CharField(default="1", blank=True)
+    version = models.CharField(default="1", blank=False, max_length=256)
     version_date = models.DateField(default=datetime.date.today)
 
     class Meta:
