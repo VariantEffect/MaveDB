@@ -122,14 +122,16 @@ def manage_instance(request, urn):
     # Initialise the forms with current group users.
     admin_select_form = SelectUsersForm(
         group=GroupTypes.ADMIN,
+        user=request.user,
         instance=instance,
         required=True,
-        prefix="administrator_management"
+        prefix="administrator_management",
     )
     viewer_select_form = SelectUsersForm(
         group=GroupTypes.VIEWER,
         instance=instance,
-        prefix="viewer_management"
+        user=request.user,
+        prefix="viewer_management",
     )
     context["instance"] = instance
     context["admin_select_form"] = admin_select_form
@@ -141,6 +143,7 @@ def manage_instance(request, urn):
         if 'administrators[]' in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
+                user=request.user,
                 group=GroupTypes.ADMIN,
                 instance=instance,
                 required=True,
@@ -149,6 +152,7 @@ def manage_instance(request, urn):
         elif 'viewers[]' in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
+                user=request.user,
                 group=GroupTypes.VIEWER,
                 instance=instance,
                 prefix="viewer_management"
