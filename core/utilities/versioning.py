@@ -3,7 +3,7 @@ import reversion
 from reversion.models import Version
 
 
-def save_and_create_revision_if_tracked_changed(user, instance):
+def track_changes(user, instance):
     comments = []
     klass = instance.__class__.__name__
     versions = Version.objects.get_for_object(instance)
