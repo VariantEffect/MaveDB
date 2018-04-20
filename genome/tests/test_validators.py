@@ -16,22 +16,21 @@ from ..validators import (
     validate_wildtype_sequence,
     validate_gene_name,
     validate_genome_short_name,
-    validate_interval_is_not_a_duplicate,
     validate_species_name,
     validate_strand,
-    validate_annotation_has_unique_reference_genome,
+    validate_map_has_unique_reference_genome,
     validate_reference_genome_has_one_external_identifier,
     validate_chromosome,
     validate_unique_intervals,
-    validate_at_least_one_annotation,
-    validate_one_primary_annotation,
-    validate_annotation_has_at_least_one_interval,
+    validate_at_least_one_map,
+    validate_one_primary_map,
+    validate_map_has_at_least_one_interval,
 )
 
 
 class TestIntervalValidators(TestCase):
     """
-    Tests validator functions throw the correct errors for :class:`Interval`.
+    Tests validator functions throw the correct errors for :class:`GenomicInterval`.
     've' is short for 'ValidationError'. Tests:
 
         - validate_interval_start_lteq_end
@@ -45,17 +44,6 @@ class TestIntervalValidators(TestCase):
 
     def test_pass_when_start_equal_end(self):
         validate_interval_start_lteq_end(start=1, end=1)
-
-    def test_ve_interval_already_in_intervals(self):
-        interval = IntervalFactory()
-        intervals = [IntervalFactory(
-            start=interval.start,
-            end=interval.end,
-            chromosome=interval.chromosome,
-            strand=interval.strand
-        )]
-        with self.assertRaises(ValidationError):
-            validate_interval_is_not_a_duplicate(interval, intervals)
 
     def test_ve_duplicate_interval_chromosome_case_ignored(self):
         interval = IntervalFactory()
@@ -163,19 +151,19 @@ class TestAnnotationValidators(TestCase):
     """
     Tests validators asscociated with :class:`ReferenceMap`:
 
-        - validate_annotation_has_unique_reference_genome
-        - validate_annotation_has_at_least_one_interval
+        - validate_map_has_unique_reference_genome
+        - validate_map_has_at_least_one_interval
         - validate_unique_intervals
     """
-    def test_ve_annotation_does_not_have_a_unique_genome(self):
-        annotation1 = ReferenceMapFactory()
-        annotation2 = ReferenceMapFactory(
-            genome=annotation1.get_reference_genome(),
-            target=annotation1.get_target_gene()
+    def test_ve_reference_map_does_not_have_a_unique_genome(self):
+        reference_map1 = ReferenceMapFactory()
+        reference_map2 = ReferenceMapFactory(
+            genome=reference_map1.get_reference_genome(),
+            target=reference_map1.get_target_gene()
         )
         with self.assertRaises(ValidationError):
-            validate_annotation_has_unique_reference_genome(
-                [annotation1, annotation2]
+            validate_map_has_unique_reference_genome(
+                [reference_map1, reference_map2]
             )
 
     def test_ve_duplicate_intervals_in_list(self):
@@ -189,33 +177,33 @@ class TestAnnotationValidators(TestCase):
         with self.assertRaises(ValidationError):
             validate_unique_intervals(intervals)
 
-    def test_ve_no_intervals_associated_with_annotation(self):
-        annotation = ReferenceMapFactory()
-        IntervalFactory(annotation=annotation)
-        validate_annotation_has_at_least_one_interval(annotation)  # passes
+    def test_ve_no_intervals_associated_with_reference_map(self):
+        reference_map = ReferenceMapFactory()
+        IntervalFactory(reference_map=reference_map)
+        validate_map_has_at_least_one_interval(reference_map)  # passes
 
-        annotation = ReferenceMapFactory()
+        reference_map = ReferenceMapFactory()
         with self.assertRaises(ValidationError):
-            validate_annotation_has_at_least_one_interval(annotation)
+            validate_map_has_at_least_one_interval(reference_map)
 
-    def test_ve_missing_primary_annotation(self):
-        annotation = ReferenceMapFactory()
-        validate_one_primary_annotation([annotation])  # passes
+    def test_ve_missing_primary_maps(self):
+        reference_map = ReferenceMapFactory()
+        validate_one_primary_map([reference_map])  # passes
 
-        annotation.set_is_primary(primary=False)
-        annotation.save()
+        reference_map.set_is_primary(primary=False)
+        reference_map.save()
         with self.assertRaises(ValidationError):
-            validate_one_primary_annotation([annotation])
+            validate_one_primary_map([reference_map])
 
-    def test_ve_target_has_two_primary_annotations(self):
-        annotation1 = ReferenceMapFactory()
-        annotation2 = ReferenceMapFactory()
+    def test_ve_target_has_two_primary_reference_maps(self):
+        reference_map1 = ReferenceMapFactory()
+        reference_map2 = ReferenceMapFactory()
         with self.assertRaises(ValidationError):
-            validate_one_primary_annotation([annotation2, annotation1])
+            validate_one_primary_map([reference_map2, reference_map1])
 
-    def test_ve_no_annotations(self):
+    def test_ve_no_reference_maps(self):
         with self.assertRaises(ValidationError):
-            validate_at_least_one_annotation([])
+            validate_at_least_one_map([])
 
 
 class TestTargetGeneValidators(TestCase):
@@ -223,7 +211,7 @@ class TestTargetGeneValidators(TestCase):
     Tests validators asscociated with :class:`TargetGene`:
 
         - validate_gene_name
-        - validate_target_has_one_primary_annotation
+        - validate_target_has_one_primary_reference_map
     """
     def test_ve_null_gene_name(self):
         for v in nan_col_values:

@@ -1,26 +1,23 @@
 from django import forms as forms
 from django.db import transaction
-from django.forms.models import (
-    BaseInlineFormSet, modelformset_factory, inlineformset_factory,
-    BaseModelFormSet, formset_factory
-)
+from django.forms.models import BaseModelFormSet
 from django.core.exceptions import ValidationError
 
 from .validators import (
     validate_interval_start_lteq_end,
     validate_wildtype_sequence,
     validate_gene_name,
-    validate_at_least_one_annotation,
+    validate_at_least_one_map,
     validate_unique_intervals,
-    validate_annotation_has_unique_reference_genome,
-    validate_one_primary_annotation
+    validate_map_has_unique_reference_genome,
+    validate_one_primary_map
 )
 
 from .models import (
     TargetGene,
     ReferenceMap,
     ReferenceGenome,
-    Interval,
+    GenomicInterval,
     WildTypeSequence,
 )
 
@@ -191,26 +188,21 @@ class BaseAnnotationFormSet(BaseModelFormSet):
 
     def clean(self):
         if not self.has_errors():
-            annotations = [form.dummy_instance() for form in self.forms]
-            validate_at_least_one_annotation(annotations)
-            validate_annotation_has_unique_reference_genome(annotations)
-            validate_one_primary_annotation(annotations)
+            maps = [form.dummy_instance() for form in self.forms]
+            validate_at_least_one_map(maps)
+            validate_map_has_unique_reference_genome(maps)
+            validate_one_primary_map(maps)
 
 
-AnnotationFormSet = modelformset_factory(
-    model=ReferenceMap, form=AnnotationForm, formset=BaseAnnotationFormSet,
-    extra=5, can_delete=False, validate_min=1, min_num=1
-)
 
-
-# Interval
+# GenomicInterval
 # ------------------------------------------------------------------------ #
-class IntervalForm(forms.ModelForm):
+class GenomicIntervalForm(forms.ModelForm):
     """
     Form for validating interval input and instantiating a valid instance.
     """
     class Meta:
-        model = Interval
+        model = GenomicInterval
         fields = ('start', 'end', 'chromosome', 'strand')
 
     def __init__(self, *args, **kwargs):
@@ -223,7 +215,7 @@ class IntervalForm(forms.ModelForm):
     def dummy_instance(self):
         if self.errors:
             return None
-        return Interval(
+        return GenomicInterval(
             start=self.cleaned_data.get('start'),
             end=self.cleaned_data.get('end'),
             chromosome=self.cleaned_data.get('chromosome'),
@@ -247,12 +239,12 @@ class IntervalForm(forms.ModelForm):
             return cleaned_data
 
 
-class BaseIntervalFormSet(BaseModelFormSet):
+class BaseGenomicIntervalFormSet(BaseModelFormSet):
     """
     Formset which will validate multiple intervals against each other
     to ensure uniqueness.
     """
-    model = Interval
+    model = GenomicInterval
 
     def has_errors(self):
         if isinstance(self.errors, list):
@@ -269,9 +261,3 @@ class BaseIntervalFormSet(BaseModelFormSet):
                     "reference reference_map."
                 )
             validate_unique_intervals(intervals)
-
-
-IntervalFormSet = modelformset_factory(
-    model=Interval, form=IntervalForm, formset=BaseIntervalFormSet,
-    extra=5, can_delete=False, validate_min=1, min_num=1
-)

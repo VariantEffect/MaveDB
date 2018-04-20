@@ -4,7 +4,7 @@ Validator functions for the fields of the following classes:
     ReferenceGenome
     TargetGene
     ReferenceMap
-    Interval
+    GenomicInterval
 
 Most validators should validate one specific field, unless fields need
 to be validated against each other.
@@ -21,40 +21,35 @@ DNA_SEQ_PATTERN = r'[ATGCatgc]+'
 
 
 min_start_validator = MinValueValidator(
-    1, message=_("The minimum starting positive is 1."))
+    1, message=_("Start coordinate must be a positive integer."))
 min_end_validator = MinValueValidator(
-    1, message=_("The minimum starting positive is 1."))
+    1, message=_("End coordinate must be a positive integer."))
 
 
-# Interval
+# GenomicInterval
 # ------------------------------------------------------------------------- #
 def validate_interval_start_lteq_end(start, end):
+    # Intervals may be underspecified, but will be ignored so skip validation.
+    if start is None or end is None:
+        return
     if start > end:
         raise ValidationError(
             (
-                "An interval's start index cannot be greater than the ending "
-                "index."
+                "An interval's starting coordinate cannot be greater than the "
+                "ending coordinate."
             )
         )
-
-
-def validate_interval_is_not_a_duplicate(interval, intervals):
-    for existing in intervals:
-        if existing is interval:
-            continue
-        elif existing.equals(interval):
-            raise ValidationError(
-                "You can not specify the same interval twice."
-            )
-
 
 def validate_strand(value):
     if value not in ('+', '-'):
         raise ValidationError(
-            "Interval strand must be either '+' or '-'")
+            "GenomicInterval strand must be either '+' or '-'")
 
 
 def validate_chromosome(value):
+    # Intervals may be underspecified, but will be ignored so skip validation.
+    if value is None:
+        return
     if is_null(value):
         raise ValidationError(
             "Chromosome identifier must not be null.")
@@ -63,7 +58,10 @@ def validate_chromosome(value):
 def validate_unique_intervals(intervals):
     for interval1 in intervals:
         for interval2 in intervals:
-            if interval1 is interval2:
+            if (interval1.pk is not None) and (interval2.pk is not None):
+                if interval1.pk == interval2.pk:
+                    continue
+            elif interval1 is interval2:
                 continue
             elif interval1.equals(interval2):
                 raise ValidationError(
@@ -95,7 +93,6 @@ def validate_reference_genome_has_one_external_identifier(referencegenome):
             "genome."
         )
 
-
 def validate_genome_short_name(value):
     if is_null(value):
         raise ValidationError("Genome short name must not be null.")
@@ -103,35 +100,34 @@ def validate_genome_short_name(value):
 
 # ReferenceMap
 # ------------------------------------------------------------------------- #
-def validate_annotation_has_unique_reference_genome(annotations):
+def validate_map_has_unique_reference_genome(annotations):
     genomes = set([str(a.get_reference_genome_name()).lower() for a in annotations])
     if len(genomes) < len(annotations):
         raise ValidationError(
-            "Each target reference_map must be for a different reference genome."
+            "Each reference map must specify a different reference genome."
         )
 
 
-def validate_annotation_has_at_least_one_interval(annotation):
-    if not annotation.get_intervals().count():
+def validate_map_has_at_least_one_interval(reference_map):
+    if not reference_map.get_intervals().count():
         raise ValidationError(
-            "You must specify at least one interval for each reference "
-            "reference_map."
+            "You must specify at least one interval for each reference map."
         )
 
 
-def validate_at_least_one_annotation(annotations):
-    if not annotations:
+def validate_at_least_one_map(reference_maps):
+    if not len(reference_maps):
         raise ValidationError(
-            "A target must have at least one reference reference_map."
+            "A target must have at least one reference map specified."
         )
 
 
-def validate_one_primary_annotation(annotations):
-    primary_count = sum(a.is_primary_annotation() for a in annotations)
+def validate_one_primary_map(reference_maps):
+    primary_count = sum(a.is_primary_annotation() for a in reference_maps)
     if primary_count > 1 or primary_count < 1:
         raise ValidationError(
             (
-                "A target must have one primary reference reference_map."
+                "A target must have one primary reference map."
             )
         )
 

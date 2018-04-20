@@ -10,7 +10,7 @@ from genome.models import (
     TargetGene,
     ReferenceMap,
     ReferenceGenome,
-    Interval,
+    GenomicInterval,
     WildTypeSequence,
 )
 
@@ -39,10 +39,10 @@ class ReferenceGenomeSerializer(serializers.ModelSerializer):
 
 class IntervalSerializer(serializers.ModelSerializer):
     """
-    Serializes fields of :class:`Interval`. Currently read only.
+    Serializes fields of :class:`GenomicInterval`. Currently read only.
     """
     class Meta:
-        model = Interval
+        model = GenomicInterval
         fields = ('start', 'end', 'chromosome', 'strand',)
         read_only_fields = fields
 

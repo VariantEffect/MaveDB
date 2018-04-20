@@ -34,7 +34,7 @@ class TestWildTypeSequenceModel(TestCase):
 
 class TestIntervalModel(TestCase):
     """
-    Tests instance and class methods for :class:`Interval`
+    Tests instance and class methods for :class:`GenomicInterval`
     """
     def test_get_start_adds_offset(self):
         interval = IntervalFactory()

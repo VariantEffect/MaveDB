@@ -47,4 +47,5 @@ variant_to_scoreset_column = {
     variant_metadata: metadata_columns
 }
 scoreset_to_variant_column = {
-    v:k for k, v in variant_to_scoreset_column.items()}
+    v:k for k, v in variant_to_scoreset_column.items()
+}

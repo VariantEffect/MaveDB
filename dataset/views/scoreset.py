@@ -14,12 +14,12 @@ from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
 from core.utilities.versioning import (
-    save_and_create_revision_if_tracked_changed
+    track_changes
 )
 
 from genome.models import TargetGene
 from genome.forms import (
-    IntervalForm, TargetGeneForm, AnnotationForm,
+    GenomicIntervalForm, TargetGeneForm, AnnotationForm,
     AnnotationFormSet, IntervalFormSet
 )
 
@@ -93,7 +93,7 @@ def scoreset_create_view(request, experiment_urn=None):
     scoreset_form = ScoreSetForm(user=request.user)
     target_form = TargetGeneForm(user=request.user)
     annotation_form = AnnotationForm()
-    interval_form = IntervalForm()
+    interval_form = GenomicIntervalForm()
 
     context["scoreset_form"] = scoreset_form
     context["target_form"] = target_form
@@ -169,7 +169,7 @@ def scoreset_create_view(request, experiment_urn=None):
         )
         target_form = TargetGeneForm(user=request.user, data=request.POST)
         annotation_form = AnnotationForm(data=request.POST)
-        interval_form = IntervalForm(data=request.POST)
+        interval_form = GenomicIntervalForm(data=request.POST)
 
         context["repop_keywords"] = ','.join(keywords)
         context["repop_sra_identifiers"] = ','.join(sra_ids)
@@ -227,7 +227,7 @@ def scoreset_create_view(request, experiment_urn=None):
                     scoreset.save(save_parents=False)
 
                 assign_user_as_instance_admin(user, scoreset)
-                save_and_create_revision_if_tracked_changed(user, scoreset)
+                track_changes(user, scoreset)
                 return redirect("dataset:scoreset_detail", urn=scoreset.urn)
     else:
         context["scoreset_form"] = scoreset_form

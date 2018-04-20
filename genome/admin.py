@@ -1,11 +1,11 @@
 from django.contrib import admin
 
 from .models import (
-    TargetGene, WildTypeSequence, ReferenceMap, ReferenceGenome, Interval
+    TargetGene, WildTypeSequence, ReferenceMap, ReferenceGenome, GenomicInterval
 )
 
 admin.site.register(TargetGene)
 admin.site.register(WildTypeSequence)
 admin.site.register(ReferenceMap)
 admin.site.register(ReferenceGenome)
-admin.site.register(Interval)
+admin.site.register(GenomicInterval)

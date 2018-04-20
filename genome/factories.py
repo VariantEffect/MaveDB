@@ -22,11 +22,11 @@ from .models import (
     WildTypeSequence,
     ReferenceMap,
     ReferenceGenome,
-    Interval,
+    GenomicInterval,
 )
 
 strand_choices = (
-    Interval.STRAND_CHOICES[0][0], Interval.STRAND_CHOICES[1][0]
+    GenomicInterval.STRAND_CHOICES[0][0], GenomicInterval.STRAND_CHOICES[1][0]
 )
 chr_chars = string.digits[1:] + 'XY'
 
@@ -75,7 +75,7 @@ class TargetGeneFactory(DjangoModelFactory):
 class ReferenceMapFactory(DjangoModelFactory):
     """
     Creates an :class:`ReferenceMap` instance with a :class:`ReferenceGenome`
-    relation and a set of 3 randomly generated :class:`Interval`
+    relation and a set of 3 randomly generated :class:`GenomicInterval`
     instnaces.
     """
     class Meta:
@@ -88,11 +88,11 @@ class ReferenceMapFactory(DjangoModelFactory):
 
 class IntervalFactory(DjangoModelFactory):
     """
-    Creates an :class:`Interval` with randomly generated start, stop, chr
+    Creates an :class:`GenomicInterval` with randomly generated start, stop, chr
     and strand.
     """
     class Meta:
-        model = Interval
+        model = GenomicInterval
 
     start = 1
     end = factory.fuzzy.FuzzyInteger(low=1, high=1000)

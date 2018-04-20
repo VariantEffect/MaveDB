@@ -10,7 +10,7 @@ from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
-from core.utilities.versioning import save_and_create_revision_if_tracked_changed
+from core.utilities.versioning import track_changes
 
 from .scoreset import scoreset_create_view
 from ..forms.experiment import ExperimentForm
@@ -139,14 +139,14 @@ def experiment_create_view(request):
             experiment.set_created_by(user, propagate=False)
             experiment.set_modified_by(user, propagate=False)
             experiment.save(save_parents=False)
-            save_and_create_revision_if_tracked_changed(user, experiment)
+            track_changes(user, experiment)
 
             if not request.POST['experimentset']:
                 assign_user_as_instance_admin(user, experiment.experimentset)
                 experiment.set_created_by(user, propagate=True)
                 experiment.set_modified_by(user, propagate=True)
                 experiment.save(save_parents=True)
-                save_and_create_revision_if_tracked_changed(
+                track_changes(
                     user, experiment.experimentset
                 )
 

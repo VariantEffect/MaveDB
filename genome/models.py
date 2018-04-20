@@ -356,7 +356,7 @@ class ReferenceMap(TimeStampedModel):
 
     def get_intervals(self):
         """
-        Return the :class:`Interval` instances defining a mapping of
+        Return the :class:`GenomicInterval` instances defining a mapping of
         genomic coordinates with respect to the :class:`ReferenceGenome`.
 
         Returns
@@ -534,7 +534,7 @@ class ReferenceGenome(TimeStampedModel):
         return "<i>{}</i>".format(self.get_species_name().capitalize())
 
 
-class Interval(TimeStampedModel):
+class GenomicInterval(TimeStampedModel):
     """
     Represents a specific region within the reference genome, including
     chromosome and strand. All intervals use 1-based indexing.
@@ -568,7 +568,7 @@ class Interval(TimeStampedModel):
 
     def __str__(self):
         return (
-            'Interval(start={start}, end={end}, ' 
+            'GenomicInterval(start={start}, end={end}, ' 
             'chromosome={chr}, strand={strand})'.format(
                 start=self.get_start(), end=self.get_end(),
                 chr=self.get_chromosome(), strand=self.get_strand()
@@ -624,7 +624,7 @@ class Interval(TimeStampedModel):
 
         Parameters
         ----------
-        other : :class:`Interval`
+        other : :class:`GenomicInterval`
             The interval to compare this instance to.
 
         Returns

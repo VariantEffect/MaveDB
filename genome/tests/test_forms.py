@@ -9,7 +9,7 @@ from accounts.permissions import (
 
 from dataset.constants import nan_col_values
 
-from ..models import ReferenceMap, Interval, WildTypeSequence
+from ..models import ReferenceMap, GenomicInterval, WildTypeSequence
 from ..factories import (
     TargetGeneFactory,
     ReferenceMapFactory,
@@ -18,7 +18,7 @@ from ..factories import (
 )
 
 from ..forms import (
-    IntervalForm,
+    GenomicIntervalForm,
     IntervalFormSet,
     AnnotationForm,
     AnnotationFormSet,
@@ -28,7 +28,7 @@ from ..forms import (
 
 class TestIntervalForm(TestCase):
     """
-    Tests that :class:`IntervalForm` raises the appropriate errors when
+    Tests that :class:`GenomicIntervalForm` raises the appropriate errors when
     invalid input is supplied; and can update existing instances.
     """
     def test_ve_end_less_than_start(self):
@@ -36,20 +36,20 @@ class TestIntervalForm(TestCase):
             'start': 2, 'end': 1,
             'chromosome': 'chrX', 'strand': 'F',
         }
-        self.assertFalse(IntervalForm(data=data).is_valid())
+        self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
     def test_ve_partially_filled_out_form(self):
         data = {
             'start': '', 'end': 1,
             'chromosome': 'chrX', 'strand': 'F',
         }
-        self.assertFalse(IntervalForm(data=data).is_valid())
+        self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
         data = {
             'start': 1, 'end': '',
             'chromosome': 'chrX', 'strand': 'F',
         }
-        self.assertFalse(IntervalForm(data=data).is_valid())
+        self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
     def test_ve_chromosome_null_value(self):
         for value in nan_col_values:
@@ -57,7 +57,7 @@ class TestIntervalForm(TestCase):
                 'start': 1, 'end': 2,
                 'chromosome': value, 'strand': 'F',
             }
-            self.assertFalse(IntervalForm(data=data).is_valid())
+            self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
     def test_ve_strand_null_value(self):
         for value in nan_col_values:
@@ -65,7 +65,7 @@ class TestIntervalForm(TestCase):
                 'start': 1, 'end': 2,
                 'chromosome': 'chr21', 'strand': value,
             }
-            self.assertFalse(IntervalForm(data=data).is_valid())
+            self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
     def test_updates_existing(self):
         data = {
@@ -73,7 +73,7 @@ class TestIntervalForm(TestCase):
             'chromosome': 'chr21', 'strand': 'F',
         }
         instance = IntervalFactory()
-        instance = IntervalForm(data=data, instance=instance).save(commit=True)
+        instance = GenomicIntervalForm(data=data, instance=instance).save(commit=True)
         self.assertEqual(instance.serialise(), data)
 
 
