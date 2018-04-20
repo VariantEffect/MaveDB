@@ -1,0 +1,38 @@
+{
+  "hg16": {
+    "short_name": "hg16",
+    "species_name": "Homo sapiens",
+    "ensembl_id": "NCBI34",
+    "refseq_id": "GCF_000001405.10"
+  },
+  "hg17": {
+    "short_name": "hg17",
+    "species_name": "Homo sapiens",
+    "ensembl_id": "NCBI35",
+    "refseq_id": "GCF_000001405.11"
+  },
+  "hg18": {
+    "short_name": "hg18",
+    "species_name": "Homo sapiens",
+    "ensembl_id": "NCBI36",
+    "refseq_id": "GCF_000001405.12"
+  },
+  "hg19": {
+    "short_name": "hg19",
+    "species_name": "Homo sapiens",
+    "ensembl_id": "GRCh37.p13",
+    "refseq_id": "GCF_000001405.25"
+  },
+  "hg38": {
+    "short_name": "hg38",
+    "species_name": "Homo sapiens",
+    "ensembl_id": "GRCh38.p12",
+    "refseq_id": "GCF_000001405.38"
+  },
+  "sacCer3/R64": {
+    "short_name": "sacCer3/R64",
+    "species_name": "Saccharomyces cerevisiae",
+    "ensembl_id": "GCA_000146045.2",
+    "refseq_id": "GCF_000146045.2"
+  }
+}
