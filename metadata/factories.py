@@ -23,6 +23,7 @@ class KeywordFactory(DjangoModelFactory):
     """Factory creating a keyword with a random `text` attribute."""
     class Meta:
         model = Keyword
+        django_get_or_create = ('text',)
 
     text = factory.fuzzy.FuzzyText(length=10)
 
@@ -34,6 +35,7 @@ class SraIdentifierFactory(DjangoModelFactory):
     """
     class Meta:
         model = SraIdentifier
+        django_get_or_create = ('identifier',)
 
     identifier = factory.fuzzy.FuzzyChoice([
         'SRX3407687', 'SRX3407686', 'SRX366265', 'PRJNA419207', 'PRJNA362734'
@@ -48,6 +50,7 @@ class DoiIdentifierFactory(DjangoModelFactory):
 
     class Meta:
         model = DoiIdentifier
+        django_get_or_create = ('identifier',)
 
     identifier = factory.fuzzy.FuzzyChoice([
         '10.1016/j.cels.2018.01.015',
@@ -66,6 +69,7 @@ class PubmedIdentifierFactory(DjangoModelFactory):
 
     class Meta:
         model = PubmedIdentifier
+        django_get_or_create = ('identifier',)
 
     identifier = factory.fuzzy.FuzzyChoice([
         '29086305', '29103961', '29269382', '29415752', '29525204'
@@ -80,6 +84,7 @@ class UniprotIdentifierFactory(DjangoModelFactory):
 
     class Meta:
         model = UniprotIdentifier
+        django_get_or_create = ('identifier',)
 
     identifier = factory.fuzzy.FuzzyChoice([
         'P00533', 'P01133', 'P19174', 'P30530', 'Q7L2J0', 'Q8N163'
@@ -94,6 +99,7 @@ class RefseqIdentifierFactory(DjangoModelFactory):
 
     class Meta:
         model = RefseqIdentifier
+        django_get_or_create = ('identifier',)
 
     identifier = factory.fuzzy.FuzzyChoice([
         'WP_107309473.1', 'NP_001349131.1',
@@ -110,6 +116,7 @@ class EnsemblIdentifierFactory(DjangoModelFactory):
 
     class Meta:
         model = EnsemblIdentifier
+        django_get_or_create = ('identifier',)
 
     identifier = factory.fuzzy.FuzzyChoice([
         'ENSG00000010404', 'ENSG00000267816',
