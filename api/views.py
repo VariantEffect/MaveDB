@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django.contrib.auth import get_user_model
 from django.http import Http404
@@ -16,19 +16,40 @@ from dataset.serializers import (
     ScoreSetSerializer,
 )
 
-from .mixins import DatasetModelFilterMixin
+from dataset.mixins import (
+    DatasetModelSearchMixin,
+    ExperimentSetSearchMixin,
+    ExperimentSearchMixin,
+    ScoreSetSearchMixin,
+)
 
 User = get_user_model()
 
 
-class DatasetModelViewSet(DatasetModelFilterMixin,
-                          viewsets.ReadOnlyModelViewSet):
+class DatasetModelViewSet(ReadOnlyModelViewSet):
+    """
+    Base API viewset. Must also inherit a subclass of
+    :class:`DatasetModelSearchMixin`.
+    """
 
     def get_queryset(self, use_list=True):
         queryset = super().get_queryset()
-        questions = self.make_q_object_list()
-        q = self.join_func(questions)
-        return queryset.filter(q)
+        query_dict = dict()
+
+        if 'search' in self.request.query_params:
+            join_func = self.or_join_qs
+            query_dict['search'] = self.request.query_params.getlist('search')
+        else:
+            join_func = self.and_join_qs
+            for field in self.search_field_to_function():
+                if field in self.request.query_params:
+                    query_dict[field] = self.request.query_params.getlist(field)
+
+        if query_dict:
+            q = self.search_all(query_dict, join_func)
+            queryset = queryset.filter(q)
+
+        return queryset
 
     def list(self, request, *args, **kwargs):
         return_list = False
@@ -40,102 +61,25 @@ class DatasetModelViewSet(DatasetModelFilterMixin,
             return super().list(request, *args, **kwargs)
 
 
-class ExperimentSetViewset(DatasetModelViewSet):
+class ExperimentSetViewset(DatasetModelViewSet, ExperimentSetSearchMixin):
     queryset = ExperimentSet.objects.filter(private=False)
     serializer_class = ExperimentSetSerializer
     lookup_field = 'urn'
 
 
-class ExperimentViewset(DatasetModelViewSet):
+class ExperimentViewset(DatasetModelViewSet, ExperimentSearchMixin):
     queryset = Experiment.objects.filter(private=False)
     serializer_class = ExperimentSerializer
     lookup_field = 'urn'
 
-    def filter_targets(self, query_key=None):
-        field_name = 'scoresets__target__name'
-        filter_type = 'iexact'
-        query_key = query_key or 'target'
-        return self.search_to_q(query_key, field_name, filter_type)
 
-    def make_q_object_list(self):
-        questions = super().make_q_object_list()
-        questions += [self.filter_targets(self.key)]
-        return questions
-
-
-class ScoreSetViewset(DatasetModelViewSet):
+class ScoreSetViewset(DatasetModelViewSet, ScoreSetSearchMixin):
     queryset = ScoreSet.objects.filter(private=False)
     serializer_class = ScoreSetSerializer
     lookup_field = 'urn'
 
-    def filter_organism(self, query_key=None):
-        field_name = 'target__reference_maps__genome__species_name'
-        filter_type = 'iexact'
-        query_key = query_key or 'organism'
-        return self.search_to_q(query_key, field_name, filter_type)
 
-    def filter_target(self, query_key=None):
-        field_name = 'target__name'
-        filter_type = 'iexact'
-        query_key = query_key or 'target'
-        return self.search_to_q(query_key, field_name, filter_type)
-
-    def filter_target_sequence(self, query_key=None):
-        field_name = 'target__wt_sequence__sequence'
-        filter_type = 'iexact'
-        query_key = query_key or 'sequence'
-        return self.search_to_q(query_key, field_name, filter_type)
-
-    def filter_reference_genome(self, query_key=None):
-        field_name = 'target__reference_maps__genome__short_name'
-        filter_type = 'iexact'
-        query_key = query_key or 'reference'
-        return self.search_to_q(query_key, field_name, filter_type)
-
-    def filter_reference_genome_identifier(self, query_key=None):
-        field_name_1 = 'target__reference_maps__genome__refseq_id__identifier'
-        field_name_2 = 'target__reference_maps__genome__ensembl_id__identifier'
-        filter_type = 'iexact'
-        query_key = query_key or 'reference_accession'
-        return self.or_join_qs([
-            self.search_to_q(query_key, field_name_1, filter_type),
-            self.search_to_q(query_key, field_name_2, filter_type),
-        ])
-
-    def filter_target_uniprot(self, query_key=None):
-        field_name = 'target__uniprot_id__identifier'
-        filter_type = 'iexact'
-        query_key = query_key or 'uniprot'
-        return self.search_to_q(query_key, field_name, filter_type)
-
-    def filter_target_refseq(self, query_key=None):
-        field_name = 'target__refseq_id__identifier'
-        filter_type = 'iexact'
-        query_key = query_key or 'refseq'
-        return self.search_to_q(query_key, field_name, filter_type)
-
-    def filter_target_ensembl(self, query_key=None):
-        field_name = 'target__ensembl_id__identifier'
-        filter_type = 'iexact'
-        query_key = query_key or 'ensembl'
-        return self.search_to_q(query_key, field_name, filter_type)
-
-    def make_q_object_list(self):
-        questions = super().make_q_object_list()
-        questions += [
-            self.filter_organism(self.key),
-            self.filter_target(self.key),
-            self.filter_target_sequence(self.key),
-            self.filter_reference_genome(self.key),
-            self.filter_reference_genome_identifier(self.key),
-            self.filter_target_uniprot(self.key),
-            self.filter_target_ensembl(self.key),
-            self.filter_target_refseq(self.key),
-        ]
-        return questions
-
-
-class UserViewset(viewsets.ReadOnlyModelViewSet):
+class UserViewset(ReadOnlyModelViewSet):
     queryset = User.objects.exclude(username='AnonymousUser')
     serializer_class = UserSerializer
     lookup_field = 'username'
