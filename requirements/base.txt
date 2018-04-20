@@ -1,4 +1,10 @@
 django==1.11.5
+django_extensions>=2.0.0
+django-guardian>=1.4.9
+django-reversion>=2.0.9
+django-braces>=1.12.0
+djangorestframework-filters>=0.10.2
+djangorestframework>=3.8.2
 django-braces=>1.12.0
 django-extensions=>2.0.6
 django-guardian=>1.4.9

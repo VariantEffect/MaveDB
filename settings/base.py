@@ -11,8 +11,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_DIR = BASE_DIR + '/settings/'
 
 # Read the secrets file
-with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
-    secrets = json.load(handle)
+try:
+    with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
+        secrets = json.load(handle)
+except FileNotFoundError:
+    raise FileNotFoundError("You must create a 'secrets.json' file in the "
+                            "project settings directory.")
 
 
 def get_secret(setting, secrets=secrets):
