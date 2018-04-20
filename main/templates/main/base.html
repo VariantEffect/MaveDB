@@ -181,7 +181,10 @@
     <!-- Scripts -->
     <!-- Ask user confirmation to remove themself as an instance admin -->
     <!-- This needs to be here in order to record the user pk from django -->
-    <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
+    <script type="text/javascript">
+        user = parseInt({{ request.user.pk }});
+        ignore = parseInt({{ request.user.is_superuser }});
+    </script>
 
     <!-- JQuery/JQuery UI -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"

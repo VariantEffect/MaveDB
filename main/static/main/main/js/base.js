@@ -107,15 +107,14 @@ $("#publish").click(function (event) {
 
 // Check management form submission
 // ----------------------------------------------------------------------- //
-// `userPk` is a global defined in base.html using Django"s templating system.
+// `user` is a global defined in base.html using Django"s templating system.
 
 function askConfirmation() {
-    var saidYes = confirm(
+    return confirm(
         "This assignment will remove you as an administartor. If you " +
         "continue, you will no longer be able to access this page. " +
         "Are you sure?"
     );
-    return saidYes;
 }
 
 function validateAdminSubmit(e) {
@@ -124,8 +123,8 @@ function validateAdminSubmit(e) {
         return parseInt(this.value);
     });
 
-    var willRemoveSelfAsAdmin = aSelectedPks.index(userPk) < 0;
-    if(willRemoveSelfAsAdmin) {
+    var willRemoveSelfAsAdmin = aSelectedPks.index(user) < 0;
+    if(willRemoveSelfAsAdmin && !ignore) {
         var submit = askConfirmation();
         if(submit) {
             return $("#admin-form").submit();
@@ -141,7 +140,7 @@ function validateEditorSubmit(e) {
         return parseInt(this.value);
     });
 
-    var willRemoveSelfAsAdmin = eSelectedPks.index(userPk) >= 0;
+    var willRemoveSelfAsAdmin = eSelectedPks.index(user) >= 0;
     if(willRemoveSelfAsAdmin) {
         var submit = askConfirmation();
         if(submit) {
@@ -158,7 +157,7 @@ function validateViewerSubmit(e) {
         return parseInt(this.value);
     });
 
-    var willRemoveSelfAsAdmin = vSelectedPks.index(userPk) >= 0;
+    var willRemoveSelfAsAdmin = vSelectedPks.index(user) >= 0;
     if(willRemoveSelfAsAdmin) {
         var submit = askConfirmation();
         if(submit) {
