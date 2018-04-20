@@ -4,13 +4,11 @@ account editing.
 """
 
 import logging
-from django import forms
 
+from django import forms
 from django.utils.translation import ugettext as _
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-
-from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
@@ -36,8 +34,14 @@ class SelectUsersForm(forms.Form):
     input are the primary keys of users in string format and after the clean
     process is run, this list is turned into a list of valid user instances.
 
+    Superusers will always be added back as an admin so errors messages
+    are not shown if the requesting user is a SU.
+
     Parameters
     ----------
+    user : `User`:
+        The request user.
+
     group : str
         A valid string from :class:`GroupType`
 
@@ -68,7 +72,7 @@ class SelectUsersForm(forms.Form):
         )
     )
 
-    def __init__(self, group, instance, required=False, *args, **kwargs):
+    def __init__(self, user, group, instance, required=False, *args, **kwargs):
         if not valid_group_type(group):
             raise ValueError("Unrecognised group type {}".format(group))
         if not valid_model_instance(instance):
@@ -91,6 +95,7 @@ class SelectUsersForm(forms.Form):
         self.fields["users"].queryset = User.objects.exclude(
             username=ANONYMOUS_USER_NAME
         )
+        self.user = user
         self.fields["users"].required = required
         self.group = group
         self.instance = instance
@@ -100,21 +105,25 @@ class SelectUsersForm(forms.Form):
         users = cleaned_data.get("users", None)
 
         if users is not None:
+            users = users.filter(is_superuser=False)
             if self.group == GroupTypes.ADMIN and users.count() == 0:
-                raise ValidationError(
-                    _("There must be at least one administrator.")
-                )
+                if not self.user.is_superuser:
+                    raise ValidationError(
+                        _("There must be at least one administrator.")
+                    )
 
         if users is not None:
             if self.group in [GroupTypes.EDITOR, GroupTypes.VIEWER]:
-                admins = self.instance.administrators()
+                admins = self.instance.administrators().filter(
+                    is_superuser=False)
                 if admins.count() == 1 and admins[0] in users:
-                    raise ValidationError(
-                        _(
-                            "Cannot assign the only administrator "
-                            "to another group."
+                    if not self.user.is_superuser:
+                        raise ValidationError(
+                            _(
+                                "Cannot assign the only administrator "
+                                "to another group."
+                            )
                         )
-                    )
         return cleaned_data
 
     def process_user_list(self):

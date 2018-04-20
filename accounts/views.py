@@ -4,7 +4,6 @@ import json
 
 from django.conf import settings
 from django.apps import apps
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -16,11 +15,12 @@ from django.http import HttpResponse
 from dataset.forms.experiment import ExperimentEditForm, ExperimentForm
 from dataset.forms.scoreset import ScoreSetEditForm, ScoreSetForm
 
+from core.utilities import is_null
+from core.utilities.pandoc import convert_md_to_html
+from core.utilities.versioning import track_changes
+
 from genome.models import TargetGene
-from genome.forms import (
-    TargetGeneForm, AnnotationForm, IntervalForm,
-    IntervalFormSet, AnnotationFormSet
-)
+from genome.forms import TargetGeneForm, AnnotationForm, GenomicIntervalForm
 
 from urn.validators import (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
@@ -28,18 +28,8 @@ from urn.validators import (
     MAVEDB_SCORESET_URN_PATTERN
 )
 
-from core.utilities import is_null
-from core.utilities.pandoc import convert_md_to_html
-from core.utilities.versioning import (
-    save_and_create_revision_if_tracked_changed
-)
 
-from .permissions import (
-    GroupTypes,
-    PermissionTypes,
-    user_is_anonymous
-)
-
+from .permissions import GroupTypes, PermissionTypes
 from .forms import (
     RegistrationForm,
     SelectUsersForm,
@@ -211,8 +201,8 @@ def edit_instance(request, urn):
 
     has_permission = request.user.has_perm(PermissionTypes.CAN_EDIT, instance)
     if not has_permission:
-        response = render(request, 'main/404_not_found.html')
-        response.status_code = 404
+        response = render(request, 'main/403_forbidden.html')
+        response.status_code = 403
         return response
 
     if klass == Experiment:
@@ -243,7 +233,7 @@ def handle_scoreset_edit_form(request, instance):
         annotation = targetgene.get_annotations().first()
         annotation_form = AnnotationForm(instance=annotation)
         intervals = annotation.get_intervals()
-        interval_form = IntervalForm(instance=intervals[0])
+        interval_form = GenomicIntervalForm(instance=intervals[0])
         context = {
             'edit_form': form, 'instance': instance,
             'target_form': target_form, 'annotation_form': annotation_form,
@@ -296,7 +286,7 @@ def handle_scoreset_edit_form(request, instance):
                 user=request.user, data=request.POST, instance=targetgene)
             annotation_form = AnnotationForm(
                 data=request.POST, instance=annotation)
-            interval_form = IntervalForm(
+            interval_form = GenomicIntervalForm(
                 data=request.POST, instance=intervals[0])
             form = ScoreSetForm.from_request(request, instance)
 
@@ -351,13 +341,12 @@ def handle_scoreset_edit_form(request, instance):
             else:
                 updated_instance = form.save(commit=True)
 
-            # save_and_create_revision_if_tracked_changed(
-            #     request.user, updated_instance)
+            track_changes(request.user, updated_instance)
             if request.POST.get("publish", None):
                 updated_instance.publish(propagate=True)
                 updated_instance.set_modified_by(request.user, propagate=True)
                 updated_instance.save(save_parents=True)
-                save_and_create_revision_if_tracked_changed(
+                track_changes(
                     request.user, updated_instance)
                 send_admin_email(request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
@@ -419,7 +408,7 @@ def handle_experiment_edit_form(request, instance):
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
-            save_and_create_revision_if_tracked_changed(
+            track_changes(
                 request.user, updated_instance)
             return redirect("accounts:edit_instance", updated_instance.urn)
 
