@@ -20,7 +20,7 @@
 		<form action="{% url 'dataset:scoreset_new' %}" method="POST" enctype="multipart/form-data">
 			{% csrf_token %}
 			
-			{% if scoreset_form.non_field_errors or target_form.non_field_errors or annotation_form.non_field_errors or interval_formset.non_form_errors %}
+			{% if scoreset_form.non_field_errors or target_form.non_field_errors or reference_map_form.non_field_errors or interval_formset.non_form_errors %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
@@ -30,7 +30,7 @@
           <hr>
           <p>{{ scoreset_form.non_field_errors }}</p>
           <p>{{ target_form.non_field_errors }}</p>
-          <p>{{ annotation_form.non_field_errors }}</p>
+          <p>{{ reference_map_form.non_field_errors }}</p>
           <p>{{ interval_formset.non_form_errors }}</p>
         </div>
 			{% endif %}
@@ -100,7 +100,7 @@
 
         <hr>
         <h4>Reference</h4>
-          {% for field in annotation_form %}
+          {% for field in reference_map_form %}
             <div class="form-group">
               <label for="{{ field.id_for_label }}" style="padding-right:10px">
                 {{ field.label }}{% if field.field.required %}*{% endif %}

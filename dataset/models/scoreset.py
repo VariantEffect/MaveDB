@@ -10,7 +10,6 @@ from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
     delete_all_groups_for_instance,
-    assign_superusers_as_admin,
 )
 
 from main.models import Licence
@@ -188,8 +187,7 @@ class ScoreSet(DatasetModel):
 
     @property
     def has_score_dataset(self):
-        # has scores column by default
-        return len(self.dataset_columns[constants.score_columns]) > 1
+        return len(self.dataset_columns[constants.score_columns]) > 0
 
     @property
     def has_count_dataset(self):
@@ -257,7 +255,6 @@ class ScoreSet(DatasetModel):
 @receiver(post_save, sender=ScoreSet)
 def create_permission_groups_for_scoreset(sender, instance, **kwargs):
     create_all_groups_for_instance(instance)
-    assign_superusers_as_admin(instance)
 
 
 # --------------------------------------------------------------------------- #

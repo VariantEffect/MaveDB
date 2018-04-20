@@ -58,8 +58,8 @@ def validate_chromosome(value):
 def validate_unique_intervals(intervals):
     for interval1 in intervals:
         for interval2 in intervals:
-            if (interval1.pk is not None) and (interval2.pk is not None):
-                if interval1.pk == interval2.pk:
+            if (interval1.pk is not None) and (interval2.pk is not None) and \
+                    (interval1.pk == interval2.pk):
                     continue
             elif interval1 is interval2:
                 continue
@@ -123,7 +123,7 @@ def validate_at_least_one_map(reference_maps):
 
 
 def validate_one_primary_map(reference_maps):
-    primary_count = sum(a.is_primary_annotation() for a in reference_maps)
+    primary_count = sum(a.is_primary_reference_map() for a in reference_maps)
     if primary_count > 1 or primary_count < 1:
         raise ValidationError(
             (

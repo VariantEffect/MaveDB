@@ -1,6 +1,7 @@
 from django import forms as forms
 from django.db import transaction
 
+from accounts.permissions import assign_superusers_as_admin
 from metadata.fields import ModelSelectMultipleField
 
 from metadata.models import (
@@ -132,13 +133,14 @@ class DatasetModelForm(forms.ModelForm):
     # Make this atomic since new m2m instances will need to be saved.
     @transaction.atomic
     def save(self, commit=True):
-        super().save(commit=commit)
+        instance = super().save(commit=commit)
         if commit:
-            self.instance.set_modified_by(self.user)
-            if not hasattr(self, 'edit_mode') and not self.instance.created_by:
-                self.instance.set_created_by(self.user)
-            self.instance.save()
-        return self.instance
+            instance.set_modified_by(self.user)
+            if not hasattr(self, 'edit_mode') and not instance.created_by:
+                instance.set_created_by(self.user)
+            instance.save()
+            assign_superusers_as_admin(instance)
+        return instance
 
     def m2m_instances_for_field(self, field_name, return_new=True):
         if field_name not in self.fields:

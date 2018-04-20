@@ -320,7 +320,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     @property
     def parent(self):
         attr = parent_attr_map[self.__class__.__name__]
-        if hasattr(self, attr):
+        if attr is not None and hasattr(self, attr):
             return getattr(self, attr)
         else:
             return None

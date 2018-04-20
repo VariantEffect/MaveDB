@@ -149,7 +149,8 @@ class TargetGene(TimeStampedModel):
         :class:`WildTypeSequence`, optional.
             Wild-type sequence string or None if no instance is attached.
         """
-        return self.wt_sequence
+        if hasattr(self, 'wt_sequence'):
+            return self.wt_sequence
 
     def set_wt_sequence(self, sequence):
         """
@@ -469,6 +470,9 @@ class ReferenceGenome(TimeStampedModel):
         elif self.refseq_id is not None:
             return self.get_refseq_id()
         return None
+
+    def display_name(self):
+        return '{} | {}'.format(self.get_short_name(), self.get_identifier())
 
     def get_refseq_id(self):
         """

@@ -13,9 +13,7 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 from dataset.factories import ScoreSetFactory
-from metadata.factories import (
-    RefseqIdentifierFactory, EnsemblIdentifierFactory
-)
+from metadata.factories import RefseqIdentifierFactory, EnsemblIdentifierFactory
 
 from .models import (
     TargetGene,
@@ -86,7 +84,7 @@ class ReferenceMapFactory(DjangoModelFactory):
     is_primary = True
 
 
-class IntervalFactory(DjangoModelFactory):
+class GenomicIntervalFactory(DjangoModelFactory):
     """
     Creates an :class:`GenomicInterval` with randomly generated start, stop, chr
     and strand.

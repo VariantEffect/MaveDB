@@ -18,7 +18,7 @@ from core.utilities.versioning import (
 )
 
 from genome.models import TargetGene
-from genome.forms import GenomicIntervalForm, TargetGeneForm, AnnotationForm
+from genome.forms import GenomicIntervalForm, TargetGeneForm, ReferenceMapForm
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
@@ -88,12 +88,12 @@ def scoreset_create_view(request, experiment_urn=None):
     context = {}
     scoreset_form = ScoreSetForm(user=request.user)
     target_form = TargetGeneForm(user=request.user)
-    annotation_form = AnnotationForm()
+    reference_map_form = ReferenceMapForm()
     interval_form = GenomicIntervalForm()
 
     context["scoreset_form"] = scoreset_form
     context["target_form"] = target_form
-    context["annotation_form"] = annotation_form
+    context["reference_map_form"] = reference_map_form
     context["interval_form"] = interval_form
 
     if experiment_urn:
@@ -115,14 +115,14 @@ def scoreset_create_view(request, experiment_urn=None):
             target_id = request.GET.get("targetId", "")
             try:
                 targetgene = TargetGene.objects.get(pk=target_id)
-                annotation = targetgene.get_annotations().first()
-                genome = annotation.get_reference_genome()
-                interval = annotation.get_intervals().first()
+                reference_map = targetgene.get_reference_maps().first()
+                genome = reference_map.get_reference_genome()
+                interval = reference_map.get_intervals().first()
                 data = {
                     'targetName': targetgene.get_name(),
                     'wildTypeSequence': targetgene.get_wt_sequence_string(),
                     'referenceGenome': genome.id,
-                    'isPrimary': annotation.is_primary_annotation(),
+                    'isPrimary': reference_map.is_primary_reference_map(),
                     'intervalStart': interval.get_start(),
                     'intervalEnd': interval.get_end(),
                     'chromosome': interval.get_chromosome(),
@@ -164,7 +164,7 @@ def scoreset_create_view(request, experiment_urn=None):
             files=request.FILES
         )
         target_form = TargetGeneForm(user=request.user, data=request.POST)
-        annotation_form = AnnotationForm(data=request.POST)
+        reference_map_form = ReferenceMapForm(data=request.POST)
         interval_form = GenomicIntervalForm(data=request.POST)
 
         context["repop_keywords"] = ','.join(keywords)
@@ -174,13 +174,13 @@ def scoreset_create_view(request, experiment_urn=None):
 
         context["scoreset_form"] = scoreset_form
         context["target_form"] = target_form
-        context["annotation_form"] = annotation_form
+        context["reference_map_form"] = reference_map_form
         context["interval_form"] = interval_form
 
         all_valid = all([
             scoreset_form.is_valid(),
             target_form.is_valid(),
-            annotation_form.is_valid(),
+            reference_map_form.is_valid(),
             interval_form.is_valid()
         ])
 
@@ -194,20 +194,15 @@ def scoreset_create_view(request, experiment_urn=None):
             user = request.user
             with transaction.atomic():
                 scoreset = scoreset_form.save(commit=True)
-                targetgene = target_form.save(commit=True)
-                annotation = annotation_form.save(commit=True)
-                interval = interval_form.save(commit=True)
 
-                # Don't change the ordering of saves. It will break the
-                # relationships if you do.
-                for i in [interval]:
-                    i.annotation = annotation
-                    i.save()
-                annotation.target = targetgene
-                annotation.save()
-                targetgene.scoreset = scoreset
-                targetgene.get_wt_sequence().save()
-                targetgene.save()
+                target_form.instance.scoreset = scoreset
+                targetgene = target_form.save(commit=True)
+
+                reference_map_form.instance.target = targetgene
+                reference_map = reference_map_form.save(commit=True)
+
+                interval_form.instance.reference_map = reference_map
+                interval_form.save(commit=True)
 
                 scoreset.set_created_by(user, propagate=False)
                 # Save and update permissions. A user will not be added as an

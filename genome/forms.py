@@ -65,12 +65,10 @@ class TargetGeneForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         instance = kwargs.get('instance', None)
-        self.existing_wt_sequence = None
         self.wt_sequence = None
-        if instance:
+        if instance and instance.get_wt_sequence():
             self.fields['wt_sequence'].initial = \
-                instance.get_wt_sequence_string()
-            self.existing_wt_sequence = instance.get_wt_sequence()
+                instance.get_wt_sequence().get_sequence()
 
         self.set_target_gene_options()
 
@@ -80,6 +78,13 @@ class TargetGeneForm(forms.ModelForm):
             attrs={'class': BOOTSTRAP_CLASS})
         self.fields['name'].error_messages.update(
             {'required': 'You must supply a name for your target.'})
+
+    def clean_wt_sequence(self):
+        sequence = self.cleaned_data.get('wt_sequence', None)
+        if sequence is None:
+            raise ValidationError("Sequence cannot be empty.")
+        self.wt_sequence = sequence
+        return sequence
 
     def set_target_gene_options(self):
         if 'target' in self.fields:
@@ -96,21 +101,30 @@ class TargetGeneForm(forms.ModelForm):
             targets_qs = TargetGene.objects.filter(
                 pk__in=choices).order_by("name")
             self.fields["target"].queryset = targets_qs
+            self.fields["target"].choices = \
+                [("", self.fields["target"].empty_label)] + [
+                (t.pk, t.get_unique_name()) for t in targets_qs.all()
+            ]
+            self.fields["target"].initial = ""
 
     @transaction.atomic
     def save(self, commit=True):
-        instance = super().save(commit=commit)
-        if instance.get_wt_sequence():
-            instance.set_wt_sequence(self.wt_sequence)
-        else:
-            wt_sequence = WildTypeSequence(sequence=self.wt_sequence)
-            instance.set_wt_sequence(wt_sequence)
+        if not self.is_valid():
+            raise ValidationError("Cannot save with invalid data.")
+
+        if self.instance.get_wt_sequence() is not None:
+            if isinstance(self.wt_sequence, str):
+                self.instance.get_wt_sequence().sequence = self.wt_sequence
 
         if commit:
-            instance.get_wt_sequence().save()
-            instance.save()
+            if self.instance.get_wt_sequence() is None:
+                self.instance.set_wt_sequence(
+                    WildTypeSequence.objects.create(sequence=self.wt_sequence)
+                )
+            self.instance.get_wt_sequence().save()
+            return super().save(commit=True)
 
-        return instance
+        return super().save(commit=False)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -124,7 +138,7 @@ class TargetGeneForm(forms.ModelForm):
 
 # ReferenceMap
 # ------------------------------------------------------------------------ #
-class AnnotationForm(forms.ModelForm):
+class ReferenceMapForm(forms.ModelForm):
     """
     The reference_map form
 
@@ -150,6 +164,11 @@ class AnnotationForm(forms.ModelForm):
         genome_field.widget.attrs.update({"class": BOOTSTRAP_CLASS})
         genome_field.requried = True
         genome_field.queryset = ReferenceGenome.objects.all()
+        genome_field.choices = \
+            [("", genome_field.empty_label)] + [
+                (r.pk, r.display_name()) for r in ReferenceGenome.objects.all()
+            ]
+        genome_field.initial = ""
 
         is_primary_field = self.fields['is_primary']
         is_primary_field.widget.attrs.update({"class": BOOTSTRAP_CLASS})
