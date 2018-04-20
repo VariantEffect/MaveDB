@@ -20,7 +20,7 @@ from core.utilities.pandoc import convert_md_to_html
 from core.utilities.versioning import track_changes
 
 from genome.models import TargetGene
-from genome.forms import TargetGeneForm, AnnotationForm, GenomicIntervalForm
+from genome.forms import TargetGeneForm, ReferenceMapForm, GenomicIntervalForm
 
 from urn.validators import (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
@@ -29,7 +29,7 @@ from urn.validators import (
 )
 
 
-from .permissions import GroupTypes, PermissionTypes
+from .permissions import GroupTypes, PermissionTypes, assign_superusers_as_admin
 from .forms import (
     RegistrationForm,
     SelectUsersForm,
@@ -133,6 +133,7 @@ def manage_instance(request, urn):
         user=request.user,
         prefix="viewer_management",
     )
+
     context["instance"] = instance
     context["admin_select_form"] = admin_select_form
     context["viewer_select_form"] = viewer_select_form
@@ -161,6 +162,7 @@ def manage_instance(request, urn):
         if post_form is not None and post_form.is_valid():
             post_form.process_user_list()
             instance.last_edit_by = request.user
+            assign_superusers_as_admin(instance)
             instance.save()
             return redirect("accounts:manage_instance", instance.urn)
 
@@ -233,14 +235,14 @@ def handle_scoreset_edit_form(request, instance):
         targetgene = scoreset.get_target()
         target_form = TargetGeneForm(user=request.user, instance=targetgene)
 
-        # TODO: Multiple annotations/intervals
-        annotation = targetgene.get_annotations().first()
-        annotation_form = AnnotationForm(instance=annotation)
-        intervals = annotation.get_intervals()
+        # TODO: Multiple reference_maps/intervals
+        reference_map = targetgene.get_reference_maps().first()
+        reference_map_form = ReferenceMapForm(instance=reference_map)
+        intervals = reference_map.get_intervals()
         interval_form = GenomicIntervalForm(instance=intervals[0])
         context = {
             'edit_form': form, 'instance': instance,
-            'target_form': target_form, 'annotation_form': annotation_form,
+            'target_form': target_form, 'reference_map_form': reference_map_form,
             'interval_form': interval_form
         }
 
@@ -253,14 +255,14 @@ def handle_scoreset_edit_form(request, instance):
             target_id = request.GET.get("targetId", "")
             try:
                 targetgene = TargetGene.objects.get(pk=target_id)
-                annotation = targetgene.get_annotations().first()
-                genome = annotation.get_reference_genome()
-                interval = annotation.get_intervals().first()
+                reference_map = targetgene.get_reference_maps().first()
+                genome = reference_map.get_reference_genome()
+                interval = reference_map.get_intervals().first()
                 data = {
                     'targetName': targetgene.get_name(),
                     'wildTypeSequence': targetgene.get_wt_sequence_string(),
                     'referenceGenome': genome.id,
-                    'isPrimary': annotation.is_primary_annotation(),
+                    'isPrimary': reference_map.is_primary_reference_map(),
                     'intervalStart': interval.get_start(),
                     'intervalEnd': interval.get_end(),
                     'chromosome': interval.get_chromosome(),
@@ -288,21 +290,21 @@ def handle_scoreset_edit_form(request, instance):
         else:
             target_form = TargetGeneForm(
                 user=request.user, data=request.POST, instance=targetgene)
-            annotation_form = AnnotationForm(
-                data=request.POST, instance=annotation)
+            reference_map_form = ReferenceMapForm(
+                data=request.POST, instance=reference_map)
             interval_form = GenomicIntervalForm(
                 data=request.POST, instance=intervals[0])
             form = ScoreSetForm.from_request(request, instance)
 
             context["edit_form"] = form
             context["target_form"] = target_form
-            context["annotation_form"] = annotation_form
+            context["reference_map_form"] = reference_map_form
             context["interval_form"] = interval_form
 
             valid = all([
                 form.is_valid(),
                 target_form.is_valid(),
-                annotation_form.is_valid(),
+                reference_map_form.is_valid(),
                 interval_form.is_valid()
             ])
 
@@ -329,19 +331,16 @@ def handle_scoreset_edit_form(request, instance):
         if valid:
             if instance.private:
                 updated_instance = form.save(commit=True)
-                targetgene = target_form.save(commit=True)
-                annotation = annotation_form.save(commit=True)
-                interval = interval_form.save(commit=True)
 
-                # Don't change the ordering of saves. It will break the
-                # relationships if you do.
-                for i in [interval]:
-                    i.annotation = annotation
-                    i.save()
-                annotation.target = targetgene
-                annotation.save()
-                targetgene.scoreset = updated_instance
-                targetgene.save()
+                target_form.instance.scoreset = updated_instance
+                targetgene = target_form.save(commit=True)
+
+                reference_map_form.instance.target = targetgene
+                reference_map = reference_map_form.save(commit=True)
+
+                interval_form.instance.reference_map = reference_map
+                interval_form.save(commit=True)
+
             else:
                 updated_instance = form.save(commit=True)
 

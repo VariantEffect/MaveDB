@@ -33,6 +33,10 @@ class Profile(TimeStampedModel):
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
+    @property
+    def unique_name(self):
+        return '{} | {}'.format(self.get_full_name(), self.user.username)
+
     @classmethod
     def non_anonymous_profiles(cls):
         """Returns a list of all non-anonymous profiles."""

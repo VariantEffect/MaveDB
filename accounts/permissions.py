@@ -369,3 +369,6 @@ def assign_superusers_as_admin(instance):
     sus = User.objects.filter(is_superuser=True)
     for su in sus:
         assign_user_as_instance_admin(su, instance)
+        while instance.parent:
+            instance = instance.parent
+            assign_user_as_instance_admin(su, instance)

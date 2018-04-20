@@ -69,7 +69,11 @@ class SelectUsersForm(forms.Form):
                 "class": "form-control select2 select2-token-select",
                 "style": "width:100%;height:50px;"
             }
-        )
+        ),
+        error_messages={
+            'list': _('Enter a list of values.'),
+            'invalid_pk_value': _('User "%(pk)s" does not exist.')
+        }
     )
 
     def __init__(self, user, group, instance, required=False, *args, **kwargs):
@@ -95,6 +99,9 @@ class SelectUsersForm(forms.Form):
         self.fields["users"].queryset = User.objects.exclude(
             username=ANONYMOUS_USER_NAME
         )
+        self.fields["users"].choices = [(u.pk, u.profile.unique_name)
+             for u in self.fields["users"].queryset]
+
         self.user = user
         self.fields["users"].required = required
         self.group = group

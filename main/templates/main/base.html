@@ -183,7 +183,11 @@
     <!-- This needs to be here in order to record the user pk from django -->
     <script type="text/javascript">
         user = parseInt({{ request.user.pk }});
-        ignore = parseInt({{ request.user.is_superuser }});
+        {% if request.user.is_superuser %}
+            ignore = true;
+        {% else %}
+            ignore = false;
+        {% endif %}
     </script>
 
     <!-- JQuery/JQuery UI -->

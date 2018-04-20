@@ -8,7 +8,7 @@
 <!-- Instances that user is a ADMIN for -->
 <div id="admin-instances">
 	<h5> Editable entries </h5>
-	{% if request.user.profile.editable_instances %}
+	{% if request.user.profile.administrator_instances %}
 		<ul style="list-style: none">
 			{% for instance in request.user.profile.administrator_instances %}
 

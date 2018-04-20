@@ -141,7 +141,7 @@ function validateEditorSubmit(e) {
     });
 
     var willRemoveSelfAsAdmin = eSelectedPks.index(user) >= 0;
-    if(willRemoveSelfAsAdmin) {
+    if(willRemoveSelfAsAdmin && !ignore) {
         var submit = askConfirmation();
         if(submit) {
             return $("#editor-form").submit();
@@ -158,7 +158,7 @@ function validateViewerSubmit(e) {
     });
 
     var willRemoveSelfAsAdmin = vSelectedPks.index(user) >= 0;
-    if(willRemoveSelfAsAdmin) {
+    if(willRemoveSelfAsAdmin && !ignore) {
         var submit = askConfirmation();
         if(submit) {
             return $("#viewer-form").submit();
