@@ -1,1 +1,4 @@
 -r base.txt
+
+mod_wsgi-httpd
+mod_wsgi
