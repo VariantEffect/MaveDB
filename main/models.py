@@ -27,19 +27,23 @@ class News(TimeStampedModel):
     text = models.TextField(default="default news.", blank=False)
 
     class Meta:
-        ordering = ['-modification_date']
+        ordering = ['-creation_date']
         verbose_name_plural = "News items"
         verbose_name = "News item"
 
     def __str__(self):
-        return '[{}]: {}'.format(str(self.modification_date), self.text)
+        return '[{}]: {}'.format(str(self.creation_date), self.text)
+
+    @property
+    def date(self):
+        return self.creation_date
 
     @staticmethod
     def recent_news():
         """
         Return the 10 most recently published news items.
         """
-        return News.objects.order_by("-modification_date")[0: 10]
+        return News.objects.order_by("-creation_date")[0: 10]
 
     @property
     def message(self):
@@ -102,10 +106,9 @@ class SiteInformation(TimeStampedModel):
         Tries to get the current instance. If it does not exist, a new one 
         is created.
         """
-        try:
-            return SiteInformation.objects.all()[0]
-        except IndexError:
-            return SiteInformation()
+        if SiteInformation.objects.first():
+            return SiteInformation.objects.first()
+        return SiteInformation()
 
     def md_about(self):
         return convert_md_to_html(self.about)
