@@ -7,7 +7,8 @@ from django.dispatch import receiver
 from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
-    delete_all_groups_for_instance
+    delete_all_groups_for_instance,
+    assign_superusers_as_admin,
 )
 
 from urn.models import UrnModel
@@ -60,6 +61,7 @@ class ExperimentSet(DatasetModel):
 @receiver(post_save, sender=ExperimentSet)
 def create_groups_for_experimentset(sender, instance, **kwargs):
     create_all_groups_for_instance(instance)
+    assign_superusers_as_admin(instance)
 
 
 # --------------------------------------------------------------------------- #

@@ -1,6 +1,7 @@
 import reversion
 
 from django.contrib.postgres.fields import JSONField
+from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -8,7 +9,8 @@ from django.dispatch import receiver
 from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
-    delete_all_groups_for_instance
+    delete_all_groups_for_instance,
+    assign_superusers_as_admin,
 )
 
 from main.models import Licence
@@ -21,6 +23,8 @@ from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json
 
+
+User = get_user_model()
 
 def default_dataset():
     return dict({
@@ -253,6 +257,7 @@ class ScoreSet(DatasetModel):
 @receiver(post_save, sender=ScoreSet)
 def create_permission_groups_for_scoreset(sender, instance, **kwargs):
     create_all_groups_for_instance(instance)
+    assign_superusers_as_admin(instance)
 
 
 # --------------------------------------------------------------------------- #
