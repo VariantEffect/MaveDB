@@ -32,11 +32,11 @@ class DatasetModelViewSet(ReadOnlyModelViewSet):
     :class:`DatasetModelSearchMixin`.
     """
 
-    def get_queryset(self, use_list=True):
+    def get_queryset(self, exclude_private=True):
         queryset = super().get_queryset()
         query_dict = dict()
 
-        if 'search' in self.request.query_params:
+        if 'search' in self.request.query_params.keys():
             join_func = self.or_join_qs
             query_dict['search'] = self.request.query_params.getlist('search')
         else:
@@ -45,11 +45,12 @@ class DatasetModelViewSet(ReadOnlyModelViewSet):
                 if field in self.request.query_params:
                     query_dict[field] = self.request.query_params.getlist(field)
 
+        print(query_dict)
         if query_dict:
             q = self.search_all(query_dict, join_func)
             queryset = queryset.filter(q)
 
-        return queryset
+        return queryset.exclude(private=exclude_private)
 
     def list(self, request, *args, **kwargs):
         return_list = False
