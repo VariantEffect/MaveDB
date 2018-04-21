@@ -63,7 +63,7 @@ class TargetGeneFactory(DjangoModelFactory):
         model = TargetGene
 
     scoreset = factory.SubFactory(ScoreSetFactory)
-    name = factory.fuzzy.FuzzyChoice(['BRCA1', 'JAK', 'STAT', 'MAPK'])
+    name = factory.fuzzy.FuzzyChoice(['BRCA1', 'JAK', 'STAT', 'MAPK', 'EGF'])
     wt_sequence = factory.SubFactory(WildTypeSequenceFactory)
     ensembl_id = None
     refseq_id = None
@@ -74,7 +74,7 @@ class ReferenceMapFactory(DjangoModelFactory):
     """
     Creates an :class:`ReferenceMap` instance with a :class:`ReferenceGenome`
     relation and a set of 3 randomly generated :class:`GenomicInterval`
-    instnaces.
+    instances.
     """
     class Meta:
         model = ReferenceMap
@@ -86,8 +86,8 @@ class ReferenceMapFactory(DjangoModelFactory):
 
 class GenomicIntervalFactory(DjangoModelFactory):
     """
-    Creates an :class:`GenomicInterval` with randomly generated start, stop, chr
-    and strand.
+    Creates an :class:`GenomicInterval` with randomly generated `start`,
+    `stop`, `chromosome` and `strand`.
     """
     class Meta:
         model = GenomicInterval
