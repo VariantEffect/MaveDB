@@ -123,14 +123,10 @@ class Experiment(DatasetModel):
     def get_target_names(self):
         return [t.get_name() for t in self.get_targets()]
 
-    def serialise(self, filter_private=True):
-        data = super().serialise()
-        data['targets'] = {
-            targetgene.get_name(): targetgene.serialise()
-            for targetgene in self.get_targets()
-            if (targetgene is not None) and \
-               not (targetgene.scoreset.private and filter_private)
-        }
+    def get_target_organisms(self):
+        from functools import reduce
+        organism_sets = [s.get_target_organisms() for s in self.children]
+        return list(sorted(reduce(lambda x, y: x | y, organism_sets, set())))
 
 
 # --------------------------------------------------------------------------- #

@@ -168,6 +168,14 @@ class ScoreSet(DatasetModel):
             return None
         return self.target
 
+    def get_target_organisms(self):
+        if not self.get_target():
+            return None
+        return set(sorted([
+            r.format_reference_genome_species_html()
+            for r in self.get_target().get_reference_maps()
+        ]))
+
     # JSON field related methods
     # ---------------------------------------------------------------------- #
     def _add_hgvs(self, ls):
@@ -225,28 +233,6 @@ class ScoreSet(DatasetModel):
         if self.replaces_previous:
             return self.replaces
         return None
-
-    def serialise(self, filter_private=True):
-        data = super().serialise()
-
-        next_version = self.next_version
-        next_version = None if not next_version else next_version.urn
-        previous_version = self.previous_version
-        previous_version = None if not previous_version else previous_version.urn
-        target = self.get_target()
-
-        data.update(**{
-            'target': None if target is None else target.serialise(),
-            "next_version": next_version,
-            "previous_version": previous_version,
-            "licence": [self.licence.short_name, self.licence.link],
-            "current_version": self.current_version.urn,
-            "score_columns": self.score_columns,
-            "count_columns": self.count_columns,
-            "meta_columns": self.metadata_columns
-        })
-
-        return data
 
 
 # --------------------------------------------------------------------------- #

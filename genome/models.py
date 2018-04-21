@@ -97,72 +97,25 @@ class TargetGene(TimeStampedModel):
     )
 
     def get_name(self):
-        """
-        Returns the string name of this target.
-
-        Returns
-        -------
-        `str`
-            The name of this target.
-        """
         return self.name
 
     def get_unique_name(self):
-        """
-        Returns the `name` concatenated with the associated scoreset urn.
-        """
+        """Target name appended to its scoreset urn."""
         return '{} | {}'.format(self.name, self.get_scoreset_urn())
 
     def get_scoreset_urn(self):
-        """
-        Returns the URN of the associated :class:`dataset.models.scoreset.ScoreSet`
-        if it exists, otherwise None.
-
-        Returns
-        -------
-        `str`, optional.
-            URN or None if no scoreset is attached.
-        """
         if self.scoreset:
             return self.scoreset.urn
 
     def get_wt_sequence_string(self):
-        """
-        Returns the wildtype sequence of nucleotides of the associated
-        :class:`WildTypeSequence` if it exists, otherwise None.
-
-        Returns
-        -------
-        `str`, optional.
-            Wild-type sequence string or None if no instance is attached.
-        """
         if self.wt_sequence:
             return self.wt_sequence.get_sequence()
 
     def get_wt_sequence(self):
-        """
-        Returns the :class:`WildTypeSequence` instance if it exists,
-        otherwise None.
-
-        Returns
-        -------
-        :class:`WildTypeSequence`, optional.
-            Wild-type sequence string or None if no instance is attached.
-        """
         if hasattr(self, 'wt_sequence'):
             return self.wt_sequence
 
     def set_wt_sequence(self, sequence):
-        """
-        Sets the `wt_sequence` instance to `sequence`. Saving these changes
-        is the responsibility of the caller.
-
-        Parameters
-        ----------
-        sequence : :class:`WildTypeSequence`
-            Associates this instance with the supplied :class:`WildTypeSequence`
-            instance.
-        """
         if not isinstance(sequence, WildTypeSequence):
             raise TypeError("Found {}, expected {} or str.".format(
                 type(sequence).__name__, WildTypeSequence.__name__
@@ -170,39 +123,12 @@ class TargetGene(TimeStampedModel):
         self.wt_sequence = sequence
 
     def reference_map_count(self):
-        """
-        Returns the count of attached :class:`ReferenceMap` instances.
-
-        Returns
-        -------
-        `int`
-            Count of attached :class:`ReferenceMap` instances.
-        """
         return self.reference_maps.count()
 
     def get_reference_maps(self):
-        """
-        Returns the `QuerySet` of attached :class:`ReferenceMap` instances. This
-        may be empty.
-
-        Returns
-        -------
-        `QuerySet`
-            The set of attached :class:`ReferenceMap` instances.
-        """
         return self.reference_maps.all()
 
     def get_reference_genomes(self):
-        """
-        Returns the :class:`ReferenceGenome` instances from the attached
-        :class:`ReferenceMap` instances.
-
-        Returns
-        -------
-        `QuerySet`
-            A set of :class:`ReferenceGenome` instances extracted from
-            any attached :class:`ReferenceMap` instances.
-        """
         genome_pks = set(a.genome.pk for a in self.get_reference_maps())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
 
@@ -265,26 +191,9 @@ class ReferenceMap(TimeStampedModel):
     )
 
     def get_target_gene(self):
-        """
-        Returns the target associated with this reference_map otherwise None.
-
-        Returns
-        -------
-        :class:`TargetGene`
-        """
         return self.target
 
     def set_target_gene(self, target):
-        """
-        Sets the target for this instnace. Saving changes is left as the
-        responsibility of the caller.
-
-        Parameters
-        ----------
-        target : :class:`TargetGene`
-            Associates this instance with the supplied :class:`TargetGene`
-            instance.
-        """
         if not isinstance(target, TargetGene):
             raise TypeError("Found {}, expected {}.".format(
                 type(target).__name__, TargetGene.__name__
@@ -292,28 +201,9 @@ class ReferenceMap(TimeStampedModel):
         self.target = target
 
     def get_reference_genome(self):
-        """
-        Return the associated genome for this reference_map if it exists.
-
-        Returns
-        -------
-        :class:`ReferenceGenome`, optional.
-            The :class:`ReferenceGenome` instance if one is attached, otherwise
-            `None`.
-        """
         return self.genome
 
     def set_reference_genome(self, genome):
-        """
-        Set the reference genome to `genome`. Saving changes is left as the
-        responsibility of the caller.
-
-        Parameters
-        ----------
-        genome : :class:`ReferenceGenome`
-            Associates this instance with the supplied :class:`ReferenceGenome`
-            instance.
-        """
         if not isinstance(genome, ReferenceGenome):
             raise TypeError("Found {}, expected {}.".format(
                 type(genome).__name__, ReferenceGenome.__name__
@@ -321,23 +211,10 @@ class ReferenceMap(TimeStampedModel):
         self.genome = genome
 
     def get_reference_genome_name(self):
-        """
-        Return the string name of genome associated with this reference_map.
-        """
         if self.get_reference_genome():
             return self.get_reference_genome().get_short_name()
 
     def get_reference_genome_species(self):
-        """
-        Return the string species name of genome associated with this
-        reference_map.
-
-        Returns
-        -------
-        `str`, optional.
-            The attached genome's species or None if there is no attached
-            genome.
-        """
         if self.get_reference_genome():
             return self.get_reference_genome().get_species_name()
 
@@ -345,40 +222,17 @@ class ReferenceMap(TimeStampedModel):
         """
         Return a HTML string formatting the associated genomes species name
         using italics and capitalisation.
-
-        Returns
-        -------
-        `str`, optional.
-            Formats the species name by enclosing captialised name if
-            HTML italics tags. Use with `|safe` in templates.
         """
         if self.get_reference_genome():
             return self.get_reference_genome().format_species_name_html()
 
     def get_intervals(self):
-        """
-        Return the :class:`GenomicInterval` instances defining a mapping of
-        genomic coordinates with respect to the :class:`ReferenceGenome`.
-
-        Returns
-        -------
-        `QuerySet`
-            The `QuerySet` of intervals attached to this instance.
-        """
         return self.intervals.all()
 
     def set_is_primary(self, primary=True):
-        """
-        Sets the primary status as `primary`. Saving changes is left as the
-        responsibility of the caller.
-        """
         self.is_primary = primary
 
     def is_primary_reference_map(self):
-        """
-        Returns True if the associated :class:`ReferenceGenome` is marked
-        as primary.
-        """
         return self.is_primary
 
 
@@ -475,65 +329,21 @@ class ReferenceGenome(TimeStampedModel):
         return '{} | {}'.format(self.get_short_name(), self.get_identifier())
 
     def get_refseq_id(self):
-        """
-        Returns the :class:`RefseqIdentifier` if there is one attached,
-        otherwise `None`.
-
-        Returns
-        -------
-        :class:`RefseqIdentifier`, optional.
-            The :class:`RefseqIdentifier` identifier if one is attached,
-            otherwise None.
-        """
         return self.refseq_id
 
     def get_ensembl_id(self):
-        """
-        Returns the :class:`EnsemblIdentifier` if there is one attached,
-        otherwise `None`.
-
-        Returns
-        -------
-        :class:`EnsemblIdentifier`, optional.
-            The :class:`EnsemblIdentifier` identifier if one is attached,
-            otherwise None.
-        """
         return self.ensembl_id
 
     def get_short_name(self):
-        """
-        The short name identifier of this genome, usually following
-        the format <species_abbreviation><version> for example 'hg37'.
-
-        Returns
-        -------
-        `str`
-            The short name identifier of this genome, usually following
-            the format <species_abbreviation><version> for example 'hg37'.
-        """
         return self.short_name
 
     def get_species_name(self):
-        """
-        The scientific name of the species this genome comes from.
-
-        Returns
-        -------
-        `str`
-            The scientific species name.
-        """
         return self.species_name
 
     def format_species_name_html(self):
         """
         Return a HTML string formatting the associated genomes species name
         using italics and capitalisation.
-
-        Returns
-        -------
-        `str`, optional.
-            Formats the species name by enclosing captialised name if
-            HTML italics tags. Use with `|safe` in templates.
         """
         return "<i>{}</i>".format(self.get_species_name().capitalize())
 
@@ -625,17 +435,6 @@ class GenomicInterval(TimeStampedModel):
         """
         Compares two intervals based on `start`, `end`, lowercase `chromosome`
         and `strand`.
-
-        Parameters
-        ----------
-        other : :class:`GenomicInterval`
-            The interval to compare this instance to.
-
-        Returns
-        -------
-        `bool`
-            True if the intervals are the same based on `start`, `end`,
-            lowercase `chromosome` and `strand`.
         """
         this = (
             self.start, self.end,
@@ -648,83 +447,21 @@ class GenomicInterval(TimeStampedModel):
         return this == other
 
     def get_start(self, offset=0):
-        """
-        Returns the start index added to an `offset`.
-
-        Parameters
-        ----------
-        offset : `int`
-            The offset to add to the starting index.
-
-        Returns
-        -------
-        `int`
-            The start index added to the offset.
-        """
         return self.start + offset
 
     def get_end(self, offset=0):
-        """
-        Returns the end index added to an `offset`.
-
-        Parameters
-        ----------
-        offset : `int`
-            The offset to add to the starting index.
-
-        Returns
-        -------
-        `int`
-            The end index added to the offset.
-        """
         return self.end + offset
 
     def get_chromosome(self):
-        """
-        Returns the chromosome identifier this interval is specified for.
-
-        Returns
-        -------
-        `str`
-            Returns the chromosome identifier this interval is specified for.
-        """
         return self.chromosome
 
     def get_strand(self):
-        """
-        Returns the strand identifier this interval is specified for. Either
-        'F' for 'Forward' and 'R' for 'Reverse'.
-
-        Returns
-        -------
-        `str`
-            Returns 'F' for 'Forward' and 'R' for 'Reverse'.
-        """
         return self.strand.upper()
 
     def get_reference_map(self):
-        """
-        Returns the :class:`ReferenceMap` this instance is attached to, otherwise
-        `None`.
-
-        Returns
-        -------
-        :class:`ReferenceMap`, optional.
-            The :class:`ReferenceMap` this instance is attached to, otherwise
-            `None`.
-        """
         return self.reference_map
 
     def set_reference_map(self, reference_map):
-        """
-        Attaches this interval to `reference_map`. Saving is the responsibility
-        of the user.
-
-        Parameters
-        ----------
-        reference_map : :class:`ReferenceMap`
-            The :class:`Annotation` to attach this interval to.
-        """
         self.reference_map = reference_map
 
 
@@ -759,12 +496,4 @@ class WildTypeSequence(TimeStampedModel):
         super().save(*args, **kwargs)
 
     def get_sequence(self):
-        """
-        Returns the nucleotide sequence.
-
-        Returns
-        -------
-        `str`
-            The nucleotide sequence.
-        """
         return self.sequence.upper()
