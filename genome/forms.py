@@ -94,9 +94,9 @@ class TargetGeneForm(forms.ModelForm):
             for target in targets:
                 scoreset = target.scoreset
                 if scoreset.private and scoreset in user_scoresets:
-                    choices.add(scoreset.pk)
+                    choices.add(target.pk)
                 elif not scoreset.private:
-                    choices.add(scoreset.pk)
+                    choices.add(target.pk)
 
             targets_qs = TargetGene.objects.filter(
                 pk__in=choices).order_by("name")
