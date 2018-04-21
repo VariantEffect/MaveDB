@@ -5,12 +5,18 @@ See Also
 --------
 `Custom pipelines <https://github.com/python-social-auth/social-docs/blob/master/docs/pipeline.rst>`_
 """
+from social_core.pipeline.social_auth import load_extra_data
 
-def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
-    social = kwargs.get('social') or \
-             backend.strategy.storage.user.get_social_auth(backend.name, uid)
+
+def mave_load_extra_data(backend, details, response, uid, user,
+                         *args, **kwargs):
+    load_extra_data(backend, details, response, uid, user, *args, **kwargs)
+    social = (
+        kwargs.get('social') or
+        backend.strategy.storage.user.get_social_auth(backend.name, uid)
+    )
     if social:
-        extra_data = backend.extra_data(user, uid, response, details,
-                                        *args, **kwargs)
-        social.set_extra_data(extra_data)
-        social.set_extra_data({'credit-name': 'credit_name'})
+        credit_name = response.get('person', {}).get('name', {}).get(
+            'credit-name', {}).get('value', None)
+        print(credit_name)
+        social.set_extra_data({'credit-name': credit_name})
