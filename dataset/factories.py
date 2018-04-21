@@ -8,7 +8,7 @@ can be changed once here instead of throughout all the tests. This will help
 with future maintainability.
 """
 
-import factory.fuzzy
+import factory.faker
 from factory.django import DjangoModelFactory
 
 from .models.base import DatasetModel
@@ -24,10 +24,10 @@ class DatasetModelFactory(DjangoModelFactory):
     class Meta:
         model = DatasetModel
 
-    method_text = factory.fuzzy.FuzzyText(length=500)
-    abstract_text = factory.fuzzy.FuzzyText(length=500)
-    title = factory.fuzzy.FuzzyText(length=64)
-    short_description = factory.fuzzy.FuzzyText(length=256)
+    method_text = factory.faker.Faker('text', max_nb_chars=1500)
+    abstract_text = factory.faker.Faker('text', max_nb_chars=1500)
+    title = factory.faker.Faker('text', max_nb_chars=250)
+    short_description = factory.faker.Faker('text', max_nb_chars=1000)
     private = True
 
 
