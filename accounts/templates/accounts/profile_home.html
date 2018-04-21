@@ -2,7 +2,7 @@
 
 {% block profile_body %}
 
-<h3> Welcome, {{ request.user.profile.get_full_name }} </h3>
+<h3> Welcome, {{ request.user.profile.get_display_name }} </h3>
 <hr>
 
 <!-- Instances that user is a ADMIN for -->
