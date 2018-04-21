@@ -18,5 +18,4 @@ def mave_load_extra_data(backend, details, response, uid, user,
     if social:
         credit_name = response.get('person', {}).get('name', {}).get(
             'credit-name', {}).get('value', None)
-        print(credit_name)
         social.set_extra_data({'credit-name': credit_name})
