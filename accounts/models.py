@@ -194,7 +194,7 @@ class Profile(TimeStampedModel):
     @staticmethod
     def _iterable_to_queryset(iterable, klass):
         pks = set([i.pk for i in iterable])
-        return klass.objects.filter(pk__in=pks).order_by('urn')
+        return klass.objects.filter(pk__in=pks).order_by('-modification_date')
 
     # Contributor
     # ----------------------------------------------------------------------- #

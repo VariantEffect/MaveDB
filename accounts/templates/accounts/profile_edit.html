@@ -2,8 +2,8 @@
 
 {% block profile_body %}
 <!-- Edit instance -->
-<div class="row" style="margin-top: 25px;">
-	<div class="col-md-10">
+<div class="container" style="margin-top: 25px;">
+
 		<h3> Edit entry {{ instance.urn }} </h3>
 		{% if instance.private %}
 		<p> 
@@ -266,8 +266,7 @@
 				{% endif %}
 			</div>
 		</form>
-	
-	</div> 
+
 </div> <!-- End edit instance -->
 
 {% endblock profile_body %}

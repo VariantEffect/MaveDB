@@ -10,7 +10,7 @@
     <meta name="description" content="MaveDB, a repository for DMS datasets">
     <meta name="author" content="Daniel C. Esposito">
     <!-- fonts/icons -->
-    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" 
+    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600|Material+Icons"
           rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet">
@@ -106,7 +106,7 @@
             {% else %}
               <li class="nav-item">
                 <a class="nav-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
-                  
+
                 <!-- Modal -->
                 <div class="modal fade" id="orcid-login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="modal-dialog" role="document">
@@ -119,8 +119,8 @@
                       </div>
                       <div class="modal-body">
                         <p>
-                          ORCID is an independent non-profit effort to provide an open registry of unique researcher 
-                          identifiers and open services to link research activities and organizations to these 
+                          ORCID is an independent non-profit effort to provide an open registry of unique researcher
+                          identifiers and open services to link research activities and organizations to these
                           identifiers. Learn more at <a href="https://orcid.org/">orcid.org</a>.
                         </p>
                         <button id="connect-orcid-button" onclick="openORCID()">
@@ -134,7 +134,7 @@
               </li>
             {% endif %}
           </ul>
-          
+
           <form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
             <input class="form-control mr-sm-1" type="text" aria-label="Search"
                    placeholder="Search..." name="search_all">
@@ -142,7 +142,7 @@
               Search
             </button>
           </form>
-            
+
         </div> <!-- End navbar links -->
       </nav> <!-- End navbar -->
     </div> <!-- End Header div -->
@@ -154,7 +154,7 @@
         <!-- Main template body block -->
       {% endblock %}
     </div>
-    
+
     <hr> <!-- clear -->
 
     <div class="section footer">
@@ -171,7 +171,7 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'main:contact'%}">Contact</a>
           </li>
-          <div class="align-self-center float-left">
+          <div class="align-self-center float-left" style="padding-left: 10px;">
             <small>All rights reserved, 2017.</small>
           </div>   
         </ul>       

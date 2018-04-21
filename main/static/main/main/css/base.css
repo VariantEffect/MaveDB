@@ -1,7 +1,7 @@
 /* Global 
 ----------------------------------- */
 * {
-    font-family: 'Raleway', sans-serif !important;
+    font-family: 'Raleway', sans-serif;
     border-radius: 0 !important;
     /* border: 1px solid red !important; */
 }
@@ -57,30 +57,30 @@ ul {
 
 /* General, navbar and footer Link Styling
 ----------------------------------- */
-a {
+a{
     color: #1EAEDB !important;
     text-decoration: none !important;
-    -webkit-transition: 0.5s;
-    -moz-transition: 0.5s;   
-    transition: color 0.5s ease-in-out;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out;
 }
 a:hover {
     color: #222 !important;
 }
 
 .nav-item > a {
-    -webkit-transition: 0.5s;
-    -moz-transition: 0.5s;   
-    transition: color 0.5s ease-in-out,
-                border-top-color 0.5s ease-in-out,
-                border-bottom-color 0.5s ease-in-out;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out,
+                border-top-color 0.1s ease-in-out,
+                border-bottom-color 0.1s ease-in-out;
     border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
 }
 .nav-item > a:hover {
     color: #222;
     border-top-color: #222;
-    border-bottom-color: #222; 
+    border-bottom-color: #222;
 }
 
 /* Tables
@@ -396,8 +396,12 @@ table {
 
 .entry-card {
     margin: 1rem 1rem;
+    display: inline-block;
+    max-width: 30%;
+    min-width: 30% !important;
+    overflow-x: hidden;
     padding: 10px 10px 10px 10px;
-    box-shadow: 1px 2px 5px #ccc;
+    /*box-shadow: 1px 2px 5px #ccc;*/
 }
 
 .section-heading {
@@ -419,4 +423,32 @@ table {
 
 .clickable-row {
     cursor: pointer;
+}
+
+a.fill-div {
+    display: block;
+    height: 100%;
+    width: 100%;
+    text-decoration: none;
+}
+
+.tile {
+    width: 100px;
+    height: 100px;
+    background: white;
+    margin: 0px 10px 10px 0px;
+}
+
+.column-border-right {
+     padding-right: 20px;
+     border-right: 1px solid rgb(0,0,0.1);
+ }
+
+[class^="icon"] {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  top: 15px;
+  margin-right: 10px;
+  fill: #fff;
 }

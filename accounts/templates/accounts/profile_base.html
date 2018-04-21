@@ -1,16 +1,10 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-<div class="row">
+<div class="container-fluid">
 	
-	<!-- Sidebar -->
-  <div class="sidenav col-2">
-    <a href="{% url 'dataset:experiment_new' %}">Create new experiment</a>
-    <a href="{% url 'dataset:scoreset_new' %}">Create new score set</a>
-	</div>
-		
 	<!-- Content -->
-	<div class="col-8">
+	<div class="container">
 		{% block profile_body %}
 			<!-- Main content for profile view -->
 		{% endblock profile_body %}

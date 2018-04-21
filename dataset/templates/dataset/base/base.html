@@ -27,43 +27,9 @@
   </p>
 </div>
 
-<div class="row">
-  <div class="sidenav col-2">
-    <a href="#contributors">Contributors</a>
+<div class="container">
 
-    {% if instance.class_name != "experimentset" %}
-      <a href="#abstract">Abstract</a>
-      <a href="#method">Method</a>
-    {% endif %}
-
-    {% if instance.class_name == "experiment" %}
-      <a href="#targets">Targets</a>
-    {% endif %}
-
-    {% if instance.class_name == "scoreset" %}
-      <a href="#target">Target</a>
-    {% endif %}
-
-    {% if instance.class_name != "experimentset" %}
-      <a href="#metadata">Metadata</a>
-      <a href="#references">References</a>
-    {% endif %}
-
-    {% if instance.class_name == "experimentset" %}
-      <a href="#experiments">Experiments</a>
-    {% endif %}
-
-    {% if instance.class_name == "experiment" %}
-      <a href="#scoresets">Score Sets</a>
-    {% endif %}
-
-    {% if instance.class_name == "scoreset" %}
-      <a href="#variants">Preview</a>
-    {% endif %}
-
-  </div>
-
-  <div class="model-detail col-10">
+  <div class="model-detail">
      <!-- Renders contributors as ORCID url-->
     <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
     <ul>

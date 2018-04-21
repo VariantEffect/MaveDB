@@ -2,11 +2,12 @@
 {% load static %}
 
 {% block profile_body %}
-<h3> {{ instance.urn }} </h3>
+<div class="container">
+  <h3> {{ instance.urn.upper }} </h3>
+</div>
 
 <!-- Admin management -->
-<div class="row" style="margin-top: 25px;">
-	<div class="col-md-10">
+<div class="container" style="margin-top: 25px;">
 
 		{% if admin_select_form.non_field_errors %}
 			<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -59,11 +60,9 @@
 			</div>
 		</form>
 	</div> 
-</div> <!-- End admin management -->
 
 <!-- Viewer management -->
-<div class="row" style="margin-top: 25px;">
-	<div class="col-md-10">
+<div class="container" style="margin-top: 25px;">
 		<h5> Add/Remove Viewers </h5><hr>
 		<form id="viewer-form"
 					action="{% url 'accounts:manage_instance' instance.urn %}" 
@@ -90,7 +89,6 @@
 								 onclick="validateViewerSubmit();">
 			</div>
 		</form>
-	</div> 
 </div> <!-- End Viewer management -->
 
 {% endblock profile_body %}

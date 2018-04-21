@@ -169,6 +169,8 @@ Since the website contains static images, these need to be placed in a location
 where Apache can find them.
 
     python manage.py collectstatic
+    python manage.py createlicences
+    python manage.py createreferences
 
 ### Starting the server
 
