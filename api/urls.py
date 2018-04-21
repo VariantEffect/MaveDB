@@ -74,7 +74,7 @@ scoreset_urls = [
         name="api_download_count_data"
     ),
     url(
-        r"(?P<urn>{})/meta/$".format(scoreset_url_pattern),
+        r"(?P<urn>{})/metadata/$".format(scoreset_url_pattern),
         scoreset_metadata,
         name="api_download_metadata"
     )
