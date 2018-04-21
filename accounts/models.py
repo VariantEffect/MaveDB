@@ -35,7 +35,7 @@ class Profile(TimeStampedModel):
 
     @property
     def unique_name(self):
-        return '{} | {}'.format(self.get_full_name(), self.user.username)
+        return '{} | {}'.format(self.get_display_name(), self.user.username)
 
     @classmethod
     def non_anonymous_profiles(cls):
@@ -69,7 +69,7 @@ class Profile(TimeStampedModel):
         else:
             return 'https://orcid.org/{}'.format(self.user.username)
 
-    def get_credit_name_hyperlink(self):
+    def get_display_name_hyperlink(self):
         """
         Returns the credit-name formatted as a hyperlink tag referencing the
         ORCID url otherwise full name if it cannot be found.
@@ -91,7 +91,7 @@ class Profile(TimeStampedModel):
         else:
             return format_html('<a href="{url}">{name}</a>'.format(
                 url=self.get_orcid_url(),
-                name=self.get_credit_name()))
+                name=self.get_display_name()))
 
     def get_full_name_hyperlink(self):
         """
@@ -111,7 +111,7 @@ class Profile(TimeStampedModel):
                 url=self.get_orcid_url(),
                 name=self.get_full_name()))
 
-    def get_credit_name(self):
+    def get_display_name(self):
         """
         Returns the users credit name if one exists for this user, otherwise
         calls :func:`get_full_name`.
@@ -125,11 +125,12 @@ class Profile(TimeStampedModel):
         if self.is_anon():
             return None
 
-        social_auth = UserSocialAuth.get_social_auth_for_user(self.user)
+        social_auth = UserSocialAuth.get_social_auth_for_user(
+            self.user).first()
         if not isinstance(social_auth, UserSocialAuth):
             return self.get_full_name()
         else:
-            credit_name = social_auth.extra_data.get('credit_name', "")
+            credit_name = social_auth.extra_data.get('credit-name', None)
             if not credit_name:
                 return self.get_full_name()
             return credit_name

@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializers a :class:`User` instance
     """
-    credit_name = serializers.CharField(source='profile.get_credit_name')
+    display_name = serializers.CharField(source='profile.get_display_name')
     contributor_experimentsets = serializers.StringRelatedField(
         source='profile.public_contributor_experimentsets', many=True)
     contributor_experiments = serializers.StringRelatedField(
@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'username', 'last_name', 'first_name', 'credit_name',
+            'username', 'last_name', 'first_name', 'display_name',
             'contributor_experimentsets', 'contributor_experiments',
             'contributor_scoresets'
         )

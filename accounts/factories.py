@@ -9,13 +9,12 @@ can be changed once here instead of throughout all the tests. This will help
 with future maintainability.
 """
 
+import random
 import factory.fuzzy
-from factory.django import DjangoModelFactory
+import factory.faker
 
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AnonymousUser
-
-from .models import Profile
 
 
 def AnonymousUserFactory():
@@ -31,18 +30,22 @@ def UserFactory(username=None, password=None, first_name=None,
     Test fixture factory for the user class which sets username,
     first_name, last_name and password.
     """
+    names = list(zip(
+        ['Spike', 'Jet', 'Faye', 'Ed', 'Ein'],
+        ['Spiegel', 'Black', 'Valentine', 'Ed', 'Ein']
+    ))
     if email is None:
-        email = "test@mavedb.com"
+        email = factory.faker.Faker('email')
     if username is None:
         username = factory.fuzzy.FuzzyText(length=8).fuzz()
     if password is None:
         password = factory.fuzzy.FuzzyText(length=16).fuzz()
+
+    first, last = random.choice(names)
     if first_name is None:
-        first_name = factory.fuzzy.FuzzyChoice(
-            ['Spike', 'Jet', 'Faye', 'Ed', 'Ein']).fuzz()
+        first_name = first
     if last_name is None:
-        last_name = factory.fuzzy.FuzzyChoice(
-            ['Spiegel', 'Black', 'Valentine', 'Ed', 'Ein']).fuzz()
+        last_name = last
 
     return User.objects.create(
         username=username,
