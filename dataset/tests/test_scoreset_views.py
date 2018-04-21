@@ -10,7 +10,6 @@ from accounts.permissions import (
     user_is_admin_for_instance
 )
 
-from genome.models import WildTypeSequence, TargetGene
 from genome.factories import ReferenceGenomeFactory
 
 from metadata.factories import (

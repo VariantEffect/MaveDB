@@ -39,11 +39,11 @@ urlpatterns = [
         r'scoreset/new/$', scoreset_create_view, name='scoreset_new'
     ),
     url(
-        r'scoreset/(?P<urn>{})/score_data/$'.format(scoreset_url_pattern),
+        r'scoreset/(?P<urn>{})/scores/$'.format(scoreset_url_pattern),
         scoreset_score_data, name='scores_download'
     ),
     url(
-        r'scoreset/(?P<urn>{})/count_data/$'.format(scoreset_url_pattern),
+        r'scoreset/(?P<urn>{})/counts/$'.format(scoreset_url_pattern),
         scoreset_count_data, name='counts_download'
     ),
     url(
