@@ -31,7 +31,7 @@
     <div class="container-fluid mt-4">
 
       <div class="row mt-1 mb-3">						
-        <div class="cold-sm-6 col-md-6">
+        <div class="col-sm-3 col-md-3">
           <h3 style="margin: 0;">Scores dataset</h3>
         </div>
         <div class="col-sm-1 col-md-1">
@@ -50,7 +50,7 @@
             <thead>
               <tr>
                 {% for column in score_columns %}
-                  <th> {{column}} </th>
+                  <th onclick="sortTable('scores-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
                 {% endfor %}
               </tr>
             </thead>
@@ -78,7 +78,7 @@
     <div class="container-fluid mt-4">
 
       <div class="row mt-1 mb-3">
-        <div class="cold-sm-6 col-md-6">
+        <div class="col-sm-3 col-md-3">
           <h3 style="margin: 0;">Counts dataset</h3>
         </div>
         <div class="col-sm-1 col-md-1">
@@ -92,12 +92,12 @@
       {% if not count_columns|length > 1 %}
         <p class="text-muted"> No counts data available.</p>
       {% else %}
-        <div id="scores-table-container" class="numeric-container container-fluid">
-          <table id="scores-table" class="styled-table table table-hover">
+        <div id="counts-table-container" class="numeric-container container-fluid">
+          <table id="counts-table" class="styled-table table table-hover">
             <thead>
               <tr>
                 {% for column in counts_columns %}
-                  <th> {{column}} </th>
+                  <th onclick="sortTable('counts-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
                 {% endfor %}
               </tr>
             </thead>
@@ -120,12 +120,12 @@
     </div>
   </div> <!-- End count data tab -->
 
-  <!-- counts data tab -->
+  <!-- meta data tab -->
   <div class="tab-pane fade" id="meta" role="tabpanel" aria-labelledby="meta-tab">
     <div class="container-fluid mt-4">
 
       <div class="row mt-1 mb-3">
-        <div class="cold-sm-6 col-md-6">
+        <div class="col-sm-3 col-md-3">
           <h3 style="margin: 0;">Metadata dataset</h3>
         </div>
         <div class="col-sm-1 col-md-1">
@@ -139,12 +139,12 @@
       {% if not metadata_columns|length > 1 %}
         <p class="text-muted"> No metadata available.</p>
       {% else %}
-        <div id="scores-table-container" class="numeric-container container-fluid">
-          <table id="scores-table" class="styled-table table table-hover">
+        <div id="meta-table-container" class="numeric-container container-fluid">
+          <table id="meta-table" class="styled-table table table-hover">
             <thead>
               <tr>
                 {% for column in metadata_columns %}
-                  <th> {{column}} </th>
+                  <th onclick="sortTable('meta-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
                 {% endfor %}
               </tr>
             </thead>

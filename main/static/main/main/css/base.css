@@ -416,3 +416,7 @@ table {
     -moz-transition: 0.5s;
     transition: color 0.1s ease-in-out
 }
+
+.clickable-row {
+    cursor: pointer;
+}

@@ -70,14 +70,15 @@
 	<table id="search-table" class="styled-table table table-hover paginated">
 		<thead>
 			<tr>
-				<th>Urn</th>
-				<th>Short description</th>
-        <th>Target name</th>
-        <th>Contributors</th>
+				<th onclick="sortTable('search-table', 0)" class="clickable-row">Urn</th>
+				<th onclick="sortTable('search-table', 1)" class="clickable-row">Short description</th>
+        <th onclick="sortTable('search-table', 2)" class="clickable-row">Target name</th>
+        <th onclick="sortTable('search-table', 3)" class="clickable-row">Target organisms</th>
+        <th onclick="sortTable('search-table', 5)" class="clickable-row">Contributors</th>
       </tr>
 		</thead>
 		<tbody>
-			{% if not has_data %}
+			{% if not experiments.count %}
 				<tr>
 					<td colspan=6> 0 search results returned. </td>
 				</tr>
@@ -86,107 +87,117 @@
 					{% if not exp.private %}
 						<tr>
 							<td>
-								<a 
-									href="{% url 'dataset:experiment_detail' exp.urn %}">
+								<a href="{% url 'dataset:experiment_detail' exp.urn %}">
 									{{ exp.urn }}
 								</a>
 							</td>
-							<td>{{ exp.short_description|default:"-" }}</td>
-							<td>{{ exp.get_target_names|join:", " }}</td>
-							<td>
-                {% for c in exp.editors %}
-							    {{ c.profile.get_full_name_hyperlink }}
+              <td>{{ exp.short_description|default:"-" }}</td>
+              <td>{{ exp.get_target_names|join:", "|default:"-" }}</td>
+              <td>
+                {% if exp.get_target_organisms|length > 0 %}
+                  {{ exp.get_target_organisms|safeseq|join:", "|default:"-" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% for c in exp.contributors %}
+                  {{ c.profile.get_display_name_hyperlink }}
                 {% endfor %}
-							</td>
-						</tr>
-					{% else %}
-						{% if exp in request.user.profile.experiments %}
-							<tr>
-								<td>
-									<a 
-										href="{% url 'dataset:experiment_detail' exp.urn %}">
-										{{ exp.urn }} [P]
-									</a>
-								</td>
-                <td>
-                  {% for c in exp.editors %}
-                    {{ c.get_full_name_hyperlink }}
-                  {% endfor %}
-							  </td>
-								<td>{{ exp.get_target_names|join:", " }}</td>
-								<td>{{ exp.get_keywords|default:"-"|join:", " }}</td>
-							</tr>
-						{% endif %}
-					{% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td>
+                <a href="{% url 'dataset:experiment_detail' exp.urn %}">
+                  {{ exp.urn }} [Private]
+                </a>
+              </td>
+              <td>{{ exp.short_description|default:"-" }}</td>
+              <td>{{ exp.get_target_names|join:", "|default:"-" }}</td>
+              <td>
+                {% if exp.get_target_organisms|length > 0 %}
+                  {{ exp.get_target_organisms|safeseq|join:", "|default:"-" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% for c in exp.contributors %}
+                  {{ c.profile.get_display_name_hyperlink }}
+                {% endfor %}
+              </td>
+            </tr>
+          {% endif %}
 				{% endfor %}
-			{% endif %}
+      {% endif %}
 		</tbody>
 	</table>
 </div>
 
-<!-- Pagination -->
-{% if experiments.has_other_pages %}
-<div class="row">
-	<div class="col-md-2 mt-2">
-		<form action="?per-page=" method="GET">
-			<div class="form-inline">
-				<label class="mr-2" for="per-page-select"> Entries per page </label>
-				<select name="per-page" id="per-page-select" onchange="paginationSubmit('search')">
-					{% for i in per_page_selections %}
-						{% if i == per_page %}
-							<option value={{i}} selected="">{{i}}</option>
-						{% else %}
-							<option value={{i}}>{{i}}</option>
-						{% endif %}
-					{% endfor %}
-				</select>
-			</div>
-		</form>
-	</div>
-
-	<div class="col-md-10">
-		<ul class="pagination justify-content-end">
-			{% if experiments.has_previous %}
-				<li class="page-item">
-					<a class="page-link previous" href=""
-						 onclick="return paginationSubmit('search', this);">
-						&laquo;
-						<div id="search-previous" hidden>{{ experiments.previous_page_number }}</div>
-					</a>
-				</li>
-			{% else %}
-				<li class="page-item disabled">
-					<a class="page-link" href="">
-						<span aria-hidden="true">&laquo;</span>
-					</a>
-				</li>
-			{% endif %}
-			
-			{% for i in experiments.paginator.page_range %}
-				<li class="page-item">
-					<a class="page-link {% if experiments.number == i %}search-active{% endif %}" href="" 
-						 onclick="return paginationSubmit('search', this);">{{ i }}</a>
-				</li>
-			{% endfor %}
-			
-			{% if experiments.has_next %}
-				<li class="page-item">
-					<a class="page-link previous" href=""
-						 onclick="return paginationSubmit('search', this);">
-						&raquo;
-						<div id="search-next" hidden>{{ experiments.next_page_number }}</div>
-					</a>
-				</li>
-			{% else %}
-				<li class="page-item disabled">
-					<a class="page-link" href="">
-						<span aria-hidden="true">&raquo;</span>
-					</a>
-				</li>
-			{% endif %}
-		</ul>
-	</div>
-</div>
-{% endif %} <!-- End pagination -->
+{#<!-- Pagination -->#}
+{#{% if experiments.has_other_pages %}#}
+{#<div class="row">#}
+{#	<div class="col-md-2 mt-2">#}
+{#		<form action="?per-page=" method="GET">#}
+{#			<div class="form-inline">#}
+{#				<label class="mr-2" for="per-page-select"> Entries per page </label>#}
+{#				<select name="per-page" id="per-page-select" onchange="paginationSubmit('search')">#}
+{#					{% for i in per_page_selections %}#}
+{#						{% if i == per_page %}#}
+{#							<option value={{i}} selected="">{{i}}</option>#}
+{#						{% else %}#}
+{#							<option value={{i}}>{{i}}</option>#}
+{#						{% endif %}#}
+{#					{% endfor %}#}
+{#				</select>#}
+{#			</div>#}
+{#		</form>#}
+{#	</div>#}
+{##}
+{#	<div class="col-md-10">#}
+{#		<ul class="pagination justify-content-end">#}
+{#			{% if experiments.has_previous %}#}
+{#				<li class="page-item">#}
+{#					<a class="page-link previous" href=""#}
+{#						 onclick="return paginationSubmit('search', this);">#}
+{#						&laquo;#}
+{#						<div id="search-previous" hidden>{{ experiments.previous_page_number }}</div>#}
+{#					</a>#}
+{#				</li>#}
+{#			{% else %}#}
+{#				<li class="page-item disabled">#}
+{#					<a class="page-link" href="">#}
+{#						<span aria-hidden="true">&laquo;</span>#}
+{#					</a>#}
+{#				</li>#}
+{#			{% endif %}#}
+{#			#}
+{#			{% for i in experiments.paginator.page_range %}#}
+{#				<li class="page-item">#}
+{#					<a class="page-link {% if experiments.number == i %}search-active{% endif %}" href="" #}
+{#						 onclick="return paginationSubmit('search', this);">{{ i }}</a>#}
+{#				</li>#}
+{#			{% endfor %}#}
+{#			#}
+{#			{% if experiments.has_next %}#}
+{#				<li class="page-item">#}
+{#					<a class="page-link previous" href=""#}
+{#						 onclick="return paginationSubmit('search', this);">#}
+{#						&raquo;#}
+{#						<div id="search-next" hidden>{{ experiments.next_page_number }}</div>#}
+{#					</a>#}
+{#				</li>#}
+{#			{% else %}#}
+{#				<li class="page-item disabled">#}
+{#					<a class="page-link" href="">#}
+{#						<span aria-hidden="true">&raquo;</span>#}
+{#					</a>#}
+{#				</li>#}
+{#			{% endif %}#}
+{#		</ul>#}
+{#	</div>#}
+{#</div>#}
+{#{% endif %} <!-- End pagination -->#}
 
 {% endblock %}
