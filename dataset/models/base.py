@@ -179,17 +179,16 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         default="",
         verbose_name="Method description"
     )
-    short_description = models.CharField(
+    short_description = models.TextField(
         blank=False,
         default="",
         verbose_name="Short description",
-        max_length=512
     )
-    title = models.TextField(
+    title = models.CharField(
         blank=False,
         default="",
         verbose_name="Short title",
-        max_length=256
+        max_length=250
     )
 
     # ---------------------------------------------------------------------- #
@@ -371,7 +370,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         data["contributors"] = [
             {
                 'orcid': user.username,
-                'credit_name': user.profile.get_credit_name(),
+                'credit_name': user.profile.get_display_name(),
                 'given_name': user.first_name,
                 'family_name': user.last_name,
             }
