@@ -27,9 +27,44 @@
   </p>
 </div>
 
-<div class="container">
+<div class="row">
 
-  <div class="model-detail">
+  <div class="sidenav border border-top-0 border-bottom-0 border-left-0 border-secondary" style="padding-right: 50px;" >
+    <a class="mave-a" href="#contributors">Contributors</a>
+
+    {% if instance.class_name != "experimentset" %}
+      <a class="mave-a" href="#abstract">Abstract</a>
+      <a class="mave-a" href="#method">Method</a>
+    {% endif %}
+
+    {% if instance.class_name == "experiment" %}
+      <a class="mave-a" href="#targets">Targets</a>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
+      <a class="mave-a" href="#target">Target</a>
+    {% endif %}
+
+    {% if instance.class_name != "experimentset" %}
+      <a class="mave-a" href="#metadata">Metadata</a>
+      <a class="mave-a" href="#references">References</a>
+    {% endif %}
+
+    {% if instance.class_name == "experimentset" %}
+      <a class="mave-a" href="#experiments">Experiments</a>
+    {% endif %}
+
+    {% if instance.class_name == "experiment" %}
+      <a class="mave-a" href="#scoresets">Score Sets</a>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
+      <a class="mave-a" href="#variants">Preview</a>
+    {% endif %}
+
+  </div>
+
+  <div class="model-detail col-md-10">
      <!-- Renders contributors as ORCID url-->
     <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
     <ul>
