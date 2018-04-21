@@ -4,14 +4,14 @@ from social_django.models import UserSocialAuth
 
 mock_person = {
     "last-modified-date": {
-        "value": 1523885850931
+        "value": 111
     },
     "name": {
         "created-date": {
-            "value": 1501480300784
+            "value": 111
         },
         "last-modified-date": {
-            "value": 1524279424178
+            "value": 111
         },
         "given-names": {
             "value": "John"
@@ -28,15 +28,15 @@ mock_person = {
     },
     "other-names": {
         "last-modified-date": {
-            "value": 1505114342843
+            "value": 222
         },
         "other-name": [
             {
                 "created-date": {
-                    "value": 1501480597224
+                    "value": 222
                 },
                 "last-modified-date": {
-                    "value": 1505114342843
+                    "value": 233
                 },
                 "source": {
                     "source-orcid": {
@@ -52,7 +52,7 @@ mock_person = {
                 "content": "John C Smith",
                 "visibility": "PUBLIC",
                 "path": "/0000-0002-0001-0003/other-names/978953",
-                "put-code": 978953,
+                "put-code": 1231,
                 "display-index": 1
             }
         ],
@@ -66,15 +66,15 @@ mock_person = {
     },
     "emails": {
         "last-modified-date": {
-            "value": 1523885777896
+            "value": 123123
         },
         "email": [
             {
                 "created-date": {
-                    "value": 1501480301005
+                    "value": 123123
                 },
                 "last-modified-date": {
-                    "value": 1523885777896
+                    "value": 1231
                 },
                 "source": {
                     "source-orcid": {
@@ -99,12 +99,12 @@ mock_person = {
     },
     "addresses": {
         "last-modified-date": {
-            "value": 1501480583422
+            "value": 12312
         },
         "address": [
             {
                 "created-date": {
-                    "value": 1501480583422
+                    "value": 123123
                 },
                 "last-modified-date": {
                     "value": 1501480583422
@@ -125,23 +125,23 @@ mock_person = {
                 },
                 "visibility": "PUBLIC",
                 "path": "/0000-0002-0001-0003/address/753757",
-                "put-code": 753757,
-                "display-index": 1
+                "put-code": 123123,
+                "display-index": 2
             }
         ],
         "path": "/0000-0002-0001-0003/address"
     },
     "keywords": {
         "last-modified-date": {
-            "value": 1523885850931
+            "value": 123123
         },
         "keyword": [
             {
                 "created-date": {
-                    "value": 1501480564153
+                    "value": 2313
                 },
                 "last-modified-date": {
-                    "value": 1523885850931
+                    "value": 1313123
                 },
                 "source": {
                     "source-orcid": {
@@ -156,8 +156,8 @@ mock_person = {
                 },
                 "content": "Bioinformatics",
                 "visibility": "PUBLIC",
-                "path": "/0000-0002-0001-0003/keywords/754348",
-                "put-code": 754348,
+                "path": "/0000-0002-0001-0003/keywords/12312",
+                "put-code": 123123,
                 "display-index": 4
             }
         ],
@@ -195,6 +195,5 @@ class TestOrcidLogin(TestCase):
             self.assertEqual(UserSocialAuth.objects.count(), 1)
 
             social = UserSocialAuth.objects.first()
-            print(social.extra_data)
             user = social.user
             self.assertEqual(user.profile.get_display_name(), 'Dudebroman')
