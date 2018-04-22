@@ -385,7 +385,8 @@ table {
 
 
 .hover-card {
-    border: 1px solid lightslategray;
+    border: 1px solid rgba(0,0,0,.125);
+    box-shadow: 1px 2px 3px rgba(0,0,0,.1);
 }
 .hover-card:hover {
     border-color: black;

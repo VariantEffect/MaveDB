@@ -406,5 +406,5 @@ function sortTable(id, n) {
 }
 
 function showOptions() {
-    $( ".sliding-option" ).toggle("slide");
+    $( ".sliding-option" ).toggle("fade");
 }
