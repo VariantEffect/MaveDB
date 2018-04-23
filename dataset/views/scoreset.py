@@ -85,16 +85,19 @@ def scoreset_create_view(request, experiment_urn=None):
     in the corresponding template element id fields as well. If you don't,
     expect everything to break horribly.
     """
+    from metadata.forms import UniprotOffsetForm
     context = {}
     scoreset_form = ScoreSetForm(user=request.user)
     target_form = TargetGeneForm(user=request.user)
     reference_map_form = ReferenceMapForm()
     interval_form = GenomicIntervalForm()
+    uniprot_form = UniprotOffsetForm()
 
     context["scoreset_form"] = scoreset_form
     context["target_form"] = target_form
     context["reference_map_form"] = reference_map_form
     context["interval_form"] = interval_form
+    context["uniprot_form"] = uniprot_form
 
     if experiment_urn:
         experiments = Experiment.objects.filter(urn=experiment_urn)
