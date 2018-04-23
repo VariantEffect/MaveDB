@@ -54,7 +54,7 @@ def validate_doi_identifier(identifier):
         )
 
 def validate_ensembl_identifier(identifier):
-    if not identifier:
+    if is_null(identifier):
         raise ValidationError(
             "%(id)s is not a valid Ensembl identifier.",
             params={"id": identifier}
@@ -62,7 +62,7 @@ def validate_ensembl_identifier(identifier):
 
 
 def validate_uniprot_identifier(identifier):
-    if not identifier:
+    if is_null(identifier):
         raise ValidationError(
             "%(id)s is not a valid UniProt identifier.",
             params={"id": identifier}
@@ -70,7 +70,7 @@ def validate_uniprot_identifier(identifier):
 
 
 def validate_refseq_identifier(identifier):
-    if not identifier:
+    if is_null(identifier):
         raise ValidationError(
             "%(id)s is not a valid RefSeq identifier.",
             params={"id": identifier}

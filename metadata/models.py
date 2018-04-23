@@ -9,7 +9,10 @@ from core.models import TimeStampedModel
 
 from metadata.validators import (
     SRA_BIOPROJECT_RE, SRA_STUDY_RE,
-    SRA_EXPERIMENT_RE, SRA_RUN_RE
+    SRA_EXPERIMENT_RE, SRA_RUN_RE,
+    validate_ensembl_identifier,
+    validate_refseq_identifier,
+    validate_uniprot_identifier,
 )
 
 
@@ -110,7 +113,7 @@ class ExternalIdentifier(TimeStampedModel):
         verbose_name_plural = "Other identifiers"
 
     def __str__(self):
-        return "{}:{}".format(self.dbname, self.identifier)
+        return "{}:{}".format(self.DATABASE_NAME, self.identifier)
 
     def format_url(self):
         if self.IDUTILS_SCHEME is not None:
@@ -282,7 +285,7 @@ class AnnotationOffset(models.Model):
         blank=True,
         null=False,
         default=0,
-        verbose_name='Wild-type offset'
+        verbose_name='Wild-type offset',
     )
     target = models.OneToOneField(
         to=genome_models.TargetGene,
@@ -299,6 +302,12 @@ class AnnotationOffset(models.Model):
             return self.identifier.dbname
         return None
 
+    @property
+    def identifier_version(self):
+        if self.target:
+            return self.identifier.dbversion
+        return None
+
 
 class UniprotOffset(AnnotationOffset):
     """
@@ -312,6 +321,7 @@ class UniprotOffset(AnnotationOffset):
         null=False,
         verbose_name='UniProt identifier',
         related_name='offset',
+        validators=[validate_uniprot_identifier],
     )
 
 
@@ -327,6 +337,7 @@ class RefseqOffset(AnnotationOffset):
         null=False,
         verbose_name='RefSeq identifier',
         related_name='offset',
+        validators=[validate_refseq_identifier],
     )
 
 
@@ -342,4 +353,5 @@ class EnsemblOffset(AnnotationOffset):
         null=False,
         verbose_name='Ensembl identifier',
         related_name='offset',
+        validators=[validate_ensembl_identifier],
     )

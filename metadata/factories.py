@@ -137,10 +137,10 @@ class AnnotationOffsetFactory(DjangoModelFactory):
     class Meta:
         model = AnnotationOffset
 
-    offset = factory.fuzzy.FuzzyInteger(low=0, high=1000)
+    offset = factory.fuzzy.FuzzyInteger(1000)
 
 
-class UniprotOffsetFactory(DjangoModelFactory):
+class UniprotOffsetFactory(AnnotationOffsetFactory):
     """
     Factory creating :class:`UniprotOffset` instances with a random
     identifier accession, target and offset.
@@ -155,7 +155,7 @@ class UniprotOffsetFactory(DjangoModelFactory):
     )
 
 
-class RefseqOffsetFactory(DjangoModelFactory):
+class RefseqOffsetFactory(AnnotationOffsetFactory):
     """
     Factory creating :class:`RefseqOffset` instances with a random
     identifier accession, target and offset.
@@ -170,7 +170,7 @@ class RefseqOffsetFactory(DjangoModelFactory):
     )
 
 
-class EnsemblOffsetFactory(DjangoModelFactory):
+class EnsemblOffsetFactory(AnnotationOffsetFactory):
     """
     Factory creating :class:`EnsemblOffset` instances with a random
     identifier accession, target and offset.
