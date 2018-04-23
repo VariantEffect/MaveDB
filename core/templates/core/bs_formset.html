@@ -1,0 +1,17 @@
+{% load widget_tweaks %}
+
+{{ formset.management_form }}
+
+{% if formset.non_form_errors %}
+  <div class="alert alert-danger" role="alert">
+    {% for error in form.non_form_errors %}
+      {{ error }}
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% for form in formset.forms %}
+  <div class="row">
+    {% include 'core/bs_form.html' with form=form %}
+  </div>
+{% endfor %}

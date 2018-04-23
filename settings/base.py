@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'search',
     'api',
     'accounts',
+    'core',
 
     'guardian',
     'reversion',

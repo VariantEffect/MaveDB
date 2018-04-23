@@ -38,8 +38,18 @@ input[type=number] {
     min-height: 85vh;
 }
 
+.form-control:focus {
+    box-shadow: none !important;
+    border-color: black !important;
+}
+
 .select2 {
     margin-bottom: 15px;
+}
+
+/* Fixes resizing issue with select2 components */
+span.select2.select2-container.select2-container--default {
+    width: 100% !important;
 }
 
 .border-secondary {
