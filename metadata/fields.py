@@ -1,8 +1,27 @@
 from django.core.exceptions import ValidationError
-from django.forms import ModelMultipleChoiceField
+from django.forms import ModelMultipleChoiceField, ModelChoiceField
 from django.utils.translation import ugettext_lazy as _
 
 from core.utilities import is_null
+
+
+class FlexibleModelChoiceField(ModelChoiceField):
+    def __init__(self, klass, queryset, *args, **kwargs):
+        super(FlexibleModelChoiceField, self).__init__(
+            queryset, *args, **kwargs)
+        self.klass = klass
+        self.queryset = queryset
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        try:
+            return self.klass.objects.get(**{self.to_field_name: value})
+        except self.queryset.model.DoesNotExist:
+            return self.klass(**{self.to_field_name: value})
+        except (ValueError, TypeError):
+            raise ValidationError(
+                self.error_messages['invalid_choice'], code='invalid_choice')
 
 
 class ModelSelectMultipleField(ModelMultipleChoiceField):
