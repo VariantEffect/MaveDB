@@ -1,7 +1,10 @@
 from django import forms as forms
 from django.db import transaction
 from django.forms.models import BaseModelFormSet
+from django.forms import formset_factory
 from django.core.exceptions import ValidationError
+
+from core.utilities import is_null
 
 from .validators import (
     validate_interval_start_lteq_end,
@@ -213,7 +216,6 @@ class BaseAnnotationFormSet(BaseModelFormSet):
             validate_one_primary_map(maps)
 
 
-
 # GenomicInterval
 # ------------------------------------------------------------------------ #
 class GenomicIntervalForm(forms.ModelForm):
@@ -222,24 +224,38 @@ class GenomicIntervalForm(forms.ModelForm):
     """
     class Meta:
         model = GenomicInterval
-        fields = ('start', 'end', 'chromosome', 'strand')
+        fields = ('start', 'end', 'chromosome', 'strand',)
 
     def __init__(self, *args, **kwargs):
         self.field_order = ('start', 'end', 'chromosome', 'strand')
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.required = False
+            field.required = True
             field.widget.attrs.update({'class': BOOTSTRAP_CLASS})
 
-    def dummy_instance(self):
-        if self.errors:
-            return None
-        return GenomicInterval(
-            start=self.cleaned_data.get('start'),
-            end=self.cleaned_data.get('end'),
-            chromosome=self.cleaned_data.get('chromosome'),
-            strand=self.cleaned_data.get('strand'),
-        )
+    def clean_start(self):
+        start = self.cleaned_data.get('start', None)
+        if is_null(start):
+            raise ValidationError("A valid start coordinate is required.")
+        return start
+
+    def clean_end(self):
+        end = self.cleaned_data.get('end', None)
+        if is_null(end):
+            raise ValidationError("An valid end coordinate is required.")
+        return end
+
+    def clean_chromosome(self):
+        value = self.cleaned_data.get('chromosome', None)
+        if is_null(value):
+            raise ValidationError("A valid chromosome is required.")
+        return value
+
+    def clean_strand(self):
+        value = self.cleaned_data.get('strand', None)
+        if is_null(value):
+            raise ValidationError("A valid strand is required.")
+        return value
 
     def clean(self):
         cleaned_data = super().clean()
@@ -248,12 +264,6 @@ class GenomicIntervalForm(forms.ModelForm):
         else:
             start = cleaned_data.get('start', None)
             end = cleaned_data.get('end', None)
-            chromosome = cleaned_data.get('chromosome', None)
-            strand = cleaned_data.get('strand', None)
-            if any([v is None for v in [start, end, chromosome, strand]]):
-                raise ValidationError(
-                    "You must specify all or no fields of an interval."
-                )
             validate_interval_start_lteq_end(start, end)
             return cleaned_data
 
@@ -264,19 +274,65 @@ class BaseGenomicIntervalFormSet(BaseModelFormSet):
     to ensure uniqueness.
     """
     model = GenomicInterval
+    form_prefix = "genomic_interval_form"
 
     def has_errors(self):
-        if isinstance(self.errors, list):
-            return any(len(dict_) for dict_ in self.errors)
+        for form in self.forms:
+            # These are not triggering for empty forms. Do them manually.
+            form.full_clean()
+            form.clean_start()
+            form.clean_end()
+            form.clean_chromosome()
+            form.clean_strand()
+        if self.non_form_errors():
+            return True
+        elif isinstance(self.errors, list):
+            return any(self.errors)
         else:
             return bool(self.errors)
 
     def clean(self):
-        if not self.has_errors():
-            intervals = [form.dummy_instance() for form in self.forms]
-            if not intervals:
+        if self.has_errors():
+            return
+
+        field_values = set()
+        for form in self.forms:
+            start = form.cleaned_data['start']
+            end = form.cleaned_data['end']
+            chromosome = form.cleaned_data['chromosome']
+            strand = form.cleaned_data['strand']
+            value = (start, end, str(chromosome).lower(), str(strand).lower())
+            if value in field_values:
                 raise ValidationError(
-                    "You must specify at least one interval for each "
-                    "reference reference_map."
-                )
-            validate_unique_intervals(intervals)
+                    "You can not specify the same interval twice.")
+            else:
+                field_values.add(value)
+
+    def save(self, reference_map=None, commit=True):
+        if self.has_errors():
+            return super().save(commit)
+        if reference_map is not None:
+            for form in self.forms:
+                if reference_map.pk is None:
+                    raise ValueError(
+                        "ReferenceMap must be saved before it can "
+                        "be assigned as a relation."
+                    )
+                if form.instance.pk is None and reference_map is None:
+                    raise ValueError(
+                        "Cannot save a GenomicInterval without a "
+                        "ReferenceMap instance."
+                    )
+                form.instance.reference_map = reference_map
+
+        print(self.initial_forms)
+        for form in self.initial_forms:
+            print(form.instance, form.instance.reference_map)
+        return super().save(commit)
+
+
+GenomicIntervaLFormSet = formset_factory(
+    form=GenomicIntervalForm, formset=BaseGenomicIntervalFormSet,
+    extra=2, min_num=1, validate_min=True,
+)
+
