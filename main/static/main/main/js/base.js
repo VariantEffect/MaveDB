@@ -2,11 +2,26 @@
 "use strict";
 jQuery, $;
 
+
+$("form#data").submit(function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    console.log(formData);
+});
+
+
 // ORCID button in base.html
 function openORCID() {
     var baseUrl = window.location.origin;
     var loginPath = baseUrl + "/accounts/login/";
     window.location.assign(loginPath);
+    return false;
+}
+
+function cancelSubmission() {
+    var baseUrl = window.location.origin;
+    var profileUrl = baseUrl + "/profile/";
+    window.location.assign(profileUrl);
     return false;
 }
 
@@ -406,5 +421,5 @@ function sortTable(id, n) {
 }
 
 function showOptions() {
-    $( ".sliding-option" ).toggle("fade");
+    $( ".fade-option" ).toggle("fade");
 }

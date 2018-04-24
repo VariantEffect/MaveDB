@@ -3,8 +3,9 @@
 {% block profile_body %}
 <h2> Dashboard
   <a onclick="showOptions()"><i class="icon material-icons" style="font-size: 48px;">add_circle_outline</i></a>
-  <a class="sliding-option" href="{% url 'dataset:experiment_new' %}" style="display:none;">Experiment |</a>
-  <a class="sliding-option" href="{% url 'dataset:scoreset_new' %}" style="display:none;">Score Set</a>
+  <a class="fade-option" href="{% url 'dataset:experiment_new' %}" style="display:none;">Experiment</a>
+  <a class="fade-option" href="#" style="display:none;">|</a>
+  <a class="fade-option" href="{% url 'dataset:scoreset_new' %}" style="display:none;">Score Set</a>
 </h2>
 <hr>
 

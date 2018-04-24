@@ -13,7 +13,7 @@
 }
 
 body {
-    margin: 1%;
+    /*margin: 1%;*/
 }
 
 pre {
@@ -56,6 +56,9 @@ span.select2.select2-container.select2-container--default {
     border-color:rgba(0,0,0,.1) !important;
 }
 
+.download-btn {
+    color: #222 !important;
+}
 .download-btn:hover {
     border: 1px solid #222 !important;
     color: white !important;
@@ -67,17 +70,6 @@ ul {
 
 /* General, navbar and footer Link Styling
 ----------------------------------- */
-a{
-    color: #1EAEDB !important;
-    text-decoration: none !important;
-    -webkit-transition: 0.1s;
-    -moz-transition: 0.1s;
-    transition: color 0.1s ease-in-out;
-}
-a:hover {
-    color: #222 !important;
-}
-
 .nav-item > a {
     -webkit-transition: 0.1s;
     -moz-transition: 0.1s;
@@ -106,7 +98,7 @@ table {
 
 .numeric-container,
 .table-container {
-    border: 2px solid #AFC8FA;
+    border: 2px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
     overflow-x: auto;
@@ -117,7 +109,7 @@ table {
     background: whitesmoke;
 }
 .styled-table th {
-    background: #AFC8FA;
+    background: #987cb8;
 }
 .table thead th, 
 .table tbody td  {
@@ -215,9 +207,10 @@ table {
 
 .news {
     padding: 1em;
-    border: 1px ridge lightslategray;
+    height: 50%;
+    border: 1px ridge rgba(0,0,0,.1);
     border-radius: 1%;
-    background: lightblue;
+    overflow-y: scroll;
 }
 
 
@@ -318,6 +311,14 @@ table {
     min-height: 250px;
     height: 250px;
     width: 650px;
+}
+
+.top-shadow {
+    box-shadow: 0 -5px 5px -5px #333;
+}
+
+.bottom-shadow {
+    box-shadow: 0 -5px 5px 1px #333
 }
 
 /* ORCID button
@@ -462,4 +463,32 @@ a.fill-div {
   top: 15px;
   margin-right: 10px;
   fill: #fff;
+}
+
+.icon {
+    cursor: pointer;
+}
+
+
+/* Links */
+.gray-link {
+    color: #6c757d !important;
+    text-decoration: none !important;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out;
+}
+.gray-link :hover {
+    color: #222 !important;
+}
+
+a {
+    color: #987cb8 !important;
+    text-decoration: none !important;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out;
+}
+a:hover {
+    color: rebeccapurple !important;
 }

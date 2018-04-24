@@ -68,44 +68,44 @@
     </div>
 
     <!-- Body content -->
-    <div class="section header container-fluid">
+    <div class="header pr-4 pl-4 border-bottom bottom-shadow">
       <nav class="navbar navbar-expand-md navbar-light">
-        
+
         <!-- MaveDB logo -->
         <a class="navbar-brand" href="{% url 'main:home' %}" style="color: #222 !important;">
           <img src="{% static 'main/main/img/dna.png' %}" width="26" height="40">
           MaveDB
         </a>
-        
+
         <!-- Bootstrap collapse button -->
-        <button class="navbar-toggler" type="button" data-toggle="collapse" 
-                data-target="#navbar-links" aria-controls="navbar-links" 
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+                data-target="#navbar-links" aria-controls="navbar-links"
                 aria-expanded="true" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <!-- Navbar links -->
         <div class="collapse navbar-collapse ml-4" id="navbar-links">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'main:home'%}">Home</a>
+              <a class="nav-link gray-link" href="{% url 'main:home'%}">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'search:search' %}">Search</a>
+              <a class="nav-link gray-link" href="{% url 'search:search' %}">Search</a>
             </li>
              <li class="nav-item">
-              <a class="nav-link" href="{% url 'main:documentation'%}">Documentation</a>
+              <a class="nav-link gray-link" href="{% url 'main:documentation'%}">Documentation</a>
             </li>
             {% if user.is_authenticated %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:profile'%}">Profile</a>
+                <a class="nav-link gray-link" href="{% url 'accounts:profile'%}">Profile</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:logout'%}">Logout</a>
+                <a class="nav-link gray-link" href="{% url 'accounts:logout'%}">Logout</a>
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="nav-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
+                <a class="nav-link gray-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
 
                 <!-- Modal -->
                 <div class="modal fade" id="orcid-login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -147,7 +147,6 @@
       </nav> <!-- End navbar -->
     </div> <!-- End Header div -->
 
-    <hr> <!-- clear -->
 
     <div class="container-fluid full-height body-block" style="width:95%;">
       {% block body %}
@@ -155,28 +154,42 @@
       {% endblock %}
     </div>
 
-    <hr> <!-- clear -->
-
-    <div class="section footer">
-      <nav class="navbar navbar-expand-md navbar-light">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'main:terms_privacy'%}">Terms</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'main:terms_privacy'%}#privacy">
-              Privacy
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'main:contact'%}">Contact</a>
-          </li>
-          <div class="align-self-center float-left" style="padding-left: 10px;">
-            <small>All rights reserved, 2017.</small>
-          </div>   
-        </ul>       
-      </nav>
-    </div>
+    <footer class="container pr-4 pl-4 pt-4 my-md-5 pt-md-5 border-top">
+      <div class="row">
+        <div class="col-12 col-md-4">
+          <img class="mb-2" src="{% static 'main/main/img/dna.png' %}" alt="" width="18" height="24">
+           MaveDB
+          <small class="d-block mb-3 text-muted">&copy; 2017-2018</small>
+        </div>
+        <div class="col-6 col-md">
+          <h5>Documentation</h5>
+          <ul class="list-unstyled text-small">
+            <li><a class="text-muted" href="#">API</a></li>
+            <li><a class="text-muted" href="#">MaveVis</a></li>
+            <li><a class="text-muted" href="#">Registration</a></li>
+            <li><a class="text-muted" href="#">Uploading data</a></li>
+            <li><a class="text-muted" href="#">User management</a></li>
+          </ul>
+        </div>
+        <div class="col-6 col-md">
+          <h5>Resources</h5>
+          <ul class="list-unstyled text-small">
+            <li><a class="text-muted" href="#">Help</a></li>
+            <li><a class="text-muted" href="#">Source</a></li>
+            <li><a class="text-muted" href="#">Contact</a></li>
+            <li><a class="text-muted" href="#">Downloads</a></li>
+          </ul>
+        </div>
+        <div class="col-6 col-md">
+          <h5>About</h5>
+          <ul class="list-unstyled text-small">
+            <li><a class="text-muted" href="{% url 'main:terms_privacy'%}#terms">Terms</a></li>
+            <li><a class="text-muted" href="{% url 'main:terms_privacy'%}#privacy">Privacy</a></li>
+            <li><a class="text-muted" href="{% url 'main:contact'%}">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
 
     <!-- Scripts -->
     <!-- Ask user confirmation to remove themself as an instance admin -->
