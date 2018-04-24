@@ -58,7 +58,7 @@ def validate_header_contains_no_null_columns(header, label=None, msg=None):
                     "position %(i)s."
                 )
                 params = {'value': value, 'i': i, 'label': label}
-            raise ValidationError(msg, params)
+            raise ValidationError(msg, params=params)
 
 
 def validate_scoreset_score_data_input(file):
