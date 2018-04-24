@@ -68,23 +68,6 @@ ul {
     list-style-type: square;
 }
 
-/* General, navbar and footer Link Styling
------------------------------------ */
-.nav-item > a {
-    -webkit-transition: 0.1s;
-    -moz-transition: 0.1s;
-    transition: color 0.1s ease-in-out,
-                border-top-color 0.1s ease-in-out,
-                border-bottom-color 0.1s ease-in-out;
-    border-top: 1px solid transparent;
-    border-bottom: 1px solid transparent;
-}
-.nav-item > a:hover {
-    color: #222;
-    border-top-color: #222;
-    border-bottom-color: #222;
-}
-
 /* Tables
 ---------------------------------- */
 table td, 
@@ -98,7 +81,7 @@ table {
 
 .numeric-container,
 .table-container {
-    border: 2px solid #987cb8;
+    border: 2px solid #b0bbd8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
     overflow-x: auto;
@@ -109,7 +92,7 @@ table {
     background: whitesmoke;
 }
 .styled-table th {
-    background: #987cb8;
+    background: #dadff1;
 }
 .table thead th, 
 .table tbody td  {
@@ -168,25 +151,6 @@ table {
 .nav-link {
     padding-top: 0.15rem !important;
     padding-bottom: 0.15rem !important;
-}
-.navbar-search {
-    margin-left: 7.75%;
-}
-.navbar-search > form {
-    margin-top: 6%;
-}
-.navbar-search > form > input {
-    margin: auto auto auto 0;
-    border: none;
-    background: transparent;
-    border-bottom: 1px solid grey;
-    min-width: 20%;
-    transition: 
-        max-width 0.3s ease, 
-        min-width 0.3s ease;
-}
-.navbar-search > form > input:focus {
-    min-width: 90%;
 }
 
 /* Logo Formatting
@@ -478,7 +442,7 @@ a.fill-div {
     -moz-transition: 0.1s;
     transition: color 0.1s ease-in-out;
 }
-.gray-link :hover {
+.gray-link:hover {
     color: #222 !important;
 }
 
