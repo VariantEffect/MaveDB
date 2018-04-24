@@ -88,24 +88,24 @@
         <div class="collapse navbar-collapse ml-4" id="navbar-links">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-              <a class="nav-link gray-link" href="{% url 'main:home'%}">Home</a>
+              <a class="nav-link text-muted" href="{% url 'main:home'%}">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link gray-link" href="{% url 'search:search' %}">Search</a>
+              <a class="nav-link text-muted" href="{% url 'search:search' %}">Search</a>
             </li>
              <li class="nav-item">
-              <a class="nav-link gray-link" href="{% url 'main:documentation'%}">Documentation</a>
+              <a class="nav-link text-muted" href="{% url 'main:documentation'%}">Documentation</a>
             </li>
             {% if user.is_authenticated %}
               <li class="nav-item">
-                <a class="nav-link gray-link" href="{% url 'accounts:profile'%}">Profile</a>
+                <a class="nav-link text-muted" href="{% url 'accounts:profile'%}">Profile</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link gray-link" href="{% url 'accounts:logout'%}">Logout</a>
+                <a class="nav-link text-muted" href="{% url 'accounts:logout'%}">Logout</a>
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="nav-link gray-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
+                <a class="nav-link text-muted btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
 
                 <!-- Modal -->
                 <div class="modal fade" id="orcid-login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
