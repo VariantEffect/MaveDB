@@ -256,6 +256,9 @@ class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
             return self.get_ajax(request)
         return super().get(request, *args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
+        print(request.POST)
+
     def get_ajax(self, request, *args, **kwargs):
         # If the request is ajax, then it's for previewing the abstract
         # or method description. This code is coupled with base.js. Changes
