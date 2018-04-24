@@ -1,7 +1,7 @@
 from django import forms as forms
 from django.db import transaction
 from django.forms.models import BaseModelFormSet
-from django.forms import formset_factory
+from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
 
 from core.utilities import is_null
@@ -11,7 +11,6 @@ from .validators import (
     validate_wildtype_sequence,
     validate_gene_name,
     validate_at_least_one_map,
-    validate_unique_intervals,
     validate_map_has_unique_reference_genome,
     validate_one_primary_map
 )
@@ -275,6 +274,11 @@ class BaseGenomicIntervalFormSet(BaseModelFormSet):
     """
     model = GenomicInterval
     form_prefix = "genomic_interval_form"
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'queryset' in kwargs:
+            self.queryset = kwargs['queryset']
 
     def has_errors(self):
         for form in self.forms:
@@ -312,27 +316,33 @@ class BaseGenomicIntervalFormSet(BaseModelFormSet):
         if self.has_errors():
             return super().save(commit)
         if reference_map is not None:
+            if reference_map.pk is None:
+                raise ValueError(
+                    "ReferenceMap must be saved before it can "
+                    "be assigned as a related object."
+                )
             for form in self.forms:
-                if reference_map.pk is None:
-                    raise ValueError(
-                        "ReferenceMap must be saved before it can "
-                        "be assigned as a relation."
-                    )
-                if form.instance.pk is None and reference_map is None:
-                    raise ValueError(
-                        "Cannot save a GenomicInterval without a "
-                        "ReferenceMap instance."
-                    )
                 form.instance.reference_map = reference_map
 
-        print(self.initial_forms)
-        for form in self.initial_forms:
-            print(form.instance, form.instance.reference_map)
+        for form in self.forms:
+            if form.instance.pk is None and reference_map is None:
+                raise ValueError(
+                    "Cannot save a GenomicInterval without a "
+                    "ReferenceMap instance."
+                )
+
         return super().save(commit)
 
 
-GenomicIntervaLFormSet = formset_factory(
-    form=GenomicIntervalForm, formset=BaseGenomicIntervalFormSet,
-    extra=2, min_num=1, validate_min=True,
-)
-
+def create_genomic_interval_formset(extra=2, min_num=1,
+                                           can_delete=False):
+    return modelformset_factory(
+        model=GenomicInterval,
+        form=GenomicIntervalForm,
+        formset=BaseGenomicIntervalFormSet,
+        extra=extra,
+        min_num=min_num,
+        validate_min=True,
+        can_delete=can_delete,
+        fields=GenomicIntervalForm.Meta.fields,
+    )
