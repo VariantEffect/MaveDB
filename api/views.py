@@ -45,7 +45,6 @@ class DatasetModelViewSet(ReadOnlyModelViewSet):
                 if field in self.request.query_params:
                     query_dict[field] = self.request.query_params.getlist(field)
 
-        print(query_dict)
         if query_dict:
             q = self.search_all(query_dict, join_func)
             queryset = queryset.filter(q)
