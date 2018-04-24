@@ -1,11 +1,11 @@
 import json
-from braces.views import AjaxResponseMixin, LoginRequiredMixin
+from braces.views import AjaxResponseMixin, LoginRequiredMixin, PermissionRequiredMixin
 
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.views.generic import DetailView, CreateView
+from django.views.generic import DetailView, CreateView, TemplateView
 from django.db import transaction
 
 from accounts.forms import send_admin_email
@@ -17,8 +17,12 @@ from core.utilities.versioning import (
     track_changes
 )
 
+from genome.serializers import TargetGeneSerializer
 from genome.models import TargetGene
-from genome.forms import GenomicIntervalForm, TargetGeneForm, ReferenceMapForm
+from genome.forms import (
+    ReferenceMapForm, TargetGeneForm,
+    create_genomic_interval_formset
+)
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
@@ -168,7 +172,7 @@ def scoreset_create_view(request, experiment_urn=None):
         )
         target_form = TargetGeneForm(user=request.user, data=request.POST)
         reference_map_form = ReferenceMapForm(data=request.POST)
-        interval_form = GenomicIntervalForm(data=request.POST)
+        # interval_form = GenomicIntervalForm(data=request.POST)
 
         context["repop_keywords"] = ','.join(keywords)
         context["repop_sra_identifiers"] = ','.join(sra_ids)
@@ -230,3 +234,73 @@ def scoreset_create_view(request, experiment_urn=None):
             "dataset/scoreset/new_scoreset.html",
             context=context
         )
+
+
+from formtools.wizard.views import WizardView
+from django.views.generic import FormView
+
+
+GenomicIntervalFormSet = create_genomic_interval_formset(
+    extra=2, min_num=1, can_delete=False
+)
+
+
+class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
+    form_class = ScoreSetForm
+    template_name = 'dataset/scoreset/new_scoreset.html'
+    login_url = '/login/'
+    prefix = ''
+
+    def get(self, request, *args, **kwargs):
+        if request.is_ajax():
+            return self.get_ajax(request)
+        return super().get(request, *args, **kwargs)
+
+    def get_ajax(self, request, *args, **kwargs):
+        # If the request is ajax, then it's for previewing the abstract
+        # or method description. This code is coupled with base.js. Changes
+        # here might break the javascript code.
+        data = {
+            "abstractText": convert_md_to_html(
+                request.GET.get("abstractText", "")),
+            "methodText": convert_md_to_html(
+                request.GET.get("methodText", ""))
+        }
+        return HttpResponse(json.dumps(data), content_type="application/json")
+
+    def get_success_url(self):
+        scoreset_form = self.get_form(self.form_class)
+        scoreset = scoreset_form.save(commit=True)
+        return redirect('dataset:scoreset_detail', urn=scoreset.urn)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if 'form' in context:
+            context['scoreset_form'] = context.pop('form')
+
+        if self.request.method == "POST":
+            # Get the new keywords/urn/target org so that we can return
+            # them for list repopulation if the form has errors.
+            keywords = self.request.POST.getlist("keywords")
+            keywords = [kw for kw in keywords if not is_null(kw)]
+
+            sra_ids = self.request.POST.getlist("sra_ids")
+            sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
+
+            doi_ids = self.request.POST.getlist("doi_ids")
+            doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
+
+            pubmed_ids = self.request.POST.getlist("pubmed_ids")
+            pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
+
+            context["repop_keywords"] = ','.join(keywords)
+            context["repop_sra_identifiers"] = ','.join(sra_ids)
+            context["repop_doi_identifiers"] = ','.join(doi_ids)
+            context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
+
+        return context

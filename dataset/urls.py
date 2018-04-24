@@ -16,7 +16,7 @@ from .constants import (
 
 from .views.experimentset import ExperimentSetDetailView
 from .views.experiment import ExperimentDetailView, experiment_create_view
-from .views.scoreset import ScoreSetDetailView, scoreset_create_view
+from .views.scoreset import ScoreSetDetailView, scoreset_create_view, ScoreSetCreateView
 
 
 urlpatterns = [
@@ -36,7 +36,7 @@ urlpatterns = [
         r'experiment/new/$', experiment_create_view, name='experiment_new'
     ),
     url(
-        r'scoreset/new/$', scoreset_create_view, name='scoreset_new'
+        r'scoreset/new/$', ScoreSetCreateView.as_view(), name='scoreset_new'
     ),
     url(
         r'scoreset/(?P<urn>{})/scores/$'.format(scoreset_url_pattern),

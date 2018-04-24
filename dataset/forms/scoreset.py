@@ -7,8 +7,6 @@ from django.utils.translation import ugettext
 
 from main.models import Licence
 
-from genome.models import TargetGene
-
 from variant.models import Variant
 from variant.validators import (
     validate_variant_rows, validate_scoreset_columns_match_variant
