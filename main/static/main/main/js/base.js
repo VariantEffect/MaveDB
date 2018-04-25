@@ -30,7 +30,7 @@ $("document").ready(function() {
     $(".select2").select2();
     $(".select2-token-select").select2({
         tags: true,
-        tokenSeparators: [","]
+        tokenSeparators: [","],
     });
 
     // Re-add any external_accession, keywords or target organism
@@ -197,6 +197,7 @@ $("#id_target").on("change", function() {
             data: {"targetId": id},
             dataType: "json",
             success: function (data) {
+                console.log(data);
                 var targetName = data.targetName;
                 var wildTypeSequence = data.wildTypeSequence;
                 var referenceGenome = data.referenceGenome;
@@ -205,15 +206,6 @@ $("#id_target").on("change", function() {
                 var intervalEnd = data.intervalEnd;
                 var chromosome = data.chromosome;
                 var strand = data.strand;
-
-                console.log(targetName);
-                console.log(wildTypeSequence);
-                console.log(referenceGenome);
-                console.log(isPrimary);
-                console.log(intervalStart);
-                console.log(intervalEnd);
-                console.log(chromosome);
-                console.log(strand);
 
                 if (targetName) {
                     $("#id_name").val(targetName);
@@ -266,95 +258,17 @@ $("#id_target").on("change", function() {
 });
 
 
-// Formsets
-// ----------------------------------------------------------------------- //
-function reset_index(prefix) {
-    var formset_tag = prefix + '-form-set';
-    var form_idx_tag = formset_tag +
-                    " > #id_" +
-                    prefix.replace('#', '') +
-                    "-TOTAL_FORMS";
-
-    var form_idx = parseInt($(form_idx_tag).val());
-    var element = prefix + "-formset-" + form_idx;
-    if ($(element).length === 0 && form_idx > 0) {
-        $(form_idx_tag).val(1);
+function ensureAtLeastOne() {
+    var num = parseInt(document.getElementById("id_form-TOTAL_FORMS").value);
+    if (num <= 0 ) {
+        return $("#add-interval").trigger("click");
     }
+    return false;
 }
 
-function add_formset(prefix) {
-    var formset_tag = prefix + '-form-set';
-    var form_idx_tag = formset_tag +
-                    " > #id_" +
-                    prefix.replace('#', '') +
-                    "-TOTAL_FORMS";
-    var template_form_tag = prefix + "-empty-form";
-    var empty_set_tag = prefix + '-empty-set';
-
-    var form_idx = parseInt($(form_idx_tag).val());
-    if (form_idx < 0) {
-        form_idx = 0;
-    }
-
-    var item = $(template_form_tag).html().replace(/__prefix__/g, form_idx);
-    var new_idx = form_idx === 0 ? form_idx : form_idx + 1;
-    item =
-        '<div id="' + prefix.replace("#", '') +
-            '-formset-' + (form_idx + 1) + '">' +
-        item +
-        '<hr></div>';
-
-    $(empty_set_tag).hide();
-    $(formset_tag).append(item);
-    $(form_idx_tag).val(form_idx + 1);
-}
-
-function remove_formset(prefix) {
-    var formset_tag = prefix + '-form-set';
-    var form_idx_tag = formset_tag +
-                    " > #id_" +
-                    prefix.replace('#', '') +
-                    "-TOTAL_FORMS";
-    var template_form_tag = prefix + "-empty-form";
-    var empty_set_tag = prefix + '-empty-set';
-
-    var form_idx = parseInt($(form_idx_tag).val());
-    var element = prefix + "-formset-" + form_idx;
-
-    var possible_elemet = prefix + "-formset-" + 1;
-    if (form_idx === 0 && $(possible_elemet).length > 0) {
-        $(possible_elemet).remove();
-        $(empty_set_tag).show();
-        $(form_idx_tag).val(0);
-    }
-    else {
-        $(element).remove();
-        if (form_idx - 1 <= 0) {
-            $(empty_set_tag).show();
-            $(form_idx_tag).val(0);
-        }
-        else {
-            $(form_idx_tag).val(form_idx - 1);
-        }
-    }
-}
-
-$("#add_reference_map").click(function () {
-    reset_index("#reference_map");
-    add_formset("#reference_map");
-});
-$("#remove_reference_map").click(function () {
-    reset_index("#reference_map");
-    remove_formset("#reference_map");
-});
-
-$("#add_interval").click(function () {
-    reset_index("#interval");
-    add_formset("#interval");
-});
-$("#remove_interval").click(function () {
-    reset_index("#interval");
-    remove_formset("#interval");
+$("#add-interval").click(function(e) {
+    e.preventDefault();
+    $(".add-interval-link").click();
 });
 
 

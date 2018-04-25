@@ -1,5 +1,6 @@
 {% load static %}
 {% load widget_tweaks %}
+{% load i18n %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -147,8 +148,49 @@
       </nav> <!-- End navbar -->
     </nav> <!-- End Header div -->
 
+    <div class="container messages pt-2">
+      {% if messages %}
+        {% for message in messages %}
+          {% if 'success' in message.tags %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
 
-    <div class="container-fluid full-height body-block" style="width:95%;">
+          {% if 'error' in message.tags %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
+
+          {% if 'warning' in message.tags %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
+
+          {% if 'info' in message.tags %}
+            <div class="alert alert-primary alert-dismissible fade show" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <div class="full-height body-block">
       {% block body %}
         <!-- Main template body block -->
       {% endblock %}
@@ -157,9 +199,16 @@
     <footer class="container pr-4 pl-4 pt-4 my-md-5 pt-md-5 border-top">
       <div class="row">
         <div class="col-12 col-md-4">
-          <img class="mb-2" src="{% static 'main/main/img/dna.png' %}" alt="" width="18" height="24">
-           MaveDB
-          <small class="d-block mb-3 text-muted">&copy; 2017-2018</small>
+          <div class="row">
+            <img class="mb-2" src="{% static 'main/main/img/dna.png' %}" alt="" width="18" height="24">
+             MaveDB
+            <small class="d-block mb-3 text-muted">&copy; 2017-2018</small>
+          </div>
+          <div class="row">
+            <a href="https://github.com/FowlerLab/">
+              <img class="mb-2" src="{% static 'main/main/img/GitHub-Mark-64px.png' %}" alt="" width="24" height="24">
+            </a>
+          </div>
         </div>
         <div class="col-6 col-md">
           <h5>Documentation</h5>
@@ -175,7 +224,7 @@
           <h5>Resources</h5>
           <ul class="list-unstyled text-small">
             <li><a class="text-muted" href="#">Help</a></li>
-            <li><a class="text-muted" href="#">Source</a></li>
+            <li><a class="text-muted" href="https://github.com/FowlerLab/">Source</a></li>
             <li><a class="text-muted" href="#">Contact</a></li>
             <li><a class="text-muted" href="#">Downloads</a></li>
           </ul>
@@ -226,7 +275,20 @@
     <!-- Select2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 
+    <!-- Formset Jquery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.formset/1.2.2/jquery.formset.min.js"></script>
+
     <!-- Cutom -->
     <script src="{% static 'main/main/js/base.js' %}"></script>
+
+    <script>
+      $('.interval-formset').formset({
+          addText: "Add interval",
+          removed: ensureAtLeastOne,
+          addCssClass: "container add-interval-link invisible",
+          deleteText: 'Remove'
+      });
+    </script>
+
   </body>
 </html>
