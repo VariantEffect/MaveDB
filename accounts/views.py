@@ -4,6 +4,7 @@ import json
 
 from django.conf import settings
 from django.apps import apps
+from django.contrib import messages
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -164,7 +165,9 @@ def manage_instance(request, urn):
             instance.last_edit_by = request.user
             assign_superusers_as_admin(instance)
             instance.save()
-            return redirect("accounts:manage_instance", instance.urn)
+            messages.success(
+                request, "Management updated for {}".format(instance.urn))
+            return redirect("accounts:profile")
 
     # Replace the form that has changed. If it reaches this point,
     # it means there were errors in the form.
@@ -352,7 +355,10 @@ def handle_scoreset_edit_form(request, instance):
                 track_changes(
                     request.user, updated_instance)
                 send_admin_email(request.user, updated_instance)
-            return redirect("accounts:edit_instance", updated_instance.urn)
+
+            messages.success(
+                request, "{} successfully updated!".format(instance.urn))
+            return redirect("accounts:profile")
 
     return render(request, 'accounts/profile_edit.html', context)
 
@@ -411,9 +417,10 @@ def handle_experiment_edit_form(request, instance):
 
         if form.is_valid():
             updated_instance = form.save(commit=True)
-            track_changes(
-                request.user, updated_instance)
-            return redirect("accounts:edit_instance", updated_instance.urn)
+            track_changes(request.user, updated_instance)
+            messages.success(
+                request, "{} successfully updated!".format(instance.urn))
+            return redirect("accounts:profile")
 
     return render(request, 'accounts/profile_edit.html', context)
 
