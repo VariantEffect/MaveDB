@@ -2,6 +2,8 @@ import datetime
 
 from django.db import models
 
+from .utilities import format_delta
+
 
 class TimeStampedModel(models.Model):
     """
@@ -17,10 +19,12 @@ class TimeStampedModel(models.Model):
         verbose_name='Creation date'
     )
     modification_date = models.DateField(
-        default=datetime.date.today,
+        auto_now=True,  # Automatically set the field to now every save
         verbose_name='Modification date'
     )
 
     def save(self, *args, **kwargs):
-        self.modification_date = datetime.date.today()
         return super().save(*args, **kwargs)
+
+    def format_last_edit_date(self):
+        return format_delta(self.modification_date)
