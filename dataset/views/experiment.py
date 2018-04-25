@@ -1,7 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
@@ -12,7 +12,6 @@ from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
 from core.utilities.versioning import track_changes
 
-from .scoreset import scoreset_create_view
 from ..forms.experiment import ExperimentForm
 from ..models.experiment import Experiment
 
@@ -150,7 +149,11 @@ def experiment_create_view(request):
                     user, experiment.experimentset
                 )
 
-            return scoreset_create_view(request, experiment_urn=experiment.urn)
+            url = "{}{}".format(
+                reverse_lazy("dataset:scoreset_new"),
+                "?experiment={}".format(experiment.urn)
+            )
+            return HttpResponseRedirect(redirect_to=url)
     else:
         return render(
             request,
