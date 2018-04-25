@@ -22,10 +22,10 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
         self.fields['identifier'] = FlexibleModelChoiceField(
             klass=self.id_class,
             to_field_name="identifier",
-            required=False, empty_label=None,
+            required=False,
             queryset=self.id_class.objects.all(),
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"}
+            widget=forms.Select(
+                attrs={"class": "shit select2 select2-token-select"}
             ),
         )
         # Re-order the fields manually. Setting field order before `super`
@@ -100,7 +100,7 @@ class UniprotOffsetForm(BaseIdentifierWithOffsetForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['identifier'].label = "UniProt"
+        self.fields['identifier'].label = "UniProt identifier"
 
 
 class RefseqOffsetForm(BaseIdentifierWithOffsetForm):
@@ -112,7 +112,7 @@ class RefseqOffsetForm(BaseIdentifierWithOffsetForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['identifier'].label = "RefSeq"
+        self.fields['identifier'].label = "RefSeq identifier"
 
 
 class EnsemblOffsetForm(BaseIdentifierWithOffsetForm):
@@ -124,4 +124,4 @@ class EnsemblOffsetForm(BaseIdentifierWithOffsetForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['identifier'].label = "Ensembl"
+        self.fields['identifier'].label = "Ensembl identifier"
