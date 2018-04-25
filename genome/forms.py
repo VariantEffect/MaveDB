@@ -55,7 +55,6 @@ class TargetGeneForm(forms.ModelForm):
     )
     target = forms.ModelChoiceField(
         label='Existing target', required=False,
-        help_text='Autofill the fields below using an existing target.',
         queryset=None,
         widget=forms.Select(
             attrs={"class": "form-control"})
@@ -183,10 +182,6 @@ class ReferenceMapForm(forms.ModelForm):
             is_primary=self.cleaned_data.get('is_primary'),
         )
 
-    def clean_is_primary(self):
-        # TODO: Remove this once formsets are working
-        return True
-
     def clean_genome(self):
         genome = self.cleaned_data.get('genome', None)
         if not genome:
@@ -194,7 +189,20 @@ class ReferenceMapForm(forms.ModelForm):
         return genome
 
 
-class BaseAnnotationFormSet(BaseModelFormSet):
+class PimraryReferenceMapForm(ReferenceMapForm):
+    """
+    Same as `ReferenceMapForm` except `is_primary` is popped and always
+    sets as True.
+    """
+    def __init__(self, *args, **kwargs):
+        super(PimraryReferenceMapForm, self).__init__(*args, **kwargs)
+        self.fields.pop('is_primary')
+
+    def clean_is_primary(self):
+        return True
+
+
+class BaseReferenceMapFormSet(BaseModelFormSet):
     """
     Formset for handling the validation of :class:`ReferenceMap` instances
     against each other.
@@ -279,6 +287,8 @@ class BaseGenomicIntervalFormSet(BaseModelFormSet):
         super().__init__(*args, **kwargs)
         if 'queryset' in kwargs:
             self.queryset = kwargs['queryset']
+        else:
+            self.queryset = GenomicInterval.objects.none()
 
     def has_errors(self):
         for form in self.forms:
