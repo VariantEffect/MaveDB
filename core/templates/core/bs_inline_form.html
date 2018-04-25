@@ -1,6 +1,8 @@
+{% load static %}
 {% load widget_tweaks %}
+{% load i18n %}
 
-<div class="form-row">
+<div class="row">
   {% for hidden_field in form.hidden_fields %}
     <div class="col">
       {{ hidden_field }}
@@ -8,7 +10,7 @@
   {% endfor %}
 </div>
 
-<div class="form-row">
+<div class="row">
   {% if form.non_field_errors %}
     <div class="alert alert-danger" role="alert">
       {% for error in form.non_field_errors %}
@@ -18,10 +20,10 @@
   {% endif %}
 </div>
 
-<div class="form-row">
+<div class="row">
   {% for field in form.visible_fields %}
     <div class="col">
-      {{ field.label_tag }}
+      {{ field.label }}
       {% if field.help_text %}
         <small class="form-text text-muted">{{ field.help_text }}</small>
       {% endif %}

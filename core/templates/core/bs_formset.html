@@ -1,10 +1,12 @@
+{% load static %}
 {% load widget_tweaks %}
+{% load i18n %}
 
 {{ formset.management_form }}
 
 {% if formset.non_form_errors %}
   <div class="alert alert-danger" role="alert">
-    {% for error in form.non_form_errors %}
+    {% for error in interval_formset.non_form_errors %}
       {{ error }}
     {% endfor %}
   </div>
