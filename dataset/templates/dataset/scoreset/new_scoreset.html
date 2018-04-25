@@ -1,5 +1,9 @@
 {% extends "main/base.html" %}
 
+{% load static %}
+{% load widget_tweaks %}
+{% load i18n %}
+
 {% block body %}
 
 <div class="row">
@@ -8,7 +12,7 @@
 			Create new scoreset
 		</h3>
 		{% if experiment_urn %}
-			<a href="{% url 'dataset:experiment_detail' experiment_urn %}"><h4 class="mt-4">Skip for now</h4></a>
+			<a href="{% url "accounts:profile" %}"><h4 class="mt-4">Skip for now</h4></a>
 		{% endif %}
 		<p class="mt-4">
 			Please fill out the form to the right. All fields will remain editable until published.
@@ -37,56 +41,102 @@
 			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
 			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
 
-			<div class="model-form">
-				{% for field in scoreset_form %}
-					<div class="form-group">
-						<label for="{{ field.id_for_label }}">
-							{{ field.label }}{% if field.field.required %}*{% endif %}
-							{% if field.label == "Abstract" %}
-								<!-- Button trigger modal -->
-								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal"
-												data-target="#abstract-markdown-modal" id="preview-abstract">
-								Preview
-								</button>
-							{% endif %}
+      <p class="text-muted">
+        Please fill our the form below. Not all fields are required, but filling
+        in as much as your can is strongly recommended to encourage data completeness.
+        You can always fill in the required fields now and then remaining fields
+        at a later date. You can access the edit view for this submission
+        from your <a href="{% url 'accounts:profile' %}">profile</a>
+        once this form has been successfully submitted and processed.
+      </p>
+      <p class="text-muted">
+        <b>Note: </b>You can only attach a score set to an experiment for which
+        you have <b>viewer</b> permissions on. Similarly, you can only replace
+        score sets for which you have <b>edit</b> permission on.
+      </p>
 
-							{% if field.label == "Method description" %}
-								<!-- Button trigger modal -->
-								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal"
-												data-target="#method-markdown-modal" id="preview-method">
-								Preview
-								</button>
-							{% endif %}
-						</label>
-
-						{% if field.errors %}
-							<div class="alert alert-danger alert-dismissible fade show" role="alert">
-								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-									<span aria-hidden="true">&times;</span>
-								</button>
-								{{ field.errors }}
-							</div>
-						{% endif %}
-						<br>
-						{{ field }}
-					</div>
-				{% endfor %}
-			</div>
+      <div class="">
+        {% include 'core/bs_form.html' with form=scoreset_form %}
+      </div>
       <hr>
 
-			<div style="width:100%;margin-top:5px;">
-        <input class="btn btn-outline-dark" type="submit" value="Save" name="save"
-               style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-               data-placement="top|right|bottom|left"
-               title="Save your changes without publishing.">
-        <input type="submit" value="Publish" class="btn btn-outline-danger" data-toggle="tooltip"
-               data-placement="top|right|bottom|left" name="publish"
-               title="Publish your entry. This action is final and will freeze your certain aspects of your entry."
-               style="width:150px;margin-bottom:35px;" id="publish">
-        <input class="btn btn-outline-dark" type="button" value="Cancel" name="save"
+      <div class="">
+        <h4>Target gene</h4>
+        <p class="text-muted">
+          Enter the name and wild-type sequence of your target gene. Alternatively,
+          you can select an existing target from the drop-down menu below and
+          auto fill the remaining form fields. The reference map section
+          will be populated with the information associated with the primary reference
+          for the selected target.
+        </p>
+        {% include 'core/bs_form.html' with form=target_gene_form %}
+      </div>
+      <hr>
+
+      <div class="">
+        <h4>Target identifiers</h4>
+        <p class="text-muted">
+          Associate an external identifier with your target. Type in a new
+          identifier if you cannot find it in the dropdown list and press enter.
+        </p>
+      </div>
+      <div class="">
+        {% include 'core/bs_inline_form.html' with form=uniprot_offset_form %}
+      </div>
+      <div class="">
+        {% include 'core/bs_inline_form.html' with form=ensembl_offset_form %}
+      </div>
+      <div class="">
+        {% include 'core/bs_inline_form.html' with form=refseq_offset_form %}
+      </div>
+      <hr>
+
+      <div class="">
+        <h4>Reference map</h4>
+        <p class="text-muted">
+          Select an existing reference genome from the drop-down list. If you cannot find
+          your particular reference in the list, please let us
+          <a href="{% url 'main:contact' %}">know!</a>
+        </p>
+        {% include 'core/bs_form.html' with form=reference_map_form %}
+      </div>
+      <hr>
+
+      <div class="">
+        <h4>
+          Genomic intervals
+          <input class="btn btn-sm btn-outline-dark white-button" type="button" value="+" id="add-interval">
+        </h4>
+        {{ interval_formset.management_form }}
+        {% if interval_formset.non_form_errors %}
+          <div class="alert alert-danger" role="alert">
+            {% for error in interval_formset.non_form_errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% for form in interval_formset.forms %}
+          <div class="container interval-formset">
+            {% include 'core/bs_inline_form.html' with form=form %}
+          </div>
+        {% endfor %}
+      </div>
+      <hr>
+
+			<div class="row">
+        <div class="col">
+          <input class="btn btn-outline-dark white-button" type="submit" value="Save" name="save"
+                 style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                 data-placement="top|right|bottom|left"
+                 title="Save your changes without publishing.">
+        </div>
+        <div class="col-auto">
+        <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="save"
                style="width:150px;margin-bottom:35px;float:right;" data-toggle="tooltip"
                data-placement="top|right|bottom|left" onclick="cancelSubmission()"
                title="Cancel your submission.">
+        </div>
 			</div>
 
     </form>
