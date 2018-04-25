@@ -85,6 +85,11 @@ class TestGenomicIntervalFormset(TestCase):
         self.assertFalse(formset.is_valid())
         self.assertTrue(formset.non_form_errors)
 
+    def test_empty_formset_has_no_initial_data(self):
+        formset = GenomicIntervaLFormSet()
+        self.assertEqual(formset.queryset.count(), 0)
+        self.assertFalse(formset.initial_forms)
+
     def test_invalid_less_than_one_form(self):
         data = self.management_form()
         data["%s-1-start" % self.prefix()] = 1
@@ -208,3 +213,42 @@ class TestGenomicIntervalFormset(TestCase):
         self.assertTrue(formset.is_valid())
         with self.assertRaises(ValueError):
             formset.save(reference_map=rm)
+
+from django.forms import inlineformset_factory
+
+class TestNestedFormset(TestCase):
+    @staticmethod
+    def prefix():
+        return 'form'
+
+    @staticmethod
+    def management_form():
+        return {
+            'form-' + TOTAL_FORM_COUNT: 3,
+            'form-' + INITIAL_FORM_COUNT: 0,
+            'form-' + MIN_NUM_FORM_COUNT: 1,
+            'form-' + MAX_NUM_FORM_COUNT: 1000
+        }
+
+    @staticmethod
+    def test_data():
+        prefix = 'form'
+        dict_ = {
+            # Form 1
+            '{}-0-start'.format(prefix): '1',
+            '{}-0-end'.format(prefix): '2',
+            '{}-0-chromosome'.format(prefix): 'chr1',
+            '{}-0-strand'.format(prefix): '+',
+            # Form 2
+            '{}-1-start'.format(prefix): '2',
+            '{}-1-end'.format(prefix): '3',
+            '{}-1-chromosome'.format(prefix): 'chr2',
+            '{}-1-strand'.format(prefix): '-',
+            # Form 3
+            '{}-2-start'.format(prefix): '3',
+            '{}-2-end'.format(prefix): '4',
+            '{}-2-chromosome'.format(prefix): 'chr3',
+            '{}-2-strand'.format(prefix): '+',
+        }
+        dict_.update(TestGenomicIntervalFormset.management_form())
+        return dict_
