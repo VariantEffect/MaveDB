@@ -19,16 +19,31 @@ def mave_load_extra_data(backend, details, response, uid, user,
         backend.strategy.storage.user.get_social_auth(backend.name, uid)
     )
     if social:
-        try:
-            credit_name = response.get('person', {}).get('name', {}).get(
-                'credit-name', {}).get('value', "")
-            social.set_extra_data({'credit-name': credit_name})
-        except Exception as e:
-            logging.warning(
-                "Encountered the following exception when "
-                "attempting to retrieve an ORCID credit-name: "
-                "\n{}\nSetting credit-name to an empty string.".format(
-                    str(e)
-                )
-            )
+        if 'person' in response:
+            person = response.get('person', {})
+            if person:
+                name = person.get('name', {})
+            else:
+                social.set_extra_data({'credit-name': ""})
+                return
+
+            if name:
+                credit_name = name.get('credit-name', {})
+            else:
+                social.set_extra_data({'credit-name': ""})
+                return
+
+            if credit_name:
+                credit_name_value = credit_name.get('value', "")
+            else:
+                social.set_extra_data({'credit-name': ""})
+                return
+
+            if credit_name_value:
+                social.set_extra_data({'credit-name': credit_name_value})
+            else:
+                social.set_extra_data({'credit-name': ""})
+                return
+        else:
             social.set_extra_data({'credit-name': ""})
+            return
