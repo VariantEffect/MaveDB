@@ -37,7 +37,7 @@
 							{{ field.label }}{% if field.field.required %} * {% endif %}
 							{% if field.label == "Abstract" %}
 								<!-- Button trigger modal -->
-								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+								<button type="button" class="btn btn-outline-dark white-button btn-sm ml-2" data-toggle="modal" 
 												data-target="#abstract-markdown-modal" id="preview-abstract">
 								Preview
 								</button>
@@ -45,7 +45,7 @@
 							
 							{% if field.label == "Method description" %}
 								<!-- Button trigger modal -->
-								<button type="button" class="btn btn-outline-dark btn-sm ml-2" data-toggle="modal" 
+								<button type="button" class="btn btn-outline-dark white-button btn-sm ml-2" data-toggle="modal" 
 												data-target="#method-markdown-modal" id="preview-method">
 								Preview
 								</button>
@@ -66,7 +66,7 @@
 				{% endfor %}
 			<hr> <!-- End model form rendering -->
 
-			<input class="btn btn-outline-dark" style="width: 200px;" type="submit"
+			<input class="btn btn-outline-dark white-button" style="width: 200px;" type="submit"
              name="submit" value="Submit" />
       </div>
 		</form>

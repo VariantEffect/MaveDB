@@ -9,21 +9,22 @@
 
 {% block child_list %}
   <h2 id="variants" class="underline left-align section-heading"> Variants </h2>
-<!-- Tab/Pills menu -->
-<ul class="nav nav-tabs" id="myTab" role="tablist">
-  <li class="nav-item">
-    <a class="nav-link" id="scores-tab" data-toggle="tab" href="#scores"
-       role="tab" aria-controls="scores">Scores</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" id="counts-tab" data-toggle="tab" href="#counts"
-       role="tab" aria-controls="counts">Counts</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" id="meta-tab" data-toggle="tab" href="#meta"
-       role="tab" aria-controls="meta">Metadata</a>
-  </li>
-</ul>
+  <p class="text-muted">Below is a sample of the first 20 variants. Click download to see the complete dataset.</p>
+  <!-- Tab/Pills menu -->
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link" id="scores-tab" data-toggle="tab" href="#scores"
+         role="tab" aria-controls="scores">Scores</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="counts-tab" data-toggle="tab" href="#counts"
+         role="tab" aria-controls="counts">Counts</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="meta-tab" data-toggle="tab" href="#meta"
+         role="tab" aria-controls="meta">Metadata</a>
+    </li>
+  </ul>
 
 <div class="tab-content" id="myTabContent">
   <!-- Scores data tab -->
@@ -166,6 +167,5 @@
       {% endif %}
     </div>
   </div> <!-- End count data tab -->
-
 </div> <!-- End tab/pills content -->
 {% endblock %}
