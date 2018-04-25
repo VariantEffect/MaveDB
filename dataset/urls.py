@@ -16,7 +16,7 @@ from .constants import (
 
 from .views.experimentset import ExperimentSetDetailView
 from .views.experiment import ExperimentDetailView, experiment_create_view
-from .views.scoreset import ScoreSetDetailView, scoreset_create_view, ScoreSetCreateView
+from .views.scoreset import ScoreSetDetailView, ScoreSetCreateView
 
 
 urlpatterns = [
