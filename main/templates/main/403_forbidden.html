@@ -11,9 +11,7 @@
 		<h3> Restricted access. </h3>
 		{% if instance %}
 			<p> 
-				This is a private entry. Contact user 
-				{{ instance.created_by.profile.get_full_name_hyperlink|default:"None" }} 
-				if you believe you should have access permissions.
+				This is a private entry.
 			</p>
 		{% else %}
 			<p> 
