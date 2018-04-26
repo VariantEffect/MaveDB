@@ -125,6 +125,13 @@ class ScoreSet(DatasetModel):
         blank=True,
     )
 
+    normalised = models.BooleanField(
+        default=False,
+        blank=True,
+        null=False,
+        verbose_name="Scores are normalised",
+    )
+
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #

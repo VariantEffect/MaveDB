@@ -58,7 +58,7 @@ class ScoreSetSerializer(DatasetModelSerializer):
         fields = DatasetModelSerializer.Meta.fields + (
             'licence', 'target', 'score_columns', 'count_columns',
             'metadata_columns', 'previous_version', 'next_version',
-            'current_version', 'variant_count', 'experiment',
+            'current_version', 'variant_count', 'experiment', 'normalised',
         )
 
 

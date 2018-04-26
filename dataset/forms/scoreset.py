@@ -20,7 +20,8 @@ from ..validators import (
     validate_scoreset_score_data_input,
     validate_csv_extension,
     validate_scoreset_count_data_input,
-    validate_scoreset_json
+    validate_scoreset_json,
+    validate_scoreset_meta_data_input,
 )
 
 
@@ -39,6 +40,7 @@ class ScoreSetForm(DatasetModelForm):
             'experiment',
             'licence',
             'replaces',
+            'normalised',
         )
 
     score_data = forms.FileField(
@@ -51,10 +53,17 @@ class ScoreSetForm(DatasetModelForm):
         validators=[validate_scoreset_count_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
+    meta_data = forms.FileField(
+        required=False, label="Variant metadata",
+        validators=[validate_scoreset_meta_data_input, validate_csv_extension],
+        widget=forms.widgets.FileInput(attrs={"accept": "csv"})
+    )
 
     def __init__(self, *args, **kwargs):
         self.field_order = ('experiment', 'replaces', 'licence',) + \
-                      self.FIELD_ORDER
+                           self.FIELD_ORDER + \
+                           ('score_data', 'count_data',
+                            'meta_data', 'normalised',)
         super().__init__(*args, **kwargs)
 
         if self.instance.pk is not None:
@@ -138,6 +147,22 @@ class ScoreSetForm(DatasetModelForm):
         self.dataset_columns[constants.count_columns] = header
         return hgvs_count_map
 
+    def clean_meta_data(self):
+        meta_file = self.cleaned_data.get("meta_data", None)
+        if not meta_file:
+            return {}
+        # Don't need to wrap this in a try/catch as the form
+        # will catch any Validation errors automagically.
+        #   Valdator must check the following:
+        #       Header has hgvs and at least one other column
+        #       Number of rows does not match header
+        #       Datatypes of rows match
+        #       HGVS string is a valid hgvs string
+        #       Hgvs appears more than once in rows
+        header, hgvs_meta_map = validate_variant_rows(meta_file)
+        self.dataset_columns[constants.metadata_columns] = header
+        return hgvs_meta_map
+
     @staticmethod
     def _fill_in_missing(hgvs_keys, mapping):
         # This function has side-effects - it creates new keys in the default
@@ -195,13 +220,22 @@ class ScoreSetForm(DatasetModelForm):
                 )
             )
 
-        # TODO: Handle the cases where count/meta data is not posted
         if has_count_data:
             # For every hgvs in scores but not in counts, fill in the
             # counts columns (if a counts dataset is supplied) with null values
             self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
+        if has_meta_data:
+            # For every hgvs in scores but not in meta, fill in the
+            # meta columns (if a meta dataset is supplied) with null values
+            self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
+
+        if has_count_data:
             # For every hgvs in counts but not in scores, fill in the
             # scores columns with null values.
+            self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
+        if has_meta_data:
+            # For every hgvs in meta but not in scores, fill in the
+            # scores meta with null values.
             self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
 
         # Re-build the variants if any new files have been processed.
@@ -290,5 +324,7 @@ class ScoreSetEditForm(ScoreSetForm):
         self.fields.pop('experiment')
         self.fields.pop('score_data')
         self.fields.pop('count_data')
+        self.fields.pop('meta_data')
+        self.fields.pop('normalised')
         self.fields.pop('licence')
         self.fields.pop('replaces')
