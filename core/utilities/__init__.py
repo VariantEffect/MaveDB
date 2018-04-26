@@ -1,7 +1,10 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from django.contrib.auth.models import User
+from django.template.loader import render_to_string
 
 import dataset.constants as constants
+from accounts.forms import logger
 
 
 def is_null(value):
@@ -26,6 +29,33 @@ def format_delta(ta, tb=None):
     delta = getattr(t_diff, units)
     if delta == 0:
         return "today"
-    if delta == 1:
-        units = units[:-1]
+    elif delta == 1:
+        return "{} {} ago".format(delta, units[:-1])
+    else:
         return "{} {} ago".format(delta, units)
+
+
+def send_admin_email(user, instance):
+    """
+    Sends an email to all admins.
+
+    Parameters
+    ----------
+    user : `auth.User`
+        The user who created the instance.
+    instance : `object`
+        The instance created.
+
+    """
+    template_name = "accounts/alert_admin_new_entry_email.html"
+    admins = User.objects.filter(is_superuser=True)
+    message = render_to_string(template_name, {
+        'user': user,
+        'instance': instance,
+        'class_name': instance.__class__.__name__
+    })
+
+    subject = "[MAVEDB ADMIN] New entry requires your attention."
+    for admin in admins:
+        logger.warning("Sending email to {}".format(admin.username))
+        admin.email_user(subject, message)

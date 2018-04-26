@@ -16,7 +16,7 @@ from django.http import HttpResponse
 from dataset.forms.experiment import ExperimentEditForm, ExperimentForm
 from dataset.forms.scoreset import ScoreSetEditForm, ScoreSetForm
 
-from core.utilities import is_null
+from core.utilities import is_null, send_admin_email
 from core.utilities.pandoc import convert_md_to_html
 from core.utilities.versioning import track_changes
 
@@ -33,8 +33,7 @@ from urn.validators import (
 from .permissions import GroupTypes, PermissionTypes, assign_superusers_as_admin
 from .forms import (
     RegistrationForm,
-    SelectUsersForm,
-    send_admin_email
+    SelectUsersForm
 )
 
 

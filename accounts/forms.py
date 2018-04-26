@@ -10,7 +10,6 @@ from django.utils.translation import ugettext as _
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
@@ -159,29 +158,3 @@ class RegistrationForm(UserCreationForm):
             'username', 'email',
             'password1', 'password2'
         )
-
-
-def send_admin_email(user, instance):
-    """
-    Sends an email to all admins.
-
-    Parameters
-    ----------
-    user : `auth.User`
-        The user who created the instance.
-    instance : `object`
-        The instance created.
-
-    """
-    template_name = "accounts/alert_admin_new_entry_email.html"
-    admins = User.objects.filter(is_superuser=True)
-    message = render_to_string(template_name, {
-        'user': user,
-        'instance': instance,
-        'class_name': instance.__class__.__name__
-    })
-
-    subject = "[MAVEDB ADMIN] New entry requires your attention."
-    for admin in admins:
-        logger.warning("Sending email to {}".format(admin.username))
-        admin.email_user(subject, message)
