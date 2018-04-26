@@ -381,12 +381,19 @@ class ReferenceMapEditView(PermissionRequiredMixin, FormView, AjaxResponseMixin,
             return HttpResponseRedirect(reverse("accounts:profile"))
 
     def get(self, request, *args, **kwargs):
+        if request.is_ajax():
+            return self.get_ajax(request, *args, **kwargs)
+
         management_form = self.get_management_form(data=request.GET)
         if not management_form.is_valid():
             return self.form_invalid(
                 {'reference_management_form': management_form}
             )
 
+        # The following code instatiates news forms based on a selected
+        # reference map instance when the user selects a reference map from
+        # the drop-down menu and sends a GET request for the pre-populated
+        # forms.
         selected = management_form.get_selected_reference_map()
         maps = self.scoreset.get_target().get_reference_maps()
         if selected is None:
@@ -415,7 +422,12 @@ class ReferenceMapEditView(PermissionRequiredMixin, FormView, AjaxResponseMixin,
 
 
     def post(self, request, *args, **kwargs):
-        pass
+        management_form = self.get_management_form(data=request.GET)
+        if not management_form.is_valid():
+            return self.form_invalid(
+                {'reference_management_form': management_form}
+            )
+        selected = management_form.get_selected_reference_map()
 
 
     # Form validation
@@ -457,4 +469,10 @@ class ReferenceMapEditView(PermissionRequiredMixin, FormView, AjaxResponseMixin,
     # GET ajax handler
     # ----------------------------------------------------------------------- #
     def get_ajax(self, request, *args, **kwargs):
-        pass
+        data = {}
+        if 'targetId' in request.GET:
+            pk = request.GET.get("targetId", "")
+            if pk and TargetGene.objects.filter(pk=pk).count():
+                targetgene = TargetGene.objects.get(pk=pk)
+                data.update(TargetGeneSerializer(targetgene).data)
+        return HttpResponse(json.dumps(data), content_type="application/json")
