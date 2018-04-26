@@ -1,18 +1,19 @@
 import json
 import logging
-from braces.views import (
-    AjaxResponseMixin, LoginRequiredMixin, PermissionRequiredMixin
-)
+from braces.views import AjaxResponseMixin
 
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404, redirect
-from django.core.urlresolvers import reverse_lazy
-from django.views.generic import DetailView, FormView
+from django.core.exceptions import PermissionDenied
+from django.http import (
+    Http404, HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+)
+from django.shortcuts import render, get_object_or_404, reverse
+from django.views.generic import DetailView, FormView, TemplateView, UpdateView
 from django.db import transaction
 
-from accounts.forms import send_admin_email
+from core.utilities import send_admin_email
+from core.mixins import MultiFormMixin
 from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
 
 from core.utilities import is_null
@@ -37,12 +38,14 @@ from genome.forms import (
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
-from ..forms.scoreset import ScoreSetForm
-
+from ..forms.scoreset import ScoreSetForm, ScoreSetEditForm
 
 logger = logging.getLogger("django")
 GenomicIntervaLFormSet = create_genomic_interval_formset(
     extra=0, min_num=1, can_delete=False
+)
+GenomicIntervaLFormSetWithDelete = create_genomic_interval_formset(
+    extra=0, min_num=1, can_delete=True
 )
 
 
@@ -96,30 +99,26 @@ class ScoreSetDetailView(DetailView):
         return context
 
 
-class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
+class ScoreSetCreateView(LoginRequiredMixin, FormView,
+                         AjaxResponseMixin, MultiFormMixin):
     form_class = ScoreSetForm
     template_name = 'dataset/scoreset/new_scoreset.html'
-    login_url = '/login/'
     success_url = '/accounts/profile/'
+    login_url = '/login/'
     prefix = ''
 
-    def get(self, request, *args, **kwargs):
-        if request.is_ajax():
-            return self.get_ajax(request)
-
-        context = self.get_context_data()
-        if not context.get('has_permission', False):
-            # Not really a success, but we need to get back to profile.
-            urn = context.pop("experiment_urn")
-            messages.error(
-                self.request,
-                "You do not have permission to access "
-                "experiment {}. This action has reported to the local "
-                "Police.".format(urn)
-            )
-            return HttpResponseRedirect(self.get_success_url())
-
-        return super().get(request, *args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        self.experiments = None
+        if self.request.GET.get("experiment", ""):
+            urn = self.request.GET.get("experiment")
+            if Experiment.objects.filter(urn=urn).count():
+                experiment = Experiment.objects.get(urn=urn)
+                has_permission = self.request.user.has_perm(
+                    PermissionTypes.CAN_VIEW, experiment)
+                if has_permission:
+                    self.experiments = \
+                        Experiment.objects.filter(urn=urn)
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         scoreset_form = self.get_form()
@@ -224,29 +223,7 @@ class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
 
     # Context
     # --------------------------------------------------------------------- #
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if 'form' in context:
-            context['scoreset_form'] = context.pop('form')
-
-        context["has_permission"] = True
-        if self.request.GET.get("experiment", ""):
-            urn = self.request.GET.get("experiment")
-            experiment = get_object_or_404(Experiment, urn=urn)
-            context["experiment_urn"] = urn
-            has_permission = self.request.user.has_perm(
-                PermissionTypes.CAN_VIEW, experiment)
-            if has_permission:
-                experiments = Experiment.objects.filter(urn=urn)
-                if 'scoreset_form' in context:
-                    scoreset_form = context.get('scoreset_form')
-                    scoreset_form.fields[
-                        'experiment'].queryset = experiments
-                    context['scoreset_form'] = scoreset_form
-                    context["has_permission"] = True
-            else:
-                context["has_permission"] = False
-
+    def update_context_with_additional_forms(self, context):
         if 'interval_formset' not in context:
             context['interval_formset'] = self.get_formset()
         if 'reference_map_form' not in context:
@@ -259,7 +236,10 @@ class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
             context['ensembl_offset_form'] = self.get_ensembl_offset_form()
         if 'refseq_offset_form' not in context:
             context['refseq_offset_form'] = self.get_refseq_offset_form()
+        return context
 
+    def get_base_context(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         if self.request.method == "POST":
             # Get the new keywords/urn/target org so that we can return
             # them for list repopulation if the form has errors.
@@ -267,19 +247,43 @@ class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
             keywords = [kw for kw in keywords if not is_null(kw)]
 
             sra_ids = self.request.POST.getlist("sra_ids")
-            sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
+            sra_ids = [i for i in sra_ids if not is_null(i)]
 
             doi_ids = self.request.POST.getlist("doi_ids")
-            doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
+            doi_ids = [i for i in doi_ids if not is_null(i)]
 
             pubmed_ids = self.request.POST.getlist("pubmed_ids")
-            pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
+            pubmed_ids = [i for i in pubmed_ids if not is_null(i)]
+
+            uniprot_id = self.request.POST.getlist("uniprot_id")
+            uniprot_id = [i for i in uniprot_id if not is_null(i)]
+
+            ensembl_id = self.request.POST.getlist("ensembl_ids")
+            ensembl_id = [i for i in ensembl_id if not is_null(i)]
+
+            refseq_id = self.request.POST.getlist("refseq_ids")
+            refseq_id = [i for i in refseq_id if not is_null(i)]
 
             context["repop_keywords"] = ','.join(keywords)
             context["repop_sra_identifiers"] = ','.join(sra_ids)
             context["repop_doi_identifiers"] = ','.join(doi_ids)
             context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
+            # context["repop_uniprot_identifier"] = ','.join(uniprot_id)
+            # context["repop_ensembl_identifier"] = ','.join(ensembl_id)
+            # context["repop_refseq_identifier"] = ','.join(refseq_id)
 
+        return context
+
+    def get_context_data(self, **kwargs):
+        context = self.get_base_context(**kwargs)
+        if 'form' in context:
+            context['scoreset_form'] = context.pop('form')
+            if self.experiments is not None and self.experiments.count():
+                context['scoreset_form'].fields['experiment'].queryset = \
+                    self.experiments.all()
+                context["experiment_urn"] = self.experiments.first().urn
+
+        context = self.update_context_with_additional_forms(context)
         return context
 
     # Ajax
@@ -289,42 +293,38 @@ class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
         # or method description. This code is coupled with base.js. Changes
         # here might break the javascript code.
         data = {}
-        if request.is_ajax():
-            markdown = request.GET.get("markdown", False)
-            target_id = request.GET.get("targetId", "")
-            if target_id:
-                if TargetGene.objects.filter(pk=target_id).count():
-                    targetgene = TargetGene.objects.get(pk=target_id)
-                    data = TargetGeneSerializer(targetgene).data
-            elif markdown:
-                data = {
-                    "abstractText": convert_md_to_html(
-                        request.GET.get("abstractText", "")),
-                    "methodText": convert_md_to_html(
-                        request.GET.get("methodText", ""))
-                }
+        if 'targetId' in request.GET:
+            pk = request.GET.get("targetId", "")
+            if pk and TargetGene.objects.filter(pk=pk).count():
+                targetgene = TargetGene.objects.get(pk=pk)
+                data.update(TargetGeneSerializer(targetgene).data)
+        if 'abstractText' in request.GET:
+            data.update({
+                "abstractText": convert_md_to_html(
+                    request.GET.get("abstractText", "")),
+            })
+        if 'methodText' in request.GET:
+            data.update({
+                "methodText": convert_md_to_html(
+                    request.GET.get("methodText", "")),
+            })
+        if 'experiment' in request.GET:
+            pk = request.GET.get("experiment", "")
+            if pk and Experiment.objects.filter(pk=pk).count():
+                experiment = Experiment.objects.get(pk=pk)
+                scoresets = [
+                    (s.pk, s.urn) for s in experiment.scoresets.order_by('urn')
+                    if self.request.user.has_perm(PermissionTypes.CAN_EDIT, s)
+                ]
+                data.update({'scoresets': scoresets})
+                data.update(
+                    {'keywords': [k.text for k in experiment.keywords.all()]}
+                )
+
         return HttpResponse(json.dumps(data), content_type="application/json")
 
     # Extra forms
     # ---------------------------------------------------------------------- #
-    def _make_form(self, form_class, instance=None,
-                   queryset=None, user=None, initial=None, **kwargs):
-        args = {}
-        if instance:
-            args["instance"] = instance
-        if queryset:
-            args["queryset"] = queryset
-        if user:
-            args["user"] = user
-        if initial:
-            args['initial'] = initial
-
-        kwargs.update(args)
-        if self.request.method == 'POST':
-            return form_class(data=self.request.POST, **kwargs)
-        else:
-            return form_class(**kwargs)
-
     def get_formset(self, **kwargs):
         return self._make_form(GenomicIntervaLFormSet, **kwargs)
 
@@ -349,3 +349,112 @@ class ScoreSetCreateView(FormView, AjaxResponseMixin, LoginRequiredMixin):
         if 'prefix' not in kwargs:
             kwargs['prefix'] = "refseq-offset-form"
         return self._make_form(RefseqOffsetForm, **kwargs)
+
+
+
+class ReferenceMapEditView(PermissionRequiredMixin, FormView, AjaxResponseMixin,
+                           MultiFormMixin):
+    form_class = ReferenceMapForm
+    template_name = 'dataset/scoreset/edit_reference_maps.html'
+    login_url = '/login/'
+    success_url = '/accounts/profile/'
+    prefix = ''
+    permission_required = 'dataset.can_edit'
+    redirect_unauthenticated_users = login_url
+    raise_exception = True
+
+
+    # Dispatch/Post/Get
+    # ----------------------------------------------------------------------- #
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.scoreset = get_object_or_404(self.kwargs.get('urn', None))
+            return super().dispatch(request, *args, **kwargs)
+        except PermissionDenied:
+            urn = self.kwargs.get('urn', None)
+            messages.error(
+                self.request,
+                "You do not have permission to edit {}. "
+                "This action has reported to the local "
+                "Police.".format(urn)
+            )
+            return HttpResponseRedirect(reverse("accounts:profile"))
+
+    def get(self, request, *args, **kwargs):
+        management_form = self.get_management_form(data=request.GET)
+        if not management_form.is_valid():
+            return self.form_invalid(
+                {'reference_management_form': management_form}
+            )
+
+        selected = management_form.get_selected_reference_map()
+        maps = self.scoreset.get_target().get_reference_maps()
+        if selected is None:
+            reference_map_form = self.get_reference_map_form()
+            interval_formset = self.get_formset()
+        else:
+            if not maps.filter(id=selected).count():
+                messages.error(
+                    request,
+                    "Could not find an existing reference "
+                    "map for {}".format(selected.genome)
+                )
+                reference_map_form = self.get_reference_map_form()
+                interval_formset = self.get_formset()
+            else:
+                map_ = maps.get(id=selected)
+                reference_map_form = self.get_reference_map_form(instance=map_)
+                interval_formset = self.get_formset(queryset=map_.get_intervals())
+
+        context = dict()
+        context["reference_management_form"] = management_form
+        context["reference_map_options"] = maps
+        context["interval_formset"] = interval_formset
+        context["reference_map_form"] = reference_map_form
+        return self.render_to_response(self.get_context_data(**context))
+
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+
+    # Form validation
+    # ----------------------------------------------------------------------- #
+    def form_valid(self, forms):
+        pass
+
+    def form_invalid(self, forms):
+        """
+        If the form is invalid, re-render the context data with the
+        data-filled form and errors.
+        """
+        return self.render_to_response(self.get_context_data(**forms))
+
+    # Context helpers
+    # ----------------------------------------------------------------------- #
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if 'reference_map_form' not in context:
+            context['reference_map_form'] = self.get_reference_map_form()
+        if 'interval_formset' not in context:
+            context['interval_formset'] = self.get_formset()
+        if 'reference_management_form' not in context:
+            context["reference_management_form"] = \
+                self.get_management_form(data=self.request.GET)
+        return context
+
+    # Get forms
+    # ----------------------------------------------------------------------- #
+    def get_formset(self, **kwargs):
+        return self._make_form(GenomicIntervaLFormSetWithDelete, **kwargs)
+
+    def get_reference_map_form(self, **kwargs):
+        return self._make_form(ReferenceMapForm, **kwargs)
+
+    def get_management_form(self, **kwargs):
+        return self._make_form(ReferenceMapForm, **kwargs)
+
+    # GET ajax handler
+    # ----------------------------------------------------------------------- #
+    def get_ajax(self, request, *args, **kwargs):
+        pass
