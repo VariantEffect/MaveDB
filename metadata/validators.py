@@ -5,27 +5,11 @@ from django.core.exceptions import ValidationError
 
 from core.utilities import is_null
 
-SRA_BIOPROJECT_PATTERN = r'^PRJNA\d+$'
-SRA_BIOPROJECT_RE = re.compile(SRA_BIOPROJECT_PATTERN)
-SRA_STUDY_PATTERN = r'^[SED]RP\d+$'
-SRA_STUDY_RE = re.compile(SRA_STUDY_PATTERN)
-SRA_EXPERIMENT_PATTERN = r'^[SED]RX\d+$'
-SRA_EXPERIMENT_RE = re.compile(SRA_EXPERIMENT_PATTERN)
-SRA_RUN_PATTERN = r'^[SED]RR\d+$'
-SRA_RUN_RE = re.compile(SRA_RUN_PATTERN)
-SRA_ANY_PATTERN = '|'.join([r'({pattern})'.format(pattern=p) for p in (
-    SRA_BIOPROJECT_PATTERN,
-    SRA_STUDY_PATTERN,
-    SRA_EXPERIMENT_PATTERN,
-    SRA_RUN_PATTERN)
-])
-SRA_ANY_RE = re.compile(SRA_ANY_PATTERN)
-
 
 def validate_sra_identifier(identifier):
-    if not SRA_ANY_RE.match(identifier):
+    if not (idutils.is_sra(identifier) or idutils.is_bioproject(identifier)):
         raise ValidationError(
-            "%(id)s is not a valid SRA identifier.",
+            "%(id)s is not a valid SRA or BioProject accession.",
             params={"id": identifier}
         )
 
@@ -49,30 +33,38 @@ def validate_pubmed_identifier(identifier):
 def validate_doi_identifier(identifier):
     if not idutils.is_doi(identifier):
         raise ValidationError(
-            "%(id)s is not a valid DOI identifier.",
+            "%(id)s is not a valid DOI.",
             params={"id": identifier}
         )
 
 def validate_ensembl_identifier(identifier):
-    if is_null(identifier):
+    if not idutils.is_ensembl(identifier):
         raise ValidationError(
-            "%(id)s is not a valid Ensembl identifier.",
+            "%(id)s is not a valid Ensembl accession.",
             params={"id": identifier}
         )
 
 
 def validate_uniprot_identifier(identifier):
-    if is_null(identifier):
+    if not idutils.is_uniprot(identifier):
         raise ValidationError(
-            "%(id)s is not a valid UniProt identifier.",
+            "%(id)s is not a valid UniProt accession.",
             params={"id": identifier}
         )
 
 
 def validate_refseq_identifier(identifier):
-    if is_null(identifier):
+    if not idutils.is_refseq(identifier):
         raise ValidationError(
-            "%(id)s is not a valid RefSeq identifier.",
+            "%(id)s is not a valid RefSeq accession.",
+            params={"id": identifier}
+        )
+
+
+def validate_genome_identifier(identifier):
+    if not idutils.is_genome(identifier):
+        raise ValidationError(
+            "%(id)s is not a valid GenBank or RefSeq genome assembly.",
             params={"id": identifier}
         )
 

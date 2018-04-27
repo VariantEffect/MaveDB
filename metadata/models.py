@@ -10,8 +10,6 @@ import genome.models as genome_models
 from core.models import TimeStampedModel
 
 from metadata.validators import (
-    SRA_BIOPROJECT_RE, SRA_STUDY_RE,
-    SRA_EXPERIMENT_RE, SRA_RUN_RE,
     validate_ensembl_identifier,
     validate_refseq_identifier,
     validate_uniprot_identifier,
@@ -145,7 +143,7 @@ class ExternalIdentifier(TimeStampedModel):
 
 class SraIdentifier(ExternalIdentifier):
     """
-    An SRA identifier.
+    An SRA or BioProject accession number.
 
     See Also
     --------
@@ -160,24 +158,13 @@ class SraIdentifier(ExternalIdentifier):
         verbose_name_plural = "SRA accessions"
 
     def format_url(self):
-        if SRA_BIOPROJECT_RE.match(self.identifier):
-            return "https://www.ncbi.nlm.nih.gov/" \
-                   "bioproject/{id}".format(id=self.identifier)
-        elif SRA_STUDY_RE.match(self.identifier):
-            return "http://trace.ncbi.nlm.nih.gov/" \
-                   "Traces/sra/sra.cgi?study={id}" \
-                   "".format(id=self.identifier)
-        elif SRA_EXPERIMENT_RE.match(self.identifier):
-            return "https://www.ncbi.nlm.nih.gov/" \
-                   "sra/{id}?report=full".format(id=self.identifier)
-        elif SRA_RUN_RE.match(self.identifier):
-            return "http://trace.ncbi.nlm.nih.gov/" \
-                   "Traces/sra/sra.cgi?" \
-                   "cmd=viewer&m=data&s=viewer&run={id}" \
-                   "".format(id=self.identifier)
+        if idutils.is_sra(self.identifier):
+            return idutils.to_url(self.identifier, 'sra')
+        elif idutils.is_bioproject(self.identifier):
+            return idutils.to_url(self.identifier, 'bioproject')
         else:
-            raise ValueError("Invalid SRA identifier '{}'".format(
-                self.identifier))
+            raise AttributeError("Invalid SRA or BioProject accession "
+                                 "'{}'".format(self.identifier))
 
 
 class DoiIdentifier(ExternalIdentifier):
@@ -231,6 +218,9 @@ class PubmedIdentifier(ExternalIdentifier):
 
 
 class GenomeIdentifier(ExternalIdentifier):
+    """
+    An NCBI RefSeq or GenBank genome accession number.
+    """
     DATABASE_NAME = "GenomeAssembly"
     IDUTILS_SCHEME = "genome"
 
@@ -244,13 +234,11 @@ class RefseqIdentifier(ExternalIdentifier):
     An NCBI RefSeq accession number.
     """
     DATABASE_NAME = "RefSeq"
+    IDUTILS_SCHEME = "refseq"
 
     class Meta:
         verbose_name = "RefSeq accession"
         verbose_name_plural = "RefSeq accessions"
-
-    def format_url(self):
-        pass
 
 
 class EnsemblIdentifier(ExternalIdentifier):
@@ -258,27 +246,23 @@ class EnsemblIdentifier(ExternalIdentifier):
     An Ensembl accession number.
     """
     DATABASE_NAME = "Ensembl"
+    IDUTILS_SCHEME = "ensembl"
 
     class Meta:
         verbose_name = "Ensembl accession"
         verbose_name_plural = "Ensembl accessions"
 
-    def format_url(self):
-        pass
-    
 
 class UniprotIdentifier(ExternalIdentifier):
     """
     A UniProt accession number.
     """
     DATABASE_NAME = "UniProt"
+    IDUTILS_SCHEME = "uniprot"
 
     class Meta:
         verbose_name = "UniProt accession"
         verbose_name_plural = "UniProt accessions"
-
-    def format_url(self):
-        pass
 
 
 # Offsets
