@@ -122,6 +122,18 @@ class TargetGene(TimeStampedModel):
             ))
         self.wt_sequence = sequence
 
+    def get_offset_annotation(self, related_field):
+        return getattr(self, related_field, None)
+
+    def get_uniprot_offset_annotation(self):
+        return self.get_offset_annotation('uniprotoffset')
+
+    def get_ensembl_offset_annotation(self):
+        return self.get_offset_annotation('ensembloffset')
+
+    def get_refseq_offset_annotation(self):
+        return self.get_offset_annotation('refseqoffset')
+
     def reference_map_count(self):
         return self.reference_maps.count()
 
