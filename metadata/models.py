@@ -325,7 +325,7 @@ class UniprotOffset(AnnotationOffset):
         on_delete=models.CASCADE,
         default=None,
         null=False,
-        verbose_name='UniProt identifier',
+        verbose_name='UniProt accession',
         related_name='offset',
         validators=[validate_uniprot_identifier],
     )
@@ -341,7 +341,7 @@ class RefseqOffset(AnnotationOffset):
         on_delete=models.CASCADE,
         default=None,
         null=False,
-        verbose_name='RefSeq identifier',
+        verbose_name='RefSeq accession',
         related_name='offset',
         validators=[validate_refseq_identifier],
     )
@@ -357,7 +357,7 @@ class EnsemblOffset(AnnotationOffset):
         on_delete=models.CASCADE,
         default=None,
         null=False,
-        verbose_name='Ensembl identifier',
+        verbose_name='Ensembl accession',
         related_name='offset',
         validators=[validate_ensembl_identifier],
     )
