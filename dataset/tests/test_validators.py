@@ -31,6 +31,12 @@ class TestHeaderFromIO(TestCase):
         expected = [hgvs_column, 'score', 'count']
         self.assertEqual(expected, header)
 
+    def test_removes_quotes_from_header(self):
+        file = BytesIO("{},\"score\",\'count\'\n".format(hgvs_column).encode())
+        header = read_header_from_io(file)
+        expected = [hgvs_column, 'score', 'count']
+        self.assertEqual(expected, header)
+
     def test_can_read_header_from_string(self):
         file = StringIO("{},score,count\n".format(hgvs_column))
         header = read_header_from_io(file)

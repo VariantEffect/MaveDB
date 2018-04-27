@@ -7,8 +7,8 @@ from metadata.factories import (
     PubmedIdentifierFactory, DoiIdentifierFactory
 )
 
-from ..factories import ExperimentSetFactory
-from ..forms.base import DatasetModelForm
+from dataset.factories import ExperimentSetFactory
+from dataset.forms.base import DatasetModelForm
 
 
 class TestDataSetModelForm(TestCase):
