@@ -78,6 +78,9 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
             self.instance.identifier = identifier
             return super().save(commit=commit)
         elif commit and identifier is None:
+            # User has chosen to delete the annoation by supplying a blank
+            if self.instance.pk is not None:
+                self.instance.delete()
             return None
         else:
             if identifier is not None:
