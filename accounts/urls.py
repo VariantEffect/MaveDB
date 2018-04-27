@@ -20,11 +20,13 @@ Including another URLconf
 
 from django.conf.urls import url, include
 
-from dataset.constants import any_url_pattern
+from dataset.constants import any_url_pattern, scoreset_url_pattern
 
 from .views import registration_view, profile_view, log_user_out, login_error
 from .views import manage_instance, edit_instance, view_instance
 from .views import login_delegator
+
+from dataset.views.scoreset import ScoreSetEditView
 
 
 urlpatterns = [
@@ -53,6 +55,11 @@ urlpatterns = [
     url(
         r"profile/edit/(?P<urn>{})/$".format(any_url_pattern),
         edit_instance,
+        name="edit_instance"
+    ),
+    url(
+        r"profile/edit/scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
+        ScoreSetEditView.as_view(),
         name="edit_instance"
     ),
     url(
