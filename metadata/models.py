@@ -1,5 +1,7 @@
 import datetime
 import idutils
+import metapub
+from eutils.exceptions import EutilsNCBIError
 
 from django.db import models
 
@@ -209,8 +211,15 @@ class PubmedIdentifier(ExternalIdentifier):
     )
 
     def format_reference_html(self):
-        # TODO: Write this.
-        return ""
+        fetch = metapub.PubMedFetcher()
+        try:
+            article = fetch.article_by_pmid(self.identifier)
+        except EutilsNCBIError:
+            reference = "Unable to retrieve PubMed ID " \
+                        "'{}'".format(self.identifier)
+        else:
+            reference = article.citation_html
+        return reference
 
     def save(self, *args, **kwargs):
         # The 'pk' is 'id' for an ExternalIdentifier, which is an
