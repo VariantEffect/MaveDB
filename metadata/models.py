@@ -115,6 +115,9 @@ class ExternalIdentifier(TimeStampedModel):
     def __str__(self):
         return "{}:{}".format(self.DATABASE_NAME, self.identifier)
 
+    def display_name(self):
+        return "{}".format(self.identifier)
+
     def format_url(self):
         if self.IDUTILS_SCHEME is not None:
             return idutils.to_url(self.identifier, self.IDUTILS_SCHEME)
@@ -133,16 +136,10 @@ class ExternalIdentifier(TimeStampedModel):
             self.dbname = self.DATABASE_NAME
         super().save(*args, **kwargs)
 
-    def serialise(self):
-        return {
-            'dbname': self.dbname,
-            'identifier': self.identifier,
-            'url': self.url
-        }
-
     def get_associated(self, model):
         attr = 'associated_{}s'.format(model)
         return getattr(self, attr).all()
+
 
 class SraIdentifier(ExternalIdentifier):
     """
@@ -222,6 +219,15 @@ class PubmedIdentifier(ExternalIdentifier):
         if self.pk is None:
             self.reference_html = self.format_reference_html()
         super().save(*args, **kwargs)
+
+
+class GenomeIdentifier(ExternalIdentifier):
+    DATABASE_NAME = "GenomeAssembly"
+    IDUTILS_SCHEME = "genome"
+
+    class Meta:
+        verbose_name = "Genome assembly accession"
+        verbose_name_plural = "Genome assembly accessions"
 
 
 class RefseqIdentifier(ExternalIdentifier):
