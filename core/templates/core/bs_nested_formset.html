@@ -1,0 +1,29 @@
+{% load static %}
+{% load widget_tweaks %}
+{% load i18n %}
+
+{{ nested_formset.management_form }}
+
+{% if formset.non_form_errors %}
+  <div class="alert alert-danger" role="alert">
+    {% for error in nested_formset.non_form_errors %}
+      {{ error }}
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% for outer_form in nested_formset.forms %}
+    <div class="parent-formset">
+      {% include 'core/bs_inline_form.html' with form=outer_form auto="-auto" %}
+      <hr>
+
+      {% if outer_form.nested %}
+        <div class="pl-4 child-formset-{{ forloop.counter0 }}">
+          <h5>Genomic Intervals</h5>
+          {% include 'core/bs_inline_formset.html' with formset=outer_form.nested auto="-auto" counter=forloop.counter0 %}
+          <hr>
+        </div>
+      {% endif %}
+    </div>
+    <hr>
+{% endfor %}

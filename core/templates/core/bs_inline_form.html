@@ -4,7 +4,7 @@
 
 <div class="row">
   {% for hidden_field in form.hidden_fields %}
-    <div class="col">
+    <div class="col-auto">
       {{ hidden_field }}
     </div>
   {% endfor %}
@@ -22,8 +22,8 @@
 
 <div class="row">
   {% for field in form.visible_fields %}
-    <div class="col">
-      {{ field.label }}
+    <div class="col{{ auto }}">
+      {{ field.label_tag }}
       {% if field.help_text %}
         <small class="form-text text-muted">{{ field.help_text }}</small>
       {% endif %}

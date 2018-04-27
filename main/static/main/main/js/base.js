@@ -241,12 +241,10 @@ $("#id_target").on("change", function() {
         console.log(data);
         var targetName = data.name;
         var wildTypeSequence = data.wt_sequence.sequence;
-        var referenceGenome = data.referenceGenome;
-        var isPrimary = data.isPrimary;
-        var intervalStart = data.intervalStart;
-        var intervalEnd = data.intervalEnd;
-        var chromosome = data.chromosome;
-        var strand = data.strand;
+        var referenceGenome = data.genome;
+        var uniprot = data.uniprot;
+        var refseq = data.refseq;
+        var ensembl = data.ensembl;
 
         if (targetName) {
           $("#id_name").val(targetName);
@@ -263,53 +261,18 @@ $("#id_target").on("change", function() {
         } else {
           $("#id_genome").val("");
         }
-        if (isPrimary) {
-          $("#id_is_primary").prop('checked', isPrimary);
-        } else {
-          $("#id_is_primary").prop('checked', false);
-        }
-        if (intervalStart) {
-          $("#id_start").val(intervalStart);
-        } else {
-          $("#id_start").val("");
-        }
-        if (intervalEnd) {
-          $("#id_end").val(intervalEnd);
-        } else {
-          $("#id_end").val("");
-        }
-        if (chromosome) {
-          $("#id_chromosome").val(chromosome);
-        } else {
-          $("#id_chromosome").val("");
-        }
-        if (strand) {
-          $("#id_strand").val(strand);
-        } else {
-          $("#id_strand").val('F');
-        }
-      },
+       },
       error: function (xhr, errmsg, err) {
-        console.log(xhr.status + ": " + xhr.responseText);
+        console.log(xhr.status + ": " + errmsg);
       }
     });
     return true;
+  } else {
+    $("#id_name").val("");
+    $("#id_wt_sequence").val("");
+    $("#id_genome").val("");
   }
   return false;
-});
-
-
-function ensureAtLeastOne() {
-  var num = parseInt(document.getElementById("id_form-TOTAL_FORMS").value);
-  if (num <= 0 ) {
-    return $("#add-interval").trigger("click");
-  }
-  return false;
-}
-
-$("#add-interval").click(function(e) {
-  e.preventDefault();
-  $(".add-interval-link").click();
 });
 
 

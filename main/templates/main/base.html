@@ -250,6 +250,7 @@
         {% else %}
             ignore = false;
         {% endif %}
+        childFormsSets = 0;
     </script>
 
     <!-- JQuery/JQuery UI -->
@@ -282,10 +283,11 @@
     <script src="{% static 'main/main/js/base.js' %}"></script>
 
     <script>
-      $('.interval-formset').formset({
-          addText: "Add interval",
-          removed: ensureAtLeastOne,
-          addCssClass: "container add-interval-link invisible",
+      $('.parent-formset').formset({
+          prefix: "reference-map",
+          removed: ensureAtLeastOneReferenceMap,
+          addCssClass: "container add-reference-map-link parent-formset invisible",
+          deleteB
           deleteText: 'Remove'
       });
     </script>

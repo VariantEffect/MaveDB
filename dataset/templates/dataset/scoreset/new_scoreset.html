@@ -92,35 +92,18 @@
       <hr>
 
       <div class="">
-        <h4>Reference map</h4>
+        <h4>
+          Reference Genome
+{#          <input class="btn btn-sm btn-outline-dark white-button" type="button" value="+" id="add-reference-map">#}
+        </h4>
         <p class="text-muted">
           Select an existing reference genome from the drop-down list. If you cannot find
           your particular reference in the list, please let us
           <a href="{% url 'main:contact' %}">know!</a>
         </p>
-        {% include 'core/bs_form.html' with form=reference_map_form %}
-      </div>
-      <hr>
-
-      <div class="">
-        <h4>
-          Genomic intervals
-          <input class="btn btn-sm btn-outline-dark white-button" type="button" value="+" id="add-interval">
-        </h4>
-        {{ interval_formset.management_form }}
-        {% if interval_formset.non_form_errors %}
-          <div class="alert alert-danger" role="alert">
-            {% for error in interval_formset.non_form_errors %}
-              {{ error }}
-            {% endfor %}
-          </div>
-        {% endif %}
-
-        {% for form in interval_formset.forms %}
-          <div class="container interval-formset">
-            {% include 'core/bs_inline_form.html' with form=form %}
-          </div>
-        {% endfor %}
+        <div class="reference-map-formset">
+          {% include 'core/bs_form.html' with form=reference_map_form %}
+        </div>
       </div>
       <hr>
 

@@ -13,7 +13,7 @@
 {% endif %}
 
 {% for form in formset.forms %}
-  <div class="row">
+  <div class="row child-form-{{ counter }}">
     {% include 'core/bs_inline_form.html' with form=form %}
   </div>
 {% endfor %}

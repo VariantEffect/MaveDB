@@ -39,7 +39,7 @@
     <div id="pubmed_identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
 
 		<form id="edit-form"
-					action="{% url 'accounts:edit_instance' instance.urn %}" 
+					action="{% url 'accounts:edit_scoreset' instance.urn %}"
 					method="post" enctype="multipart/form-data">
 			{% csrf_token %}
 
