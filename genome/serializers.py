@@ -62,13 +62,13 @@ class ReferenceMapSerializer(serializers.ModelSerializer):
     Serializes :class:`ReferenceMap` where `intervals` are returned as
     a recursively serialised list of json objects.
     """
-    intervals = IntervalSerializer(many=True)
+    # intervals = IntervalSerializer(many=True)
     genome = ReferenceGenomeSerializer(many=False)
 
     class Meta:
         model = ReferenceMap
-        fields = ('genome', 'is_primary', 'intervals',)
-        read_only_fields = ('genome', 'is_primary', 'intervals',)
+        fields = ('genome',)# 'is_primary', 'intervals',)
+        read_only_fields = ('genome',)#'is_primary',)# 'intervals',)
 
 
 class TargetGeneSerializer(serializers.ModelSerializer):
