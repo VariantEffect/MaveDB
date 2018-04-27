@@ -40,7 +40,6 @@ class ScoreSetForm(DatasetModelForm):
             'experiment',
             'licence',
             'replaces',
-            'normalised',
         )
 
     score_data = forms.FileField(
@@ -62,8 +61,8 @@ class ScoreSetForm(DatasetModelForm):
     def __init__(self, *args, **kwargs):
         self.field_order = ('experiment', 'replaces', 'licence',) + \
                            self.FIELD_ORDER + \
-                           ('score_data', 'count_data',
-                            'meta_data', 'normalised',)
+                           ('score_data', 'count_data', 'meta_data',)
+
         super().__init__(*args, **kwargs)
 
         if self.instance.pk is not None:
@@ -81,7 +80,7 @@ class ScoreSetForm(DatasetModelForm):
             queryset=None, required=True, widget=forms.Select(
                 attrs={"class": "form-control"}))
         self.fields['replaces'] = forms.ModelChoiceField(
-            queryset=None, required=False, widget=forms.Select(
+            queryset=ScoreSet.objects.none(), required=False, widget=forms.Select(
                 attrs={"class": "form-control"}))
         self.fields['licence'] = forms.ModelChoiceField(
             queryset=Licence.objects.all(), required=False,
@@ -89,7 +88,7 @@ class ScoreSetForm(DatasetModelForm):
                 attrs={"class": "form-control "}))
 
         self.fields["replaces"].required = False
-        self.set_replaces_options()
+        # self.set_replaces_options()
         self.set_experiment_options()
 
         self.fields["licence"].required = False
@@ -184,9 +183,11 @@ class ScoreSetForm(DatasetModelForm):
         parent = cleaned_data.get('experiment', None)
         if 'experiment' in self.fields and self.instance.pk is not None:
             if self.instance.parent != parent:
-                raise ValidationError(
+                self.add_error(
+                    None if 'experiment' not in self.fields else 'experiment',
                     "MaveDB does not currently support changing a "
-                    "previously assigned Experiment.")
+                    "previously assigned Experiment."
+                )
 
         # Indicates that a new scoreset is being created
         scores_required = self.instance.pk is None
@@ -202,22 +203,21 @@ class ScoreSetForm(DatasetModelForm):
         # In edit mode, we have relaxed the requirement of uploading a score
         # dataset since one already exists.
         if scores_required and not has_score_data:
-            raise ValidationError(
-                ugettext(
-                    "You must upload a non-empty Score Data file."
-                )
+            self.add_error(
+                None if 'score_data' not in self.fields else 'score_data',
+                "You must upload a non-empty scores data file."
             )
+
         # In edit mode if a user tries to submit a new count dataset without
         # an accompanying score dataset, this error will be thrown. We could
         # relax this but there is the potential that the user might upload
         # a new count dataset and forget to upload a new score dataset.
         if (has_count_data or has_meta_data) and not has_score_data:
-            raise ValidationError(
-                ugettext(
-                    "You must upload an accompanying score data file when "
-                    "uploading a new count/meta data file or replacing an "
-                    "existing one."
-                )
+            self.add_error(
+                None if 'score_data' not in self.fields else 'score_data',
+                "You must upload an accompanying score data file when "
+                "uploading a new count/meta data file or replacing an "
+                "existing one."
             )
 
         if has_count_data:
