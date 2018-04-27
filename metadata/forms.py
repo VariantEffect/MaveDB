@@ -1,6 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
+from core.utilities import is_null
+
 from .fields import FlexibleModelChoiceField
 from .validators import (
     validate_uniprot_identifier,
@@ -42,7 +44,7 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
 
     def clean_identifier(self):
         identifier = self.cleaned_data.get("identifier", None)
-        if identifier is not None:
+        if identifier and not is_null(identifier.identifier):
             value = identifier.identifier
             if self.id_class == RefseqIdentifier:
                 validate_refseq_identifier(value)
@@ -50,45 +52,38 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
                 validate_uniprot_identifier(value)
             elif self.id_class == EnsemblIdentifier:
                 validate_ensembl_identifier(value)
-        return identifier
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if self.errors:
-            return cleaned_data
+            return identifier
         else:
-            identifier = cleaned_data.get('identifier', None)
-            offset = cleaned_data.get('offset', None)
-            if identifier is None and offset is None:
-                return cleaned_data
-            elif any([v is None for v in [identifier, offset]]):
-                raise ValidationError(
-                    "You cannot submit a partially filled external "
-                    "identifier. "
-                )
+            return None
 
     def save(self, target=None, commit=True):
         if self.errors:
             return super().save(commit=commit)
-        if commit:
+        # Don't attempt a save if identifier is None. This will cause
+        # a database IntegrityError so return None instead.
+        identifier = self.cleaned_data.get('identifier', None)
+        if commit and identifier is not None:
             if target is not None:
                 self.instance.target = target
-
             if self.instance.pk is None and target is None:
                 raise ValueError(
                     "Cannot save an AnnotationOffset model without a "
                     "valid target instance."
                 )
-            identifier = self.cleaned_data.get('identifier', None)
             if self.instance.pk is None and identifier is None:
                 raise ValueError(
                     "Cannot save an AnnotationOffset model without a "
                     "valid identifier instance."
                 )
+            self.instance.identifier = identifier
+            return super().save(commit=commit)
+        elif commit and identifier is None:
+            return None
+        else:
             if identifier is not None:
-                identifier.save()
-                self.instance.identifier = identifier
-        return super().save(commit=commit)
+                return super().save(commit=commit)
+            else:
+                return None
 
 
 class UniprotOffsetForm(BaseIdentifierWithOffsetForm):
