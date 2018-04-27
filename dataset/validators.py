@@ -15,7 +15,10 @@ def read_header_from_io(file, label=None, msg=None):
         if isinstance(header_line, bytes):
             header_line = header_line.decode()
         file.seek(0)
-        return [l.strip() for l in header_line.strip().split(',')]
+        return [
+            l.strip().replace("'", '').replace('"', '')
+            for l in header_line.strip().split(',')
+        ]
     except Exception as e:
         if msg is None:
             msg = (
@@ -72,6 +75,7 @@ def validate_scoreset_score_data_input(file):
     file : :class:`io.FileIO`
         An open file handle in read mode.
     """
+    file.seek(0)
     header = read_header_from_io(file, label='Score')
     validate_header_contains_no_null_columns(header, label='Score')
     validate_has_hgvs_in_header(header, label='Score')
@@ -98,6 +102,7 @@ def validate_scoreset_count_data_input(file):
     file : :class:`io.FileIO`
         File parsed by a `django` form.
     """
+    file.seek(0)
     header = read_header_from_io(file, label='Count')
     validate_header_contains_no_null_columns(header, label='Count')
     validate_has_hgvs_in_header(header, label='Count')
@@ -115,6 +120,7 @@ def validate_scoreset_meta_data_input(file):
     file : :class:`io.FileIO`
         File parsed by a `django` form.
     """
+    file.seek(0)
     header = read_header_from_io(file, label='Metadata')
     validate_header_contains_no_null_columns(header, label='Metadata')
     validate_has_hgvs_in_header(header, label='Metadata')
