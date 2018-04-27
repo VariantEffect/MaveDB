@@ -281,22 +281,13 @@ class ReferenceGenome(TimeStampedModel):
     )
 
     # Potential ExternalIdentifiers that may be linked.
-    ensembl_id = models.ForeignKey(
-        to='metadata.EnsemblIdentifier',
+    genome_id = models.ForeignKey(
+        to='metadata.GenomeIdentifier',
         blank=True,
         null=True,
         default=None,
         on_delete=models.SET_NULL,
-        verbose_name='Ensembl identifier',
-        related_name='associated_%(class)ss',
-    )
-    refseq_id = models.ForeignKey(
-        to='metadata.RefseqIdentifier',
-        blank=True,
-        null=True,
-        default=None,
-        on_delete=models.SET_NULL,
-        verbose_name='RefSeq identifier',
+        verbose_name='Genome assembly identifier',
         related_name='associated_%(class)ss',
     )
 
@@ -319,20 +310,12 @@ class ReferenceGenome(TimeStampedModel):
         return None
 
     def get_identifier_instance(self):
-        if self.ensembl_id is not None:
-            return self.get_ensembl_id()
-        elif self.refseq_id is not None:
-            return self.get_refseq_id()
+        if self.genome_id is not None:
+            return self.genome_id
         return None
 
     def display_name(self):
-        return '{} | {}'.format(self.get_short_name(), self.get_identifier())
-
-    def get_refseq_id(self):
-        return self.refseq_id
-
-    def get_ensembl_id(self):
-        return self.ensembl_id
+        return '{} | {}'.format(self.get_short_name(), self.get_species_name())
 
     def get_short_name(self):
         return self.short_name
