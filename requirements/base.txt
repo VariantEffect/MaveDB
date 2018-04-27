@@ -15,5 +15,5 @@ selenium>=3.4.3
 gunicorn
 whitenoise
 dj-database-url
-idutils
-metapub
+git+https://github.com/afrubin/idutils.git@bio
+hg+http://bitbucket.org/afrubin/metapub@html_citation
