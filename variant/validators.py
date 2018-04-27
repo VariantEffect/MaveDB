@@ -169,7 +169,7 @@ def validate_variant_rows(file, is_meta=False):
         header,
         msg=(
             "Header cannot contain blank/empty/whitespace only columns or the "
-            "following case-insensitive null values: {}."
+            "following case-insensitive null values: [{}]."
         ).format(', '.join(readable_null_values)))
     file.readline()  # remove header line
 
