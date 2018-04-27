@@ -13,6 +13,7 @@ from .models import (
     UniprotOffset,
     EnsemblOffset,
     RefseqOffset,
+    GenomeIdentifier,
 )
 
 class KeywordSerializer(serializers.ModelSerializer):
@@ -94,6 +95,13 @@ class PubmedIdentifierSerializer(ExternalIdentifierSerializer):
     """
     class Meta(ExternalIdentifierSerializer.Meta):
         model = PubmedIdentifier
+
+class GenomeIdentifierSerializer(ExternalIdentifierSerializer):
+    """
+    Serializes a :class:`PubmedIdentifier` instance/queryset.
+    """
+    class Meta(ExternalIdentifierSerializer.Meta):
+        model = GenomeIdentifier
 
 
 # Annotation based
