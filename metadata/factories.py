@@ -15,7 +15,8 @@ from factory.django import DjangoModelFactory
 from .models import (
     Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier,
     UniprotIdentifier, EnsemblIdentifier, RefseqIdentifier,
-    UniprotOffset, RefseqOffset, EnsemblOffset, AnnotationOffset
+    UniprotOffset, RefseqOffset, EnsemblOffset, AnnotationOffset,
+    GenomeIdentifier
 )
 
 
@@ -110,7 +111,7 @@ class RefseqIdentifierFactory(DjangoModelFactory):
 
 class EnsemblIdentifierFactory(DjangoModelFactory):
     """
-    Factory creating :class:`RefseqIdentifier` instances with a random
+    Factory creating :class:`EnsemblIdentifier` instances with a random
     identifier choice.
     """
 
@@ -122,9 +123,23 @@ class EnsemblIdentifierFactory(DjangoModelFactory):
         'ENSG00000010404', 'ENSG00000267816',
         'ENSG00000143384', 'ENSG00000198001',
         'ENSG00000006062', 'ENSG00000172936',
-        'GRCh37.p13', 'GRCh38.p12'
     ])
-    dbversion = '92.13'
+
+
+class GenomeIdentifierFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`GenomeIdentifier` instances with a random
+    identifier choice.
+    """
+
+    class Meta:
+        model = GenomeIdentifier
+        django_get_or_create = ('identifier',)
+
+    identifier = factory.fuzzy.FuzzyChoice([
+        'GCF_000146045.2', 'GCF_000001405.26', 'GCF_000001405.13',
+        'GCF_000146795.2', 'GCF_000001405.11', 'GCF_000001405.10'
+    ])
 
 
 # AnnotationOffsets
