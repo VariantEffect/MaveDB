@@ -1,8 +1,10 @@
 from django import forms as forms
 from django.db import transaction
-from django.forms.models import BaseModelFormSet
+from django.forms.models import BaseModelFormSet, inlineformset_factory, BaseInlineFormSet
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
+
+from nested_formset import nestedformset_factory
 
 from core.utilities import is_null
 
@@ -22,8 +24,6 @@ from .models import (
     GenomicInterval,
     WildTypeSequence,
 )
-
-BOOTSTRAP_CLASS = 'form-control'
 
 
 # TargetGene
@@ -46,7 +46,7 @@ class TargetGeneForm(forms.ModelForm):
     wt_sequence = forms.CharField(
         label='Target wild-type sequence',
         required=True,
-        widget=forms.Textarea(attrs={'class': BOOTSTRAP_CLASS}),
+        widget=forms.Textarea(),
         validators=[validate_wildtype_sequence],
         error_messages={
             'required':
@@ -75,8 +75,7 @@ class TargetGeneForm(forms.ModelForm):
 
         self.fields['name'].label = 'Target name'
         self.fields['name'].validators = [validate_gene_name]
-        self.fields['name'].widget = forms.TextInput(
-            attrs={'class': BOOTSTRAP_CLASS})
+        self.fields['name'].widget = forms.TextInput()
         self.fields['name'].error_messages.update(
             {'required': 'You must supply a name for your target.'})
 
@@ -137,98 +136,13 @@ class TargetGeneForm(forms.ModelForm):
         return cleaned_data
 
 
-# ReferenceMap
-# ------------------------------------------------------------------------ #
-class ReferenceMapForm(forms.ModelForm):
-    """
-    The reference_map form
-
-    Parameters
-    ----------
-    annotations : `tuple`
-        A tuple of annotations to validate the instance this form will create
-        against. Useful for validating all annotations specify unique
-        references.
-
-    intervals : `tuple`
-        A tuple of valid intervals to associate with the reference_map.
-    """
-    class Meta:
-        model = ReferenceMap
-        fields = ('is_primary', 'genome',)
-
-    def __init__(self, *args, **kwargs):
-        self.field_order = ('is_primary', 'genome',)
-        super().__init__(*args, **kwargs)
-
-        genome_field = self.fields['genome']
-        genome_field.widget.attrs.update({"class": BOOTSTRAP_CLASS})
-        genome_field.requried = True
-        genome_field.queryset = ReferenceGenome.objects.all()
-        genome_field.choices = \
-            [("", genome_field.empty_label)] + [
-                (r.pk, r.display_name()) for r in ReferenceGenome.objects.all()
-            ]
-        genome_field.initial = ""
-
-        is_primary_field = self.fields['is_primary']
-        is_primary_field.widget.attrs.update({"class": BOOTSTRAP_CLASS})
-
-    def dummy_instance(self):
-        if self.errors:
-            return None
-        return ReferenceMap(
-            genome=self.cleaned_data.get('genome'),
-            is_primary=self.cleaned_data.get('is_primary'),
-        )
-
-    def clean_genome(self):
-        genome = self.cleaned_data.get('genome', None)
-        if not genome:
-            raise ValidationError("You must select a valid reference genome.")
-        return genome
-
-
-class PimraryReferenceMapForm(ReferenceMapForm):
-    """
-    Same as `ReferenceMapForm` except `is_primary` is popped and always
-    sets as True.
-    """
-    def __init__(self, *args, **kwargs):
-        super(PimraryReferenceMapForm, self).__init__(*args, **kwargs)
-        self.fields.pop('is_primary')
-
-    def clean_is_primary(self):
-        return True
-
-
-class BaseReferenceMapFormSet(BaseModelFormSet):
-    """
-    Formset for handling the validation of :class:`ReferenceMap` instances
-    against each other.
-    """
-    model = ReferenceMap
-
-    def has_errors(self):
-        if isinstance(self.errors, list):
-            return any(len(dict_) for dict_ in self.errors)
-        else:
-            return bool(self.errors)
-
-    def clean(self):
-        if not self.has_errors():
-            maps = [form.dummy_instance() for form in self.forms]
-            validate_at_least_one_map(maps)
-            validate_map_has_unique_reference_genome(maps)
-            validate_one_primary_map(maps)
-
-
 # GenomicInterval
 # ------------------------------------------------------------------------ #
 class GenomicIntervalForm(forms.ModelForm):
     """
     Form for validating interval input and instantiating a valid instance.
     """
+
     class Meta:
         model = GenomicInterval
         fields = ('start', 'end', 'chromosome', 'strand',)
@@ -238,7 +152,6 @@ class GenomicIntervalForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = True
-            field.widget.attrs.update({'class': BOOTSTRAP_CLASS})
 
     def clean_start(self):
         start = self.cleaned_data.get('start', None)
@@ -274,15 +187,22 @@ class GenomicIntervalForm(forms.ModelForm):
             validate_interval_start_lteq_end(start, end)
             return cleaned_data
 
+    def form_is_blank(self):
+        start = self.cleaned_data.get("start")
+        end = self.cleaned_data.get("end")
+        chr_ = self.cleaned_data.get("chromosome")
+        strand = self.cleaned_data.get("strand")
+        return all([is_null(elem) for elem in [start, end, chr_, strand]])
 
-class BaseGenomicIntervalFormSet(BaseModelFormSet):
+
+class BaseGenomicIntervalFormSet(BaseInlineFormSet):
     """
     Formset which will validate multiple intervals against each other
     to ensure uniqueness.
     """
     model = GenomicInterval
     form_prefix = "genomic_interval_form"
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'queryset' in kwargs:
@@ -345,7 +265,7 @@ class BaseGenomicIntervalFormSet(BaseModelFormSet):
 
 
 def create_genomic_interval_formset(extra=2, min_num=1,
-                                           can_delete=False):
+                                    can_delete=False):
     return modelformset_factory(
         model=GenomicInterval,
         form=GenomicIntervalForm,
@@ -355,4 +275,142 @@ def create_genomic_interval_formset(extra=2, min_num=1,
         validate_min=True,
         can_delete=can_delete,
         fields=GenomicIntervalForm.Meta.fields,
+    )
+
+
+def create_inline_genomic_interval_formset(extra=2, min_num=1,
+                                           can_delete=False):
+    return inlineformset_factory(
+        parent_model=ReferenceMap,
+        model=GenomicInterval,
+        form=GenomicIntervalForm,
+        formset=BaseGenomicIntervalFormSet,
+        extra=extra,
+        min_num=min_num,
+        validate_min=True,
+        can_delete=can_delete,
+        fields=GenomicIntervalForm.Meta.fields,
+    )
+
+
+# ReferenceMap
+# ------------------------------------------------------------------------ #
+class ReferenceMapForm(forms.ModelForm):
+    """
+    The reference_map form
+
+    Parameters
+    ----------
+    annotations : `tuple`
+        A tuple of annotations to validate the instance this form will create
+        against. Useful for validating all annotations specify unique
+        references.
+
+    intervals : `tuple`
+        A tuple of valid intervals to associate with the reference_map.
+    """
+    class Meta:
+        model = ReferenceMap
+        fields = ('is_primary', 'genome',)
+
+    def __init__(self, *args, **kwargs):
+        self.field_order = ('is_primary', 'genome',)
+        super().__init__(*args, **kwargs)
+
+        genome_field = self.fields['genome']
+        genome_field.requried = True
+        genome_field.queryset = ReferenceGenome.objects.all()
+        genome_field.choices = \
+            [("", genome_field.empty_label)] + [
+                (r.pk, r.display_name()) for r in ReferenceGenome.objects.all()
+            ]
+        genome_field.initial = ""
+        is_primary_field = self.fields['is_primary']
+
+    def dummy_instance(self):
+        if self.errors:
+            return None
+        return ReferenceMap(
+            genome=self.cleaned_data.get('genome'),
+            is_primary=self.cleaned_data.get('is_primary'),
+        )
+
+    def clean_genome(self):
+        genome = self.cleaned_data.get('genome', None)
+        if not genome:
+            raise ValidationError("You must select a valid reference genome.")
+        return genome
+
+
+class PimraryReferenceMapForm(ReferenceMapForm):
+    """
+    Same as `ReferenceMapForm` except `is_primary` is popped and always
+    sets as True.
+    """
+    def __init__(self, *args, **kwargs):
+        super(PimraryReferenceMapForm, self).__init__(*args, **kwargs)
+        self.fields.pop('is_primary')
+
+    def clean_is_primary(self):
+        return True
+
+
+class BaseReferenceMapFormSet(BaseInlineFormSet):
+    """
+    Formset for handling the validation of :class:`ReferenceMap` instances
+    against each other.
+    """
+    model = ReferenceMap
+
+    def has_errors(self):
+        if isinstance(self.errors, list):
+            return any(len(dict_) for dict_ in self.errors)
+        else:
+            return bool(self.errors)
+
+    def clean(self):
+        if not self.has_errors():
+            maps = [form.dummy_instance() for form in self.forms]
+            validate_at_least_one_map(maps)
+            validate_map_has_unique_reference_genome(maps)
+            validate_one_primary_map(maps)
+
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        # save the formset in the 'nested' property
+        print(form.prefix)
+        form.nested = self.nested_formset_class(
+            instance=form.instance,
+            data=form.data if form.is_bound else None,
+            files=form.files if form.is_bound else None,
+            prefix='%s-%s' % (
+                form.prefix,
+                self.nested_formset_class.get_default_prefix()
+            )
+        )
+
+
+def create_reference_map_interval_nested_formset(outer_kwargs, inner_kwargs):
+
+    GenomicIntervalFormSet = create_inline_genomic_interval_formset(
+        **inner_kwargs
+    )
+    NestedFormSet = inlineformset_factory(
+        parent_model=TargetGene, model=ReferenceMap,
+        form=ReferenceMapForm, formset=BaseReferenceMapFormSet,
+        fields=ReferenceMapForm.Meta.fields, validate_min=True,
+        **outer_kwargs
+    )
+    NestedFormSet.nested_formset_class = GenomicIntervalFormSet
+    return NestedFormSet
+
+
+# Mangement forms
+# -------------------------------------------------------------------------- #
+class ReferenceMapManagementForm(forms.Form):
+
+    target = forms.ModelChoiceField(
+        label='Existing target', required=False,
+        queryset=None,
+        widget=forms.Select()
     )
