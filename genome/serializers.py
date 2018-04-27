@@ -4,6 +4,7 @@ from metadata.serializers import (
     UniprotIdentifierSerializer,
     EnsemblIdentifierSerializer,
     RefseqIdentifierSerializer,
+    GenomeIdentifierSerializer
 )
 
 from genome.models import (
@@ -20,21 +21,13 @@ class ReferenceGenomeSerializer(serializers.ModelSerializer):
     Serializes fields of :class:`ReferenceGenome`. Currently read only and
     will recurse on :class:`ExternalIdentifiers`.
     """
-    ensembl = EnsemblIdentifierSerializer(source='ensembl_id', many=False)
-    refseq = RefseqIdentifierSerializer(source='refseq_id', many=False)
+    assembly_identifier = GenomeIdentifierSerializer(
+        source='genome_id', many=False)
 
     class Meta:
         model = ReferenceGenome
-        fields = ('short_name', 'species_name', 'ensembl', 'refseq',)
+        fields = ('short_name', 'species_name', 'assembly_identifier',)
         read_only_fields = fields
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        if 'ensembl' in rep:
-            rep['ensembl'].pop('offset')
-        if 'refseq' in rep:
-            rep['refseq'].pop('offset')
-        return rep
 
 
 class IntervalSerializer(serializers.ModelSerializer):
@@ -80,7 +73,7 @@ class TargetGeneSerializer(serializers.ModelSerializer):
     reference_maps = ReferenceMapSerializer(many=True)
     wt_sequence = WildTypeSequenceSerializer(many=False)
     uniprot = UniprotIdentifierSerializer(source='uniprot_id', many=False)
-    ensembl = EnsemblIdentifierSerializer(source='refseq_id', many=False)
+    ensembl = EnsemblIdentifierSerializer(source='ensembl_id', many=False)
     refseq = RefseqIdentifierSerializer(source='refseq_id', many=False)
 
     class Meta:
