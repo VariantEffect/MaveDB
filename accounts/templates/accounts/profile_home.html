@@ -17,6 +17,7 @@
       <p class="text-muted">
         Below are the instances you contribute to sorted by modification date.
       </p>
+
       <!-- Experiment Sets -->
       {% if request.user.profile.contributor_experimentsets %}
       <h2 class="underline left-align section-heading">Experiment Sets</h2>
@@ -55,7 +56,7 @@
                     </a>
                   {% endif %}
                   {% if instance in request.user.profile.administrator_instances or instance in request.user.profile.editor_instances or instance in request.user.profile.viewer_instances %}
-                  <a href="{% url 'accounts:view_instance' instance.urn %}">
+                  <a href="{% url 'dataset:experimentset_detail' instance.urn %}">
                     <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
                   </a>
                   {% endif %}
@@ -109,12 +110,12 @@
                       </a>
                     {% endif %}
                     {% if instance in request.user.profile.administrator_instances or instance in request.user.profile.editor_instances %}
-                     <a href="{% url 'accounts:edit_instance' instance.urn %}">
+                     <a href="{% url 'accounts:edit_experiment' instance.urn %}">
                       <i class="material-icons" style="font-size: 24px">edit</i>
                      </a>
                     {% endif %}
                     {% if instance in request.user.profile.administrator_instances or instance in request.user.profile.editor_instances or instance in request.user.profile.viewer_instances %}
-                    <a href="{% url 'accounts:view_instance' instance.urn %}">
+                    <a href="{% url 'dataset:experiment_detail' instance.urn %}">
                       <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
                     </a>
                     {% endif %}
@@ -155,12 +156,12 @@
                       </a>
                     {% endif %}
                     {% if instance in request.user.profile.administrator_instances or instance in request.user.profile.editor_instances %}
-                     <a href="{% url 'accounts:edit_instance' instance.urn %}">
+                     <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
                       <i class="material-icons" style="font-size: 24px">edit</i>
                      </a>
                     {% endif %}
                     {% if instance in request.user.profile.administrator_instances or instance in request.user.profile.editor_instances or instance in request.user.profile.viewer_instances %}
-                    <a href="{% url 'accounts:view_instance' instance.urn %}">
+                    <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
                       <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
                     </a>
                     {% endif %}
