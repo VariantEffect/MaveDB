@@ -220,7 +220,7 @@ $("#id_experiment").on("change", function() {
         });
       },
       error: function (xhr, errmsg, err) {
-        console.log(xhr.status + ": " + errmsg);
+        console.log(xhr.status + ": " + xhr + errmsg + err);
       }
     })
   }
@@ -263,7 +263,7 @@ $("#id_target").on("change", function() {
         }
        },
       error: function (xhr, errmsg, err) {
-        console.log(xhr.status + ": " + errmsg);
+        console.log(xhr.status + ": " + xhr + errmsg + err);
       }
     });
     return true;
