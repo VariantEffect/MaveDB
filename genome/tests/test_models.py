@@ -49,15 +49,9 @@ class TestReferenceGenomeModel(TestCase):
     """
     Tests instance and class methods for :class:`ReferenceGenome`
     """
-    def test_get_identifier_instance_returns_ensemble_as_default(self):
-        ref = ReferenceGenomeFactory(
-            refseq_id=RefseqIdentifierFactory(),
-            ensembl_id=EnsemblIdentifierFactory()
-        )
-        self.assertEqual(ref.get_identifier_instance(), ref.get_ensembl_id())
 
-    def test_get_id_methods_return_none_if_no_associations(self):
-        ref = ReferenceGenomeFactory(ensembl_id=None, refseq_id=None)
+    def test_get_id_methods_return_none_if_no_association(self):
+        ref = ReferenceGenomeFactory(ensembl_id=None, genome_id=None)
         self.assertIsNone(ref.get_identifier())
         self.assertIsNone(ref.get_identifier_url())
         self.assertIsNone(ref.get_identifier_instance())

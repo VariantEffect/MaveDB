@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 
 from ..constants import (
     nan_col_values, hgvs_column,
-    score_columns, count_columns, metadata_columns
+    score_columns, count_columns, meta_columns
 )
 from ..validators import (
     validate_scoreset_count_data_input,
@@ -32,7 +32,8 @@ class TestHeaderFromIO(TestCase):
         self.assertEqual(expected, header)
 
     def test_removes_quotes_from_header(self):
-        file = BytesIO("{},\"score\",\'count\'\n".format(hgvs_column).encode())
+        file = BytesIO(
+            "\"{}\",\"score\",\'count\'\n".format(hgvs_column).encode())
         header = read_header_from_io(file)
         expected = [hgvs_column, 'score', 'count']
         self.assertEqual(expected, header)
@@ -192,7 +193,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
             'extra_column': [],
             score_columns: ['score'],
             count_columns: [],
-            metadata_columns: []
+            meta_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
@@ -201,7 +202,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
         field = {
             score_columns: ['score'],
             count_columns: {},
-            metadata_columns: {}
+            meta_columns: {}
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
@@ -210,7 +211,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
         field = {
             score_columns: [b'score'],
             count_columns: [],
-            metadata_columns: []
+            meta_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
@@ -219,7 +220,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
         field = {
             score_columns: [],
             count_columns: [],
-            metadata_columns: []
+            meta_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
@@ -228,7 +229,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
         # score_columns missing
         field = {
             count_columns: [],
-            metadata_columns: []
+            meta_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
@@ -236,7 +237,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
         # count_columns missing
         field = {
             score_columns: ['score'],
-            metadata_columns: []
+            meta_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)
@@ -254,7 +255,7 @@ class TestValidateScoreSetJsonValidator(TestCase):
         field = {
             score_columns: ['hgvs'],
             count_columns: [],
-            metadata_columns: []
+            meta_columns: []
         }
         with self.assertRaises(ValidationError):
             validate_scoreset_json(field)

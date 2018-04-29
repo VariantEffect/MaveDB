@@ -5,9 +5,10 @@ from django.db import IntegrityError
 from django.db.models import ProtectedError
 from django.test import TestCase
 
-from ..factories import ExperimentFactory, ScoreSetFactory
+from ..factories import ExperimentFactory, ScoreSetFactory, ScoreSetWithTargetFactory
 from ..models.experimentset import ExperimentSet
 from ..models.experiment import Experiment
+
 
 class TestExperiment(TestCase):
     """
@@ -64,3 +65,33 @@ class TestExperiment(TestCase):
     def test_creates_experimentset_if_none_when_saved(self):
         exp = ExperimentFactory(experimentset=None)  # invokes save
         self.assertEqual(exp.experimentset, ExperimentSet.objects.first())
+
+    def test_get_targets_returns_empty_qs(self):
+        exp = ExperimentFactory(experimentset=None)
+        self.assertEqual(exp.get_targets().count(), 0)
+
+    def test_get_target_organisms_returns_sorted(self):
+        exp = ExperimentFactory(experimentset=None)
+
+        scs1 = ScoreSetWithTargetFactory(experiment=exp)
+        scs2 = ScoreSetWithTargetFactory(experiment=exp)
+        genome1 = scs1.target.get_reference_genomes().first()
+        genome2 = scs2.target.get_reference_genomes().first()
+
+        genome1.species_name = 'A'
+        genome1.save()
+        genome2.species_name = 'B'
+        genome2.save()
+
+        expected = sorted(set(
+            [genome1.format_species_name_html()] +
+            [genome2.format_species_name_html()]
+        ))
+        self.assertEqual(exp.get_targets().count(), 2)
+        self.assertEqual(exp.get_display_target_organisms(), expected)
+
+        expected = sorted(set(
+            [genome1.get_species_name()] +
+            [genome2.get_species_name()]
+        ))
+        self.assertEqual(exp.get_target_organisms(), expected)

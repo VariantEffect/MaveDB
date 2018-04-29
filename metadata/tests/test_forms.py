@@ -33,7 +33,7 @@ class TestBaseOffsetForm(TestCase):
         return [
             (
                 UniprotIdentifierFactory, UniprotOffsetForm,
-                UniprotOffset, UniprotIdentifier, 'P1233'
+                UniprotOffset, UniprotIdentifier, 'P19174'
             ),
             (
                 EnsemblIdentifierFactory, EnsemblOffsetForm,
@@ -74,20 +74,6 @@ class TestBaseOffsetForm(TestCase):
             self.assertEqual(offset_class.objects.count(), 1)
             self.assertEqual(id_class.objects.count(), 1)
 
-    def test_invalid_if_partially_completed(self):
-        up = UniprotIdentifierFactory()
-
-        data = self.form_data()
-        data['identifier'] = up.identifier
-        data.pop('offset')
-        form = UniprotOffsetForm(data=data)
-        self.assertFalse(form.is_valid())
-
-        data = self.form_data()
-        data.pop('identifier')
-        form = UniprotOffsetForm(data=data)
-        self.assertFalse(form.is_valid())
-
     def test_valid_if_all_fields_blank(self):
         data = {}
         form = UniprotOffsetForm(data=data)
@@ -112,22 +98,14 @@ class TestBaseOffsetForm(TestCase):
         with self.assertRaises(ValueError):
             form.save(commit=True)
 
-    def test_value_error_save_without_identifier(self):
-        data = self.form_data()
-        data['identifier'] = "P12345"
-        target = TargetGeneFactory()
-        form = UniprotOffsetForm(data=data)
-
-        self.assertTrue(form.is_valid())
-        form.cleaned_data.pop('identifier')
-        with self.assertRaises(ValueError):
-            form.save(target=target, commit=True)
-
     def test_invalid_null_identifier(self):
         for value in nan_col_values:
             data = self.form_data()
             data['identifier'] = value
             form = UniprotOffsetForm(data=data)
+            if value == '' or value == ' ':
+                self.assertTrue(form.is_valid())
+                continue
             self.assertFalse(form.is_valid())
 
     def test_invalid_negative_offset(self):
@@ -151,8 +129,12 @@ class TestBaseOffsetForm(TestCase):
             form.fields['offset'].initial, instance.offset)
         self.assertTrue(form.is_valid())
 
-    def test_can_save_form_with_empty_data_but_initial_instance(self):
-        old_instance = UniprotOffsetFactory()
-        form = UniprotOffsetForm(instance=old_instance, data={})
+    def test_deletes_self_when_blank(self):
+        data = self.form_data()
+        instance = UniprotOffsetFactory()
+        data['identifier'] = ""
+        form = UniprotOffsetForm(data=data, instance=instance)
+        self.assertTrue(form.is_valid())
         instance = form.save(commit=True)
-        self.assertEqual(instance, old_instance)
+        self.assertEqual(UniprotOffset.objects.count(), 0)
+        self.assertIsNone(instance)

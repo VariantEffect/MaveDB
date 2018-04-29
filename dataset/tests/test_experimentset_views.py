@@ -1,4 +1,7 @@
 from django.test import TestCase, RequestFactory
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.contrib.messages.storage.fallback import FallbackStorage
 
 from accounts.factories import UserFactory
 from accounts.permissions import assign_user_as_instance_viewer
@@ -14,23 +17,30 @@ class TestExperimentSetDetailView(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.template = 'dataset/experimentset/experimentset.html'
-        self.template_403 = 'main/403_forbidden.html'
-        self.template_404 = 'main/404_not_found.html'
+        self.template_403 = 'main/403.html'
+        self.template_404 = 'main/404.html'
+        self.user = UserFactory()
+
+    def create_request(self, method='get', **kwargs):
+        request = getattr(self.factory, method)(**kwargs)
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        return request
 
     def test_uses_correct_template(self):
-        obj = ExperimentSetFactory()
-        obj.publish()
-        obj.save()
+        obj = ExperimentSetFactory(private=False)
         response = self.client.get('/experimentset/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template)
 
     def test_private_instance_will_403_if_no_permission(self):
         user = UserFactory()
         obj = ExperimentSetFactory(private=True)
-        request = self.factory.get('/experimentset/{}/'.format(obj.urn))
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
-        response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 403)
+        with self.assertRaises(PermissionDenied):
+            ExperimentSetDetailView.as_view()(request, urn=obj.urn)
 
     def test_403_uses_correct_template(self):
         obj = ExperimentSetFactory(private=True)
@@ -43,7 +53,7 @@ class TestExperimentSetDetailView(TestCase):
         obj.delete()
         response = self.client.get('/experimentset/{}/'.format(urn))
         self.assertEqual(response.status_code, 404)
-        self.assertTemplateUsed(response, 'main/404_not_found.html')
+        self.assertTemplateUsed(response, 'main/404.html')
 
     def test_private_experiment_rendered_if_user_can_view(self):
         user = UserFactory()

@@ -1,4 +1,5 @@
 import idutils
+import metapub
 
 from django.db import IntegrityError
 from django.test import TestCase
@@ -8,7 +9,9 @@ from dataset.factories import ExperimentFactory
 from ..models import Keyword
 from ..factories import (
     KeywordFactory, DoiIdentifierFactory,
-    PubmedIdentifierFactory, SraIdentifierFactory
+    PubmedIdentifierFactory, SraIdentifierFactory,
+    UniprotIdentifierFactory, EnsemblIdentifierFactory,
+    RefseqIdentifierFactory, GenomeIdentifierFactory
 )
 
 
@@ -105,35 +108,28 @@ class TestSraIdentidier(TestCase):
     def test_format_url_creates_bioproject_ncbi_url(self):
         sra = SraIdentifierFactory(identifier='PRJNA362734')
         expected_url = (
-            "https://www.ncbi.nlm.nih.gov/"
-            "bioproject/{id}".format(id=sra.identifier)
+            "http://www.ebi.ac.uk/ena/data/view/{}".format(sra.identifier)
         )
         self.assertEqual(sra.url, expected_url)
 
     def test_format_url_creates_study_ncbi_url(self):
         sra = SraIdentifierFactory(identifier='SRP3407687')
         expected_url = (
-            "http://trace.ncbi.nlm.nih.gov/"
-            "Traces/sra/sra.cgi?study={id}"
-            "".format(id=sra.identifier)
+            "http://www.ebi.ac.uk/ena/data/view/{id}".format(id=sra.identifier)
         )
         self.assertEqual(sra.url, expected_url)
 
     def test_format_url_creates_experiment_ncbi_url(self):
         sra = SraIdentifierFactory(identifier='SRX3407687')
         expected_url = (
-            "https://www.ncbi.nlm.nih.gov/"
-            "sra/{id}?report=full".format(id=sra.identifier)
+            "http://www.ebi.ac.uk/ena/data/view/{}".format(sra.identifier)
         )
         self.assertEqual(sra.url, expected_url)
 
     def test_format_url_creates_run_ncbi_url(self):
         sra = SraIdentifierFactory(identifier='SRR3407687')
         expected_url = (
-            "http://trace.ncbi.nlm.nih.gov/"
-            "Traces/sra/sra.cgi?"
-            "cmd=viewer&m=data&s=viewer&run={id}"
-            "".format(id=sra.identifier)
+            "http://www.ebi.ac.uk/ena/data/view/{id}".format(id=sra.identifier)
         )
         self.assertEqual(sra.url, expected_url)
 
@@ -161,11 +157,43 @@ class TestPubmedIdentifier(TestCase):
         self.assertEqual(expected_id, pubmed.identifier)
 
     def test_format_reference_url_hyperlinks_references(self):
-        self.fail(
-            "Implement this when format_reference_html "
-            "has been implemented"
-        )
+        pubmed = PubmedIdentifierFactory()
+        fetch = metapub.PubMedFetcher()
+        article = fetch.article_by_pmid(pubmed.identifier)
+        self.assertEqual(pubmed.reference_html, article.citation_html)
 
     def test_save_sets_dbname_as_PubMeD(self):
         pm = PubmedIdentifierFactory()
         self.assertEqual(pm.dbname, pm.DATABASE_NAME)
+
+
+class TestUniProtIdentifier(TestCase):
+    def test_format_url_creates_url(self):
+        obj = UniprotIdentifierFactory()
+        url = obj.format_url()
+        expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
+        self.assertEqual(expected_url, url)
+
+
+class TestRefSeqIdentifier(TestCase):
+    def test_format_url_creates_url(self):
+        obj = RefseqIdentifierFactory()
+        url = obj.format_url()
+        expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
+        self.assertEqual(expected_url, url)
+
+
+class TestEnsemblIdentifier(TestCase):
+    def test_format_url_creates_url(self):
+        obj = EnsemblIdentifierFactory()
+        url = obj.format_url()
+        expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
+        self.assertEqual(expected_url, url)
+
+
+class TestGenomeIdentifier(TestCase):
+    def test_format_url_creates_url(self):
+        obj = GenomeIdentifierFactory()
+        url = obj.format_url()
+        expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
+        self.assertEqual(expected_url, url)

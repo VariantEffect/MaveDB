@@ -68,6 +68,12 @@ class TargetGeneFactory(DjangoModelFactory):
     refseq_id = None
     uniprot_id = None
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        instance = super()._create(model_class, *args, **kwargs)
+        ReferenceMapFactory(target=instance)
+        return instance
+
 
 class ReferenceMapFactory(DjangoModelFactory):
     """
@@ -81,6 +87,12 @@ class ReferenceMapFactory(DjangoModelFactory):
     genome = factory.SubFactory(ReferenceGenomeFactory)
     target = factory.SubFactory(TargetGeneFactory)
     is_primary = True
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        instance = super()._create(model_class, *args, **kwargs)
+        GenomicIntervalFactory(reference_map=instance)
+        return instance
 
 
 class GenomicIntervalFactory(DjangoModelFactory):

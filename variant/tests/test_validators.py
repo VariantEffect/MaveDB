@@ -32,7 +32,7 @@ class TestValidateMatchingColumns(TestCase):
     def test_validationerror_non_matching_meta_columns(self):
         variant = VariantFactory()
         with self.assertRaises(ValidationError):
-            variant.data[constants.variant_metadata] = {'meta': 'variant'}
+            variant.data[constants.variant_meta_data] = {'meta': 'variant'}
             validate_scoreset_columns_match_variant(
                 variant.scoreset.dataset_columns, variant.data)
 
@@ -73,7 +73,7 @@ class TestVariantJsonValidator(TestCase):
     def test_validationerror_missing_score_data_key(self):
         data = {
             constants.variant_count_data: {},
-            constants.variant_metadata: {}
+            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -81,7 +81,7 @@ class TestVariantJsonValidator(TestCase):
     def test_validationerror_missing_count_data_key(self):
         data = {
             constants.variant_score_data: {},
-            constants.variant_metadata: {}
+            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -89,7 +89,7 @@ class TestVariantJsonValidator(TestCase):
     def test_validationerror_missing_meta_data_key(self):
         data = {
             constants.variant_count_data: {},
-            constants.variant_metadata: {}
+            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -99,7 +99,7 @@ class TestVariantJsonValidator(TestCase):
             'extra': {},
             constants.variant_score_data: {},
             constants.variant_count_data: {},
-            constants.variant_metadata: {}
+            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -108,7 +108,7 @@ class TestVariantJsonValidator(TestCase):
         data = {
             constants.variant_score_data: {},
             constants.variant_count_data: {},
-            constants.variant_metadata: {}
+            constants.variant_meta_data: {}
         }
         for key in data.keys():
             data[key] = []

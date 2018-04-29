@@ -71,12 +71,6 @@ class TestExperimentForm(TestCase):
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
         self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)
 
-    def test_viewer_experimentset_appear_in_options(self):
-        obj1 = ExperimentSetFactory()
-        assign_user_as_instance_viewer(self.user, obj1)
-        form = ExperimentForm(user=self.user)
-        self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
-
     def test_from_request_modifies_existing_instance(self):
         exp = ExperimentFactory()
         data = self.make_form_data(use_exps=False)

@@ -1,10 +1,8 @@
 from django import forms as forms
 from django.db import transaction
-from django.forms.models import BaseModelFormSet, inlineformset_factory, BaseInlineFormSet
+from django.forms.models import inlineformset_factory, BaseInlineFormSet
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
-
-from nested_formset import nestedformset_factory
 
 from core.utilities import is_null
 
@@ -12,9 +10,6 @@ from .validators import (
     validate_interval_start_lteq_end,
     validate_wildtype_sequence,
     validate_gene_name,
-    validate_at_least_one_map,
-    validate_map_has_unique_reference_genome,
-    validate_one_primary_map
 )
 
 from .models import (
@@ -56,8 +51,7 @@ class TargetGeneForm(forms.ModelForm):
     target = forms.ModelChoiceField(
         label='Existing target', required=False,
         queryset=None,
-        widget=forms.Select(
-            attrs={"class": "form-control"})
+        widget=forms.Select()
     )
 
     def __init__(self, *args, **kwargs):
@@ -100,12 +94,12 @@ class TargetGeneForm(forms.ModelForm):
 
             targets_qs = TargetGene.objects.filter(
                 pk__in=choices).order_by("name")
+            self.fields["target"].initial = ""
             self.fields["target"].queryset = targets_qs
             self.fields["target"].choices = \
                 [("", self.fields["target"].empty_label)] + [
                 (t.pk, t.get_unique_name()) for t in targets_qs.all()
             ]
-            self.fields["target"].initial = ""
 
     @transaction.atomic
     def save(self, commit=True):
@@ -131,7 +125,11 @@ class TargetGeneForm(forms.ModelForm):
         if not self.errors:
             wt_sequence = cleaned_data.get('wt_sequence', None)
             if not wt_sequence:
-                raise ValidationError("You must supply a wild-type sequence.")
+                self.add_error(
+                    'wt_sequence',
+                    "You must supply a wild-type sequence."
+                )
+                return cleaned_data
             self.wt_sequence = wt_sequence
         return cleaned_data
 
@@ -325,7 +323,6 @@ class ReferenceMapForm(forms.ModelForm):
                 (r.pk, r.display_name()) for r in ReferenceGenome.objects.all()
             ]
         genome_field.initial = ""
-        is_primary_field = self.fields['is_primary']
 
     def dummy_instance(self):
         if self.errors:
@@ -353,64 +350,3 @@ class PimraryReferenceMapForm(ReferenceMapForm):
 
     def clean_is_primary(self):
         return True
-
-
-class BaseReferenceMapFormSet(BaseInlineFormSet):
-    """
-    Formset for handling the validation of :class:`ReferenceMap` instances
-    against each other.
-    """
-    model = ReferenceMap
-
-    def has_errors(self):
-        if isinstance(self.errors, list):
-            return any(len(dict_) for dict_ in self.errors)
-        else:
-            return bool(self.errors)
-
-    def clean(self):
-        if not self.has_errors():
-            maps = [form.dummy_instance() for form in self.forms]
-            validate_at_least_one_map(maps)
-            validate_map_has_unique_reference_genome(maps)
-            validate_one_primary_map(maps)
-
-    def add_fields(self, form, index):
-        super().add_fields(form, index)
-        # save the formset in the 'nested' property
-        print(form.prefix)
-        form.nested = self.nested_formset_class(
-            instance=form.instance,
-            data=form.data if form.is_bound else None,
-            files=form.files if form.is_bound else None,
-            prefix='%s-%s' % (
-                form.prefix,
-                self.nested_formset_class.get_default_prefix()
-            )
-        )
-
-
-def create_reference_map_interval_nested_formset(outer_kwargs, inner_kwargs):
-
-    GenomicIntervalFormSet = create_inline_genomic_interval_formset(
-        **inner_kwargs
-    )
-    NestedFormSet = inlineformset_factory(
-        parent_model=TargetGene, model=ReferenceMap,
-        form=ReferenceMapForm, formset=BaseReferenceMapFormSet,
-        fields=ReferenceMapForm.Meta.fields, validate_min=True,
-        **outer_kwargs
-    )
-    NestedFormSet.nested_formset_class = GenomicIntervalFormSet
-    return NestedFormSet
-
-
-# Mangement forms
-# -------------------------------------------------------------------------- #
-class ReferenceMapManagementForm(forms.Form):
-
-    target = forms.ModelChoiceField(
-        label='Existing target', required=False,
-        queryset=None,
-        widget=forms.Select()
-    )

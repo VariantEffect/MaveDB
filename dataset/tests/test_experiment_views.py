@@ -1,5 +1,9 @@
 from django.test import TestCase, RequestFactory
 from django.urls import reverse_lazy
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+
+from core.utilities.tests import TestMessageMixin
 
 from accounts.factories import UserFactory
 from accounts.permissions import (
@@ -17,68 +21,81 @@ from metadata.factories import (
 from ..models.experiment import Experiment
 from ..models.experimentset import ExperimentSet
 from ..factories import ExperimentFactory, ExperimentSetFactory
-from ..views.experiment import ExperimentDetailView, experiment_create_view
+from ..views.experiment import (
+    ExperimentDetailView, ExperimentCreateView, ExperimentEditView
+)
 
 
-class TestExperimentDetailView(TestCase):
+class TestExperimentDetailView(TestCase, TestMessageMixin):
     """
     Test that experiments are displayed correctly to the public.
     """
+
     def setUp(self):
         self.factory = RequestFactory()
         self.template = 'dataset/experiment/experiment.html'
-        self.template_403 = 'main/403_forbidden.html'
-        self.template_404 = 'main/404_not_found.html'
+        self.template_403 = 'main/403.html'
+        self.template_404 = 'main/404.html'
 
     def test_uses_correct_template(self):
-        obj = ExperimentFactory()
-        obj.publish()
-        obj.save()
+        obj = ExperimentFactory(private=False)
         response = self.client.get('/experiment/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template)
 
     def test_private_instance_will_403_if_no_permission(self):
         user = UserFactory()
         obj = ExperimentFactory(private=True)
-        request = self.factory.get('/experiment/{}/'.format(obj.urn))
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
-        response = ExperimentDetailView.as_view()(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 403)
+        with self.assertRaises(PermissionDenied):
+            ExperimentDetailView.as_view()(request, urn=obj.urn)
 
-    def test_403_uses_correct_template(self):
+    def test_403_no_permission_if_private(self):
         obj = ExperimentFactory(private=True)
-        response = self.client.get('/experiment/{}/'.format(obj.urn))
-        self.assertTemplateUsed(response, self.template_403)
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(obj.urn))
+        request.user = UserFactory()
+        with self.assertRaises(PermissionDenied):
+            ExperimentDetailView.as_view()(request, urn=obj.urn)
 
     def test_404_status_and_template_used_when_object_not_found(self):
+        user = UserFactory()
         obj = ExperimentFactory()
+        assign_user_as_instance_admin(user, obj)
+
         urn = obj.urn
         obj.delete()
-        response = self.client.get('/experiment/{}/'.format(urn))
-        self.assertEqual(response.status_code, 404)
-        self.assertTemplateUsed(response, 'main/404_not_found.html')
+
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(urn))
+        request.user = user
+        with self.assertRaises(Http404):
+            ExperimentDetailView.as_view()(request, urn=obj.urn)
 
     def test_private_experiment_rendered_if_user_can_view(self):
         user = UserFactory()
         obj = ExperimentFactory()
         assign_user_as_instance_viewer(user, obj)
-        request = self.factory.get('/experiment/{}/'.format(obj.urn))
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
 
 
-class TestCreateNewExperimentView(TestCase):
+class TestCreateNewExperimentView(TestCase, TestMessageMixin):
     """
     Test that the submission process does not allow invalid data through,
     and properly handles model creation.
     """
+
     def setUp(self):
         # Every test needs access to the request factory.
         self.factory = RequestFactory()
         self.template = 'dataset/experiment/new_experiment.html'
-        self.template_403 = 'main/403_forbidden.html'
-        self.template_404 = 'main/404_not_found.html'
+        self.template_403 = 'main/403.html'
+        self.template_404 = 'main/404.html'
         self.path = reverse_lazy("dataset:experiment_new")
         self.post_data = {
             'experimentset': [''],
@@ -115,21 +132,20 @@ class TestCreateNewExperimentView(TestCase):
         data = self.post_data
         data['target'] = "brca1"
         data['title'] = ""  # Required field missing
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
+        response = ExperimentCreateView.as_view()(request)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'error')
 
     def test_form_will_post_with_valid_data(self):
         data = self.post_data
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 200)
+        response = ExperimentCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
 
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.keywords.count(), 2)
@@ -144,10 +160,10 @@ class TestCreateNewExperimentView(TestCase):
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 200)
+        response = ExperimentCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
 
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.parent, exps)
@@ -162,10 +178,10 @@ class TestCreateNewExperimentView(TestCase):
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 200)
+        response = ExperimentCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
 
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.parent, exps)
@@ -177,10 +193,10 @@ class TestCreateNewExperimentView(TestCase):
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 200)
+        response = ExperimentCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
 
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.created_by, self.user)
@@ -191,10 +207,10 @@ class TestCreateNewExperimentView(TestCase):
         data['abstract_text'] = ['hello world']
         data['method_text'] = ['foo bar']
         data['keywords'] = ['protein', 'blue']
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
-        self.assertEqual(response.status_code, 200)
+        response = ExperimentCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
 
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.modified_by, self.user)
@@ -202,17 +218,17 @@ class TestCreateNewExperimentView(TestCase):
 
     def test_experiment_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(path=self.path, data=data, method='post')
         request.user = self.user
-        _ = experiment_create_view(request)
+        response = ExperimentCreateView.as_view()(request)
         exp = Experiment.objects.all()[0]
         self.assertTrue(user_is_admin_for_instance(self.user, exp))
 
     def test_new_experimentset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        _ = experiment_create_view(request)
+        _ = ExperimentCreateView.as_view()(request)
         exps = ExperimentSet.objects.first()
 
         self.assertTrue(user_is_admin_for_instance(self.user, exps))
@@ -222,9 +238,9 @@ class TestCreateNewExperimentView(TestCase):
         es = ExperimentSetFactory()
         assign_user_as_instance_editor(self.user, es)
         data['experimentset'] = [es.pk]
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        _ = experiment_create_view(request)
+        _ = ExperimentCreateView.as_view()(request)
 
         self.assertFalse(user_is_admin_for_instance(self.user, es))
 
@@ -232,10 +248,11 @@ class TestCreateNewExperimentView(TestCase):
         data = self.post_data.copy()
         kw = KeywordFactory()
         data['keywords'] = ['protein', kw.text]
+        data['title'] = ""
 
-        request = self.factory.post(path=self.path, data=data)
+        request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
-        response = experiment_create_view(request)
+        response = ExperimentCreateView.as_view()(request)
 
         self.assertContains(response, 'protein')
         self.assertContains(response, kw.text)
@@ -250,10 +267,12 @@ class TestCreateNewExperimentView(TestCase):
             data = self.post_data.copy()
             instance = factory()
             data[field] = [instance.identifier]
+            data['title'] = ""
 
-            request = self.factory.post(path=self.path, data=data)
+            request = self.create_request(
+                method='post', path=self.path, data=data)
             request.user = self.user
-            response = experiment_create_view(request)
+            response = ExperimentCreateView.as_view()(request)
 
             self.assertContains(response, instance.identifier)
 
@@ -268,10 +287,133 @@ class TestCreateNewExperimentView(TestCase):
             instance = factory()
             value = instance.identifier
             data[field] = [value]
+            data['title'] = ""
             instance.delete()
 
-            request = self.factory.post(path=self.path, data=data)
+            request = self.create_request(
+                method='post', path=self.path, data=data)
             request.user = self.user
-            response = experiment_create_view(request)
+            response = ExperimentCreateView.as_view()(request)
 
             self.assertContains(response, instance.identifier)
+
+
+class TestEditExperimentView(TestCase, TestMessageMixin):
+    """
+    Test that the submission process does not allow invalid data through,
+    and properly handles model creation.
+    """
+
+    def setUp(self):
+        # Every test needs access to the request factory.
+        self.factory = RequestFactory()
+        self.path = '/profile/edit/experiment/{}/'
+        self.template = 'dataset/experiment/update_experiment.html'
+        self.post_data = {
+            'experimentset': [''],
+            'private': ['on'],
+            'abstract_text': [''],
+            'method_text': [''],
+            'short_description': ['experiment'],
+            'title': ['title'],
+            'sra_ids': [''],
+            'doi_ids': [''],
+            'pubmed_ids': [''],
+            'keywords': [''],
+            'submit': ['submit']
+        }
+        self.unencrypted_password = 'secret_key'
+        self.user = UserFactory(password=self.unencrypted_password)
+        self.user.set_password(self.unencrypted_password)
+        self.user.save()
+        self.client.logout()
+
+    def test_correct_tamplate_when_logged_in(self):
+        scs = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, scs)
+        self.client.login(
+            username=self.user.username,
+            password=self.unencrypted_password
+        )
+        response = self.client.get(self.path.format(scs.urn))
+        self.assertTemplateUsed(response, self.template)
+
+    def test_requires_login(self):
+        self.client.logout()
+        obj = ExperimentFactory()
+        response = self.client.get(self.path.format(obj.urn))
+        self.assertEqual(response.status_code, 302)
+
+    def test_404_object_not_found(self):
+        obj = ExperimentFactory()
+        urn = obj.urn
+        request = self.factory.get(self.path.format(urn))
+        request.user = self.user
+        obj.delete()
+        with self.assertRaises(Http404):
+            ExperimentEditView.as_view()(request, urn=urn)
+
+    def test_redirect_to_profile_if_no_permission(self):
+        exp = ExperimentFactory()
+        assign_user_as_instance_viewer(self.user, exp)
+
+        path = self.path.format(exp.urn)
+        request = self.create_request(method='get', path=path)
+        request.user = self.user
+
+        response = ExperimentEditView.as_view()(request, urn=exp.urn)
+        self.assertEqual(response.status_code, 302)
+
+    def test_published_instance_returns_edit_only_mode_form(self):
+        exp = ExperimentFactory(private=False)
+        assign_user_as_instance_admin(self.user, exp)
+        assign_user_as_instance_admin(self.user, exp.parent)
+
+        path = self.path.format(exp.urn)
+        request = self.create_request(method='get', path=path)
+        request.user = self.user
+
+        response = ExperimentEditView.as_view()(request, urn=exp.urn)
+        self.assertNotContains(response, 'id_experimentset')
+
+    def test_valid_submission_sets_modified_by(self):
+        data = self.post_data
+        exp = ExperimentFactory(private=False)
+        assign_user_as_instance_admin(self.user, exp)
+        assign_user_as_instance_admin(self.user, exp.parent)
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        response = ExperimentEditView.as_view()(request, urn=exp.urn)
+        self.assertEqual(response.status_code, 302)
+
+        experiment = Experiment.objects.first()
+        self.assertEqual(experiment.modified_by, self.user)
+
+    def test_experimentset_options_are_restricted_to_editor_instances(self):
+        exp1 = ExperimentFactory()
+        exp2 = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, exp1)
+        assign_user_as_instance_editor(self.user, exp1.parent)
+        assign_user_as_instance_viewer(self.user, exp2.parent)
+
+        request = self.create_request(method='get', path=self.path)
+        request.user = self.user
+        response = ExperimentEditView.as_view()(request, urn=exp1.urn)
+
+        self.assertContains(response, '>'+exp1.parent.urn+'<')
+        self.assertNotContains(response, '>'+exp2.parent.urn+'<')
+
+    def test_experimentset_options_are_restricted_to_admin_instances(self):
+        exp1 = ExperimentFactory()
+        exp2 = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, exp1)
+        assign_user_as_instance_admin(self.user, exp1.parent)
+        assign_user_as_instance_viewer(self.user, exp2.parent)
+
+        request = self.create_request(method='get', path=self.path)
+        request.user = self.user
+        response = ExperimentEditView.as_view()(request, urn=exp1.urn)
+
+        self.assertContains(response, '>'+exp1.parent.urn+'<')
+        self.assertNotContains(response, '>'+exp2.parent.urn+'<')

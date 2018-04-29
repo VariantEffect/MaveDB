@@ -10,7 +10,7 @@ import dataset.constants as constants
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetEditForm
 
-from .utility import make_score_count_files
+from .utility import make_files
 
 
 class TestScoreSetEditForm(TestCase):
@@ -21,7 +21,7 @@ class TestScoreSetEditForm(TestCase):
         self.user = UserFactory()
         self.factory = RequestFactory()
 
-    def make_post_data(self, score_data=None, count_data=None,
+    def make_post_data(self, score_data=None, count_data=None, meta_data=None,
                        make_exp=True):
         """
         Makes sample test input for instantiating the form to simulate
@@ -48,10 +48,12 @@ class TestScoreSetEditForm(TestCase):
             'title': 'title',
             "experiment": experiment.pk if experiment else None,
         }
-        s_file, c_file = make_score_count_files(score_data, count_data)
+        s_file, c_file, m_file = make_files(score_data, count_data, meta_data)
         files = {constants.variant_score_data: s_file}
         if c_file is not None:
             files[constants.variant_count_data] = c_file
+        if m_file is not None:
+            files[constants.variant_meta_data] = m_file
         return data, files
 
     def test_empty_data_submission_is_invalid(self):

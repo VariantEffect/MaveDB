@@ -17,7 +17,7 @@ from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm
 from ..models.scoreset import ScoreSet, default_dataset
 
-from .utility import make_score_count_files
+from .utility import make_files
 
 
 class TestScoreSetForm(TestCase):
@@ -29,7 +29,7 @@ class TestScoreSetForm(TestCase):
         self.factory = RequestFactory()
 
     def make_post_data(self, score_data=None, count_data=None,
-                       make_exp=True):
+                       meta_data=None, make_exp=True):
         """
         Makes sample test input for instantiating the form to simulate
         POST data from a view. By default creates an experiment and
@@ -55,10 +55,12 @@ class TestScoreSetForm(TestCase):
             'title': 'title',
             "experiment": experiment.pk if experiment else None,
         }
-        s_file, c_file = make_score_count_files(score_data, count_data)
+        s_file, c_file, m_file = make_files(score_data, count_data, meta_data)
         files = {constants.variant_score_data: s_file}
         if c_file is not None:
             files[constants.variant_count_data] = c_file
+        if m_file is not None:
+            files[constants.variant_meta_data] = m_file
         return data, files
 
     def test_licence_defaults_to_cc4(self):
@@ -110,7 +112,7 @@ class TestScoreSetForm(TestCase):
 
     def test_admin_experiments_appear_in_options(self):
         data, files = self.make_post_data()
-        _ = ExperimentFactory()
+        assign_user_as_instance_viewer(self.user, ExperimentFactory())
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['experiment'].queryset.count(), 1)
         self.assertEqual(
@@ -120,9 +122,9 @@ class TestScoreSetForm(TestCase):
     def test_editor_experiments_appear_in_options(self):
         data, files = self.make_post_data(make_exp=False)
         obj1 = ExperimentFactory()
-        _ = ExperimentFactory()
 
         assign_user_as_instance_editor(self.user, obj1)
+        assign_user_as_instance_viewer(self.user, ExperimentFactory())
         data['experiment'] = obj1.pk
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['experiment'].queryset.count(), 1)
@@ -131,12 +133,18 @@ class TestScoreSetForm(TestCase):
             data['experiment']
         )
 
-    def test_viewer_experiments_appear_in_options(self):
+    def test_replaces_options_can_be_seeded_from_experiment(self):
         data, files = self.make_post_data(make_exp=False)
-        obj1 = ExperimentFactory()
-        assign_user_as_instance_viewer(self.user, obj1)
+        exp = ExperimentFactory()
+        scs = ScoreSetFactory(experiment=exp)
+        scs2 = ScoreSetFactory()
+        assign_user_as_instance_admin(self.user, exp)
+        assign_user_as_instance_admin(self.user, scs)
+
         form = ScoreSetForm(data=data, files=files, user=self.user)
-        self.assertEqual(form.fields['experiment'].queryset.count(), 1)
+        self.assertEqual(form.fields['replaces'].queryset.count(), 1)
+        self.assertEqual(
+            form.fields['replaces'].queryset.first().pk, scs.pk)
 
     def test_admin_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
@@ -248,14 +256,24 @@ class TestScoreSetForm(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_invalid_no_scores_but_meta_provided(self):
-        self.fail("Write this when meta uploads are supported.")
+        data, files = self.make_post_data(meta_data=True)
+        files.pop(constants.variant_score_data)
+        instance = ScoreSetFactory()
+        assign_user_as_instance_admin(self.user, instance.experiment)
+        data['experiment'] = instance.experiment.pk
+        form = ScoreSetForm(
+            data=data, files=files, user=self.user, instance=instance)
+        self.assertFalse(form.is_valid())
 
     def test_variants_correctly_parsed_integration_test(self):
-        # Generate two distinct hgvs strings
+        # Generate distinct hgvs strings
         score_hgvs = generate_hgvs()
         count_hgvs = generate_hgvs()
+        meta_hgvs = generate_hgvs()
         while count_hgvs == score_hgvs:
             count_hgvs = generate_hgvs()
+        while meta_hgvs == score_hgvs or meta_hgvs == count_hgvs:
+            meta_hgvs = generate_hgvs()
 
         score_data = "{},{},se\n{},1,".format(
             constants.hgvs_column, constants.required_score_column, score_hgvs
@@ -263,7 +281,10 @@ class TestScoreSetForm(TestCase):
         count_data = "{},{},sig\n{},None,-1".format(
             constants.hgvs_column, 'count', count_hgvs
         )
-        data, files = self.make_post_data(score_data, count_data)
+        meta_data = "{},{}\n{},\"hello,world\"".format(
+            constants.hgvs_column, 'metadata', meta_hgvs
+        )
+        data, files = self.make_post_data(score_data, count_data, meta_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         scs = form.save(commit=True)
         variants = scs.children
@@ -271,15 +292,21 @@ class TestScoreSetForm(TestCase):
         data_1 = {
             'score_data': {'se': None, 'score': 1.0},
             'count_data': {'sig': None, 'count': None},
-            'metadata': {}
+            'meta_data': {'metadata': None}
         }
         data_2 = {
             'score_data': {'se': None, 'score': None},
             'count_data': {'sig': -1.0, 'count': None},
-            'metadata': {}
+            'meta_data': {'metadata': None}
+        }
+        data_3 = {
+            'score_data': {'se': None, 'score': None},
+            'count_data': {'sig': None, 'count': None},
+            'meta_data': {'metadata': 'hello,world'}
         }
         self.assertEqual(variants.filter(hgvs=score_hgvs).first().data, data_1)
         self.assertEqual(variants.filter(hgvs=count_hgvs).first().data, data_2)
+        self.assertEqual(variants.filter(hgvs=meta_hgvs).first().data, data_3)
 
     def test_invalid_empty_score_file(self):
         score_data = "{},{},se\n".format(
@@ -321,7 +348,7 @@ class TestScoreSetForm(TestCase):
         form.dataset_columns = {
             constants.score_columns: [constants.required_score_column, 'aaa'],
             constants.count_columns: [],
-            constants.metadata_columns: []
+            constants.meta_columns: []
         }
         with self.assertRaises(ValidationError):
             form.clean()
