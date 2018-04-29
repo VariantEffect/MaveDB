@@ -1,128 +1,90 @@
-{% extends "main/base.html" %}
+{% extends "dataset/base/base_create_update.html" %}
 
-{% load static %}
-{% load widget_tweaks %}
-{% load i18n %}
 
-{% block body %}
+{% block form-action %}
+  {% url 'dataset:scoreset_new' %}
+{% endblock %}
 
-<div class="row">
-	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
-		<h3>
-			Create new scoreset
-		</h3>
-		{% if experiment_urn %}
-			<a href="{% url "accounts:profile" %}"><h4 class="mt-4">Skip for now</h4></a>
-		{% endif %}
-		<p class="mt-4">
-			Please fill out the form to the right. All fields will remain editable until published.
-		</p>
-		<p>* indicates a required field</p>
-	</div>
 
-	<div class="col-md-8 mx-3">
-		<form action="{% url 'dataset:scoreset_new' %}" method="POST" enctype="multipart/form-data">
-			{% csrf_token %}
-			
-			{% if scoreset_form.non_field_errors %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <h4> Oh no! </h4>
-          <p> There were some errors with your submission </p>
-          <hr>
-          <p>{{ scoreset_form.non_field_errors }}</p>
-        </div>
-			{% endif %}
+{% block side-bar-title %}
+  Create new Score Set
+{% endblock %}
 
-			<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
-			<div id="sra-identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
-			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
-			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
 
-      <p class="text-muted">
-        Please fill our the form below. Not all fields are required, but filling
-        in as much as your can is strongly recommended to encourage data completeness.
-        You can always fill in the required fields now and then remaining fields
-        at a later date. You can access the edit view for this submission
-        from your <a href="{% url 'accounts:profile' %}">profile</a>
-        once this form has been successfully submitted and processed.
-      </p>
-      <p class="text-muted">
-        <b>Note: </b>You can only attach a score set to an experiment for which
-        you have <b>viewer</b> permissions on. Similarly, you can only replace
-        score sets for which you have <b>edit</b> permission on.
-      </p>
+{% block side-bar-instructions %}
+  Please fill out the form to the right. All fields will remain editable until published.
+{% endblock %}
 
-      <div class="">
-        {% include 'core/bs_form.html' with form=scoreset_form %}
-      </div>
-      <hr>
 
-      <div class="">
-        <h4>Target gene</h4>
-        <p class="text-muted">
-          Enter the name and wild-type sequence of your target gene. Alternatively,
-          you can select an existing target from the drop-down menu below and
-          auto fill the remaining form fields. The reference map section
-          will be populated with the information associated with the primary reference
-          for the selected target.
-        </p>
-        {% include 'core/bs_form.html' with form=target_gene_form %}
-      </div>
-      <hr>
+{% block top-instructions %}
+  <p class="text-muted">
+    Please fill our the form below. Not all fields are required, but filling
+    in as much as your can is strongly recommended to encourage data completeness.
+    You can always fill in the required fields now and then remaining fields
+    at a later date. You can access the edit view for this submission
+    from your <a href="{% url 'accounts:profile' %}">profile</a>
+    once this form has been successfully submitted and processed.
+  </p>
+  <p class="text-muted">
+    <b>Note: </b>You can only attach a Score Set to an Experiment for which
+    you have <b>edit</b> permissions on. Similarly, you can only replace
+    score sets for which you have <b>edit</b> permission on.
+  </p>
+{% endblock %}
 
-      <div class="">
-        <h4>Target identifiers</h4>
-        <p class="text-muted">
-          Associate an external identifier with your target. Type in a new
-          identifier if you cannot find it in the dropdown list and press enter.
-        </p>
-      </div>
-      <div class="">
-        {% include 'core/bs_inline_form.html' with form=uniprot_offset_form %}
-      </div>
-      <div class="">
-        {% include 'core/bs_inline_form.html' with form=ensembl_offset_form %}
-      </div>
-      <div class="">
-        {% include 'core/bs_inline_form.html' with form=refseq_offset_form %}
-      </div>
-      <hr>
 
-      <div class="">
-        <h4>
-          Reference Genome
-{#          <input class="btn btn-sm btn-outline-dark white-button" type="button" value="+" id="add-reference-map">#}
-        </h4>
-        <p class="text-muted">
-          Select an existing reference genome from the drop-down list. If you cannot find
-          your particular reference in the list, please let us
-          <a href="{% url 'main:contact' %}">know!</a>
-        </p>
-        <div class="reference-map-formset">
-          {% include 'core/bs_form.html' with form=reference_map_form %}
-        </div>
-      </div>
-      <hr>
+{% block form-block %}
+  <div class="scoreset-form-group">
+    <div class="scoreset-form">
+      {% include 'core/bs_form.html' with form=scoreset_form %}
+    </div>
+  </div>
+  <hr>
 
-			<div class="row">
-        <div class="col-auto">
-          <input class="btn btn-outline-dark white-button" type="submit" value="Submit" name="save"
-                 style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                 data-placement="top|right|bottom|left"
-                 title="Save your changes without publishing.">
-        </div>
-        <div class="col-auto">
-          <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="save"
-                 style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                 data-placement="top|right|bottom|left" onclick="cancelSubmission()"
-                 title="Cancel your submission.">
-        </div>
-			</div>
+  <div class="target-gene-form-group">
+    <h4>Target gene</h4>
+    <p class="text-muted">
+      Enter the name and wild-type sequence of your target gene. Alternatively,
+      you can select an existing target from the drop-down menu below and
+      auto fill the remaining form fields. The reference map section
+      will be populated with the information associated with the primary reference
+      for the selected target.
+    </p>
+    <div class="target-gene-form">
+      {% include 'core/bs_form.html' with form=target_gene_form %}
+    </div>
+  </div>
+  <hr>
 
-    </form>
-	</div>
-</div>
-{% endblock body %}
+  <div class="identifier-offset-form-group">
+    <h4>Target identifiers</h4>
+    <p class="text-muted">
+      Associate an external identifier with your target. Type in a new
+      identifier if you cannot find it in the dropdown list and press enter.
+    </p>
+  </div>
+  <div class="uniprot-offset-form-group">
+    {% include 'core/bs_inline_form.html' with form=uniprot_offset_form %}
+  </div>
+  <div class="ensembl-offset-form-group">
+    {% include 'core/bs_inline_form.html' with form=ensembl_offset_form %}
+  </div>
+  <div class="refseq-offset-form-group">
+    {% include 'core/bs_inline_form.html' with form=refseq_offset_form %}
+  </div>
+  <hr>
+
+  <div class="reference-map-form-group">
+    <h4>
+      Reference Genome
+    </h4>
+    <p class="text-muted">
+      Select an existing reference genome from the drop-down list. If you cannot find
+      your particular reference in the list, please let us
+      <a href="{% url 'main:contact' %}">know!</a>
+    </p>
+    <div class="reference-map-form">
+      {% include 'core/bs_form.html' with form=reference_map_form %}
+    </div>
+  </div>
+{% endblock %}

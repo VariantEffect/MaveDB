@@ -97,7 +97,7 @@
           <table id="counts-table" class="styled-table table table-hover">
             <thead>
               <tr>
-                {% for column in counts_columns %}
+                {% for column in count_columns %}
                   <th onclick="sortTable('counts-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
                 {% endfor %}
               </tr>

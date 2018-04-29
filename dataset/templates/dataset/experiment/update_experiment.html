@@ -1,0 +1,53 @@
+{% extends "dataset/base/base_create_update.html" %}
+
+
+{% block form-action %}
+  {% url 'accounts:edit_experiment' instance.urn %}
+{% endblock %}
+
+
+{% block side-bar-title %}
+  Edit Experiment
+{% endblock %}
+
+
+{% block side-bar-instructions %}
+  {% if instance.private %}
+    <p>
+      This entry will remain fully editable until you click publish at the
+      bottom of this form. Should you choose to publish, your
+      entry will go live and some fields will become permanently frozen.
+      See our <a href="{% url 'main:documentation' %}"> documentation </a>
+      for further information.
+    </p>
+    {% else %}
+    <p>
+      This entry has been published and editing is restricted.
+    </p>
+  {% endif %}
+{% endblock %}
+
+
+{% block top-instructions %}
+  <p class="text-muted">
+    Please fill our the form below. Not all fields are required, but filling
+    in as much as your can is strongly recommended to encourage data completeness.
+    You can always fill in the required fields now and then remaining fields
+    at a later date.
+  </p>
+  {% if instance.private %}
+    <p class="text-muted">
+      <b>Note: </b>You can only attach an Experiment to an Experiment Set for which
+      you have <b>edit</b> permissions on.
+    </p>
+  {% endif %}
+{% endblock %}
+
+
+{% block form-block %}
+  <div class="experiment-form-group">
+    <div class="experiment-form">
+      {% include 'core/bs_form.html' with form=experiment_form %}
+    </div>
+  </div>
+{% endblock %}

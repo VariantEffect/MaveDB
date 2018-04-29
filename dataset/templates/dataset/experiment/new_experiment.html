@@ -1,87 +1,41 @@
-{% extends "main/base.html" %}
+{% extends "dataset/base/base_create_update.html" %}
 
-{% block body %}
-<div class="row">
-	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary">
-		<h3>Create new experiment</h3>
-		<p class="mt-4">
-			Please fill out the form to the right. All fields will remain editable until published.
-		</p>
-		<p>* indicates a required field</p>
-	</div>
-	
-	<!-- Composite form rendering -->
-	<div class="col-md-8 mx-3">
-		<form action="{% url 'dataset:experiment_new' %}" method="POST">
-			{% csrf_token %}
-			
-			{% if experiment_form.non_field_errors %}
-			<div class="alert alert-danger alert-dismissible fade show">
-				<h4> Oh no! </h4>
-				<p> There were some errors with your submission </p>
-				<hr>
-				<p>{{ experiment_form.non_field_errors }}</p>
-			</div>
-			{% endif %}
 
-			<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
-			<div id="sra-identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
-			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
-			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
+{% block form-action %}
+  {% url 'dataset:experiment_new' %}
+{% endblock %}
 
-			<!-- Model form rendering -->
-			<div class="model-form">
-				{% for field in experiment_form %}
-					<div class="form-group">
-						<label for="{{ field.id_for_label }}">
-							{{ field.label }}{% if field.field.required %} * {% endif %}
-							{% if field.label == "Abstract" %}
-								<!-- Button trigger modal -->
-								<button type="button" class="btn btn-outline-dark white-button btn-sm ml-2" data-toggle="modal" 
-												data-target="#abstract-markdown-modal" id="preview-abstract">
-								Preview
-								</button>
-							{% endif %}
-							
-							{% if field.label == "Method description" %}
-								<!-- Button trigger modal -->
-								<button type="button" class="btn btn-outline-dark white-button btn-sm ml-2" data-toggle="modal" 
-												data-target="#method-markdown-modal" id="preview-method">
-								Preview
-								</button>
-							{% endif %}
-						</label>
-						
-						{% if field.errors %}
-							<div class="alert alert-danger alert-dismissible fade show" role="alert">
-								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-									<span aria-hidden="true">&times;</span>
-								</button>	
-								{{ field.errors }}
-						</div>
-						{% endif %}
-            <br>
-						{{ field }}
-					</div>
-				{% endfor %}
-			  <hr> <!-- End model form rendering -->
 
-        <div class="row">
-          <div class="col-auto">
-            <input class="btn btn-outline-dark white-button" type="submit" value="Submit" name="save"
-                   style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                   data-placement="top|right|bottom|left"
-                   title="Save your changes without publishing.">
-          </div>
-          <div class="col-auto">
-            <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="save"
-                   style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                   data-placement="top|right|bottom|left" onclick="cancelSubmission()"
-                   title="Cancel your submission.">
-          </div>
-        </div>
-      </div>
-		</form>
-	</div> <!-- End composite form rendering -->
-</div>
-{% endblock body %}
+{% block side-bar-title %}
+  Create new Experiment
+{% endblock %}
+
+
+{% block side-bar-instructions %}
+  Please fill out the form to the right. All fields will remain editable until published.
+{% endblock %}
+
+
+{% block top-instructions %}
+  <p class="text-muted">
+    Please fill our the form below. Not all fields are required, but filling
+    in as much as your can is strongly recommended to encourage data completeness.
+    You can always fill in the required fields now and then remaining fields
+    at a later date. You can access the edit view for this submission
+    from your <a href="{% url 'accounts:profile' %}">profile</a>
+    once this form has been successfully submitted and processed.
+  </p>
+  <p class="text-muted">
+    <b>Note: </b>You can only attach an Experiment to an Experiment Set for which
+    you have <b>edit</b> permissions on.
+  </p>
+{% endblock %}
+
+
+{% block form-block %}
+  <div class="experiment-form-group">
+    <div class="experiment-form">
+      {% include 'core/bs_form.html' with form=experiment_form %}
+    </div>
+  </div>
+{% endblock %}
