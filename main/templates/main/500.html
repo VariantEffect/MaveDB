@@ -4,20 +4,15 @@
 
 <div class=row>
 	<div class="col-md-2 border border-top-0 border-bottom-0 border-left-0 border-secondary" style="height:80vh;">
-		<h5> 403 - Forbidden! </h5>
+		<h5>500</h5>
 	</div>
 
 	<div class="col-md-8 mx-3">
-		<h3> Restricted access. </h3>
-		{% if instance %}
+		<h3>Internal server error!</h3>
 			<p> 
-				This is a private entry.
+				Something has gone wrong on our side. Please contact us if this is
+        a reccuring issue.
 			</p>
-		{% else %}
-			<p> 
-				It appears that you don't have access to this page.
-			</p>
-		{% endif %}
 	</div>
 </div>
 
