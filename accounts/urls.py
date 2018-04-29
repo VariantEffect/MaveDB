@@ -20,12 +20,14 @@ Including another URLconf
 
 from django.conf.urls import url, include
 
-from dataset.constants import any_url_pattern, scoreset_url_pattern
+from dataset.constants import (
+    scoreset_url_pattern, experiment_url_pattern, any_url_pattern
+)
 
 from .views import registration_view, profile_view, log_user_out, login_error
-from .views import manage_instance, edit_instance, view_instance
-from .views import login_delegator
+from .views import manage_instance, login_delegator
 
+from dataset.views.experiment import ExperimentEditView
 from dataset.views.scoreset import ScoreSetEditView
 
 
@@ -34,7 +36,7 @@ urlpatterns = [
     url(r"register/$", registration_view, name="register"),
 
     # ------ Social stuff
-    url(r"error", login_error, name="login_error"),
+    url(r"profile/error/$", login_error, name="login_error"),
     url(
         r'^oauth/', include('social_django.urls', namespace='social'),
         name="social"
@@ -45,7 +47,6 @@ urlpatterns = [
     url(r'login/$', login_delegator, name='login'),
 
     # ------ Profile
-    url(r"^$", profile_view, name="index"),
     url(r"profile/$", profile_view, name="profile"),
     url(
         r"profile/manage/(?P<urn>{})/$".format(any_url_pattern),
@@ -53,18 +54,13 @@ urlpatterns = [
         name="manage_instance"
     ),
     url(
-        r"profile/edit/(?P<urn>{})/$".format(any_url_pattern),
-        edit_instance,
-        name="edit_instance"
+        r"profile/edit/experiment/(?P<urn>{})/$".format(experiment_url_pattern),
+        ExperimentEditView.as_view(),
+        name="edit_experiment"
     ),
     url(
         r"profile/edit/scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
         ScoreSetEditView.as_view(),
-        name="edit_instance"
+        name="edit_scoreset"
     ),
-    url(
-        r"profile/view/(?P<urn>{})/$".format(any_url_pattern),
-        view_instance,
-        name="view_instance"
-    )
 ]
