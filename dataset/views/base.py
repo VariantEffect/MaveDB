@@ -1,15 +1,25 @@
-from braces.views import (
-    PermissionRequiredMixin, UserFormKwargsMixin, LoginRequiredMixin
+import logging
+
+from django.views.generic import DetailView, FormView
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin
 )
-
-from django.views.generic import DetailView, FormView, UpdateView
+from django.shortcuts import reverse
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
 
+from dataset.mixins import DatasetUrnMixin, DatasetPermissionMixin, \
+    DatasetFormViewContextMixin, MultiFormMixin
+
+from ..forms.base import DatasetModelForm
 from ..models.base import DatasetModel
 
 
-class DatasetModelView(DetailView, PermissionRequiredMixin):
+logger = logging.getLogger("django")
+
+
+class DatasetModelView(DatasetPermissionMixin, DatasetUrnMixin, DetailView):
     """
     Base view which will handle retrieval of an object and checking permissions
     against the requesting user. The user must have 'view' permission if the
@@ -25,44 +35,146 @@ class DatasetModelView(DetailView, PermissionRequiredMixin):
     HTTP404
     PermissionDenied
     """
-    # The following MUST be overriden in the inheriting view.
+    # Override the following in the inheriting view.
+    # -------
     model = DatasetModel
     template_name = None
-    raise_exception = True
-    permission_required = None
+    # -------
 
     context_object_name = "instance"
     http_method_names = ['get']
     login_url = "/login/"
 
-    def get_object(self, queryset=None):
-        urn = self.kwargs.get('urn', None)
-        return get_object_or_404(self.model, urn=urn)
 
-    def check_permissions(self, request=None):
-        instance = self.get_object()
-        has_permission = super().check_permissions(request) and instance.private
-        return has_permission
+class DatasetModelFormView(DatasetFormViewContextMixin,
+                           FormView,
+                           MultiFormMixin):
+    # Override the following in the inheriting view.
+    # -------
+    form_class = DatasetModelForm  # Unused but defined for Django compliance.
+    template_name = None
+    model_class_name = 'dataset'
+    # -------
 
-    def handle_no_permission(self, request):
+    success_url = '/accounts/profile/'
+    prefix = None
+    success_message = None
+
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if request.is_ajax():
+            return self.get_ajax(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        all_valid, forms = self.forms_valid()
+        if not all_valid:
+            return self.form_invalid(forms)
+        else:
+            return self.form_valid(forms)
+
+    def get_ajax(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        # Pass this. We're using `get_forms` from MultiFormMixin.
+        return None
+
+    def form_invalid(self, forms):
+        """
+        Overridden from FormView. We just redirect to the same url if invalid.
+        We're just changing `form` to `forms` to add the forms with errors to
+        the context.
+        """
+        return self.render_to_response(self.get_context_data(**forms))
+
+    def form_valid(self, forms=None):
+        """
+        Overridden from FormView. FormView definition just redirects to
+        success url or back to the same url if invalid. We're just adding some
+        extra logic on top to handle all the additional forms.
+        """
         try:
-            return super().handle_no_permission(request)
-        except PermissionDenied:
-            instance = self.get_object()
-            raise PermissionDenied(
-                "{urn} is a private entry and is under restricted access until "
-                "it is published.".format(
-                    urn=instance.urn
-                )
+            forms = self.save_forms(forms)
+            message = self.format_success_message()
+            if message:
+                messages.success(self.request, message)
+            return super().form_valid(forms)
+        except Exception as e:
+            logger.exception(
+                "The following error occured during "
+                "{} creation:\n{}".format(self.model_class_name, str(e))
             )
+            messages.error(
+                self.request,
+                "There was a server side error while saving your submission "
+                "Try again or contact us if this issue persists."
+            )
+            return self.form_invalid(forms)
+
+    def format_success_message(self):
+        return None
 
 
+class CreateDatasetModelView(LoginRequiredMixin, DatasetModelFormView):
+    """
+    Base view for serving up multiple forms for creating a new instance.
+    Handles the context creation, form handling and object creation.
 
-class CreateDatasetModelView(UserFormKwargsMixin, FormView, LoginRequiredMixin):
-    pass
+    Raises
+    ------
+    HTTP404
+    """
+    login_url = '/login/'
+    success_message = (
+        "Successfully created a new {model_name}, which has been assigned the "
+        "URN {urn}. You can freely edit this submission until you choose to "
+        "publish it. You can access the draft submission from your profile."
+    )
+
+    def format_success_message(self):
+        return self.success_message.format(
+            model_name=self.model_class_name, urn=self.kwargs.get('urn', None)
+        )
 
 
+class UpdateDatasetModelView(DatasetPermissionMixin,
+                             DatasetUrnMixin,
+                             DatasetModelFormView):
+    """
+    Base view for serving up multiple forms for updating an instance.
+    Handles the context creation, form handling and object creation.
 
-class UpdateDatasetModelView(UserFormKwargsMixin, UpdateView,
-                             PermissionRequiredMixin):
-    pass
+    Raises
+    ------
+    HTTP404
+    PermissionDenied
+    """
+
+    success_message = "Successfully updated model {urn}!"
+    permission_required = 'dataset.can_edit'
+    model_class = None
+    permission_denied_message = \
+        'You do not have the required permissions to edit entry {urn}.'
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.instance = self.get_object()
+            return super().dispatch(request, *args, **kwargs)
+        except PermissionDenied:
+            urn = self.kwargs.get('urn', None)
+            messages.error(
+                self.request,
+                self.permission_denied_message.format(urn=urn)
+            )
+            return HttpResponseRedirect(reverse("accounts:profile"))
+
+    def format_success_message(self):
+        return self.success_message.format(urn=self.instance.urn)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['instance'] = self.instance
+        return context

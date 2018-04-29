@@ -1,22 +1,21 @@
-import json
-
-from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.http import HttpRequest
 from django.urls import reverse_lazy
-from django.views.generic import DetailView
+from django.db import transaction
 
-from accounts.permissions import PermissionTypes, assign_user_as_instance_admin
+from accounts.permissions import assign_user_as_instance_admin
 
-from core.utilities import is_null
-from core.utilities.pandoc import convert_md_to_html
+from core.utilities import send_admin_email
 from core.utilities.versioning import track_changes
 
-from ..forms.experiment import ExperimentForm
+from ..forms.experiment import ExperimentForm, ExperimentEditForm
 from ..models.experiment import Experiment
 
+from .base import (
+    DatasetModelView, CreateDatasetModelView, UpdateDatasetModelView
+)
 
-class ExperimentDetailView(DetailView):
+
+class ExperimentDetailView(DatasetModelView):
     """
     object in question and render a simple template for public viewing, or
     Simple class-based detail view for an `Experiment`. Will either find the
@@ -27,43 +26,14 @@ class ExperimentDetailView(DetailView):
     urn : :class:`HttpRequest`
         The urn of the `Experiment` to render.
     """
+    # Overriding from `DatasetModelView`.
+    # -------
     model = Experiment
     template_name = 'dataset/experiment/experiment.html'
-    context_object_name = "instance"
-
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            experiment = self.get_object()
-        except Http404:
-            response = render(
-                request=request,
-                template_name="main/404_not_found.html"
-            )
-            response.status_code = 404
-            return response
-
-        has_permission = self.request.user.has_perm(
-            PermissionTypes.CAN_VIEW, experiment)
-        if experiment.private and not has_permission:
-            response = render(
-                request=request,
-                template_name="main/403_forbidden.html",
-                context={"instance": experiment},
-            )
-            response.status_code = 403
-            return response
-        else:
-            return super(ExperimentDetailView, self).dispatch(
-                request, *args, **kwargs
-            )
-
-    def get_object(self, queryset=None):
-        urn = self.kwargs.get('urn', None)
-        return get_object_or_404(Experiment, urn=urn)
+    # -------
 
 
-@login_required(login_url=reverse_lazy("accounts:login"))
-def experiment_create_view(request):
+class ExperimentCreateView(CreateDatasetModelView):
     """
     This view serves up the form:
         - `ExperimentForm` for the instantiation of an Experiment instnace.
@@ -77,86 +47,104 @@ def experiment_create_view(request):
     request : :class:`HttpRequest`
         The request object that django passes into all views.
     """
-    context = {}
-    experiment_form = ExperimentForm(user=request.user)
-    context["experiment_form"] = experiment_form
+    # Overridden from `CreateDatasetModelView`
+    # -------
+    form_class = ExperimentForm
+    template_name = 'dataset/experiment/new_experiment.html'
+    model_class_name = 'Experiment'
+    # -------
 
-    # If the request is ajax, then it's for previewing the abstract
-    # or method description. This code is coupled with base.js. Changes
-    # here might break the javascript code.
-    if request.is_ajax():
-        data = dict()
-        data['abstractText'] = convert_md_to_html(
-            request.GET.get("abstractText", "")
-        )
-        data['methodText'] = convert_md_to_html(
-            request.GET.get("methodText", "")
-        )
-        return HttpResponse(json.dumps(data), content_type="application/json")
+    forms = {"experiment_form": ExperimentForm}
 
-    # If you change the prefix arguments here, make sure to change them
-    # in base.js as well.
-    if request.method == "POST":
-        # Get the new keywords/urn/target org so that we can return
-        # them for list repopulation if the form has errors.
-        keywords = request.POST.getlist("keywords")
-        keywords = [kw for kw in keywords if not is_null(kw)]
+    @transaction.atomic
+    def save_forms(self, forms):
+        experiment_form = forms['experiment_form']
+        experiment = experiment_form.save(commit=True)
+        # Save and update permissions. If no experimentset was selected,
+        # by default a new experimentset is created with the current user
+        # as it's administrator.
+        user = self.request.user
+        assign_user_as_instance_admin(user, experiment)
+        experiment.set_created_by(user, propagate=False)
+        experiment.set_modified_by(user, propagate=False)
+        experiment.save(save_parents=False)
+        track_changes(user, experiment)
 
-        sra_ids = request.POST.getlist("sra_ids")
-        sra_ids = [i for i in sra_ids if not is_null(sra_ids)]
-
-        doi_ids = request.POST.getlist("doi_ids")
-        doi_ids = [i for i in doi_ids if not is_null(doi_ids)]
-
-        pubmed_ids = request.POST.getlist("pubmed_ids")
-        pubmed_ids = [i for i in pubmed_ids if not is_null(pubmed_ids)]
-
-        target_organism = request.POST.getlist("target_organism")
-        target_organism = [to for to in target_organism if not is_null(to)]
-
-        experiment_form = ExperimentForm(request.POST, user=request.user)
-        context["experiment_form"] = experiment_form
-        context["repop_keywords"] = ','.join(keywords)
-        context["repop_sra_identifiers"] = ','.join(sra_ids)
-        context["repop_doi_identifiers"] = ','.join(doi_ids)
-        context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
-        context["repop_target_organism"] = ','.join(target_organism)
-
-        if not experiment_form.is_valid():
-            return render(
-                request,
-                "dataset/experiment/new_experiment.html",
-                context=context
-            )
+        if not self.request.POST['experimentset']:
+            assign_user_as_instance_admin(user, experiment.experimentset)
+            send_admin_email(self.request.user, experiment.experimentset)
+            propagate = True
+            save_parents = True
         else:
-            experiment = experiment_form.save(commit=True)
-            # Save and update permissions. If no experimentset was selected,
-            # by default a new experimentset is created with the current user
-            # as it's administrator.
-            user = request.user
-            assign_user_as_instance_admin(user, experiment)
-            experiment.set_created_by(user, propagate=False)
-            experiment.set_modified_by(user, propagate=False)
-            experiment.save(save_parents=False)
-            track_changes(user, experiment)
+            propagate = False
+            save_parents = False
 
-            if not request.POST['experimentset']:
-                assign_user_as_instance_admin(user, experiment.experimentset)
-                experiment.set_created_by(user, propagate=True)
-                experiment.set_modified_by(user, propagate=True)
-                experiment.save(save_parents=True)
-                track_changes(
-                    user, experiment.experimentset
-                )
+        experiment.set_created_by(user, propagate=propagate)
+        experiment.set_modified_by(user, propagate=propagate)
+        experiment.save(save_parents=save_parents)
+        track_changes(user, experiment.experimentset)
+        track_changes(user, experiment)
+        send_admin_email(self.request.user, experiment)
+        self.kwargs['urn'] = experiment.urn
+        return forms
 
-            url = "{}{}".format(
-                reverse_lazy("dataset:scoreset_new"),
-                "?experiment={}".format(experiment.urn)
-            )
-            return HttpResponseRedirect(redirect_to=url)
-    else:
-        return render(
-            request,
-            "dataset/experiment/new_experiment.html",
-            context=context
+    def get_experiment_form_kwargs(self, key):
+        return {'user': self.request.user}
+
+    def get_success_url(self):
+        return "{}{}".format(
+            reverse_lazy("dataset:scoreset_new"),
+            "?experiment={}".format(self.kwargs['urn'])
         )
+
+
+class ExperimentEditView(UpdateDatasetModelView):
+    """
+    This view serves up the form:
+        - `ExperimentForm` for the instantiation of an Experiment instnace.
+
+    A new experiment instance will only be created if all forms pass validation
+    otherwise the forms with the appropriate errors will be served back. Upon
+    success, the user is redirected to the newly created experiment page.
+
+    Parameters
+    ----------
+    request : :class:`HttpRequest`
+        The request object that django passes into all views.
+    """
+    # Overridden from `CreateDatasetModelView`
+    # -------
+    form_class = ExperimentForm
+    template_name = 'dataset/experiment/update_experiment.html'
+    model_class_name = 'Experiment'
+    model_class = Experiment
+    # -------
+
+    forms = {"experiment_form": ExperimentForm}
+    restricted_forms = {"experiment_form": ExperimentEditForm}
+
+    @transaction.atomic
+    def save_forms(self, forms):
+        experiment_form = forms['experiment_form']
+        experiment = experiment_form.save(commit=True)
+        experiment.set_modified_by(self.request.user, propagate=False)
+        track_changes(self.request.user, experiment)
+        self.kwargs['urn'] = experiment.urn
+        return forms
+
+    def get_experiment_form_form(self, form_class, **form_kwargs):
+        if self.request.method == "POST":
+            if self.instance.private:
+                return ExperimentForm.from_request(
+                    self.request, self.instance, initial=None,
+                    prefix=self.prefixes.get('experiment_form', None)
+                )
+            else:
+                return ExperimentEditForm.from_request(
+                    self.request, self.instance, initial=None,
+                    prefix=self.prefixes.get('experiment_form', None)
+                )
+        else:
+            if 'user' not in form_kwargs:
+                form_kwargs.update({'user': self.request.user})
+            return form_class(**form_kwargs)
