@@ -29,7 +29,7 @@ def default_dataset():
     return dict({
         constants.score_columns: [constants.required_score_column],
         constants.count_columns: [],
-        constants.metadata_columns: []
+        constants.meta_columns: []
     })
 
 
@@ -177,7 +177,15 @@ class ScoreSet(DatasetModel):
 
     def get_target_organisms(self):
         if not self.get_target():
-            return None
+            return set()
+        return set([
+            g.get_species_name()
+            for g in self.get_target().get_reference_genomes()
+        ])
+
+    def get_display_target_organisms(self):
+        if not self.get_target():
+            return set()
         return set(sorted([
             r.format_reference_genome_species_html()
             for r in self.get_target().get_reference_maps()
@@ -198,7 +206,7 @@ class ScoreSet(DatasetModel):
 
     @property
     def metadata_columns(self):
-        return self._add_hgvs(self.dataset_columns[constants.metadata_columns])
+        return self._add_hgvs(self.dataset_columns[constants.meta_columns])
 
     @property
     def has_score_dataset(self):
@@ -210,7 +218,7 @@ class ScoreSet(DatasetModel):
 
     @property
     def has_metadata(self):
-        return len(self.dataset_columns[constants.metadata_columns]) > 0
+        return len(self.dataset_columns[constants.meta_columns]) > 0
 
     # replaced_by/replaces chain traversal
     # ---------------------------------------------------------------------- #

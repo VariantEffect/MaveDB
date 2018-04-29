@@ -1,5 +1,6 @@
 import string
 import reversion
+from functools import reduce
 
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
@@ -124,8 +125,14 @@ class Experiment(DatasetModel):
         return [t.get_name() for t in self.get_targets()]
 
     def get_target_organisms(self):
-        from functools import reduce
-        organism_sets = [s.get_target_organisms() for s in self.children]
+        organism_sets = [
+            s.get_target_organisms() for s in self.children]
+        return list(
+            sorted(reduce(lambda x, y: x | y, organism_sets, set())))
+
+    def get_display_target_organisms(self):
+        organism_sets = [
+            s.get_display_target_organisms() for s in self.children]
         return list(sorted(reduce(lambda x, y: x | y, organism_sets, set())))
 
 
