@@ -9,6 +9,7 @@ from .permissions import (
     user_is_viewer_for_instance,
 )
 
+
 def filter_su(qs):
     """filter superusers from a query."""
     if isinstance(qs, (list, set)):
@@ -88,3 +89,23 @@ class GroupPermissionMixin(object):
         users = User.objects.all()
         viewers = [u.pk for u in users if user_is_viewer_for_instance(u, self)]
         return filter_anon(User.objects.filter(pk__in=viewers))
+
+    def users_with_manage_permission(self):
+        """
+        Returns all users with `dataset.can_manage` permission for
+        this instance.
+        """
+        return self.administrators()
+
+    def users_with_edit_permission(self):
+        """
+        Returns all users with `dataset.can_edit` permission for this instance.
+        """
+        return self.editors().union(self.administrators())
+
+    def users_with_view_permission(self):
+        """
+        Returns all users with `dataset.can_view` permission for this instance.
+        """
+        return self.administrators().union(
+            self.editors()).union(self.viewers())
