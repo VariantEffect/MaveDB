@@ -140,7 +140,7 @@ def validate_scoreset_json(dict_):
     required_columns = [
         constants.score_columns,
         constants.count_columns,
-        constants.metadata_columns
+        constants.meta_columns
     ]
 
     for key in required_columns:
