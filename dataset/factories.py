@@ -59,3 +59,20 @@ class ScoreSetFactory(DatasetModelFactory):
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
 
+
+class ScoreSetWithTargetFactory(DatasetModelFactory):
+    """
+    Factory for producing test instances for :class:`Scoreset`.
+    """
+    class Meta:
+        model = ScoreSet
+
+    experiment = factory.SubFactory(ExperimentFactory)
+    dataset_columns = default_dataset()
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        from genome.factories import TargetGeneFactory
+        instance = super()._create(model_class, *args, **kwargs)
+        TargetGeneFactory(scoreset=instance)
+        return instance
