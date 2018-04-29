@@ -23,6 +23,8 @@ from dataset.mixins import (
     ScoreSetSearchMixin,
 )
 
+from accounts.permissions import PermissionTypes
+
 User = get_user_model()
 
 
@@ -111,7 +113,8 @@ def download_variant_data(request, urn, dataset_column):
             dataset_column))
 
     scoreset = get_object_or_404(ScoreSet, urn=urn)
-    if scoreset.private:
+    has_permission = request.user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
+    if scoreset.private and not has_permission:
         raise Http404()
 
     if dataset_column == constants.score_columns and \
@@ -122,7 +125,7 @@ def download_variant_data(request, urn, dataset_column):
             not scoreset.has_count_dataset:
         return StreamingHttpResponse("", content_type='text')
 
-    if dataset_column == constants.metadata_columns and \
+    if dataset_column == constants.meta_columns and \
             not scoreset.has_metadata:
         return StreamingHttpResponse("", content_type='text')
 
@@ -155,7 +158,8 @@ def scoreset_count_data(request, urn):
         request, urn, dataset_column=constants.count_columns)
     return StreamingHttpResponse(response, content_type='text')
 
+
 def scoreset_metadata(request, urn):
     response = download_variant_data(
-        request, urn, dataset_column=constants.metadata_columns)
+        request, urn, dataset_column=constants.meta_columns)
     return StreamingHttpResponse(response, content_type='text')
