@@ -5,17 +5,15 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import ugettext
 
+from dataset import constants as constants
 from main.models import Licence
-
 from variant.models import Variant
 from variant.validators import (
     validate_variant_rows, validate_scoreset_columns_match_variant
 )
-
-from dataset import constants as constants
-from ..models.scoreset import ScoreSet
-from ..models.experiment import Experiment
 from ..forms.base import DatasetModelForm
+from ..models.experiment import Experiment
+from ..models.scoreset import ScoreSet
 from ..validators import (
     validate_scoreset_score_data_input,
     validate_csv_extension,
@@ -62,7 +60,12 @@ class ScoreSetForm(DatasetModelForm):
         self.field_order = ('experiment', 'replaces', 'licence',) + \
                            self.FIELD_ORDER + \
                            ('score_data', 'count_data', 'meta_data',)
-
+        # If an experiment is passed in we can used to it to seed initial
+        # replaces and m2m field selections.
+        if 'experiment' in kwargs:
+            self.experiment = kwargs.pop('experiment')
+        else:
+            self.experiment = None
         super().__init__(*args, **kwargs)
 
         if self.instance.pk is not None:
@@ -73,14 +76,15 @@ class ScoreSetForm(DatasetModelForm):
             self.dataset_columns = {
                 constants.score_columns: [],
                 constants.count_columns: [],
-                constants.metadata_columns: []
+                constants.meta_columns: []
             }
 
         self.fields['experiment'] = forms.ModelChoiceField(
             queryset=None, required=True, widget=forms.Select(
                 attrs={"class": "form-control"}))
         self.fields['replaces'] = forms.ModelChoiceField(
-            queryset=ScoreSet.objects.none(), required=False, widget=forms.Select(
+            queryset=ScoreSet.objects.none(), required=False,
+            widget=forms.Select(
                 attrs={"class": "form-control"}))
         self.fields['licence'] = forms.ModelChoiceField(
             queryset=Licence.objects.all(), required=False,
@@ -88,7 +92,7 @@ class ScoreSetForm(DatasetModelForm):
                 attrs={"class": "form-control "}))
 
         self.fields["replaces"].required = False
-        # self.set_replaces_options()
+        self.set_replaces_options()
         self.set_experiment_options()
 
         self.fields["licence"].required = False
@@ -133,15 +137,8 @@ class ScoreSetForm(DatasetModelForm):
     def clean_count_data(self):
         count_file = self.cleaned_data.get("count_data", None)
         if not count_file:
+            self.dataset_columns[constants.count_columns] = []
             return {}
-        # Don't need to wrap this in a try/catch as the form
-        # will catch any Validation errors automagically.
-        #   Valdator must check the following:
-        #       Header has hgvs and at least one other column
-        #       Number of rows does not match header
-        #       Datatypes of rows match
-        #       HGVS string is a valid hgvs string
-        #       Hgvs appears more than once in rows
         header, hgvs_count_map = validate_variant_rows(count_file)
         self.dataset_columns[constants.count_columns] = header
         return hgvs_count_map
@@ -149,17 +146,10 @@ class ScoreSetForm(DatasetModelForm):
     def clean_meta_data(self):
         meta_file = self.cleaned_data.get("meta_data", None)
         if not meta_file:
+            self.dataset_columns[constants.meta_columns] = []
             return {}
-        # Don't need to wrap this in a try/catch as the form
-        # will catch any Validation errors automagically.
-        #   Valdator must check the following:
-        #       Header has hgvs and at least one other column
-        #       Number of rows does not match header
-        #       Datatypes of rows match
-        #       HGVS string is a valid hgvs string
-        #       Hgvs appears more than once in rows
-        header, hgvs_meta_map = validate_variant_rows(meta_file)
-        self.dataset_columns[constants.metadata_columns] = header
+        header, hgvs_meta_map = validate_variant_rows(meta_file, is_meta=True)
+        self.dataset_columns[constants.meta_columns] = header
         return hgvs_meta_map
 
     @staticmethod
@@ -188,6 +178,7 @@ class ScoreSetForm(DatasetModelForm):
                     "MaveDB does not currently support changing a "
                     "previously assigned Experiment."
                 )
+                return cleaned_data
 
         # Indicates that a new scoreset is being created
         scores_required = self.instance.pk is None
@@ -207,6 +198,7 @@ class ScoreSetForm(DatasetModelForm):
                 None if 'score_data' not in self.fields else 'score_data',
                 "You must upload a non-empty scores data file."
             )
+            return cleaned_data
 
         # In edit mode if a user tries to submit a new count dataset without
         # an accompanying score dataset, this error will be thrown. We could
@@ -219,24 +211,23 @@ class ScoreSetForm(DatasetModelForm):
                 "uploading a new count/meta data file or replacing an "
                 "existing one."
             )
+            return cleaned_data
 
         if has_count_data:
-            # For every hgvs in scores but not in counts, fill in the
-            # counts columns (if a counts dataset is supplied) with null values
-            self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
+            # Cross-populate the hgvs_score_map with every hgvs in counts
+            # but not in scores.
+            self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
         if has_meta_data:
-            # For every hgvs in scores but not in meta, fill in the
-            # meta columns (if a meta dataset is supplied) with null values
-            self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
+            # Cross-populate the hgvs_score_map with every hgvs in meta
+            # but not in scores
+            self._fill_in_missing(hgvs_meta_map.keys(), hgvs_score_map)
 
+        # hgvs_score_map now contains all variants. We can then fill in the
+        # missing hgvs values in the other maps.
         if has_count_data:
-            # For every hgvs in counts but not in scores, fill in the
-            # scores columns with null values.
-            self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
+            self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
         if has_meta_data:
-            # For every hgvs in meta but not in scores, fill in the
-            # scores meta with null values.
-            self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
+            self._fill_in_missing(hgvs_score_map.keys(), hgvs_meta_map)
 
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
@@ -252,7 +243,7 @@ class ScoreSetForm(DatasetModelForm):
                 data = {
                     constants.variant_score_data: scores_json,
                     constants.variant_count_data: counts_json,
-                    constants.variant_metadata: meta_json
+                    constants.variant_meta_data: meta_json
                 }
                 validate_scoreset_columns_match_variant(
                     self.dataset_columns, data)
@@ -284,23 +275,40 @@ class ScoreSetForm(DatasetModelForm):
 
     def set_replaces_options(self):
         if 'replaces' in self.fields:
-            choices = self.user.profile.contributor_scoresets()
+            admin_instances = self.user.profile.administrator_scoresets()
+            editor_instances = self.user.profile.editor_scoresets()
+            choices = set(
+                [i.pk for i in admin_instances.union(editor_instances)]
+            )
+            if self.experiment is not None:
+                choices &= set(
+                    [i.pk for i in self.experiment.scoresets.all()]
+                )
             scoresets_qs = ScoreSet.objects.filter(
-                pk__in=set([i.pk for i in choices])).order_by("urn")
+                pk__in=choices).order_by("urn")
             self.fields["replaces"].queryset = scoresets_qs
 
     def set_experiment_options(self):
         if 'experiment' in self.fields:
-            choices = self.user.profile.contributor_experiments()
+            admin_instances = self.user.profile.administrator_experiments()
+            editor_instances = self.user.profile.editor_experiments()
+            choices = set(
+                [i.pk for i in admin_instances.union(editor_instances)]
+            )
             experiment_qs = Experiment.objects.filter(
-                pk__in=set([i.pk for i in choices])).order_by("urn")
+                pk__in=choices).order_by("urn")
             self.fields["experiment"].queryset = experiment_qs
+            if self.experiment is not None:
+                choices_qs = Experiment.objects.filter(
+                    pk__in=[self.experiment.pk]).order_by("urn")
+                self.fields["experiment"].queryset = choices_qs
+                self.fields["experiment"].initial = self.experiment
 
     @classmethod
-    def from_request(cls, request, instance):
-        form = super().from_request(request, instance)
+    def from_request(cls, request, instance=None, prefix=None, initial=None):
+        form = super().from_request(request, instance, prefix, initial)
         form.set_replaces_options()
-        if 'experiment' in form.fields:
+        if 'experiment' in form.fields and instance is not None:
             choices_qs = Experiment.objects.filter(
                 pk__in=[instance.experiment.pk]).order_by("urn")
             form.fields["experiment"].queryset = choices_qs
@@ -325,6 +333,5 @@ class ScoreSetEditForm(ScoreSetForm):
         self.fields.pop('score_data')
         self.fields.pop('count_data')
         self.fields.pop('meta_data')
-        self.fields.pop('normalised')
         self.fields.pop('licence')
         self.fields.pop('replaces')
