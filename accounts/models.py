@@ -2,6 +2,7 @@ from social_django.models import UserSocialAuth
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.html import format_html
@@ -202,61 +203,69 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`DatasetModel` instances the user is a
         contributor for (view, edit, or admin).
+
+        Returns
+        -------
+        `list`
         """
-        return self.contributor_experimentsets() + \
-            self.contributor_experiments() + \
-            self.contributor_scoresets()
+        instances = list(self.contributor_experimentsets()) + \
+            list(self.contributor_experiments()) + \
+            list(self.contributor_scoresets())
+        return instances
 
     def contributor_experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user
         contributes to.
-        """
-        instances = self.administrator_experimentsets() + \
-            self.editor_experimentsets() + \
-            self.viewer_experimentsets()
 
-        return list(self._iterable_to_queryset(instances, ExperimentSet).all())
+        Returns
+        -------
+        `QuerySet`
+        """
+        instances = self.administrator_experimentsets() | \
+            self.editor_experimentsets() | \
+            self.viewer_experimentsets()
+        return instances.all()
 
     def contributor_experiments(self):
         """
         Return a list of :class:`Experiment` instances the user
         contributes to.
-        """
-        instances = self.administrator_experiments() + \
-                    self.editor_experiments() + \
-                    self.viewer_experiments()
 
-        return list(self._iterable_to_queryset(instances, Experiment).all())
+        Returns
+        -------
+        `QuerySet`
+        """
+        instances = self.administrator_experiments() | \
+            self.editor_experiments() | \
+            self.viewer_experiments()
+        return instances.all()
 
     def contributor_scoresets(self):
         """
         Return a list of :class:`ScoreSet` instances the user
         contributes to.
-        """
-        instances = self.administrator_scoresets() + \
-                    self.editor_scoresets() + \
-                    self.viewer_scoresets()
 
-        return list(self._iterable_to_queryset(instances, ScoreSet).all())
+        Returns
+        -------
+        `QuerySet`
+        """
+        instances = self.administrator_scoresets() | \
+            self.editor_scoresets() | \
+            self.viewer_scoresets()
+        return instances.all()
 
     def public_contributor_experimentsets(self):
-        return list(self._iterable_to_queryset(
-            self.contributor_experimentsets(),
-            klass=ExperimentSet,
-        ).filter(private=False))
+        instances = self.contributor_experimentsets().exclude(private=True)
+        return instances.all()
 
     def public_contributor_experiments(self):
-        return list(self._iterable_to_queryset(
-            self.contributor_experiments(),
-            klass=Experiment,
-        ).filter(private=False))
+        instances = self.contributor_experiments().exclude(private=True)
+        return instances.all()
 
     def public_contributor_scoresets(self):
-        return list(self._iterable_to_queryset(
-            self.contributor_scoresets(),
-            klass=ScoreSet,
-        ).filter(private=False))
+        instances = self.contributor_scoresets().exclude(private=True)
+        return instances.all()
 
     # Administrator
     # ----------------------------------------------------------------------- #
@@ -264,15 +273,24 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`DatasetModel` instances the user is an admin
         for.
+
+        Returns
+        -------
+        `QuerySet`
         """
-        return self.administrator_experimentsets() + \
-            self.administrator_experiments() + \
+        instances = self.administrator_experimentsets() | \
+            self.administrator_experiments() | \
             self.administrator_scoresets()
+        return instances.all()
 
     def administrator_experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user
         administrates.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -284,6 +302,10 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`Experiment` instances the user
         administrates.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -295,6 +317,10 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`Experiment` instances the user
         administrates.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -308,15 +334,24 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`DatasetModel` instances the user is a viewer
         for.
+
+        Returns
+        -------
+        `QuerySet`
         """
-        return self.editor_experimentsets() + \
-               self.editor_experiments() + \
-               self.editor_scoresets()
+        instances = self.editor_experimentsets() | \
+            self.editor_experiments() | \
+            self.editor_scoresets()
+        return instances.all()
 
     def editor_experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user
         can only view.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -328,6 +363,10 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`Experiment` instances the user
         can only view.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -339,6 +378,10 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`ScoreSet` instances the user
         can only view.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -352,15 +395,24 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`DatasetModel` instances the user is a viewer
         for.
+
+        Returns
+        -------
+        `QuerySet`
         """
-        return self.viewer_experimentsets() + \
-            self.viewer_experiments() + \
+        instances = self.viewer_experimentsets() | \
+            self.viewer_experiments() | \
             self.viewer_scoresets()
+        return instances.all()
 
     def viewer_experimentsets(self):
         """
         Return a list of :class:`ExperimentSet` instances the user
         can only view.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -372,6 +424,10 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`Experiment` instances the user
         can only view.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
@@ -383,6 +439,10 @@ class Profile(TimeStampedModel):
         """
         Return a list of :class:`ScoreSet` instances the user
         can only view.
+
+        Returns
+        -------
+        `QuerySet`
         """
         return instances_for_user_with_group_permission(
             user=self.user,
