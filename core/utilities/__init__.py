@@ -47,7 +47,7 @@ def send_admin_email(user, instance):
         The instance created.
 
     """
-    template_name = "accounts/alert_admin_new_entry_email.html"
+    template_name = "core/alert_admin_new_entry_email.html"
     admins = User.objects.filter(is_superuser=True)
     message = render_to_string(template_name, {
         'user': user,
@@ -57,5 +57,5 @@ def send_admin_email(user, instance):
 
     subject = "[MAVEDB ADMIN] New entry requires your attention."
     for admin in admins:
-        logger.warning("Sending email to {}".format(admin.username))
+        logger.info("Sending email to {}".format(admin.username))
         admin.email_user(subject, message)
