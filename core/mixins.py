@@ -130,26 +130,3 @@ class SearchMixin(FilterMixin):
         if join_func is None:
             return qs
         return join_func(qs)
-
-
-class MultiFormMixin:
-    """
-    Mixin contains a helper function to instantiate an arbitrary form.
-    """
-    def _make_form(self, form_class, instance=None,
-                   queryset=None, user=None, initial=None, **kwargs):
-        args = {}
-        if instance:
-            args["instance"] = instance
-        if queryset:
-            args["queryset"] = queryset
-        if user:
-            args["user"] = user
-        if initial:
-            args['initial'] = initial
-
-        kwargs.update(args)
-        if self.request.method == 'POST':
-            return form_class(data=self.request.POST, **kwargs)
-        else:
-            return form_class(**kwargs)
