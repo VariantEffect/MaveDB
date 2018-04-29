@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 
 from guardian.shortcuts import assign_perm
 from guardian.conf.settings import ANONYMOUS_USER_NAME
@@ -102,12 +103,14 @@ def user_is_admin_for_instance(user, instance):
     else:
         return False
 
+
 def user_editor_for_instance(user, instance):
     group_name = get_editor_group_name_for_instance(instance)
     if group_name is not None:
         return group_name in set([g.name for g in user.groups.all()])
     else:
         return False
+
 
 def user_is_viewer_for_instance(user, instance):
     group_name = get_viewer_group_name_for_instance(instance)
@@ -116,10 +119,12 @@ def user_is_viewer_for_instance(user, instance):
     else:
         return False
 
+
 def user_is_contributor_for_instance(user, instance):
     return user_is_admin_for_instance(user, instance) or \
            user_editor_for_instance(user, instance) or \
            user_is_viewer_for_instance(user, instance)
+
 
 GROUP_TYPE_CALLBACK = {
     GroupTypes.ADMIN: user_is_admin_for_instance,
@@ -129,6 +134,22 @@ GROUP_TYPE_CALLBACK = {
 
 
 def instances_for_user_with_group_permission(user, model, group_type):
+    """
+    Return all instances that the user is in `group_type` for.
+
+    Parameters
+    ----------
+    user : `User`
+        The user to retrieve instances for.
+    model : `class`
+        The instance model class.
+    group_type : `str`
+        The group, which is either admins, editors or viewers.
+
+    Returns
+    -------
+    `QuerySet`
+    """
     from dataset.models.experimentset import ExperimentSet
     from dataset.models.experiment import Experiment
     from dataset.models.scoreset import ScoreSet
@@ -149,7 +170,8 @@ def instances_for_user_with_group_permission(user, model, group_type):
     if is_in_group is None:
         raise ValueError("Unrecognised group type {}.".format(group_type))
 
-    return [i for i in instances if is_in_group(user, i)]
+    pks = set([i.pk for i in instances if is_in_group(user, i)])
+    return model.objects.filter(pk__in=pks).all()
 
 
 def contributors_for_instance(instance):
