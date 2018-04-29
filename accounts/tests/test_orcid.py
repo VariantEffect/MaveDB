@@ -191,7 +191,7 @@ class TestOrcidLogin(TestCase):
                         '.set_expiry', side_effect=[OverflowError, None]):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 302)
-            self.assertEqual(response.url, '/accounts/profile/')
+            self.assertEqual(response.url, '/profile/')
             self.assertEqual(UserSocialAuth.objects.count(), 1)
 
             social = UserSocialAuth.objects.first()
