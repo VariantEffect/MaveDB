@@ -1,5 +1,4 @@
 from django import forms
-from django.core.exceptions import ValidationError
 
 from core.utilities import is_null
 
@@ -38,13 +37,15 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
         self.fields["identifier"] = identifier_field
         self.fields["offset"] = offset_field
 
-        if 'instance' in kwargs:
+        if kwargs.get('instance', None):
             self.fields['identifier'].initial = kwargs['instance'].identifier
             self.fields['offset'].initial = kwargs['instance'].offset
 
     def clean_identifier(self):
         identifier = self.cleaned_data.get("identifier", None)
-        if identifier and not is_null(identifier.identifier):
+        if identifier and str(identifier.identifier).strip() == "":
+            return None
+        if identifier:
             value = identifier.identifier
             if self.id_class == RefseqIdentifier:
                 validate_refseq_identifier(value)
@@ -56,13 +57,17 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
         else:
             return None
 
+    def is_blank(self):
+        identifier = self.cleaned_data.get('identifier', None)
+        return identifier is None
+
     def save(self, target=None, commit=True):
         if self.errors:
             return super().save(commit=commit)
         # Don't attempt a save if identifier is None. This will cause
         # a database IntegrityError so return None instead.
         identifier = self.cleaned_data.get('identifier', None)
-        if commit and identifier is not None:
+        if commit and not self.is_blank():
             if target is not None:
                 self.instance.target = target
             if self.instance.pk is None and target is None:
@@ -70,23 +75,18 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
                     "Cannot save an AnnotationOffset model without a "
                     "valid target instance."
                 )
-            if self.instance.pk is None and identifier is None:
-                raise ValueError(
-                    "Cannot save an AnnotationOffset model without a "
-                    "valid identifier instance."
-                )
+            identifier.save()
             self.instance.identifier = identifier
             return super().save(commit=commit)
-        elif commit and identifier is None:
+        elif commit and self.is_blank():
             # User has chosen to delete the annoation by supplying a blank
             if self.instance.pk is not None:
                 self.instance.delete()
             return None
         else:
-            if identifier is not None:
+            if not self.is_blank():
                 return super().save(commit=commit)
-            else:
-                return None
+            return None
 
 
 class UniprotOffsetForm(BaseIdentifierWithOffsetForm):

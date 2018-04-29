@@ -45,8 +45,8 @@ def validate_scoreset_columns_match_variant(dataset_columns, variant_data):
             sorted(list(variant_data[constants.variant_count_data].keys())):
         raise ValidationError(
             "Variant count columns do not match parent's columns.")
-    if sorted(dataset_columns[constants.metadata_columns]) != \
-            sorted(list(variant_data[constants.variant_metadata].keys())):
+    if sorted(dataset_columns[constants.meta_columns]) != \
+            sorted(list(variant_data[constants.variant_meta_data].keys())):
         raise ValidationError(
             "Variant metadata columns do not match parent's columns.")
 
@@ -82,7 +82,7 @@ def validate_variant_json(dict_):
     expected_keys = [
         constants.variant_score_data,
         constants.variant_count_data,
-        constants.variant_metadata
+        constants.variant_meta_data
     ]
     for key in expected_keys:
         if key not in dict_.keys():
@@ -207,9 +207,9 @@ def validate_variant_rows(file, is_meta=False):
         if hgvs_col not in row:
             raise ValidationError(
                 (
-                    "Missing required column '%(col)s' in line %(i)s."
+                    "Missing required column '%(col)s' in row %(i)s."
                 ),
-                params={'col': hgvs_col, 'i': i}
+                params={'col': hgvs_col, 'i': i+1}
             )
         hgvs_string = row.pop(constants.hgvs_column)
         validate_hgvs(hgvs_string)
@@ -219,7 +219,7 @@ def validate_variant_rows(file, is_meta=False):
                     "Type for column '%(col)s' at line %(i)s is '%(dtype)s'. "
                     "Expected 'str'. HGVS values must be strings only."
                 ),
-                params={'col': hgvs_col, 'i': i,
+                params={'col': hgvs_col, 'i': i+1,
                         'dtype': type(hgvs_string).__name__}
             )
 
@@ -241,7 +241,8 @@ def validate_variant_rows(file, is_meta=False):
                                 "'float'. Score/count uploads can only "
                                 "contain numeric column values."
                            ),
-                           params={'col': k, 'i': i, 'dtype': type(v).__name__}
+                           params={
+                               'col': k, 'i': i+1, 'dtype': type(v).__name__}
                         )
 
         # Make sure the variant has been defined more than one time.
@@ -249,7 +250,7 @@ def validate_variant_rows(file, is_meta=False):
             raise ValidationError(
                 "Variant '%(hgvs)s' has been re-defined at index %(i)s. Input "
                 "cannot contain the same variant twice in different rows.",
-                params={'hgvs': hgvs_string, 'i': i}
+                params={'hgvs': hgvs_string, 'i': i+1}
             )
         else:
             hgvs_map[hgvs_string] = row

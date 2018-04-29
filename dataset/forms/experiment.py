@@ -43,15 +43,19 @@ class ExperimentForm(DatasetModelForm):
 
     def set_experimentset_options(self):
         if 'experimentset' in self.fields:
-            choices = self.user.profile.contributor_experimentsets()
+            admin_instances = self.user.profile.administrator_experimentsets()
+            editor_instances = self.user.profile.editor_experimentsets()
+            choices = set(
+                [i.pk for i in admin_instances.union(editor_instances)]
+            )
             choices_qs = ExperimentSet.objects.filter(
-                pk__in=set([i.pk for i in choices])).order_by("urn")
+                pk__in=choices).order_by("urn")
             self.fields["experimentset"].queryset = choices_qs
 
     @classmethod
-    def from_request(cls, request, instance):
-        form = super().from_request(request, instance)
-        if 'experimentset' in form.fields:
+    def from_request(cls, request, instance=None, prefix=None, initial=None):
+        form = super().from_request(request, instance, prefix, initial)
+        if 'experimentset' in form.fields and instance is not None:
             choices_qs = ExperimentSet.objects.filter(
                 pk__in=[instance.experimentset.pk]).order_by("urn")
             form.fields["experimentset"].queryset = choices_qs

@@ -42,5 +42,5 @@ class VariantFactory(DjangoModelFactory):
         constants.variant_score_data: {
             default_dataset()[constants.score_columns][0]: 1.0},
         constants.variant_count_data: {},
-        constants.variant_metadata: {}
+        constants.variant_meta_data: {}
     }

@@ -136,9 +136,12 @@ class ExternalIdentifier(TimeStampedModel):
             self.dbname = self.DATABASE_NAME
         super().save(*args, **kwargs)
 
-    def get_associated(self, model):
-        attr = 'associated_{}s'.format(model)
-        return getattr(self, attr).all()
+    def get_associated(self, model_class_name):
+        attr = 'associated_{}s'.format(model_class_name.lower())
+        if hasattr(self, attr):
+            return getattr(self, attr).all()
+        else:
+            return None
 
 
 class SraIdentifier(ExternalIdentifier):

@@ -154,11 +154,16 @@ class DatasetModelForm(forms.ModelForm):
         return existing_entries
 
     @classmethod
-    def from_request(cls, request, instance):
+    def from_request(cls, request, instance, prefix=None, initial=None):
         if request.method == "POST":
             form = cls(
                 user=request.user, data=request.POST,
-                files=request.FILES, instance=instance)
+                files=request.FILES, instance=instance,
+                prefix=prefix, initial=initial
+            )
         else:
-            form = cls(user=request.user, instance=instance)
+            form = cls(
+                user=request.user, instance=instance,
+                prefix=prefix, initial=initial
+            )
         return form

@@ -68,7 +68,7 @@ class Variant(UrnModel):
         default=dict({
             constants.variant_score_data: {},
             constants.variant_count_data: {},
-            constants.variant_metadata: {}
+            constants.variant_meta_data: {}
         }),
         validators=[validate_variant_json],
     )
@@ -145,7 +145,7 @@ class Variant(UrnModel):
     @property
     def metadata_columns(self):
         return [constants.hgvs_column] + \
-               list(self.data[constants.variant_metadata].keys())
+               list(self.data[constants.variant_meta_data].keys())
 
     @property
     def meta_data(self):
@@ -153,4 +153,4 @@ class Variant(UrnModel):
             if column == constants.hgvs_column:
                 yield self.hgvs
             else:
-                yield self.data[constants.variant_metadata][column]
+                yield self.data[constants.variant_meta_data][column]

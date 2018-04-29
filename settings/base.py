@@ -43,8 +43,8 @@ SOCIAL_AUTH_ORCID_PROFILE_EXTRA_PARAMS = {'credit-name': 'credit_name'}
 SOCIAL_AUTH_ORCID_KEY = get_secret('orcid_key')
 SOCIAL_AUTH_ORCID_SECRET = get_secret('orcid_secret')
 SOCIAL_AUTH_USER_MODEL = 'auth.User'
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/accounts/profile/"
-SOCIAL_AUTH_LOGIN_ERROR_URL = "/accounts/error/"
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/profile/"
+SOCIAL_AUTH_LOGIN_ERROR_URL = "/profile/error/"
 SOCIAL_AUTH_URL_NAMESPACE = 'accounts:social'
 SOCIAL_AUTH_PIPELINE = [
     'social_core.pipeline.social_auth.social_details',
@@ -161,7 +161,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 
 # Redirect to home URL after login (Default redirects to /profile/)
 LOGIN_REDIRECT_URL = '/profile/'
-LOGOUT_REDIRECT_URL = '/profile/'
+LOGOUT_REDIRECT_URL = '/'
 
 # DEBUG email server, set to something proper when DEBUG = FALSE
 DEFAULT_FROM_EMAIL = "mavedb@mavedb.org"

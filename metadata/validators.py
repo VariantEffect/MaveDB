@@ -96,13 +96,13 @@ def validate_doi_list(values):
 def validate_ensembl_list(values):
     for value in values:
         if not is_null(value):
-            validate_ensembl_list(value)
+            validate_ensembl_identifier(value)
 
 
 def validate_refseq_list(values):
     for value in values:
         if not is_null(value):
-            validate_refseq_list(value)
+            validate_refseq_identifier(value)
 
 
 def validate_uniprot_list(values):
