@@ -6,6 +6,7 @@ from dataset import constants as constants
 from core.utilities import is_null
 
 validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
+validate_json_extension = FileExtensionValidator(allowed_extensions=['json'])
 
 
 def read_header_from_io(file, label=None, msg=None):
@@ -109,24 +110,6 @@ def validate_scoreset_count_data_input(file):
     validate_at_least_two_columns(header, label='Count')
 
 
-def validate_scoreset_meta_data_input(file):
-    """
-    Validator function for checking that the `meta` file input contains
-    at least the column 'hgvs'. Returns the file to position 0
-    after reading the header (first line).
-
-    Parameters
-    ----------
-    file : :class:`io.FileIO`
-        File parsed by a `django` form.
-    """
-    file.seek(0)
-    header = read_header_from_io(file, label='Metadata')
-    validate_header_contains_no_null_columns(header, label='Metadata')
-    validate_has_hgvs_in_header(header, label='Metadata')
-    validate_at_least_two_columns(header, label='Metadata')
-
-
 def validate_scoreset_json(dict_):
     """
     Checks a given dictionary to ensure that it is suitable to be used
@@ -140,7 +123,6 @@ def validate_scoreset_json(dict_):
     required_columns = [
         constants.score_columns,
         constants.count_columns,
-        constants.meta_columns
     ]
 
     for key in required_columns:
