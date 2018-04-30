@@ -25,11 +25,15 @@ from ..validators import validate_scoreset_json
 
 User = get_user_model()
 
+
+def _add_hgvs(ls):
+    return [constants.hgvs_column] + ls
+
+
 def default_dataset():
     return dict({
         constants.score_columns: [constants.required_score_column],
         constants.count_columns: [],
-        constants.meta_columns: []
     })
 
 
@@ -193,20 +197,13 @@ class ScoreSet(DatasetModel):
 
     # JSON field related methods
     # ---------------------------------------------------------------------- #
-    def _add_hgvs(self, ls):
-        return [constants.hgvs_column] + ls
-
     @property
     def score_columns(self):
-        return self._add_hgvs(self.dataset_columns[constants.score_columns])
+        return _add_hgvs(self.dataset_columns[constants.score_columns])
 
     @property
     def count_columns(self):
-        return self._add_hgvs(self.dataset_columns[constants.count_columns])
-
-    @property
-    def metadata_columns(self):
-        return self._add_hgvs(self.dataset_columns[constants.meta_columns])
+        return _add_hgvs(self.dataset_columns[constants.count_columns])
 
     @property
     def has_score_dataset(self):
@@ -218,7 +215,7 @@ class ScoreSet(DatasetModel):
 
     @property
     def has_metadata(self):
-        return len(self.dataset_columns[constants.meta_columns]) > 0
+        return len(self.extra_metadata) > 0
 
     # replaced_by/replaces chain traversal
     # ---------------------------------------------------------------------- #
