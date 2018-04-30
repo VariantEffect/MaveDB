@@ -2,7 +2,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django.contrib.auth import get_user_model
 from django.http import Http404
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 
 from dataset.models.experimentset import ExperimentSet
@@ -40,12 +40,14 @@ class DatasetModelViewSet(ReadOnlyModelViewSet):
 
         if 'search' in self.request.query_params.keys():
             join_func = self.or_join_qs
-            query_dict['search'] = self.request.query_params.getlist('search')
+            query_dict['search'] = self.request.query_params.getlist(
+                'search', [])
         else:
             join_func = self.and_join_qs
             for field in self.search_field_to_function():
                 if field in self.request.query_params:
-                    query_dict[field] = self.request.query_params.getlist(field)
+                    query_dict[field] = self.request.query_params.getlist(
+                        field, [])
 
         if query_dict:
             q = self.search_all(query_dict, join_func)
@@ -125,10 +127,6 @@ def download_variant_data(request, urn, dataset_column):
             not scoreset.has_count_dataset:
         return StreamingHttpResponse("", content_type='text')
 
-    if dataset_column == constants.meta_columns and \
-            not scoreset.has_metadata:
-        return StreamingHttpResponse("", content_type='text')
-
     variants = scoreset.children.order_by("urn")
     columns = [constants.hgvs_column] + scoreset.dataset_columns[dataset_column]
     variant_column = constants.scoreset_to_variant_column[dataset_column]
@@ -160,6 +158,8 @@ def scoreset_count_data(request, urn):
 
 
 def scoreset_metadata(request, urn):
-    response = download_variant_data(
-        request, urn, dataset_column=constants.meta_columns)
-    return StreamingHttpResponse(response, content_type='text')
+    scoreset = get_object_or_404(ScoreSet, urn=urn)
+    has_permission = request.user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
+    if scoreset.private and not has_permission:
+        raise Http404()
+    return JsonResponse(scoreset.extra_metadata)
