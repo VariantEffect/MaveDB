@@ -51,7 +51,6 @@ class ScoreSetDetailView(DatasetModelView):
         context["variants"] = variants
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
-        context["metadata_columns"] = instance.metadata_columns
         return context
 
 
