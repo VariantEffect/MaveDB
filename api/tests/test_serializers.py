@@ -112,7 +112,7 @@
 #     json data.
 #     """
 #     def setUp(self):
-#         self.target = GenomicIntervalFactory().reference_map.get_target_gene()
+#         self.target = GenomicIntervalFactory().reference_map.get_target()
 #
 #     def test_can_correctly_serialize_instance(self):
 #         instance = ExperimentFactory()
@@ -244,7 +244,7 @@
 #     json data.
 #     """
 #     def setUp(self):
-#         self.target = GenomicIntervalFactory().reference_map.get_target_gene()
+#         self.target = GenomicIntervalFactory().reference_map.get_target()
 #
 #     def test_can_serialize_minimal_example(self):
 #         instance = ScoreSetFactory()

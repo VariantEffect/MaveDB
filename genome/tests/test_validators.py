@@ -122,28 +122,14 @@ class TestReferenceGenomeValidators(TestCase):
             with self.assertRaises(ValidationError):
                 validate_genome_short_name(v)
 
-    def test_ve_reference_genome_has_two_external_identifiers(self):
-        ens_id = EnsemblIdentifierFactory()
-        rs_id = RefseqIdentifierFactory()
-        referencegenome = ReferenceGenomeFactory()
-        referencegenome.ensembl_id = ens_id
-        referencegenome.refseq_id = rs_id
-        referencegenome.save()
+    def test_ve_reference_genome_has_no_external_identifiers(self):
+        referencegenome = ReferenceGenomeFactory(genome_id=None)
         with self.assertRaises(ValidationError):
             validate_reference_genome_has_one_external_identifier(
                 referencegenome)
 
-    def test_passes_reference_genome_has_one__external_identifiers(self):
-        ens_id = EnsemblIdentifierFactory()
-        rs_id = RefseqIdentifierFactory()
-        referencegenome = ReferenceGenomeFactory(refseq_id=None)
-        referencegenome.ensembl_id = ens_id
-        referencegenome.save()
-        validate_reference_genome_has_one_external_identifier(referencegenome)
-
-        referencegenome.ensembl_id = None
-        referencegenome.refseq_id = rs_id
-        referencegenome.save()
+    def test_passes_reference_genome_has_one_external_identifiers(self):
+        referencegenome = ReferenceGenomeFactory()
         validate_reference_genome_has_one_external_identifier(referencegenome)
 
 
@@ -159,7 +145,7 @@ class TestReferenceMapValidators(TestCase):
         reference_map1 = ReferenceMapFactory()
         reference_map2 = ReferenceMapFactory(
             genome=reference_map1.get_reference_genome(),
-            target=reference_map1.get_target_gene()
+            target=reference_map1.get_target()
         )
         with self.assertRaises(ValidationError):
             validate_map_has_unique_reference_genome(

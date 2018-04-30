@@ -15,7 +15,6 @@ import dataset.constants as constants
 
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm
-from ..models.scoreset import ScoreSet, default_dataset
 
 from .utility import make_files
 
@@ -60,7 +59,7 @@ class TestScoreSetForm(TestCase):
         if c_file is not None:
             files[constants.variant_count_data] = c_file
         if m_file is not None:
-            files[constants.variant_meta_data] = m_file
+            files[constants.meta_data] = m_file
         return data, files
 
     def test_licence_defaults_to_cc4(self):
@@ -255,25 +254,12 @@ class TestScoreSetForm(TestCase):
             data=data, files=files, user=self.user, instance=instance)
         self.assertFalse(form.is_valid())
 
-    def test_invalid_no_scores_but_meta_provided(self):
-        data, files = self.make_post_data(meta_data=True)
-        files.pop(constants.variant_score_data)
-        instance = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, instance.experiment)
-        data['experiment'] = instance.experiment.pk
-        form = ScoreSetForm(
-            data=data, files=files, user=self.user, instance=instance)
-        self.assertFalse(form.is_valid())
-
     def test_variants_correctly_parsed_integration_test(self):
         # Generate distinct hgvs strings
         score_hgvs = generate_hgvs()
         count_hgvs = generate_hgvs()
-        meta_hgvs = generate_hgvs()
         while count_hgvs == score_hgvs:
             count_hgvs = generate_hgvs()
-        while meta_hgvs == score_hgvs or meta_hgvs == count_hgvs:
-            meta_hgvs = generate_hgvs()
 
         score_data = "{},{},se\n{},1,".format(
             constants.hgvs_column, constants.required_score_column, score_hgvs
@@ -281,10 +267,7 @@ class TestScoreSetForm(TestCase):
         count_data = "{},{},sig\n{},None,-1".format(
             constants.hgvs_column, 'count', count_hgvs
         )
-        meta_data = "{},{}\n{},\"hello,world\"".format(
-            constants.hgvs_column, 'metadata', meta_hgvs
-        )
-        data, files = self.make_post_data(score_data, count_data, meta_data)
+        data, files = self.make_post_data(score_data, count_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         scs = form.save(commit=True)
         variants = scs.children
@@ -292,21 +275,13 @@ class TestScoreSetForm(TestCase):
         data_1 = {
             'score_data': {'se': None, 'score': 1.0},
             'count_data': {'sig': None, 'count': None},
-            'meta_data': {'metadata': None}
         }
         data_2 = {
             'score_data': {'se': None, 'score': None},
             'count_data': {'sig': -1.0, 'count': None},
-            'meta_data': {'metadata': None}
-        }
-        data_3 = {
-            'score_data': {'se': None, 'score': None},
-            'count_data': {'sig': None, 'count': None},
-            'meta_data': {'metadata': 'hello,world'}
         }
         self.assertEqual(variants.filter(hgvs=score_hgvs).first().data, data_1)
         self.assertEqual(variants.filter(hgvs=count_hgvs).first().data, data_2)
-        self.assertEqual(variants.filter(hgvs=meta_hgvs).first().data, data_3)
 
     def test_invalid_empty_score_file(self):
         score_data = "{},{},se\n".format(
@@ -348,7 +323,20 @@ class TestScoreSetForm(TestCase):
         form.dataset_columns = {
             constants.score_columns: [constants.required_score_column, 'aaa'],
             constants.count_columns: [],
-            constants.meta_columns: []
         }
         with self.assertRaises(ValidationError):
             form.clean()
+    
+    def test_ve_invalid_meta(self):
+        data, files = self.make_post_data(meta_data="{not valid}")
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+
+    def test_valid_meta(self):
+        dict_ = {"foo": ["bar"]}
+        data, files = self.make_post_data(meta_data=dict_)
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
+        model = form.save()
+        result = model.extra_metadata
+        self.assertEqual(result, dict_)

@@ -151,3 +151,10 @@ class TestScoreSetAPIViews(TestCase):
             list(response.streaming_content),
             [b'hgvs,count\n', b'"test",1\n']
         )
+
+    def test_can_download_metadata(self):
+        scs = ScoreSetFactory(private=False)
+        response = json.loads(self.client.get(
+            "/api/scoreset/{}/metadata/".format(scs.urn)
+        ).content.decode())
+        self.assertEqual(response, scs.extra_metadata)

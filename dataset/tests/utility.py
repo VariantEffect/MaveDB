@@ -1,4 +1,5 @@
 import os
+import json
 from io import StringIO
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -59,17 +60,22 @@ def make_files(score_data=None, count_data=None, meta_data=None):
     else:
         counts_file = None
 
+    if isinstance(meta_data, dict):
+        meta_data = json.dumps(meta_data)
+
     if isinstance(meta_data, bool) and meta_data:
-        string_io = StringIO("{},metadata\n{},hello world\n".format(
-            hgvs_column, hgvs
-        ))
+        dict_ = {
+            "inner": {"foo": 2, "bar": 1},
+            "hello": ["world"]
+        }
+        string_io = StringIO(json.dumps(dict_))
         size = string_io.seek(0, os.SEEK_END)
         string_io.seek(0)
         meta_file = InMemoryUploadedFile(
             file=string_io,
-            name="meta.csv",
+            name="meta.json",
             field_name=None,
-            content_type='text/csv',
+            content_type='json',
             size=size,
             charset="utf-8"
         )
@@ -79,9 +85,9 @@ def make_files(score_data=None, count_data=None, meta_data=None):
         string_io.seek(0)
         meta_file = InMemoryUploadedFile(
             file=string_io,
-            name="meta.csv",
+            name="meta.json",
             field_name=None,
-            content_type='text/csv',
+            content_type='json',
             size=size,
             charset="utf-8"
         )

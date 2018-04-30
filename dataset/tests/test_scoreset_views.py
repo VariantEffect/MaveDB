@@ -87,7 +87,6 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         scs.dataset_columns = {
             constants.score_columns: ["score"],
             constants.count_columns: [],
-            constants.meta_columns: [],
         }
         scs.save()
         var = VariantFactory(

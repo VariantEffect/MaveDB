@@ -51,7 +51,7 @@ class TestReferenceGenomeModel(TestCase):
     """
 
     def test_get_id_methods_return_none_if_no_association(self):
-        ref = ReferenceGenomeFactory(ensembl_id=None, genome_id=None)
+        ref = ReferenceGenomeFactory(genome_id=None)
         self.assertIsNone(ref.get_identifier())
         self.assertIsNone(ref.get_identifier_url())
         self.assertIsNone(ref.get_identifier_instance())

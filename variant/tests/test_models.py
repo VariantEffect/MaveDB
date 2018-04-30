@@ -45,7 +45,6 @@ class TestVariant(TestCase):
     def test_validation_error_json_has_no_scores_key(self):
         var = VariantFactory(data={
             constants.variant_count_data: {},
-            constants.variant_meta_data: {}
         })
         with self.assertRaises(ValidationError):
             var.full_clean()
@@ -53,22 +52,12 @@ class TestVariant(TestCase):
     def test_validation_error_json_has_no_counts_key(self):
         var = VariantFactory(data={
             constants.variant_score_data: {constants.required_score_column: 1},
-            constants.variant_meta_data: {}
-        })
-        with self.assertRaises(ValidationError):
-            var.full_clean()
-
-    def test_validation_error_json_has_no_meta_key(self):
-        var = VariantFactory(data={
-            constants.variant_count_data: {},
-            constants.variant_score_data: {constants.required_score_column: 1}
         })
         with self.assertRaises(ValidationError):
             var.full_clean()
 
     def test_validation_error_data_missing_required_score_column(self):
         var = VariantFactory(data={
-            constants.variant_meta_data: {},
             constants.variant_count_data: {},
             constants.variant_score_data: {}
         })

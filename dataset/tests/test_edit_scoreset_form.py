@@ -53,7 +53,7 @@ class TestScoreSetEditForm(TestCase):
         if c_file is not None:
             files[constants.variant_count_data] = c_file
         if m_file is not None:
-            files[constants.variant_meta_data] = m_file
+            files[constants.meta_data] = m_file
         return data, files
 
     def test_empty_data_submission_is_invalid(self):

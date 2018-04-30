@@ -29,13 +29,6 @@ class TestValidateMatchingColumns(TestCase):
             validate_scoreset_columns_match_variant(
                 variant.scoreset.dataset_columns, variant.data)
 
-    def test_validationerror_non_matching_meta_columns(self):
-        variant = VariantFactory()
-        with self.assertRaises(ValidationError):
-            variant.data[constants.variant_meta_data] = {'meta': 'variant'}
-            validate_scoreset_columns_match_variant(
-                variant.scoreset.dataset_columns, variant.data)
-
     def test_validationerror_non_matching_count_columns(self):
         variant = VariantFactory()
         with self.assertRaises(ValidationError):
@@ -73,7 +66,6 @@ class TestVariantJsonValidator(TestCase):
     def test_validationerror_missing_score_data_key(self):
         data = {
             constants.variant_count_data: {},
-            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -81,15 +73,6 @@ class TestVariantJsonValidator(TestCase):
     def test_validationerror_missing_count_data_key(self):
         data = {
             constants.variant_score_data: {},
-            constants.variant_meta_data: {}
-        }
-        with self.assertRaises(ValidationError):
-            validate_variant_json(data)
-
-    def test_validationerror_missing_meta_data_key(self):
-        data = {
-            constants.variant_count_data: {},
-            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -99,7 +82,6 @@ class TestVariantJsonValidator(TestCase):
             'extra': {},
             constants.variant_score_data: {},
             constants.variant_count_data: {},
-            constants.variant_meta_data: {}
         }
         with self.assertRaises(ValidationError):
             validate_variant_json(data)
@@ -108,7 +90,6 @@ class TestVariantJsonValidator(TestCase):
         data = {
             constants.variant_score_data: {},
             constants.variant_count_data: {},
-            constants.variant_meta_data: {}
         }
         for key in data.keys():
             data[key] = []
@@ -199,15 +180,6 @@ class TestVariantRowValidator(TestCase):
         # Index a new value to create the default entry
         row = hgvs_map['new_hgvs']
         self.assertEqual(row, {required_score_column: None})
-
-    def test_trailing_whitespace_stripped_from_column_values(self):
-        value = ' hello world '
-        hgvs = generate_hgvs()
-        data = "{},meta\n{},{}".format(hgvs_column, hgvs, value)
-        _, hgvs_map = validate_variant_rows(
-            BytesIO(data.encode()), is_meta=True)
-        expected_map = {hgvs: {'meta': value.strip()}}
-        self.assertEqual(dict(hgvs_map), expected_map)
 
     def test_returns_sorted_header(self):
         hgvs = generate_hgvs()
