@@ -7,15 +7,12 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 
 from accounts.permissions import user_is_anonymous, PermissionTypes
-from core.mixins import SearchMixin, logger
+from search.mixins import logger, SearchMixin
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
 from dataset.models.experiment import Experiment
 from genome.models import TargetGene
 from genome.serializers import TargetGeneSerializer
-
-
-logger = logging.getLogger('django')
 
 
 class DatasetModelSearchMixin(SearchMixin):
@@ -129,7 +126,15 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
     Filter :class:`Experiment` instances by common fields in
     :class:`DatasetModelSearchMixin` and the below:
 
-        'target': 'scoresets__target__name'
+        'target': 'scoresets__target__name',
+        'organism':
+            'scoresets__target__reference_maps__genome__species_name',
+        'uniprot': 'scoresets__target__uniprot_id__identifier',
+        'ensembl': 'scoresets__target__ensembl_id__identifier',
+        'refseq': 'scoresets__target__refseq_id__identifier',
+        'genome': [
+            'scoresets__target__reference_maps__genome__short_name',
+            'scoresets__target__reference_maps__genome__genome_id__identifier'
 
     Expects the above :class:`Experiment` field names to work correctly.
     """
@@ -137,14 +142,28 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
     def search_field_to_model_field():
         dict_ = super().search_field_to_model_field()
         dict_.update({
-            'target': 'scoresets__target__name'
+            'target': 'scoresets__target__name',
+            'organism':
+                'scoresets__target__reference_maps__genome__species_name',
+            'uniprot': 'scoresets__target__uniprot_id__identifier',
+            'ensembl': 'scoresets__target__ensembl_id__identifier',
+            'refseq': 'scoresets__target__refseq_id__identifier',
+            'genome': [
+                'scoresets__target__reference_maps__genome__short_name',
+                'scoresets__target__reference_maps__genome__genome_id__identifier'
+            ],
         })
         return dict_
 
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
-            'target': self.filter_target
+            'target': self.filter_target,
+            'organism': self.filter_target_organism,
+            'uniprot': self.filter_target_uniprot,
+            'ensembl': self.filter_target_ensembl,
+            'refseq': self.filter_target_refseq,
+            'genome': self.filter_reference_genome,
         })
         return dict_
 
@@ -152,6 +171,37 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
         field_name = 'scoresets__target__name'
         filter_type = 'iexact'
         return self.search_to_q(value, field_name, filter_type)
+
+    def filter_target_organism(self, value):
+        field_name = 'scoresets__target__reference_maps__genome__species_name'
+        filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_target_uniprot(self, value):
+        field_name = 'scoresets__target__uniprot_id__identifier'
+        filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_target_refseq(self, value):
+        field_name = 'scoresets__target__refseq_id__identifier'
+        filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_target_ensembl(self, value):
+        field_name = 'scoresets__target__ensembl_id__identifier'
+        filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_reference_genome(self, value):
+        field_name_1 = 'scoresets__target__reference_maps__genome__short_name'
+        field_name_2 = (
+            'scoresets__target__reference_maps__genome__genome_id__identifier'
+        )
+        filter_type = 'iexact'
+        return self.or_join_qs([
+            self.search_to_q(value, field_name_1, filter_type),
+            self.search_to_q(value, field_name_2, filter_type),
+        ])
 
 
 class ScoreSetSearchMixin(DatasetModelSearchMixin):
@@ -162,11 +212,9 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
         'target': 'target__name',
         'organism': 'target__reference_maps__genome__species_name',
         'sequence': 'target__wt_sequence__sequence',
-        'reference': [
+        'genome': [
             'target__reference_maps__genome__short_name',
-            'target__reference_maps__genome__refseq_id__identifier',
-            'target__reference_maps__genome__ensembl_id__identifier',
-        ],
+            'target__reference_maps__genome__genome_id__identifier'
         'uniprot': 'target__uniprot_id__identifier',
         'ensembl': 'target__ensembl_id__identifier',
         'refseq': 'target__refseq_id__identifier',
@@ -181,10 +229,9 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
             'target': 'target__name',
             'organism': 'target__reference_maps__genome__species_name',
             'sequence': 'target__wt_sequence__sequence',
-            'reference': [
+            'genome': [
                 'target__reference_maps__genome__short_name',
-                'target__reference_maps__genome__refseq_id__identifier',
-                'target__reference_maps__genome__ensembl_id__identifier',
+                'target__reference_maps__genome__genome_id__identifier'
             ],
             'uniprot': 'target__uniprot_id__identifier',
             'ensembl': 'target__ensembl_id__identifier',
@@ -198,7 +245,7 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
             'organism': self.filter_organism,
             'target': self.filter_target,
             'sequence': self.filter_target_sequence,
-            'reference': self.filter_reference_genome,
+            'genome': self.filter_reference_genome,
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
@@ -224,13 +271,11 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
 
     def filter_reference_genome(self, value):
         field_name_1 = 'target__reference_maps__genome__short_name'
-        field_name_2 = 'target__reference_maps__genome__refseq_id__identifier'
-        field_name_3 = 'target__reference_maps__genome__ensembl_id__identifier'
+        field_name_2 = 'target__reference_maps__genome__genome_id__identifier'
         filter_type = 'iexact'
         return self.or_join_qs([
             self.search_to_q(value, field_name_1, filter_type),
             self.search_to_q(value, field_name_2, filter_type),
-            self.search_to_q(value, field_name_3, filter_type),
         ])
 
     def filter_target_uniprot(self, value):
