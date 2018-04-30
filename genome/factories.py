@@ -68,11 +68,12 @@ class TargetGeneFactory(DjangoModelFactory):
     refseq_id = None
     uniprot_id = None
 
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        instance = super()._create(model_class, *args, **kwargs)
-        ReferenceMapFactory(target=instance)
-        return instance
+
+class TargetGeneWithReferenceMapFactory(TargetGeneFactory):
+    @factory.post_generation
+    def target(self, create, extracted, **kwargs):
+        if create:
+            ReferenceMapWithIntervalsFactory(target=self)
 
 
 class ReferenceMapFactory(DjangoModelFactory):
@@ -88,11 +89,13 @@ class ReferenceMapFactory(DjangoModelFactory):
     target = factory.SubFactory(TargetGeneFactory)
     is_primary = True
 
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        instance = super()._create(model_class, *args, **kwargs)
-        GenomicIntervalFactory(reference_map=instance)
-        return instance
+
+class ReferenceMapWithIntervalsFactory(ReferenceMapFactory):
+    @factory.post_generation
+    def intervals(self, create, extracted, **kwargs):
+        if create:
+            for i in range(3):
+                GenomicInterval(reference_map=self)
 
 
 class GenomicIntervalFactory(DjangoModelFactory):

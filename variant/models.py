@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from django.db import models, transaction
 from django.contrib.postgres.fields import JSONField
 
@@ -68,7 +66,6 @@ class Variant(UrnModel):
         default=dict({
             constants.variant_score_data: {},
             constants.variant_count_data: {},
-            constants.variant_meta_data: {}
         }),
         validators=[validate_variant_json],
     )
@@ -141,16 +138,3 @@ class Variant(UrnModel):
                 yield self.hgvs
             else:
                 yield self.data[constants.variant_count_data][column]
-
-    @property
-    def metadata_columns(self):
-        return [constants.hgvs_column] + \
-               list(self.data[constants.variant_meta_data].keys())
-
-    @property
-    def meta_data(self):
-        for column in self.scoreset.metadata_columns:
-            if column == constants.hgvs_column:
-                yield self.hgvs
-            else:
-                yield self.data[constants.variant_meta_data][column]

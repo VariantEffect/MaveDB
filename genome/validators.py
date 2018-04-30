@@ -87,7 +87,7 @@ def validate_species_name(value):
 
 
 def validate_reference_genome_has_one_external_identifier(referencegenome):
-    if referencegenome.ensembl_id and referencegenome.refseq_id:
+    if not referencegenome.genome_id:
         raise ValidationError(
             "Only one external identifier can be specified for a reference"
             "genome."

@@ -103,9 +103,15 @@ class TargetGene(TimeStampedModel):
         """Target name appended to its scoreset urn."""
         return '{} | {}'.format(self.name, self.get_scoreset_urn())
 
+    def get_scoreset(self):
+        if hasattr(self, 'scoreset'):
+            return self.scoreset
+        return None
+
     def get_scoreset_urn(self):
-        if self.scoreset:
+        if self.get_scoreset():
             return self.scoreset.urn
+        return None
 
     def get_wt_sequence_string(self):
         if self.wt_sequence:
@@ -202,10 +208,12 @@ class ReferenceMap(TimeStampedModel):
         verbose_name='Primary',
     )
 
-    def get_target_gene(self):
-        return self.target
+    def get_target(self):
+        if hasattr(self, 'target'):
+            return self.target
+        return None
 
-    def set_target_gene(self, target):
+    def set_target(self, target):
         if not isinstance(target, TargetGene):
             raise TypeError("Found {}, expected {}.".format(
                 type(target).__name__, TargetGene.__name__

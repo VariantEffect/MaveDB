@@ -45,10 +45,6 @@ def validate_scoreset_columns_match_variant(dataset_columns, variant_data):
             sorted(list(variant_data[constants.variant_count_data].keys())):
         raise ValidationError(
             "Variant count columns do not match parent's columns.")
-    if sorted(dataset_columns[constants.meta_columns]) != \
-            sorted(list(variant_data[constants.variant_meta_data].keys())):
-        raise ValidationError(
-            "Variant metadata columns do not match parent's columns.")
 
 
 def validate_hgvs_string(value):
@@ -82,7 +78,6 @@ def validate_variant_json(dict_):
     expected_keys = [
         constants.variant_score_data,
         constants.variant_count_data,
-        constants.variant_meta_data
     ]
     for key in expected_keys:
         if key not in dict_.keys():
@@ -116,12 +111,11 @@ def validate_variant_json(dict_):
             )
 
 
-def validate_variant_rows(file, is_meta=False):
+def validate_variant_rows(file):
     """
     Variant data validator that checks the following:
 
-        1) Datatypes of rows must be either str, int, float or NoneType if
-           `is_meta` is False.
+        1) Datatypes of rows must be either int, float or NoneType
         2) HGVS string is a valid hgvs string,
         3) Hgvs does not appear more than once in rows
 
@@ -132,9 +126,6 @@ def validate_variant_rows(file, is_meta=False):
     ----------
     file : :class:`io.FileIO`
         An open file handle in read mode.
-
-    is_meta : bool, optional. Default: False
-        If True, will not attempt to cast non-hgvs fields to a float.
 
     Returns
     -------
@@ -190,7 +181,7 @@ def validate_variant_rows(file, is_meta=False):
                 (
                     "Row columns '%(row)s' do not match those found in the "
                     "header '%(header)s. "
-                    "Check that multi-mutants and metadata columns/values "
+                    "Check that multi-mutants and columns/values "
                     "containing commas are double quoted and that rows columns"
                     " match those in the header."
                 ),
@@ -223,27 +214,26 @@ def validate_variant_rows(file, is_meta=False):
                         'dtype': type(hgvs_string).__name__}
             )
 
-        # Ensure all values for columns other than 'hgvs' are either an int
-        # or a float if the input is not a metadata file.
-        if not is_meta:
-            for k, v in row.items():
-                if k == constants.hgvs_column:
-                    continue
-                if v is not None:
-                    try:
-                        v = float(v)
-                        row[k] = v
-                    except ValueError:
-                        raise ValidationError(
-                           (
-                                "Type for column '%(col)s' at line %(i)s is "
-                                "'%(dtype)s'. Expected either an 'int' or "
-                                "'float'. Score/count uploads can only "
-                                "contain numeric column values."
-                           ),
-                           params={
-                               'col': k, 'i': i+1, 'dtype': type(v).__name__}
-                        )
+        # Ensure all values for columns other than 'hgvs' are either an int,
+        # float or None
+        for k, v in row.items():
+            if k == constants.hgvs_column:
+                continue
+            if v is not None:
+                try:
+                    v = float(v)
+                    row[k] = v
+                except ValueError:
+                    raise ValidationError(
+                       (
+                            "Type for column '%(col)s' at line %(i)s is "
+                            "'%(dtype)s'. Expected either an 'int' or "
+                            "'float'. Score/count uploads can only "
+                            "contain numeric column values."
+                       ),
+                       params={
+                           'col': k, 'i': i+1, 'dtype': type(v).__name__}
+                    )
 
         # Make sure the variant has been defined more than one time.
         if hgvs_string in hgvs_map:

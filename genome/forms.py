@@ -1,6 +1,6 @@
 from django import forms as forms
 from django.db import transaction
-from django.forms.models import inlineformset_factory, BaseInlineFormSet
+from django.forms.models import BaseModelFormSet
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
 
@@ -193,7 +193,7 @@ class GenomicIntervalForm(forms.ModelForm):
         return all([is_null(elem) for elem in [start, end, chr_, strand]])
 
 
-class BaseGenomicIntervalFormSet(BaseInlineFormSet):
+class BaseGenomicIntervalFormSet(BaseModelFormSet):
     """
     Formset which will validate multiple intervals against each other
     to ensure uniqueness.
@@ -265,21 +265,6 @@ class BaseGenomicIntervalFormSet(BaseInlineFormSet):
 def create_genomic_interval_formset(extra=2, min_num=1,
                                     can_delete=False):
     return modelformset_factory(
-        model=GenomicInterval,
-        form=GenomicIntervalForm,
-        formset=BaseGenomicIntervalFormSet,
-        extra=extra,
-        min_num=min_num,
-        validate_min=True,
-        can_delete=can_delete,
-        fields=GenomicIntervalForm.Meta.fields,
-    )
-
-
-def create_inline_genomic_interval_formset(extra=2, min_num=1,
-                                           can_delete=False):
-    return inlineformset_factory(
-        parent_model=ReferenceMap,
         model=GenomicInterval,
         form=GenomicIntervalForm,
         formset=BaseGenomicIntervalFormSet,

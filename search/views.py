@@ -1,7 +1,10 @@
 from django.shortcuts import render
 
 from dataset.models.experiment import Experiment
-from accounts.permissions import user_is_anonymous
+from dataset.mixins import (
+    ScoreSetSearchMixin, ExperimentSearchMixin, ExperimentSetSearchMixin
+)
+
 
 from .forms import SearchForm
 

@@ -28,6 +28,7 @@ class DatasetModelFactory(DjangoModelFactory):
     abstract_text = factory.faker.Faker('text', max_nb_chars=1500)
     title = factory.faker.Faker('text', max_nb_chars=250)
     short_description = factory.faker.Faker('text', max_nb_chars=1000)
+    extra_metadata = {"foo": "bar"}
     private = True
 
 
@@ -49,6 +50,22 @@ class ExperimentFactory(DatasetModelFactory):
     experimentset = factory.SubFactory(ExperimentSetFactory)
 
 
+class ExperimentWithScoresetFactory(DatasetModelFactory):
+    """
+    Factory for producing test instances for :class:`Experiment` with an
+    associated fully specified :class:`ScoreSet` (target, references etc).
+    """
+    class Meta:
+        model = Experiment
+
+    experimentset = factory.SubFactory(ExperimentSetFactory)
+
+    @factory.post_generation
+    def scoreset(self, create, extracted, **kwargs):
+        if create:
+            ScoreSetWithTargetFactory(experiment=self)
+
+
 class ScoreSetFactory(DatasetModelFactory):
     """
     Factory for producing test instances for :class:`Scoreset`.
@@ -62,7 +79,8 @@ class ScoreSetFactory(DatasetModelFactory):
 
 class ScoreSetWithTargetFactory(DatasetModelFactory):
     """
-    Factory for producing test instances for :class:`Scoreset`.
+    Factory for producing test instances for :class:`Scoreset` with an
+    associated fully specified :class:`TargetGene` (references etc).
     """
     class Meta:
         model = ScoreSet
@@ -70,9 +88,8 @@ class ScoreSetWithTargetFactory(DatasetModelFactory):
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
 
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        from genome.factories import TargetGeneFactory
-        instance = super()._create(model_class, *args, **kwargs)
-        TargetGeneFactory(scoreset=instance)
-        return instance
+    @factory.post_generation
+    def target(self, create, extracted, **kwargs):
+        from genome.factories import TargetGeneWithReferenceMapFactory
+        if create and not self.get_target():
+            TargetGeneWithReferenceMapFactory(scoreset=self)
