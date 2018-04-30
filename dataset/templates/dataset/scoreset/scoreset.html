@@ -20,10 +20,6 @@
       <a class="nav-link" id="counts-tab" data-toggle="tab" href="#counts"
          role="tab" aria-controls="counts">Counts</a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link" id="meta-tab" data-toggle="tab" href="#meta"
-         role="tab" aria-controls="meta">Metadata</a>
-    </li>
   </ul>
 
 <div class="tab-content" id="myTabContent">
@@ -106,53 +102,6 @@
               {% for var in variants %}
                 <tr>
                   {% for data in var.count_data %}
-                    {% if forloop.counter >= 2 %}
-                      <td> {{ data|floatformat:"-4" }} </td>
-                    {% else %}
-                      <td> {{ data }} </td>
-                    {% endif %}
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% endif %}
-    </div>
-  </div> <!-- End count data tab -->
-
-  <!-- meta data tab -->
-  <div class="tab-pane fade" id="meta" role="tabpanel" aria-labelledby="meta-tab">
-    <div class="container-fluid mt-4">
-
-      <div class="row mt-1 mb-3">
-        <div class="col-sm-3 col-md-3">
-          <h3 style="margin: 0;">Metadata dataset</h3>
-        </div>
-        <div class="col-sm-1 col-md-1">
-          <a class="download-btn btn btn-sm btn-outline-dark"
-             href="{% url 'dataset:metadata_download' instance.urn %}">
-            Download
-          </a>
-        </div>
-      </div>
-
-      {% if not metadata_columns|length > 1 %}
-        <p class="text-muted"> No metadata available.</p>
-      {% else %}
-        <div id="meta-table-container" class="numeric-container container-fluid">
-          <table id="meta-table" class="styled-table table table-hover">
-            <thead>
-              <tr>
-                {% for column in metadata_columns %}
-                  <th onclick="sortTable('meta-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for var in variants %}
-                <tr>
-                  {% for data in var.meta_data %}
                     {% if forloop.counter >= 2 %}
                       <td> {{ data|floatformat:"-4" }} </td>
                     {% else %}
