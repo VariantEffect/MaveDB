@@ -1,3 +1,4 @@
+import json
 from collections import OrderedDict
 
 from django import forms as forms
@@ -16,10 +17,9 @@ from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..validators import (
     validate_scoreset_score_data_input,
-    validate_csv_extension,
+    validate_csv_extension, validate_json_extension,
     validate_scoreset_count_data_input,
     validate_scoreset_json,
-    validate_scoreset_meta_data_input,
 )
 
 
@@ -52,8 +52,8 @@ class ScoreSetForm(DatasetModelForm):
     )
     meta_data = forms.FileField(
         required=False, label="Variant metadata",
-        validators=[validate_scoreset_meta_data_input, validate_csv_extension],
-        widget=forms.widgets.FileInput(attrs={"accept": "csv"})
+        validators=[validate_json_extension],
+        widget=forms.widgets.FileInput(attrs={"accept": "json"})
     )
 
     def __init__(self, *args, **kwargs):
@@ -76,7 +76,6 @@ class ScoreSetForm(DatasetModelForm):
             self.dataset_columns = {
                 constants.score_columns: [],
                 constants.count_columns: [],
-                constants.meta_columns: []
             }
 
         self.fields['experiment'] = forms.ModelChoiceField(
@@ -145,12 +144,15 @@ class ScoreSetForm(DatasetModelForm):
 
     def clean_meta_data(self):
         meta_file = self.cleaned_data.get("meta_data", None)
-        if not meta_file:
-            self.dataset_columns[constants.meta_columns] = []
+        if meta_file is None:
             return {}
-        header, hgvs_meta_map = validate_variant_rows(meta_file, is_meta=True)
-        self.dataset_columns[constants.meta_columns] = header
-        return hgvs_meta_map
+        try:
+            dict_ = json.load(meta_file)
+            return dict_
+        except ValueError as error:
+            raise ValidationError(
+                "Incorrectly formatted json file: {}".format(error)
+            )
 
     @staticmethod
     def _fill_in_missing(hgvs_keys, mapping):
@@ -185,11 +187,14 @@ class ScoreSetForm(DatasetModelForm):
 
         hgvs_score_map = cleaned_data.get("score_data", {})
         hgvs_count_map = cleaned_data.get("count_data", {})
-        hgvs_meta_map = cleaned_data.get("meta_data", {})
+        meta_data = cleaned_data.get("meta_data", {})
 
         has_score_data = len(hgvs_score_map) > 0
         has_count_data = len(hgvs_count_map) > 0
-        has_meta_data = len(hgvs_meta_map) > 0
+        has_meta_data = len(meta_data) > 0
+
+        if has_meta_data:
+            self.instance.extra_metadata = meta_data
 
         # In edit mode, we have relaxed the requirement of uploading a score
         # dataset since one already exists.
@@ -204,11 +209,11 @@ class ScoreSetForm(DatasetModelForm):
         # an accompanying score dataset, this error will be thrown. We could
         # relax this but there is the potential that the user might upload
         # a new count dataset and forget to upload a new score dataset.
-        if (has_count_data or has_meta_data) and not has_score_data:
+        if has_count_data and not has_score_data:
             self.add_error(
                 None if 'score_data' not in self.fields else 'score_data',
                 "You must upload an accompanying score data file when "
-                "uploading a new count/meta data file or replacing an "
+                "uploading a new count data file or replacing an "
                 "existing one."
             )
             return cleaned_data
@@ -217,17 +222,10 @@ class ScoreSetForm(DatasetModelForm):
             # Cross-populate the hgvs_score_map with every hgvs in counts
             # but not in scores.
             self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
-        if has_meta_data:
-            # Cross-populate the hgvs_score_map with every hgvs in meta
-            # but not in scores
-            self._fill_in_missing(hgvs_meta_map.keys(), hgvs_score_map)
-
-        # hgvs_score_map now contains all variants. We can then fill in the
-        # missing hgvs values in the other maps.
         if has_count_data:
+            # hgvs_score_map now contains all variants. We can then fill in the
+            # missing hgvs values in the other maps.
             self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
-        if has_meta_data:
-            self._fill_in_missing(hgvs_score_map.keys(), hgvs_meta_map)
 
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
@@ -239,11 +237,9 @@ class ScoreSetForm(DatasetModelForm):
             for hgvs in hgvs_score_map.keys():
                 scores_json = hgvs_score_map[hgvs]
                 counts_json = hgvs_count_map[hgvs] if has_count_data else {}
-                meta_json = hgvs_meta_map[hgvs] if has_meta_data else {}
                 data = {
                     constants.variant_score_data: scores_json,
                     constants.variant_count_data: counts_json,
-                    constants.variant_meta_data: meta_json
                 }
                 validate_scoreset_columns_match_variant(
                     self.dataset_columns, data)
