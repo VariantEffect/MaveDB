@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
+from search.mixins import SearchMixin
 from .permissions import (
     user_is_anonymous,
     user_is_admin_for_instance,
@@ -109,3 +110,38 @@ class GroupPermissionMixin(object):
         """
         return self.administrators().union(
             self.editors()).union(self.viewers())
+
+
+class UserSearchMixin(SearchMixin):
+    """
+    Filter :class:`User` instances by common fields:
+        'username': 'username',
+        'first_name': 'first_name',
+        'last_name': 'last_name',
+    """
+    @staticmethod
+    def search_field_to_model_field():
+        return {
+            'username': 'username',
+            'first_name': 'first_name',
+            'last_name': 'last_name',
+        }
+
+    def search_field_to_function(self):
+        return {
+            'username': self.filter_username,
+            'first_name': self.filter_first_name,
+            'last_name': self.filter_last_name,
+        }
+
+    def filter_username(self, value):
+        return self.search_to_q(
+            value, field_name='username', filter_type='iexact')
+
+    def filter_first_name(self, value):
+        return self.search_to_q(
+            value, field_name='first_name', filter_type='icontains')
+
+    def filter_last_name(self, value):
+        return self.search_to_q(
+            value, field_name='last_name', filter_type='icontains')
