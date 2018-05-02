@@ -78,6 +78,7 @@ class ScoreSetForm(DatasetModelForm):
                 constants.count_columns: [],
             }
 
+        self.fields['short_description'].max_length = 500
         self.fields['experiment'] = forms.ModelChoiceField(
             queryset=None, required=True, widget=forms.Select(
                 attrs={"class": "form-control"}))
