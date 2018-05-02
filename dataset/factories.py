@@ -11,6 +11,11 @@ with future maintainability.
 import factory.faker
 from factory.django import DjangoModelFactory
 
+from metadata.factories import (
+    KeywordFactory, SraIdentifierFactory, DoiIdentifierFactory,
+    PubmedIdentifierFactory
+)
+
 from .models.base import DatasetModel
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
@@ -30,6 +35,30 @@ class DatasetModelFactory(DjangoModelFactory):
     short_description = factory.faker.Faker('text', max_nb_chars=1000)
     extra_metadata = {"foo": "bar"}
     private = True
+
+    @factory.post_generation
+    def keywords(self, create, extracted, **kwargs):
+        if create:
+            kw = KeywordFactory()
+            self.add_keyword(kw)
+
+    @factory.post_generation
+    def sra_ids(self, create, extracted, **kwargs):
+        if create:
+            id_ = SraIdentifierFactory()
+            self.add_identifier(id_)
+
+    @factory.post_generation
+    def doi_ids(self, create, extracted, **kwargs):
+        if create:
+            id_ = DoiIdentifierFactory()
+            self.add_identifier(id_)
+
+    @factory.post_generation
+    def pubmed_ids(self, create, extracted, **kwargs):
+        if create:
+            id_ = PubmedIdentifierFactory()
+            self.add_identifier(id_)
 
 
 class ExperimentSetFactory(DatasetModelFactory):
@@ -63,7 +92,7 @@ class ExperimentWithScoresetFactory(DatasetModelFactory):
     @factory.post_generation
     def scoreset(self, create, extracted, **kwargs):
         if create:
-            ScoreSetWithTargetFactory(experiment=self)
+            ScoreSetWithTargetFactory(experiment=self, private=self.private)
 
 
 class ScoreSetFactory(DatasetModelFactory):
