@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
 
 import django.contrib.auth.views as auth_views
 from django.contrib.auth import logout, get_user_model
@@ -24,7 +26,8 @@ from .permissions import (
 )
 from .forms import (
     RegistrationForm,
-    SelectUsersForm
+    SelectUsersForm,
+    ProfileForm
 )
 
 
@@ -86,7 +89,32 @@ def profile_view(request):
     """
     A simple view, at only one line...
     """
-    return render(request, 'accounts/profile_home.html')
+    profile_form = ProfileForm(instance=request.user.profile)
+    if request.method == 'POST':
+        profile_form = ProfileForm(
+            instance=request.user.profile, data=request.POST)
+        if profile_form.is_valid():
+            profile = profile_form.save(commit=True)
+            messages.success(request, "Successfully updated your profile.")
+            if profile.email:
+                template_name = "core/confirm_email.html"
+                message = render_to_string(template_name, {
+                    'user': request.user,
+                })
+                send_mail(
+                    subject='Confirm email update.',
+                    message=message,
+                    from_email=None,
+                    recipient_list=[profile.email]
+                )
+        else:
+            messages.error(
+                request,
+                "There were errors with your submission. "
+                "Check the profile tab for more detail."
+            )
+    context = {"profile_form": profile_form}
+    return render(request, 'accounts/profile_home.html', context)
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
