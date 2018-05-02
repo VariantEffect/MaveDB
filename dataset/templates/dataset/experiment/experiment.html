@@ -9,16 +9,44 @@
       <p class="text-muted">A single target has been scored for this experiment: </p>
     {% endif %}
     {% for target in instance.get_targets.all %}
-      <a href="{% url 'dataset:scoreset_detail' target.scoreset.urn %}">
-        <div class="target-card">
-          <p><strong>Target:</strong> {{ target.get_name }}</p>
-          <p><strong>Species:</strong> {{ target.get_reference_genomes.first.format_species_name_html|safe }}</p>
-          <p><strong>Wildtype Sequence:</strong> {{ target.get_wt_sequence }}</p>
+        <div class="target-card" onclick="goToUrl('{% url 'dataset:scoreset_detail' target.scoreset.urn %}')">
+          <p>
+            <strong>Target:</strong>
+            <a href="/search/?target={{ target.get_name }}">
+              {{ target.get_name }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Species:</strong>
+            <a href="/search/?species={{ target.get_reference_genomes.first.get_species_name }}">
+              {{ target.get_reference_genomes.first.format_species_name_html|safe }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Reference genome:</strong>
+            <a href="/search/?genome={{ target.get_reference_genomes.first.get_short_name }}">
+              {{ target.get_reference_genomes.first.get_short_name }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Reference assembly:</strong>
+            <a href={{ target.get_reference_genomes.first.genome_id.url }}>
+              {{ target.get_reference_genomes.first.genome_id.identifier }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Wildtype Sequence:</strong>
+            {{ target.get_wt_sequence }}
+          </p>
+
           {% if forloop.counter < instance.get_targets.count %}
             <hr>
           {% endif %}
         </div>
-      </a>
     {% endfor %}
   {% else %}
     <p class="text-muted">No targets have been scored for this experiment.</p>

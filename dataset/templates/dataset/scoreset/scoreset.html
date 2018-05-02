@@ -2,14 +2,76 @@
 
 {% block target %}
   <h2 id="target" class="underline left-align section-heading"> Target </h2>
-  <p><strong>Target:</strong> {{ instance.target.get_name }}</p>
-  <p><strong>Wildtype Sequence:</strong> {{ instance.target.get_wt_sequence_string }}</p>
-  <p><strong>Target Organism:</strong> {{ instance.target.get_reference_genomes.first.format_species_name_html|default:"Unspecified"|safe }}</p>
+    <p>
+      <strong>Target:</strong>
+      <a href="/search/?target={{ instance.get_target.get_name }}">
+        {{ instance.get_target.get_name }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Species:</strong>
+      <a href="/search/?species={{ instance.get_target.get_reference_genomes.first.get_species_name }}">
+        {{ instance.get_target.get_reference_genomes.first.format_species_name_html|safe }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Reference genome:</strong>
+      <a href="/search/?genome={{ instance.get_target.get_reference_genomes.first.get_short_name }}">
+        {{ instance.get_target.get_reference_genomes.first.get_short_name }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Reference assembly:</strong>
+      <a href={{ instance.get_target.get_reference_genomes.first.genome_id.url }}>
+        {{ instance.get_target.get_reference_genomes.first.genome_id.identifier }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Wildtype Sequence:</strong>
+      {{ instance.get_target.get_wt_sequence }}
+    </p>
+
+  <p><strong>UniProt:</strong>
+    {% if instance.get_target.uniprot_id %}
+      <a href="{{ instance.get_target.uniprot_id.url }}">
+        {{ instance.get_target.uniprot_id.identifier }}
+      </a>
+    {% else %}
+        Not associated
+    {% endif %}
+  </p>
+
+  <p><strong>RefSeq:</strong>
+    {% if instance.get_target.refseq_id %}
+      <a href="{{ instance.get_target.refseq_id.url }}">
+        {{ instance.get_target.refseq_id.identifier }}
+      </a>
+    {% else %}
+        Not associated
+    {% endif %}
+  </p>
+
+  <p><strong>Ensembl:</strong>
+    {% if instance.get_target.ensembl_id %}
+      <a href="{{ instance.get_target.ensembl_id.url }}">
+        {{ instance.get_target.ensembl_id.identifier }}
+      </a>
+    {% else %}
+        Not associated
+    {% endif %}
+  </p>
+
 {% endblock %}
 
 {% block child_list %}
   <h2 id="variants" class="underline left-align section-heading"> Variants </h2>
-  <p class="text-muted">Below is a sample of the first 20 variants. Click download to see the complete dataset.</p>
+  <p class="text-muted">
+    Below is a sample of the first 20 variants. Click download to see the complete dataset.
+  </p>
   <!-- Tab/Pills menu -->
   <ul class="nav nav-tabs" id="myTab" role="tablist">
     <li class="nav-item">
@@ -39,8 +101,8 @@
         </div>
       </div>
 
-      {% if not score_columns|length > 1 %}
-        <p class="text-muted"> No counts data available.</p>
+      {% if not instance.has_score_dataset %}
+        <p class="text-muted"> No score data available.</p>
       {% else %}
         <div id="scores-table-container" class="numeric-container container-fluid">
           <table id="scores-table" class="styled-table table table-hover">
@@ -86,8 +148,8 @@
         </div>
       </div>
 
-      {% if not count_columns|length > 1 %}
-        <p class="text-muted"> No counts data available.</p>
+      {% if not instance.has_count_dataset %}
+        <p class="text-muted"> No count data available.</p>
       {% else %}
         <div id="counts-table-container" class="numeric-container container-fluid">
           <table id="counts-table" class="styled-table table table-hover">

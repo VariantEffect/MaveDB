@@ -1,5 +1,21 @@
 /* Global 
 ----------------------------------- */
+/* COLORS
+    #343a40 - 'Charcoal gray'
+    #222222 - 'Deep charcoal gray'
+    #f7f7f7 - 'Ever so slightly gray'
+    #987cb8 - 'Pastel purple'
+    #dadff1 - 'Ensembl purple'
+    #ffffff - 'White'
+    #1eaedb - 'Some sort of rusty blue'
+    #333333 - 'Shadow gray'
+    #d3d3d3 - 'Slategray'
+    #999999 - 'ORCID gray'
+    #338caf - 'ORCID blue'
+    #6c757d - 'Subdued gray'
+    rebeccapurple - 'Hyperlink hover purple'
+ */
+
 * {
     font-family: 'Raleway', sans-serif;
     border-radius: 0 !important;
@@ -16,6 +32,9 @@ body {
    /*margin: 1%;*/
    color: #343a40;
    background-color: #f7f7f7;
+   /*display: flex;*/
+   /*!*min-height: 85vh;*!*/
+   /*flex-direction: column;*/
 }
 
 
@@ -37,14 +56,12 @@ input[type=number] {
     width: auto;
 }
 
-.full-height {
-    min-height: 85vh;
-}
 
 .form-control:focus {
     box-shadow: none !important;
     border-color: black !important;
 }
+
 
 .select2 {
     margin-bottom: 15px;
@@ -60,10 +77,10 @@ span.select2.select2-container.select2-container--default {
 }
 
 .download-btn {
-    color: #222 !important;
+    color: #222222 !important;
 }
 .download-btn:hover {
-    border: 1px solid #222 !important;
+    border: 1px solid #222222 !important;
     color: white !important;
 }
 
@@ -71,15 +88,27 @@ ul {
     list-style-type: square;
 }
 
+.arrow-ul {
+    list-style-type: none;
+    padding-left: 1em;
+}
+.arrow-ul li:before {
+    content: ">";
+}
+
 /* Tables
 ---------------------------------- */
-table td, 
+table td {
+    width: 200px;
+    word-break: break-all;
+}
 table th {
     white-space: nowrap !important;
     width: 1% !important;
 }
 table {
-    max-width: none;
+    width: 100%;
+    word-break: break-all;
 }
 
 .numeric-container,
@@ -88,7 +117,7 @@ table {
     padding: 0 0.25px 0.25px 1px;
     display: block;
     overflow-x: auto;
-    white-space: nowrap;
+    /*white-space: nowrap;*/
 }
 .styled-table {
     margin-bottom: 0; 
@@ -97,21 +126,15 @@ table {
 .styled-table th {
     background: #dadff1;
 }
-.table thead th, 
+.table thead th,
 .table tbody td  {
     font-size: 14px;
-    line-height: 0.10em;
+    /*line-height: 0.10em;*/
     border: 1px solid white;
 }
 
 .styled-table .input-group .form-control,
 .table {
-    color: black;
-    font-family: Verdana, Helvetica, Arial, sans-serif;
-    font-size: 12px;
-    font-weight: normal;
-    height: auto;
-    
     border: 1px solid black;
     margin-top: 1px;
     margin-bottom: 1px;
@@ -122,10 +145,6 @@ table {
 }
 
 .styled-table .filters th .textinput.textInput.form-control {
-    color: black;
-    font-family: Verdana, Helvetica, Arial, sans-serif;
-    font-size: 12px;
-    font-weight: normal;
     height: auto;
     max-width: 80%;
     
@@ -141,7 +160,6 @@ table {
 /* navbar/header/footer Formatting 
 ----------------------------------- */
 .footer {
-    float: right;
     margin-bottom: 10px;
 }
 .sidebar {
@@ -169,22 +187,44 @@ table {
 /* body-block formatting
 ----------------------------------- */
 .body-block {
-    margin: 2%;
+    padding: 2%;
 }
 
-.news {
+/*[class^="news-item"] {*/
+    /*margin-bottom: 2em;*/
+/*}*/
+
+.news, .highlights, .quick-search {
     padding: 1em;
     height: 50%;
     border: 1px ridge rgba(0,0,0,.1);
-    border-radius: 1%;
-    overflow-y: scroll;
+    border-radius: 0;
+    box-shadow: none !important;
+    background-color: #dadff1;
+}
+.highlights {
+    background-color: transparent;
+}
+
+.profile-card {
+    box-shadow: none !important;
+    max-width: 30%;
+    min-width: 30%;
+    margin-top: 1em;
+}
+.card-description {
+    max-height: 15em;
+    overflow:hidden;
+}
+.card-description:hover {
+    overflow-y: auto;
 }
 
 
 /* Tocbot
 ---------------------------------------- */
 .js-toc {
-    background: #fff;
+    background: #ffffff;
     z-index: 999;
 }
 
@@ -200,14 +240,14 @@ table {
 }
 
 .toc-link {
-    color: #222 !important;
+    color: #222222 !important;
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
     transition: color 0.5s ease-in-out;
 }
 
 .toc-link:hover {
-    color: #1EAEDB !important;
+    color: #1eaedb !important;
 }
 
 .node-name--H1 { font-size: 20px;}
@@ -217,53 +257,6 @@ table {
 .node-name--H5 { font-size: 12px;}
 .node-name--H6 { font-size: 10px;}
 
-
-/* Pagination
----------------------------------------- */
-.page-link.scores-active,
-.page-link.counts-active,
-.page-link.search-active {
-    color: whitesmoke !important;
-    border-color: #D1D1D1 !important;
-    background-color: #AFC8FA !important;
-}
-
-.pagination {
-    padding-top: 10px;
-    list-style: none;
-    display: flex;
-}
-.pagination > li {
-    margin-top: auto;
-}
-.pagination > li > a.start {
-    border: 1px solid #999999;
-    border-right: 0 solid #999999;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-}
-.pagination > li > a.end {
-    border: 1px solid #D1D1D1;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-}
-.pagination > li > a {
-    color: #1EAEDB;
-    background-color: #fff;
-    text-decoration: none;
-    
-    padding: 0.5em;
-    border-top: 1px solid #D1D1D1;
-    border-bottom: 1px solid #D1D1D1;
-    border-left: 1px solid #D1D1D1;
-    
-    -webkit-transition: 0.5s;
-    -moz-transition: 0.5s;   
-    transition: color 0.5s ease-in-out
-}
-.pagination > li > a:hover {
-    color: #222;
-}
 
 /* Model Forms
 ---------------------------------------- */
@@ -281,23 +274,23 @@ table {
 }
 
 .top-shadow {
-    box-shadow: 0 -5px 5px -5px #333;
+    box-shadow: 0 -5px 5px -5px #333333;
 }
 
 .bottom-shadow {
-    box-shadow: 0 -5px 5px 1px #333
+    box-shadow: 0 -5px 5px 1px #333333
 }
 
 /* ORCID button
 ---------------------------------------- */
 #connect-orcid-button{
-	border: 1px solid #D3D3D3;
+	border: 1px solid #d3d3d3;
 	padding: .3em;
-	background-color: #fff;
+	background-color: #ffffff;
 	border-radius: 8px;
-	box-shadow: 1px 1px 3px #999;
+	box-shadow: 1px 1px 3px #999999;
 	cursor: pointer;
-	color: #999;
+	color: #999999;
 	font-weight: bold;
 	font-size: .8em;
 	line-height: 24px;
@@ -380,7 +373,6 @@ table {
     min-width: 30% !important;
     overflow-x: hidden;
     padding: 10px 10px 10px 10px;
-    /*box-shadow: 1px 2px 5px #ccc;*/
 }
 
 .section-heading {
@@ -391,13 +383,17 @@ table {
 
 .target-card {
     padding-left: 10px;
-    color: black !important;
+    color: #343a40 !important;
 }
 .target-card:hover {
+    cursor: pointer;
     color: lightslategray !important;
-    -webkit-transition: 0.5s;
-    -moz-transition: 0.5s;
-    transition: color 0.1s ease-in-out
+    -webkit-transition: 0.5s !important;
+    -moz-transition: 0.5s !important;
+    transition: color 0.1s ease-in-out !important;
+}
+.target-card:hover a {
+    color: lightslategray !important;
 }
 
 .clickable-row {
@@ -415,7 +411,7 @@ a.fill-div {
     width: 100px;
     height: 100px;
     background: white;
-    margin: 0px 10px 10px 0px;
+    margin: 0 10px 10px 0;
 }
 
 .column-border-right {
@@ -436,6 +432,9 @@ a.fill-div {
     cursor: pointer;
 }
 
+.form-title {
+    color: #222222 !important;
+}
 
 /* Links */
 .gray-link {
@@ -446,7 +445,7 @@ a.fill-div {
     transition: color 0.1s ease-in-out;
 }
 .gray-link:hover {
-    color: #222 !important;
+    color: #222222 !important;
 }
 
 a {
@@ -463,4 +462,17 @@ a:hover {
 
 .white-button {
     background-color: white;
+}
+
+.profile-nav-link {
+    color: #343a40 !important;
+    background-color: transparent !important;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out,
+                background-color 0.1s ease-in-out;
+}
+.profile-nav-link:hover {
+    color: white !important;
+    background-color: #343a40 !important;
 }

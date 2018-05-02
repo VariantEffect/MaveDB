@@ -85,15 +85,25 @@
       {% else %}
         <p>{{ instance.md_abstract|safe}}</p>
       {% endif %}
-    {% endif %}
 
-    <!-- Renders markdown method text -->
-    {% if instance.class_name != "experimentset"%}
+      <!-- Renders markdown method text -->
       <h2 id="method" class="underline left-align section-heading">Method</h2>
       {% if not instance.method_text %}
         <p class="text-muted">No method has been provided for this entry.</p>
       {% else %}
         <p>{{ instance.md_method|safe}}</p>
+      {% endif %}
+
+      <!-- Renders Keywords -->
+      <h2 id="method" class="underline left-align section-heading">Keywords</h2>
+      {% if not keywords %}
+        <p class="text-muted">No keywords are associated with this entry.</p>
+      {% else %}
+        <ul>
+          {% for kw in keywords %}
+            <li><a href="/search/?keywords={{ kw.text }}">{{ kw.text }}</a></li>
+          {% endfor %}
+        </ul>
       {% endif %}
     {% endif %}
 
@@ -111,21 +121,36 @@
       {% endif %}
 
       {% if instance.doi_ids.count %}
-        <p><strong>DOI:</strong>{% for doi in instance.doi_ids.all %} {{doi.url}} {% endfor %} </p>
+        <strong>DOI:</strong>
+          <ul>
+          {% for doi in instance.doi_ids.all %}
+            <li><a href="{{doi.url}}">{{doi.identifier}}</a></li>
+          {% endfor %}
+          </ul>
       {% else %}
         <p><strong>DOI:</strong> No associated DOIs </p>
       {% endif %}
 
       {% if instance.sra_ids.count %}
-        <p><strong>SRA:</strong>{% for sra in instance.sra_ids.all %} {{sra.url}} {% endfor %} </p>
+        <strong>SRA:</strong>
+          <ul>
+          {% for sra in instance.sra_ids.all %}
+            <li><a href="{{sra.url}}">{{sra.identifier}}</a></li>
+          {% endfor %}
+          </ul>
       {% else %}
         <p><strong>SRA:</strong> No associated SRAs </p>
       {% endif %}
 
       <!-- Renders PubMed references -->
       <h2 id="references" class="underline left-align section-heading">References</h2>
-      {% if instance.pmid_ids.count %}
-        <p><strong>PubMed:</strong>{% for pmid in instance.pmid_ids.all %} {{pmid.url}} {% endfor %} </p>
+      {% if instance.pubmed_ids.count %}
+        <strong>PubMed:</strong>
+          <ul>
+          {% for pm in instance.pubmed_ids.all %}
+            <li><a href="{{pm.url}}">{{pm.identifier}}</a>: {{ pm.reference_html|safe }}</li>
+          {% endfor %}
+          </ul>
       {% else %}
         <p><strong>PubMed:</strong> No associated publications </p>
       {% endif %}

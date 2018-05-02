@@ -6,7 +6,6 @@ jQuery, $;
 $("form#data").submit(function(e) {
   e.preventDefault();
   var formData = new FormData(this);
-  console.log(formData);
 });
 
 
@@ -15,6 +14,13 @@ function openORCID() {
   var baseUrl = window.location.origin;
   var loginPath = baseUrl + "/accounts/login/";
   window.location.assign(loginPath);
+  return false;
+}
+
+function goToUrl(url) {
+  var baseUrl = window.location.origin;
+  var path = baseUrl + url;
+  window.location.assign(path);
   return false;
 }
 
