@@ -8,13 +8,20 @@ import logging
 from django import forms
 from django.utils.translation import ugettext as _
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+
+from core.utilities import is_null
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
+from search.forms import parse_char_list
+
+from .models import Profile
+from .mixins import UserSearchMixin
 from .permissions import (
     GroupTypes,
+    user_is_anonymous,
     update_admin_list_for_instance,
     update_editor_list_for_instance,
     update_viewer_list_for_instance,
@@ -22,7 +29,76 @@ from .permissions import (
     valid_group_type
 )
 
+
+User = get_user_model()
 logger = logging.getLogger("django")
+
+
+class UserSearchForm(forms.Form, UserSearchMixin):
+    """Search by text fields and keywords."""
+    username = forms.CharField(
+        max_length=None, label="ORCID", required=False,
+        initial=None, empty_value="",
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.username, i.username)
+                for i in User.objects.all()
+                if not user_is_anonymous(i)
+            ]))
+        ),
+    )
+    first_name = forms.CharField(
+        max_length=None, label="First name", required=False,
+        initial=None, empty_value="",
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.first_name, i.first_name)
+                for i in User.objects.all()
+                if not user_is_anonymous(i)
+            ]))
+        ),
+    )
+    last_name = forms.CharField(
+        max_length=None, label="Last name", required=False,
+        initial=None, empty_value="",
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.last_name, i.last_name)
+                for i in User.objects.all()
+                if not user_is_anonymous(i)
+            ]))
+        ),
+    )
+
+    def clean_first_name(self):
+        field_name = 'first_name'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        return list(set([i for i in instances if not is_null(i)]))
+
+    def clean_last_name(self):
+        field_name = 'last_name'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        return list(set([i for i in instances if not is_null(i)]))
+
+    def clean_username(self):
+        field_name = 'username'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        return list(set([i for i in instances if not is_null(i)]))
+
+    def make_filters(self, join=True):
+        data = self.cleaned_data
+        search_dict = {
+            'first_name': data.get('first_name', ""),
+            'last_name': data.get('last_name', ""),
+            'username': data.get('username', ""),
+        }
+        join_func = None
+        if join:
+            join_func = self.or_join_qs
+        return self.search_all(search_dict, join_func=join_func)
 
 
 class SelectUsersForm(forms.Form):
@@ -158,3 +234,17 @@ class RegistrationForm(UserCreationForm):
             'username', 'email',
             'password1', 'password2'
         )
+
+
+class ProfileForm(forms.ModelForm):
+    """Simple form for setting an email address."""
+    class Meta:
+        model = Profile
+        fields = ('email',)
+        help_texts = {
+            'email': (
+                'You can provide an alternative email address below. We will '
+                'use this email over your OCRID email to '
+                'contact you.'
+            )
+        }
