@@ -71,7 +71,7 @@ class TargetGene(TimeStampedModel):
 
     # External Identifiers
     # ----------------------------------------------------------------------- #
-    uniprot_id = models.OneToOneField(
+    uniprot_id = models.ForeignKey(
         to='metadata.UniprotIdentifier',
         on_delete=models.SET_NULL,
         null=True,
@@ -79,7 +79,7 @@ class TargetGene(TimeStampedModel):
         blank=True,
         related_name='associated_%(class)ss',
     )
-    ensembl_id = models.OneToOneField(
+    ensembl_id = models.ForeignKey(
         to='metadata.EnsemblIdentifier',
         on_delete=models.SET_NULL,
         null=True,
@@ -87,7 +87,7 @@ class TargetGene(TimeStampedModel):
         blank=True,
         related_name='associated_%(class)ss',
     )
-    refseq_id = models.OneToOneField(
+    refseq_id = models.ForeignKey(
         to='metadata.RefseqIdentifier',
         on_delete=models.SET_NULL,
         null=True,
