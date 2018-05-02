@@ -60,8 +60,8 @@ class ReferenceMapSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReferenceMap
-        fields = ('genome',)# 'is_primary', 'intervals',)
-        read_only_fields = ('genome',)#'is_primary',)# 'intervals',)
+        fields = ('genome',)  # 'is_primary', 'intervals',)
+        read_only_fields = ('genome',)  # 'is_primary',)# 'intervals',)
 
 
 class TargetGeneSerializer(serializers.ModelSerializer):
