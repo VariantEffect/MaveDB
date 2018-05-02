@@ -41,6 +41,9 @@ def UserFactory(username=None, password=None, first_name=None,
     if password is None:
         password = factory.fuzzy.FuzzyText(length=16).fuzz()
 
+    if User.objects.filter(username=username).count():
+        return User.objects.filter(username=username).first()
+
     first, last = random.choice(names)
     if first_name is None:
         first_name = first
