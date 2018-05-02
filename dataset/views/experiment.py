@@ -32,6 +32,16 @@ class ExperimentDetailView(DatasetModelView):
     template_name = 'dataset/experiment/experiment.html'
     # -------
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        instance = self.get_object()
+        keywords = set([kw for kw in instance.keywords.all()])
+        if instance.children:
+            for child in instance.children:
+                keywords |= set([kw for kw in child.keywords.all()])
+        context['keywords'] = sorted(keywords, key=lambda kw: kw.text)
+        return context
+
 
 class ExperimentCreateView(CreateDatasetModelView):
     """

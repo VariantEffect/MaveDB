@@ -51,6 +51,8 @@ class ScoreSetDetailView(DatasetModelView):
         context["variants"] = variants
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
+        context['keywords'] = sorted(
+            instance.keywords.all(), key=lambda kw: kw.text)
         return context
 
 
@@ -104,9 +106,20 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         reference_map_form.instance.target = targetgene
         reference_map_form.save(commit=True)
 
-        uniprot_offset_form.save(target=targetgene, commit=True)
-        refseq_offset_form.save(target=targetgene, commit=True)
-        ensembl_offset_form.save(target=targetgene, commit=True)
+        uniprot_offset = \
+            uniprot_offset_form.save(target=targetgene, commit=True)
+        refseq_offset = \
+            refseq_offset_form.save(target=targetgene, commit=True)
+        ensembl_offset = \
+            ensembl_offset_form.save(target=targetgene, commit=True)
+
+        if uniprot_offset:
+            targetgene.uniprot_id = uniprot_offset.identifier
+        if refseq_offset:
+            targetgene.refseq_id = refseq_offset.identifier
+        if ensembl_offset:
+            targetgene.ensembl_id = ensembl_offset.identifier
+        targetgene.save()
 
         scoreset.set_created_by(self.request.user, propagate=False)
         scoreset.set_modified_by(self.request.user, propagate=False)
@@ -179,9 +192,20 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             reference_map_form.instance.target = targetgene
             reference_map_form.save(commit=True)
 
-            uniprot_offset_form.save(target=targetgene, commit=True)
-            refseq_offset_form.save(target=targetgene, commit=True)
-            ensembl_offset_form.save(target=targetgene, commit=True)
+            uniprot_offset = \
+                uniprot_offset_form.save(target=targetgene, commit=True)
+            refseq_offset = \
+                refseq_offset_form.save(target=targetgene, commit=True)
+            ensembl_offset = \
+                ensembl_offset_form.save(target=targetgene, commit=True)
+
+            if uniprot_offset:
+                targetgene.uniprot_id = uniprot_offset.identifier
+            if refseq_offset:
+                targetgene.refseq_id = refseq_offset.identifier
+            if ensembl_offset:
+                targetgene.ensembl_id = ensembl_offset.identifier
+            targetgene.save()
 
         if self.request.POST.get('publish', False):
             propagate = True
