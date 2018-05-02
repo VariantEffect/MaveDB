@@ -31,20 +31,6 @@ class DatasetModelSearchMixin(SearchMixin):
 
     Expects the above :class:`DatasetModel` field names to work correctly.
     """
-    @staticmethod
-    def search_field_to_model_field():
-        return {
-            'urn': 'urn',
-            'abstract': 'abstract_text',
-            'method': 'method_text',
-            'title': 'title',
-            'description': 'short_description',
-            'keywords': 'keywords',
-            'sra': 'sra_ids__identifier',
-            'doi': 'doi_ids__identifier',
-            'pubmed': 'pubmed_ids__identifier',
-        }
-
     def search_field_to_function(self):
         return {
             'abstract': self.filter_abstract,
@@ -76,7 +62,7 @@ class DatasetModelSearchMixin(SearchMixin):
 
     def filter_keywords(self, value):
         return self.search_to_q(
-            value, field_name='short_description', filter_type='icontains')
+            value, field_name='keywords__text', filter_type='iexact')
 
     def filter_sra(self, value):
         return self.search_to_q(
@@ -111,10 +97,6 @@ class ExperimentSetSearchMixin(DatasetModelSearchMixin):
 
     Expects the above :class:`ExperimentSet` field names to work correctly.
     """
-    @staticmethod
-    def search_field_to_model_field():
-        dict_ = super().search_field_to_model_field()
-        return dict_
 
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
@@ -127,52 +109,42 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
     :class:`DatasetModelSearchMixin` and the below:
 
         'target': 'scoresets__target__name',
-        'organism':
-            'scoresets__target__reference_maps__genome__species_name',
+        'species': 'scoresets__target__reference_maps__genome__species_name',
         'uniprot': 'scoresets__target__uniprot_id__identifier',
         'ensembl': 'scoresets__target__ensembl_id__identifier',
         'refseq': 'scoresets__target__refseq_id__identifier',
-        'genome': [
-            'scoresets__target__reference_maps__genome__short_name',
-            'scoresets__target__reference_maps__genome__genome_id__identifier'
+        'assembly': 'scoresets__target__reference_maps__genome__genome_id__identifier',
+        'genome': 'scoresets__target__reference_maps__genome__short_name',
 
     Expects the above :class:`Experiment` field names to work correctly.
     """
-    @staticmethod
-    def search_field_to_model_field():
-        dict_ = super().search_field_to_model_field()
-        dict_.update({
-            'target': 'scoresets__target__name',
-            'organism':
-                'scoresets__target__reference_maps__genome__species_name',
-            'uniprot': 'scoresets__target__uniprot_id__identifier',
-            'ensembl': 'scoresets__target__ensembl_id__identifier',
-            'refseq': 'scoresets__target__refseq_id__identifier',
-            'genome': [
-                'scoresets__target__reference_maps__genome__short_name',
-                'scoresets__target__reference_maps__genome__genome_id__identifier'
-            ],
-        })
-        return dict_
 
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
             'target': self.filter_target,
-            'organism': self.filter_target_organism,
+            'species': self.filter_target_species,
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
-            'genome': self.filter_reference_genome,
+            'genome': self.filter_reference_genome_name,
+            'assembly': self.filter_reference_genome_id,
+            'keywords': self.filter_keywords,
         })
         return dict_
+
+    def filter_keywords(self, value):
+        return self.or_join_qs([
+            self.search_to_q(value, field_name='keywords__text', filter_type='iexact'),
+            self.search_to_q(value, field_name='scoresets__keywords__text', filter_type='iexact'),
+        ])
 
     def filter_target(self, value):
         field_name = 'scoresets__target__name'
         filter_type = 'iexact'
         return self.search_to_q(value, field_name, filter_type)
 
-    def filter_target_organism(self, value):
+    def filter_target_species(self, value):
         field_name = 'scoresets__target__reference_maps__genome__species_name'
         filter_type = 'iexact'
         return self.search_to_q(value, field_name, filter_type)
@@ -192,16 +164,15 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
         filter_type = 'iexact'
         return self.search_to_q(value, field_name, filter_type)
 
-    def filter_reference_genome(self, value):
-        field_name_1 = 'scoresets__target__reference_maps__genome__short_name'
-        field_name_2 = (
-            'scoresets__target__reference_maps__genome__genome_id__identifier'
-        )
+    def filter_reference_genome_name(self, value):
+        field_name = 'scoresets__target__reference_maps__genome__short_name'
         filter_type = 'iexact'
-        return self.or_join_qs([
-            self.search_to_q(value, field_name_1, filter_type),
-            self.search_to_q(value, field_name_2, filter_type),
-        ])
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_reference_genome_id(self, value):
+        field_name = 'scoresets__target__reference_maps__genome__genome_id__identifier'
+        filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
 
 
 class ScoreSetSearchMixin(DatasetModelSearchMixin):
@@ -210,11 +181,10 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
     :class:`DatasetModelSearchMixin` and the below:
 
         'target': 'target__name',
-        'organism': 'target__reference_maps__genome__species_name',
+        'species': 'target__reference_maps__genome__species_name',
         'sequence': 'target__wt_sequence__sequence',
-        'genome': [
-            'target__reference_maps__genome__short_name',
-            'target__reference_maps__genome__genome_id__identifier'
+        'assembly': 'target__reference_maps__genome__genome_id__identifier',
+        'genome': 'target__reference_maps__genome__short_name',
         'uniprot': 'target__uniprot_id__identifier',
         'ensembl': 'target__ensembl_id__identifier',
         'refseq': 'target__refseq_id__identifier',
@@ -222,30 +192,14 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
     Expects the above :class:`ScoreSet` field names to work correctly.
     """
 
-    @staticmethod
-    def search_field_to_model_field():
-        dict_ = super().search_field_to_model_field()
-        dict_.update({
-            'target': 'target__name',
-            'organism': 'target__reference_maps__genome__species_name',
-            'sequence': 'target__wt_sequence__sequence',
-            'genome': [
-                'target__reference_maps__genome__short_name',
-                'target__reference_maps__genome__genome_id__identifier'
-            ],
-            'uniprot': 'target__uniprot_id__identifier',
-            'ensembl': 'target__ensembl_id__identifier',
-            'refseq': 'target__refseq_id__identifier',
-        })
-        return dict_
-
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
-            'organism': self.filter_organism,
+            'species': self.filter_organism,
             'target': self.filter_target,
             'sequence': self.filter_target_sequence,
-            'genome': self.filter_reference_genome,
+            'genome': self.filter_reference_genome_name,
+            'assembly': self.filter_reference_genome_id,
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
@@ -269,14 +223,15 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
         value = value or 'sequence'
         return self.search_to_q(value, field_name, filter_type)
 
-    def filter_reference_genome(self, value):
-        field_name_1 = 'target__reference_maps__genome__short_name'
-        field_name_2 = 'target__reference_maps__genome__genome_id__identifier'
+    def filter_reference_genome_name(self, value):
+        field_name = 'target__reference_maps__genome__short_name'
         filter_type = 'iexact'
-        return self.or_join_qs([
-            self.search_to_q(value, field_name_1, filter_type),
-            self.search_to_q(value, field_name_2, filter_type),
-        ])
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_reference_genome_id(self, value):
+        field_name = 'target__reference_maps__genome__genome_id__identifier'
+        filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
 
     def filter_target_uniprot(self, value):
         field_name = 'target__uniprot_id__identifier'
@@ -532,3 +487,24 @@ class ScoreSetAjaxMixin:
                     {'keywords': [k.text for k in experiment.keywords.all()]}
                 )
         return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+class PrivateDatasetFilterMixin:
+    """
+    Splits datasets into those viewable, filtering out those that are not.
+    """
+    def filter_and_split_instances(self, instances):
+        private_viewable = []
+        public = []
+        for instance in instances:
+            if user_is_anonymous(self.request.user) and instance.private:
+                continue
+
+            has_perm = self.request.user.has_perm(
+                PermissionTypes.CAN_VIEW, instance)
+            if not instance.private:
+                public.append(instance)
+            elif instance.private and has_perm:
+                private_viewable.append(instance)
+
+        return public, private_viewable
