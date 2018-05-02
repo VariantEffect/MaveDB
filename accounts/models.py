@@ -33,6 +33,7 @@ class Profile(TimeStampedModel):
         The foreign key relationship associating a profile with a user.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    email = models.EmailField(default=None, blank=True, null=True)
 
     @property
     def unique_name(self):
@@ -276,12 +277,12 @@ class Profile(TimeStampedModel):
 
         Returns
         -------
-        `QuerySet`
+        `list`
         """
-        instances = self.administrator_experimentsets() | \
-            self.administrator_experiments() | \
-            self.administrator_scoresets()
-        return instances.all()
+        instances = list(self.administrator_experimentsets()) + \
+            list(self.administrator_experiments()) + \
+            list(self.administrator_scoresets())
+        return instances
 
     def administrator_experimentsets(self):
         """
@@ -339,10 +340,10 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = self.editor_experimentsets() | \
-            self.editor_experiments() | \
-            self.editor_scoresets()
-        return instances.all()
+        instances = list(self.editor_experimentsets()) + \
+            list(self.editor_experiments()) + \
+            list(self.editor_scoresets())
+        return instances
 
     def editor_experimentsets(self):
         """
@@ -398,12 +399,12 @@ class Profile(TimeStampedModel):
 
         Returns
         -------
-        `QuerySet`
+        `list`
         """
-        instances = self.viewer_experimentsets() | \
-            self.viewer_experiments() | \
-            self.viewer_scoresets()
-        return instances.all()
+        instances = list(self.viewer_experimentsets()) + \
+            list(self.viewer_experiments()) + \
+            list(self.viewer_scoresets())
+        return instances
 
     def viewer_experimentsets(self):
         """
