@@ -9,7 +9,7 @@ from dataset.constants import (
 
 from .views import (
     UserViewset,
-    ExperimentViewset, ExperimentSetViewset, ScoreSetViewset,
+    ExperimentViewset, ExperimentSetViewset, ScoreSetViewset, UserViewset,
     scoreset_count_data, scoreset_score_data, scoreset_metadata
 )
 
@@ -28,8 +28,8 @@ experiment_detail = ExperimentViewset.as_view({'get': 'retrieve'})
 scoreset_list = ScoreSetViewset.as_view({'get': 'list'})
 scoreset_detail = ScoreSetViewset.as_view({'get': 'retrieve'})
 
-user_list = ScoreSetViewset.as_view({'get': 'list'})
-user_detail = ScoreSetViewset.as_view({'get': 'retrieve'})
+user_list = UserViewset.as_view({'get': 'list'})
+user_detail = UserViewset.as_view({'get': 'retrieve'})
 
 
 experimentset_urls = [

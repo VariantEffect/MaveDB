@@ -5,6 +5,8 @@ from django.http import Http404
 from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 
+from accounts.mixins import UserSearchMixin
+
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
@@ -17,7 +19,6 @@ from dataset.serializers import (
 )
 
 from dataset.mixins import (
-    DatasetModelSearchMixin,
     ExperimentSetSearchMixin,
     ExperimentSearchMixin,
     ScoreSetSearchMixin,
@@ -46,23 +47,14 @@ class DatasetModelViewSet(ReadOnlyModelViewSet):
             join_func = self.and_join_qs
             for field in self.search_field_to_function():
                 if field in self.request.query_params:
-                    query_dict[field] = self.request.query_params.getlist(
-                        field, [])
+                    query_dict[field] = self.request.\
+                        query_params.getlist(field, [])
 
         if query_dict:
             q = self.search_all(query_dict, join_func)
-            queryset = queryset.filter(q)
+            queryset = queryset.filter(q).distinct()
 
         return queryset.exclude(private=exclude_private)
-
-    def list(self, request, *args, **kwargs):
-        return_list = False
-        if 'return_list' in kwargs:
-            return_list = kwargs.pop('return_list')
-        if return_list:
-            return [i.urn for i in self.get_queryset()]
-        else:
-            return super().list(request, *args, **kwargs)
 
 
 class ExperimentSetViewset(DatasetModelViewSet, ExperimentSetSearchMixin):
@@ -83,10 +75,31 @@ class ScoreSetViewset(DatasetModelViewSet, ScoreSetSearchMixin):
     lookup_field = 'urn'
 
 
-class UserViewset(ReadOnlyModelViewSet):
+class UserViewset(ReadOnlyModelViewSet, UserSearchMixin):
     queryset = User.objects.exclude(username='AnonymousUser')
     serializer_class = UserSerializer
     lookup_field = 'username'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query_dict = dict()
+
+        if 'search' in self.request.query_params.keys():
+            join_func = self.or_join_qs
+            query_dict['search'] = self.request.query_params.getlist(
+                'search', [])
+        else:
+            join_func = self.and_join_qs
+            for field in self.search_field_to_function():
+                if field in self.request.query_params:
+                    query_dict[field] = self.request. \
+                        query_params.getlist(field, [])
+
+        if query_dict:
+            q = self.search_all(query_dict, join_func)
+            queryset = queryset.filter(q).distinct()
+
+        return queryset
 
 
 def download_variant_data(request, urn, dataset_column):
