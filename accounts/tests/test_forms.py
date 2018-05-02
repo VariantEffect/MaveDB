@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 
 from dataset.factories import ExperimentFactory
 
-from ..forms import SelectUsersForm
+from ..factories import UserFactory
+from ..forms import SelectUsersForm, UserSearchForm
 from ..permissions import (
     GroupTypes,
     user_is_anonymous,
@@ -174,3 +175,64 @@ class TestSelectUsersForm(TestCase):
             required=False
         )
         self.assertTrue(form.is_valid())
+
+
+class TestUserSearchForm(TestCase):
+
+    def test_can_search_by_first_name(self):
+        u1 = UserFactory(first_name='Bob')
+        u2 = UserFactory(first_name='Alice')
+
+        dict_ = {'first_name': 'bob'}
+        form = UserSearchForm(data=dict_)
+        self.assertTrue(form.is_valid())
+        q = form.make_filters(join=True)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 1)
+        self.assertIn(u1, result)
+        self.assertNotIn(u2, result)
+
+    def test_can_search_by_last_name(self):
+        u1 = UserFactory(last_name='Bob')
+        u2 = UserFactory(last_name='Alice')
+
+        dict_ = {'last_name': 'bob'}
+        form = UserSearchForm(data=dict_)
+        self.assertTrue(form.is_valid())
+        q = form.make_filters(join=True)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 1)
+        self.assertIn(u1, result)
+        self.assertNotIn(u2, result)
+
+    def test_can_search_by_username(self):
+        u1 = UserFactory(username='Bob')
+        u2 = UserFactory(username='Alice')
+
+        dict_ = {'username': 'bob'}
+        form = UserSearchForm(data=dict_)
+        self.assertTrue(form.is_valid())
+        q = form.make_filters(join=True)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 1)
+        self.assertIn(u1, result)
+        self.assertNotIn(u2, result)
+
+    def test_can_search_multiple_fields(self):
+        u1 = UserFactory(username='Bob')
+        u2 = UserFactory(first_name='Alice')
+        u3 = UserFactory(first_name='Bob')
+
+        dict_ = {'first_name': 'Alice', 'username': 'bob'}
+        form = UserSearchForm(data=dict_)
+        self.assertTrue(form.is_valid())
+        q = form.make_filters(join=True)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 2)
+        self.assertIn(u1, result)
+        self.assertIn(u2, result)
+        self.assertNotIn(u3, result)

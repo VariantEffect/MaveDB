@@ -48,7 +48,7 @@ class TestDatasetModel(TestCase):
         with self.assertRaises(TypeError):
             instance.add_keyword('')
 
-        instance.add_keyword(KeywordFactory())
+        # instance.add_keyword(KeywordFactory())
         self.assertEqual(instance.keywords.count(), 1)
 
     def test_typeerror_add_non_external_identifier_instance(self):
@@ -56,14 +56,14 @@ class TestDatasetModel(TestCase):
         with self.assertRaises(TypeError):
             instance.add_identifier(KeywordFactory())
 
-        instance.add_identifier(DoiIdentifierFactory())
+        # instance.add_identifier(DoiIdentifierFactory())
         self.assertEqual(instance.doi_ids.count(), 1)
 
     def test_clear_m2m_clears_m2m_relationships(self):
         instance = ExperimentSetFactory()
-        instance.add_identifier(DoiIdentifierFactory())
-        instance.add_identifier(SraIdentifierFactory())
-        instance.add_identifier(PubmedIdentifierFactory())
+        # instance.add_identifier(DoiIdentifierFactory())
+        # instance.add_identifier(SraIdentifierFactory())
+        # instance.add_identifier(PubmedIdentifierFactory())
 
         self.assertEqual(instance.doi_ids.count(), 1)
         instance.doi_ids.clear()

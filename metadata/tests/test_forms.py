@@ -49,7 +49,8 @@ class TestBaseOffsetForm(TestCase):
         for (factory, form_class, offset_class, id_class, new) in self.types():
             data = self.form_data()
             data['identifier'] = new
-            target = TargetGeneFactory()
+            target = TargetGeneFactory(
+                uniprot_id=None, refseq_id=None, ensembl_id=None)
 
             form = form_class(data=data)
             self.assertTrue(form.is_valid())
@@ -64,7 +65,8 @@ class TestBaseOffsetForm(TestCase):
             up = factory()
             data = self.form_data()
             data['identifier'] = up.identifier
-            target = TargetGeneFactory()
+            target = TargetGeneFactory(
+                uniprot_id=None, refseq_id=None, ensembl_id=None)
 
             form = form_class(data=data)
             self.assertTrue(form.is_valid())
@@ -98,15 +100,12 @@ class TestBaseOffsetForm(TestCase):
         with self.assertRaises(ValueError):
             form.save(commit=True)
 
-    def test_invalid_null_identifier(self):
+    def test_valid_empty_identifier(self):
         for value in nan_col_values:
             data = self.form_data()
             data['identifier'] = value
             form = UniprotOffsetForm(data=data)
-            if value == '' or value == ' ':
-                self.assertTrue(form.is_valid())
-                continue
-            self.assertFalse(form.is_valid())
+            self.assertTrue(form.is_valid())
 
     def test_invalid_negative_offset(self):
         data = self.form_data()

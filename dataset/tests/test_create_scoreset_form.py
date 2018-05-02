@@ -205,7 +205,6 @@ class TestScoreSetForm(TestCase):
         self.assertTrue(form.is_valid())
         variants = form.get_variants()
 
-        # TODO: Add in meta cross-population test
         # Check score data parsed correctly
         self.assertEqual(
             1.0,

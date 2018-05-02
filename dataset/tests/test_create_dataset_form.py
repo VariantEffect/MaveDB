@@ -43,7 +43,8 @@ class TestDataSetModelForm(TestCase):
             m2m.delete()  # delete instance from db so it's new
 
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+            form = DatasetModelForm(
+                data=self.data, user=self.user, instance=obj)
             obj = form.save(commit=True)
             self.assertEqual(
                 getattr(obj, attr).first().identifier,
@@ -68,7 +69,8 @@ class TestDataSetModelForm(TestCase):
             m2m = factory()
             self.data.update(**{attr: [m2m.identifier]})
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+            form = DatasetModelForm(
+                data=self.data, user=self.user, instance=obj)
             obj = form.save(commit=True)
             self.assertEqual(
                 getattr(obj, attr).first().identifier,
@@ -93,9 +95,9 @@ class TestDataSetModelForm(TestCase):
         for factory, attr in fs:
             self.data.update(**{attr: []})
             obj = ExperimentSetFactory()
-            getattr(obj, attr).add(factory())
             self.assertEqual(getattr(obj, attr).count(), 1)
-            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+            form = DatasetModelForm(
+                data=self.data, user=self.user, instance=obj)
             obj = form.save(commit=True)
             self.assertEqual(getattr(obj, attr).count(), 0)
 
@@ -111,7 +113,8 @@ class TestDataSetModelForm(TestCase):
             new.delete()  # delete instance from db so it's new
 
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+            form = DatasetModelForm(
+                data=self.data, user=self.user, instance=obj)
             self.assertTrue(form.is_valid())
             self.assertEqual(
                 form.m2m_instances_for_field(attr, True)[0].identifier,
@@ -128,7 +131,8 @@ class TestDataSetModelForm(TestCase):
             new = factory()
             self.data.update(**{attr: [new.identifier]})
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+            form = DatasetModelForm(
+                data=self.data, user=self.user, instance=obj)
             self.assertTrue(form.is_valid())
             self.assertEqual(
                 form.m2m_instances_for_field(attr)[0], new

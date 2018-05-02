@@ -4,7 +4,8 @@ from django.contrib.auth.models import AnonymousUser
 
 from dataset.models.experimentset import ExperimentSet
 
-from ..mixins import filter_su, filter_anon
+from ..factories import UserFactory
+from ..mixins import filter_su, filter_anon, UserSearchMixin
 from ..permissions import (
     assign_user_as_instance_admin, assign_user_as_instance_editor,
     assign_user_as_instance_viewer
@@ -74,3 +75,62 @@ class TestGroupPermisionMixin(TestCase):
             [self.alice, self.bob],
             list(filter_anon(User.objects.all()))
         )
+
+
+class TestUserSearchMixin(TestCase):
+
+    searcher = UserSearchMixin()
+
+    def test_can_search_by_first_name(self):
+        u1 = UserFactory(first_name='Bob')
+        u2 = UserFactory(first_name='Alice')
+
+        dict_ = {'first_name': 'bob'}
+        q = self.searcher.search_all(
+            dict_, join_func=self.searcher.or_join_qs)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 1)
+        self.assertIn(u1, result)
+        self.assertNotIn(u2, result)
+
+    def test_can_search_by_last_name(self):
+        u1 = UserFactory(last_name='Bob')
+        u2 = UserFactory(last_name='Alice')
+
+        dict_ = {'last_name': 'bob'}
+        q = self.searcher.search_all(
+            dict_, join_func=self.searcher.or_join_qs)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 1)
+        self.assertIn(u1, result)
+        self.assertNotIn(u2, result)
+
+    def test_can_search_by_username(self):
+        u1 = UserFactory(username='Bob')
+        u2 = UserFactory(username='Alice')
+
+        dict_ = {'username': 'bob'}
+        q = self.searcher.search_all(
+            dict_, join_func=self.searcher.or_join_qs)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 1)
+        self.assertIn(u1, result)
+        self.assertNotIn(u2, result)
+
+    def test_can_search_multiple_fields(self):
+        u1 = UserFactory(username='Bob')
+        u2 = UserFactory(first_name='Alice')
+        u3 = UserFactory(first_name='Bob')
+
+        dict_ = {'first_name': 'Alice', 'username': 'bob'}
+        q = self.searcher.search_all(
+            dict_, join_func=self.searcher.or_join_qs)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 2)
+        self.assertIn(u1, result)
+        self.assertIn(u2, result)
+        self.assertNotIn(u3, result)

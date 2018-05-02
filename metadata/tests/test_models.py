@@ -22,7 +22,11 @@ class TestM2MRelationships(TestCase):
     """
     def setUp(self):
         self.exp_1 = ExperimentFactory()
+        self.exp_1.keywords.clear()
+        self.exp_1.save()
         self.exp_2 = ExperimentFactory()
+        self.exp_2.keywords.clear()
+        self.exp_2.save()
 
     def test_can_associate_multiple_keywords_with_dataset(self):
         kw1 = KeywordFactory()
@@ -47,8 +51,10 @@ class TestM2MRelationships(TestCase):
     def test_delete_experiment_doesnt_delete_kw(self):
         kw1 = KeywordFactory()
         self.exp_1.keywords.add(kw1)
+        count_before = Keyword.objects.count()
         self.exp_1.delete()
-        self.assertEqual(Keyword.objects.count(), 1)
+        count_after = Keyword.objects.count()
+        self.assertEqual(count_after, count_before)
 
     def test_deleted_keyword_removed_from_experiment_keywords(self):
         kw1 = KeywordFactory()
@@ -157,7 +163,7 @@ class TestPubmedIdentifier(TestCase):
         self.assertEqual(expected_id, pubmed.identifier)
 
     def test_format_reference_url_hyperlinks_references(self):
-        pubmed = PubmedIdentifierFactory()
+        pubmed = PubmedIdentifierFactory(reference_html=None)
         fetch = metapub.PubMedFetcher()
         article = fetch.article_by_pmid(pubmed.identifier)
         self.assertEqual(pubmed.reference_html, article.citation_html)

@@ -2,6 +2,7 @@ from django.test import TestCase
 
 from ..mixins import FilterMixin
 
+from metadata.models import PubmedIdentifier
 from metadata.factories import PubmedIdentifierFactory
 
 from dataset.models.experimentset import ExperimentSet
@@ -206,8 +207,9 @@ class TestSearchMixin(TestCase):
         searcher = DatasetModelSearchMixin()
 
         obj1 = ExperimentSetFactory(title='hello')
-        obj2 = ExperimentSetFactory()
+        obj2 = ExperimentSetFactory(title='world')
         obj3 = ExperimentSetFactory(title='foo bar')
+        PubmedIdentifier.objects.all().delete()
 
         pm = PubmedIdentifierFactory()
         obj2.pubmed_ids.add(pm)
@@ -228,6 +230,7 @@ class TestSearchMixin(TestCase):
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='hello')
         obj3 = ExperimentSetFactory(title='foo bar')
+        PubmedIdentifier.objects.all().delete()
 
         pm = PubmedIdentifierFactory()
         obj2.pubmed_ids.add(pm)
@@ -255,14 +258,6 @@ class TestSearchMixin(TestCase):
         result = ExperimentSet.objects.filter(q)
         self.assertEqual(result.count(), 3)
         self.assertEqual(len(q), 0)
-
-    def test_type_error_input_not_dict_or_string(self):
-        searcher = DatasetModelSearchMixin()
-        with self.assertRaises(TypeError):
-            searcher.search_all(
-                value_or_dict={},
-                join_func=searcher.and_join_qs
-            )
 
     def test_uknown_field_returns_empty_qs(self):
         searcher = DatasetModelSearchMixin()

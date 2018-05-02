@@ -128,12 +128,12 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
             'doi_ids': [''],
             'pubmed_ids': [''],
             'keywords': [''],
-            'uniprot_identifier': [''],
-            'uniprot_offset': [''],
-            'ensembl_identifier': [''],
-            'ensembl_offset': [''],
-            'refseq_identifier': [''],
-            'refseq_offset': [''],
+            'uniprot-identifier': [''],
+            'uniprot-offset': [''],
+            'ensembl-identifier': [''],
+            'ensembl-offset': [''],
+            'refseq-identifier': [''],
+            'refseq-offset': [''],
             'submit': ['submit'],
             'genome': [self.ref.pk],
             'wt_sequence': 'atcg',
@@ -448,6 +448,15 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         user_is_admin_for_instance(scoreset.experiment, su)
         user_is_admin_for_instance(scoreset.experiment.experimentset, su)
 
+    def test_associates_new_uniprot_identifiers(self):
+        pass
+
+    def test_associates_new_ensembl_identifiers(self):
+        pass
+
+    def test_associates_new_refseq_identifiers(self):
+        pass
+
 
 class TestEditScoreSetView(TestCase, TestMessageMixin):
     """
@@ -473,12 +482,12 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
             'doi_ids': [''],
             'pubmed_ids': [''],
             'keywords': [''],
-            'uniprot_identifier': [''],
-            'uniprot_offset': [''],
-            'ensembl_identifier': [''],
-            'ensembl_offset': [''],
-            'refseq_identifier': [''],
-            'refseq_offset': [''],
+            'uniprot-identifier': [''],
+            'uniprot-offset': [''],
+            'ensembl-identifier': [''],
+            'ensembl-offset': [''],
+            'refseq-identifier': [''],
+            'refseq-offset': [''],
             'submit': ['submit'],
             'genome': [self.ref.pk],
             'wt_sequence': 'atcg',
@@ -660,3 +669,12 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         self.assertEqual(obj.modified_by, self.user)
         self.assertEqual(obj.experiment.modified_by, self.user)
         self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
+
+    def test_resubmit_blank_uniprot_id_deletes_offset_instance(self):
+        pass
+
+    def test_resubmit_blank_refseq_id_deletes_offset_instance(self):
+        pass
+
+    def test_resubmit_blank_ensembl_id_deletes_offset_instance(self):
+        pass

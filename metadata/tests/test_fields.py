@@ -4,13 +4,13 @@ from django.test import TestCase
 import dataset.constants as constants
 
 from ..factories import KeywordFactory
-from ..fields import ModelSelectMultipleField
+from ..fields import FlexibleModelChoiceField, FlexibleModelMultipleChoiceField
 from ..models import Keyword
 
 
-class TestModelSelectMultipleField(TestCase):
+class TestFlexibleModelMultipleChoiceField(TestCase):
     """
-    Tests the :class:`ModelSelectMultipleField` which handles being able
+    Tests the :class:`FlexibleModelMultipleChoiceField` which handles being able
     to select existing M2M relationships or create new ones, for example
     if a user wishes to create a new keyword not in the database.
     """
@@ -18,68 +18,67 @@ class TestModelSelectMultipleField(TestCase):
         Keyword.objects.all().delete()
 
     def test_check_values_filters_out_null_values(self):
-        field = ModelSelectMultipleField(
-            klass=Keyword, to_field_name='text',
+        field = FlexibleModelMultipleChoiceField(
+            klass=Keyword, to_field_name='text', required=False,
             queryset=Keyword.objects.none()
         )
-        for value in constants.nan_col_values:
-            existing = field._check_values([value])
-            self.assertEqual(existing.count(), 0)
-            self.assertEqual(len(field.new_values), 0)
+        existing = field.clean(constants.nan_col_values)
+        self.assertEqual(len(existing), 0)
 
     def test_new_values_detected(self):
-        field = ModelSelectMultipleField(
+        field = FlexibleModelMultipleChoiceField(
             klass=Keyword, to_field_name='text',
             queryset=Keyword.objects.none()
         )
         values = ['hello', 'world']
         qs = field.clean(values)
-        self.assertEqual(qs.count(), 0)
-        self.assertEqual(len(field.new_values), 2)
-        self.assertEqual(len(field.new_instances), 0)
+        self.assertEqual(len(qs), 2)
+        self.assertIsNone(qs[0].pk)
+        self.assertIsNone(qs[1].pk)
 
-    def test_new_value_not_created_if_exists_in_new_instances(self):
-        field = ModelSelectMultipleField(
+    def test_new_value_not_created_if_exists(self):
+        field = FlexibleModelMultipleChoiceField(
             klass=Keyword, to_field_name='text',
             queryset=Keyword.objects.none()
         )
-        field.new_instances = [Keyword(text='protein')]
+        kw = KeywordFactory(text='protein')
         qs = field.clean(['protein'])
-        self.assertEqual(qs.count(), 0)
-        self.assertEqual(len(field.new_instances), 1)
-        self.assertEqual(len(field.new_values), 0)
+        self.assertEqual(len(qs), 1)
+        self.assertEqual(qs[0], kw)
 
-    def test_new_value_not_created_if_exists_in_new_values(self):
-        field = ModelSelectMultipleField(
+
+class TestFlexibleModelChoiceField(TestCase):
+    """
+    Tests the :class:`FlexibleModelChoiceField` which handles being able
+    to select existing M2M relationships or create new ones, for example
+    if a user wishes to create a new keyword not in the database.
+    """
+    def tearDown(self):
+        Keyword.objects.all().delete()
+
+    def test_check_values_filters_out_null_values(self):
+        field = FlexibleModelChoiceField(
+            klass=Keyword, to_field_name='text', required=False,
+            queryset=Keyword.objects.none()
+        )
+        for value in constants.nan_col_values:
+            v = field.clean(value)
+            self.assertIsNone(v)
+
+    def test_new_values_detected(self):
+        field = FlexibleModelChoiceField(
             klass=Keyword, to_field_name='text',
             queryset=Keyword.objects.none()
         )
-        field.new_values = ['protein']
-        qs = field.clean(['protein'])
-        self.assertEqual(qs.count(), 0)
-        self.assertEqual(len(field.new_instances), 0)
-        self.assertEqual(len(field.new_values), 1)
+        values = 'hello world'
+        v = field.clean(values)
+        self.assertIsNone(v.pk)
 
-    def test_existing_db_values_pass_on_to_super_check_values(self):
-        kw = KeywordFactory()
-        field = ModelSelectMultipleField(
-            klass=Keyword, to_field_name='text',
-            queryset=Keyword.objects.all()
-        )
-        qs = field._check_values([kw.text])
-        self.assertEqual(qs.count(), 1)
-        self.assertEqual(len(field.new_instances), 0)
-        self.assertEqual(len(field.new_values), 0)
-
-    def test_create_new_creates_new_instances(self):
-        field = ModelSelectMultipleField(
+    def test_new_value_not_created_if_exists(self):
+        field = FlexibleModelChoiceField(
             klass=Keyword, to_field_name='text',
             queryset=Keyword.objects.none()
         )
-        values = ['protein']
-        field.clean(values)
-        new = field.create_new()
-        self.assertEqual(new[0].text, values[0])
-
-        field.save_new()
-        self.assertEqual(Keyword.objects.count(), 1)
+        kw = KeywordFactory(text='protein')
+        v = field.clean('protein')
+        self.assertEqual(v, kw)

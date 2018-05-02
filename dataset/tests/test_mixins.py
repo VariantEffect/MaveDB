@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+from genome.factories import ReferenceGenomeFactory
 from metadata.factories import (
     UniprotIdentifierFactory, RefseqIdentifierFactory,
     EnsemblIdentifierFactory
@@ -17,6 +18,36 @@ class TestExperimentSearchMixin(TestCase):
         self.factory = ExperimentWithScoresetFactory
         self.searcher = ExperimentSearchMixin()
         self.model_class = Experiment
+
+    def can_filter_by_keywords_in_scoresets(self):
+        obj1 = self.factory()
+        kw1_obj1 = obj1.keywords.first()
+        kw1_obj1.text = 'Protein'
+        kw1_obj1.save()
+
+        scs1 = obj1.children.first()
+        kw1 = scs1.keywords.first()
+        kw1.text = 'Kinase'
+        kw1.save()
+
+        obj2 = self.factory()
+        kw1_obj2 = obj2.keywords.first()
+        kw1_obj2.text = 'Apple'
+        kw1_obj2.save()
+
+        scs2 = obj2.children.first()
+        kw2 = scs2.keywords.first()
+        kw2.text = 'Orange'
+        kw2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={"keywords": kw1.text},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(obj1, result)
+        self.assertNotIn(obj2, result)
 
     def test_can_filter_singular_target(self):
         obj1 = self.factory()
@@ -140,7 +171,7 @@ class TestExperimentSearchMixin(TestCase):
         
         q = self.searcher.search_all(
             value_or_dict={
-                "organism": ["human"]
+                "species": ["human"]
             },
             join_func=self.searcher.or_join_qs
         )
@@ -189,7 +220,7 @@ class TestExperimentSearchMixin(TestCase):
                 break_ = True
 
         q = self.searcher.search_all(
-            value_or_dict={'genome': genome1.get_identifier()},
+            value_or_dict={'assembly': genome1.get_identifier()},
             join_func=self.searcher.or_join_qs
         )
 
@@ -365,7 +396,7 @@ class TestScoreSetSearchMixin(TestCase):
 
         q = self.searcher.search_all(
             value_or_dict={
-                "organism": ["human"]
+                "species": ["human"]
             },
             join_func=self.searcher.or_join_qs
         )
@@ -399,18 +430,19 @@ class TestScoreSetSearchMixin(TestCase):
 
     def test_can_search_by_genome_id(self):
         obj1 = self.factory()
-        obj2 = None
+        obj2 = self.factory()
         genome1 = obj1.get_target().get_reference_genomes().first()
+        genome2 = obj2.get_target().get_reference_genomes().first()
 
-        break_ = False
-        while not break_:
-            obj2 = self.factory()
-            genome2 = obj2.get_target().get_reference_genomes().first()
+        while genome1.get_identifier() == genome2.get_identifier():
+            genome2 = ReferenceGenomeFactory()
             if genome1.get_identifier() != genome2.get_identifier():
-                break_ = True
+                rm = obj2.target.get_reference_maps().first()
+                rm.genome = genome2
+                rm.save()
 
         q = self.searcher.search_all(
-            value_or_dict={'genome': genome1.get_identifier()},
+            value_or_dict={'assembly': genome1.get_identifier()},
             join_func=self.searcher.or_join_qs
         )
 
