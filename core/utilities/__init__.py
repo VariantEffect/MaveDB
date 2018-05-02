@@ -1,10 +1,14 @@
+import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 
 import dataset.constants as constants
-from accounts.forms import logger
+
+
+logger = logging.getLogger("django")
 
 
 def is_null(value):
