@@ -13,7 +13,12 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 from dataset.factories import ScoreSetFactory
-from metadata.factories import GenomeIdentifierFactory
+from metadata.factories import (
+    GenomeIdentifierFactory,
+    UniprotIdentifierFactory,
+    RefseqIdentifierFactory,
+    EnsemblIdentifierFactory
+)
 
 from .models import (
     TargetGene,
@@ -49,7 +54,7 @@ class ReferenceGenomeFactory(DjangoModelFactory):
         model = ReferenceGenome
 
     short_name = factory.fuzzy.FuzzyChoice(['hg38', 'hg37', 'hg36'])
-    species_name = factory.fuzzy.FuzzyChoice(['Homo spaiens'])
+    species_name = factory.fuzzy.FuzzyChoice(['Homo sapiens'])
     genome_id = factory.SubFactory(GenomeIdentifierFactory)
 
 
@@ -64,9 +69,9 @@ class TargetGeneFactory(DjangoModelFactory):
     scoreset = factory.SubFactory(ScoreSetFactory)
     name = factory.fuzzy.FuzzyChoice(['BRCA1', 'JAK', 'STAT', 'MAPK', 'EGF'])
     wt_sequence = factory.SubFactory(WildTypeSequenceFactory)
-    ensembl_id = None
-    refseq_id = None
-    uniprot_id = None
+    ensembl_id = factory.SubFactory(EnsemblIdentifierFactory)
+    refseq_id = factory.SubFactory(RefseqIdentifierFactory)
+    uniprot_id = factory.SubFactory(UniprotIdentifierFactory)
 
 
 class TargetGeneWithReferenceMapFactory(TargetGeneFactory):
