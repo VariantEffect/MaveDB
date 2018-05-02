@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if kwargs.get('clear', False):
             if not settings.DEBUG:
-                raise ValueError("Cannot clear user table when DEBUG is True")
+                raise ValueError("Cannot clear user table when DEBUG is False")
             else:
                 User.objects.all().delete()
 

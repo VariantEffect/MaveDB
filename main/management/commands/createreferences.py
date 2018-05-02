@@ -34,7 +34,7 @@ class Command(BaseCommand):
                         'species_name': species,
                         'genome_id': genome_id
                     }
-                    sys.stdout.write("Create reference '%s'\n" % name)
+                    sys.stdout.write("Created reference '%s'\n" % name)
                     ReferenceGenome.objects.create(**params)
                 else:
                     sys.stdout.write("Reference '%s' already exists\n" % name)
