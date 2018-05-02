@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Licence
+from .models import Licence, SiteInformation
 
 
 class LicenceSerializer(serializers.ModelSerializer):
@@ -13,3 +13,10 @@ class LicenceSerializer(serializers.ModelSerializer):
         fields = ('long_name', 'short_name', 'link', 'version')
         read_only_fields = fields
         write_only_fields = ()
+
+
+class SiteInformationSerializer(serializers.ModelSerializer):
+    """Serializes all fields in SiteInformation"""
+    class Meta:
+        model = SiteInformation
+        fields = '__all__'

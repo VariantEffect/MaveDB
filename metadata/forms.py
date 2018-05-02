@@ -37,9 +37,10 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
         self.fields["identifier"] = identifier_field
         self.fields["offset"] = offset_field
 
-        if kwargs.get('instance', None):
-            self.fields['identifier'].initial = kwargs['instance'].identifier
-            self.fields['offset'].initial = kwargs['instance'].offset
+        instance = kwargs.get('instance', None)
+        if hasattr(instance, 'pk') and instance.pk is not None:
+            self.fields['identifier'].initial = instance.identifier
+            self.fields['offset'].initial = instance.offset
 
     def clean_identifier(self):
         identifier = self.cleaned_data.get("identifier", None)
@@ -47,6 +48,10 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
             return None
         if identifier:
             value = identifier.identifier
+            # Nothing was submitted. Should still be a valid form since
+            # no input was supplied.
+            if value is None:
+                return value
             if self.id_class == RefseqIdentifier:
                 validate_refseq_identifier(value)
             elif self.id_class == UniprotIdentifier:

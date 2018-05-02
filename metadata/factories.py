@@ -10,13 +10,14 @@ with future maintainability.
 """
 
 import factory.fuzzy
+import factory.faker
 from factory.django import DjangoModelFactory
 
 from .models import (
     Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier,
     UniprotIdentifier, EnsemblIdentifier, RefseqIdentifier,
     UniprotOffset, RefseqOffset, EnsemblOffset, AnnotationOffset,
-    GenomeIdentifier
+    GenomeIdentifier, ExternalIdentifier
 )
 
 
@@ -26,10 +27,20 @@ class KeywordFactory(DjangoModelFactory):
         model = Keyword
         django_get_or_create = ('text',)
 
-    text = factory.fuzzy.FuzzyText(length=10)
+    text = factory.faker.Faker('word')
 
 
-class SraIdentifierFactory(DjangoModelFactory):
+class ExternalIdentifierFactory(DjangoModelFactory):
+    """
+    Factory creating :class:`SraIdentifier` instances matching the
+    SRA_RUN_PATTERN
+    """
+    class Meta:
+        model = ExternalIdentifier
+        django_get_or_create = ('identifier',)
+
+
+class SraIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`SraIdentifier` instances matching the
     SRA_RUN_PATTERN
@@ -43,12 +54,11 @@ class SraIdentifierFactory(DjangoModelFactory):
     ])
 
 
-class DoiIdentifierFactory(DjangoModelFactory):
+class DoiIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`DoiIdentifier` instances with a random choice
     of doi ids.
     """
-
     class Meta:
         model = DoiIdentifier
         django_get_or_create = ('identifier',)
@@ -62,27 +72,30 @@ class DoiIdentifierFactory(DjangoModelFactory):
     ])
 
 
-class PubmedIdentifierFactory(DjangoModelFactory):
+class PubmedIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`PubmedIdentifier` instances with a random choice
     of ids.
     """
-
     class Meta:
         model = PubmedIdentifier
         django_get_or_create = ('identifier',)
 
+    reference_html = (
+        "Rubin AF, <i>et al</i>. Correction to: A statistical framework for "
+        "analyzing deep mutational scanning data. <i>Genome Biol</i>. 2018; "
+        "<b>19</b>:17."
+    )
     identifier = factory.fuzzy.FuzzyChoice([
         '29086305', '29103961', '29269382', '29415752', '29525204'
     ])
 
 
-class UniprotIdentifierFactory(DjangoModelFactory):
+class UniprotIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`UniprotIdentifier` instances with a random
     identifier choice.
     """
-
     class Meta:
         model = UniprotIdentifier
         django_get_or_create = ('identifier',)
@@ -92,12 +105,11 @@ class UniprotIdentifierFactory(DjangoModelFactory):
     ])
 
 
-class RefseqIdentifierFactory(DjangoModelFactory):
+class RefseqIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`RefseqIdentifier` instances with a random
     identifier choice.
     """
-
     class Meta:
         model = RefseqIdentifier
         django_get_or_create = ('identifier',)
@@ -109,12 +121,11 @@ class RefseqIdentifierFactory(DjangoModelFactory):
     ])
 
 
-class EnsemblIdentifierFactory(DjangoModelFactory):
+class EnsemblIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`EnsemblIdentifier` instances with a random
     identifier choice.
     """
-
     class Meta:
         model = EnsemblIdentifier
         django_get_or_create = ('identifier',)
@@ -126,12 +137,11 @@ class EnsemblIdentifierFactory(DjangoModelFactory):
     ])
 
 
-class GenomeIdentifierFactory(DjangoModelFactory):
+class GenomeIdentifierFactory(ExternalIdentifierFactory):
     """
     Factory creating :class:`GenomeIdentifier` instances with a random
     identifier choice.
     """
-
     class Meta:
         model = GenomeIdentifier
         django_get_or_create = ('identifier',)

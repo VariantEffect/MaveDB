@@ -1,8 +1,10 @@
 import datetime
 import idutils
 import metapub
+import faker
 from eutils.exceptions import EutilsNCBIError
 
+from django.conf import settings
 from django.db import models
 
 import genome.models as genome_models
@@ -14,6 +16,8 @@ from metadata.validators import (
     validate_refseq_identifier,
     validate_uniprot_identifier,
 )
+
+Faker = faker.Faker()
 
 
 class Keyword(TimeStampedModel):
@@ -132,7 +136,8 @@ class ExternalIdentifier(TimeStampedModel):
             if self.IDUTILS_SCHEME is not None:
                 self.identifier = idutils.normalize_pid(
                     self.identifier, self.IDUTILS_SCHEME)
-            self.url = self.format_url()
+            if not self.url:
+                self.url = self.format_url()
             self.dbname = self.DATABASE_NAME
         super().save(*args, **kwargs)
 
@@ -216,7 +221,8 @@ class PubmedIdentifier(ExternalIdentifier):
         # auto-incrementing integer field. It will be None until the
         # instance is saved for the first time.
         if self.pk is None:
-            self.reference_html = self.format_reference_html()
+            if not self.reference_html:
+                self.reference_html = self.format_reference_html()
         super().save(*args, **kwargs)
 
 

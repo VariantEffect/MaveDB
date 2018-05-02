@@ -31,16 +31,16 @@ class FilterMixin(object):
         return self.value_to_q(value, field_name, filter_type)
 
     def list_to_or_q(self, values, field_name, filter_type):
-        q_object = Q()
+        qs = []
         for v in values:
-            q_object |= self.value_to_q(v, field_name, filter_type)
-        return q_object
+            qs.append(self.value_to_q(v, field_name, filter_type))
+        return self.or_join_qs(qs)
 
     def list_to_and_q(self, values, field_name, filter_type):
-        q_object = Q()
+        qs = []
         for v in values:
-            q_object &= self.value_to_q(v, field_name, filter_type)
-        return q_object
+            qs.append(self.value_to_q(v, field_name, filter_type))
+        return self.and_join_qs(qs)
 
     @staticmethod
     def value_to_q(value, field_name, filter_type):
@@ -103,14 +103,7 @@ class SearchMixin(FilterMixin):
     `field_name` to search a model with and a `filter_type` to `search_to_q`.
     `filter_types` are those supported by a `QuerySet`. ALternatively, you can
     define a more complex function returning a `Q`.
-
-    `search_field_to_model_field` is currently unused, but define it anyway
-    for future compatibility.
     """
-    @staticmethod
-    def search_field_to_model_field():
-        raise NotImplementedError
-
     @staticmethod
     def search_field_to_function():
         raise NotImplementedError
@@ -137,16 +130,17 @@ class SearchMixin(FilterMixin):
         if isinstance(value_or_dict, dict):
             qs = []
             for field, value in value_or_dict.items():
+                if hasattr(value, '__len__') and not len(value):
+                    continue
+                elif not value:
+                    continue
                 search_func = self.get_function_for_field(field)
                 if search_func is not None:
                     qs.append(search_func(value))
-        elif isinstance(value_or_dict, str):
+        else:
             qs = [func(value_or_dict) for _, func in functions.items()]
             join_func = self.or_join_qs
-        else:
-            raise TypeError("Expected `dict` or `str`. Found {}".format(
-                type(value_or_dict).__name__
-            ))
+
         if join_func is None:
             return qs
         return join_func(qs)

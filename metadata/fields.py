@@ -13,7 +13,7 @@ class FlexibleModelChoiceField(ModelChoiceField):
         self.queryset = queryset
 
     def to_python(self, value):
-        if value is None:
+        if is_null(value):
             return None
         try:
             return self.klass.objects.get(**{self.to_field_name: value})
@@ -24,18 +24,18 @@ class FlexibleModelChoiceField(ModelChoiceField):
                 self.error_messages['invalid_choice'], code='invalid_choice')
 
 
-class ModelSelectMultipleField(ModelMultipleChoiceField):
+class FlexibleModelMultipleChoiceField(ModelMultipleChoiceField):
     """
     Custom Field to handle Keyword, ExternalAccession and TargetOrganism
     select fields, where new input shouldn't create an error but should
     create a new instance. This needs to be initialised inside a forms
     `init` method otherwise it will be created as a class instance since
-    django will not defer it's instatiation at import time.
+    django will not defer it's instantiation at import time.
     """
     default_error_messages = {
         'list': _('Enter a list of values.'),
         'invalid_choice': _(
-            'Select a valid choice. %(value)s is not one of the'
+            'Select a valid choice. "%(value)s" is not one of the'
             ' available choices.'
         ),
         'invalid_pk_value': _(
@@ -43,127 +43,43 @@ class ModelSelectMultipleField(ModelMultipleChoiceField):
         )
     }
 
-    def __init__(self, klass, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.to_field_name is None:
-            raise ValueError("You must define 'to_field_name'.")
+    def __init__(self, klass, queryset, *args, **kwargs):
+        super().__init__(queryset, *args, **kwargs)
         self.klass = klass
-        self.new_values = set()
-        self.new_instances = []
+        self.queryset = queryset
 
-    def save_new(self):
-        self.create_new()
-        for instance in self.new_instances:
-            instance.save()
-        return self.new_instances
-
-    def create_new(self):
-        self.new_instances = [
-            self.klass(**{self.to_field_name: field_value})
-            for field_value in self.new_values
-        ]
-        return self.new_instances
-
-    def _exists_in_new_instances(self, value):
-        value = str(value).strip()
-        exists_in_new = value in set([
-            getattr(inst, self.to_field_name)
-            for inst in self.new_instances
-        ])
-        return exists_in_new
-
-    def _exists_in_new_values(self, value):
-        value = str(value).strip()
-        exists_in_new = value in self.new_values
-        return exists_in_new
-
-    def _exists_in_db(self, value):
-        accession = str(value).strip()
-        exists_in_db = self.klass.objects.filter(
-            **{self.to_field_name: accession}
-        ).count() > 0
-        return exists_in_db
-
-    def is_new_value(self, value):
-        """
-        Checks values existance against this fields own `new_values`,
-        `new_instances` and the database.
-
-        Parameters
-        ----------
-        value : str
-            The field value corresponding the model field `to_field_name`.
-
-        Returns
-        -------
-        `bool`
-            Returns True if an instance already exists with the value for the
-            field defined by `to_field_name`.
-        """
-        is_new = not (
-            self._exists_in_db(value) |
-            self._exists_in_new_instances(value) |
-            self._exists_in_new_values(value)
-        )
-        return is_new
+    def to_python(self, value):
+        values = []
+        if not value:
+            return values
+        if not isinstance(value, (set, list, tuple)):
+            value = [value]
+        for v in value:
+            if is_null(v):
+                continue
+            try:
+                values.append(
+                    self.klass.objects.get(**{self.to_field_name: v}))
+            except self.queryset.model.DoesNotExist:
+                values.append(self.klass(**{self.to_field_name: v}))
+            except (ValueError, TypeError):
+                raise ValidationError(
+                    self.error_messages['invalid_choice'],
+                    code='invalid_choice'
+                    )
+        return values
 
     def clean(self, value):
-        """
-        Cleans the value returning a QuerySet of instances relating
-        to the chosen values in `value`.
-
-        Note: QuerySet that is returned will only contain instances that
-        are already in the database. If new keywords etc have been created
-        then these values are in the `new_values` attribute. These should
-        be saved only when the form containing this field is valid.
-        """
-        # The `target_organism` widget in `ExperimentForm` uses a non-multiple
-        # select widget which will return a string instead of a list of values.
-        # Instead of subclassing the single selection django widget just
-        # for this field use this line here instead.
-        if isinstance(value, str):
-            value = [value]
-        return super().clean(value)
-
-    def _check_values(self, value):
-        """
-        Overrides the base method found in `ModelMultipleChoiceField`.
-
-        Given a list of possible PK values, returns a QuerySet of the
-        corresponding objects. Instead of raising a ValidationError if a given
-        value not a valid PK and instead is a string input, a new instance is
-        created. This handles the case where new keywords etc must be
-        added to the database during an instance creation/edit.
-
-        Parameters
-        ----------
-        value : list
-            The field values corresponding the model field `to_field_name`.
-
-        Returns
-        -------
-        `QuerySet`
-            Returns the queryset of instances corresponding to the selected
-            options.
-        """
-        existing = []
-        # deduplicate given values to avoid creating many querysets or
-        # requiring the database backend deduplicate efficiently.
-        try:
-            values = frozenset(value)
-        except TypeError:
-            # list of lists isn't hashable, for example
+        value = self.prepare_value(value)
+        if self.required and not value:
+            raise ValidationError(
+                self.error_messages['required'], code='required')
+        elif not self.required and not value:
+            return self.queryset.none()
+        if not isinstance(value, (list, tuple)):
             raise ValidationError(self.error_messages['list'], code='list')
-        for value in values:
-            if is_null(value):
-                continue
-            pass_to_super = not (
-                self._exists_in_new_instances(value) |
-                self._exists_in_new_values(value)
-            )
-            if self.is_new_value(value):
-                self.new_values.add(value)
-            elif pass_to_super:
-                existing.append(value)
-
-        return super()._check_values(existing)
+        qs = self.to_python(value)
+        # Since this overrides the inherited ModelChoiceField.clean
+        # we run custom validators here
+        self.run_validators(value)
+        return qs

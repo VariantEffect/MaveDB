@@ -1,87 +1,349 @@
+import ast
+import json
 import django.forms as forms
 
+from core.utilities import is_null
 
-from core.utilities.query_parsing import parse_query
+from metadata.models import (
+    Keyword,
+    RefseqIdentifier,
+    EnsemblIdentifier,
+    UniprotIdentifier,
+    GenomeIdentifier,
+    SraIdentifier,
+    DoiIdentifier,
+    PubmedIdentifier,
+)
+
+from genome.models import ReferenceGenome, TargetGene
+
+from dataset.mixins import ExperimentSearchMixin
 
 
-class SearchForm(forms.Form):
-    urns = forms.CharField(
-        max_length=None, label="URN", required=False,
+def parse_char_list(value):
+    if isinstance(value, (list, set, tuple)):
+        return list(value)
+    try:
+        return json.loads(
+            value
+                .replace('[\'', '[\"')
+                .replace('\']', '\"]')
+                .replace(', \'', ', \"')
+                .replace('\',', '\",')
+        )
+    except (ValueError, TypeError):
+        return [value]
+
+
+class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
+    """Search by text fields and keywords."""
+    title = forms.CharField(
+        max_length=None, label="Title", required=False,
+        help_text='Search entries by title.',
         widget=forms.widgets.TextInput()
     )
-    external_identifiers = forms.CharField(
-        max_length=None, label="External identifiers", required=False,
-        help_text=(
-            'Search using PubMed, UniProt, RefSeq, GenBank, '
-            'Ensembl, SRA and DOI accessions.'
-        ),
+
+    description = forms.CharField(
+        max_length=None, label="Description", required=False,
+        help_text='Search entries by short description.',
         widget=forms.widgets.TextInput()
     )
+
+    method_abstract = forms.CharField(
+        max_length=None, label="Abstract/Method", required=False,
+        help_text='Search entries by abstract/method.',
+        widget=forms.widgets.TextInput()
+    )
+
     keywords = forms.CharField(
-        max_length=None, label="Keywords", required=False,
-        help_text='Search entries by keyword.',
-        widget=forms.widgets.TextInput()
-    )
-    targets = forms.CharField(
-        max_length=None, label="Target", required=False,
-        help_text='Search using a target gene name.',
-        widget=forms.widgets.TextInput()
-    )
-    target_organisms = forms.CharField(
-        max_length=None, label="Target organism", required=False,
-        help_text='Search by the organism of a target gene.',
-        widget=forms.widgets.TextInput()
-    )
-    metadata = forms.CharField(
-        max_length=None, label="Full text", required=False,
-        help_text=(
-            'Search entries by their title, description, method and abstract.'
+        label='Keywords',
+        help_text='Search by keywords.',
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.text, i.text)
+                for i in Keyword.objects.all()
+            ]))
         ),
-        widget=forms.widgets.TextInput()
     )
 
-    def clean_urns(self):
-        return parse_query(self.cleaned_data.get("urns", ""))
+    def clean_method_abstract(self):
+        method_abtract = self.cleaned_data.get("method_abstract", "")
+        if is_null(method_abtract):
+            return ""
+        return method_abtract
 
-    def clean_external_identifiers(self):
-        return parse_query(self.cleaned_data.get("external_identifiers", ""))
+    def clean_description(self):
+        description = self.cleaned_data.get("description", "")
+        if is_null(description):
+            return ""
+        return description
 
-    def clean_targets(self):
-        return parse_query(self.cleaned_data.get("targets", ""))
-
-    def clean_target_organisms(self):
-        return parse_query(self.cleaned_data.get("target_organisms", ""))
-
-    def clean_metadata(self):
-        return parse_query(self.cleaned_data.get("metadata", ""))
+    def clean_title(self):
+        title = self.cleaned_data.get("title", "")
+        if is_null(title):
+            return ""
+        return title
 
     def clean_keywords(self):
-        return parse_query(self.cleaned_data.get("keywords", ""))
+        field_name = 'keywords'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
 
-    def base_search_dict(self):
+    def make_filters(self, join=True):
         data = self.cleaned_data
-        dict_ = {
-            'urn': data.get('urns', []),
-            'abstract': data.get('metadata', ""),
-            'method': data.get('metadata', ""),
-            'title': data.get('metadata', ""),
-            'description': data.get('metadata', ""),
-            'keywords': data.get('keywords', []),
-            'sra':  data.get('external_identifiers', []),
-            'doi':  data.get('external_identifiers', []),
-            'pubmed':  data.get('external_identifiers', []),
+        abstract = {'abstract': data.get('method_abstract', "")}
+        method = {'method': data.get('method_abstract', "")}
+        title = {'title': data.get('title', "")}
+        description = {'description': data.get('description', "")}
+        keywords = {'keywords': data.get('keywords', [])}
+
+        abstract_q = self.search_all(abstract, join_func=None)
+        method_q = self.search_all(method, join_func=None)
+        title_q = self.search_all(title, join_func=None)
+        description_q = self.search_all(description, join_func=None)
+        keywords_q = self.search_all(keywords, join_func=None)
+        method_abstract_q = self.or_join_qs(abstract_q + method_q)
+        if not len(method_abstract_q):
+            method_abstract_q = []
+        else:
+            method_abstract_q = [method_abstract_q]
+
+        join_func = lambda x: x
+        if join:
+            join_func = self.and_join_qs
+        return join_func(
+            method_abstract_q + title_q + description_q + keywords_q)
+
+
+class MetaIdentifiersSearchForm(forms.Form, ExperimentSearchMixin):
+    """Search by PubMed, SRA and DOI."""
+    pubmed_ids = forms.CharField(
+        label='PubMed identifiers',
+        help_text='Search by PubMed identifiers associated with an entry.',
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in PubmedIdentifier.objects.all()
+            ]))
+        ),
+    )
+    sra_ids = forms.CharField(
+        label='SRA accessions',
+        help_text='Search by SRA accessions associated with an entry.',
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in SraIdentifier.objects.all()
+            ]))
+        ),
+    )
+    doi_ids = forms.CharField(
+        label='DOI accessions',
+        help_text='Search by DOI accessions associated with an entry.',
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in DoiIdentifier.objects.all()
+            ]))
+        ),
+    )
+
+    def clean_pubmed_ids(self):
+        field_name = 'pubmed_ids'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_sra_ids(self):
+        field_name = 'sra_ids'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_doi_ids(self):
+        field_name = 'doi_ids'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def make_filters(self, join=True):
+        data = self.cleaned_data
+        search_dict = {
+            'pubmed': data.get('pubmed_ids', []),
+            'sra': data.get('sra_ids', []),
+            'doi': data.get('doi_ids', []),
         }
-        return dict_
+        join_func = None
+        if join:
+            join_func = self.and_join_qs
+        return self.search_all(search_dict, join_func=join_func)
 
-    def experiment_search_dict(self):
+
+class TargetIdentifierSearchForm(forms.Form, ExperimentSearchMixin):
+    """
+    Search by uniprot, refseq, ensembl and genome assembly.
+    """
+    uniprot = forms.CharField(
+        label='UniProt accession',
+        help_text='Search by a target\'s UniProt accession.',
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in UniprotIdentifier.objects.all()
+            ]))
+        ),
+    )
+    refseq = forms.CharField(
+        label='RefSeq accession',
+        help_text='Search by a target\'s RefSeq accession.',
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in RefseqIdentifier.objects.all()
+            ]))
+        ),
+    )
+    ensembl = forms.CharField(
+        required=False,
+        label='Ensembl accession',
+        help_text='Search by a target\'s Ensembl accession.',
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in EnsemblIdentifier.objects.all()
+            ]))
+        ),
+    )
+    target = forms.CharField(
+        required=False,
+        label='Target gene name',
+        help_text='Search by a target\'s gene name.',
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.name, i.name)
+                for i in TargetGene.objects.all()
+            ]))
+        ),
+    )
+
+    def clean_uniprot(self):
+        field_name = 'uniprot'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_refseq(self):
+        field_name = 'refseq'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_ensembl(self):
+        field_name = 'ensembl'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_target(self):
+        field_name = 'target'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def make_filters(self, join=True):
         data = self.cleaned_data
-        base = self.base_search_dict()
-        base.update({
-            'target': data.get('targets', []),
-            'organism': data.get('target_organisms', []),
-            'uniprot': data.get('external_identifiers', []),
-            'ensembl': data.get('external_identifiers', []),
-            'refseq': data.get('external_identifiers', []),
-            'genome': data.get('external_identifiers', []),
-        })
-        return base
+        search_dict = {
+            'uniprot': data.get('uniprot', []),
+            'refseq': data.get('refseq', []),
+            'ensembl': data.get('ensembl', []),
+            'target': data.get('target', []),
+        }
+        join_func = None
+        if join:
+            join_func = self.and_join_qs
+        return self.search_all(search_dict, join_func=join_func)
+
+
+class GenomeSearchForm(forms.Form, ExperimentSearchMixin):
+    """Search by genome name and assembly"""
+    genome = forms.CharField(
+        required=False,
+        label='Reference name',
+        help_text='Search by a target\'s reference genome.',
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.short_name, i.short_name)
+                for i in ReferenceGenome.objects.all()
+            ]))
+        ),
+    )
+    assembly = forms.CharField(
+        required=False,
+        label='Assembly accession',
+        help_text='Search by a target\'s reference assembly accession.',
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.identifier, i.identifier)
+                for i in GenomeIdentifier.objects.all()
+            ]))
+        ),
+    )
+    species = forms.CharField(
+        required=False,
+        label='Reference species',
+        help_text='Search by a target\'s reference genome species.',
+        widget=forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(set([
+                (i.species_name, i.species_name)
+                for i in ReferenceGenome.objects.all()
+            ]))
+        )
+    )
+
+    def clean_genome(self):
+        field_name = 'genome'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_species(self):
+        field_name = 'species'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def clean_assembly(self):
+        field_name = 'assembly'
+        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = list(set([i for i in instances if not is_null(i)]))
+        return instances
+
+    def make_filters(self, join=True):
+        data = self.cleaned_data
+        search_dict = {
+            'species': data.get('species', []),
+            'genome': data.get('genome', []),
+            'assembly': data.get('assembly', []),
+        }
+        join_func = None
+        if join:
+            join_func = self.and_join_qs
+        return self.search_all(search_dict, join_func=join_func)
