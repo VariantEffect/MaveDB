@@ -47,7 +47,6 @@ class ScoreSetSerializer(DatasetModelSerializer):
 
     score_columns = serializers.ListSerializer(child=serializers.CharField())
     count_columns = serializers.ListSerializer(child=serializers.CharField())
-    metadata_columns = serializers.ListSerializer(child=serializers.CharField())
 
     previous_version = serializers.StringRelatedField(many=False)
     next_version = serializers.StringRelatedField(many=False)
@@ -57,8 +56,8 @@ class ScoreSetSerializer(DatasetModelSerializer):
         model = ScoreSet
         fields = DatasetModelSerializer.Meta.fields + (
             'licence', 'target', 'score_columns', 'count_columns',
-            'metadata_columns', 'previous_version', 'next_version',
-            'current_version', 'variant_count', 'experiment', 'normalised',
+            'previous_version', 'next_version',
+            'current_version', 'variant_count', 'experiment',
         )
 
 
