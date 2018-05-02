@@ -24,7 +24,21 @@ class News(TimeStampedModel):
     text : `models.TextField`
         The content of the news item.abs
     """
+    STATUS_CHOICES = (
+        ('Happy holidays', 'Happy holidays'),
+        ('April fools', 'April fools'),
+        ('Information', 'Information'),
+        ('Important', 'Important'),
+        ('Critical', 'Critical'),
+    )
     text = models.TextField(default="default news.", blank=False)
+    level = models.CharField(
+        max_length=250,
+        default='Information',
+        null=False,
+        blank=True,
+        choices=STATUS_CHOICES
+    )
 
     class Meta:
         ordering = ['-creation_date']
@@ -229,7 +243,7 @@ class Licence(TimeStampedModel):
     def create_licence(cls, short_name, long_name, file_name, link, version):
         try:
             legal_code = open(
-                os.path.join(settings.LICENCE_DIR,
+                os.path.join(settings.MAIN_DIR,
                              file_name),
                 mode='rt'
             ).read()
@@ -265,7 +279,7 @@ class Licence(TimeStampedModel):
                 short_name="CC0",
                 long_name="CC0 (Public domain)",
                 legal_code=open(
-                    os.path.join(settings.LICENCE_DIR,
+                    os.path.join(settings.MAIN_DIR,
                                  "CC0.txt"),
                     mode='rt'
                 ).read(),
@@ -283,7 +297,7 @@ class Licence(TimeStampedModel):
                 short_name="CC BY-NC-SA 4.0",
                 long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
                 legal_code=open(
-                    os.path.join(settings.LICENCE_DIR,
+                    os.path.join(settings.MAIN_DIR,
                                  "CC_BY-NC-SA_4.0.txt"),
                     mode='rt'
                 ).read(),

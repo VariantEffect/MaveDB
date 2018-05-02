@@ -1,13 +1,49 @@
+from collections import Counter
+
 from django.shortcuts import render
+
+from dataset.models.scoreset import ScoreSet
+from dataset.models.experiment import Experiment
 
 from .models import News, SiteInformation
 
 
+def get_top_n(n, ls):
+    counter = list(Counter(ls).items())
+    top_n = [i for i, _ in sorted(counter, key=lambda x: x[1])[0:n]]
+    return top_n
+
+
 def home_view(request):
     news_items = News.recent_news()
+    species = [
+        (g.get_species_name(), g.format_species_name_html())
+        for s in ScoreSet.objects.exclude(private=True)
+        for g in s.get_target().get_reference_genomes()
+    ]
+    targets = [
+        (s.get_target().get_name(), s.get_target().get_name())
+        for s in ScoreSet.objects.exclude(private=True)
+    ]
+    keywords = [
+        (k.text, k.text)
+        for s in Experiment.objects.exclude(private=True)
+        for k in s.keywords.all()
+    ]
+    keywords += [
+        (k.text, k.text)
+        for s in ScoreSet.objects.exclude(private=True)
+        for k in s.keywords.all()
+    ]
+
     return render(request, 'main/home.html', {
         "news_items": news_items,
-        "site_information": SiteInformation.get_instance()
+        "site_information": SiteInformation.get_instance(),
+        "top_species": sorted(get_top_n(3, species)),
+        "top_targets": sorted(get_top_n(3, targets)),
+        "top_keywords": sorted(get_top_n(3, keywords)),
+        "all_species": sorted(set([i[0] for i in species])),
+        "all_targets": sorted(set([i[0] for i in targets]))
     })
 
 
