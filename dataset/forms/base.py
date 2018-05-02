@@ -2,7 +2,7 @@ from django import forms as forms
 from django.db import transaction
 
 from accounts.permissions import assign_superusers_as_admin
-from metadata.fields import ModelSelectMultipleField
+from metadata.fields import FlexibleModelMultipleChoiceField
 
 from metadata.models import (
     Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier
@@ -57,44 +57,40 @@ class DatasetModelForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
-        self.fields['title'].widget = forms.TextInput(
-            attrs={"class": "form-control"}
-        )
         self.fields['short_description'].widget = forms.Textarea(
-            attrs={"class": "form-control", 'cols': "40", 'rows': "4"}
-        )
-        self.fields['abstract_text'].widget = forms.Textarea(
-            attrs={"class": "form-control"}
-        )
-        self.fields['method_text'].widget = forms.Textarea(
-            attrs={"class": "form-control"}
-        )
-        self.fields['keywords'] = ModelSelectMultipleField(
+            attrs={'cols': "40", 'rows': "4"})
+        self.fields['title'].widget = forms.TextInput()
+        self.fields['abstract_text'].widget = forms.Textarea()
+        self.fields['method_text'].widget = forms.Textarea()
+        self.fields['keywords'] = FlexibleModelMultipleChoiceField(
             klass=Keyword, to_field_name='text',
             label='Keywords', required=False,
             queryset=Keyword.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
+                attrs={"class": "select2 select2-token-select"}
             )
         )
-        self.fields['sra_ids'] = ModelSelectMultipleField(
+        self.fields['sra_ids'] = FlexibleModelMultipleChoiceField(
             klass=SraIdentifier, to_field_name='identifier',
             label='SRA Identifiers', required=False,
-            queryset=SraIdentifier.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
+            queryset=SraIdentifier.objects.all(),
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"}
             )
         )
-        self.fields['doi_ids'] = ModelSelectMultipleField(
+        self.fields['doi_ids'] = FlexibleModelMultipleChoiceField(
             klass=DoiIdentifier, to_field_name='identifier',
             label='DOI Identifiers', required=False,
-            queryset=DoiIdentifier.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
+            queryset=DoiIdentifier.objects.all(),
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"}
             )
         )
-        self.fields['pubmed_ids'] = ModelSelectMultipleField(
+        self.fields['pubmed_ids'] = FlexibleModelMultipleChoiceField(
             klass=PubmedIdentifier, to_field_name='identifier',
             label='PubMed Identifiers', required=False,
-            queryset=PubmedIdentifier.objects.all(), widget=forms.SelectMultiple(
-                attrs={"class": "form-control select2 select2-token-select"}
+            queryset=PubmedIdentifier.objects.all(),
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"}
             )
         )
         self.fields['keywords'].validators.append(validate_keyword_list)
@@ -102,23 +98,17 @@ class DatasetModelForm(forms.ModelForm):
         self.fields['doi_ids'].validators.append(validate_doi_list)
         self.fields['pubmed_ids'].validators.append(validate_pubmed_list)
 
-    def _clean_field_name(self, field_name):
-        field = self.fields[field_name]
-        cleaned_queryset = self.cleaned_data[field_name]
-        all_instances = list(cleaned_queryset.all()) + field.create_new()
-        return all_instances
-
     def clean_keywords(self):
-        return self._clean_field_name('keywords')
+        return self.cleaned_data.get('keywords', [])
 
     def clean_sra_ids(self):
-        return self._clean_field_name('sra_ids')
+        return self.cleaned_data.get('sra_ids', [])
 
     def clean_doi_ids(self):
-        return self._clean_field_name('doi_ids')
+        return self.cleaned_data.get('doi_ids', [])
 
     def clean_pubmed_ids(self):
-        return self._clean_field_name('pubmed_ids')
+        return self.cleaned_data.get('pubmed_ids', [])
 
     def _save_m2m(self):
         # Save all instances before calling super() so that all new instances
@@ -147,9 +137,10 @@ class DatasetModelForm(forms.ModelForm):
             raise ValueError(
                 '{} is not a field in this form.'.format(field_name)
             )
-        existing_entries = [i for i in self.cleaned_data.get(field_name, [])]
+        entries = self.cleaned_data.get(field_name, [])
+        existing_entries = [i for i in entries if i.pk is not None]
         if return_new:
-            new_entries = self.fields[field_name].new_instances
+            new_entries = [i for i in entries if i.pk is None]
             return existing_entries + new_entries
         return existing_entries
 
