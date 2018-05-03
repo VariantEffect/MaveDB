@@ -129,7 +129,9 @@ class TargetGene(TimeStampedModel):
         self.wt_sequence = sequence
 
     def get_offset_annotation(self, related_field):
-        return getattr(self, related_field, None)
+        value = getattr(self, related_field, None)
+        if value is not None:
+            return value.first()
 
     def get_uniprot_offset_annotation(self):
         return self.get_offset_annotation('uniprotoffset')

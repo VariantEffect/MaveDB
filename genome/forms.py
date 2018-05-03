@@ -310,7 +310,7 @@ class ReferenceMapForm(forms.ModelForm):
         genome_field.initial = ""
 
     def dummy_instance(self):
-        if self.errors:
+        if not self.is_bound or self.errors:
             return None
         return ReferenceMap(
             genome=self.cleaned_data.get('genome'),
