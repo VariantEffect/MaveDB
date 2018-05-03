@@ -42,16 +42,36 @@ class ScoreSetForm(DatasetModelForm):
 
     score_data = forms.FileField(
         required=False, label="Variant score data",
+        help_text=(
+            "A valid CSV file containing variant score information. "
+            "The file must at least specify the columns 'hgvs' and "
+            "'score'. There are no constraints on other column names. "
+            "Apart from the 'hgvs' column, all data must be numeric.\n\n"
+            "Row scores that are empty, or the the strings None, Null, Na and "
+            "NaN (case-insensitive) will be converted to a null score."
+        ),
         validators=[validate_scoreset_score_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
     count_data = forms.FileField(
         required=False, label="Variant count data",
+        help_text=(
+            "A valid CSV file containing variant count information. " 
+            "The file must at least specify the column 'hgvs' and "
+            "one additional column containing numeric count data. "
+            "There are no constraints on the other column names.\n\n"
+            "Row counts that are empty, or the the strings None, Null, Na and "
+            "NaN (case-insensitive) will be converted to a null score."
+        ),
         validators=[validate_scoreset_count_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
     meta_data = forms.FileField(
-        required=False, label="Variant metadata",
+        required=False, label="Metadata",
+        help_text=(
+            "You can upload a JSON file containing additional information "
+            "not available as a field in this form."
+        ),
         validators=[validate_json_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "json"})
     )
@@ -77,6 +97,19 @@ class ScoreSetForm(DatasetModelForm):
                 constants.score_columns: [],
                 constants.count_columns: [],
             }
+
+        self.fields['abstract_text'].help_text = (
+            "A plain text or markdown abstract relating to the scoring "
+            "method used for this score set. Click the preview button "
+            "to view a rendered preview of what other users will "
+            "see once you publish your submission."
+        )
+        self.fields['method_text'].help_text = (
+            "A plain text or markdown method describing the scoring "
+            "method used for this score set. Click the preview button "
+            "to view a rendered preview of what other users will "
+            "see once you publish your submission."
+        )
 
         self.fields['short_description'].max_length = 500
         self.fields['experiment'] = forms.ModelChoiceField(
@@ -107,16 +140,29 @@ class ScoreSetForm(DatasetModelForm):
         return licence
 
     def clean_replaces(self):
-        scoreset = self.cleaned_data.get("replaces", None)
+        replaces = self.cleaned_data.get("replaces", None)
         experiment = self.cleaned_data.get("experiment", None)
-        if scoreset is not None and experiment is not None:
-            if scoreset not in experiment.scoresets.all():
+        if replaces is not None:
+            if experiment is not None and \
+                    replaces not in experiment.scoresets.all():
                 raise ValidationError(
                     ugettext(
                         "Replaces field selection must be a member of the "
                         "selected experiment."
                     ))
-        return scoreset
+            if replaces.next_version is not None:
+                raise ValidationError(
+                    ugettext(
+                        "{} has already been replaced by "
+                        "{}.".format(replaces.urn, replaces.next_version.urn)
+                    ))
+            if replaces.private:
+                raise ValidationError(
+                    ugettext("Only public entries can be replaced."))
+            if replaces.pk == self.instance.pk:
+                raise ValidationError(
+                    ugettext("A Score Set cannot replace itself."))
+        return replaces
 
     def clean_score_data(self):
         score_file = self.cleaned_data.get("score_data", None)
@@ -281,8 +327,12 @@ class ScoreSetForm(DatasetModelForm):
                 choices &= set(
                     [i.pk for i in self.experiment.scoresets.all()]
                 )
-            scoresets_qs = ScoreSet.objects.filter(
-                pk__in=choices).order_by("urn")
+            scoresets_qs = ScoreSet.objects\
+                .filter(pk__in=choices)\
+                .exclude(private=True)\
+                .exclude(pk=self.instance.pk)\
+                .exclude(urn=self.instance.urn)\
+                .order_by("urn")
             self.fields["replaces"].queryset = scoresets_qs
 
     def set_experiment_options(self):
