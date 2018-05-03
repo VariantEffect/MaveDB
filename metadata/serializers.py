@@ -16,6 +16,7 @@ from .models import (
     GenomeIdentifier,
 )
 
+
 class KeywordSerializer(serializers.ModelSerializer):
     """
     Serializes the `text` field of a Keyword.
@@ -44,6 +45,16 @@ class UniprotOffsetSerializer(serializers.ModelSerializer):
     class Meta(AnnotationOffsetSerializer.Meta):
         model = UniprotOffset
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance:
+            serializer = UniprotIdentifierSerializer()
+            identifier_rep = serializer.to_representation(
+                instance=instance.identifier)
+            representation.update(identifier_rep)
+            return representation
+        return representation
+
 
 class EnsemblOffsetSerializer(serializers.ModelSerializer):
     """
@@ -52,6 +63,16 @@ class EnsemblOffsetSerializer(serializers.ModelSerializer):
     class Meta(AnnotationOffsetSerializer.Meta):
         model = EnsemblOffset
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance:
+            serializer = EnsemblIdentifierSerializer()
+            identifier_rep = serializer.to_representation(
+                instance=instance.identifier)
+            representation.update(identifier_rep)
+            return representation
+        return representation
+
 
 class RefseqOffsetSerializer(serializers.ModelSerializer):
     """
@@ -59,6 +80,16 @@ class RefseqOffsetSerializer(serializers.ModelSerializer):
     """
     class Meta(AnnotationOffsetSerializer.Meta):
         model = RefseqOffset
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance:
+            serializer = RefseqIdentifierSerializer()
+            identifier_rep = serializer.to_representation(
+                instance=instance.identifier)
+            representation.update(identifier_rep)
+            return representation
+        return representation
 
 
 # ExternalIdentifiers
@@ -96,6 +127,7 @@ class PubmedIdentifierSerializer(ExternalIdentifierSerializer):
     class Meta(ExternalIdentifierSerializer.Meta):
         model = PubmedIdentifier
 
+
 class GenomeIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`PubmedIdentifier` instance/queryset.
@@ -112,7 +144,6 @@ class EnsemblIdentifierSerializer(ExternalIdentifierSerializer):
     """
     class Meta(ExternalIdentifierSerializer.Meta):
         model = EnsemblIdentifier
-        fields = ExternalIdentifierSerializer.Meta.fields + ('offset',)
 
 
 class RefseqIdentifierSerializer(ExternalIdentifierSerializer):
@@ -121,13 +152,12 @@ class RefseqIdentifierSerializer(ExternalIdentifierSerializer):
     """
     class Meta(ExternalIdentifierSerializer.Meta):
         model = RefseqIdentifier
-        fields = ExternalIdentifierSerializer.Meta.fields + ('offset',)
 
 
 class UniprotIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`UniprotIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = UniprotIdentifier
-        fields = ExternalIdentifierSerializer.Meta.fields + ('offset',)
