@@ -122,7 +122,7 @@ class ScoreSet(DatasetModel):
 
     replaces = models.OneToOneField(
         to='dataset.ScoreSet',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True,
         verbose_name="Replaces",
         related_name="replaced_by",
@@ -229,14 +229,30 @@ class ScoreSet(DatasetModel):
 
     @property
     def current_version(self):
-        next_instance = self
-        while next_instance.next_version is not None:
-            next_instance = next_instance.next_version
-        return next_instance
+        instance = self
+        while instance.next_version is not None:
+            instance = instance.next_version
+        return instance
+
+    @property
+    def current_public_version(self):
+        instance = self
+        while instance.next_version is not None:
+            if instance.next_version.private:
+                break
+            else:
+                instance = instance.next_version
+        return instance
 
     @property
     def next_version(self):
         if self.has_replacement:
+            return self.replaced_by
+        return None
+
+    @property
+    def next_public_version(self):
+        if self.has_replacement and not self.replaced_by.private:
             return self.replaced_by
         return None
 
