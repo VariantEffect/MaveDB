@@ -121,8 +121,12 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # Custom
+                "main.context_processors.baseurl",
 
                 # Social-auth context_processors
                 'social_django.context_processors.backends',
