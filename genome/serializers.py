@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
 from metadata.serializers import (
+    UniprotOffsetSerializer,
+    EnsemblOffsetSerializer,
+    RefseqOffsetSerializer,
     UniprotIdentifierSerializer,
     EnsemblIdentifierSerializer,
     RefseqIdentifierSerializer,
@@ -72,9 +75,9 @@ class TargetGeneSerializer(serializers.ModelSerializer):
     scoreset = serializers.StringRelatedField(many=False)
     reference_maps = ReferenceMapSerializer(many=True)
     wt_sequence = WildTypeSequenceSerializer(many=False)
-    uniprot = UniprotIdentifierSerializer(source='uniprot_id', many=False)
-    ensembl = EnsemblIdentifierSerializer(source='ensembl_id', many=False)
-    refseq = RefseqIdentifierSerializer(source='refseq_id', many=False)
+    uniprot = UniprotOffsetSerializer(source='get_uniprot_offset_annotation', many=False)
+    ensembl = EnsemblOffsetSerializer(source='get_ensembl_offset_annotation', many=False)
+    refseq = RefseqOffsetSerializer(source='get_refseq_offset_annotation', many=False)
 
     class Meta:
         model = TargetGene
