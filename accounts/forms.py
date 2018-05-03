@@ -17,6 +17,7 @@ from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 from search.forms import parse_char_list
 
+from .utilities import notify_user
 from .models import Profile
 from .mixins import UserSearchMixin
 from .permissions import (
@@ -141,7 +142,7 @@ class SelectUsersForm(forms.Form):
         required=False,
         widget=forms.SelectMultiple(
             attrs={
-                "class": "form-control select2 select2-token-select",
+                "class": "select2 select2-token-select",
                 "style": "width:100%;height:50px;"
             }
         ),
@@ -208,19 +209,65 @@ class SelectUsersForm(forms.Form):
                         )
         return cleaned_data
 
-    def process_user_list(self):
+    def process_user_list(self, base_url=''):
         """
         Defer the call to the appropriate update function for the input
         user list based on the initialised group type.
         """
+        existing_admins = self.instance.administrators()
+        existing_editors = self.instance.editors()
+        existing_viewers = self.instance.viewers()
+        user_reassigned = {}
+
         if self.is_bound and self.is_valid():
             users = self.clean().get("users", [])
             if self.group == GroupTypes.ADMIN:
+                existing = existing_admins
+                for user in users:
+                    if user in existing_editors or existing_viewers:
+                        user_reassigned[user] = True
                 update_admin_list_for_instance(users, self.instance)
+
             elif self.group == GroupTypes.EDITOR:
+                existing = existing_editors
+                for user in users:
+                    if user in existing_admins or existing_viewers:
+                        user_reassigned[user] = True
                 update_editor_list_for_instance(users, self.instance)
+
             elif self.group == GroupTypes.VIEWER:
+                existing = existing_viewers
+                for user in users:
+                    if user in existing_admins or existing_editors:
+                        user_reassigned[user] = True
                 update_viewer_list_for_instance(users, self.instance)
+
+            else:
+                logger.error(
+                    "Unrecognised group '{}' found when "
+                    "calling 'process_user_list' in SelectUsersForm.".format(
+                        self.group))
+                return
+
+            for user in existing:
+                if user not in users:
+                    notify_user(
+                        base_url, user, self.instance,
+                        action='removed', group=self.group
+                    )
+            for user in users:
+                reassigned = user_reassigned.get(user, False)
+                if reassigned:
+                    notify_user(
+                        base_url, user, self.instance,
+                        action='re-assigned', group=self.group
+                    )
+                else:
+                    if user not in existing:
+                        notify_user(
+                            base_url, user, self.instance,
+                            action='added', group=self.group
+                        )
 
 
 class RegistrationForm(UserCreationForm):
