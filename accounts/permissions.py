@@ -104,7 +104,7 @@ def user_is_admin_for_instance(user, instance):
         return False
 
 
-def user_editor_for_instance(user, instance):
+def user_is_editor_for_instance(user, instance):
     group_name = get_editor_group_name_for_instance(instance)
     if group_name is not None:
         return group_name in set([g.name for g in user.groups.all()])
@@ -122,13 +122,13 @@ def user_is_viewer_for_instance(user, instance):
 
 def user_is_contributor_for_instance(user, instance):
     return user_is_admin_for_instance(user, instance) or \
-           user_editor_for_instance(user, instance) or \
+           user_is_editor_for_instance(user, instance) or \
            user_is_viewer_for_instance(user, instance)
 
 
 GROUP_TYPE_CALLBACK = {
     GroupTypes.ADMIN: user_is_admin_for_instance,
-    GroupTypes.EDITOR: user_editor_for_instance,
+    GroupTypes.EDITOR: user_is_editor_for_instance,
     GroupTypes.VIEWER: user_is_viewer_for_instance,
 }
 
@@ -190,7 +190,7 @@ def contributors_for_instance(instance):
 def create_admin_group_for_instance(instance):
     if valid_model_instance(instance):
         name = get_admin_group_name_for_instance(instance)
-        if not Group.objects.filter(name=name).exists():
+        if not Group.objects.filter(name=name).count():
             group = Group.objects.create(name=name)
             for permission in GroupTypes.admin_permissions():
                 assign_perm(permission, group, instance)
@@ -201,7 +201,7 @@ def create_admin_group_for_instance(instance):
 def create_editor_group_for_instance(instance):
     if valid_model_instance(instance):
         name = get_editor_group_name_for_instance(instance)
-        if not Group.objects.filter(name=name).exists():
+        if not Group.objects.filter(name=name).count():
             group = Group.objects.create(name=name)
             for permission in GroupTypes.editor_permissions():
                 assign_perm(permission, group, instance)
@@ -212,7 +212,7 @@ def create_editor_group_for_instance(instance):
 def create_viewer_group_for_instance(instance):
     if valid_model_instance(instance):
         name = get_viewer_group_name_for_instance(instance)
-        if not Group.objects.filter(name=name).exists():
+        if not Group.objects.filter(name=name).count():
             group = Group.objects.create(name=name)
             for permission in GroupTypes.viewer_permissions():
                 assign_perm(permission, group, instance)
@@ -278,7 +278,7 @@ def assign_user_as_instance_admin(user, instance):
     except ObjectDoesNotExist:
         create_admin_group_for_instance(instance)
 
-    admin_group = Group.objects.get(name=group_name)
+    admin_group, _ = Group.objects.get_or_create(name=group_name)
     remove_user_as_instance_editor(user, instance)
     remove_user_as_instance_viewer(user, instance)
     user.groups.add(admin_group)
@@ -359,32 +359,34 @@ def remove_user_as_instance_viewer(user, instance):
 
 # Updates
 # -------------------------------------------------------------------------- #
+
+
 def update_admin_list_for_instance(users, instance):
-    site_users = User.objects.all()
-    for user in site_users:
+    for user in instance.administrators():
         if user not in users:
             remove_user_as_instance_admin(user, instance)
     for user in users:
-        assign_user_as_instance_admin(user, instance)
+        if user not in instance.administrators():
+            assign_user_as_instance_admin(user, instance)
     assign_superusers_as_admin(instance)
 
 
 def update_editor_list_for_instance(users, instance):
-    site_users = User.objects.all()
-    for user in site_users:
+    for user in instance.editors():
         if user not in users:
             remove_user_as_instance_editor(user, instance)
     for user in users:
-        assign_user_as_instance_editor(user, instance)
+        if user not in instance.editors():
+            assign_user_as_instance_editor(user, instance)
 
 
 def update_viewer_list_for_instance(users, instance):
-    site_users = User.objects.all()
-    for user in site_users:
+    for user in instance.viewers():
         if user not in users:
             remove_user_as_instance_viewer(user, instance)
     for user in users:
-        assign_user_as_instance_viewer(user, instance)
+        if user not in instance.viewers():
+            assign_user_as_instance_viewer(user, instance)
 
 
 def assign_superusers_as_admin(instance):

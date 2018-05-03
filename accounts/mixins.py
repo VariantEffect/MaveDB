@@ -6,7 +6,7 @@ from .permissions import (
     user_is_anonymous,
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
-    user_editor_for_instance,
+    user_is_editor_for_instance,
     user_is_viewer_for_instance,
 )
 
@@ -74,7 +74,7 @@ class GroupPermissionMixin(object):
         """
         editors = [
             u.pk for u in User.objects.all()
-            if user_editor_for_instance(u, self)
+            if user_is_editor_for_instance(u, self)
         ]
         return filter_anon(User.objects.filter(pk__in=editors))
 
