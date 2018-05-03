@@ -1,9 +1,5 @@
 import logging
 
-from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, reverse
 from django.db import transaction
 
 from accounts.permissions import (
