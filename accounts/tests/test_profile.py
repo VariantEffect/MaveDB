@@ -36,6 +36,15 @@ class TestUserProfile(TestCase):
         self.assertFalse(user_is_anonymous(bob))
         self.assertTrue(user_is_anonymous(anon))
 
+    def test_profile_gets_users_email_as_default(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey", email='bob@bob.com')
+        self.assertEqual(bob.email, bob.profile.email)
+
+        alice = User.objects.create(
+            username="alice", password="secretkey", email="")
+        self.assertIsNone(alice.profile.email)
+
     def test_can_get_full_name(self):
         bob = User.objects.create(
             username="bob", password="secretkey",
