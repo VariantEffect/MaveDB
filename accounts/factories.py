@@ -35,7 +35,7 @@ def UserFactory(username=None, password=None, first_name=None,
         ['Spiegel', 'Black', 'Valentine', 'Ed', 'Ein']
     ))
     if email is None:
-        email = factory.faker.Faker('email')
+        email = factory.faker.Faker('email').generate({})
     if username is None:
         username = factory.fuzzy.FuzzyText(length=8).fuzz()
     if password is None:
@@ -50,11 +50,12 @@ def UserFactory(username=None, password=None, first_name=None,
     if last_name is None:
         last_name = last
 
-    return User.objects.create(
+    user = User.objects.create(
         username=username,
-        password=password,
         first_name=first_name,
         last_name=last_name,
         email=email
     )
+    user.set_password(password)
+    return user
 
