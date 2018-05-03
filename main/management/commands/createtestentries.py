@@ -25,7 +25,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         password = "1234qwer"
         with transaction.atomic():
-            for username in ['usera', 'userb', 'userb', 'userd']:
+            for i, username in enumerate(['usera', 'userb', 'userb', 'userd']):
                 user = UserFactory(username=username)
                 user.set_password(password)
                 user.save()
@@ -34,17 +34,17 @@ class Command(BaseCommand):
                 assign_user_as_instance_admin(user, instance.parent)
                 for scoreset in instance.children.all():
                     UniprotOffset.objects.create(
-                        offset=0,
+                        offset=i*3 + 1,
                         target=scoreset.target,
                         identifier=scoreset.target.uniprot_id
                     )
                     RefseqOffset.objects.create(
-                        offset=0,
+                        offset=i*3 + 2,
                         target=scoreset.target,
                         identifier=scoreset.target.refseq_id
                     )
                     EnsemblOffset.objects.create(
-                        offset=0,
+                        offset=i*3 + 3,
                         target=scoreset.target,
                         identifier=scoreset.target.ensembl_id
                     )
