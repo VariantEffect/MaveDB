@@ -121,7 +121,7 @@ class TestFilterMixin(TestCase):
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
         obj3 = ExperimentSetFactory(title='Hello world')
-        obj4 = ExperimentSetFactory()
+        obj4 = ExperimentSetFactory(title="nothing")
 
         q = filter_.search_to_q(
             value=['hello', 'world'],
