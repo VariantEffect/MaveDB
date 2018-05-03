@@ -15,6 +15,8 @@ import django.contrib.auth.views as auth_views
 from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
 
+from main.context_processors import baseurl
+
 from urn.validators import (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
     MAVEDB_EXPERIMENT_URN_PATTERN,
@@ -137,53 +139,77 @@ def manage_instance(request, urn):
         user=request.user,
         instance=instance,
         required=True,
-        prefix="administrator_management",
+        prefix="{}_management".format(GroupTypes.ADMIN),
+    )
+    editor_select_form = SelectUsersForm(
+        group=GroupTypes.EDITOR,
+        instance=instance,
+        user=request.user,
+        prefix="{}_management".format(GroupTypes.EDITOR),
     )
     viewer_select_form = SelectUsersForm(
         group=GroupTypes.VIEWER,
         instance=instance,
         user=request.user,
-        prefix="viewer_management",
+        prefix="{}_management".format(GroupTypes.VIEWER),
     )
 
     context["instance"] = instance
+    context['group_types'] = GroupTypes
     context["admin_select_form"] = admin_select_form
+    context["editor_select_form"] = editor_select_form
     context["viewer_select_form"] = viewer_select_form
 
     if request.method == "POST":
         # Hidden list in each form submission so we can determine which
         # form was submitted
-        if 'administrators[]' in request.POST:
+        if '{}[]'.format(GroupTypes.ADMIN) in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
                 user=request.user,
                 group=GroupTypes.ADMIN,
                 instance=instance,
                 required=True,
-                prefix="administrator_management"
+                prefix="{}_management".format(GroupTypes.ADMIN)
             )
-        elif 'viewers[]' in request.POST:
+        elif '{}[]'.format(GroupTypes.EDITOR) in request.POST:
+            post_form = SelectUsersForm(
+                data=request.POST,
+                user=request.user,
+                group=GroupTypes.EDITOR,
+                instance=instance,
+                prefix="{}_management".format(GroupTypes.EDITOR)
+            )
+        elif '{}[]'.format(GroupTypes.VIEWER) in request.POST:
             post_form = SelectUsersForm(
                 data=request.POST,
                 user=request.user,
                 group=GroupTypes.VIEWER,
                 instance=instance,
-                prefix="viewer_management"
+                prefix="{}_management".format(GroupTypes.VIEWER)
             )
 
         if post_form is not None and post_form.is_valid():
-            post_form.process_user_list()
+            base_url = baseurl(request)['BASE_URL']
+            post_form.process_user_list(base_url)
             instance.last_edit_by = request.user
             assign_superusers_as_admin(instance)
             instance.save()
             messages.success(
-                request, "Management updated for {}".format(instance.urn))
+                request, "Management updated for {}.".format(instance.urn))
             return redirect("accounts:profile")
+        else:
+            messages.error(
+                request,
+                "Could not update {} management changes. "
+                "Check your submission for errors.".format(instance.urn))
 
     # Replace the form that has changed. If it reaches this point,
     # it means there were errors in the form.
     if post_form is not None and post_form.group == GroupTypes.ADMIN:
         context["admin_select_form"] = post_form
+    elif post_form is not None and post_form.group == GroupTypes.EDITOR:
+        context["editor_select_form"] = post_form
     elif post_form is not None and post_form.group == GroupTypes.VIEWER:
         context["viewer_select_form"] = post_form
 
