@@ -328,7 +328,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     def children(self):
         attr, model_name, app_label = child_attr_map[self.__class__.__name__]
         if hasattr(self, attr):
-            return getattr(self, attr).all()
+            return getattr(self, attr).order_by('urn')
         else:
             if model_name is None:
                 return None
