@@ -22,14 +22,14 @@
       {% if instance.previous_version %}
         Previous version: <a href="{% url 'dataset:scoreset_detail' instance.previous_version.urn %}">{{instance.previous_version}}</a><br>
       {% endif %}
-      Current version: <a href="{% url 'dataset:scoreset_detail' instance.current_version.urn %}">{{instance.current_version}}</a>
+      Current version: <a href="{% url 'dataset:scoreset_detail' instance.current_public_version.urn %}">{{instance.current_public_version}}</a>
     {% endif %}
   </p>
 </div>
 
 <div class="row">
 
-  <div class="hidden-sm sidenav border border-top-0 border-bottom-0 border-left-0 border-secondary" style="padding-right: 50px;" >
+  <div class="col-auto sidenav border-right">
     <a href="#contributors">Contributors</a>
 
     {% if instance.class_name != "experimentset" %}
@@ -59,7 +59,7 @@
     {% endif %}
 
     {% if instance.class_name == "scoreset" %}
-      <a href="#variants">Preview</a>
+      <a href="#variants">Variants</a>
     {% endif %}
 
     {% if instance.class_name == "scoreset" %}
