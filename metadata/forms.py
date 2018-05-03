@@ -26,7 +26,7 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
             required=False,
             queryset=self.id_class.objects.all(),
             widget=forms.Select(
-                attrs={"class": "select2 select2-token-select"}
+                attrs={"class": "select2 select2-token-select"},
             ),
         )
         # Re-order the fields manually. Setting field order before `super`
