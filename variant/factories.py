@@ -23,6 +23,16 @@ from .models import Variant
 sample_hgvs = ['c.101G>C', 'c.10C>A', 'c.41G>A', 'c.53G>T', 'c.17C>G']
 
 
+def make_data(instance):
+    return {
+        constants.variant_score_data: {
+            default_dataset()[constants.score_columns][0]:
+                factory.fuzzy.FuzzyFloat(low=-1, high=1).fuzz()
+        },
+        constants.variant_count_data: {},
+    }
+
+
 def generate_hgvs():
     """Generates a random hgvs string from a small sample."""
     return choice(sample_hgvs)
@@ -38,8 +48,4 @@ class VariantFactory(DjangoModelFactory):
     urn = None
     scoreset = factory.SubFactory(ScoreSetFactory)
     hgvs = factory.fuzzy.FuzzyChoice(sample_hgvs)
-    data = {
-        constants.variant_score_data: {
-            default_dataset()[constants.score_columns][0]: 1.0},
-        constants.variant_count_data: {},
-    }
+    data = factory.lazy_attribute(make_data)
