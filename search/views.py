@@ -36,14 +36,17 @@ def search_view(request):
     if request.method == "GET" and request.GET:
         if search_all:
             try:
-                v_list = list(csv.reader(
+                parsed_list = list(csv.reader(
                     [v.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ')
                      for v in request.GET.getlist('search', [])]
                 ))
-                v_list = [sl[0] for sl in v_list]
-                q = searher.search_all(v_list, join_func=searher.or_join_qs)
+                flattened = []
+                for sublist in parsed_list:
+                    if isinstance(sublist, list):
+                        flattened.extend(sublist)
+                q = searher.search_all(flattened, join_func=searher.or_join_qs)
                 user_q = user_searcher.search_all(
-                    v_list, join_func=searher.or_join_qs)
+                    flattened, join_func=searher.or_join_qs)
             except (ValueError, TypeError):
                 q = None
                 user_q = None
@@ -71,24 +74,28 @@ def search_view(request):
             else:
                 q = searher.and_join_qs(qs)
 
-        if q is None or user_q is None:
-            # Invalid query causing a CSV reader error.
-            experiments = Experiment.objects.none()
-        else:
+        if not q and not user_q:
+            # Error occurred during CSV parsing.
+            return Experiment.objects.none()
+
+        if q:
             experiments = experiments.filter(q).distinct()
-            if user_q:
-                users = User.objects.filter(user_q).distinct()
-                user_experiments = [
-                    u.profile.contributor_experiments()
-                    for u in users if not user_is_anonymous(u)
-                ]
-                user_experiments = reduce(
-                    lambda x, y: x.union(y), user_experiments
-                )
-                if not search_all:
-                    experiments = experiments.intersection(user_experiments)
-                else:
-                    experiments = experiments.union(user_experiments)
+        if user_q:
+            users = User.objects.filter(user_q).distinct()
+            user_experiments = [
+                u.profile.contributor_experiments()
+                for u in users if not user_is_anonymous(u)
+            ]
+            user_experiments = reduce(
+                lambda x, y: x.union(y),
+                user_experiments,
+                Experiment.objects.none()
+            )
+            if not search_all:
+                experiments = experiments.intersection(user_experiments)
+            else:
+                experiments = experiments.union(user_experiments)
+
     context = {
         "meta_search_form": meta_search_form,
         "meta_id_search_form": meta_id_search_form,
