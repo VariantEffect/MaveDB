@@ -4,6 +4,7 @@ staticfiles/
 /static/
 .env
 debug.log
+.pytest_cache/*
 
 geckodriver.log
 *.pyc
