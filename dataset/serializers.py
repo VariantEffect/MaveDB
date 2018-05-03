@@ -1,3 +1,6 @@
+import json
+import logging
+
 from rest_framework import serializers
 
 from core.serializers import TimeStampedModelSerializer
@@ -15,6 +18,9 @@ from .models.base import DatasetModel
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
 from .models.scoreset import ScoreSet
+
+
+logger = logging.getLogger('django')
 
 
 class DatasetModelSerializer(TimeStampedModelSerializer):
@@ -49,8 +55,10 @@ class ScoreSetSerializer(DatasetModelSerializer):
     count_columns = serializers.ListSerializer(child=serializers.CharField())
 
     previous_version = serializers.StringRelatedField(many=False)
-    next_version = serializers.StringRelatedField(many=False)
-    current_version = serializers.StringRelatedField(many=False)
+    next_version = serializers.StringRelatedField(
+        source="next_public_version", many=False)
+    current_version = serializers.StringRelatedField(
+        source='current_public_version', many=False)
 
     class Meta(DatasetModelSerializer.Meta):
         model = ScoreSet
@@ -62,7 +70,8 @@ class ScoreSetSerializer(DatasetModelSerializer):
 
 
 class ExperimentSerializer(DatasetModelSerializer):
-    scoresets = serializers.StringRelatedField(many=True)
+    scoresets = serializers.StringRelatedField(
+        source='public_scoresets', many=True)
     experimentset = serializers.StringRelatedField(many=False)
 
     class Meta(DatasetModelSerializer.Meta):
@@ -73,7 +82,8 @@ class ExperimentSerializer(DatasetModelSerializer):
 
 
 class ExperimentSetSerializer(DatasetModelSerializer):
-    experiments = serializers.StringRelatedField(many=True)
+    experiments = serializers.StringRelatedField(
+        source='public_experiments', many=True)
 
     class Meta(DatasetModelSerializer.Meta):
         model = ExperimentSet
