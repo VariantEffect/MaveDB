@@ -2,12 +2,10 @@ import datetime
 
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
-from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 
 from main.models import Licence
-import dataset.constants as constants
 from variant.factories import VariantFactory
 
 from ..models.scoreset import default_dataset, ScoreSet
@@ -115,3 +113,25 @@ class TestScoreSet(TestCase):
         self.assertEqual(scs.dataset_columns, default_dataset())
         self.assertEqual(scs.variants.count(), 0)
         self.assertEqual(scs.last_child_value, 0)
+
+    def test_can_traverse_public_replaced_by_tree(self):
+        scs_1 = ScoreSetFactory(private=False)
+        scs_2 = ScoreSetFactory(
+            private=False, experiment=scs_1.experiment, replaces=scs_1)
+        scs_3 = ScoreSetFactory(
+            private=True, experiment=scs_2.experiment, replaces=scs_2)
+        self.assertEqual(scs_1.current_public_version, scs_2)
+        self.assertEqual(scs_2.current_public_version, scs_2)
+
+    def test_next_public_version_returns_none_if_next_is_private(self):
+        scs_1 = ScoreSetFactory(private=False)
+        scs_2 = ScoreSetFactory(
+            private=True, experiment=scs_1.experiment, replaces=scs_1)
+        self.assertEqual(scs_1.next_public_version, None)
+        self.assertEqual(scs_2.next_public_version, None)
+
+    def test_next_public_version_returns_next_if_next_is_public(self):
+        scs_1 = ScoreSetFactory(private=False)
+        scs_2 = ScoreSetFactory(
+            private=False, experiment=scs_1.experiment, replaces=scs_1)
+        self.assertEqual(scs_1.next_public_version, scs_2)

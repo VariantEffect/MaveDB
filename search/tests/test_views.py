@@ -77,3 +77,49 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.exp1.urn)
         self.assertContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
+
+    def test_can_search_comma_sep_input(self):
+        self.exp1.private = False
+        self.exp1.title = "foo bar"
+        self.exp2.private = False
+        self.exp2.title = 'Hello world'
+        self.exp3.private = False
+        self.exp1.save()
+        self.exp2.save()
+        self.exp3.save()
+
+        user = UserFactory()
+        assign_user_as_instance_admin(user, self.exp1)
+        request = self.factory.get(
+            self.path + '/?search={}%2C{}'.format(
+                self.exp1.title,
+                self.exp2.title)
+        )
+
+        response = search_view(request)
+        self.assertContains(response, self.exp1.urn)
+        self.assertContains(response, self.exp2.urn)
+        self.assertNotContains(response, self.exp3.urn)
+
+    def test_double_quoted_comma_sep_not_split_input(self):
+        self.exp1.private = False
+        self.exp1.title = "foo bar"
+        self.exp2.private = False
+        self.exp2.title = '"Hello,world"'
+        self.exp3.private = False
+        self.exp1.save()
+        self.exp2.save()
+        self.exp3.save()
+
+        user = UserFactory()
+        assign_user_as_instance_admin(user, self.exp1)
+        request = self.factory.get(
+            self.path + '/?search={}%2C{}'.format(
+                self.exp1.title,
+                self.exp2.title)
+        )
+
+        response = search_view(request)
+        self.assertContains(response, self.exp1.urn)
+        self.assertContains(response, self.exp2.urn)
+        self.assertNotContains(response, self.exp3.urn)

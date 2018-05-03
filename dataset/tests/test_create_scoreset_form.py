@@ -132,10 +132,18 @@ class TestScoreSetForm(TestCase):
             data['experiment']
         )
 
+    def test_private_entries_not_in_replaces_options(self):
+        data, files = self.make_post_data(make_exp=False)
+        obj1 = ScoreSetFactory(private=True)
+        assign_user_as_instance_admin(self.user, obj1)
+        assign_user_as_instance_admin(self.user, obj1.parent)
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertEqual(form.fields['replaces'].queryset.count(), 0)
+
     def test_replaces_options_can_be_seeded_from_experiment(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()
-        scs = ScoreSetFactory(experiment=exp)
+        scs = ScoreSetFactory(private=False, experiment=exp)
         scs2 = ScoreSetFactory()
         assign_user_as_instance_admin(self.user, exp)
         assign_user_as_instance_admin(self.user, scs)
@@ -148,8 +156,8 @@ class TestScoreSetForm(TestCase):
     def test_admin_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()
-        scs = ScoreSetFactory(experiment=exp)
-        _ = ScoreSetFactory(experiment=exp)
+        scs = ScoreSetFactory(private=False, experiment=exp)
+        _ = ScoreSetFactory(private=False, experiment=exp)
         assign_user_as_instance_admin(self.user, exp)
         assign_user_as_instance_admin(self.user, scs)
 
@@ -161,8 +169,8 @@ class TestScoreSetForm(TestCase):
     def test_editor_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()
-        scs = ScoreSetFactory(experiment=exp)
-        _ = ScoreSetFactory(experiment=exp)
+        scs = ScoreSetFactory(private=False, experiment=exp)
+        _ = ScoreSetFactory(private=False, experiment=exp)
         assign_user_as_instance_editor(self.user, exp)
         assign_user_as_instance_editor(self.user, scs)
 
@@ -173,10 +181,11 @@ class TestScoreSetForm(TestCase):
 
     def test_viewer_scoresets_do_not_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
-        obj1 = ScoreSetFactory()
+        obj1 = ScoreSetFactory(private=False)
         assign_user_as_instance_viewer(self.user, obj1)
+        assign_user_as_instance_viewer(self.user, obj1.parent)
         form = ScoreSetForm(data=data, files=files, user=self.user)
-        self.assertEqual(form.fields['experiment'].queryset.count(), 0)
+        self.assertEqual(form.fields['replaces'].queryset.count(), 0)
 
     def test_from_request_locks_experiment_to_instance_experiment(self):
         inst = ScoreSetFactory()
@@ -339,3 +348,48 @@ class TestScoreSetForm(TestCase):
         model = form.save()
         result = model.extra_metadata
         self.assertEqual(result, dict_)
+
+    def test_cannot_replace_scoreset_that_is_already_replaced(self):
+        scs1 = ScoreSetFactory(private=False)
+        scs2 = ScoreSetFactory(
+            private=False, experiment=scs1.parent, replaces=scs1)
+        assign_user_as_instance_admin(self.user, scs1)
+        assign_user_as_instance_admin(self.user, scs2)
+        assign_user_as_instance_admin(self.user, scs1.parent)
+
+        data, files = self.make_post_data(make_exp=False)
+        data['replaces'] = scs1.pk
+        data['experiment'] = scs1.parent.pk
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+
+    def test_cannot_replace_a_private_scoreset(self):
+        scs1 = ScoreSetFactory(private=True)
+        assign_user_as_instance_admin(self.user, scs1)
+        assign_user_as_instance_admin(self.user, scs1.parent)
+
+        data, files = self.make_post_data(make_exp=False)
+        data['replaces'] = scs1.pk
+        data['experiment'] = scs1.parent.pk
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+
+    def test_form_scoreset_instance_not_in_replace_options(self):
+        scs = ScoreSetFactory(private=False)
+        data, files = self.make_post_data()
+        assign_user_as_instance_admin(self.user, scs.experiment)
+        assign_user_as_instance_admin(self.user, scs)
+        form = ScoreSetForm(
+            data=data, files=files, user=self.user, instance=scs)
+        self.assertNotIn(scs, form.fields['replaces'].queryset.all())
+
+    def test_cant_replace_self(self):
+        scs1 = ScoreSetFactory(private=False)
+        assign_user_as_instance_admin(self.user, scs1)
+        assign_user_as_instance_admin(self.user, scs1.parent)
+        data, files = self.make_post_data(make_exp=False)
+        data['replaces'] = scs1.pk
+        data['experiment'] = scs1.parent.pk
+        form = ScoreSetForm(
+            data=data, files=files, instance=scs1, user=self.user)
+        self.assertFalse(form.is_valid())

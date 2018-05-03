@@ -20,13 +20,15 @@ from metadata.factories import (
     KeywordFactory, PubmedIdentifierFactory, DoiIdentifierFactory,
     SraIdentifierFactory, UniprotOffsetFactory, EnsemblOffsetFactory,
     RefseqOffsetFactory, UniprotIdentifierFactory, EnsemblIdentifierFactory,
-    RefseqIdentifierFactory
+    RefseqIdentifierFactory, EnsemblOffset, UniprotOffset, RefseqOffset
 )
 
 from variant.factories import VariantFactory
 
 import dataset.constants as constants
-from ..factories import ScoreSetFactory, ExperimentFactory
+from ..factories import (
+    ScoreSetFactory, ExperimentFactory, ScoreSetWithTargetFactory
+)
 from ..models.scoreset import ScoreSet
 from ..views.scoreset import (
     ScoreSetDetailView, ScoreSetCreateView, ScoreSetEditView
@@ -209,8 +211,8 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
 
     def test_replaces_options_are_restricted_to_admin_instances(self):
         exp1 = ExperimentFactory()
-        scs_1 = ScoreSetFactory(experiment=exp1)
-        scs_2 = ScoreSetFactory(experiment=exp1)
+        scs_1 = ScoreSetFactory(experiment=exp1, private=False)
+        scs_2 = ScoreSetFactory(experiment=exp1, private=False)
         assign_user_as_instance_admin(self.user, scs_1)
         assign_user_as_instance_viewer(self.user, scs_2)
 
@@ -223,8 +225,8 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
 
     def test_replaces_options_are_restricted_to_editor_instances(self):
         exp1 = ExperimentFactory()
-        scs_1 = ScoreSetFactory(experiment=exp1)
-        scs_2 = ScoreSetFactory(experiment=exp1)
+        scs_1 = ScoreSetFactory(experiment=exp1, private=False)
+        scs_2 = ScoreSetFactory(experiment=exp1, private=False)
         assign_user_as_instance_editor(self.user, scs_1)
         assign_user_as_instance_viewer(self.user, scs_2)
 
@@ -237,20 +239,14 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
 
     def test_can_submit_and_create_scoreset_when_forms_are_valid(self):
         data = self.post_data.copy()
-        scs1 = ScoreSetFactory()
+        scs1 = ScoreSetFactory(private=False)
         assign_user_as_instance_admin(self.user, scs1)
-        assign_user_as_instance_admin(self.user, scs1.parent)
+        assign_user_as_instance_admin(self.user, scs1.experiment)
         data['experiment'] = [scs1.parent.pk]
         data['replaces'] = [scs1.pk]
         data['keywords'] = ['protein', 'kinase']
         data['abstract_text'] = "Hello world"
         data['method_text'] = "foo bar"
-
-        ref = RefseqIdentifierFactory()
-        identifier = ref.identifier
-        data['refseq-offset-identifier'] = identifier
-        data['refseq-offset-offset'] = 5
-        ref.delete()
 
         request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
@@ -265,10 +261,9 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         self.assertEqual(scoreset.keywords.count(), 2)
         self.assertEqual(scoreset.abstract_text, 'Hello world')
         self.assertEqual(scoreset.method_text, 'foo bar')
-        self.assertEqual(
-            scoreset.target.refseqoffset.identifier.identifier, identifier)
-        self.assertEqual(
-            scoreset.target.refseqoffset.offset, 5)
+        self.assertEqual(scoreset.method_text, 'foo bar')
+        self.assertEqual(scoreset.target.name, 'BRCA1')
+        self.assertEqual(scoreset.target.wt_sequence.sequence, 'ATCG')
 
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()
@@ -449,13 +444,73 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         user_is_admin_for_instance(scoreset.experiment.experimentset, su)
 
     def test_associates_new_uniprot_identifiers(self):
-        pass
+        data = self.post_data.copy()
+        exp = ExperimentFactory(private=False)
+        assign_user_as_instance_admin(self.user, exp)
+        data['experiment'] = [exp.pk]
+
+        obj = UniprotIdentifierFactory()
+        identifier = obj.identifier
+        data['uniprot-offset-identifier'] = identifier
+        data['uniprot-offset-offset'] = 5
+        obj.delete()
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
+        scoreset = ScoreSet.objects.order_by("-urn").first()
+        self.assertEqual(scoreset.target.get_uniprot_offset_annotation().
+                         identifier.identifier, identifier)
+        self.assertEqual(scoreset.target.
+                         get_uniprot_offset_annotation().offset, 5)
 
     def test_associates_new_ensembl_identifiers(self):
-        pass
+        data = self.post_data.copy()
+        exp = ExperimentFactory(private=False)
+        assign_user_as_instance_admin(self.user, exp)
+        data['experiment'] = [exp.pk]
+
+        obj = EnsemblIdentifierFactory()
+        identifier = obj.identifier
+        data['ensembl-offset-identifier'] = identifier
+        data['ensembl-offset-offset'] = 5
+        obj.delete()
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
+        scoreset = ScoreSet.objects.order_by("-urn").first()
+        self.assertEqual(scoreset.target.get_ensembl_offset_annotation().
+                         identifier.identifier, identifier)
+        self.assertEqual(scoreset.target.
+                         get_ensembl_offset_annotation().offset, 5)
 
     def test_associates_new_refseq_identifiers(self):
-        pass
+        data = self.post_data.copy()
+        exp = ExperimentFactory(private=False)
+        assign_user_as_instance_admin(self.user, exp)
+        data['experiment'] = [exp.pk]
+
+        obj = RefseqIdentifierFactory()
+        identifier = obj.identifier
+        data['refseq-offset-identifier'] = identifier
+        data['refseq-offset-offset'] = 5
+        obj.delete()
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
+        scoreset = ScoreSet.objects.order_by("-urn").first()
+        self.assertEqual(scoreset.target.get_refseq_offset_annotation().
+                         identifier.identifier, identifier)
+        self.assertEqual(scoreset.target.
+                         get_refseq_offset_annotation().offset, 5)
 
 
 class TestEditScoreSetView(TestCase, TestMessageMixin):
@@ -671,10 +726,80 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
 
     def test_resubmit_blank_uniprot_id_deletes_offset_instance(self):
-        pass
+        data = self.post_data.copy()
+        scs = ScoreSetWithTargetFactory()
+        UniprotOffsetFactory(
+            target=scs.target, identifier=scs.target.uniprot_id)
+        self.assertIsNotNone(scs.target.uniprot_id)
+        self.assertIsNotNone(scs.target.get_uniprot_offset_annotation())
+
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data['experiment'] = [scs.parent.pk]
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method='post', path=path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNotNone(scs.target.uniprot_id, 1)
+        self.assertEqual(UniprotOffset.objects.count(), 0)
+
+        scs = ScoreSet.objects.first()
+        self.assertIsNone(scs.target.get_uniprot_offset_annotation())
 
     def test_resubmit_blank_refseq_id_deletes_offset_instance(self):
-        pass
+        data = self.post_data.copy()
+        scs = ScoreSetWithTargetFactory()
+        RefseqOffsetFactory(
+            target=scs.target, identifier=scs.target.refseq_id)
+        self.assertIsNotNone(scs.target.refseq_id)
+        self.assertIsNotNone(scs.target.get_refseq_offset_annotation())
+
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data['experiment'] = [scs.parent.pk]
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method='post', path=path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNotNone(scs.target.refseq_id, 1)
+        self.assertEqual(RefseqOffset.objects.count(), 0)
+
+        scs = ScoreSet.objects.first()
+        self.assertIsNone(scs.target.get_refseq_offset_annotation())
 
     def test_resubmit_blank_ensembl_id_deletes_offset_instance(self):
-        pass
+        data = self.post_data.copy()
+        scs = ScoreSetWithTargetFactory()
+        EnsemblOffsetFactory(
+            target=scs.target, identifier=scs.target.ensembl_id)
+
+        self.assertIsNotNone(scs.target.ensembl_id)
+        self.assertIsNotNone(scs.target.get_ensembl_offset_annotation())
+
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data['experiment'] = [scs.parent.pk]
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method='post', path=path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNotNone(scs.target.ensembl_id, 1)
+        self.assertEqual(EnsemblOffset.objects.count(), 0)
+
+        scs = ScoreSet.objects.first()
+        self.assertIsNone(scs.target.get_ensembl_offset_annotation())

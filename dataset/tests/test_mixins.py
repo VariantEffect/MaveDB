@@ -207,17 +207,19 @@ class TestExperimentSearchMixin(TestCase):
 
     def test_can_search_by_genome_id(self):
         obj1 = self.factory()
-        obj2 = None
-        genome1 = obj1.children.first().get_target().\
-            get_reference_genomes().first()
+        obj2 = self.factory()
+        genome1 = obj1.scoresets.first().\
+            get_target().get_reference_genomes().first()
+        genome2 = obj2.scoresets.first().\
+            get_target().get_reference_genomes().first()
 
-        break_ = False
-        while not break_:
-            obj2 = self.factory()
-            genome2 = obj2.children.first().get_target().\
-                get_reference_genomes().first()
+        while genome1.get_identifier() == genome2.get_identifier():
+            genome2 = ReferenceGenomeFactory()
             if genome1.get_identifier() != genome2.get_identifier():
-                break_ = True
+                rm = obj2.scoresets.first().\
+                        get_target().get_reference_maps().first()
+                rm.genome = genome2
+                rm.save()
 
         q = self.searcher.search_all(
             value_or_dict={'assembly': genome1.get_identifier()},

@@ -6,10 +6,7 @@ from django.contrib.auth import get_user_model
 from accounts.factories import UserFactory
 
 from dataset.factories import ExperimentSetFactory, ScoreSetFactory
-from metadata.factories import (
-    KeywordFactory, DoiIdentifierFactory, SraIdentifierFactory,
-    PubmedIdentifierFactory
-)
+from metadata.factories import KeywordFactory
 
 User = get_user_model()
 
