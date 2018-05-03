@@ -117,10 +117,10 @@ class ExternalIdentifier(TimeStampedModel):
         verbose_name_plural = "Other identifiers"
 
     def __str__(self):
-        return "{}:{}".format(self.DATABASE_NAME, self.identifier)
+        return "{}".format(self.identifier)
 
     def display_name(self):
-        return "{}".format(self.identifier)
+        return "{}:{}".format(self.DATABASE_NAME, self.identifier)
 
     def format_url(self):
         if self.IDUTILS_SCHEME is not None:
@@ -283,6 +283,7 @@ class AnnotationOffset(models.Model):
     """
     class Meta:
         abstract = True
+        unique_together = ('target', 'identifier',)
 
     def __str__(self):
         return "{}Offset(target={}, identifier={}, offset={})".format(
@@ -295,7 +296,7 @@ class AnnotationOffset(models.Model):
         default=0,
         verbose_name='Wild-type offset',
     )
-    target = models.OneToOneField(
+    target = models.ForeignKey(
         to=genome_models.TargetGene,
         on_delete=models.CASCADE,
         default=None,
@@ -322,7 +323,7 @@ class UniprotOffset(AnnotationOffset):
     An offset value unique to an :class:`UniprotIdentifier` and a
     :class:`TargetGene`.
     """
-    identifier = models.OneToOneField(
+    identifier = models.ForeignKey(
         to=UniprotIdentifier,
         on_delete=models.CASCADE,
         default=None,
@@ -338,7 +339,7 @@ class RefseqOffset(AnnotationOffset):
     An offset value unique to an :class:`RefseqIdentifier` and a
     :class:`TargetGene`.
     """
-    identifier = models.OneToOneField(
+    identifier = models.ForeignKey(
         to=RefseqIdentifier,
         on_delete=models.CASCADE,
         default=None,
@@ -354,7 +355,7 @@ class EnsemblOffset(AnnotationOffset):
     An offset value unique to an :class:`EnsemblIdentifier` and a
     :class:`TargetGene`.
     """
-    identifier = models.OneToOneField(
+    identifier = models.ForeignKey(
         to=EnsemblIdentifier,
         on_delete=models.CASCADE,
         default=None,
