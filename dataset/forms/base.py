@@ -58,7 +58,10 @@ class DatasetModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.fields['short_description'].widget = forms.Textarea(
-            attrs={'cols': "40", 'rows': "4"})
+            attrs={'cols': "40", 'rows': "4"}
+        )
+        self.fields['short_description'].help_text = \
+            "A short plain text description limited to 500 characters."
         self.fields['title'].widget = forms.TextInput()
         self.fields['abstract_text'].widget = forms.Textarea()
         self.fields['method_text'].widget = forms.Textarea()

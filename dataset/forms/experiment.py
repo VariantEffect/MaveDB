@@ -28,6 +28,20 @@ class ExperimentForm(DatasetModelForm):
         )
         self.set_experimentset_options()
 
+        self.fields['abstract_text'].help_text = (
+            "A plain text or markdown abstract relating to the study "
+            "conducted. Click the preview button "
+            "to view a rendered preview of what other users will "
+            "see once you publish your submission."
+        )
+        self.fields['method_text'].help_text = (
+            "A plain text or markdown method describing experimental "
+            "design and data collection. Click the preview button "
+            "to view a rendered preview of what other users will "
+            "see once you publish your submission."
+        )
+
+
     def clean(self):
         cleaned_data = super().clean()
         experimentset = cleaned_data.get('experimentset', None)
