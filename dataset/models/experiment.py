@@ -135,6 +135,9 @@ class Experiment(DatasetModel):
             s.get_display_target_organisms() for s in self.children]
         return list(sorted(reduce(lambda x, y: x | y, organism_sets, set())))
 
+    def public_scoresets(self):
+        return self.children.exclude(private=True)
+
 
 # --------------------------------------------------------------------------- #
 #                               Post Save

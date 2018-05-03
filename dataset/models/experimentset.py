@@ -53,6 +53,9 @@ class ExperimentSet(DatasetModel):
         urn = "{}{}".format(self.URN_PREFIX, padded_expset_number)
         return urn
 
+    def public_experiments(self):
+        return self.children.exclude(private=True)
+
 
 # --------------------------------------------------------------------------- #
 #                            Post Save
