@@ -461,7 +461,10 @@ def create_user_profile(sender, instance, created, **kwargs):
     new profile for the user if this a first time call.
     """
     if created:
-        Profile.objects.create(user=instance)
+        email = None
+        if instance.email:
+            email = instance.email
+        Profile.objects.create(user=instance, email=email)
 
 
 @receiver(post_save, sender=User)
