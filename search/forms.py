@@ -55,18 +55,20 @@ class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
         widget=forms.widgets.TextInput()
     )
 
-    keywords = forms.CharField(
-        label='Keywords',
-        help_text='Search by keywords.',
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.text, i.text)
-                for i in Keyword.objects.all()
-            ]))
-        ),
-    )
+    def __init__(self, *args, **kwargs):
+        super(MetadataSearchForm, self).__init__(*args, **kwargs)
+        self.fields['keywords'] = forms.CharField(
+            label='Keywords',
+            help_text='Search by keywords.',
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.text, i.text)
+                    for i in Keyword.objects.all()
+                ]))
+            ),
+        )
 
     def clean_method_abstract(self):
         method_abtract = self.cleaned_data.get("method_abstract", "")
@@ -120,42 +122,45 @@ class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
 
 class MetaIdentifiersSearchForm(forms.Form, ExperimentSearchMixin):
     """Search by PubMed, SRA and DOI."""
-    pubmed_ids = forms.CharField(
-        label='PubMed identifiers',
-        help_text='Search by PubMed identifiers associated with an entry.',
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in PubmedIdentifier.objects.all()
-            ]))
-        ),
-    )
-    sra_ids = forms.CharField(
-        label='SRA accessions',
-        help_text='Search by SRA accessions associated with an entry.',
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in SraIdentifier.objects.all()
-            ]))
-        ),
-    )
-    doi_ids = forms.CharField(
-        label='DOI accessions',
-        help_text='Search by DOI accessions associated with an entry.',
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in DoiIdentifier.objects.all()
-            ]))
-        ),
-    )
+
+    def __init__(self, *args, **kwargs):
+        super(MetaIdentifiersSearchForm, self).__init__(*args, **kwargs)
+        self.fields['pubmed_ids'] = forms.CharField(
+            label='PubMed identifiers',
+            help_text='Search by PubMed identifiers associated with an entry.',
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in PubmedIdentifier.objects.all()
+                ]))
+            ),
+        )
+        self.fields['sra_ids'] = forms.CharField(
+            label='SRA accessions',
+            help_text='Search by SRA accessions associated with an entry.',
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in SraIdentifier.objects.all()
+                ]))
+            ),
+        )
+        self.fields['doi_ids'] = forms.CharField(
+            label='DOI accessions',
+            help_text='Search by DOI accessions associated with an entry.',
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in DoiIdentifier.objects.all()
+                ]))
+            ),
+        )
 
     def clean_pubmed_ids(self):
         field_name = 'pubmed_ids'
@@ -192,54 +197,56 @@ class TargetIdentifierSearchForm(forms.Form, ExperimentSearchMixin):
     """
     Search by uniprot, refseq, ensembl and genome assembly.
     """
-    uniprot = forms.CharField(
-        label='UniProt accession',
-        help_text='Search by a target\'s UniProt accession.',
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in UniprotIdentifier.objects.all()
-            ]))
-        ),
-    )
-    refseq = forms.CharField(
-        label='RefSeq accession',
-        help_text='Search by a target\'s RefSeq accession.',
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in RefseqIdentifier.objects.all()
-            ]))
-        ),
-    )
-    ensembl = forms.CharField(
-        required=False,
-        label='Ensembl accession',
-        help_text='Search by a target\'s Ensembl accession.',
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in EnsemblIdentifier.objects.all()
-            ]))
-        ),
-    )
-    target = forms.CharField(
-        required=False,
-        label='Target gene name',
-        help_text='Search by a target\'s gene name.',
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.name, i.name)
-                for i in TargetGene.objects.all()
-            ]))
-        ),
-    )
+    def __init__(self, *args, **kwargs):
+        super(TargetIdentifierSearchForm, self).__init__(*args, **kwargs)
+        self.fields['uniprot'] = forms.CharField(
+            label='UniProt accession',
+            help_text='Search by a target\'s UniProt accession.',
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in UniprotIdentifier.objects.all()
+                ]))
+            ),
+        )
+        self.fields['refseq'] = forms.CharField(
+            label='RefSeq accession',
+            help_text='Search by a target\'s RefSeq accession.',
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in RefseqIdentifier.objects.all()
+                ]))
+            ),
+        )
+        self.fields['ensembl'] = forms.CharField(
+            required=False,
+            label='Ensembl accession',
+            help_text='Search by a target\'s Ensembl accession.',
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in EnsemblIdentifier.objects.all()
+                ]))
+            ),
+        )
+        self.fields['target'] = forms.CharField(
+            required=False,
+            label='Target gene name',
+            help_text='Search by a target\'s gene name.',
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.name, i.name)
+                    for i in TargetGene.objects.all()
+                ]))
+            ),
+        )
 
     def clean_uniprot(self):
         field_name = 'uniprot'
@@ -281,42 +288,44 @@ class TargetIdentifierSearchForm(forms.Form, ExperimentSearchMixin):
 
 class GenomeSearchForm(forms.Form, ExperimentSearchMixin):
     """Search by genome name and assembly"""
-    genome = forms.CharField(
-        required=False,
-        label='Reference name',
-        help_text='Search by a target\'s reference genome.',
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.short_name, i.short_name)
-                for i in ReferenceGenome.objects.all()
-            ]))
-        ),
-    )
-    assembly = forms.CharField(
-        required=False,
-        label='Assembly accession',
-        help_text='Search by a target\'s reference assembly accession.',
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in GenomeIdentifier.objects.all()
-            ]))
-        ),
-    )
-    species = forms.CharField(
-        required=False,
-        label='Reference species',
-        help_text='Search by a target\'s reference genome species.',
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.species_name, i.species_name)
-                for i in ReferenceGenome.objects.all()
-            ]))
+    def __init__(self, *args, **kwargs):
+        super(GenomeSearchForm, self).__init__(*args, **kwargs)
+        self.fields['genome'] = forms.CharField(
+            required=False,
+            label='Reference name',
+            help_text='Search by a target\'s reference genome.',
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.short_name, i.short_name)
+                    for i in ReferenceGenome.objects.all()
+                ]))
+            ),
         )
-    )
+        self.fields['assembly'] = forms.CharField(
+            required=False,
+            label='Assembly accession',
+            help_text='Search by a target\'s reference assembly accession.',
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.identifier, i.identifier)
+                    for i in GenomeIdentifier.objects.all()
+                ]))
+            ),
+        )
+        self.fields['species'] = forms.CharField(
+            required=False,
+            label='Reference species',
+            help_text='Search by a target\'s reference genome species.',
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.species_name, i.species_name)
+                    for i in ReferenceGenome.objects.all()
+                ]))
+            )
+        )
 
     def clean_genome(self):
         field_name = 'genome'

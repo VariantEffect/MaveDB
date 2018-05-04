@@ -37,42 +37,44 @@ logger = logging.getLogger("django")
 
 class UserSearchForm(forms.Form, UserSearchMixin):
     """Search by text fields and keywords."""
-    username = forms.CharField(
-        max_length=None, label="ORCID", required=False,
-        initial=None, empty_value="",
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.username, i.username)
-                for i in User.objects.all()
-                if not user_is_anonymous(i)
-            ]))
-        ),
-    )
-    first_name = forms.CharField(
-        max_length=None, label="First name", required=False,
-        initial=None, empty_value="",
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.first_name, i.first_name)
-                for i in User.objects.all()
-                if not user_is_anonymous(i)
-            ]))
-        ),
-    )
-    last_name = forms.CharField(
-        max_length=None, label="Last name", required=False,
-        initial=None, empty_value="",
-        widget=forms.SelectMultiple(
-            attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.last_name, i.last_name)
-                for i in User.objects.all()
-                if not user_is_anonymous(i)
-            ]))
-        ),
-    )
+    def __init__(self, *args, **kwargs):
+        super(UserSearchForm, self).__init__(*args, **kwargs)
+        self.fields['username']  = forms.CharField(
+            max_length=None, label="ORCID", required=False,
+            initial=None, empty_value="",
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.username, i.username)
+                    for i in User.objects.all()
+                    if not user_is_anonymous(i)
+                ]))
+            ),
+        )
+        self.fields['first_name'] = forms.CharField(
+            max_length=None, label="First name", required=False,
+            initial=None, empty_value="",
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.first_name, i.first_name)
+                    for i in User.objects.all()
+                    if not user_is_anonymous(i)
+                ]))
+            ),
+        )
+        self.fields['last_name'] = forms.CharField(
+            max_length=None, label="Last name", required=False,
+            initial=None, empty_value="",
+            widget=forms.SelectMultiple(
+                attrs={"class": "select2 select2-token-select"},
+                choices=sorted(set([
+                    (i.last_name, i.last_name)
+                    for i in User.objects.all()
+                    if not user_is_anonymous(i)
+                ]))
+            ),
+        )
 
     def clean_first_name(self):
         field_name = 'first_name'

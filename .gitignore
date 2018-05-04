@@ -8,6 +8,7 @@ debug.log
 
 geckodriver.log
 *.pyc
+.sql
 
 # vscode
 .vscode/
