@@ -111,10 +111,8 @@ class TestSearchView(TestCase):
         self.exp2.save()
         self.exp3.save()
 
-        user = UserFactory()
-        assign_user_as_instance_admin(user, self.exp1)
         request = self.factory.get(
-            self.path + '/?search={}%2C{}'.format(
+            self.path + '?search={}%2C{}'.format(
                 self.exp1.title,
                 self.exp2.title)
         )
@@ -123,3 +121,17 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.exp1.urn)
         self.assertContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
+
+    def test_can_search_empty(self):
+        self.exp1.private = False
+        self.exp2.private = False
+        self.exp3.private = False
+        self.exp1.save()
+        self.exp2.save()
+        self.exp3.save()
+
+        request = self.factory.get(self.path + '/?search=')
+        response = search_view(request)
+        self.assertContains(response, self.exp1.urn)
+        self.assertContains(response, self.exp2.urn)
+        self.assertContains(response, self.exp3.urn)

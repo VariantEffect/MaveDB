@@ -1,6 +1,7 @@
 import csv
 from functools import reduce
 from django.shortcuts import render
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 
 from accounts.permissions import user_is_anonymous
@@ -24,14 +25,14 @@ user_searcher = UserSearchMixin()
 
 def search_view(request):
     user_q = None
-    user_search_form = UserSearchForm(request.GET)
+    user_search_form = UserSearchForm()
     meta_search_form = MetadataSearchForm()
     meta_id_search_form = MetaIdentifiersSearchForm()
     target_id_search_form = TargetIdentifierSearchForm()
     genome_search_form = GenomeSearchForm()
     experiments = Experiment.objects.all()
 
-    search_all = bool(request.GET.get('search', ""))
+    search_all = 'search' in request.GET
 
     if request.method == "GET" and request.GET:
         if search_all:
@@ -44,9 +45,14 @@ def search_view(request):
                 for sublist in parsed_list:
                     if isinstance(sublist, list):
                         flattened.extend(sublist)
-                q = searher.search_all(flattened, join_func=searher.or_join_qs)
-                user_q = user_searcher.search_all(
-                    flattened, join_func=searher.or_join_qs)
+                if flattened:
+                    q = searher.search_all(
+                        flattened, join_func=searher.or_join_qs)
+                    user_q = user_searcher.search_all(
+                        flattened, join_func=searher.or_join_qs)
+                else:
+                    q = Q()
+                    user_q = Q()
             except (ValueError, TypeError):
                 q = None
                 user_q = None
@@ -74,27 +80,27 @@ def search_view(request):
             else:
                 q = searher.and_join_qs(qs)
 
-        if not q and not user_q:
+        if q is None and user_q is None:
             # Error occurred during CSV parsing.
-            return Experiment.objects.none()
-
-        if q:
-            experiments = experiments.filter(q).distinct()
-        if user_q:
-            users = User.objects.filter(user_q).distinct()
-            user_experiments = [
-                u.profile.contributor_experiments()
-                for u in users if not user_is_anonymous(u)
-            ]
-            user_experiments = reduce(
-                lambda x, y: x.union(y),
-                user_experiments,
-                Experiment.objects.none()
-            )
-            if not search_all:
-                experiments = experiments.intersection(user_experiments)
-            else:
-                experiments = experiments.union(user_experiments)
+            experiments = Experiment.objects.none()
+        else:
+            if len(q):
+                experiments = experiments.filter(q).distinct()
+            if len(user_q):
+                users = User.objects.filter(user_q).distinct()
+                user_experiments = [
+                    u.profile.contributor_experiments()
+                    for u in users if not user_is_anonymous(u)
+                ]
+                user_experiments = reduce(
+                    lambda x, y: x.union(y),
+                    user_experiments,
+                    Experiment.objects.none()
+                )
+                if not search_all:
+                    experiments = experiments.intersection(user_experiments)
+                else:
+                    experiments = experiments.union(user_experiments)
 
     context = {
         "meta_search_form": meta_search_form,

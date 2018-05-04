@@ -4,7 +4,7 @@
 
 <div class="container mb-4" style="width:100%;">
 	<div class="container" style="float: none; margin: 0 auto;">
-		<form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
+		<form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="get">
 			<input class="form-control mr-sm-1" type="text" aria-label="Search"
 							placeholder="Search..." name="search" style="width:80%;">
 			<button class="btn btn-outline-dark my-2 my-sm-0  white-button" type="submit">
@@ -43,8 +43,7 @@
         {% include 'core/bs_inline_form.html' with form=user_search_form %}
 
         <div class="card-footer bg-white">
-					<button class="btn btn-outline-dark float-right white-button" style="width: 150px;"
-                  type="submit" name="submit" value="Search">Search</button>
+					<button class="btn btn-outline-dark float-right white-button" style="width: 150px;" type="submit">Search</button>
 				</div>
 			</form>
 		
