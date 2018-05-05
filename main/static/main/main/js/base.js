@@ -196,6 +196,27 @@ function repopulateSelect(selectId, listId) {
   }
 }
 
+
+function getNewDataSelectId(formGroupClass) {
+  let parent = document.getElementsByClassName(formGroupClass)[0];
+  let children = parent.getElementsByClassName(
+    "select2-selection__rendered")[0].children;
+  let nums = [];
+  for(let i =0; i < children.length; i++) {
+    let num = children[i].getAttribute('data-select2-id');
+    if (!isNaN(parseInt(num))) {
+      nums.push(parseInt(num));
+    }
+  }
+  let num = nums.sort()[nums.length - 1] + 1;
+  if (isNaN(num)) {
+    return -1;
+  } else {
+    return num
+  }
+}
+
+
 $("#id_experiment").on("change", function() {
   var id = this.value;
   var replaces_selector = "#id_replaces";
@@ -224,6 +245,28 @@ $("#id_experiment").on("change", function() {
             }));
           }
         });
+        
+        // // <li class="select2-selection__choice" title="process" data-select2-id="67">
+        // /* <span class="select2-selection__choice__remove" role="presentation">×</span>process</li> */
+        //
+        //
+        // var options = document.getElementById('id_keywords').children;
+        // console.log(options);
+        // var keywords = data.keywords;
+        // var i, j = 0;
+        // for (i = 0; i < options.length; i++) {
+        //   for (j=0; j<keywords.length; j++)
+        //     if (options[i].value === keywords[j]) {
+        //       console.log(options[i]);
+        //       options[i].selected = true;
+        //
+        //       let li = document.createElement("li")
+        //       li.title = options[i].value;
+        //       li.setAttribute('data-select-id', parseString(getNewDataSelectId('keywords-group')))
+        //
+        //     }
+        // }
+        
       },
       error: function (xhr, errmsg, err) {
         console.log(xhr.status + ": " + xhr + errmsg + err);
@@ -237,6 +280,27 @@ $("#id_target").on("change", function() {
   // First get whatever is in the form and send an ajax request
   // to convert it to markdown.
   var id = this.value;
+  var emptySelect = '---------';
+  
+  var uniprotSelect = document.getElementById(
+    'select2-id_uniprot-offset-identifier-container');
+  var uniprotOffsetElem = document.getElementById(
+    "id_uniprot-offset-offset");
+  
+  var refseqSelect = document.getElementById(
+    'select2-id_refseq-offset-identifier-container');
+  var refseqOffsetElem = document.getElementById(
+    "id_refseq-offset-offset");
+  
+  var ensemblSelect = document.getElementById(
+    'select2-id_ensembl-offset-identifier-container');
+  var ensemblOffsetElem = document.getElementById(
+    "id_ensembl-offset-offset");
+  
+  var nameElem = document.getElementById('id_name');
+  var seqElem = document.getElementById('id_wt_sequence');
+  var genomeElem = document.getElementById('id_genome');
+    
   if (parseInt(id)) {
     $.ajax({
       url: window.location.pathname,
@@ -245,27 +309,81 @@ $("#id_target").on("change", function() {
       dataType: "json",
       success: function (data) {
         console.log(data);
+        var i = 0;
+        var options = document.getElementsByTagName('OPTION');
         var targetName = data.name;
         var wildTypeSequence = data.wt_sequence.sequence;
         var referenceGenome = data.genome;
-        var uniprot = data.uniprot;
-        var refseq = data.refseq;
-        var ensembl = data.ensembl;
+        
+        var uniprot_id = data.uniprot.identifier;
+        var uniprot_offset = data.uniprot.offset;
+        
+        var refseq_id = data.refseq.identifier;
+        var refseq_offset = data.refseq.offset;
+
+        var ensembl_id = data.ensembl.identifier;
+        var ensembl_offset = data.ensembl.offset;
+        
+         
+        if (uniprot_id) {
+          for(i=0; i<options.length; i++) {
+            if (options[i].value === uniprot_id) {
+              options[i].selected = true;
+              uniprotSelect.innerHTML = uniprot_id;
+              uniprotSelect.title = uniprot_id;
+              uniprotOffsetElem.value = uniprot_offset;
+            }
+          }
+        } else {
+          uniprotSelect.innerHTML = emptySelect;
+          uniprotSelect.title = emptySelect;
+          uniprotOffsetElem.value = 0;
+        }
+        
+        if (refseq_id) {
+          for(i=0; i<options.length; i++) {
+            if (options[i].value === refseq_id) {
+              options[i].selected = true;
+              refseqSelect.innerHTML = refseq_id;
+              refseqSelect.title = refseq_id;
+              refseqOffsetElem.value = refseq_offset;
+            }
+          }
+        } else {
+          refseqSelect.innerHTML = emptySelect;
+          refseqSelect.title = emptySelect;
+          refseqOffsetElem.value = 0;
+        }
+        
+        if (ensembl_id) {
+          for(i=0; i<options.length; i++) {
+            if (options[i].value === ensembl_id) {
+              options[i].selected = true;
+              ensemblSelect.innerHTML = ensembl_id;
+              ensemblSelect.title = ensembl_id;
+              ensemblOffsetElem.value = ensembl_offset;
+            }
+          }
+        } else {
+          ensemblSelect.innerHTML = emptySelect;
+          ensemblSelect.title = emptySelect;
+          ensemblOffsetElem.value = 0;
+        }
 
         if (targetName) {
-          $("#id_name").val(targetName);
+          nameElem.value = targetName;
         } else {
-          $("#id_name").val("");
+          nameElem.value = "";
         }
         if (wildTypeSequence) {
-          $("#id_wt_sequence").val(wildTypeSequence);
+          seqElem.value = wildTypeSequence
         } else {
-          $("#id_wt_sequence").val("");
+          seqElem.value = ""
         }
         if (referenceGenome) {
-          $("#id_genome").val(referenceGenome);
+          genomeElem.value = referenceGenome;
         } else {
-          $("#id_genome").val("");
+          genomeElem.value = "";
         }
        },
       error: function (xhr, errmsg, err) {
@@ -274,17 +392,34 @@ $("#id_target").on("change", function() {
     });
     return true;
   } else {
-    $("#id_name").val("");
-    $("#id_wt_sequence").val("");
-    $("#id_genome").val("");
+    nameElem.value = "";
+    seqElem.value = "";
+    genomeElem.value = "";
+    
+    ensemblSelect.innerHTML = emptySelect;
+    ensemblSelect.title = emptySelect;
+    ensemblOffsetElem.value = 0;
+    
+    refseqSelect.innerHTML = emptySelect;
+    refseqSelect.title = emptySelect;
+    refseqOffsetElem.value = 0;
+    
+    uniprotSelect.innerHTML = emptySelect;
+    uniprotSelect.title = emptySelect;
+    uniprotOffsetElem.value = 0;
   }
   return false;
 });
 
 
-function sortTable(id, n) {
-  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+function sortTable(id, n, isHyperlinked) {
+  var table, rows, switching, i, elem, x, y, shouldSwitch, dir, switchcount = 0;
   var x_val, y_val = 0;
+  if (!isHyperlinked) {
+    isHyperlinked = false;
+  }
+  console.log(isHyperlinked);
+
   table = document.getElementById(id);
   switching = true;
   // Set the sorting direction to ascending:
@@ -304,14 +439,32 @@ function sortTable(id, n) {
       one from current row and one from the next: */
       x = rows[i].getElementsByTagName("TD")[n];
       y = rows[i + 1].getElementsByTagName("TD")[n];
+
+      // Some rows will have hyperlinked values. Parse these out into strings
+      if (isHyperlinked) {
+        x_val = "";
+        y_val = "";
+        var x_vals = x.getElementsByTagName('A');
+        var y_vals = y.getElementsByTagName('A');
+        for (elem = 0; elem < x_vals.length; elem++) {
+          x_val += x_vals[elem].innerHTML;
+        }
+        for (elem = 0; elem < y_vals.length; elem++) {
+          y_val += y_vals[elem].innerHTML;
+        }
+      } else {
+        // Otherwise attempt parsing into a float. If that fails,
+        // treat the inner HTML as a string
+        x_val = parseFloat(x.innerHTML.toLowerCase());
+        y_val = parseFloat(y.innerHTML.toLowerCase());
+        if (isNaN(x_val) || isNaN(y_val)) {
+          x_val = x.innerHTML.toLowerCase();
+          y_val = y.innerHTML.toLowerCase();
+        }
+      }
+
       /* Check if the two rows should switch place,
       based on the direction, asc or desc: */
-      x_val = parseFloat(x.innerHTML.toLowerCase());
-      y_val = parseFloat(y.innerHTML.toLowerCase());
-      if (isNaN(x_val) || isNaN(y_val)) {
-        x_val = x.innerHTML.toLowerCase();
-        y_val = y.innerHTML.toLowerCase();
-      }
       if (dir === "asc") {
         if (x_val > y_val) {
           // If so, mark as a switch and break the loop:

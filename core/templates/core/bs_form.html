@@ -15,7 +15,7 @@
 {% endif %}
 
 {% for field in form.visible_fields %}
-  <div class="form-group">
+  <div class="form-group {{ field.label|lower }}-group">
     {{ field.label_tag }}{% if field.field.required %}*{% endif %}
     <label for="{{ field.id_for_label }}">
 
