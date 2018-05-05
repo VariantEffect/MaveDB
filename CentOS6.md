@@ -142,6 +142,23 @@ low-memory EC2 instance will not have enough memory to build `pandoc`, but it
 can be copied from another system if it was built with 
 `--flag pandoc:embed_data_files`.
 
+## Installing and configuring RabbitMQ (Incomplete)
+Using celery to run long running processes requires the broker-messaging backend RabbitMQ.
+Installing RabbitMQ requires the installation of Erlang as a dependency.
+
+    sudo yum -y install erlang
+    sudo yum -y install rabbitmq
+    
+Here are further instructions:
+    
+    https://github.com/rabbitmq/erlang-rpm
+    http://www.rabbitmq.com/install-rpm.html
+
+Once the installation has completed, you will need to start the RabbitMQ service. By default,
+this service listens on port 5672, which you may need to configure.
+
+    service rabbitmq-server start
+
 ## Setting up the MAVEDB virtual environment
 
 Having installed all the dependencies, we can create and activate the Python 
