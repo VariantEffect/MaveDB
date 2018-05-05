@@ -59,7 +59,7 @@
 				<th onclick="sortTable('search-table', 1)" class="clickable-row">Short description</th>
         <th onclick="sortTable('search-table', 2)" class="clickable-row">Target name</th>
         <th onclick="sortTable('search-table', 3)" class="clickable-row">Target organisms</th>
-        <th onclick="sortTable('search-table', 4)" class="clickable-row">Contributors</th>
+        <th onclick="sortTable('search-table', 4, true)" class="clickable-row">Contributors</th>
       </tr>
 		</thead>
 		<tbody>
@@ -110,7 +110,7 @@
                 </td>
                 <td>
                   {% for c in exp.contributors %}
-                    {{ c.profile.get_display_name_hyperlink }}
+                    {{ c.profile.get_display_name }}
                   {% endfor %}
                 </td>
               </tr>
