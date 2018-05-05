@@ -1,6 +1,7 @@
 import time
 from collections import Counter
 
+from django.http import HttpResponse
 from django.shortcuts import render
 
 from dataset.models.scoreset import ScoreSet
@@ -91,3 +92,5 @@ def handler500(request, exception=None, template_name='main/500.html'):
     return response
 
 
+def robots(request):
+    return render(request, 'main/robots.txt', content_type='text/plain')
