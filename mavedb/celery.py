@@ -5,7 +5,7 @@ from django.conf import settings
 try:
     settings.configure()
 except RuntimeError:
-    # settings already configures
+    # settings already configured
     pass
 
 app = Celery('mavedb')
