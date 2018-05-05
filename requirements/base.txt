@@ -9,6 +9,7 @@ djangorestframework-filters>=0.10.2
 social-auth-app-django>=1.2.0
 factory-boy>=2.9.2
 numpy>=1.12.1
+celery>=3.1
 psycopg2>=2.7.1
 pypandoc>=1.4
 selenium>=3.4.3
