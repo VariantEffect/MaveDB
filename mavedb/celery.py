@@ -2,7 +2,11 @@ import time
 from celery import Celery
 from django.conf import settings
 
-settings.configure()
+try:
+    settings.configure()
+except RuntimeError:
+    # settings already configures
+    pass
 
 app = Celery('mavedb')
 
