@@ -25,7 +25,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         password = "1234qwer"
         with transaction.atomic():
-            for i, username in enumerate(['usera', 'userb', 'userb', 'userd']):
+            for i, username in enumerate(['usera', 'userb', 'userc', 'userd']):
                 user = UserFactory(username=username)
                 user.set_password(password)
                 user.save()
