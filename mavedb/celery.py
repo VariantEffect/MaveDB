@@ -20,7 +20,7 @@ app.config_from_object(settings)
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 
-@app.task(bind=True)
+@app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print("Started at {}.".format(time.time()))
     print('Request: {0!r}'.format(self.request))
