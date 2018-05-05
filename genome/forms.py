@@ -93,7 +93,7 @@ class TargetGeneForm(forms.ModelForm):
                     choices.add(target.pk)
 
             targets_qs = TargetGene.objects.filter(
-                pk__in=choices).order_by("name")
+                pk__in=choices).order_by("scoreset__urn").order_by('name')
             self.fields["target"].initial = ""
             self.fields["target"].queryset = targets_qs
             self.fields["target"].choices = \
