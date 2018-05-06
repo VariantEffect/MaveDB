@@ -207,11 +207,13 @@ class ScoreSet(DatasetModel):
 
     @property
     def has_score_dataset(self):
-        return len(self.dataset_columns[constants.score_columns]) >= 1
+        return self.has_variants and \
+               len(self.dataset_columns[constants.score_columns]) >= 1
 
     @property
     def has_count_dataset(self):
-        return len(self.dataset_columns[constants.count_columns]) > 0
+        return self.has_variants and \
+               len(self.dataset_columns[constants.count_columns]) > 0
 
     @property
     def has_metadata(self):
