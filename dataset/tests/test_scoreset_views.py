@@ -511,7 +511,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
                          identifier.identifier, identifier)
         self.assertEqual(scoreset.target.
                          get_refseq_offset_annotation().offset, 5)
-
+        
 
 class TestEditScoreSetView(TestCase, TestMessageMixin):
     """

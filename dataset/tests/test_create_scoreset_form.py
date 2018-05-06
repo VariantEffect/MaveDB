@@ -1,6 +1,5 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 from django.core.exceptions import ValidationError
-
 from accounts.factories import UserFactory
 from accounts.permissions import (
     assign_user_as_instance_viewer,
@@ -298,7 +297,7 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(score_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
-
+        
     def test_new_scores_deletes_variants(self):
         scs = ScoreSetFactory()
         for i in range(5):
@@ -393,3 +392,12 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(
             data=data, files=files, instance=scs1, user=self.user)
         self.assertFalse(form.is_valid())
+    
+    def test_save_can_publish_propagates_modified_by(self):
+        self.fail()
+        
+    def test_save_can_publish_propagates_private_bit(self):
+        self.fail()
+        
+    def test_save_with_publish_false_does_not_propagate_or_set_public(self):
+        self.fail()

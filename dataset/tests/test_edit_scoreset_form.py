@@ -85,3 +85,9 @@ class TestScoreSetEditForm(TestCase):
         self.assertEqual(instance.experiment, old_experiment)
         self.assertEqual(instance.previous_version, old_replaces)
         self.assertEqual(instance.licence, old_licence)
+
+    def test_failed_state_instance_requires_scores(self):
+        self.fail()
+        
+    def test_failed_state_instance_correctly_resets_dataset_columns(self):
+        self.fail()
