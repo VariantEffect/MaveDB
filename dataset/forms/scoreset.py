@@ -6,13 +6,21 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import ugettext
 
-from dataset import constants as constants
+from core.utilities import send_admin_email
+
+from main.context_processors import baseurl
 from main.models import Licence
-from variant.models import Variant
+
 from variant.validators import (
     validate_variant_rows, validate_scoreset_columns_match_variant
 )
+
+# Absolute import tasks for celery to work
+from dataset.tasks import create_variants
+
+from dataset import constants as constants
 from ..forms.base import DatasetModelForm
+from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..validators import (
@@ -21,6 +29,11 @@ from ..validators import (
     validate_scoreset_count_data_input,
     validate_scoreset_json,
 )
+
+
+PROCESSING = DatasetModel.STATUS_CHOICES[0][0]
+SUCCESS = DatasetModel.STATUS_CHOICES[1][0]
+FAILED = DatasetModel.STATUS_CHOICES[2][0]
 
 
 class ScoreSetForm(DatasetModelForm):
@@ -50,7 +63,8 @@ class ScoreSetForm(DatasetModelForm):
             "Row scores that are empty, or the the strings None, Null, Na and "
             "NaN (case-insensitive) will be converted to a null score."
         ),
-        validators=[validate_scoreset_score_data_input, validate_csv_extension],
+        validators=[
+            validate_scoreset_score_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
     count_data = forms.FileField(
@@ -63,7 +77,8 @@ class ScoreSetForm(DatasetModelForm):
             "Row counts that are empty, or the the strings None, Null, Na and "
             "NaN (case-insensitive) will be converted to a null score."
         ),
-        validators=[validate_scoreset_count_data_input, validate_csv_extension],
+        validators=[
+            validate_scoreset_count_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
     )
     meta_data = forms.FileField(
@@ -90,6 +105,13 @@ class ScoreSetForm(DatasetModelForm):
 
         if self.instance.pk is not None:
             self.dataset_columns = self.instance.dataset_columns.copy()
+            # Disable further uploads if this instance is being processed.
+            if 'score_data' in self.fields and \
+                    self.instance.processing_state == PROCESSING:
+                self.fields['score_data'].disabled = True
+            if 'count_data' in self.fields and \
+                    self.instance.processing_state == PROCESSING:
+                self.fields['count_data'].disabled = True
         else:
             # This will be used later after score/count files have been read in
             # to store the headers.
@@ -230,7 +252,8 @@ class ScoreSetForm(DatasetModelForm):
                 return cleaned_data
 
         # Indicates that a new scoreset is being created
-        scores_required = self.instance.pk is None
+        scores_required = self.instance.pk is None or \
+                          self.instance.processing_state == FAILED
 
         hgvs_score_map = cleaned_data.get("score_data", {})
         hgvs_count_map = cleaned_data.get("count_data", {})
@@ -290,28 +313,43 @@ class ScoreSetForm(DatasetModelForm):
                 }
                 validate_scoreset_columns_match_variant(
                     self.dataset_columns, data)
-                variant = Variant(hgvs=hgvs, data=data)
+                variant = {'hgvs': hgvs, 'data': data}
                 variants[hgvs] = variant
 
             cleaned_data["variants"] = variants
+            
         return cleaned_data
 
     @transaction.atomic
     def _save_m2m(self):
-        variants = self.get_variants()
-        if variants:  # No variants if in edit mode and no new files uploaded.
-            self.instance.delete_variants()
-            variant_kwargs_list = [
-                {'hgvs': v.hgvs, 'data': v.data} for _, v in variants.items()]
-            Variant.bulk_create(self.instance, variant_kwargs_list)
-        super()._save_m2m()
+        return super()._save_m2m()
 
     @transaction.atomic
-    def save(self, commit=True):
-        super().save(commit=commit)
-        self.instance.dataset_columns = self.dataset_columns
-        self.instance.save()
-        return self.instance
+    def save(self, commit=True, request=None, publish=False):
+        if request:
+            base = baseurl(request)['BASE_URL']
+        else:
+            base = ""
+            
+        instance = super().save(commit=commit)
+        if self.get_variants():
+            self.instance.processing_state = DatasetModel.STATUS_CHOICES[0][0]
+            create_variants.delay(
+                user_pk=self.user.pk,
+                variants=self.get_variants().copy(),
+                scoreset_urn=instance.urn,
+                dataset_columns=self.dataset_columns.copy(),
+                base_url=base,
+                publish=publish,
+            )
+        else:
+            if publish:
+                instance.set_modified_by(self.user, propagate=True)
+                instance.publish(propagate=True)
+                send_admin_email.delay(self.user.pk, instance.urn, base)
+                instance.save(save_parents=True)
+                
+        return instance
 
     def get_variants(self):
         return self.cleaned_data.get('variants', {})
