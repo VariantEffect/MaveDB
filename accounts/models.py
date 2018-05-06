@@ -1,5 +1,8 @@
+import logging
+
 from social_django.models import UserSocialAuth
 
+from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import QuerySet
@@ -20,6 +23,9 @@ from .permissions import (
 )
 
 
+logger = logging.getLogger('django')
+
+
 class Profile(TimeStampedModel):
     """
     A Profile is associated with a user. It contains helper functions
@@ -34,7 +40,22 @@ class Profile(TimeStampedModel):
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)
-
+    
+    def email_user(self, message, subject, from_email=None):
+        email = self.email or self.user.email
+        if email:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=[email]
+            )
+        else:
+            logger.error(
+                "Tried email user {} from Profile but could not find an "
+                "email address.".format(self.user.username)
+            )
+        
     @property
     def unique_name(self):
         return '{} | {}'.format(self.get_display_name(), self.user.username)
