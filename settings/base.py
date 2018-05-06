@@ -8,7 +8,9 @@ from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 SETTINGS_DIR = BASE_DIR + '/settings/'
+os.environ['DJANGO_SETTINGS_MODULE'] = "settings.base"
 
 # Read the secrets file
 try:
@@ -88,7 +90,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles'
+    'django.contrib.staticfiles',
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -200,3 +202,11 @@ REST_FRAMEWORK = {
         'user': '10000/day'
     },
 }
+
+# ------ CELERY CONFIG ------------------- #
+CELERY_BROKER_URL = "amqp://localhost:5672//"
+CELERY_RESULT_BACKEND = "amqp://localhost:5672//"
+
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']

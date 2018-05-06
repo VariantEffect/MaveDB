@@ -6,10 +6,8 @@ DEBUG = True
 
 USE_SOCIAL_AUTH = False
 
-if sys.platform != 'win32':
-    os.environ.setdefault('PYPANDOC_PANDOC', '/anaconda/bin/pandoc')
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost',]
+DOMAIN = ALLOWED_HOSTS[0]
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -59,11 +57,3 @@ LOGGING = {
         },
     },
 }
-
-# ------ CELERY CONFIG ------------------- #
-CELERY_BROKER_URL = "amqp://localhost:5672//"
-CELERY_RESULT_BACKEND = "amqp://localhost:5672//"
-
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ['json']
