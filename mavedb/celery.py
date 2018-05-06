@@ -1,12 +1,9 @@
-import time
+import os
 from celery import Celery
-from django.conf import settings
 
-try:
-    settings.configure()
-except RuntimeError:
-    # settings already configured
-    pass
+if not os.environ.get('DJANGO_SETTINGS_MODULE'):
+    # Default to production
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'mavedb.settings'
 
 app = Celery('mavedb')
 
@@ -14,13 +11,8 @@ app = Celery('mavedb')
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object(settings)
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+app.autodiscover_tasks()
 
-
-@app.task(bind=True, ignore_result=True)
-def debug_task(self):
-    print("Started at {}.".format(time.time()))
-    print('Request: {0!r}'.format(self.request))
