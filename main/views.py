@@ -1,15 +1,11 @@
-import time
 from collections import Counter
 
-from django.http import HttpResponse
 from django.shortcuts import render
 
 from dataset.models.scoreset import ScoreSet
 from dataset.models.experiment import Experiment
 
 from .models import News, SiteInformation
-
-from mavedb.celery import debug_task
 
 
 def get_top_n(n, ls):
@@ -39,8 +35,6 @@ def home_view(request):
         for s in ScoreSet.objects.exclude(private=True)
         for k in s.keywords.all()
     ]
-    print("called at {}.".format(time.time()))
-    debug_task.apply_async(countdown=10)
 
     return render(request, 'main/home.html', {
         "news_items": news_items,
