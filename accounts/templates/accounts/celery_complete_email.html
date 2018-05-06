@@ -1,0 +1,11 @@
+{% autoescape off %}
+{% if user.first_name %}
+Hi {{ user.first_name }},
+{% else %}
+Hi,
+{% endif %}
+Your submission has been processed. You can see the results <a href="{{ base_url|safe }}{% url 'dataset:scoreset_detail' urn %}">Here</a>. If there was a problem with your submission, try uploading your variant files again or contacting support.
+
+Regards,
+The Mave team.
+{% endautoescape %}
