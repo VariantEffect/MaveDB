@@ -7,12 +7,10 @@ from django.core.validators import MinValueValidator
 from django.db import models, transaction
 
 from accounts.mixins import GroupPermissionMixin
-from core.utilities import pandoc as pandoc
+from core.utilities import pandoc
 from metadata.models import (
     Keyword, SraIdentifier, DoiIdentifier,
-    PubmedIdentifier, ExternalIdentifier,
-    EnsemblIdentifier, UniprotIdentifier,
-    RefseqIdentifier
+    PubmedIdentifier, ExternalIdentifier
 )
 from urn.models import UrnModel
 
@@ -109,6 +107,11 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         'pubmed_ids',
         'sra_ids',
     )
+    STATUS_CHOICES = (
+        ("processing", "processing"),
+        ("success", "success"),
+        ("failed", "failed"),
+    )
 
     class Meta:
         abstract = True
@@ -122,7 +125,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     #                       Model fields
     # ---------------------------------------------------------------------- #
     publish_date = models.DateField(
-        blank=False,
+        blank=True,
         null=True,
         default=None,
         verbose_name="Published on",
@@ -144,15 +147,24 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         related_name='last_created_%(class)s',
     )
 
+    processing_state = models.CharField(
+        blank=True,
+        null=True,
+        default=None,
+        max_length=32,
+        verbose_name="Processing state",
+        choices=STATUS_CHOICES
+    )
+
     approved = models.BooleanField(
-        blank=False,
+        blank=True,
         null=False,
         default=False,
         verbose_name="Approved",
     )
 
     private = models.BooleanField(
-        blank=False,
+        blank=True,
         null=False,
         default=True,
         verbose_name="Private",
