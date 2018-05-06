@@ -153,7 +153,7 @@ class UpdateDatasetModelView(DatasetPermissionMixin,
     PermissionDenied
     """
 
-    success_message = "Successfully updated model {urn}!"
+    success_message = "Successfully updated {urn}!"
     permission_required = 'dataset.can_edit'
     model_class = None
     permission_denied_message = \
@@ -178,3 +178,9 @@ class UpdateDatasetModelView(DatasetPermissionMixin,
         context = super().get_context_data(**kwargs)
         context['instance'] = self.instance
         return context
+    
+    def form_invalid(self, forms):
+        messages.error(
+            self.request, "Your submission contains errors."
+        )
+        return super(UpdateDatasetModelView, self).form_invalid(forms)
