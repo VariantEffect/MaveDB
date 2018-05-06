@@ -99,7 +99,7 @@ def profile_view(request):
             profile = profile_form.save(commit=True)
             messages.success(request, "Successfully updated your profile.")
             if profile.email:
-                template_name = "core/confirm_email.html"
+                template_name = "accounts/confirm_email.html"
                 message = render_to_string(template_name, {
                     'user': request.user,
                 })
