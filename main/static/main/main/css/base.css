@@ -475,3 +475,28 @@ a:hover {
     color: white !important;
     background-color: #343a40 !important;
 }
+
+
+.error-icon {
+    color: red !important;
+    cursor: help;
+}
+.error-icon:hover {
+    color: darkred !important;
+}
+
+.processing-icon {
+    color: orange !important;
+    cursor: help;
+}
+.processing-icon:hover {
+    color: darkorange !important;
+}
+
+.success-icon {
+    color: green !important;
+    cursor: help;
+}
+.success-icon:hover {
+    color: darkgreen !important;
+}

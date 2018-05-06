@@ -28,7 +28,6 @@
                 <p class="text-muted">
                   Below are the instances you contribute to sorted by modification date.
                 </p>
-
                 <!-- Score Sets -->
                 {% if request.user.profile.contributor_scoresets %}
                   <h2 class="underline left-align section-heading">Score Sets</h2>
@@ -66,6 +65,25 @@
                                 <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
                                   <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
                                 </a>
+                                {% endif %}
+
+                                {% if instance.processing_state == 'processing'%}
+                                  <a class="processing-icon" data-toggle="tooltip" data-placement="top"
+                                     title="Your submission is currently being processed.">
+                                    <i class="material-icons">access_time</i>
+                                  </a>
+                                {% endif %}
+                                {% if instance.processing_state == 'failed'%}
+                                  <a class="error-icon" data-toggle="tooltip" data-placement="top"
+                                     title="There was an error with your submission. Try again or contact support.">
+                                    <i class="material-icons">error</i>
+                                  </a>
+                                {% endif %}
+                                {% if instance.processing_state == 'success' %}
+                                  <a class="success-icon" data-toggle="tooltip" data-placement="top"
+                                     title="Your submission has been successfully processed.">
+                                    <i class="material-icons">sentiment_very_satisfied</i>
+                                  </a>
                                 {% endif %}
                               </small>
                             </div>

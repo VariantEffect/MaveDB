@@ -93,12 +93,14 @@
         <div class="col-sm-3 col-md-3">
           <h3 style="margin: 0;">Scores dataset</h3>
         </div>
-        <div class="col-sm-1 col-md-1">
-          <a class="download-btn btn btn-sm btn-outline-dark"
-             href="{% url 'dataset:scores_download' instance.urn %}">
-            Download
-          </a>
-        </div>
+        {% if instance.has_score_dataset %}
+          <div class="col-sm-1 col-md-1">
+            <a class="download-btn btn btn-sm btn-outline-dark"
+               href="{% url 'dataset:scores_download' instance.urn %}">
+              Download
+            </a>
+          </div>
+        {% endif %}
       </div>
 
       {% if not instance.has_score_dataset %}
@@ -140,12 +142,14 @@
         <div class="col-sm-3 col-md-3">
           <h3 style="margin: 0;">Counts dataset</h3>
         </div>
-        <div class="col-sm-1 col-md-1">
-          <a class="download-btn btn btn-sm btn-outline-dark"
-             href="{% url 'dataset:counts_download' instance.urn %}">
-            Download
-          </a>
-        </div>
+        {% if instance.has_count_dataset %}
+          <div class="col-sm-1 col-md-1">
+            <a class="download-btn btn btn-sm btn-outline-dark"
+               href="{% url 'dataset:counts_download' instance.urn %}">
+              Download
+            </a>
+          </div>
+        {% endif %}
       </div>
 
       {% if not instance.has_count_dataset %}
