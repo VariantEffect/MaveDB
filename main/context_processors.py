@@ -2,7 +2,6 @@
 Add any functions here which you would like for use in templates.
 """
 
-
 def baseurl(request):
     """
     Return a BASE_URL template context for the current request.
