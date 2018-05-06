@@ -94,7 +94,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         refseq_offset_form = forms['refseq_offset_form']
         ensembl_offset_form = forms['ensembl_offset_form']
 
-        scoreset = scoreset_form.save(commit=True)
+        scoreset = scoreset_form.save(commit=True, request=self.request)
 
         target_gene_form.instance.scoreset = scoreset
         targetgene = target_gene_form.save(commit=True)
@@ -172,8 +172,10 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save_forms(self, forms):
+        publish = self.request.POST.get('publish', False)
         scoreset_form = forms['scoreset_form']
-        scoreset = scoreset_form.save(commit=True)
+        scoreset = scoreset_form.save(
+            commit=True, request=self.request, publish=publish)
 
         if self.instance.private:
             target_gene_form = forms['target_gene_form']
@@ -203,17 +205,8 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 targetgene.ensembl_id = ensembl_offset.identifier
             targetgene.save()
 
-        if self.request.POST.get('publish', False):
-            propagate = True
-            save_parents = True
-            scoreset.publish(propagate=True)
-            send_admin_email(self.request.user, scoreset)
-        else:
-            propagate = False
-            save_parents = False
-
-        scoreset.set_modified_by(self.request.user, propagate=propagate)
-        scoreset.save(save_parents=save_parents)
+        scoreset.set_modified_by(self.request.user)
+        scoreset.save()
         assign_user_as_instance_admin(self.request.user, scoreset)
         track_changes(self.request.user, scoreset)
         return forms
