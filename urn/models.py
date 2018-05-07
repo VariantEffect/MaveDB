@@ -1,9 +1,22 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 
 from core.models import TimeStampedModel
 
 from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, \
     MAVEDB_URN_MAX_LENGTH, MAVEDB_URN_NAMESPACE
+
+
+def get_model_by_urn(urn):
+    from variant.models import Variant
+    from dataset.models.scoreset import ScoreSet
+    from dataset.models.experiment import Experiment
+    from dataset.models.experimentset import ExperimentSet
+
+    for model in [ScoreSet, Experiment, ExperimentSet, Variant]:
+        if model.objects.filter(urn=urn).exists():
+            return model.objects.get(urn=urn)
+    raise ObjectDoesNotExist("No model found with urn {}.".format(urn))
 
 
 class UrnModel(TimeStampedModel):
