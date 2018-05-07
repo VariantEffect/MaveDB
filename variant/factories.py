@@ -14,7 +14,7 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 import dataset.constants as constants
-from dataset.models.scoreset import ScoreSet, default_dataset
+from dataset.models.scoreset import default_dataset
 from dataset.factories import ScoreSetFactory
 
 from .models import Variant
@@ -23,7 +23,8 @@ from .models import Variant
 sample_hgvs = ['c.101G>C', 'c.10C>A', 'c.41G>A', 'c.53G>T', 'c.17C>G']
 
 
-def make_data(instance):
+#  Instance is passed in by default by factory_boy
+def make_data(instance=None):
     return {
         constants.variant_score_data: {
             default_dataset()[constants.score_columns][0]:
