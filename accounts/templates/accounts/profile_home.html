@@ -36,7 +36,7 @@
                       {% for instance in request.user.profile.contributor_scoresets %}
                         <div class="card hover-card profile-card">
                           <div class="card-body">
-                            <h5 class="card-title right-align">{{ instance.urn }}</h5><br>
+                            <h5 class="card-title right-align"><a href="{% url 'dataset:scoreset_detail' instance.urn %}">{{ instance.urn }}</a></h5><br>
                             <p class="card-text"><b>{{ instance.get_title }}</b></p>
                             <p class="card-text card-description">{{ instance.get_description }}</p>
                           </div>
@@ -53,18 +53,25 @@
                               <small class="col-auto text-muted float-right">
                                 {% if instance in request.user.profile.administrator_scoresets %}
                                   <a href="{% url 'accounts:manage_instance' instance.urn %}">
-                                    <i class="material-icons" style="font-size: 24px">group_add</i>
+                                    <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                     title="View the detail page for this Score Set.">group_add</i>
                                   </a>
                                 {% endif %}
                                 {% if instance in request.user.profile.administrator_scoresets or instance in request.user.profile.editor_scoresets %}
                                  <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px">edit</i>
+                                  <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                     title="Edit this Score Set.">edit</i>
                                  </a>
                                 {% endif %}
-                                {% if instance in request.user.profile.administrator_scoresets or instance in request.user.profile.editor_scoresets or instance in request.user.profile.viewer_scoresets %}
-                                <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
-                                </a>
+
+                                {% if instance.private %}
+                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                     title="This Score Set is private and may only be viewed by you and other contributors." >visibility_off
+                                  </i>
+                                 {% else %}
+                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                     title="This Score Set is public and may be viewed by anyone visiting the site." >visibility
+                                  </i>
                                 {% endif %}
 
                                 {% if instance.processing_state == 'processing'%}
@@ -129,21 +136,31 @@
                                 {% endif %}
                               </small>
                               <small class="col-auto text-muted float-right">
+
                                 {% if instance in request.user.profile.administrator_experiments %}
                                   <a href="{% url 'accounts:manage_instance' instance.urn %}">
-                                    <i class="material-icons" style="font-size: 24px">group_add</i>
+                                    <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                     title="View the detail page for this Experiment.">group_add</i>
                                   </a>
                                 {% endif %}
+
                                 {% if instance in request.user.profile.administrator_experiments or instance in request.user.profile.editor_experiments %}
                                  <a href="{% url 'accounts:edit_experiment' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px">edit</i>
+                                  <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                     title="Edit this Experiment.">edit</i>
                                  </a>
                                 {% endif %}
-                                {% if instance in request.user.profile.administrator_experiments or instance in request.user.profile.editor_experiments or instance in request.user.profile.viewer_experiments %}
-                                <a href="{% url 'dataset:experiment_detail' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
-                                </a>
+
+                                {% if instance.private %}
+                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                     title="This Experiment is private and may only be viewed by you and other contributors." >visibility_off
+                                  </i>
+                                 {% else %}
+                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                     title="This Experiment is public and may be viewed by anyone visiting the site." >visibility
+                                  </i>
                                 {% endif %}
+
                               </small>
                             </div>
                           </div>
@@ -186,16 +203,24 @@
                               {% endif %}
                             </small>
                             <small class="col-auto text-muted float-right">
+
                               {% if instance in request.user.profile.administrator_experimentsets %}
                                 <a href="{% url 'accounts:manage_instance' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px">group_add</i>
+                                  <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                     title="View the detail page for this Experiment Set.">group_add</i>
                                 </a>
                               {% endif %}
-                              {% if instance in request.user.profile.administrator_experimentsets or instance in request.user.profile.editor_experimentsets or instance in request.user.profile.viewer_experimentsets %}
-                              <a href="{% url 'dataset:experimentset_detail' instance.urn %}">
-                                <i class="material-icons" style="font-size: 24px">remove_red_eye</i>
-                              </a>
+
+                              {% if instance.private %}
+                                <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                   title="This Experiment Set is private and may only be viewed by you and other contributors." >visibility_off
+                                </i>
+                              {% else %}
+                                <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                   title="This Experiment Set is public and may be viewed by anyone visiting the site." >visibility
+                                </i>
                               {% endif %}
+
                             </small>
                           </div>
                         </div>
