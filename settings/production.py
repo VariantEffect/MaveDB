@@ -8,8 +8,7 @@ USE_SOCIAL_AUTH = True
 
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
-ALLOWED_HOSTS = ['www.mavedb.org', 'localhost', '127.0.0.1',]
-DOMAIN = ALLOWED_HOSTS[0]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org',]
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

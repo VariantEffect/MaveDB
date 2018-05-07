@@ -1,13 +1,11 @@
 # settings/local.py
-
 from .base import *
 
 DEBUG = True
 
 USE_SOCIAL_AUTH = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost',]
-DOMAIN = ALLOWED_HOSTS[0]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
