@@ -6,9 +6,9 @@ from accounts.permissions import (
     PermissionTypes, assign_user_as_instance_admin
 )
 
-from core.utilities import send_admin_email
 from core.utilities.versioning import track_changes
 
+from main.context_processors import baseurl
 from metadata.forms import (
     UniprotOffsetForm,
     EnsemblOffsetForm,
@@ -17,6 +17,9 @@ from metadata.forms import (
 
 from genome.forms import PimraryReferenceMapForm, TargetGeneForm
 
+from dataset import constants
+# Absolute import tasks for celery to work
+from dataset.tasks import create_variants, publish_scoreset
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
 from ..forms.scoreset import ScoreSetForm, ScoreSetEditForm
@@ -94,7 +97,10 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         refseq_offset_form = forms['refseq_offset_form']
         ensembl_offset_form = forms['ensembl_offset_form']
 
-        scoreset = scoreset_form.save(commit=True, request=self.request)
+        scoreset = scoreset_form.save(commit=True)
+        scoreset.set_created_by(self.request.user)
+        scoreset.set_modified_by(self.request.user)
+        scoreset.save()
 
         target_gene_form.instance.scoreset = scoreset
         targetgene = target_gene_form.save(commit=True)
@@ -117,9 +123,19 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
             targetgene.ensembl_id = ensembl_offset.identifier
         targetgene.save()
 
-        scoreset.set_created_by(self.request.user, propagate=False)
-        scoreset.set_modified_by(self.request.user, propagate=False)
-        scoreset.save(save_parents=False)
+        # Call celery task after all the above has successfully completed
+        if scoreset_form.get_variants():
+            scoreset.processing_state = constants.processing
+            scoreset.save()
+            create_variants_kwargs = {
+                "user_pk": self.request.user.pk,
+                "variants": scoreset_form.get_variants().copy(),
+                "scoreset_urn": scoreset.urn,
+                "dataset_columns": scoreset_form.dataset_columns.copy(),
+                "base_url": baseurl(self.request)['BASE_URL'],
+            }
+            create_variants.delay(**create_variants_kwargs)
+
         assign_user_as_instance_admin(self.request.user, scoreset)
         track_changes(self.request.user, scoreset)
         self.kwargs['urn'] = scoreset.urn
@@ -172,10 +188,11 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save_forms(self, forms):
-        publish = self.request.POST.get('publish', False)
+        publish = bool(self.request.POST.get('publish', False))
         scoreset_form = forms['scoreset_form']
-        scoreset = scoreset_form.save(
-            commit=True, request=self.request, publish=publish)
+        scoreset = scoreset_form.save(commit=True)
+        scoreset.set_modified_by(self.request.user)
+        scoreset.save()
 
         if self.instance.private:
             target_gene_form = forms['target_gene_form']
@@ -205,8 +222,25 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 targetgene.ensembl_id = ensembl_offset.identifier
             targetgene.save()
 
-        scoreset.set_modified_by(self.request.user)
-        scoreset.save()
+        # Call celery task after all the above has successfully completed
+        if scoreset_form.get_variants():
+            scoreset.processing_state = constants.processing
+            scoreset.save()
+            create_variants.delay(
+                user_pk=self.request.user.pk,
+                variants=scoreset_form.get_variants().copy(),
+                scoreset_urn=scoreset.urn,
+                publish=publish,
+                dataset_columns=scoreset_form.dataset_columns.copy(),
+                base_url=baseurl(self.request)['BASE_URL'],
+            )
+        elif (not scoreset_form.get_variants()) and publish:
+            publish_scoreset.delay(
+                scoreset_urn=scoreset.urn,
+                user_pk=self.request.user.pk,
+                base_url=baseurl(self.request)['BASE_URL'],
+            )
+
         assign_user_as_instance_admin(self.request.user, scoreset)
         track_changes(self.request.user, scoreset)
         return forms

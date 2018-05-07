@@ -4,7 +4,7 @@ from django.db import transaction
 
 from accounts.permissions import assign_user_as_instance_admin
 
-from core.utilities import send_admin_email
+from core.tasks import send_admin_email
 from core.utilities.versioning import track_changes
 
 from ..forms.experiment import ExperimentForm, ExperimentEditForm
