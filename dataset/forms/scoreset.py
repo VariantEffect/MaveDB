@@ -6,21 +6,15 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import ugettext
 
-from core.utilities import send_admin_email
 
-from main.context_processors import baseurl
 from main.models import Licence
 
 from variant.validators import (
     validate_variant_rows, validate_scoreset_columns_match_variant
 )
 
-# Absolute import tasks for celery to work
-from dataset.tasks import create_variants
-
 from dataset import constants as constants
 from ..forms.base import DatasetModelForm
-from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..validators import (
@@ -29,11 +23,6 @@ from ..validators import (
     validate_scoreset_count_data_input,
     validate_scoreset_json,
 )
-
-
-PROCESSING = DatasetModel.STATUS_CHOICES[0][0]
-SUCCESS = DatasetModel.STATUS_CHOICES[1][0]
-FAILED = DatasetModel.STATUS_CHOICES[2][0]
 
 
 class ScoreSetForm(DatasetModelForm):
@@ -102,15 +91,17 @@ class ScoreSetForm(DatasetModelForm):
         else:
             self.experiment = None
         super().__init__(*args, **kwargs)
+        if 'sra_ids' in self.fields:
+            self.fields.pop("sra_ids")
 
         if self.instance.pk is not None:
             self.dataset_columns = self.instance.dataset_columns.copy()
             # Disable further uploads if this instance is being processed.
             if 'score_data' in self.fields and \
-                    self.instance.processing_state == PROCESSING:
+                    self.instance.processing_state == constants.processing:
                 self.fields['score_data'].disabled = True
             if 'count_data' in self.fields and \
-                    self.instance.processing_state == PROCESSING:
+                    self.instance.processing_state == constants.processing:
                 self.fields['count_data'].disabled = True
         else:
             # This will be used later after score/count files have been read in
@@ -251,9 +242,11 @@ class ScoreSetForm(DatasetModelForm):
                 )
                 return cleaned_data
 
-        # Indicates that a new scoreset is being created
+        # Indicates that a new scoreset is being created or a failed scoreset
+        # is being edited. Failed scoresets have not variants.
         scores_required = self.instance.pk is None or \
-                          self.instance.processing_state == FAILED
+                          not self.instance.has_variants or \
+                          self.instance.processing_state == constants.failed
 
         hgvs_score_map = cleaned_data.get("score_data", {})
         hgvs_count_map = cleaned_data.get("count_data", {})
@@ -325,31 +318,8 @@ class ScoreSetForm(DatasetModelForm):
         return super()._save_m2m()
 
     @transaction.atomic
-    def save(self, commit=True, request=None, publish=False):
-        if request:
-            base = baseurl(request)['BASE_URL']
-        else:
-            base = ""
-            
-        instance = super().save(commit=commit)
-        if self.get_variants():
-            self.instance.processing_state = DatasetModel.STATUS_CHOICES[0][0]
-            create_variants.delay(
-                user_pk=self.user.pk,
-                variants=self.get_variants().copy(),
-                scoreset_urn=instance.urn,
-                dataset_columns=self.dataset_columns.copy(),
-                base_url=base,
-                publish=publish,
-            )
-        else:
-            if publish:
-                instance.set_modified_by(self.user, propagate=True)
-                instance.publish(propagate=True)
-                send_admin_email.delay(self.user.pk, instance.urn, base)
-                instance.save(save_parents=True)
-                
-        return instance
+    def save(self, commit=True):
+        return super().save(commit=commit)
 
     def get_variants(self):
         return self.cleaned_data.get('variants', {})

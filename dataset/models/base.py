@@ -14,6 +14,8 @@ from metadata.models import (
 )
 from urn.models import UrnModel
 
+from dataset import constants
+
 
 User = get_user_model()
 child_attr_map = {
@@ -108,9 +110,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         'sra_ids',
     )
     STATUS_CHOICES = (
-        ("processing", "processing"),
-        ("success", "success"),
-        ("failed", "failed"),
+        (constants.processing, constants.processing),
+        (constants.success, constants.success),
+        (constants.failed, constants.failed),
     )
 
     class Meta:
