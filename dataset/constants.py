@@ -45,3 +45,8 @@ variant_to_scoreset_column = {
 scoreset_to_variant_column = {
     v: k for k, v in variant_to_scoreset_column.items()
 }
+
+# Celery dataset statuses
+processing = "processing"
+failed = "failed"
+success = "success"
