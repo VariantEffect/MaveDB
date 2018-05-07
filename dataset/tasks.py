@@ -6,20 +6,18 @@ from django.template.loader import render_to_string
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
-from core.utilities import send_admin_email
+from core.tasks import send_admin_email
 
 from mavedb import celery_app
 
 from variant.models import Variant
 
-from .models.base import DatasetModel
+from dataset import constants
 from .models.scoreset import ScoreSet
 
 
 logger = logging.getLogger('django')
 User = get_user_model()
-SUCCESS = DatasetModel.STATUS_CHOICES[1][0]
-FAILED = DatasetModel.STATUS_CHOICES[2][0]
 
 
 class BaseCreateVariants(Task):
@@ -30,9 +28,11 @@ class BaseCreateVariants(Task):
         base_url = kwargs.get('base_url', "")
         user = User.objects.get(pk=user_pk)
         scoreset = ScoreSet.objects.get(urn=scoreset_urn)
-        scoreset.processing_state = FAILED
+        scoreset.processing_state = constants.failed
         scoreset.save()
-        notify_user_upload_status.delay(user_pk, scoreset.urn, 'end', base_url)
+        notify_user_upload_status.delay(
+            user_pk=user_pk, scoreset_urn=scoreset_urn,
+            step='end', base_url=base_url)
         logger.exception(
             "CELERY: Task {} raised exception while saving "
             "variants to ScoreSet {} from user {}:\n{!r}\n{!r}.".format(
@@ -42,27 +42,36 @@ class BaseCreateVariants(Task):
             exc, task_id, args, kwargs, einfo)
 
 
-@celery_app.task(ignore_result=True, base=BaseCreateVariants)
-def create_variants(user_pk, variants, scoreset_urn,
-                    dataset_columns, base_url="", publish=False):
-    """Bulk creates and emails the user the processing status."""
+@celery_app.task(ignore_result=True)
+def publish_scoreset(scoreset_urn, user_pk, base_url):
     user = User.objects.get(pk=user_pk)
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
-    
-    notify_user_upload_status.delay(user_pk, scoreset_urn, 'start', base_url)
-    
+    scoreset.set_modified_by(user, propagate=True)
+    scoreset.publish(propagate=True)
+    scoreset.save(save_parents=True)
+    send_admin_email.delay(user=user.pk, urn=scoreset.urn, base_url=base_url)
+
+
+@celery_app.task(ignore_result=True, base=BaseCreateVariants)
+def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
+                    publish=False, base_url=""):
+    """Bulk creates and emails the user the processing status."""
+    scoreset = ScoreSet.objects.get(urn=scoreset_urn)
+    notify_user_upload_status.delay(
+        user_pk=user_pk, scoreset_urn=scoreset_urn,
+        step='start', base_url=base_url)
     with transaction.atomic():
         scoreset.delete_variants()
         Variant.bulk_create(scoreset, [v for _, v in variants.items()])
         scoreset.dataset_columns = dataset_columns
-        scoreset.processing_state = SUCCESS
+        scoreset.processing_state = constants.success
         scoreset.save()
-        notify_user_upload_status.delay(user_pk, scoreset_urn, 'end', base_url)
+        notify_user_upload_status.delay(
+            user_pk=user_pk, scoreset_urn=scoreset_urn,
+            step='end', base_url=base_url)
         if publish:
-            scoreset.set_modified_by(user, propagate=True)
-            scoreset.publish(propagate=True)
-            scoreset.save(save_parents=True)
-            send_admin_email.delay(user.pk, scoreset_urn, base_url)
+            publish_scoreset.delay(
+                scoreset_urn=scoreset_urn, user_pk=user_pk, base_url=base_url)
 
 
 @celery_app.task(ignore_result=True)
