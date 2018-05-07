@@ -46,7 +46,7 @@
     {% endif %}
 
     {% if instance.class_name != "experimentset" %}
-      <a href="#metadata">Metadata</a>
+      <a href="#metadata">External Identifiers</a>
       <a href="#references">References</a>
     {% endif %}
 
@@ -79,6 +79,20 @@
 
     <!-- Renders markdown abstract text -->
     {% if instance.class_name != "experimentset" %}
+      <h2 id="Title" class="underline left-align section-heading">Title</h2>
+      {% if not instance.title %}
+        <p class="text-muted">This entry does not have a title.</p>
+      {% else %}
+        <p>{{ instance.title}}</p>
+      {% endif %}
+
+      <h2 id="Description" class="underline left-align section-heading">Description</h2>
+      {% if not instance.title %}
+        <p class="text-muted">This entry does not have a description.</p>
+      {% else %}
+        <p>{{ instance.short_description}}</p>
+      {% endif %}
+
       <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
       {% if not instance.abstract_text %}
         <p class="text-muted">No abstract has been provided for this entry.</p>
@@ -96,11 +110,11 @@
 
       <!-- Renders Keywords -->
       <h2 id="method" class="underline left-align section-heading">Keywords</h2>
-      {% if not keywords %}
+      {% if not instance.keywords.all %}
         <p class="text-muted">No keywords are associated with this entry.</p>
       {% else %}
         <ul>
-          {% for kw in keywords %}
+          {% for kw in instance.keywords.all %}
             <li><a href="/search/?keywords={{ kw.text }}">{{ kw.text }}</a></li>
           {% endfor %}
         </ul>
@@ -113,13 +127,7 @@
 
     {% if instance.class_name != "experimentset" %}
       <!-- Renders External Identifier urls -->
-      <h2 id="metadata" class="underline left-align section-heading">Metadata</h2>
-      {% if instance.keywords.count %}
-        <p><strong>Keywords:</strong>{% for kw in instance.keywords.all %} {{kw.text}} {% endfor %} </p>
-      {% else %}
-        <p><strong>Keywords:</strong> No associated keywords </p>
-      {% endif %}
-
+      <h2 id="metadata" class="underline left-align section-heading">External Identifiers</h2>
       {% if instance.doi_ids.count %}
         <strong>DOI:</strong>
           <ul>
@@ -131,15 +139,17 @@
         <p><strong>DOI:</strong> No associated DOIs </p>
       {% endif %}
 
-      {% if instance.sra_ids.count %}
-        <strong>SRA:</strong>
-          <ul>
-          {% for sra in instance.sra_ids.all %}
-            <li><a href="{{sra.url}}">{{sra.identifier}}</a></li>
-          {% endfor %}
-          </ul>
-      {% else %}
-        <p><strong>SRA:</strong> No associated SRAs </p>
+      {% if instance.class_name == 'experiment' %}
+        {% if instance.sra_ids.count %}
+          <strong>SRA:</strong>
+            <ul>
+            {% for sra in instance.sra_ids.all %}
+              <li><a href="{{sra.url}}">{{sra.identifier}}</a></li>
+            {% endfor %}
+            </ul>
+        {% else %}
+          <p><strong>SRA:</strong> No associated SRAs </p>
+        {% endif %}
       {% endif %}
 
       <!-- Renders PubMed references -->

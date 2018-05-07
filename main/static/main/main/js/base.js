@@ -45,9 +45,9 @@ $("document").ready(function() {
   repopulateSelect("#id_sra_ids", "#sra-identifiers-to-add");
   repopulateSelect("#id_doi_ids", "#doi-identifiers-to-add");
   repopulateSelect("#id_pubmed_ids", "#pubmed-identifiers-to-add");
-  repopulateSelect("#id_uniprot_id", "#uniprot-identifier-to-add");
-  repopulateSelect("#id_ensembl_id", "#ensembl-identifier-to-add");
-  repopulateSelect("#id_refseq_id", "#refseq-identifier-to-add");
+  repopulateSelect("#id_uniprot-offset-identifier", "#uniprot-identifier-to-add");
+  repopulateSelect("#id_ensembl-offset-identifier", "#ensembl-identifier-to-add");
+  repopulateSelect("#id_refseq-offset-identifier", "#refseq-identifier-to-add");
 });
 
 
@@ -178,37 +178,51 @@ function validateViewerSubmit(e) {
 // Re-add any external_accession, keywords or target organism
 // back to failed form submission
 function repopulateSelect(selectId, listId) {
-  var ls = listId;
-  if (ls !== undefined) {
+  var selectItems = listId;
+  var i,j = 0;
+
+  if (selectItems !== undefined) {
     if (typeof listId === "string") {
-      ls = $(listId).text();
-      ls = ls.trim().split(",");
+      selectItems = $(listId).text();
+      selectItems = selectItems.trim().split(",");
     }
-    $.each(ls, function (index, value) {
-      if (value !== "") {
+
+    for(i=0; i<selectItems.length; i++) {
+      var optionExists = false;
+      var options = document.getElementsByTagName("option");
+
+      for (j=0; j<options.length; j++) {
+        if (selectItems[i] === options[j].value) {
+          options[j].selected = true;
+          optionExists = true;
+          break;
+        }
+      }
+
+      if (!optionExists && selectItems[i]) {
         $(selectId).append($("<option/>", {
-          value: value,
-          text: value,
+          value: selectItems[i],
+          text: selectItems[i],
           selected: true
         }));
       }
-    });
+    }
   }
 }
 
 
 function getNewDataSelectId(formGroupClass) {
-  let parent = document.getElementsByClassName(formGroupClass)[0];
-  let children = parent.getElementsByClassName(
+  var parent = document.getElementsByClassName(formGroupClass)[0];
+  var children = parent.getElementsByClassName(
     "select2-selection__rendered")[0].children;
-  let nums = [];
-  for(let i =0; i < children.length; i++) {
-    let num = children[i].getAttribute('data-select2-id');
+  var nums = [];
+  for(var i =0; i < children.length; i++) {
+    var num = children[i].getAttribute('data-select2-id');
     if (!isNaN(parseInt(num))) {
       nums.push(parseInt(num));
     }
   }
-  let num = nums.sort()[nums.length - 1] + 1;
+  var num = nums.sort()[nums.length - 1] + 1;
   if (isNaN(num)) {
     return -1;
   } else {
@@ -221,6 +235,7 @@ $("#id_experiment").on("change", function() {
   var id = this.value;
   var replaces_selector = "#id_replaces";
   var options = $(replaces_selector).children();
+  console.log("here")
   if (parseInt(id)) {
     $.ajax({
       url: window.location.pathname,
