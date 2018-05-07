@@ -335,13 +335,16 @@ class DatasetFormViewContextMixin:
             pubmed_ids = self.request.POST.getlist("pubmed_ids", [])
             pubmed_ids = [i for i in pubmed_ids if not is_null(i)]
 
-            uniprot_id = self.request.POST.getlist("uniprot_identifier", [])
+            uniprot_id = self.request.POST.getlist(
+                "uniprot-offset-identifier", [])
             uniprot_id = [i for i in uniprot_id if not is_null(i)]
 
-            ensembl_id = self.request.POST.getlist("ensembl_identifier", [])
+            ensembl_id = self.request.POST.getlist(
+                "ensembl-offset-identifier", [])
             ensembl_id = [i for i in ensembl_id if not is_null(i)]
 
-            refseq_id = self.request.POST.getlist("refseq_identifier", [])
+            refseq_id = self.request.POST.getlist(
+                "refseq-offset-identifier", [])
             refseq_id = [i for i in refseq_id if not is_null(i)]
 
             context["repop_keywords"] = ','.join(keywords)
