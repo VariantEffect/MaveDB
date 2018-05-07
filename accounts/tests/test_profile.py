@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.core import mail
 from django.contrib.auth import get_user_model
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
@@ -58,6 +59,40 @@ class TestUserProfile(TestCase):
             first_name="daniel", last_name="smith"
         )
         self.assertEqual(bob.profile.get_short_name(), "Smith, D")
+
+    def test_send_email_uses_profile_by_email_by_default(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey",
+            first_name="daniel", last_name="smith"
+        )
+        bob.profile.email = "email@email.com"
+        bob.profile.save()
+        bob.profile.email_user(message="hello", subject="None")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [bob.profile.email])
+
+    def test_send_email_uses_user_email_as_backup(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey",
+            first_name="daniel", last_name="smith", email="bob@email.com"
+        )
+        bob.profile.email = None
+        bob.profile.save()
+
+        bob.profile.email_user(message="hello", subject="None")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [bob.email])
+
+    def test_email_user_sends_no_email_if_no_email_present(self):
+        bob = User.objects.create(
+            username="bob", password="secretkey",
+            first_name="daniel", last_name="smith",
+            email="",
+        )
+        bob.profile.email = None
+        bob.profile.save()
+        bob.profile.email_user(message="hello", subject="None")
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_name_methods_default_to_username(self):
         bob = User.objects.create(username="bob", password="secretkey")
