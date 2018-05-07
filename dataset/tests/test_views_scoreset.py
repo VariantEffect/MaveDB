@@ -1,8 +1,10 @@
 from django.core import mail
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 from django.urls import reverse_lazy
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
+
+from mavedb import celery_app
 
 from accounts.factories import UserFactory
 from accounts.permissions import (
@@ -12,6 +14,7 @@ from accounts.permissions import (
     user_is_admin_for_instance
 )
 
+from core.tasks import send_admin_email
 from core.utilities.tests import TestMessageMixin
 
 from genome.factories import ReferenceGenomeFactory
@@ -26,6 +29,8 @@ from metadata.factories import (
 from variant.factories import VariantFactory
 
 import dataset.constants as constants
+from ..tasks import create_variants, publish_scoreset
+from ..forms.scoreset import ScoreSetForm
 from ..factories import (
     ScoreSetFactory, ExperimentFactory, ScoreSetWithTargetFactory
 )
@@ -46,6 +51,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         self.template = 'dataset/scoreset/scoreset.html'
         self.template_403 = 'main/403.html'
         self.template_404 = 'main/404.html'
+        celery_app.conf.update(CELERY_TASK_ALWAYS_EAGER=True)
 
     def test_404_status_and_template_used_when_object_not_found(self):
         obj = ScoreSetFactory()
@@ -122,8 +128,8 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
             'experiment': [''],
             'replaces': [''],
             'private': ['on'],
-            'short_description': 'an entry',
-            'title': 'title',
+            'short_description': ['an entry'],
+            'title': ['title'],
             'abstract_text': [''],
             'method_text': [''],
             'sra_ids': [''],
@@ -138,8 +144,8 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
             'refseq-offset': [''],
             'submit': ['submit'],
             'genome': [self.ref.pk],
-            'wt_sequence': 'atcg',
-            'name': 'BRCA1'
+            'wt_sequence': ['atcg'],
+            'name': ['BRCA1']
         }
         self.files = {constants.variant_score_data: score_file}
         self.user = UserFactory()
@@ -265,6 +271,34 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         self.assertEqual(scoreset.target.name, 'BRCA1')
         self.assertEqual(scoreset.target.wt_sequence.sequence, 'ATCG')
 
+    def test_calls_create_variants(self):
+        data = self.post_data.copy()
+        exp = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, exp)
+        data['experiment'] = [exp.pk]
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+
+        form_data = {k: v[0] for k,v in data.items()}
+        form = ScoreSetForm(files=self.files, data=form_data, user=self.user)
+        self.assertTrue(form.is_valid())
+
+        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+            ScoreSetCreateView.as_view()(request)
+            create_mock.assert_called_once()
+            self.assertEqual(
+                {
+                    "user_pk": self.user.pk,
+                    "scoreset_urn": ScoreSet.objects.first().urn,
+                    "variants": form.get_variants(),
+                    "dataset_columns": form.dataset_columns,
+                    "base_url": "http://" + request.get_host(),
+                },
+                create_mock.call_args[1]
+            )
+
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()
         data['experiment'] = ['wrong_pk']
@@ -352,26 +386,6 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
 
         self.assertContains(response, 'P12345')
         self.assertContains(response, up.identifier)
-
-    def test_not_publishing_does_not_propagate_user_fields(self):
-        data = self.post_data.copy()
-        exp1 = ExperimentFactory()
-        assign_user_as_instance_admin(self.user, exp1)
-        data['experiment'] = [exp1.pk]
-
-        request = self.create_request(method='post', path=self.path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-        _ = ScoreSetCreateView.as_view()(request)
-
-        scs = ScoreSet.objects.all()[0]
-        self.assertEqual(scs.created_by, self.user)
-        self.assertNotEqual(scs.parent.created_by, scs.created_by)
-        self.assertNotEqual(scs.parent.parent.created_by, scs.created_by)
-
-        self.assertEqual(scs.modified_by, self.user)
-        self.assertNotEqual(scs.parent.modified_by, scs.modified_by)
-        self.assertNotEqual(scs.parent.parent.modified_by, scs.modified_by)
 
     def test_does_not_add_user_as_admin_to_selected_parent(self):
         data = self.post_data.copy()
@@ -593,6 +607,25 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         response = ScoreSetEditView.as_view()(request, urn=scs.urn)
         self.assertEqual(response.status_code, 302)
 
+    def test_calls_publish_with_no_new_variants_uploaded(self):
+        data = self.post_data.copy()
+        scs = ScoreSetFactory()
+        VariantFactory(scoreset=scs)
+
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data['experiment'] = [scs.experiment.pk]
+        data['publish'] = ['publish']
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method='post', path=path, data=data)
+        request.user = self.user
+
+        with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
+            publish_mock.assert_called_once()
+            publish_scoreset(**publish_mock.call_args[1])
+
     def test_publish_propagates_modified_by(self):
         data = self.post_data.copy()
         scs = ScoreSetFactory()
@@ -605,7 +638,14 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request = self.create_request(method='post', path=path, data=data)
         request.user = self.user
         request.FILES.update(self.files)
-        _ = ScoreSetEditView.as_view()(request, urn=scs.urn)
+
+        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
+            create_mock.assert_called_once()
+            with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
+                create_variants(**create_mock.call_args[1])
+                publish_mock.assert_called_once()
+                publish_scoreset(**publish_mock.call_args[1])
 
         scs = ScoreSet.objects.all()[0]
         self.assertEqual(scs.modified_by, self.user)
@@ -624,7 +664,14 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request = self.create_request(method='post', path=path, data=data)
         request.user = self.user
         request.FILES.update(self.files)
-        _ = ScoreSetEditView.as_view()(request, urn=scs.urn)
+
+        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
+            create_mock.assert_called_once()
+            with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
+                create_variants(**create_mock.call_args[1])
+                publish_mock.assert_called_once()
+                publish_scoreset(**publish_mock.call_args[1])
 
         scs = ScoreSet.objects.all()[0]
         self.assertFalse(scs.private)
@@ -668,9 +715,22 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
 
-        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(len(mail.outbox), 1)
+        form = ScoreSetForm(
+            user=self.user, data=data, files=self.files, instance=scs)
+        form.full_clean()
+
+        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+            response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+            create_mock.assert_called_once()
+            with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
+                create_variants(**create_mock.call_args[1])
+                publish_mock.assert_called_once()
+                with mock.patch('core.tasks.send_admin_email.delay') as send_mock:
+                    publish_scoreset(**publish_mock.call_args[1])
+                    send_mock.assert_called_once()
+                    send_admin_email(**send_mock.call_args[1])
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(len(mail.outbox), 1)
 
     def test_published_instance_returns_edit_only_mode_form(self):
         scs = ScoreSetFactory(private=False)
@@ -700,7 +760,14 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
 
-        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
+            create_mock.assert_called_once()
+            with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
+                create_variants(**create_mock.call_args[1])
+                publish_mock.assert_called_once()
+                publish_scoreset(**publish_mock.call_args[1])
+
         obj = ScoreSet.objects.get(urn=scs.urn)
         self.assertFalse(obj.private)
         self.assertFalse(obj.parent.private)
@@ -719,7 +786,14 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
 
-        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
+            create_mock.assert_called_once()
+            with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
+                create_variants(**create_mock.call_args[1])
+                publish_mock.assert_called_once()
+                publish_scoreset(**publish_mock.call_args[1])
+
         obj = ScoreSet.objects.get(urn=scs.urn)
         self.assertEqual(obj.modified_by, self.user)
         self.assertEqual(obj.experiment.modified_by, self.user)

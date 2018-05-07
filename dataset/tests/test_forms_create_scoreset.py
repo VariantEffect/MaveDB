@@ -1,4 +1,4 @@
-from django.test import TestCase, RequestFactory, mock
+from django.test import TestCase, RequestFactory
 from django.core.exceptions import ValidationError
 from accounts.factories import UserFactory
 from accounts.permissions import (
@@ -7,7 +7,6 @@ from accounts.permissions import (
     assign_user_as_instance_admin
 )
 from main.models import Licence
-from variant.models import Variant
 from variant.factories import generate_hgvs, VariantFactory
 
 import dataset.constants as constants
@@ -82,12 +81,6 @@ class TestScoreSetForm(TestCase):
         data["experiment"] = 100
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
-
-    def test_variants_are_saved_via_m2m_relationship(self):
-        data, files = self.make_post_data()
-        form = ScoreSetForm(data=data, files=files, user=self.user)
-        instance = form.save(commit=True)
-        self.assertEqual(instance.variants.count(), 1)
 
     def test_not_valid_change_experiment_from_saved_instance(self):
         data, files = self.make_post_data()  # new experiment
@@ -216,20 +209,20 @@ class TestScoreSetForm(TestCase):
         # Check score data parsed correctly
         self.assertEqual(
             1.0,
-            variants[score_hgvs].data[constants.variant_score_data][
+            variants[score_hgvs]['data'][constants.variant_score_data][
                 constants.required_score_column
             ])
         # Check count data for score_hgvs is set to None
         self.assertIsNone(
-            variants[score_hgvs].data[constants.variant_count_data]['count'])
+            variants[score_hgvs]['data'][constants.variant_count_data]['count'])
 
         # Check count data parsed correctly
         self.assertEqual(
             2.0,
-            variants[count_hgvs].data[constants.variant_count_data]['count'])
+            variants[count_hgvs]['data'][constants.variant_count_data]['count'])
         # Check score data for count_hgvs is set to None
         self.assertIsNone(
-            variants[count_hgvs].data[constants.variant_score_data][
+            variants[count_hgvs]['data'][constants.variant_score_data][
                 constants.required_score_column])
 
     def test_invalid_no_score_file(self):
@@ -249,6 +242,28 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(
             data=data, user=self.user, instance=instance)
         self.assertTrue(form.is_valid())
+
+    def test_invalid_no_score_file_and_instance_is_in_fail_state(self):
+        data, files = self.make_post_data()
+        files.pop(constants.variant_score_data)
+
+        instance = ScoreSetFactory()
+        instance.processing_state = constants.failed
+        instance.save()
+        assign_user_as_instance_admin(self.user, instance.experiment)
+        data['experiment'] = instance.experiment.pk
+
+        form = ScoreSetForm(data=data, user=self.user, instance=instance)
+        self.assertFalse(form.is_valid())
+
+    def test_uploads_disabled_instance_in_processing_state(self):
+        instance = ScoreSetFactory()
+        instance.processing_state = constants.processing
+        instance.save()
+
+        form = ScoreSetForm(user=self.user, instance=instance)
+        self.assertTrue(form.fields['score_data'].disabled)
+        self.assertTrue(form.fields['count_data'].disabled)
 
     def test_invalid_no_scores_but_counts_provided(self):
         data, files = self.make_post_data(count_data=True)
@@ -276,8 +291,7 @@ class TestScoreSetForm(TestCase):
         )
         data, files = self.make_post_data(score_data, count_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
-        scs = form.save(commit=True)
-        variants = scs.children
+        self.assertTrue(form.is_valid())
 
         data_1 = {
             'score_data': {'se': None, 'score': 1.0},
@@ -287,8 +301,8 @@ class TestScoreSetForm(TestCase):
             'score_data': {'se': None, 'score': None},
             'count_data': {'sig': -1.0, 'count': None},
         }
-        self.assertEqual(variants.filter(hgvs=score_hgvs).first().data, data_1)
-        self.assertEqual(variants.filter(hgvs=count_hgvs).first().data, data_2)
+        self.assertEqual(form.get_variants()[score_hgvs]['data'], data_1)
+        self.assertEqual(form.get_variants()[count_hgvs]['data'], data_2)
 
     def test_invalid_empty_score_file(self):
         score_data = "{},{},se\n".format(
@@ -298,7 +312,7 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
         
-    def test_new_scores_deletes_variants(self):
+    def test_new_scores_resets_dataset_columns(self):
         scs = ScoreSetFactory()
         for i in range(5):
             VariantFactory(scoreset=scs)
@@ -314,12 +328,9 @@ class TestScoreSetForm(TestCase):
 
         form.save(commit=True)
 
-        scs.refresh_from_db()
-        self.assertTrue(Variant.objects.count(), 1)
-        self.assertTrue(scs.children.count(), 1)
-        self.assertTrue(scs.last_child_value, 1)
+        self.assertTrue(len(form.get_variants()), 1)
         self.assertEqual(
-            sorted(scs.dataset_columns[constants.score_columns]),
+            sorted(form.dataset_columns[constants.score_columns]),
             sorted(['score', 'se'])
         )
 
@@ -392,12 +403,3 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(
             data=data, files=files, instance=scs1, user=self.user)
         self.assertFalse(form.is_valid())
-    
-    def test_save_can_publish_propagates_modified_by(self):
-        self.fail()
-        
-    def test_save_can_publish_propagates_private_bit(self):
-        self.fail()
-        
-    def test_save_with_publish_false_does_not_propagate_or_set_public(self):
-        self.fail()
