@@ -375,10 +375,10 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         self.assertContains(response, 'protein')
         self.assertContains(response, kw.text)
 
-    def test_failed_submission_adds_uniprot_to_context(self):
+    def test_failed_submission_adds_uniprot_ids_to_context(self):
         data = self.post_data.copy()
         up = UniprotIdentifierFactory()
-        data['uniprot_identifier'] = ['P12345', up.identifier]
+        data['uniprot-offset-identifier'] = ['P12345', up.identifier]
 
         request = self.create_request(method='post', path=self.path, data=data)
         request.user = self.user
@@ -386,6 +386,30 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
 
         self.assertContains(response, 'P12345')
         self.assertContains(response, up.identifier)
+
+    def test_failed_submission_adds_refseq_ids_to_context(self):
+        data = self.post_data.copy()
+        id_ = RefseqIdentifierFactory()
+        data['ensembl-offset-identifier'] = ['RefSeq', id_.identifier]
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        response = ScoreSetCreateView.as_view()(request)
+
+        self.assertContains(response, 'RefSeq')
+        self.assertContains(response, id_.identifier)
+
+    def test_failed_submission_adds_ensembl_ids_to_context(self):
+        data = self.post_data.copy()
+        id_ = EnsemblIdentifierFactory()
+        data['refseq-offset-identifier'] = ['Ensembl', id_.identifier]
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        response = ScoreSetCreateView.as_view()(request)
+
+        self.assertContains(response, 'Ensembl')
+        self.assertContains(response, id_.identifier)
 
     def test_does_not_add_user_as_admin_to_selected_parent(self):
         data = self.post_data.copy()

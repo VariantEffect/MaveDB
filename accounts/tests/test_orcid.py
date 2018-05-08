@@ -1,5 +1,5 @@
 from django.test import TestCase, mock
-from social_django.compat import reverse
+from django.shortcuts import reverse
 from social_django.models import UserSocialAuth
 
 mock_person = {

@@ -236,6 +236,7 @@ class TestScoreSetForm(TestCase):
         files.pop(constants.variant_score_data)
 
         instance = ScoreSetFactory()
+        VariantFactory(scoreset=instance)
         assign_user_as_instance_admin(self.user, instance.experiment)
         data['experiment'] = instance.experiment.pk
 
