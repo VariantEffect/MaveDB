@@ -3,24 +3,28 @@
 {% block profile_body %}
 
   <div class="row">
-    <div class="col-xs-12 col-auto border-right mt-4">
-      <div class="profile-nav nav flex-column nav-pills" id="pills-tab" role="tablist" aria-orientation="vertical">
-        <a class="profile-nav-link nav-link active" id="dashboard-tab" data-toggle="pill" href="#dashboard" role="tab" aria-controls="dashboard" aria-selected="true">Dashboard</a>
-        <a class="profile-nav-link nav-link" id="profile-tab" data-toggle="pill" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Profile</a>
-      </div>
-    </div>
-
-    <div class="col-xs-12 col-11 pl-4">
+    <div class="col-12">
       <div class="tab-content" id="home-pills">
         <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
-          <div>
-            <h2> Dashboard
-              <a onclick="showOptions()"><i class="icon material-icons" style="font-size: 48px;">add_circle_outline</i></a>
-              <a class="fade-option" href="{% url 'dataset:experiment_new' %}">Experiment</a>
-              <a class="fade-option" href="">|</a>
-              <a class="fade-option" href="{% url 'dataset:scoreset_new' %}">Score Set</a>
-            </h2>
-            <hr>
+          <div class="row">
+            <div class="col-auto">
+              <h2> Dashboard </h2>
+            </div>
+            <div class="col-auto">
+              <div class="dropdown">
+                <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Do the thing
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <a class="dropdown-item" id="dashboard-tab" data-toggle="pill" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Home</a>
+                  <a class="dropdown-item" id="profile-tab" data-toggle="pill" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Edit Profile</a>
+                  <a class="dropdown-item" href="{% url 'dataset:experiment_new' %}">New Experiment</a>
+                  <a class="dropdown-item" href="{% url 'dataset:scoreset_new' %}">New Score Set</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr>
 
             <!-- Instances that user is a ADMIN for -->
             <div id="contributor-instances">
@@ -229,7 +233,6 @@
                     </div> <!-- end card deck -->
                   </div> <!-- end experiment set card deck container -->
                 {% endif %}
-                
               {% else %}
                 <p class="text-muted">
                   You are not a contributor on any entries

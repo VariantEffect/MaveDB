@@ -2,24 +2,23 @@
 
 {% block body %}
 
-<div class="container mb-4" style="width:100%;">
-	<div class="container" style="float: none; margin: 0 auto;">
-		<form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="get">
-			<input class="form-control mr-sm-1" type="text" aria-label="Search"
-							placeholder="Search..." name="search" style="width:80%;">
-			<button class="btn btn-outline-dark my-2 my-sm-0  white-button" type="submit">
-				Search
-			</button>
-			<button data-toggle="collapse" data-target="#search-options" 
-							class="btn btn-outline-dark ml-1  white-button" type="button">
-					Advanced
-			</button>
-		</form>
-	</div>
-</div>
+<div class="container-fluid">
 
+  <div class="container">
+    <form class="mb-2" action="{% url 'search:search' %}" method="get">
+      <div class="input-group">
+        <input class="form-control" name="search">
+        <button class="btn btn-outline-dark white-button ml-1">
+          <i class="fa fa-search"></i>
+        </button>
+        <button class="btn btn-outline-dark white-button ml-1" data-toggle="collapse" data-target="#search-options" type="button">
+          <i class="fa fa-gear"></i>
+        </button>
+      </div>
+    </form>
+  </div>
 
-<div id="search-options" class="row collapse fade" aria-hidden="true">
+<div id="search-options" class="row collapse fade mt-2" aria-hidden="true">
 	<div class="container card" >
 		<div class="card-body">
 			<div class="card-header bg-white mb-2">
@@ -50,16 +49,17 @@
 		</div> <!-- End card body -->
 	</div> <!-- End card -->
 </div> <!-- end row -->
+<hr>
 
-<div class="table-container styled-table mt-4">
+<div class="styled-table mt-4">
 	<table id="search-table" class="table table-hover">
 		<thead>
 			<tr>
-				<th onclick="sortTable('search-table', 0)" class="clickable-row">Urn</th>
-				<th onclick="sortTable('search-table', 1)" class="clickable-row">Short description</th>
-        <th onclick="sortTable('search-table', 2)" class="clickable-row">Target name</th>
-        <th onclick="sortTable('search-table', 3)" class="clickable-row">Target organisms</th>
-        <th onclick="sortTable('search-table', 4, true)" class="clickable-row">Contributors</th>
+				<th class="clickable-row">Urn</th>
+				<th class="clickable-row">Short description</th>
+        <th class="clickable-row">Target name</th>
+        <th class="clickable-row">Target organisms</th>
+        <th class="clickable-row">Contributors</th>
       </tr>
 		</thead>
 		<tbody>

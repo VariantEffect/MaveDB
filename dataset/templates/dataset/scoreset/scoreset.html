@@ -70,7 +70,7 @@
 {% block child_list %}
   <h2 id="variants" class="underline left-align section-heading"> Variants </h2>
   <p class="text-muted">
-    Below is a sample of the first 20 variants. Click download to see the complete dataset.
+    Below is a sample of the first 100 variants. Click download to see the complete dataset.
   </p>
   <!-- Tab/Pills menu -->
   <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -95,7 +95,7 @@
         </div>
         {% if instance.has_score_dataset %}
           <div class="col-sm-1 col-md-1">
-            <a class="download-btn btn btn-sm btn-outline-dark"
+            <a class="download-btn btn btn-sm btn-outline-dark white-button"
                href="{% url 'dataset:scores_download' instance.urn %}">
               Download
             </a>
@@ -106,12 +106,12 @@
       {% if not instance.has_score_dataset %}
         <p class="text-muted"> No score data available.</p>
       {% else %}
-        <div id="scores-table-container" class="numeric-container container-fluid">
+        <div id="scores-table-container" class="container-fluid">
           <table id="scores-table" class="styled-table table table-hover">
             <thead>
               <tr>
                 {% for column in score_columns %}
-                  <th onclick="sortTable('scores-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
+                  <th class="clickable-row"> {{column}} </th>
                 {% endfor %}
               </tr>
             </thead>
@@ -144,7 +144,7 @@
         </div>
         {% if instance.has_count_dataset %}
           <div class="col-sm-1 col-md-1">
-            <a class="download-btn btn btn-sm btn-outline-dark"
+            <a class="download-btn btn btn-sm btn-outline-dark white-button"
                href="{% url 'dataset:counts_download' instance.urn %}">
               Download
             </a>
@@ -155,12 +155,12 @@
       {% if not instance.has_count_dataset %}
         <p class="text-muted"> No count data available.</p>
       {% else %}
-        <div id="counts-table-container" class="numeric-container container-fluid">
+        <div id="counts-table-container" class="container-fluid">
           <table id="counts-table" class="styled-table table table-hover">
             <thead>
               <tr>
                 {% for column in count_columns %}
-                  <th onclick="sortTable('counts-table', {{ forloop.counter0 }})" class="clickable-row"> {{column}} </th>
+                  <th class="clickable-row"> {{column}} </th>
                 {% endfor %}
               </tr>
             </thead>

@@ -56,48 +56,31 @@ input[type=number] {
     width: auto;
 }
 
-
-.form-control:focus {
-    box-shadow: none !important;
-    border-color: black !important;
+a {
+    color: #987cb8 !important;
+    text-decoration: none !important;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out;
 }
-
-
-.select2 {
-    margin-bottom: 15px;
+a:hover {
+    color: rebeccapurple !important;
 }
-
-/* Fixes resizing issue with select2 components */
-span.select2.select2-container.select2-container--default {
-    width: 100% !important;
+a:active {
+    background-color: transparent !important;
 }
 
 .border-secondary {
     border-color:rgba(0,0,0,.1) !important;
 }
 
-.download-btn {
-    color: #222222 !important;
-}
-.download-btn:hover {
-    border: 1px solid #222222 !important;
-    color: white !important;
-}
-
 ul {
     list-style-type: square;
 }
 
-.arrow-ul {
-    list-style-type: none;
-    padding-left: 1em;
-}
-.arrow-ul li:before {
-    content: ">";
-}
 
 /* Tables
----------------------------------- */
+---------------------------------------------------------------------------  */
 table td {
     width: 200px;
     word-break: break-all;
@@ -111,14 +94,14 @@ table {
     word-break: break-all;
 }
 
-.numeric-container,
-.table-container {
+#search-table, #counts-table, #scores-table {
     border: 2px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
+    min-width: 25% !important;
     overflow-x: auto;
-    /*white-space: nowrap;*/
 }
+
 .styled-table {
     margin-bottom: 0; 
     background: whitesmoke;
@@ -126,6 +109,7 @@ table {
 .styled-table th {
     background: #dadff1;
 }
+
 .table thead th,
 .table tbody td  {
     font-size: 14px;
@@ -156,21 +140,26 @@ table {
     padding-bottom: 1px;
 }
 
-/* navbar/header/footer Formatting 
------------------------------------ */
-.footer {
-    margin-bottom: 10px;
+.page-item.active .page-link {
+    background-color: #f7f7f7 !important;
+
 }
-.sidebar {
-    min-height:80vh !important;
-    width:200px !important;
+
+.nav-link.active {
+    border-color: rebeccapurple !important;
+    border-bottom: none;
 }
+
 
 /* Navbar / search box
 ------------------------------------ */
 .nav-link {
     padding-top: 0.15rem !important;
     padding-bottom: 0.15rem !important;
+}
+
+.footer {
+    margin-bottom: 10px;
 }
 
 /* Logo Formatting
@@ -183,16 +172,22 @@ table {
 }
 
 
-/* body-block formatting
------------------------------------ */
+/* Base template */
+/* ------------------------------------------------------------------------- */
 .body-block {
     padding: 2%;
 }
 
-/*[class^="news-item"] {*/
-    /*margin-bottom: 2em;*/
-/*}*/
+.sidenav a {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 20px;
+    display: block;
+}
 
+
+/* Home Page elements */
+/* ------------------------------------------------------------------------- */
 .news, .highlights, .quick-search {
     padding: 1em;
     height: 50%;
@@ -205,26 +200,17 @@ table {
     background-color: transparent;
 }
 
-.profile-card {
-    box-shadow: none !important;
-    max-width: 30%;
-    min-width: 30%;
-    margin-top: 1em;
-}
-.card-description {
-    max-height: 15em;
-    overflow:hidden;
-}
-.card-description:hover {
-    overflow-y: auto;
-}
-
 
 /* Tocbot
 ---------------------------------------- */
 .js-toc {
     background: #ffffff;
     z-index: 999;
+}
+
+.sidebar {
+    min-height:80vh !important;
+    width:200px !important;
 }
 
 @media (max-width: 800px) {
@@ -272,13 +258,24 @@ table {
     width: 650px;
 }
 
-.top-shadow {
-    box-shadow: 0 -5px 5px -5px #333333;
-}
-
 .bottom-shadow {
     box-shadow: 0 -5px 5px 1px #333333
 }
+
+.form-control:focus {
+    box-shadow: none !important;
+    border-color: black !important;
+}
+
+.select2 {
+    margin-bottom: 15px;
+}
+
+/* Fixes resizing issue with select2 components */
+span.select2.select2-container.select2-container--default {
+    width: 100% !important;
+}
+
 
 /* ORCID button
 ---------------------------------------- */
@@ -309,71 +306,8 @@ table {
 }
 
 
-/* DetailView css
----------------------------------------- */
-.right-align {
-    text-align: right;
-}
-.left-align {
-    text-align: left;
-}
-.centered {
-    text-align: center;
-}
-.underline {
-    border-bottom: 2px solid rgba(0,0,0,.1);
-}
-
-
-/* DetailView css
----------------------------------------- */
-.sidenav a {
-    padding: 6px 8px 6px 16px;
-    text-decoration: none;
-    font-size: 20px;
-    display: block;
-}
-
-.sidenav-list-item {
-    list-style-type: none;
-    padding-right: 200px !important;
-}
-
-.sidenav-list-item a {
-    font-size: 16px;
-    text-decoration: none;
-    display: block;
-}
-
-.child-list-description {
-    margin-left:20px !important;
-    margin-top:20px;
-}
-.urn-item-link {
-    display: block;
-}
-
-
-.hover-card {
-    border: 1px solid rgba(0,0,0,.125);
-    box-shadow: 1px 2px 3px rgba(0,0,0,.1);
-}
-.hover-card:hover {
-    border-color: #343a40;
-    -webkit-transition: 0.5s;
-    -moz-transition: 0.5s;
-    transition: border-color 0.1s ease-in-out
-}
-
-.entry-card {
-    margin: 1rem 1rem;
-    display: inline-block;
-    max-width: 30%;
-    min-width: 30% !important;
-    overflow-x: hidden;
-    padding: 10px 10px 10px 10px;
-}
-
+/* Dataset Detail Views */
+/* ------------------------------------------------------------------------ */
 .section-heading {
     padding: 15px;
     color: lightslategray;
@@ -384,6 +318,7 @@ table {
     padding-left: 10px;
     color: #343a40 !important;
 }
+
 .target-card:hover {
     cursor: pointer;
     color: lightslategray !important;
@@ -391,6 +326,7 @@ table {
     -moz-transition: 0.5s !important;
     transition: color 0.1s ease-in-out !important;
 }
+
 .target-card:hover a {
     color: lightslategray !important;
 }
@@ -399,43 +335,38 @@ table {
     cursor: pointer;
 }
 
-a.fill-div {
-    display: block;
-    height: 100%;
-    width: 100%;
-    text-decoration: none;
-}
-
-.tile {
-    width: 100px;
-    height: 100px;
-    background: white;
-    margin: 0 10px 10px 0;
-}
-
-.column-border-right {
-     padding-right: 20px;
-     border-right: 1px solid rgb(0,0,0.1);
- }
-
-[class^="icon"] {
-  width: 50px;
-  height: 50px;
-  position: relative;
-  top: 15px;
-  margin-right: 10px;
-  fill: #fff;
-}
-
-.icon {
-    cursor: pointer;
-}
-
 .form-title {
     color: #222222 !important;
 }
 
-/* Links */
+.right-align {
+    text-align: right;
+}
+
+.left-align {
+    text-align: left;
+}
+
+.centered {
+    text-align: center;
+}
+
+.underline {
+    border-bottom: 2px solid rgba(0,0,0,.1);
+}
+
+.child-list-description {
+    margin-left:20px !important;
+    margin-top:20px;
+}
+
+.urn-item-link {
+    display: block;
+}
+
+
+/* Buttons and Links */
+/* ------------------------------------------------------------------------- */
 .gray-link {
     color: #6c757d !important;
     text-decoration: none !important;
@@ -447,36 +378,21 @@ a.fill-div {
     color: #222222 !important;
 }
 
-a {
-    color: #987cb8 !important;
-    text-decoration: none !important;
-    -webkit-transition: 0.1s;
-    -moz-transition: 0.1s;
-    transition: color 0.1s ease-in-out;
+.download-btn {
+    color: #222222 !important;
 }
-a:hover {
-    color: rebeccapurple !important;
+.download-btn:hover {
+    border: 1px solid #222222 !important;
+    color: white !important;
 }
-
 
 .white-button {
     background-color: white;
 }
 
-.profile-nav-link {
-    color: #343a40 !important;
-    background-color: transparent !important;
-    -webkit-transition: 0.1s;
-    -moz-transition: 0.1s;
-    transition: color 0.1s ease-in-out,
-                background-color 0.1s ease-in-out;
-}
-.profile-nav-link:hover {
-    color: white !important;
-    background-color: #343a40 !important;
-}
 
-
+/* Profile CSS Elements */
+/* ------------------------------------------------------------------------- */
 .error-icon {
     color: red !important;
     cursor: help;
@@ -499,4 +415,73 @@ a:hover {
 }
 .success-icon:hover {
     color: darkgreen !important;
+}
+
+.profile-card {
+    box-shadow: none !important;
+    max-width: 30%;
+    min-width: 30%;
+    margin-top: 1em;
+}
+
+.profile-nav-link {
+    color: #343a40 !important;
+    background-color: transparent !important;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out,
+                background-color 0.1s ease-in-out;
+}
+.profile-nav-link:hover {
+    color: white !important;
+    background-color: #343a40 !important;
+}
+
+.icon {
+    cursor: pointer;
+}
+
+[class^="icon"] {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  top: 15px;
+  margin-right: 10px;
+  fill: #fff;
+}
+
+.hover-card {
+    border: 1px solid rgba(0,0,0,.125);
+    box-shadow: 1px 2px 3px rgba(0,0,0,.1);
+}
+.hover-card:hover {
+    border-color: #343a40;
+    -webkit-transition: 0.5s;
+    -moz-transition: 0.5s;
+    transition: border-color 0.1s ease-in-out
+}
+
+@media (max-width: 575.98px) {
+    .profile-card {
+        max-width: 100%;
+        min-width: 100%;
+    }
+}
+@media (max-width: 767.98px) {
+    .profile-card {
+        max-width: 95%;
+        min-width: 95%;
+    }
+}
+
+.card-description {
+    max-height: 15em;
+    overflow:hidden;
+}
+.card-description:hover {
+    overflow-y: auto;
+}
+
+.dropdown-item:active {
+    background-color: transparent !important;
 }
