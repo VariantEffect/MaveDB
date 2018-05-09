@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import QuerySet
 
 from core.models import TimeStampedModel
 
@@ -39,6 +38,12 @@ class TargetGene(TimeStampedModel):
         verbose_name = "Target Gene"
         verbose_name_plural = "Target Genes"
 
+    @classmethod
+    def tracked_fields(cls):
+        return (
+            'name', 'wt_sequence', 'scoreset_id', 'wt'
+        )
+
     def __str__(self):
         return self.get_name()
 
@@ -67,6 +72,7 @@ class TargetGene(TimeStampedModel):
         default=None,
         verbose_name='Wild-type Sequence',
         related_name='target',
+        on_delete=models.PROTECT,
     )
 
     # External Identifiers
@@ -95,6 +101,11 @@ class TargetGene(TimeStampedModel):
         blank=True,
         related_name='associated_%(class)ss',
     )
+
+    def delete(self, using=None, keep_parents=False):
+        retval = super().delete(using, keep_parents)
+        self.wt_sequence.delete()
+        return retval
 
     def get_name(self):
         return self.name
@@ -502,3 +513,6 @@ class WildTypeSequence(TimeStampedModel):
 
     def get_sequence(self):
         return self.sequence.upper()
+
+    def is_attached(self):
+        return getattr(self, 'target', None) is not None
