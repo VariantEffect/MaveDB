@@ -188,6 +188,7 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
         'uniprot': 'target__uniprot_id__identifier',
         'ensembl': 'target__ensembl_id__identifier',
         'refseq': 'target__refseq_id__identifier',
+        'licence': 'licence__short_name'
 
     Expects the above :class:`ScoreSet` field names to work correctly.
     """
@@ -195,7 +196,7 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
-            'species': self.filter_organism,
+            'species': self.filter_species,
             'target': self.filter_target,
             'sequence': self.filter_target_sequence,
             'genome': self.filter_reference_genome_name,
@@ -203,10 +204,11 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
+            'licence': self.filter_licence,
         })
         return dict_
     
-    def filter_organism(self, value):
+    def filter_species(self, value):
         field_name = 'target__reference_maps__genome__species_name'
         filter_type = 'iexact'
         return self.search_to_q(value, field_name, filter_type)
@@ -246,6 +248,11 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
     def filter_target_ensembl(self, value):
         field_name = 'target__ensembl_id__identifier'
         filter_type = 'iexact'
+        return self.search_to_q(value, field_name, filter_type)
+
+    def filter_licence(self, value):
+        field_name = 'licence__short_name'
+        filter_type = 'icontains'
         return self.search_to_q(value, field_name, filter_type)
 
 
