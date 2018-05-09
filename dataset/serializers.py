@@ -54,7 +54,8 @@ class ScoreSetSerializer(DatasetModelSerializer):
     score_columns = serializers.ListSerializer(child=serializers.CharField())
     count_columns = serializers.ListSerializer(child=serializers.CharField())
 
-    previous_version = serializers.StringRelatedField(many=False)
+    previous_version = serializers.StringRelatedField(
+        source="previous_public_version", many=False)
     next_version = serializers.StringRelatedField(
         source="next_public_version", many=False)
     current_version = serializers.StringRelatedField(
