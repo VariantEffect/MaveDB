@@ -21,7 +21,6 @@ from ..models.base import DatasetModel
 from ..models.experimentset import ExperimentSet
 
 
-@reversion.register()
 class Experiment(DatasetModel):
     """
     This is the class representing an Experiment. The experiment object
@@ -40,19 +39,6 @@ class Experiment(DatasetModel):
     #                       Class members/functions
     # ---------------------------------------------------------------------- #
     # TODO: Update TRACKED_FIELDS in all classes to use inheritance
-    TRACKED_FIELDS = (
-        "private",
-        "approved",
-        "abstract_text",
-        "method_text",
-        "short_description",
-        "title",
-        "keywords",
-        "pubmed_ids",
-        "doi_ids",
-        "sra_ids",
-        "targets"
-    )
 
     class Meta:
         verbose_name = "Experiment"

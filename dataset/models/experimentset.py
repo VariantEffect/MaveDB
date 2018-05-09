@@ -16,7 +16,6 @@ from urn.validators import validate_mavedb_urn_experimentset
 from ..models.base import DatasetModel
 
 
-@reversion.register()
 class ExperimentSet(DatasetModel):
     """
     This is the class representing a set of related Experiments. Related
@@ -24,8 +23,6 @@ class ExperimentSet(DatasetModel):
     methodology, same target, target organism etc, but differed in
     the experimental condition and scoring process.
     """
-    # TODO: Update TRACKED_FIELDS in all classes to use inheritance
-    TRACKED_FIELDS = ("private", "approved")
 
     class Meta:
         verbose_name = "ExperimentSet"
