@@ -5,11 +5,13 @@ from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 
+from genome.models import TargetGene
+
 from main.models import Licence
 from variant.factories import VariantFactory
 
 from ..models.scoreset import default_dataset, ScoreSet
-from ..factories import ScoreSetFactory
+from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory
 
 
 class TestScoreSet(TestCase):
@@ -135,3 +137,37 @@ class TestScoreSet(TestCase):
         scs_2 = ScoreSetFactory(
             private=False, experiment=scs_1.experiment, replaces=scs_1)
         self.assertEqual(scs_1.next_public_version, scs_2)
+
+    def test_previous_public_version_returns_none_if_previous_is_private(self):
+        scs_1 = ScoreSetFactory(private=True)
+        scs_2 = ScoreSetFactory(experiment=scs_1.experiment, replaces=scs_1)
+        self.assertEqual(scs_1.previous_public_version, None)
+        self.assertEqual(scs_2.previous_public_version, None)
+
+    def test_previous_public_version_returns_previous_if_previous_is_public(self):
+        scs_1 = ScoreSetFactory(private=False)
+        scs_2 = ScoreSetFactory(
+            private=True, experiment=scs_1.experiment, replaces=scs_1)
+        scs_3 = ScoreSetFactory(experiment=scs_2.experiment, replaces=scs_2)
+        self.assertEqual(scs_3.previous_public_version, scs_1)
+        self.assertEqual(scs_2.previous_public_version, scs_1)
+
+    def test_delete_cascades_to_target(self):
+        scs = ScoreSetWithTargetFactory()
+        self.assertEqual(TargetGene.objects.count(), 1)
+        scs.delete()
+        self.assertEqual(TargetGene.objects.count(), 0)
+
+    def test_delete_does_not_delete_licence(self):
+        scs = ScoreSetFactory()
+        self.assertEqual(Licence.objects.count(), 1)
+        scs.delete()
+        self.assertEqual(Licence.objects.count(), 1)
+
+    def test_delete_replaces_sets_field_to_none(self):
+        scs_1 = ScoreSetFactory()
+        scs_2 = ScoreSetFactory(replaces=scs_1)
+        self.assertIsNotNone(scs_2.replaces)
+        scs_1.delete()
+        scs_2.refresh_from_db()
+        self.assertIsNone(scs_2.replaces)

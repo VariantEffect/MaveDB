@@ -1,17 +1,22 @@
 from django.test import TestCase
-from django.core.exceptions import ValidationError
+from django.db.models.deletion import ProtectedError
 
-from metadata.factories import (
-    EnsemblIdentifierFactory, RefseqIdentifierFactory
+from metadata.models import UniprotOffset, RefseqOffset, EnsemblOffset
+from metadata.factories import RefseqOffsetFactory, UniprotOffsetFactory, EnsemblOffsetFactory
+
+from ..models import (
+    WildTypeSequence, ReferenceGenome, GenomicInterval,
+    ReferenceMap, TargetGene,
 )
 
-from ..models import WildTypeSequence
 from ..factories import (
     TargetGeneFactory,
     ReferenceMapFactory,
     ReferenceGenomeFactory,
     GenomicIntervalFactory,
-    WildTypeSequenceFactory
+    WildTypeSequenceFactory,
+    TargetGeneWithReferenceMapFactory,
+    ReferenceMapWithIntervalsFactory
 )
 
 
@@ -26,6 +31,11 @@ class TestWildTypeSequenceModel(TestCase):
     def test_sequence_saved_in_uppercase(self):
         wt = WildTypeSequenceFactory(sequence='atcg')
         self.assertEqual(wt.sequence, 'ATCG')
+
+    def test_cannot_delete_when_associated_with_a_target(self):
+        gene = TargetGeneFactory()
+        with self.assertRaises(ProtectedError):
+            gene.wt_sequence.delete()
 
 
 class TestIntervalModel(TestCase):
@@ -68,6 +78,19 @@ class TestReferenceGenomeModel(TestCase):
         expected = "<i>{}</i>".format(ref.get_species_name().capitalize())
         self.assertEqual(ref.format_species_name_html(), expected)
 
+    def test_delete_identifier_sets_field_as_none(self):
+        genome = ReferenceGenomeFactory()
+        self.assertIsNotNone(genome.genome_id)
+
+        genome.genome_id.delete()
+        genome = ReferenceGenome.objects.first()
+        self.assertIsNone(genome.genome_id)
+
+    def test_cannot_delete_genome_associated_with_a_map(self):
+        map = ReferenceMapFactory()
+        with self.assertRaises(ProtectedError):
+            map.genome.delete()
+
 
 class TestReferenceMapModel(TestCase):
     """
@@ -82,6 +105,18 @@ class TestReferenceMapModel(TestCase):
     def test_can_get_intervals_when_there_are_no_associations(self):
         ann = ReferenceMapFactory()
         self.assertIsNotNone(ann.get_intervals())
+
+    def test_delete_does_not_delete_genome(self):
+        map = ReferenceMapFactory()
+        self.assertEqual(ReferenceGenome.objects.count(), 1)
+        map.delete()
+        self.assertEqual(ReferenceGenome.objects.count(), 1)
+
+    def test_delete_cascades_over_intervals(self):
+        map = ReferenceMapWithIntervalsFactory()
+        self.assertEqual(GenomicInterval.objects.count(), 3)
+        map.delete()
+        self.assertEqual(GenomicInterval.objects.count(), 0)
 
 
 class TestTargetGene(TestCase):
@@ -110,3 +145,62 @@ class TestTargetGene(TestCase):
 
         ReferenceMapFactory(target=target)
         self.assertEqual(target.get_reference_genomes().count(), 1)
+
+    def test_delete_deletes_maps(self):
+        gene = TargetGeneWithReferenceMapFactory()
+        self.assertEqual(ReferenceMap.objects.count(), 1)
+        gene.delete()
+        self.assertEqual(ReferenceMap.objects.count(), 0)
+
+    def test_delete_deletes_wt_seq(self):
+        gene = TargetGeneFactory()
+        self.assertEqual(WildTypeSequence.objects.count(), 1)
+        gene.delete()
+        self.assertEqual(WildTypeSequence.objects.count(), 0)
+
+    def test_delete_identifier_sets_field_as_none(self):
+        gene = TargetGeneFactory()
+        self.assertIsNotNone(gene.uniprot_id)
+        self.assertIsNotNone(gene.refseq_id)
+        self.assertIsNotNone(gene.ensembl_id)
+
+        gene.uniprot_id.delete()
+        gene.refseq_id.delete()
+        gene.ensembl_id.delete()
+
+        gene = TargetGene.objects.first()
+        self.assertIsNone(gene.uniprot_id)
+        self.assertIsNone(gene.refseq_id)
+        self.assertIsNone(gene.ensembl_id)
+
+    def test_delete_cascades_over_annotations(self):
+        gene = TargetGeneFactory()
+        UniprotOffsetFactory(target=gene)
+        RefseqOffsetFactory(target=gene)
+        EnsemblOffsetFactory(target=gene)
+
+        self.assertEqual(UniprotOffset.objects.count(), 1)
+        self.assertEqual(RefseqOffset.objects.count(), 1)
+        self.assertEqual(EnsemblOffset.objects.count(), 1)
+
+        gene.delete()
+        self.assertEqual(UniprotOffset.objects.count(), 0)
+        self.assertEqual(RefseqOffset.objects.count(), 0)
+        self.assertEqual(EnsemblOffset.objects.count(), 0)
+
+    def test_deleted_offset_sets_field_to_none(self):
+        gene = TargetGeneFactory()
+        offset = UniprotOffsetFactory(target=gene)
+        self.assertIsNotNone(gene.get_uniprot_offset_annotation())
+        offset.delete()
+        self.assertIsNone(gene.get_uniprot_offset_annotation())
+
+        offset = RefseqOffsetFactory(target=gene)
+        self.assertIsNotNone(gene.get_refseq_offset_annotation())
+        offset.delete()
+        self.assertIsNone(gene.get_refseq_offset_annotation())
+
+        offset = EnsemblOffsetFactory(target=gene)
+        self.assertIsNotNone(gene.get_ensembl_offset_annotation())
+        offset.delete()
+        self.assertIsNone(gene.get_ensembl_offset_annotation())

@@ -133,6 +133,16 @@ class TestUserProfile(TestCase):
         self.assertEqual(len(bobs_exps), 1)
         self.assertEqual(bobs_exps[0], self.exps_1)
 
+    def test_public_experimentsets_filters_out_private(self):
+        bob = User.objects.create(username="bob")
+        assign_user_as_instance_admin(bob, self.exps_1)
+        assign_user_as_instance_admin(bob, self.exps_2)
+        public = bob.profile.public_contributor_experimentsets()
+        self.exps_1.publish()
+        self.exps_1.save()
+        self.assertEqual(len(public), 1)
+        self.assertEqual(list(public)[0], self.exps_1)
+
     # ----- Experiments
     def test_can_get_all_experiments_user_is_admin_on(self):
         bob = User.objects.create(username="bob")
@@ -157,6 +167,16 @@ class TestUserProfile(TestCase):
         bobs_exp = bob.profile.viewer_experiments()
         self.assertEqual(len(bobs_exp), 1)
         self.assertEqual(bobs_exp[0], self.exp_1)
+
+    def test_public_experiments_filters_out_private(self):
+        bob = User.objects.create(username="bob")
+        assign_user_as_instance_admin(bob, self.exp_1)
+        assign_user_as_instance_admin(bob, self.exp_2)
+        public = bob.profile.public_contributor_experiments()
+        self.exp_1.publish()
+        self.exp_1.save()
+        self.assertEqual(len(public), 1)
+        self.assertEqual(list(public)[0], self.exp_1)
 
     # ----- ScoreSets
     def test_can_get_all_scoresets_user_is_admin_on(self):
@@ -183,7 +203,17 @@ class TestUserProfile(TestCase):
         self.assertEqual(len(bobs_scs), 1)
         self.assertEqual(bobs_scs[0], self.scs_1)
 
-    # ----- Null values
+    def test_public_scoresets_filters_out_private(self):
+        bob = User.objects.create(username="bob")
+        assign_user_as_instance_admin(bob, self.scs_1)
+        assign_user_as_instance_admin(bob, self.scs_2)
+        public = bob.profile.public_contributor_scoresets()
+        self.scs_1.publish()
+        self.scs_1.save()
+        self.assertEqual(len(public), 1)
+        self.assertEqual(list(public)[0], self.scs_1)
+
+    # ----- Empty values
     def test_empty_list_not_admin_on_anything(self):
         bob = User.objects.create(username="bob")
         self.assertEqual(len(bob.profile.administrator_scoresets()), 0)

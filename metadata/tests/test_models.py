@@ -4,14 +4,17 @@ import metapub
 from django.db import IntegrityError
 from django.test import TestCase
 
-from dataset.factories import ExperimentFactory
+from genome.factories import TargetGeneFactory, ReferenceGenomeFactory
+from dataset.factories import ExperimentFactory, ScoreSetFactory, ExperimentSetFactory
 
 from ..models import Keyword
 from ..factories import (
     KeywordFactory, DoiIdentifierFactory,
     PubmedIdentifierFactory, SraIdentifierFactory,
     UniprotIdentifierFactory, EnsemblIdentifierFactory,
-    RefseqIdentifierFactory, GenomeIdentifierFactory
+    RefseqIdentifierFactory, GenomeIdentifierFactory,
+    UniprotOffsetFactory, RefseqOffsetFactory, EnsemblOffsetFactory,
+    UniprotOffset, RefseqOffset, EnsemblOffset
 )
 
 
@@ -83,6 +86,35 @@ class TestKeyword(TestCase):
         with self.assertRaises(IntegrityError):
             KeywordFactory(text=None)
 
+    def test_is_attached_if_member_of_experiment(self):
+        dataset = ExperimentFactory()
+        dataset.experimentset.keywords.clear()
+        dataset.experimentset.save()
+
+        kw = dataset.keywords.first()
+        self.assertTrue(kw.is_attached())
+        dataset.delete()
+        self.assertFalse(kw.is_attached())
+
+    def test_is_attached_if_member_of_scoreset(self):
+        dataset = ScoreSetFactory()
+        dataset.experiment.keywords.clear()
+        dataset.experiment.save()
+        dataset.experiment.experimentset.keywords.clear()
+        dataset.experiment.experimentset.save()
+
+        kw = dataset.keywords.first()
+        self.assertTrue(kw.is_attached())
+        dataset.delete()
+        self.assertFalse(kw.is_attached())
+
+    def test_is_attached_if_member_of_experimentset(self):
+        dataset = ExperimentSetFactory()
+        kw = dataset.keywords.first()
+        self.assertTrue(kw.is_attached())
+        dataset.delete()
+        self.assertFalse(kw.is_attached())
+
 
 class TestDoiIdentifierModel(TestCase):
     """
@@ -104,6 +136,36 @@ class TestDoiIdentifierModel(TestCase):
     def test_save_sets_dbname_as_DOI(self):
         doi = DoiIdentifierFactory()
         self.assertEqual(doi.dbname, doi.DATABASE_NAME)
+
+    def test_is_attached_if_member_of_experiment(self):
+        dataset = ExperimentFactory()
+        dataset.experimentset.doi_ids.clear()
+        dataset.experimentset.save()
+
+        obj = dataset.doi_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_is_attached_if_member_of_scoreset(self):
+        dataset = ScoreSetFactory()
+        dataset.experiment.doi_ids.clear()
+        dataset.experiment.save()
+        dataset.experiment.experimentset.doi_ids.clear()
+        dataset.experiment.experimentset.save()
+
+        obj = dataset.doi_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_is_attached_if_member_of_experimentset(self):
+        dataset = ExperimentSetFactory()
+
+        obj = dataset.doi_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
 
 
 class TestSraIdentidier(TestCase):
@@ -143,6 +205,35 @@ class TestSraIdentidier(TestCase):
         sra = SraIdentifierFactory()
         self.assertEqual(sra.dbname, sra.DATABASE_NAME)
 
+    def test_is_attached_if_member_of_experiment(self):
+        dataset = ExperimentFactory()
+        dataset.experimentset.sra_ids.clear()
+        dataset.experimentset.save()
+
+        obj = dataset.sra_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_is_attached_if_member_of_scoreset(self):
+        dataset = ScoreSetFactory()
+        dataset.experiment.sra_ids.clear()
+        dataset.experiment.save()
+        dataset.experiment.experimentset.sra_ids.clear()
+        dataset.experiment.experimentset.save()
+
+        obj = dataset.sra_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_is_attached_if_member_of_experimentset(self):
+        dataset = ExperimentSetFactory()
+        obj = dataset.sra_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
 
 class TestPubmedIdentifier(TestCase):
     """
@@ -172,29 +263,100 @@ class TestPubmedIdentifier(TestCase):
         pm = PubmedIdentifierFactory()
         self.assertEqual(pm.dbname, pm.DATABASE_NAME)
 
+    def test_is_attached_if_member_of_experiment(self):
+        dataset = ExperimentFactory()
+        dataset.experimentset.pubmed_ids.clear()
+        dataset.experimentset.save()
+
+        obj = dataset.pubmed_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_is_attached_if_member_of_scoreset(self):
+        dataset = ScoreSetFactory()
+        dataset.experiment.pubmed_ids.clear()
+        dataset.experiment.save()
+        dataset.experiment.experimentset.pubmed_ids.clear()
+        dataset.experiment.experimentset.save()
+
+        obj = dataset.pubmed_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_is_attached_if_member_of_experimentset(self):
+        dataset = ExperimentSetFactory()
+        obj = dataset.pubmed_ids.first()
+        self.assertTrue(obj.is_attached())
+        dataset.delete()
+        self.assertFalse(obj.is_attached())
+
 
 class TestUniProtIdentifier(TestCase):
+
     def test_format_url_creates_url(self):
         obj = UniprotIdentifierFactory()
         url = obj.format_url()
         expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
         self.assertEqual(expected_url, url)
 
+    def test_is_attached_if_associated_with_a_target(self):
+        tg = TargetGeneFactory()
+        obj = tg.uniprot_id
+        self.assertTrue(obj.is_attached())
+        tg.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_delete_deletes_associated_offset(self):
+        offset = UniprotOffsetFactory()
+        self.assertEqual(UniprotOffset.objects.count(), 1)
+        offset.identifier.delete()
+        self.assertEqual(UniprotOffset.objects.count(), 0)
+
 
 class TestRefSeqIdentifier(TestCase):
+
     def test_format_url_creates_url(self):
         obj = RefseqIdentifierFactory()
         url = obj.format_url()
         expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
         self.assertEqual(expected_url, url)
 
+    def test_is_attached_if_associated_with_a_target(self):
+        tg = TargetGeneFactory()
+        obj = tg.refseq_id
+        self.assertTrue(obj.is_attached())
+        tg.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_delete_deletes_associated_offset(self):
+        offset = RefseqOffsetFactory()
+        self.assertEqual(RefseqOffset.objects.count(), 1)
+        offset.identifier.delete()
+        self.assertEqual(RefseqOffset.objects.count(), 0)
+
 
 class TestEnsemblIdentifier(TestCase):
+
     def test_format_url_creates_url(self):
         obj = EnsemblIdentifierFactory()
         url = obj.format_url()
         expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
         self.assertEqual(expected_url, url)
+
+    def test_is_attached_if_associated_with_a_target(self):
+        tg = TargetGeneFactory()
+        obj = tg.ensembl_id
+        self.assertTrue(obj.is_attached())
+        tg.delete()
+        self.assertFalse(obj.is_attached())
+
+    def test_delete_deletes_associated_offset(self):
+        offset = EnsemblOffsetFactory()
+        self.assertEqual(EnsemblOffset.objects.count(), 1)
+        offset.identifier.delete()
+        self.assertEqual(EnsemblOffset.objects.count(), 0)
 
 
 class TestGenomeIdentifier(TestCase):
@@ -203,3 +365,10 @@ class TestGenomeIdentifier(TestCase):
         url = obj.format_url()
         expected_url = idutils.to_url(obj.identifier, obj.IDUTILS_SCHEME)
         self.assertEqual(expected_url, url)
+
+    def test_is_attached_if_associated_with_a_genome(self):
+        genome = ReferenceGenomeFactory()
+        obj = genome.genome_id
+        self.assertTrue(obj.is_attached())
+        genome.delete()
+        self.assertFalse(obj.is_attached())
