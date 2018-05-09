@@ -100,7 +100,7 @@ class ReferenceMapWithIntervalsFactory(ReferenceMapFactory):
     def intervals(self, create, extracted, **kwargs):
         if create:
             for i in range(3):
-                GenomicInterval(reference_map=self)
+                GenomicIntervalFactory(reference_map=self)
 
 
 class GenomicIntervalFactory(DjangoModelFactory):
