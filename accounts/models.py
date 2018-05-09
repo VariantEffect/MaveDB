@@ -278,14 +278,17 @@ class Profile(TimeStampedModel):
         return instances.all()
 
     def public_contributor_experimentsets(self):
+        """Filters out private experimentsets"""
         instances = self.contributor_experimentsets().exclude(private=True)
         return instances.all()
 
     def public_contributor_experiments(self):
+        """Filters out private experiments"""
         instances = self.contributor_experiments().exclude(private=True)
         return instances.all()
 
     def public_contributor_scoresets(self):
+        """Filters out private scoresets"""
         instances = self.contributor_scoresets().exclude(private=True)
         return instances.all()
 
