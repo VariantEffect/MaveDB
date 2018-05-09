@@ -79,16 +79,11 @@ class ExperimentFactory(DatasetModelFactory):
     experimentset = factory.SubFactory(ExperimentSetFactory)
 
 
-class ExperimentWithScoresetFactory(DatasetModelFactory):
+class ExperimentWithScoresetFactory(ExperimentFactory):
     """
     Factory for producing test instances for :class:`Experiment` with an
     associated fully specified :class:`ScoreSet` (target, references etc).
     """
-    class Meta:
-        model = Experiment
-
-    experimentset = factory.SubFactory(ExperimentSetFactory)
-
     @factory.post_generation
     def scoreset(self, create, extracted, **kwargs):
         if create:
@@ -104,19 +99,14 @@ class ScoreSetFactory(DatasetModelFactory):
 
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
+    replaces = None
 
 
-class ScoreSetWithTargetFactory(DatasetModelFactory):
+class ScoreSetWithTargetFactory(ScoreSetFactory):
     """
     Factory for producing test instances for :class:`Scoreset` with an
     associated fully specified :class:`TargetGene` (references etc).
     """
-    class Meta:
-        model = ScoreSet
-
-    experiment = factory.SubFactory(ExperimentFactory)
-    dataset_columns = default_dataset()
-
     @factory.post_generation
     def target(self, create, extracted, **kwargs):
         from genome.factories import TargetGeneWithReferenceMapFactory
