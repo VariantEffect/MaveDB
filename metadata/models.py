@@ -1,10 +1,8 @@
 import datetime
 import idutils
 import metapub
-import faker
 from eutils.exceptions import EutilsNCBIError
 
-from django.conf import settings
 from django.db import models
 
 import genome.models as genome_models
@@ -17,7 +15,21 @@ from metadata.validators import (
     validate_uniprot_identifier,
 )
 
-Faker = faker.Faker()
+
+def _is_attached(instance):
+    i = instance
+    has_scoresets = False if i.get_associated('scoreset') is None \
+        else i.get_associated('scoreset').count() > 0
+    has_experiments = False if i.get_associated('experiment') is None \
+        else i.get_associated('experiment').count() > 0
+    has_experimentsets = False if i.get_associated('experimentset') is None \
+        else i.get_associated('experimentset').count() > 0
+    has_targets = False if i.get_associated('targetgene') is None \
+        else i.get_associated('targetgene').count() > 0
+    has_maps = False if i.get_associated('referencegenome') is None \
+        else i.get_associated('referencegenome').count() > 0
+    return has_maps or has_targets or has_scoresets or \
+           has_experiments or has_experimentsets
 
 
 class Keyword(TimeStampedModel):
@@ -52,9 +64,19 @@ class Keyword(TimeStampedModel):
     def __str__(self):
         return self.text
 
+    @classmethod
+    def tracked_fields(cls):
+        return "text",
+
     def get_associated(self, model):
         attr = 'associated_{}s'.format(model)
-        return getattr(self, attr).all()
+        if hasattr(self, attr):
+            return getattr(self, attr).all()
+        else:
+            return None
+    
+    def is_attached(self):
+        return _is_attached(self)
 
 
 class ExternalIdentifier(TimeStampedModel):
@@ -116,6 +138,10 @@ class ExternalIdentifier(TimeStampedModel):
         verbose_name = "Other identifier"
         verbose_name_plural = "Other identifiers"
 
+    @classmethod
+    def tracked_fields(cls):
+        return 'identifier', 'url', 'dbversion',
+
     def __str__(self):
         return "{}".format(self.identifier)
 
@@ -148,6 +174,9 @@ class ExternalIdentifier(TimeStampedModel):
         else:
             return None
 
+    def is_attached(self):
+        return _is_attached(self)
+    
 
 class SraIdentifier(ExternalIdentifier):
     """
