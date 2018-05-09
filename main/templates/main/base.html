@@ -142,11 +142,13 @@
           </ul>
 
           <form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
-            <input class="form-control mr-sm-1" type="text" aria-label="Search"
+            <div class="input-group">
+             <input class="form-control mr-sm-1" type="text" aria-label="Search"
                    placeholder="Search..." name="search">
-            <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">
-              Search
-            </button>
+              <button class="btn btn-outline-dark white-button ml-1">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
           </form>
 
         </div> <!-- End navbar links -->

@@ -142,6 +142,7 @@ table {
 
 .page-item.active .page-link {
     background-color: #f7f7f7 !important;
+    border-color: rebeccapurple !important;
 
 }
 
@@ -364,6 +365,20 @@ span.select2.select2-container.select2-container--default {
     display: block;
 }
 
+.wild-type-sequence {
+    word-wrap: break-word;
+}
+
+.urn-title, .urn-detail {
+    word-wrap: break-word;
+}
+
+@media (max-width: 1400px) {
+    .sidenav-detail {
+        display: none;
+    }
+}
+
 
 /* Buttons and Links */
 /* ------------------------------------------------------------------------- */
@@ -380,14 +395,22 @@ span.select2.select2-container.select2-container--default {
 
 .download-btn {
     color: #222222 !important;
+    background-color: white !important;
 }
 .download-btn:hover {
-    border: 1px solid #222222 !important;
+    border: 1px solid #343a40 !important;
     color: white !important;
+    background-color: #343a40 !important;
 }
 
 .white-button {
-    background-color: white;
+    color: #222222 !important;
+    background-color: white !important;
+}
+.white-button:hover {
+    border: 1px solid #343a40 !important;
+    color: white !important;
+    background-color: #343a40 !important;
 }
 
 
