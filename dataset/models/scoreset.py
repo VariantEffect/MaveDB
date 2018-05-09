@@ -37,7 +37,6 @@ def default_dataset():
     })
 
 
-@reversion.register()
 class ScoreSet(DatasetModel):
     """
     This is the class representing a set of scores for an experiment.
@@ -71,13 +70,6 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
     # ---------------------------------------------------------------------- #
-    # TODO: Update TRACKED_FIELDS in all classes to use inheritance
-    TRACKED_FIELDS = (
-        "private", "approved", "abstract_text",
-        "method_text", "doi_ids", "sra_ids", "pubmed_ids", "keywords",
-        "licence", "dataset_columns", "replaces", "short_description",
-        "title",
-    )
 
     class Meta:
         verbose_name = "ScoreSet"
@@ -86,6 +78,13 @@ class ScoreSet(DatasetModel):
             (PermissionTypes.CAN_VIEW, "Can view"),
             (PermissionTypes.CAN_EDIT, "Can edit"),
             (PermissionTypes.CAN_MANAGE, "Can manage")
+        )
+
+    @classmethod
+    def tracked_fields(cls):
+        # One-to-One fields are not supported by django-reversion.
+        return super().tracked_fields() + (
+            "licence", "dataset_columns", "normalised",
         )
 
     # ---------------------------------------------------------------------- #
@@ -223,11 +222,11 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @property
     def has_replacement(self):
-        return hasattr(self, 'replaced_by')
+        return getattr(self, 'replced_by', None) is not None
 
     @property
     def replaces_previous(self):
-        return hasattr(self, 'replaces')
+        return getattr(self, 'replaces', None) is not None
 
     @property
     def current_version(self):
@@ -254,8 +253,8 @@ class ScoreSet(DatasetModel):
 
     @property
     def next_public_version(self):
-        if self.has_replacement and not self.replaced_by.private:
-            return self.replaced_by
+        if self.has_replacement and not self.next_version.private:
+            return self.next_version
         return None
 
     @property
@@ -264,6 +263,18 @@ class ScoreSet(DatasetModel):
             return self.replaces
         return None
 
+    @property
+    def previous_public_version(self):
+        instance = self
+        public_versions = []
+        while instance.previous_version is not None:
+            if not instance.previous_version.private:
+                public_versions.append(instance.previous_version)
+            instance = instance.previous_version
+        if not public_versions:
+            return None
+        else:
+            return public_versions[-1]
 
 # --------------------------------------------------------------------------- #
 #                               Post Save
