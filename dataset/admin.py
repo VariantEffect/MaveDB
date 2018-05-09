@@ -1,21 +1,30 @@
+import reversion
+
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
 from .models.scoreset import ScoreSet
 
 
-@admin.register(ExperimentSet)
-class YourModelAdmin(VersionAdmin):
-    pass
+# admin.site.register(ExperimentSet)
+# admin.site.register(Experiment)
+# admin.site.register(ScoreSet)
 
+reversion.register(
+    model=ExperimentSet,
+    fields=ExperimentSet.tracked_fields(),
+    follow=ExperimentSet.follow_fields()
+)
 
-@admin.register(Experiment)
-class YourModelAdmin(VersionAdmin):
-    pass
+reversion.register(
+    model=Experiment,
+    fields=Experiment.tracked_fields(),
+    follow=Experiment.follow_fields()
+)
 
-
-@admin.register(ScoreSet)
-class YourModelAdmin(VersionAdmin):
-    pass
+reversion.register(
+    model=ScoreSet,
+    fields=ScoreSet.tracked_fields(),
+    follow=ScoreSet.follow_fields()
+)
