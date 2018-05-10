@@ -14,17 +14,14 @@ from .models.scoreset import ScoreSet
 reversion.register(
     model=ExperimentSet,
     fields=ExperimentSet.tracked_fields(),
-    follow=ExperimentSet.follow_fields()
 )
 
 reversion.register(
     model=Experiment,
     fields=Experiment.tracked_fields(),
-    follow=Experiment.follow_fields()
 )
 
 reversion.register(
     model=ScoreSet,
     fields=ScoreSet.tracked_fields(),
-    follow=ScoreSet.follow_fields()
 )
