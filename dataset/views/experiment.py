@@ -36,10 +36,8 @@ class ExperimentDetailView(DatasetModelView):
         context = super().get_context_data(**kwargs)
         instance = self.get_object()
         keywords = set([kw for kw in instance.keywords.all()])
-        if instance.children:
-            for child in instance.children:
-                keywords |= set([kw for kw in child.keywords.all()])
-        context['keywords'] = sorted(keywords, key=lambda kw: kw.text)
+        keywords = sorted(keywords, key=lambda kw: -1 * kw.get_association_count())
+        context['keywords'] = keywords
         return context
 
 
@@ -78,8 +76,7 @@ class ExperimentCreateView(CreateDatasetModelView):
         experiment.set_created_by(user, propagate=False)
         experiment.set_modified_by(user, propagate=False)
         experiment.save(save_parents=False)
-        track_changes(user, experiment)
-
+        
         if not self.request.POST['experimentset']:
             assign_user_as_instance_admin(user, experiment.experimentset)
             send_admin_email(self.request.user, experiment.experimentset)
@@ -92,8 +89,8 @@ class ExperimentCreateView(CreateDatasetModelView):
         experiment.set_created_by(user, propagate=propagate)
         experiment.set_modified_by(user, propagate=propagate)
         experiment.save(save_parents=save_parents)
-        track_changes(user, experiment.experimentset)
-        track_changes(user, experiment)
+        track_changes(instance=experiment, user=self.request.user)
+        track_changes(instance=experiment.parent, user=self.request.user)
         send_admin_email(self.request.user, experiment)
         self.kwargs['urn'] = experiment.urn
         return forms
@@ -138,7 +135,7 @@ class ExperimentEditView(UpdateDatasetModelView):
         experiment_form = forms['experiment_form']
         experiment = experiment_form.save(commit=True)
         experiment.set_modified_by(self.request.user, propagate=False)
-        track_changes(self.request.user, experiment)
+        track_changes(instance=experiment, user=self.request.user)
         self.kwargs['urn'] = experiment.urn
         return forms
 

@@ -50,8 +50,11 @@ class ScoreSetDetailView(DatasetModelView):
         context["variants"] = variants
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
-        context['keywords'] = sorted(
-            instance.keywords.all(), key=lambda kw: kw.text)
+        
+        keywords = set([kw for kw in instance.keywords.all()])
+        keywords = sorted(keywords, key=lambda kw: -1 * kw.get_association_count())
+        context['keywords'] = keywords
+        
         return context
 
 
@@ -137,7 +140,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
             create_variants.delay(**create_variants_kwargs)
 
         assign_user_as_instance_admin(self.request.user, scoreset)
-        track_changes(self.request.user, scoreset)
+        track_changes(instance=scoreset, user=self.request.user)
         self.kwargs['urn'] = scoreset.urn
         return forms
 
@@ -242,7 +245,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             )
 
         assign_user_as_instance_admin(self.request.user, scoreset)
-        track_changes(self.request.user, scoreset)
+        track_changes(instance=scoreset, user=self.request.user)
         return forms
 
     def get_instance_for_form(self, form_key):
