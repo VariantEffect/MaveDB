@@ -125,6 +125,7 @@ TEMPLATES = [
 
                 # Custom
                 "main.context_processors.baseurl",
+                "main.context_processors.site_information",
 
                 # Social-auth context_processors
                 'social_django.context_processors.backends',

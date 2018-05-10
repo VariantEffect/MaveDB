@@ -16,6 +16,9 @@ from metadata.validators import (
 )
 
 
+RELATED_FIELD_NAME = "associated_{}s"
+
+
 def _is_attached(instance):
     i = instance
     has_scoresets = False if i.get_associated('scoreset') is None \
@@ -69,11 +72,20 @@ class Keyword(TimeStampedModel):
         return "text",
 
     def get_associated(self, model):
-        attr = 'associated_{}s'.format(model)
+        attr = RELATED_FIELD_NAME.format(model)
         if hasattr(self, attr):
             return getattr(self, attr).all()
         else:
             return None
+        
+    def get_association_count(self):
+        experimentsets = self.get_associated('experimentset')
+        experiments = self.get_associated('experiment')
+        scoresets = self.get_associated('scoreset')
+        return sum([
+            qs.count() for qs in [experimentsets, experiments, scoresets]
+            if qs is not None
+        ])
     
     def is_attached(self):
         return _is_attached(self)
@@ -168,7 +180,7 @@ class ExternalIdentifier(TimeStampedModel):
         super().save(*args, **kwargs)
 
     def get_associated(self, model_class_name):
-        attr = 'associated_{}s'.format(model_class_name.lower())
+        attr = RELATED_FIELD_NAME.format(model_class_name.lower())
         if hasattr(self, attr):
             return getattr(self, attr).all()
         else:

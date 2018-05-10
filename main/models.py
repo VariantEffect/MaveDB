@@ -100,15 +100,16 @@ class SiteInformation(TimeStampedModel):
     version_date : `DateTimeField`
         MaveDB version release date.
     """
-    about = models.TextField(default="", blank=True)
-    citation = models.TextField(default="", blank=True)
-    usage_guide = models.TextField(default="", blank=True)
-    documentation = models.TextField(default="", blank=True)
-    terms = models.TextField(default="", blank=True)
-    privacy = models.TextField(default="", blank=True)
-    email = models.EmailField(default="", blank=True)
-    version = models.CharField(default="1", blank=False, max_length=256)
+    about = models.TextField(default="")
+    citation = models.TextField(default="")
+    usage_guide = models.TextField(default="")
+    documentation = models.TextField(default="")
+    terms = models.TextField(default="")
+    privacy = models.TextField(default="")
+    email = models.EmailField(default="")
+    version = models.CharField(default="", max_length=250)
     version_date = models.DateField(default=datetime.date.today)
+    branch = models.CharField(default="", max_length=50)
 
     class Meta:
         verbose_name_plural = "Site Information"
@@ -122,7 +123,7 @@ class SiteInformation(TimeStampedModel):
         """
         if SiteInformation.objects.first():
             return SiteInformation.objects.first()
-        return SiteInformation()
+        return SiteInformation.objects.create()
 
     def md_about(self):
         return convert_md_to_html(self.about)
@@ -157,6 +158,10 @@ class SiteInformation(TimeStampedModel):
     @property
     def release_date(self):
         return self.version_date
+    
+    @property
+    def release_branch(self):
+        return self.branch
 
     def can_save(self):
         """

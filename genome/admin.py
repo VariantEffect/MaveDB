@@ -11,9 +11,3 @@ from .models import (
 # admin.site.register(ReferenceMap)
 # admin.site.register(ReferenceGenome)
 # admin.site.register(GenomicInterval)
-
-reversion.register(TargetGene)
-reversion.register(WildTypeSequence)
-reversion.register(ReferenceMap)
-reversion.register(ReferenceGenome)
-reversion.register(GenomicInterval)

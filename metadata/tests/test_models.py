@@ -114,8 +114,29 @@ class TestKeyword(TestCase):
         self.assertTrue(kw.is_attached())
         dataset.delete()
         self.assertFalse(kw.is_attached())
-
-
+        
+    def test_get_association_count(self):
+        kw = KeywordFactory()
+        self.assertEqual(kw.get_association_count(), 0)
+        
+        exps = ExperimentSetFactory()
+        exps.keywords.add(kw)
+        self.assertEqual(kw.get_association_count(), 1)
+        
+        exp = ExperimentFactory()
+        exp.keywords.add(kw)
+        self.assertEqual(kw.get_association_count(), 2)
+        
+        scs = ScoreSetFactory()
+        scs.keywords.add(kw)
+        self.assertEqual(kw.get_association_count(), 3)
+        
+        exps.keywords.clear()
+        exp.keywords.clear()
+        scs.keywords.clear()
+        self.assertEqual(kw.get_association_count(), 0)
+        
+        
 class TestDoiIdentifierModel(TestCase):
     """
     Tests basic :class:`DoiIdentifier` functionality, specifically that the
