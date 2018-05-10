@@ -86,11 +86,11 @@ class ScoreSetForm(DatasetModelForm):
                            ('score_data', 'count_data', 'meta_data',)
         # If an experiment is passed in we can used to it to seed initial
         # replaces and m2m field selections.
+        self.experiment = None
         if 'experiment' in kwargs:
             self.experiment = kwargs.pop('experiment')
-        else:
-            self.experiment = None
         super().__init__(*args, **kwargs)
+        
         if 'sra_ids' in self.fields:
             self.fields.pop("sra_ids")
 
@@ -140,11 +140,27 @@ class ScoreSetForm(DatasetModelForm):
         self.fields["replaces"].required = False
         self.set_replaces_options()
         self.set_experiment_options()
-
+        
+        self.set_initial_keywords()
+        self.set_initial_dois()
+        self.set_initial_pmids()
+        
         self.fields["licence"].required = False
         if not self.fields["licence"].initial:
             self.fields["licence"].initial = Licence.get_default()
         self.fields["licence"].empty_label = 'Default'
+        
+    def set_initial_keywords(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields['keywords'].initial = self.experiment.keywords.all()
+            
+    def set_initial_dois(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields['doi_ids'].initial = self.experiment.doi_ids.all()
+            
+    def set_initial_pmids(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields['pubmed_ids'].initial = self.experiment.pubmed_ids.all()
 
     def clean_licence(self):
         licence = self.cleaned_data.get("licence", None)
