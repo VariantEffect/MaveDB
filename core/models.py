@@ -16,14 +16,15 @@ class TimeStampedModel(models.Model):
 
     creation_date = models.DateField(
         default=datetime.date.today,
-        verbose_name='Creation date'
+        verbose_name='Creation date',
     )
     modification_date = models.DateField(
-        auto_now=True,  # Automatically set the field to now every save
-        verbose_name='Modification date'
+        default=datetime.date.today,
+        verbose_name='Modification date',
     )
 
     def save(self, *args, **kwargs):
+        self.modification_date = datetime.datetime.today()
         return super().save(*args, **kwargs)
 
     def format_last_edit_date(self):
