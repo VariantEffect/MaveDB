@@ -127,13 +127,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     def tracked_fields(cls):
         return (
             "title", "short_description", "abstract_text", "method_text",
-            "private", "approved", "keywords", "sra_ids", "doi_ids",
-            "pubmed_ids", "extra_metadata", "urn"
-        )
-
-    @classmethod
-    def follow_fields(cls):
-        return (
             "keywords", "sra_ids", "doi_ids", "pubmed_ids",
         )
 

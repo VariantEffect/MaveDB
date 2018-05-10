@@ -80,13 +80,6 @@ class ScoreSet(DatasetModel):
             (PermissionTypes.CAN_MANAGE, "Can manage")
         )
 
-    @classmethod
-    def tracked_fields(cls):
-        # One-to-One fields are not supported by django-reversion.
-        return super().tracked_fields() + (
-            "licence", "dataset_columns", "normalised",
-        )
-
     # ---------------------------------------------------------------------- #
     #                       Required Model fields
     # ---------------------------------------------------------------------- #
