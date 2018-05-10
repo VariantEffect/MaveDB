@@ -211,12 +211,25 @@
              MaveDB
             <small class="d-block mb-3 text-muted">&copy; 2017-2018</small>
           </div>
+
+          {% if site_information.release_version and site_information.release_branch %}
+            <div class="row justify-content-center">
+              <small>
+                <p class="text-muted site-version">
+                  <strong>{{ site_information.release_branch }}: </strong>
+                  {{ site_information.release_version }}
+                </p>
+              </small>
+            </div>
+          {% endif %}
+
           <div class="row justify-content-center">
             <a href="https://github.com/FowlerLab/">
               <img class="mb-2" src="{% static 'main/main/img/GitHub-Mark-64px.png' %}" alt="" width="24" height="24">
             </a>
           </div>
         </div>
+
         <div class="col-12 col-md">
           <div class="row">
             <div class="col">
@@ -251,6 +264,7 @@
           </div>
         </div>
       </div>
+
     </footer>
 
     <!-- Scripts -->

@@ -2,7 +2,21 @@
 
 {% block body %}
 <div class="right-align">
-  <h1><span class="underline urn-title" style="word-wrap: break-word;">{{ instance.get_display_urn }}</span></h1>
+  <h1><span class="underline urn-title" style="word-wrap: break-word;">
+    {{ instance.get_display_urn }}</span>
+    {% if instance.class_name == "scoreset" %}
+      <div class="dropdown">
+        <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Downloads
+        </button>
+        <div class="dropdown-menu" aria-labelledby="scoresetDropDown">
+          <a class="dropdown-item" href="{% url 'dataset:scores_download' instance.urn %}">Scores</a>
+          <a class="dropdown-item" href="{% url 'dataset:counts_download' instance.urn %}">Counts</a>
+          <a class="dropdown-item" href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>
+        </div>
+      </div>
+    {% endif %}
+  </h1>
   <p class="text-muted urn-detail">
 
     Created <a href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a><br>
@@ -65,10 +79,6 @@
       <a href="#variants">Variants</a>
     {% endif %}
 
-    {% if instance.class_name == "scoreset" %}
-      <a href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>
-    {% endif %}
-
   </div>
 
   <div class="model-detail col-10 pl-4">
@@ -113,11 +123,11 @@
 
       <!-- Renders Keywords -->
       <h2 id="method" class="underline left-align section-heading">Keywords</h2>
-      {% if not instance.keywords.all %}
+      {% if not keywords %}
         <p class="text-muted">No keywords are associated with this entry.</p>
       {% else %}
         <ul>
-          {% for kw in instance.keywords.all %}
+          {% for kw in keywords %}
             <li><a href="/search/?keywords={{ kw.text }}">{{ kw.text }}</a></li>
           {% endfor %}
         </ul>

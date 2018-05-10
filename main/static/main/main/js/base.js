@@ -2,13 +2,55 @@
 "use strict";
 jQuery, $;
 
+// On Load ----------------------------------------------------------------- //
+$("document").ready(function() {
 
-$("form#data").submit(function(e) {
-  e.preventDefault();
-  var formData = new FormData(this);
+  // Initialise select2
+  $(".select2").select2();
+  $(".select2-token-select").select2({
+    tags: true,
+    tokenSeparators: [","]
+  });
+
+  $('#search-table').DataTable();
+  $('#scores-table').DataTable();
+  $('#counts-table').DataTable();
+
+  // Re-add any external_accession, keywords or target organism
+  // back to failed form submission
+  repopulateSelect(
+    "#id_keywords",
+    "#keywords-to-add"
+  );
+  repopulateSelect(
+    "#id_sra_ids",
+    "#sra-identifiers-to-add"
+  );
+  repopulateSelect(
+    "#id_doi_ids",
+    "#doi-identifiers-to-add"
+  );
+  repopulateSelect(
+    "#id_pubmed_ids",
+    "#pubmed-identifiers-to-add"
+  );
+  repopulateSelect(
+    "#id_uniprot-offset-identifier",
+    "#uniprot-identifier-to-add"
+  );
+  repopulateSelect(
+    "#id_ensembl-offset-identifier",
+    "#ensembl-identifier-to-add"
+  );
+  repopulateSelect(
+    "#id_refseq-offset-identifier",
+    "#refseq-identifier-to-add"
+  );
+
 });
 
 
+// Buttons ----------------------------------------------------------------- //
 // ORCID button in base.html
 function openORCID() {
   var baseUrl = window.location.origin;
@@ -31,92 +73,9 @@ function cancelSubmission() {
   return false;
 }
 
-$("document").ready(function() {
-  // Initialise select2
-  $(".select2").select2();
-  $(".select2-token-select").select2({
-    tags: true,
-    tokenSeparators: [","],
-  });
-
-  $('#search-table').DataTable();
-  $('#scores-table').DataTable();
-  $('#counts-table').DataTable();
-
-  // Re-add any external_accession, keywords or target organism
-  // back to failed form submission
-  repopulateSelect("#id_keywords", "#keywords-to-add");
-  repopulateSelect("#id_sra_ids", "#sra-identifiers-to-add");
-  repopulateSelect("#id_doi_ids", "#doi-identifiers-to-add");
-  repopulateSelect("#id_pubmed_ids", "#pubmed-identifiers-to-add");
-  repopulateSelect("#id_uniprot-offset-identifier", "#uniprot-identifier-to-add");
-  repopulateSelect("#id_ensembl-offset-identifier", "#ensembl-identifier-to-add");
-  repopulateSelect("#id_refseq-offset-identifier", "#refseq-identifier-to-add");
-});
-
-
-// Ajax for markdown field preview
-$("#preview-abstract").click(function (e) {
-  // First get whatever is in the form and send an ajax request
-  // to convert it to markdown.
-  var abstract = $("#id_abstract_text").val();
-  $.ajax({
-    url: window.location.pathname,
-    type: "GET",
-    data: { "abstractText": abstract, "markdown": true},
-    dataType: "json",
-    success: function (data) {
-      abstract = data.abstractText;
-      $("#abstract-markdown-modal .modal-body")
-        .text("")
-        .append(abstract);
-    },
-    error : function(xhr, errmsg, err) {
-      console.log(xhr.status + ": " + xhr.responseText);
-    }
-  });
-  return true;
-});
-
-$("#preview-method").click(function (e) {
-  // First get whatever is in the form and send an ajax request
-  // to convert it to markdown.
-  var method = $("#id_method_text").val();
-  $.ajax({
-    url: window.location.pathname,
-    type: "GET",
-    data: { "methodText": method, "markdown": true },
-    dataType: "json",
-    success: function (data) {
-      method = data.methodText;
-      $("#method-markdown-modal .modal-body")
-        .text("")
-        .append(method);
-    },
-    error : function(xhr,errmsg,err) {
-      console.log(xhr.status + ": " + xhr.responseText);
-    }
-  });
-  return true;
-});
-
-// Check Publish is ok with user
-$("#publish").click(function (event) {
-  var saidYes = confirm(
-    "WARNING! Proceeding will freeze your upload and limit which fields " +
-    "can be edited. If this score set is part of a private experiment, " +
-    "this experiment will also be published and frozen. " +
-    "Please make sure you have read the documentation before proceeding." +
-    " This action cannot be undone. Would you like to proceed?"
-  );
-  return saidYes;
-});
-
-
 // Check management form submission
 // ----------------------------------------------------------------------- //
 // `user` is a global defined in base.html using Django"s templating system.
-
 function askConfirmation() {
   return confirm(
     "This assignment will remove you as an administartor. If you " +
@@ -176,6 +135,18 @@ function validateViewerSubmit(e) {
   return $("#viewer-form").submit();
 }
 
+// Check Publish is ok with user
+$("#publish").click(function (event) {
+  var saidYes = confirm(
+    "WARNING! Proceeding will freeze your upload and limit which fields " +
+    "can be edited. If this score set is part of a private experiment, " +
+    "this experiment will also be published and frozen. " +
+    "Please make sure you have read the documentation before proceeding." +
+    " This action cannot be undone. Would you like to proceed?"
+  );
+  return saidYes;
+});
+
 
 // Dynaimic form selection
 // ------------------------------------------------------------------------ //
@@ -185,6 +156,7 @@ function repopulateSelect(selectId, listId) {
   var selectItems = listId;
   var i,j = 0;
 
+
   if (selectItems !== undefined) {
     if (typeof listId === "string") {
       selectItems = $(listId).text();
@@ -193,7 +165,11 @@ function repopulateSelect(selectId, listId) {
 
     for(i=0; i<selectItems.length; i++) {
       var optionExists = false;
-      var options = document.getElementsByTagName("option");
+      var select = document.getElementById(selectId.replace("#", ''));
+      if (select === null) {
+        return
+      }
+      var options = select.getElementsByTagName("option");
 
       for (j=0; j<options.length; j++) {
         if (selectItems[i] === options[j].value) {
@@ -215,31 +191,58 @@ function repopulateSelect(selectId, listId) {
 }
 
 
-function getNewDataSelectId(formGroupClass) {
-  var parent = document.getElementsByClassName(formGroupClass)[0];
-  var children = parent.getElementsByClassName(
-    "select2-selection__rendered")[0].children;
-  var nums = [];
-  for(var i =0; i < children.length; i++) {
-    var num = children[i].getAttribute('data-select2-id');
-    if (!isNaN(parseInt(num))) {
-      nums.push(parseInt(num));
+// AJAX Calls -------------------------------------------------------------- //
+// ------------------------------------------------------------------------- //
+$("#preview-abstract").click(function (e) {
+  // First get whatever is in the form and send an ajax request
+  // to convert it to markdown.
+  var abstract = $("#id_abstract_text").val();
+  $.ajax({
+    url: window.location.pathname,
+    type: "GET",
+    data: { "abstractText": abstract, "markdown": true},
+    dataType: "json",
+    success: function (data) {
+      abstract = data.abstractText;
+      $("#abstract-markdown-modal .modal-body")
+        .text("")
+        .append(abstract);
+    },
+    error : function(xhr, errmsg, err) {
+      console.log(xhr.status + ": " + xhr.responseText);
     }
-  }
-  var num = nums.sort()[nums.length - 1] + 1;
-  if (isNaN(num)) {
-    return -1;
-  } else {
-    return num
-  }
-}
+  });
+  return true;
+});
+
+
+$("#preview-method").click(function (e) {
+  // First get whatever is in the form and send an ajax request
+  // to convert it to markdown.
+  var method = $("#id_method_text").val();
+  $.ajax({
+    url: window.location.pathname,
+    type: "GET",
+    data: { "methodText": method, "markdown": true },
+    dataType: "json",
+    success: function (data) {
+      method = data.methodText;
+      $("#method-markdown-modal .modal-body")
+        .text("")
+        .append(method);
+    },
+    error : function(xhr,errmsg,err) {
+      console.log(xhr.status + ": " + xhr.responseText);
+    }
+  });
+  return true;
+});
 
 
 $("#id_experiment").on("change", function() {
   var id = this.value;
   var replaces_selector = "#id_replaces";
   var options = $(replaces_selector).children();
-  console.log("here")
   if (parseInt(id)) {
     $.ajax({
       url: window.location.pathname,
@@ -248,7 +251,7 @@ $("#id_experiment").on("change", function() {
       dataType: "json",
 
       success: function (data) {
-        console.log(data);
+        // console.log(data);
         $.each(options, function (index, option) {
           if (option.value !== "") {
             $(option).remove();
@@ -256,6 +259,7 @@ $("#id_experiment").on("change", function() {
             $(option).select();
           }
         });
+
         $.each(data.scoresets, function (index, tuple) {
           if (tuple[0] !== "" && tuple[1] !== "") {
             $(replaces_selector).append($("<option/>", {
@@ -264,28 +268,6 @@ $("#id_experiment").on("change", function() {
             }));
           }
         });
-        
-        // // <li class="select2-selection__choice" title="process" data-select2-id="67">
-        // /* <span class="select2-selection__choice__remove" role="presentation">×</span>process</li> */
-        //
-        //
-        // var options = document.getElementById('id_keywords').children;
-        // console.log(options);
-        // var keywords = data.keywords;
-        // var i, j = 0;
-        // for (i = 0; i < options.length; i++) {
-        //   for (j=0; j<keywords.length; j++)
-        //     if (options[i].value === keywords[j]) {
-        //       console.log(options[i]);
-        //       options[i].selected = true;
-        //
-        //       let li = document.createElement("li")
-        //       li.title = options[i].value;
-        //       li.setAttribute('data-select-id', parseString(getNewDataSelectId('keywords-group')))
-        //
-        //     }
-        // }
-        
       },
       error: function (xhr, errmsg, err) {
         console.log(xhr.status + ": " + xhr + errmsg + err);
@@ -300,26 +282,26 @@ $("#id_target").on("change", function() {
   // to convert it to markdown.
   var id = this.value;
   var emptySelect = '---------';
-  
+
   var uniprotSelect = document.getElementById(
     'select2-id_uniprot-offset-identifier-container');
   var uniprotOffsetElem = document.getElementById(
     "id_uniprot-offset-offset");
-  
+
   var refseqSelect = document.getElementById(
     'select2-id_refseq-offset-identifier-container');
   var refseqOffsetElem = document.getElementById(
     "id_refseq-offset-offset");
-  
+
   var ensemblSelect = document.getElementById(
     'select2-id_ensembl-offset-identifier-container');
   var ensemblOffsetElem = document.getElementById(
     "id_ensembl-offset-offset");
-  
+
   var nameElem = document.getElementById('id_name');
   var seqElem = document.getElementById('id_wt_sequence');
   var genomeElem = document.getElementById('id_genome');
-    
+
   if (parseInt(id)) {
     $.ajax({
       url: window.location.pathname,
@@ -327,23 +309,23 @@ $("#id_target").on("change", function() {
       data: {"targetId": id},
       dataType: "json",
       success: function (data) {
-        console.log(data);
+        // console.log(data);
         var i = 0;
         var options = document.getElementsByTagName('OPTION');
         var targetName = data.name;
         var wildTypeSequence = data.wt_sequence.sequence;
         var referenceGenome = data.genome;
-        
+
         var uniprot_id = data.uniprot.identifier;
         var uniprot_offset = data.uniprot.offset;
-        
+
         var refseq_id = data.refseq.identifier;
         var refseq_offset = data.refseq.offset;
 
         var ensembl_id = data.ensembl.identifier;
         var ensembl_offset = data.ensembl.offset;
-        
-         
+
+
         if (uniprot_id) {
           for(i=0; i<options.length; i++) {
             if (options[i].value === uniprot_id) {
@@ -358,7 +340,7 @@ $("#id_target").on("change", function() {
           uniprotSelect.title = emptySelect;
           uniprotOffsetElem.value = 0;
         }
-        
+
         if (refseq_id) {
           for(i=0; i<options.length; i++) {
             if (options[i].value === refseq_id) {
@@ -373,7 +355,7 @@ $("#id_target").on("change", function() {
           refseqSelect.title = emptySelect;
           refseqOffsetElem.value = 0;
         }
-        
+
         if (ensembl_id) {
           for(i=0; i<options.length; i++) {
             if (options[i].value === ensembl_id) {
@@ -414,15 +396,15 @@ $("#id_target").on("change", function() {
     nameElem.value = "";
     seqElem.value = "";
     genomeElem.value = "";
-    
+
     ensemblSelect.innerHTML = emptySelect;
     ensemblSelect.title = emptySelect;
     ensemblOffsetElem.value = 0;
-    
+
     refseqSelect.innerHTML = emptySelect;
     refseqSelect.title = emptySelect;
     refseqOffsetElem.value = 0;
-    
+
     uniprotSelect.innerHTML = emptySelect;
     uniprotSelect.title = emptySelect;
     uniprotOffsetElem.value = 0;

@@ -14,6 +14,8 @@
     #338caf - 'ORCID blue'
     #6c757d - 'Subdued gray'
     rebeccapurple - 'Hyperlink hover purple'
+    #dc3545 - 'bootstrap red'
+    #28a745; - 'bootstrap green'
  */
 
 * {
@@ -76,6 +78,19 @@ a:active {
 
 ul {
     list-style-type: square;
+}
+
+/* Home page */
+.site-version {
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+.is-valid {
+    border-color: #28a745 !important;
 }
 
 
