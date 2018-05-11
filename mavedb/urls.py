@@ -18,7 +18,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-
+from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
 
@@ -29,7 +29,6 @@ handler403 = 'main.views.handler403'
 handler500 = 'main.views.handler500'
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
     url('^', include('social_django.urls', namespace='social')),
     url(r'^', include('main.urls', namespace='main'), name='main'),
     url(r'^api/', include('api.urls', namespace='api'), name='api'),
@@ -46,3 +45,9 @@ urlpatterns = [
         include("search.urls", namespace="search"), name="search"
     ),
 ]
+
+if settings.ADMIN_ENABLED:
+    urlpatterns += [
+        url(r'^admin/', admin.site.urls),
+    ]
+
