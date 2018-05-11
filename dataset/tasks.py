@@ -40,16 +40,19 @@ class BaseCreateVariants(Task):
         )
         return super(BaseCreateVariants, self).on_failure(
             exc, task_id, args, kwargs, einfo)
-
-
-@celery_app.task(ignore_result=True)
-def publish_scoreset(scoreset_urn, user_pk, base_url):
+    
+    
+@celery_app.task(ignore_result=True, base=BaseCreateVariants)
+def publish_scoreset(user_pk, scoreset_urn, base_url="", email_admins=True):
     user = User.objects.get(pk=user_pk)
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
+    scoreset.publish()
     scoreset.set_modified_by(user, propagate=True)
-    scoreset.publish(propagate=True)
     scoreset.save(save_parents=True)
-    send_admin_email.delay(user=user.pk, urn=scoreset.urn, base_url=base_url)
+    if email_admins:
+        send_admin_email.delay(
+            user=user.pk, urn=scoreset.urn, base_url=base_url)
+    return scoreset
 
 
 @celery_app.task(ignore_result=True, base=BaseCreateVariants)
@@ -57,10 +60,25 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
                     publish=False, base_url=""):
     """Bulk creates and emails the user the processing status."""
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
+    user = User.objects.get(pk=user_pk)
+    
     notify_user_upload_status.delay(
         user_pk=user_pk, scoreset_urn=scoreset_urn,
         step='start', base_url=base_url)
+    
     with transaction.atomic():
+        # Variants build their urns from the scoreset urn so we will need
+        # to publish the scoreset first to cr
+        # eate the public urn.
+        if publish:
+            # Re-assign to refresh the current in-memory object to
+            # to refresh the urn.
+            scoreset = publish_scoreset(
+                user_pk=user_pk, scoreset_urn=scoreset_urn,
+                base_url=base_url, email_admins=False
+            )
+            
+        # Delete existing variants and create new ones.
         scoreset.delete_variants()
         Variant.bulk_create(scoreset, [v for _, v in variants.items()])
         scoreset.dataset_columns = dataset_columns
@@ -69,9 +87,12 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
         notify_user_upload_status.delay(
             user_pk=user_pk, scoreset_urn=scoreset_urn,
             step='end', base_url=base_url)
+        
         if publish:
-            publish_scoreset.delay(
-                scoreset_urn=scoreset_urn, user_pk=user_pk, base_url=base_url)
+            # Send an email last to ensure that all the above has worked
+            # without error.
+            send_admin_email.delay(
+                user=user.pk, urn=scoreset.urn, base_url=base_url)
 
 
 @celery_app.task(ignore_result=True)
