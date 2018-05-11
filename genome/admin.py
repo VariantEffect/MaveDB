@@ -1,13 +1,9 @@
-import reversion
-
 from django.contrib import admin
 
-from .models import (
-    TargetGene, WildTypeSequence, ReferenceMap, ReferenceGenome, GenomicInterval
-)
+from . import models
 
-# admin.site.register(TargetGene)
-# admin.site.register(WildTypeSequence)
-# admin.site.register(ReferenceMap)
-# admin.site.register(ReferenceGenome)
-# admin.site.register(GenomicInterval)
+admin.site.register(models.TargetGene)
+admin.site.register(models.WildTypeSequence)
+admin.site.register(models.ReferenceMap)
+admin.site.register(models.ReferenceGenome)
+admin.site.register(models.GenomicInterval)

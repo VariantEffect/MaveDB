@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Variant
+from . import models
 
 
-# admin.site.register(Variant)
+admin.site.register(models.Variant)

@@ -1,27 +1,40 @@
 import reversion
+from reversion.admin import VersionAdmin
 
 from django.contrib import admin
 
-from .models.experimentset import ExperimentSet
-from .models.experiment import Experiment
-from .models.scoreset import ScoreSet
-
-
-# admin.site.register(ExperimentSet)
-# admin.site.register(Experiment)
-# admin.site.register(ScoreSet)
+from . import models
 
 reversion.register(
-    model=ExperimentSet,
-    fields=ExperimentSet.tracked_fields(),
+    model=models.experimentset.ExperimentSet,
+    fields=models.experimentset.ExperimentSet.tracked_fields(),
 )
 
 reversion.register(
-    model=Experiment,
-    fields=Experiment.tracked_fields(),
+    model=models.experiment.Experiment,
+    fields=models.experiment.Experiment.tracked_fields(),
 )
 
 reversion.register(
-    model=ScoreSet,
-    fields=ScoreSet.tracked_fields(),
+    model=models.scoreset.ScoreSet,
+    fields=models.scoreset.ScoreSet.tracked_fields(),
 )
+
+
+# The following classes enable version control to be accessed from the admin
+# view
+@admin.register(models.experiment.Experiment)
+class ExperimentVersion(VersionAdmin):
+    pass
+
+
+@admin.register(models.experimentset.ExperimentSet)
+class ExperimentSetVersion(VersionAdmin):
+    pass
+
+
+@admin.register(models.scoreset.ScoreSet)
+class ScoreSetVersion(VersionAdmin):
+    pass
+
+

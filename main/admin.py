@@ -1,11 +1,11 @@
 from django.contrib import admin
 
-from .models import News, SiteInformation, Licence
+from . import models
 
 # Register with admin
-admin.site.register(News)
-admin.site.register(Licence)
-admin.site.register(SiteInformation)
+admin.site.register(models.News)
+admin.site.register(models.Licence)
+admin.site.register(models.SiteInformation)
 
 
 
