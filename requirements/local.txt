@@ -1,5 +1,2 @@
 -r base.txt
 
-Faker>=0.7.18
-mod_wsgi-httpd
-mod_wsgi
