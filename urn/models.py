@@ -1,11 +1,17 @@
+import random
+import string
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 
 from core.models import TimeStampedModel
 
 from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, \
-    MAVEDB_URN_MAX_LENGTH, MAVEDB_URN_NAMESPACE
+    MAVEDB_URN_MAX_LENGTH, MAVEDB_URN_NAMESPACE, \
+    MAVEDB_TMP_URN_DIGITS
 
+
+RANDOM_CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
 
 def get_model_by_urn(urn):
     from variant.models import Variant
@@ -18,6 +24,14 @@ def get_model_by_urn(urn):
             return model.objects.get(urn=urn)
     raise ObjectDoesNotExist("No model found with urn {}.".format(urn))
 
+
+def generate_tmp_urn():
+    return 'tmp:{}'.format(
+        ''.join([
+            random.choice(RANDOM_CHARS)
+            for _ in range(MAVEDB_TMP_URN_DIGITS)
+    ]))
+    
 
 class UrnModel(TimeStampedModel):
     """
@@ -72,7 +86,19 @@ class UrnModel(TimeStampedModel):
 
     def create_urn(self):
         raise NotImplementedError()
-
+    
+    @classmethod
+    def create_temp_urn(cls):
+        urn = generate_tmp_urn()
+        while cls.objects.filter(urn=urn).count() > 0:
+            urn = generate_tmp_urn()
+        return urn
+        
     def get_display_urn(self):
         if self.urn:
             return self.urn
+        
+    @property
+    def has_public_urn(self):
+        return 'urn:' in str(self.urn)
+    
