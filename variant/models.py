@@ -76,6 +76,10 @@ class Variant(UrnModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+        
+    @property
+    def parent(self):
+        return self.scoreset
 
     @classmethod
     @transaction.atomic
@@ -102,14 +106,17 @@ class Variant(UrnModel):
         return child_urns
 
     def create_urn(self):
-        parent = self.scoreset
-        child_value = parent.last_child_value + 1
-
-        urn = "{}#{}".format(parent.urn, child_value)
-
-        # update parent
-        parent.last_child_value = child_value
-        parent.save()
+        if self.scoreset.private:
+            urn = self.create_temp_urn()
+        else:
+            parent = self.scoreset
+            child_value = parent.last_child_value + 1
+    
+            urn = "{}#{}".format(parent.urn, child_value)
+    
+            # update parent
+            parent.last_child_value = child_value
+            parent.save()
 
         return urn
 
