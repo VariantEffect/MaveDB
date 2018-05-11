@@ -4,7 +4,7 @@ from django.shortcuts import reverse
 
 from accounts.factories import UserFactory
 
-from variant.factories import generate_hgvs, make_data
+from variant.factories import generate_hgvs, make_data, VariantFactory
 
 from dataset import constants
 from dataset.models.scoreset import default_dataset, ScoreSet
@@ -102,8 +102,7 @@ class TestCreateVariantsTask(TestCase):
         )
         mock_patch.assert_called()
 
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
-    def test_calls_publish_if_true(self, mock_patch):
+    def test_publish_sets_public_urns(self):
         create_variants(
             dataset_columns=default_dataset(),
             variants=self.variants,
@@ -112,7 +111,9 @@ class TestCreateVariantsTask(TestCase):
             base_url="",
             scoreset_urn=self.scoreset.urn,
         )
-        mock_patch.assert_called()
+        self.scoreset.refresh_from_db()
+        self.assertTrue(self.scoreset.has_public_urn)
+        self.assertTrue(self.scoreset.variants.first().has_public_urn)
 
 
 class TestPublishScoresetTask(TestCase):
@@ -152,6 +153,16 @@ class TestPublishScoresetTask(TestCase):
         publish_scoreset(
             scoreset_urn=self.scoreset.urn, user_pk=self.user.pk, base_url="")
         mock_patch.assert_called()
+        
+    def test_publish_sets_public_urns(self):
+        var = VariantFactory(scoreset=self.scoreset)
+        self.assertFalse(var.has_public_urn)
+        publish_scoreset(
+            scoreset_urn=self.scoreset.urn, user_pk=self.user.pk, base_url="")
+        var.refresh_from_db()
+        self.scoreset.refresh_from_db()
+        self.assertTrue(var.has_public_urn)
+        self.assertTrue(self.scoreset.has_public_urn)
 
 
 class TestNotifyUserTask(TestCase):

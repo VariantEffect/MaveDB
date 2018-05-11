@@ -17,13 +17,21 @@ class TestVariant(TestCase):
     """
 
     def test_autoassign_urn_when_save(self):
-        variant = VariantFactory()
+        variant = VariantFactory(
+            scoreset__private=False,
+            scoreset__experiment__private=False,
+            scoreset__experiment__experimentset__private=False,
+        )
         scoreset = variant.scoreset
         urn = "{}#{}".format(scoreset.urn, scoreset.last_child_value)
         self.assertEqual(variant.urn, urn)
 
     def test_create_urn_increments_last_child_value_by_one(self):
-        scoreset = ScoreSetFactory()
+        scoreset = ScoreSetFactory(
+            private=False,
+            experiment__private=False,
+            experiment__experimentset__private=False,
+        )
         before_variant = scoreset.last_child_value
         _ = VariantFactory(scoreset=scoreset)
         after_variant = scoreset.last_child_value
@@ -63,3 +71,28 @@ class TestVariant(TestCase):
         })
         with self.assertRaises(ValidationError):
             var.full_clean()
+            
+    def test_variant_will_get_tmp_urn_if_scoreset_is_private(self):
+        scs = ScoreSetFactory()
+        obj = VariantFactory(scoreset=scs)
+        self.assertIn('tmp', obj.urn)
+        
+    def test_variant_will_get_public_urn_if_scoreset_is_private(self):
+        scs = ScoreSetFactory(
+            private=False,
+            experiment__private=False,
+            experiment__experimentset__private=False,
+        )
+        obj = VariantFactory(scoreset=scs)
+        self.assertIn('urn', obj.urn)
+        
+    def test_has_public_urn(self):
+        obj = ScoreSetFactory()
+        self.assertFalse(obj.has_public_urn)
+        
+        obj = ScoreSetFactory(
+            private=False,
+            experiment__private=False,
+            experiment__experimentset__private=False,
+        )
+        self.assertTrue(obj.has_public_urn)

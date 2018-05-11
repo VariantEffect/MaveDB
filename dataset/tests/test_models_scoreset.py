@@ -31,6 +31,27 @@ class TestScoreSet(TestCase):
         scs = ScoreSetFactory()
         scs.publish()
         self.assertFalse(scs.private)
+        
+    def test_publish_assigns_a_public_urn(self):
+        scs = ScoreSetFactory()
+        self.assertFalse(scs.has_public_urn)
+        scs.publish()
+        self.assertTrue(scs.has_public_urn)
+        self.assertTrue(scs.parent.has_public_urn)
+        self.assertTrue(scs.parent.parent.has_public_urn)
+        
+    def test_publish_assigns_a_public_urn_to_variants(self):
+        scs = ScoreSetFactory()
+        var = VariantFactory(scoreset=scs)
+        self.assertFalse(var.has_public_urn)
+        
+        scs.publish()
+        scs.save(save_parents=True)
+        scs.save_children()
+        
+        scs.refresh_from_db()
+        var.refresh_from_db()
+        self.assertTrue(var.has_public_urn)
 
     def test_new_is_assigned_all_permission_groups(self):
         self.assertEqual(Group.objects.count(), 0)

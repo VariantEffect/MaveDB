@@ -1,9 +1,11 @@
+import random
+
 from django.test import TestCase
 from django.core.exceptions import ObjectDoesNotExist
 
 from dataset import models
 from dataset.factories import (
-    ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
+    ScoreSetFactory, ExperimentFactory, ExperimentSetFactory,
 )
 from variant.models import Variant
 from variant.factories import VariantFactory
@@ -36,3 +38,18 @@ class TestGetByUrn(TestCase):
     def test_ObjectDoesNotExist_if_cannot_find_urn(self):
         with self.assertRaises(ObjectDoesNotExist):
             self.assertIsInstance(get_model_by_urn("urn:111"), Variant)
+            
+    def test_can_assign_tmp_urn_when_private_is_true(self):
+        obj = ExperimentSetFactory(private=True)
+        self.assertIn('tmp:', obj.urn)
+        
+    def test_can_assign_public_urn_when_private_is_false(self):
+        obj = ExperimentSetFactory(private=False)
+        self.assertIn('urn:', obj.urn)
+
+    def test_will_avoid_tmp_urn_collision(self):
+        random.seed(0)
+        obj1 = ExperimentSetFactory(private=True)
+        random.seed(0)
+        obj2 = ExperimentSetFactory(private=True)
+        self.assertNotEqual(obj1.urn, obj2.urn)

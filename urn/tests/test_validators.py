@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
+from ..models import generate_tmp_urn
+
 from ..validators import (
     validate_mavedb_urn,
     validate_mavedb_urn_experiment,
@@ -18,7 +20,11 @@ class TestURNValidators(TestCase):
     :class:`variant.models.Variant` as the driver.
     """
     def test_validationerror_malformed_experimentset_urn(self):
-        variant = VariantFactory()
+        variant = VariantFactory(
+            scoreset__private=False,
+            scoreset__experiment__private=False,
+            scoreset__experiment__experimentset__private=False,
+        )
         with self.assertRaises(ValidationError):
             validate_mavedb_urn_experimentset(variant.urn)
         # Should pass
@@ -26,7 +32,11 @@ class TestURNValidators(TestCase):
             variant.scoreset.experiment.experimentset.urn)
 
     def test_validationerror_malformed_experiment_urn(self):
-        variant = VariantFactory()
+        variant = VariantFactory(
+            scoreset__private=False,
+            scoreset__experiment__private=False,
+            scoreset__experiment__experimentset__private=False,
+        )
         with self.assertRaises(ValidationError):
             validate_mavedb_urn_experiment(variant.urn)
         # Should pass
@@ -37,14 +47,22 @@ class TestURNValidators(TestCase):
         validate_mavedb_urn_experiment(variant.scoreset.experiment.urn + 'a')
 
     def test_validationerror_malformed_scoreset_urn(self):
-        variant = VariantFactory()
+        variant = VariantFactory(
+            scoreset__private=False,
+            scoreset__experiment__private=False,
+            scoreset__experiment__experimentset__private=False,
+        )
         with self.assertRaises(ValidationError):
             validate_mavedb_urn_scoreset(variant.urn)
         # Should pass
         validate_mavedb_urn_scoreset(variant.scoreset.urn)
 
     def test_validationerror_malformed_variant_urn(self):
-        variant = VariantFactory()
+        variant = VariantFactory(
+            scoreset__private=False,
+            scoreset__experiment__private=False,
+            scoreset__experiment__experimentset__private=False,
+        )
         with self.assertRaises(ValidationError):
             validate_mavedb_urn_variant(variant.urn + 'extra')
         # Should pass
@@ -64,3 +82,13 @@ class TestURNValidators(TestCase):
         for i in instances:
             # Test should pass
             validate_mavedb_urn(i.urn)
+            
+    def test_can_validate_tmp_pattern(self):
+        # Passing test
+        validate_mavedb_urn(generate_tmp_urn())
+        variant = VariantFactory()
+        validate_mavedb_urn_variant(variant.urn)
+        validate_mavedb_urn_scoreset(variant.scoreset.urn)
+        validate_mavedb_urn_experiment(variant.scoreset.parent.urn)
+        validate_mavedb_urn_experimentset(variant.scoreset.parent.parent.urn)
+        
