@@ -263,7 +263,13 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def create_urn(self):
         raise NotImplementedError()
-
+    
+    @transaction.atomic
+    def save_children(self):
+        if self.children:
+            for child in self.children:
+                child.save()
+       
     def save_parents(self, *args, **kwargs):
         if hasattr(self, 'experiment'):
             self.experiment.save(*args, **kwargs)
@@ -271,14 +277,18 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         if hasattr(self, 'experimentset'):
             self.experimentset.save(*args, **kwargs)
 
-    def publish(self, propagate=True):
-        if propagate:
-            self.propagate_set_value('private', False)
-            self.propagate_set_value('publish_date', datetime.date.today())
-        else:
-            self.private = False
-            self.publish_date = datetime.date.today()
-
+    @transaction.atomic
+    def publish(self):
+        # Need to traverse to the root of the ancestral tree first because
+        # urns are recursively generated from parents.
+        self.private = False
+        self.publish_date = datetime.date.today()
+        if self.parent:
+            self.parent.publish()
+        if not self.has_public_urn:
+            self.urn = self.create_urn()
+            self.save()
+        
     def set_modified_by(self, user, propagate=False):
         if propagate:
             self.propagate_set_value('modified_by', user)

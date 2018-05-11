@@ -82,21 +82,24 @@ class Experiment(DatasetModel):
         super().save(*args, **kwargs)
 
     def create_urn(self):
-        parent = self.experimentset
-        child_value = parent.last_child_value + 1
-
-        # convert child_value to letters
-        suffix = ""
-        x = child_value
-        while x > 0:
-            x, y = divmod(x - 1, len(string.ascii_lowercase))
-            suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
-
-        urn = "{}-{}".format(parent.urn, suffix)
-
-        # update parent
-        parent.last_child_value = child_value
-        parent.save()
+        if self.private:
+            urn = self.create_temp_urn()
+        else:
+            parent = self.experimentset
+            child_value = parent.last_child_value + 1
+    
+            # convert child_value to letters
+            suffix = ""
+            x = child_value
+            while x > 0:
+                x, y = divmod(x - 1, len(string.ascii_lowercase))
+                suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
+    
+            urn = "{}-{}".format(parent.urn, suffix)
+    
+            # update parent
+            parent.last_child_value = child_value
+            parent.save()
 
         return urn
 

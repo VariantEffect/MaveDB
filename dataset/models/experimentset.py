@@ -45,9 +45,12 @@ class ExperimentSet(DatasetModel):
     #                       Methods
     # ---------------------------------------------------------------------- #
     def create_urn(self):
-        expset_number = str(self.pk)
-        padded_expset_number = expset_number.zfill(self.URN_DIGITS)
-        urn = "{}{}".format(self.URN_PREFIX, padded_expset_number)
+        if self.private:
+            urn = self.create_temp_urn()
+        else:
+            expset_number = str(self.pk)
+            padded_expset_number = expset_number.zfill(self.URN_DIGITS)
+            urn = "{}{}".format(self.URN_PREFIX, padded_expset_number)
         return urn
 
     def public_experiments(self):

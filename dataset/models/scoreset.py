@@ -135,17 +135,28 @@ class ScoreSet(DatasetModel):
     def save(self, *args, **kwargs):
         if self.licence is None:
             self.licence = Licence.get_default()
-        super().save(*args, **kwargs)
-
+        return super().save(*args, **kwargs)
+    
+    @transaction.atomic
+    def publish(self):
+        super().publish()
+        for child in self.children:
+            child.urn = child.create_urn()
+            child.save()
+        return self
+        
     def create_urn(self):
-        parent = self.experiment
-        child_value = parent.last_child_value + 1
-
-        urn = "{}-{}".format(parent.urn, child_value)
-
-        # update parent
-        parent.last_child_value = child_value
-        parent.save()
+        if self.private:
+            urn = self.create_temp_urn()
+        else:
+            parent = self.experiment
+            child_value = parent.last_child_value + 1
+    
+            urn = "{}-{}".format(parent.urn, child_value)
+    
+            # update parent
+            parent.last_child_value = child_value
+            parent.save()
 
         return urn
 
