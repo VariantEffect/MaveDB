@@ -2,6 +2,7 @@
 from .base import *
 
 DEBUG = True
+ADMIN_ENABLED = DEBUG
 
 USE_SOCIAL_AUTH = False
 
