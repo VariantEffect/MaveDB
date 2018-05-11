@@ -1,277 +1,258 @@
 {% extends "accounts/profile_base.html" %}
 
 {% block profile_body %}
-
   <div class="row">
+
     <div class="col-12">
-      <div class="tab-content" id="home-pills">
-        <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
-          <div class="row">
-            <div class="col-auto">
-              <h2> Dashboard </h2>
-            </div>
-            <div class="col-auto">
-              <div class="dropdown">
-                <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Do the thing
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                  <a class="dropdown-item" id="dashboard-tab" data-toggle="pill" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Home</a>
-                  <a class="dropdown-item" id="profile-tab" data-toggle="pill" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Edit Profile</a>
-                  <a class="dropdown-item" href="{% url 'dataset:experiment_new' %}">New Experiment</a>
-                  <a class="dropdown-item" href="{% url 'dataset:scoreset_new' %}">New Score Set</a>
-                </div>
-              </div>
-            </div>
-          </div>
-          <hr>
 
-            <!-- Instances that user is a ADMIN for -->
-            <div id="contributor-instances">
-              {% if request.user.profile.contributor_instances %}
-                <p class="text-muted">
-                  Below are the instances you contribute to sorted by modification date.
-                </p>
-                <!-- Score Sets -->
-                {% if request.user.profile.contributor_scoresets %}
-                  <h2 class="underline left-align section-heading">Score Sets</h2>
-                  <div>
-                    <div class="card-deck">
-                      {% for instance in request.user.profile.contributor_scoresets %}
-                        <div class="card hover-card profile-card">
-                          <div class="card-body">
-                            <h5 class="card-title right-align"><a href="{% url 'dataset:scoreset_detail' instance.urn %}">{{ instance.urn }}</a></h5><br>
-                            <p class="card-text"><b>{{ instance.get_title }}</b></p>
-                            <p class="card-text card-description">{{ instance.get_description }}</p>
-                          </div>
-                          <div class="card-footer">
-                            <div class="row">
-                              <small class="col text-muted">Last updated {{ instance.format_last_edit_date }} by
-                                <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a> &middot;
-                                {% if instance.private %}
-                                  Private
-                                {% else %}
-                                  Public
-                                {% endif %}
-                              </small>
-                              <small class="col-auto text-muted float-right">
-                                {% if instance in request.user.profile.administrator_scoresets %}
-                                  <a href="{% url 'accounts:manage_instance' instance.urn %}">
-                                    <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
-                                     title="View the detail page for this Score Set.">group_add</i>
-                                  </a>
-                                {% endif %}
-                                {% if instance in request.user.profile.administrator_scoresets or instance in request.user.profile.editor_scoresets %}
-                                 <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
-                                     title="Edit this Score Set.">edit</i>
-                                 </a>
-                                {% endif %}
+      <div class="tab-pane fade show" id="home" role="tabpanel" aria-labelledby="home-tab">
+        <div id="contributor-instances">
+          {% if request.user.profile.contributor_instances %}
+            <p class="text-muted">
+              Below are the instances you contribute to sorted by modification date.
+            </p>
 
-                                {% if instance.private %}
-                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
-                                     title="This Score Set is private and may only be viewed by you and other contributors." >visibility_off
-                                  </i>
-                                 {% else %}
-                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
-                                     title="This Score Set is public and may be viewed by anyone visiting the site." >visibility
-                                  </i>
-                                {% endif %}
-
-                                {% if instance.processing_state == 'processing'%}
-                                  <a class="processing-icon" data-toggle="tooltip" data-placement="top"
-                                     title="Your submission is currently being processed.">
-                                    <i class="material-icons">access_time</i>
-                                  </a>
-                                {% endif %}
-                                {% if instance.processing_state == 'failed'%}
-                                  <a class="error-icon" data-toggle="tooltip" data-placement="top"
-                                     title="There was an error with your submission. Try again or contact support.">
-                                    <i class="material-icons">error</i>
-                                  </a>
-                                {% endif %}
-                                {% if instance.processing_state == 'success' %}
-                                  <a class="success-icon" data-toggle="tooltip" data-placement="top"
-                                     title="Your submission has been successfully processed.">
-                                    <i class="material-icons">sentiment_very_satisfied</i>
-                                  </a>
-                                {% endif %}
-                              </small>
-                            </div>
-                          </div>
-                        </div>
-                      {% endfor %}
-                    </div> <!-- end card deck -->
-                  </div> <!-- end scoreset card deck container -->
-                {% endif %}
-
-                <!-- Experiments -->
-                {% if request.user.profile.contributor_experiments %}
-                  <h2 class="underline left-align section-heading">Experiments</h2>
-                  <div>
-                    <div class="card-deck">
-                      {% for instance in request.user.profile.contributor_experiments %}
-                        <div class="card hover-card profile-card">
-                          <div class="card-body">
-                            <h5 class="card-title right-align">{{ instance.urn }}</h5><br>
-                            <p class="card-text"><b>{{ instance.get_title }}</b></p>
-                            <p class="card-text card-description">{{ instance.get_description }}</p>
-                            {% if not instance.children.count %}
-                              <p class="card-text">No associated score sets.</p>
+            <!-- Score Sets -->
+            {% if request.user.profile.contributor_scoresets %}
+              <h2 class="underline left-align section-heading">Score Sets</h2>
+              <div>
+                <div class="card-deck">
+                  {% for instance in request.user.profile.contributor_scoresets %}
+                    <div class="card hover-card profile-card">
+                      <div class="card-body">
+                        <h5 class="card-title right-align"><a href="{% url 'dataset:scoreset_detail' instance.urn %}">{{ instance.urn }}</a></h5><br>
+                        <p class="card-text"><b>{{ instance.get_title }}</b></p>
+                        <p class="card-text card-description">{{ instance.get_description }}</p>
+                      </div>
+                      <div class="card-footer">
+                        <div class="row">
+                          <small class="col text-muted">Last updated {{ instance.format_last_edit_date }} by
+                            <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a> &middot;
+                            {% if instance.private %}
+                              Private
                             {% else %}
-                              <p class="card-text">
-                                <h6>Score Sets:</h6>
-                                <ul>
-                                  {% for child in instance.children %}
-                                    <li><a href="{% url 'dataset:scoreset_detail' child.urn %}"> {{ child.urn }}</a></li>
-                                  {% endfor %}
-                                </ul>
-                              </p>
+                              Public
                             {% endif %}
-                          </div>
-                          <div class="card-footer">
-                            <div class="row">
-                              <small class="col text-muted">Last updated {{ instance.format_last_edit_date }} by
-                                <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a> &middot;
-                                {% if instance.private %}
-                                  Private
-                                {% else %}
-                                  Public
-                                {% endif %}
-                              </small>
-                              <small class="col-auto text-muted float-right">
+                          </small>
+                          <small class="col-auto text-muted float-right">
+                            {% if instance in request.user.profile.administrator_scoresets %}
+                              <a href="{% url 'accounts:manage_instance' instance.urn %}">
+                                <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                 title="View the detail page for this Score Set.">group_add</i>
+                              </a>
+                            {% endif %}
+                            {% if instance in request.user.profile.administrator_scoresets or instance in request.user.profile.editor_scoresets %}
+                             <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
+                              <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                 title="Edit this Score Set.">edit</i>
+                             </a>
+                            {% endif %}
 
-                                {% if instance in request.user.profile.administrator_experiments %}
-                                  <a href="{% url 'accounts:manage_instance' instance.urn %}">
-                                    <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
-                                     title="View the detail page for this Experiment.">group_add</i>
-                                  </a>
-                                {% endif %}
+                            {% if instance.private %}
+                              <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                 title="This Score Set is private and may only be viewed by you and other contributors." >visibility_off
+                              </i>
+                             {% else %}
+                              <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                 title="This Score Set is public and may be viewed by anyone visiting the site." >visibility
+                              </i>
+                            {% endif %}
 
-                                {% if instance in request.user.profile.administrator_experiments or instance in request.user.profile.editor_experiments %}
-                                 <a href="{% url 'accounts:edit_experiment' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
-                                     title="Edit this Experiment.">edit</i>
-                                 </a>
-                                {% endif %}
-
-                                {% if instance.private %}
-                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
-                                     title="This Experiment is private and may only be viewed by you and other contributors." >visibility_off
-                                  </i>
-                                 {% else %}
-                                  <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
-                                     title="This Experiment is public and may be viewed by anyone visiting the site." >visibility
-                                  </i>
-                                {% endif %}
-
-                              </small>
-                            </div>
-                          </div>
-                        </div>
-                      {% endfor %}
-                    </div> <!-- end card deck -->
-                  </div> <!-- end experiment card deck container -->
-                {% endif %}
-
-                <!-- Experiment Sets -->
-                {% if request.user.profile.contributor_experimentsets %}
-                  <h2 class="underline left-align section-heading">Experiment Sets</h2>
-                  <div>
-                    <div class="card-deck">
-                    {% for instance in request.user.profile.contributor_experimentsets %}
-                      <div class="card hover-card profile-card">
-                        <div class="card-body">
-                          <h5 class="card-title right-align">{{ instance.urn }}</h5><br>
-                          {% if not instance.children.count %}
-                            <p class="card-text">No associated experiments.</p>
-                          {% else %}
-                            <p class="card-text">
-                              <h6>Experiments:</h6>
-                              <ul>
-                                {% for child in instance.children %}
-                                  <li><a href="{% url 'dataset:experiment_detail' child.urn %}"> {{ child.urn }}</a></li>
-                                {% endfor %}
-                              </ul>
-                            </p>
-                          {% endif %}
-                        </div>
-                        <div class="card-footer">
-                          <div class="row">
-                            <small class="col text-muted">Last updated {{ instance.format_last_edit_date }} by
-                              <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a> &middot;
-                              {% if instance.private %}
-                                Private
-                              {% else %}
-                                Public
-                              {% endif %}
-                            </small>
-                            <small class="col-auto text-muted float-right">
-
-                              {% if instance in request.user.profile.administrator_experimentsets %}
-                                <a href="{% url 'accounts:manage_instance' instance.urn %}">
-                                  <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
-                                     title="View the detail page for this Experiment Set.">group_add</i>
-                                </a>
-                              {% endif %}
-
-                              {% if instance.private %}
-                                <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
-                                   title="This Experiment Set is private and may only be viewed by you and other contributors." >visibility_off
-                                </i>
-                              {% else %}
-                                <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
-                                   title="This Experiment Set is public and may be viewed by anyone visiting the site." >visibility
-                                </i>
-                              {% endif %}
-
-                            </small>
-                          </div>
+                            {% if instance.processing_state == 'processing'%}
+                              <a class="processing-icon" data-toggle="tooltip" data-placement="top"
+                                 title="Your submission is currently being processed.">
+                                <i class="material-icons">access_time</i>
+                              </a>
+                            {% endif %}
+                            {% if instance.processing_state == 'failed'%}
+                              <a class="error-icon" data-toggle="tooltip" data-placement="top"
+                                 title="There was an error with your submission. Try again or contact support.">
+                                <i class="material-icons">error</i>
+                              </a>
+                            {% endif %}
+                            {% if instance.processing_state == 'success' %}
+                              <a class="success-icon" data-toggle="tooltip" data-placement="top"
+                                 title="Your submission has been successfully processed.">
+                                <i class="material-icons">sentiment_very_satisfied</i>
+                              </a>
+                            {% endif %}
+                          </small>
                         </div>
                       </div>
-                    {% endfor %}
-                    </div> <!-- end card deck -->
-                  </div> <!-- end experiment set card deck container -->
-                {% endif %}
-              {% else %}
-                <p class="text-muted">
-                  You are not a contributor on any entries
-                </p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-          <div>
-            <h2> Profile settings
-              <a><i class="icon material-icons" style="font-size: 48px;">person_outline</i></a>
-            </h2>
-            <hr>
-            <div class="row">
-              <div class="col-12 col-xs-12">
-                <form action="{% url 'accounts:profile' %}" method="post">
-                  {% csrf_token %}
-                  {% include 'core/bs_form.html' with form=profile_form %}
-                  <div class="row">
-                    <div class="col-auto">
-                      <input class="btn btn-outline-dark white-button" type="submit" value="Save"
-                             name="save" style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                             data-placement="top|right|bottom|left" title="Save profile changes.">
                     </div>
-                    <div class="col-auto">
-                      <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
-                             style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                             data-placement="top|right|bottom|left" onclick="window.location.assign('{% url 'accounts:profile' %}')"
-                             title="Cancel your changes.">
+                  {% endfor %}
+                </div> <!-- end card deck -->
+              </div> <!-- end scoreset card deck container -->
+            {% endif %}
+
+            <!-- Experiments -->
+            {% if request.user.profile.contributor_experiments %}
+              <h2 class="underline left-align section-heading">Experiments</h2>
+              <div>
+                <div class="card-deck">
+                  {% for instance in request.user.profile.contributor_experiments %}
+                    <div class="card hover-card profile-card">
+                      <div class="card-body">
+                        <h5 class="card-title right-align">{{ instance.urn }}</h5><br>
+                        <p class="card-text"><b>{{ instance.get_title }}</b></p>
+                        <p class="card-text card-description">{{ instance.get_description }}</p>
+                        {% if not instance.children.count %}
+                          <p class="card-text">No associated score sets.</p>
+                        {% else %}
+                          <p class="card-text">
+                            <h6>Score Sets:</h6>
+                            <ul>
+                              {% for child in instance.children %}
+                                <li><a href="{% url 'dataset:scoreset_detail' child.urn %}"> {{ child.urn }}</a></li>
+                              {% endfor %}
+                            </ul>
+                          </p>
+                        {% endif %}
+                      </div>
+                      <div class="card-footer">
+                        <div class="row">
+                          <small class="col text-muted">Last updated {{ instance.format_last_edit_date }} by
+                            <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a> &middot;
+                            {% if instance.private %}
+                              Private
+                            {% else %}
+                              Public
+                            {% endif %}
+                          </small>
+                          <small class="col-auto text-muted float-right">
+
+                            {% if instance in request.user.profile.administrator_experiments %}
+                              <a href="{% url 'accounts:manage_instance' instance.urn %}">
+                                <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                 title="View the detail page for this Experiment.">group_add</i>
+                              </a>
+                            {% endif %}
+
+                            {% if instance in request.user.profile.administrator_experiments or instance in request.user.profile.editor_experiments %}
+                             <a href="{% url 'accounts:edit_experiment' instance.urn %}">
+                              <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                 title="Edit this Experiment.">edit</i>
+                             </a>
+                            {% endif %}
+
+                            {% if instance.private %}
+                              <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                 title="This Experiment is private and may only be viewed by you and other contributors." >visibility_off
+                              </i>
+                             {% else %}
+                              <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                                 title="This Experiment is public and may be viewed by anyone visiting the site." >visibility
+                              </i>
+                            {% endif %}
+
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div> <!-- end card deck -->
+              </div> <!-- end experiment card deck container -->
+            {% endif %}
+
+            <!-- Experiment Sets -->
+            {% if request.user.profile.contributor_experimentsets %}
+              <h2 class="underline left-align section-heading">Experiment Sets</h2>
+              <div>
+                <div class="card-deck">
+                {% for instance in request.user.profile.contributor_experimentsets %}
+                  <div class="card hover-card profile-card">
+                    <div class="card-body">
+                      <h5 class="card-title right-align">{{ instance.urn }}</h5><br>
+                      {% if not instance.children.count %}
+                        <p class="card-text">No associated experiments.</p>
+                      {% else %}
+                        <p class="card-text">
+                          <h6>Experiments:</h6>
+                          <ul>
+                            {% for child in instance.children %}
+                              <li><a href="{% url 'dataset:experiment_detail' child.urn %}"> {{ child.urn }}</a></li>
+                            {% endfor %}
+                          </ul>
+                        </p>
+                      {% endif %}
+                    </div>
+                    <div class="card-footer">
+                      <div class="row">
+                        <small class="col text-muted">Last updated {{ instance.format_last_edit_date }} by
+                          <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a> &middot;
+                          {% if instance.private %}
+                            Private
+                          {% else %}
+                            Public
+                          {% endif %}
+                        </small>
+                        <small class="col-auto text-muted float-right">
+
+                          {% if instance in request.user.profile.administrator_experimentsets %}
+                            <a href="{% url 'accounts:manage_instance' instance.urn %}">
+                              <i class="material-icons" style="font-size: 24px" data-toggle="tooltip" data-placement="top"
+                                 title="View the detail page for this Experiment Set.">group_add</i>
+                            </a>
+                          {% endif %}
+
+                          {% if instance.private %}
+                            <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                               title="This Experiment Set is private and may only be viewed by you and other contributors." >visibility_off
+                            </i>
+                          {% else %}
+                            <i class="material-icons" style="font-size: 24px; cursor: help" data-toggle="tooltip" data-placement="top"
+                               title="This Experiment Set is public and may be viewed by anyone visiting the site." >visibility
+                            </i>
+                          {% endif %}
+
+                        </small>
+                      </div>
                     </div>
                   </div>
-                </form>
-              </div>
+                {% endfor %}
+                </div> <!-- end card deck -->
+              </div> <!-- end experiment set card deck container -->
+            {% endif %}
+
+          {% else %}
+            <p class="text-muted">
+              You are not a contributor on any entries
+            </p>
+          {% endif %}
+        </div>
+      </div> <!-- End home tab-panel -->
+
+      <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+        <div>
+          <h2> Profile settings
+            <a><i class="icon material-icons" style="font-size: 48px;">person_outline</i></a>
+          </h2>
+          <hr>
+          <div class="row">
+            <div class="col-12 col-xs-12">
+              <form action="{% url 'accounts:profile' %}" method="post">
+                {% csrf_token %}
+                {% include 'core/bs_form.html' with form=profile_form %}
+                <div class="row">
+                  <div class="col-auto">
+                    <input class="btn btn-outline-dark white-button" type="submit" value="Save"
+                           name="save" style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                           data-placement="top|right|bottom|left" title="Save profile changes.">
+                  </div>
+                  <div class="col-auto">
+                    <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                           style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                           data-placement="top|right|bottom|left" onclick="window.location.assign('{% url 'accounts:profile' %}')"
+                           title="Cancel your changes.">
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>
-      </div>
+      </div> <!-- End profile tab-panel -->
+
     </div>
+
   </div>
 {% endblock profile_body %}
