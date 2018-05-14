@@ -1,13 +1,20 @@
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
-from search.mixins import SearchMixin
+from search.mixins import FilterMixin
 from .permissions import (
+    GroupTypes,
     user_is_anonymous,
     user_is_admin_for_instance,
     user_is_contributor_for_instance,
     user_is_editor_for_instance,
     user_is_viewer_for_instance,
+    assign_user_as_instance_viewer,
+    assign_user_as_instance_admin,
+    assign_user_as_instance_editor,
+    remove_user_as_instance_admin,
+    remove_user_as_instance_editor,
+    remove_user_as_instance_viewer,
 )
 
 
@@ -25,6 +32,48 @@ def filter_anon(qs):
     else:
         users = [u.pk for u in qs if not user_is_anonymous(u)]
         return User.objects.filter(pk__in=users)
+
+
+def _add_users(instance, users, group):
+    if group == GroupTypes.ADMIN:
+        func = assign_user_as_instance_admin
+    elif group == GroupTypes.EDITOR:
+        func = assign_user_as_instance_editor
+    elif group == GroupTypes.VIEWER:
+        func = assign_user_as_instance_viewer
+    else:
+        raise ValueError("Unrecognised permission group {}.".format(group))
+    if hasattr(users, '__iter__'):
+        all_assigned = True
+        for u in users:
+            all_assigned &= func(user=u, instance=instance)
+        return all_assigned
+    elif isinstance(users, User):
+        return func(user=users, instance=instance)
+    else:
+        raise TypeError("Expected iterable or User. Found {}.".format(
+            type(users).__name__))
+
+
+def _remove_users(instance, users, group):
+    if group == GroupTypes.ADMIN:
+        func = remove_user_as_instance_admin
+    elif group == GroupTypes.EDITOR:
+        func = remove_user_as_instance_editor
+    elif group == GroupTypes.VIEWER:
+        func = remove_user_as_instance_viewer
+    else:
+        raise ValueError("Unrecognised permission group {}.".format(group))
+    if hasattr(users, '__iter__'):
+        all_removed = True
+        for u in users:
+            all_removed &= func(user=u, instance=instance)
+        return all_removed
+    elif isinstance(users, User):
+        return func(user=users, instance=instance)
+    else:
+        raise TypeError("Expected iterable or User. Found {}.".format(
+            type(users).__name__))
 
 
 class GroupPermissionMixin(object):
@@ -111,8 +160,47 @@ class GroupPermissionMixin(object):
         return self.administrators().union(
             self.editors()).union(self.viewers())
 
+    def add_administrators(self, users):
+        """
+        Assigns user(s) as an administrator, removing them from any previous
+        group assignment.
+        """
+        return _add_users(self, users, group=GroupTypes.ADMIN)
 
-class UserSearchMixin(SearchMixin):
+    def remove_administrators(self, users):
+        """
+        Removes user(s) as an administrator.
+        """
+        return _remove_users(self, users, group=GroupTypes.ADMIN)
+
+    def add_editors(self, users):
+        """
+        Assigns user(s) as an editor, removing them from any previous
+        group assignment.
+        """
+        return _add_users(self, users, group=GroupTypes.EDITOR)
+
+    def remove_editors(self, users):
+        """
+        Removes user(s) as an editor.
+        """
+        return _remove_users(self, users, group=GroupTypes.EDITOR)
+
+    def add_viewers(self, users):
+        """
+        Assigns user(s) as a viewer, removing them from any previous
+        group assignment.
+        """
+        return _add_users(self, users, group=GroupTypes.VIEWER)
+
+    def remove_viewers(self, users):
+        """
+        Removes user(s) as a viewer.
+        """
+        return _remove_users(self, users, group=GroupTypes.VIEWER)
+
+
+class UserFilterMixin(FilterMixin):
     """
     Filter :class:`User` instances by common fields:
         'username': 'username',
