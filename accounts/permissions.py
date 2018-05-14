@@ -271,6 +271,9 @@ def delete_all_groups_for_instance(instance):
 def assign_user_as_instance_admin(user, instance):
     if user_is_anonymous(user):
         return False
+    if not isinstance(user, User):
+        raise TypeError(
+            "Expected type User, found {}.".format(type(user).__name__))
 
     group_name = get_admin_group_name_for_instance(instance)
     try:
@@ -289,6 +292,9 @@ def assign_user_as_instance_admin(user, instance):
 def assign_user_as_instance_editor(user, instance):
     if user_is_anonymous(user):
         return False
+    if not isinstance(user, User):
+        raise TypeError(
+            "Expected type User, found {}.".format(type(user).__name__))
 
     group_name = get_editor_group_name_for_instance(instance)
     try:
@@ -307,6 +313,9 @@ def assign_user_as_instance_editor(user, instance):
 def assign_user_as_instance_viewer(user, instance):
     if user_is_anonymous(user):
         return False
+    if not isinstance(user, User):
+        raise TypeError(
+            "Expected type User, found {}.".format(type(user).__name__))
 
     group_name = get_viewer_group_name_for_instance(instance)
     try:
@@ -325,6 +334,9 @@ def assign_user_as_instance_viewer(user, instance):
 # User removal
 # --------------------------------------------------------------------------- #
 def remove_user_as_instance_admin(user, instance):
+    if not isinstance(user, User):
+        raise TypeError(
+            "Expected type User, found {}.".format(type(user).__name__))
     try:
         group_name = get_admin_group_name_for_instance(instance)
         admin_group = Group.objects.get(name=group_name)
@@ -336,6 +348,9 @@ def remove_user_as_instance_admin(user, instance):
 
 
 def remove_user_as_instance_editor(user, instance):
+    if not isinstance(user, User):
+        raise TypeError(
+            "Expected type User, found {}.".format(type(user).__name__))
     try:
         group_name = get_editor_group_name_for_instance(instance)
         author_group = Group.objects.get(name=group_name)
@@ -347,6 +362,9 @@ def remove_user_as_instance_editor(user, instance):
 
 
 def remove_user_as_instance_viewer(user, instance):
+    if not isinstance(user, User):
+        raise TypeError(
+            "Expected type User, found {}.".format(type(user).__name__))
     try:
         group_name = get_viewer_group_name_for_instance(instance)
         viewer_group = Group.objects.get(name=group_name)
@@ -359,8 +377,6 @@ def remove_user_as_instance_viewer(user, instance):
 
 # Updates
 # -------------------------------------------------------------------------- #
-
-
 def update_admin_list_for_instance(users, instance):
     for user in instance.administrators():
         if user not in users:
