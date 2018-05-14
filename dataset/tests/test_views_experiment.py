@@ -38,7 +38,10 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
         self.template_404 = 'main/404.html'
 
     def test_uses_correct_template(self):
-        obj = ExperimentFactory(private=False)
+        obj = ExperimentFactory(
+            private=False,
+            experimentset__private=False
+        )
         response = self.client.get('/experiment/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template)
 

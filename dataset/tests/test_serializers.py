@@ -38,7 +38,7 @@ class TestExperimentSerializer(TestCase):
 class TestScoreSetSerializer(TestCase):
 
     def test_current_version_shows_only_latest_public_version(self):
-        scs_1 = ScoreSetFactory(private=False)
+        scs_1 = ScoreSetFactory()
         scs_2 = ScoreSetFactory(
             private=False,
             experiment=scs_1.experiment,

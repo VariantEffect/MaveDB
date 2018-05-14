@@ -91,7 +91,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         self.assertEqual(response.status_code, 200)
 
     def test_variants_are_in_response(self):
-        scs = ScoreSetFactory()
+        scs = ScoreSetFactory(private=False)
         scs.dataset_columns = {
             constants.score_columns: ["score"],
             constants.count_columns: [],
@@ -103,13 +103,97 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
                 constants.variant_score_data: {"score": "1"},
             }
         )
-        scs.publish(propagate=True)
-        scs.save(save_parents=True)
         request = self.factory.get('/scoreset/{}/'.format(scs.urn))
         request.user = UserFactory()
         response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
         # Remove '>' because it gets escaped.
         self.assertContains(response, var.hgvs[:-2])
+
+    # --- Next version links
+    def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=True, replaces=scs)
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertNotContains(response, scs1.urn)
+
+    def test_next_version_shown_if_private_and_user_is_a_contributor(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=True, replaces=scs)
+        scs2 = ScoreSetFactory(private=False, replaces=scs1)
+        user = UserFactory()
+        scs1.add_viewers(user)
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = user
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertContains(response, scs1.urn + " [Private]", count=1)
+
+    def test_next_version_shown_if_public(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        scs2 = ScoreSetFactory(private=False, replaces=scs1)
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertContains(response, '>' + scs1.urn + '<', count=1)
+
+    # --- Prev version links
+    def test_prev_version_not_shown_if_private_and_user_is_not_a_contributor(self):
+        scs = ScoreSetFactory(private=True)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        request = self.factory.get('/scoreset/{}/'.format(scs1.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs1.urn)
+        self.assertNotContains(response, scs.urn)
+
+    def test_prev_version_shown_if_private_and_user_is_a_contributor(self):
+        scs = ScoreSetFactory(private=True)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        user = UserFactory()
+        scs.add_viewers(user)
+        request = self.factory.get('/scoreset/{}/'.format(scs1.urn))
+        request.user = user
+        response = ScoreSetDetailView.as_view()(request, urn=scs1.urn)
+        self.assertContains(response, scs.urn + " [Private]", count=1)
+
+    def test_prev_version_shown_if_public(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        request = self.factory.get('/scoreset/{}/'.format(scs1.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs1.urn)
+        self.assertContains(response, '>' + scs.urn + '<', count=1)
+
+    # --- Current Version
+    def test_curr_version_not_shown_if_private_and_user_is_not_a_contributor(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        scs2 = ScoreSetFactory(private=True, replaces=scs1)
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertNotContains(response, scs2.urn)
+
+    def test_curr_version_shown_if_private_and_user_is_a_contributor(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        scs2 = ScoreSetFactory(private=True, replaces=scs1)
+        user = UserFactory()
+        scs2.add_viewers(user)
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = user
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertContains(response, scs2.urn + " [Private]", count=1)
+
+    def test_curr_version_shown_if_public(self):
+        scs = ScoreSetFactory(private=False)
+        scs1 = ScoreSetFactory(private=False, replaces=scs)
+        scs2 = ScoreSetFactory(private=False, replaces=scs1)
+        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        self.assertContains(response, '>' + scs2.urn + '<', count=1)
 
 
 class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
@@ -261,7 +345,10 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
 
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
-        scoreset = ScoreSet.objects.order_by("-urn").first()
+        if ScoreSet.objects.all()[0].urn == scs1.urn:
+            scoreset = ScoreSet.objects.all()[1]
+        else:
+            scoreset = ScoreSet.objects.all()[0]
         self.assertEqual(scoreset.experiment, scs1.parent)
         self.assertEqual(scoreset.replaces, scs1)
         self.assertEqual(scoreset.keywords.count(), 2)
@@ -746,15 +833,11 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
             response = ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()
-            with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
-                create_variants(**create_mock.call_args[1])
-                publish_mock.assert_called_once()
-                with mock.patch('core.tasks.send_admin_email.delay') as send_mock:
-                    publish_scoreset(**publish_mock.call_args[1])
-                    send_mock.assert_called_once()
-                    send_admin_email(**send_mock.call_args[1])
-                    self.assertEqual(response.status_code, 302)
-                    self.assertEqual(len(mail.outbox), 1)
+            with mock.patch('core.tasks.send_admin_email.delay') as send_mock:
+                send_mock.assert_called_once()
+                send_admin_email(**send_mock.call_args[1])
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(len(mail.outbox), 1)
 
     def test_published_instance_returns_edit_only_mode_form(self):
         scs = ScoreSetFactory(private=False)

@@ -37,14 +37,12 @@ class TestSearchView(TestCase):
         user = UserFactory()
         assign_user_as_instance_admin(user, self.exp1)
         scs = self.exp1.scoresets.first()
-        scs.publish(propagate=True)
-        scs.save(save_parents=True)
+        scs.publish()
         self.assertFalse(self.exp1.private)
 
         assign_user_as_instance_admin(user, self.exp2)
         scs = self.exp2.scoresets.first()
-        scs.publish(propagate=True)
-        scs.save(save_parents=True)
+        scs.publish()
         self.assertFalse(self.exp2.private)
 
         assign_user_as_instance_admin(user, self.exp1)

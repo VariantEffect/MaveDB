@@ -94,8 +94,8 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_empty_text_response_download_counts_but_has_no_counts(self):
         instance = ScoreSetFactory()
-        instance.publish(propagate=True)
-        instance.save(save_parents=True)
+        instance.publish()
+        instance.refresh_from_db()
         response = self.client.get(
             "/api/scoreset/{}/counts/".format(instance.urn)
         )
@@ -107,8 +107,8 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_scores(self):
         scs = ScoreSetFactory()
-        scs.publish(propagate=True)
-        scs.save(save_parents=True)
+        scs.publish()
+        scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
             constants.count_columns: ["count"]
@@ -131,7 +131,8 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_counts(self):
         scs = ScoreSetFactory()
-        scs.publish(propagate=True)
+        scs.publish()
+        scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
             constants.count_columns: ["count"]
@@ -154,6 +155,8 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_metadata(self):
         scs = ScoreSetFactory(private=False)
+        scs.publish()
+        scs.refresh_from_db()
         response = json.loads(self.client.get(
             "/api/scoreset/{}/metadata/".format(scs.urn)
         ).content.decode())

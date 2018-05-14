@@ -5,7 +5,9 @@ from django.http import Http404
 from django.core import mail
 from django.core.exceptions import PermissionDenied
 
-from dataset.factories import ExperimentSetFactory
+from dataset import constants
+from dataset import models as dataset_models
+from dataset.factories import ExperimentSetFactory, ScoreSetFactory
 
 from core.utilities.tests import TestMessageMixin
 
@@ -20,7 +22,65 @@ from ..permissions import (
     user_is_editor_for_instance,
 )
 
-from ..views import manage_instance, profile_view
+from ..views import manage_instance, profile_view, profile_settings
+
+
+class TestProfileSettings(TestCase, TestMessageMixin):
+    """
+    Test the settings view forms.
+    """
+    def setUp(self):
+        self.path = reverse_lazy("accounts:profile_settings")
+        self.factory = RequestFactory()
+        self.template = 'accounts/profile_settings.html'
+        self.alice = UserFactory(username="alice")
+
+    def test_requires_login(self):
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 302)
+
+    def test_can_set_email(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='post',
+            path='/profile/',
+            data={'email': 'email@email.com'}
+        )
+        request.user = user
+        response = profile_settings(request)
+        self.assertContains(response, 'email@email.com')
+
+    def test_cannot_set_invalid_email(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='post',
+            path='/profile/',
+            data={'email': 'not an email.com'}
+        )
+        request.user = user
+        response = profile_settings(request)
+        self.assertContains(response, 'There were errors')
+
+    def test_setting_email_emails_user(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='post',
+            path='/profile/',
+            data={'email': 'email@email.com'}
+        )
+        request.user = user
+        _ = profile_settings(request)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_users_email_appears_in_profile(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='get',
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_settings(request)
+        self.assertContains(response, user.profile.email)
 
 
 class TestProfileHomeView(TestCase, TestMessageMixin):
@@ -37,48 +97,126 @@ class TestProfileHomeView(TestCase, TestMessageMixin):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
-    def test_can_set_email(self):
+    def test_can_delete_private_entry(self):
         user = UserFactory()
+        instance = ScoreSetFactory()
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        assign_user_as_instance_admin(user, instance)
         request = self.create_request(
             method='post',
-            path='/profile/',
-            data={'email': 'email@email.com'}
-        )
-        request.user = user
-        response = profile_view(request)
-        self.assertContains(response, 'email@email.com')
-
-    def test_cannot_set_invalid_email(self):
-        user = UserFactory()
-        request = self.create_request(
-            method='post',
-            path='/profile/',
-            data={'email': 'not an email.com'}
-        )
-        request.user = user
-        response = profile_view(request)
-        self.assertContains(response, 'There were errors')
-
-    def test_setting_email_emails_user(self):
-        user = UserFactory()
-        request = self.create_request(
-            method='post',
-            path='/profile/',
-            data={'email': 'email@email.com'}
-        )
-        request.user = user
-        _ = profile_view(request)
-        self.assertEqual(len(mail.outbox), 1)
-
-    def test_users_email_appears_in_profile(self):
-        user = UserFactory()
-        request = self.create_request(
-            method='get',
+            data={"delete": instance.urn},
             path='/profile/',
         )
         request.user = user
         response = profile_view(request)
-        self.assertContains(response, user.profile.email)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 0)
+
+    def test_cannot_delete_public_entry(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        instance.save(save_parents=True)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "is public and cannot be deleted.")
+
+    def test_returns_error_message_if_urn_does_not_exist(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        instance.delete()
+        response = profile_view(request)
+        self.assertContains(response, "already been deleted.")
+
+    def test_cannot_delete_if_not_an_admin(self):
+        editor = UserFactory()
+        viewer = UserFactory()
+        instance = ScoreSetFactory()
+        assign_user_as_instance_editor(editor, instance)
+        assign_user_as_instance_viewer(viewer, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = editor
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "You must be an administrator")
+
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = viewer
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "You must be an administrator")
+
+    def test_can_delete_experimentset_if_it_has_children(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        assign_user_as_instance_admin(user, instance.experiment.experimentset)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.experiment.experimentset.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertContains(response, "Child entries must be deleted")
+        self.assertEqual(dataset_models.experimentset.ExperimentSet.objects.count(), 1)
+        self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+
+    def test_can_delete_experiment_if_it_has_children(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        assign_user_as_instance_admin(user, instance.experiment)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.experiment.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertContains(response, "Child entries must be deleted")
+        self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+
+    def test_cannot_delete_entry_being_processed(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        instance.processing_state = constants.processing
+        instance.save()
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "being processed cannot be deleted.")
 
 
 class TestProfileManageInstanceView(TestCase, TestMessageMixin):

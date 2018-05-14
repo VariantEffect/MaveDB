@@ -1,19 +1,19 @@
 from django.test import TestCase
 
-from ..mixins import FilterMixin
+from ..mixins import QMixin
 
 from metadata.models import PubmedIdentifier
 from metadata.factories import PubmedIdentifierFactory
 
 from dataset.models.experimentset import ExperimentSet
 from dataset.factories import ExperimentSetFactory
-from dataset.mixins import DatasetModelSearchMixin
+from dataset.mixins import DatasetModelFilterMixin
 
 
 class TestFilterMixin(TestCase):
 
     def test_list_to_or_q_makes_OR_Q(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
         obj3 = ExperimentSetFactory(title='this and that')
@@ -31,7 +31,7 @@ class TestFilterMixin(TestCase):
         self.assertNotIn(obj3, result)
 
     def test_list_to_and_q_makes_AND_Q(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='this')
         obj2 = ExperimentSetFactory(title='that')
         obj3 = ExperimentSetFactory(title='this and that')
@@ -49,7 +49,7 @@ class TestFilterMixin(TestCase):
         self.assertIn(obj3, result)
 
     def test_value_to_q(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
 
@@ -65,7 +65,7 @@ class TestFilterMixin(TestCase):
         self.assertNotIn(obj2, result)
 
     def test_can_join_Qs_with_OR(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
         obj3 = ExperimentSetFactory(title='this and that')
@@ -91,7 +91,7 @@ class TestFilterMixin(TestCase):
         self.assertNotIn(obj4, result)
 
     def test_can_join_Qs_with_AND(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
         obj3 = ExperimentSetFactory(title='this and that')
@@ -117,7 +117,7 @@ class TestFilterMixin(TestCase):
         self.assertIn(obj4, result)
 
     def test_search_to_q_correctly_delegates_list_join(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
         obj3 = ExperimentSetFactory(title='Hello world')
@@ -152,7 +152,7 @@ class TestFilterMixin(TestCase):
         self.assertNotIn(obj4, result)
 
     def test_search_to_q_returns_empty_q_in_input_is_empty(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         _ = ExperimentSetFactory()
         q = filter_.search_to_q(
             value=[],
@@ -164,7 +164,7 @@ class TestFilterMixin(TestCase):
         self.assertEqual(ExperimentSet.objects.filter(q).count(), 1)
 
     def test_search_to_q_returns_single_q_for_single_element_list(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
 
@@ -181,7 +181,7 @@ class TestFilterMixin(TestCase):
         self.assertNotIn(obj2, result)
 
     def test_join_funcs_filter_empty_qs(self):
-        filter_ = FilterMixin()
+        filter_ = QMixin()
 
         q1 = filter_.value_to_q(
             value='hello',
@@ -204,7 +204,7 @@ class TestFilterMixin(TestCase):
 class TestSearchMixin(TestCase):
 
     def test_can_search_multiple_fields_with_OR(self):
-        searcher = DatasetModelSearchMixin()
+        searcher = DatasetModelFilterMixin()
 
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='world')
@@ -225,7 +225,7 @@ class TestSearchMixin(TestCase):
         self.assertNotIn(obj3, result)
 
     def test_can_search_multiple_fields_with_AND(self):
-        searcher = DatasetModelSearchMixin()
+        searcher = DatasetModelFilterMixin()
 
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(title='hello')
@@ -246,7 +246,7 @@ class TestSearchMixin(TestCase):
         self.assertNotIn(obj3, result)
 
     def test_empty_q_returns_all(self):
-        searcher = DatasetModelSearchMixin()
+        searcher = DatasetModelFilterMixin()
         _ = ExperimentSetFactory(title='hello')
         _ = ExperimentSetFactory(title='hello')
         _ = ExperimentSetFactory(title='foo bar')
@@ -260,7 +260,7 @@ class TestSearchMixin(TestCase):
         self.assertEqual(len(q), 0)
 
     def test_uknown_field_returns_empty_qs(self):
-        searcher = DatasetModelSearchMixin()
+        searcher = DatasetModelFilterMixin()
         _ = ExperimentSetFactory(title='hello')
         _ = ExperimentSetFactory(title='hello')
         _ = ExperimentSetFactory(title='foo bar')
@@ -274,7 +274,7 @@ class TestSearchMixin(TestCase):
         self.assertEqual(len(q), 0)
 
     def test_string_search_searches_all_fields(self):
-        searcher = DatasetModelSearchMixin()
+        searcher = DatasetModelFilterMixin()
 
         obj1 = ExperimentSetFactory(title='hello')
         obj2 = ExperimentSetFactory(short_description="hello")

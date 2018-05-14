@@ -2,8 +2,10 @@ import datetime
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 from accounts.factories import UserFactory
+from accounts.permissions import GroupTypes
 
 from dataset.factories import ExperimentSetFactory, ScoreSetFactory
 from metadata.factories import KeywordFactory
@@ -33,6 +35,42 @@ class TestDatasetModel(TestCase):
         instance.save()
         self.assertEqual(instance.private, False)
         self.assertEqual(instance.publish_date, datetime.date.today())
+
+    def test_publish_deletes_old_tmp_permission_groups(self):
+        instance = ScoreSetFactory()
+        old_urn = instance.urn
+        self.assertEqual(Group.objects.count(), 9)
+        instance.publish()
+        self.assertEqual(Group.objects.count(), 9)
+        self.assertFalse(
+            Group.objects.filter(
+                name='{}-{}'.format(old_urn, GroupTypes.ADMIN)).exists()
+        )
+
+    def test_publish_creates_new_perm_groups(self):
+        instance = ScoreSetFactory()
+        self.assertEqual(Group.objects.count(), 9)
+        instance.publish()
+        self.assertEqual(Group.objects.count(), 9)
+        self.assertTrue(
+            Group.objects.filter(
+                name='{}-{}'.format(instance.urn, GroupTypes.ADMIN)).exists()
+        )
+
+    def test_publish_reassigns_contributors_to_new_perm_groups(self):
+        admin = UserFactory()
+        editor = UserFactory()
+        viewer = UserFactory()
+
+        instance = ScoreSetFactory()
+        instance.add_administrators(admin)
+        instance.add_editors(editor)
+        instance.add_viewers(viewer)
+
+        instance.publish()
+        self.assertListEqual(list(instance.administrators()), [admin])
+        self.assertListEqual(list(instance.editors()), [editor])
+        self.assertListEqual(list(instance.viewers()), [viewer])
 
     def test_approve_sets_approved_to_true(self):
         instance = ExperimentSetFactory()

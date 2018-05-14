@@ -72,15 +72,15 @@ class UtilitiesTest(TransactionTestCase):
 
     def test_can_get_admin_group_name_for_instance(self):
         group_name = get_admin_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, 'urn:mavedb:00000001-administrator')
+        self.assertEqual(group_name, '{}-administrator'.format(self.exps.urn))
 
     def test_can_get_editor_group_name_for_instance(self):
         group_name = get_editor_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, 'urn:mavedb:00000001-editor')
+        self.assertEqual(group_name, '{}-editor'.format(self.exps.urn))
 
     def test_can_get_viewer_group_name_for_instance(self):
         group_name = get_viewer_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, 'urn:mavedb:00000001-viewer')
+        self.assertEqual(group_name, '{}-viewer'.format(self.exps.urn))
 
 
 class GroupConstructionTest(TestCase):
@@ -167,6 +167,22 @@ class UserAssignmentToInstanceGroupTest(TestCase):
 
     def user(self):
         return User.objects.create(username="bob", password="pass")
+
+    def type_error_add_non_user(self):
+        with self.assertRaises(TypeError):
+            assign_user_as_instance_admin("", self.instance_1)
+        with self.assertRaises(TypeError):
+            assign_user_as_instance_editor([], self.instance_1)
+        with self.assertRaises(TypeError):
+            assign_user_as_instance_editor(User.objects, self.instance_1)
+
+    def type_error_remove_non_user(self):
+        with self.assertRaises(TypeError):
+            remove_user_as_instance_admin("", self.instance_1)
+        with self.assertRaises(TypeError):
+            remove_user_as_instance_editor([], self.instance_1)
+        with self.assertRaises(TypeError):
+            remove_user_as_instance_viewer(User.objects, self.instance_1)
 
     def test_permissions_removed_when_deleting_group(self):
         user = self.user()

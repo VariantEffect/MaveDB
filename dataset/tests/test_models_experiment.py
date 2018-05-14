@@ -41,10 +41,16 @@ class TestExperiment(TestCase):
         self.assertEqual(Group.objects.count(), 3)
 
     def test_autoassign_does_not_reassign_deleted_urn(self):
-        exps1 = ExperimentFactory()
+        exps1 = ExperimentFactory(
+            private=False,
+            experimentset__private=False
+        )
         previous = exps1.urn
         exps1.delete()
-        exps2 = ExperimentFactory()
+        exps2 = ExperimentFactory(
+            private=False,
+            experimentset__private=False
+        )
         self.assertGreater(exps2.urn, previous)
 
     def test_cannot_create_with_duplicate_urn(self):

@@ -9,14 +9,14 @@ from metadata.factories import (
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..factories import ExperimentWithScoresetFactory, ScoreSetWithTargetFactory
-from ..mixins import ExperimentSearchMixin, ScoreSetSearchMixin
+from ..mixins import ExperimentFilterMixin, ScoreSetFilterMixin
 
 
 class TestExperimentSearchMixin(TestCase):
     
     def setUp(self):
         self.factory = ExperimentWithScoresetFactory
-        self.searcher = ExperimentSearchMixin()
+        self.searcher = ExperimentFilterMixin()
         self.model_class = Experiment
 
     def can_filter_by_keywords_in_scoresets(self):
@@ -268,7 +268,7 @@ class TestScoreSetSearchMixin(TestCase):
 
     def setUp(self):
         self.factory = ScoreSetWithTargetFactory
-        self.searcher = ScoreSetSearchMixin()
+        self.searcher = ScoreSetFilterMixin()
         self.model_class = ScoreSet
 
     def test_can_filter_singular_target(self):

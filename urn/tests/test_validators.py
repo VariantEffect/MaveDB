@@ -43,7 +43,11 @@ class TestURNValidators(TestCase):
         validate_mavedb_urn_experiment(variant.scoreset.experiment.urn)
 
     def test_wrapped_experiment_urn_does_not_raise_error(self):
-        variant = VariantFactory()
+        variant = VariantFactory(
+            scoreset__private=False,
+            scoreset__experiment__private=False,
+            scoreset__experiment__experimentset__private=False,
+        )
         validate_mavedb_urn_experiment(variant.scoreset.experiment.urn + 'a')
 
     def test_validationerror_malformed_scoreset_urn(self):
