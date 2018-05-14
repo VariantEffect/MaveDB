@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block profile_body %}
-  <div>
+  <div class="container">
     <div class="row">
       <div class="col-xs-12 col-auto border-right mt-4">
         <div class="profile-nav nav flex-column nav-pills" id="pills-tab" role="tablist" aria-orientation="vertical">
@@ -18,10 +18,10 @@
           <!-- Administrators -->
           <div class="tab-pane fade show active" id="administrators" role="tabpanel" aria-labelledby="administrators-tab">
             <div class="admin-select">
-              <h5>
+              <h2>
                 Manage administrators
-                <a><i class="icon material-icons" style="font-size: 46px;">person</i></a>
-              </h5>
+                <a><i class="icon material-icons" style="font-size: 46px;">people_outline</i></a>
+              </h2>
               <hr>
               <form id="admin-form" action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
                 {% csrf_token %}
@@ -50,10 +50,10 @@
           <!-- Editors -->
           <div class="tab-pane fade" id="editors" role="tabpanel" aria-labelledby="editors-tab">
             <div class="editor-select">
-              <h5>
+              <h2>
                 Manage editors
-                <a><i class="icon material-icons" style="font-size: 46px;">person</i></a>
-              </h5>
+                <a><i class="icon material-icons" style="font-size: 46px;">people_outline</i></a>
+              </h2>
               <hr>
               <form id="editor-form" action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
                 {% csrf_token %}
@@ -82,10 +82,10 @@
           <!-- Viewers -->
           <div class="tab-pane fade" id="viewers" role="tabpanel" aria-labelledby="viewers-tab">
             <div class="viewer-select">
-              <h5>
+              <h2>
                 Manage viewers
-                <a><i class="icon material-icons" style="font-size: 46px;">person</i></a>
-              </h5>
+                <a><i class="icon material-icons" style="font-size: 46px;">people_outline</i></a>
+              </h2>
               <hr>
               <form id="viewer-form" action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
                 {% csrf_token %}

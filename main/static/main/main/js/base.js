@@ -73,6 +73,17 @@ function cancelSubmission() {
   return false;
 }
 
+function confirmDelete(urn) {
+  var yes = confirm(
+    "Deleting an entry is final and cannot be undone. Are you sure" +
+    "you would like to continue? Note that before deleting an Experiment Set or " +
+    "Experiment, you must first delete all child entries."
+  );
+  if (yes) {
+    return document.getElementById(urn + "-delete").submit();
+  }
+}
+
 // Check management form submission
 // ----------------------------------------------------------------------- //
 // `user` is a global defined in base.html using Django"s templating system.

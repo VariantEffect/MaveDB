@@ -63,54 +63,70 @@
       </tr>
 		</thead>
 		<tbody>
-			{% if not experiments.count %}
+			{% if not instances|length > 0 %}
 				<tr>
 					<td colspan=6> 0 search results returned. </td>
 				</tr>
 			{% else %}
-				{% for exp in experiments  %}
-					{% if not exp.private %}
+				{% for instance in instances  %}
+					{% if not instance.private %}
 						<tr>
 							<td>
-								<a href="{% url 'dataset:experiment_detail' exp.urn %}">
-									{{ exp.urn }}
-								</a>
-							</td>
-              <td>{{ exp.short_description|default:"-" }}</td>
-              <td>{{ exp.get_target_names|join:", "|default:"-" }}</td>
-              <td>
-                {% if exp.get_target_organisms|length > 0 %}
-                  {{ exp.get_target_organisms|safeseq|join:", "|default:"-" }}
+                {% if instance.class_name == 'experiment' %}
+                  <a href="{% url 'dataset:experiment_detail' instance.urn %}">
+                    {{ instance.urn }}
+                  </a>
                 {% else %}
-                  -
+                  <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
+                    {{ instance.urn }}
+                  </a>
+                {% endif %}
+							</td>
+              <td>{{ instance.short_description|default:"-" }}</td>
+              <td>
+                {% if instance.class_name == 'experiment' %}
+                  {{ instance.get_target_names|join:", "|default:"-" }}
+                {% else %}
+                    {{ instance.get_target.name|default:"-" }}
                 {% endif %}
               </td>
               <td>
-                {% for c in exp.contributors %}
+                {{ instance.get_display_target_organisms|safeseq|join:", "|default:"-"|safe }}
+              </td>
+              <td>
+                {% for c in instance.contributors %}
                   {{ c.profile.get_display_name_hyperlink|safe }}
                 {% endfor %}
               </td>
             </tr>
           {% else %}
-            {% if request.user in exp.contributors %}
+            {% if request.user in instance.contributors %}
               <tr>
                 <td>
-                  <a href="{% url 'dataset:experiment_detail' exp.urn %}">
-                    {{ exp.urn }} [Private]
-                  </a>
-                </td>
-                <td>{{ exp.short_description|default:"-" }}</td>
-                <td>{{ exp.get_target_names|join:", "|default:"-" }}</td>
-                <td>
-                  {% if exp.get_target_organisms|length > 0 %}
-                    {{ exp.get_target_organisms|safeseq|join:", "|default:"-" }}
+                  {% if instance.class_name == 'experiment' %}
+                    <a href="{% url 'dataset:experiment_detail' instance.urn %}">
+                      {{ instance.urn }} [Private]
+                    </a>
                   {% else %}
-                    -
+                    <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
+                      {{ instance.urn }} [Private]
+                    </a>
+                  {% endif %}
+                </td>
+                <td>{{ instance.short_description|default:"-" }}</td>
+                <td>
+                  {% if instance.class_name == 'experiment' %}
+                    {{ instance.get_target_names|join:", "|default:"-" }}
+                  {% else %}
+                      {{ instance.get_target.name|default:"-" }}
                   {% endif %}
                 </td>
                 <td>
-                  {% for c in exp.contributors %}
-                    {{ c.profile.get_display_name }}
+                  {{ instance.get_display_target_organisms|safeseq|join:", "|default:"-"|safe }}
+                </td>
+                <td>
+                  {% for c in instance.contributors %}
+                    {{ c.profile.get_display_name_hyperlink|safe }}
                   {% endfor %}
                 </td>
               </tr>

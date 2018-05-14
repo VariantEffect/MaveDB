@@ -4,18 +4,24 @@
 
   <div class="row">
 
-    <div class="col-md-8 information">
-      <h1> About </h1>
-      <div id="about">
-        {{ site_information.about|safe|escape|default:"None" }}
-      </div>
-      <h1> Citation </h1>
-      <div id="citation">
-        {{ site_information.citation|safe|escape|default:"None" }}
+    <div class="col-md-6">
+      <div class="container">
+        <h1> About </h1>
+        <div id="about">
+          {{ site_information.about|safe|escape|default:"None" }}
+        </div>
+        <hr>
+        <h1> Citation </h1>
+        <div id="citation">
+          {{ site_information.citation|safe|escape|default:"None" }}
+        </div>
+        <hr class="visible-xs invisible">
       </div>
     </div> <!-- end left side content -->
 
-    <div class="col-md-4">
+
+
+    <div class="col-md-6">
       <div class="container">
         <h1> News <i class="material-icons">announcement</i> </h1>
         <div class="news hover-card">

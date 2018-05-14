@@ -45,6 +45,13 @@ pre {
 	margin-right: 1%;
 }
 
+p {
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+}
+
 form > input {
     width: 50%;
 }
@@ -91,6 +98,12 @@ ul {
 }
 .is-valid {
     border-color: #28a745 !important;
+}
+
+@media (max-width: 767.98px) {
+    .visible-xs {
+        visibility: visible !important;
+    }
 }
 
 
@@ -428,6 +441,14 @@ span.select2.select2-container.select2-container--default {
     background-color: #343a40 !important;
 }
 
+.delete-urn {
+    cursor: pointer;
+    color: #dc3545 !important;
+}
+.delete-urn:hover {
+    color: darkred !important;
+}
+
 
 /* Profile CSS Elements */
 /* ------------------------------------------------------------------------- */
@@ -477,15 +498,20 @@ span.select2.select2-container.select2-container--default {
 
 .icon {
     cursor: pointer;
+    font-size: 24px;
+    vertical-align: bottom;
 }
-
-[class^="icon"] {
-  width: 50px;
-  height: 50px;
-  position: relative;
-  top: 15px;
-  margin-right: 10px;
-  fill: #fff;
+.eye-icon {
+    font-size: 28px;
+}
+.help-icon {
+    cursor: help;
+}
+.state-icon {
+    font-size: 24px;
+}
+.trash-icon {
+    font-size: 20px !important;
 }
 
 .hover-card {
@@ -507,8 +533,15 @@ span.select2.select2-container.select2-container--default {
 }
 @media (max-width: 767.98px) {
     .profile-card {
-        max-width: 95%;
-        min-width: 95%;
+        max-width: 95% !important;
+        min-width: 95% !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .profile-card {
+        max-width: 45%;
+        min-width: 45%;
     }
 }
 
@@ -522,4 +555,22 @@ span.select2.select2-container.select2-container--default {
 
 .dropdown-item:active {
     background-color: transparent !important;
+}
+
+.form-sidebar {
+    word-break: break-word;
+}
+
+@media (max-width: 1025px) {
+    .sidebar-title {
+        -webkit-hyphens: auto;
+        -moz-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+    }
+}
+@media (max-width: 767.98px) {
+    .form-sidebar {
+        border: none !important;
+    }
 }
