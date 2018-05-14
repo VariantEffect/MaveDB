@@ -7,6 +7,8 @@ from django.core.validators import MinValueValidator
 from django.db import models, transaction
 
 from accounts.mixins import GroupPermissionMixin
+from accounts import permissions
+
 from core.utilities import pandoc
 from metadata.models import (
     Keyword, SraIdentifier, DoiIdentifier,
@@ -286,8 +288,20 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         if self.parent:
             self.parent.publish()
         if not self.has_public_urn:
+            admins = self.administrators()
+            editors = self.editors()
+            viewers = self.viewers()
+
+            # The old groups associated with the tmp urn must be deleted
+            permissions.delete_all_groups_for_instance(self)
+
             self.urn = self.create_urn()
-            self.save()
+            self.save()  # New groups will be created as a post-save signal
+
+            # Re-assign contributors to the new groups.
+            self.add_administrators(admins)
+            self.add_editors(editors)
+            self.add_viewers(viewers)
         
     def set_modified_by(self, user, propagate=False):
         if propagate:

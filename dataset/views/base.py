@@ -14,6 +14,7 @@ from dataset.mixins import DatasetUrnMixin, DatasetPermissionMixin, \
 
 from ..forms.base import DatasetModelForm
 from ..models.base import DatasetModel
+from ..utilities import delete_instance
 
 
 logger = logging.getLogger("django")
@@ -129,9 +130,11 @@ class CreateDatasetModelView(LoginRequiredMixin, DatasetModelFormView):
     """
     login_url = '/login/'
     success_message = (
-        "Successfully created a new {model_name}, which has been assigned the "
-        "URN {urn}. You can freely edit this submission until you choose to "
-        "publish it. You can access the draft submission from your profile."
+        "Successfully created a new {model_name}, which has been assigned a "
+        "temporary URN {urn}. You can freely edit this submission until you "
+        "choose to publish it. You can access the draft submission from "
+        "your profile. Once published, your submission will be assigned a "
+        "permanent URN."
     )
 
     def format_success_message(self):
@@ -157,7 +160,7 @@ class UpdateDatasetModelView(DatasetPermissionMixin,
     permission_required = 'dataset.can_edit'
     model_class = None
     permission_denied_message = \
-        'You do not have the required permissions to edit entry {urn}.'
+        'You do not have the required permissions to edit {urn}.'
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -180,7 +183,5 @@ class UpdateDatasetModelView(DatasetPermissionMixin,
         return context
     
     def form_invalid(self, forms):
-        messages.error(
-            self.request, "Your submission contains errors."
-        )
+        messages.error(self.request, "Your submission contains errors.")
         return super(UpdateDatasetModelView, self).form_invalid(forms)

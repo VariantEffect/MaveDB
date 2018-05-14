@@ -5,7 +5,7 @@ from django.db.models import Q
 logger = logging.getLogger('django')
 
 
-class FilterMixin(object):
+class QMixin(object):
     """
     Mixin enabling the creation of complex search queries using
     AND/OR `Q` objects.
@@ -76,7 +76,7 @@ class FilterMixin(object):
             return joined
 
 
-class SearchMixin(FilterMixin):
+class FilterMixin(QMixin):
     """
     Provides functionality to search multiple fields in a model, and combine
     them with either OR or AND. The entry point for creating a search `Q` is

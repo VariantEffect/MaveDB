@@ -5,7 +5,7 @@ from django.http import Http404
 from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 
-from accounts.mixins import UserSearchMixin
+from accounts.mixins import UserFilterMixin
 
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
@@ -19,9 +19,9 @@ from dataset.serializers import (
 )
 
 from dataset.mixins import (
-    ExperimentSetSearchMixin,
-    ExperimentSearchMixin,
-    ScoreSetSearchMixin,
+    ExperimentSetFilterMixin,
+    ExperimentFilterMixin,
+    ScoreSetFilterMixin,
 )
 
 from accounts.permissions import PermissionTypes
@@ -32,7 +32,7 @@ User = get_user_model()
 class DatasetModelViewSet(ReadOnlyModelViewSet):
     """
     Base API viewset. Must also inherit a subclass of
-    :class:`DatasetModelSearchMixin`.
+    :class:`DatasetModelFilterMixin`.
     """
 
     def get_queryset(self, exclude_private=True):
@@ -57,25 +57,25 @@ class DatasetModelViewSet(ReadOnlyModelViewSet):
         return queryset.exclude(private=exclude_private)
 
 
-class ExperimentSetViewset(DatasetModelViewSet, ExperimentSetSearchMixin):
+class ExperimentSetViewset(DatasetModelViewSet, ExperimentSetFilterMixin):
     queryset = ExperimentSet.objects.filter(private=False)
     serializer_class = ExperimentSetSerializer
     lookup_field = 'urn'
 
 
-class ExperimentViewset(DatasetModelViewSet, ExperimentSearchMixin):
+class ExperimentViewset(DatasetModelViewSet, ExperimentFilterMixin):
     queryset = Experiment.objects.filter(private=False)
     serializer_class = ExperimentSerializer
     lookup_field = 'urn'
 
 
-class ScoreSetViewset(DatasetModelViewSet, ScoreSetSearchMixin):
+class ScoreSetViewset(DatasetModelViewSet, ScoreSetFilterMixin):
     queryset = ScoreSet.objects.filter(private=False)
     serializer_class = ScoreSetSerializer
     lookup_field = 'urn'
 
 
-class UserViewset(ReadOnlyModelViewSet, UserSearchMixin):
+class UserViewset(ReadOnlyModelViewSet, UserFilterMixin):
     queryset = User.objects.exclude(username='AnonymousUser')
     serializer_class = UserSerializer
     lookup_field = 'username'

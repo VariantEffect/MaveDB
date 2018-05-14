@@ -30,8 +30,6 @@ class Command(BaseCommand):
                 user.set_password(password)
                 user.save()
                 instance = ExperimentWithScoresetFactory()
-                assign_user_as_instance_admin(user, instance)
-                assign_user_as_instance_admin(user, instance.parent)
                 for scoreset in instance.children.all():
                     UniprotOffset.objects.create(
                         offset=i*3 + 1,
@@ -49,13 +47,15 @@ class Command(BaseCommand):
                         identifier=scoreset.target.ensembl_id
                     )
 
-                    assign_user_as_instance_admin(user, scoreset)
-                    scoreset.publish(propagate=True)
+                    scoreset.publish()
                     scoreset.set_modified_by(user, propagate=True)
                     scoreset.set_created_by(user, propagate=True)
                     for i in range(10):
                         VariantFactory(scoreset=scoreset)
-
                     scoreset.save(save_parents=True)
+
+                    scoreset.add_administrators(user)
+                    scoreset.experiment.add_administrators(user)
+                    scoreset.experiment.experimentset.add_administrators(user)
 
                 sys.stdout.write("Created {}\n".format(instance.urn))

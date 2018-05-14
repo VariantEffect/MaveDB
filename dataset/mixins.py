@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 
 from accounts.permissions import user_is_anonymous, PermissionTypes
-from search.mixins import logger, SearchMixin
+from search.mixins import logger, FilterMixin
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
 from dataset.models.experiment import Experiment
@@ -15,7 +15,7 @@ from genome.models import TargetGene
 from genome.serializers import TargetGeneSerializer
 
 
-class DatasetModelSearchMixin(SearchMixin):
+class DatasetModelFilterMixin(FilterMixin):
     """
     Filter :class:`DatasetModel` instances by common fields:
 
@@ -81,7 +81,7 @@ class DatasetModelSearchMixin(SearchMixin):
             value, field_name='urn', filter_type='iexact')
 
 
-class ExperimentSetSearchMixin(DatasetModelSearchMixin):
+class ExperimentSetFilterMixin(DatasetModelFilterMixin):
     """
     Filter :class:`ExperimentSet` instances by common fields:
 
@@ -103,10 +103,10 @@ class ExperimentSetSearchMixin(DatasetModelSearchMixin):
         return dict_
 
 
-class ExperimentSearchMixin(DatasetModelSearchMixin):
+class ExperimentFilterMixin(DatasetModelFilterMixin):
     """
     Filter :class:`Experiment` instances by common fields in
-    :class:`DatasetModelSearchMixin` and the below:
+    :class:`DatasetModelFilterMixin` and the below:
 
         'target': 'scoresets__target__name',
         'species': 'scoresets__target__reference_maps__genome__species_name',
@@ -122,22 +122,15 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
-            'target': self.filter_target,
             'species': self.filter_target_species,
+            'target': self.filter_target,
+            'genome': self.filter_reference_genome_name,
+            'assembly': self.filter_reference_genome_id,
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
-            'genome': self.filter_reference_genome_name,
-            'assembly': self.filter_reference_genome_id,
-            'keywords': self.filter_keywords,
         })
         return dict_
-
-    def filter_keywords(self, value):
-        return self.or_join_qs([
-            self.search_to_q(value, field_name='keywords__text', filter_type='iexact'),
-            self.search_to_q(value, field_name='scoresets__keywords__text', filter_type='iexact'),
-        ])
 
     def filter_target(self, value):
         field_name = 'scoresets__target__name'
@@ -175,10 +168,10 @@ class ExperimentSearchMixin(DatasetModelSearchMixin):
         return self.search_to_q(value, field_name, filter_type)
 
 
-class ScoreSetSearchMixin(DatasetModelSearchMixin):
+class ScoreSetFilterMixin(DatasetModelFilterMixin):
     """
     Filter :class:`ScoreSet` instances by common fields in
-    :class:`DatasetModelSearchMixin` and the below:
+    :class:`DatasetModelFilterMixin` and the below:
 
         'target': 'target__name',
         'species': 'target__reference_maps__genome__species_name',
@@ -198,12 +191,12 @@ class ScoreSetSearchMixin(DatasetModelSearchMixin):
         dict_.update({
             'species': self.filter_species,
             'target': self.filter_target,
-            'sequence': self.filter_target_sequence,
             'genome': self.filter_reference_genome_name,
             'assembly': self.filter_reference_genome_id,
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
+            'sequence': self.filter_target_sequence,
             'licence': self.filter_licence,
         })
         return dict_

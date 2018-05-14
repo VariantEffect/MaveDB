@@ -1,8 +1,11 @@
+from django.db import transaction
+
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
 from .models.scoreset import ScoreSet
 
 
+@transaction.atomic
 def delete_instance(instance):
     if isinstance(instance, ExperimentSet):
         delete_experimentset(instance)
@@ -17,6 +20,7 @@ def delete_instance(instance):
         )
 
 
+@transaction.atomic
 def delete_experimentset(experimentset):
     if not isinstance(experimentset, ExperimentSet):
         raise TypeError(
@@ -27,6 +31,7 @@ def delete_experimentset(experimentset):
     experimentset.delete()
 
 
+@transaction.atomic
 def delete_experiment(experiment):
     if not isinstance(experiment, Experiment):
         raise TypeError(
@@ -37,6 +42,7 @@ def delete_experiment(experiment):
     experiment.delete()
 
 
+@transaction.atomic
 def delete_scoreset(scoreset):
     if not isinstance(scoreset, ScoreSet):
         raise TypeError(

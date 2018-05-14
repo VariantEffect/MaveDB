@@ -1,71 +1,36 @@
-import re
 import logging
 
-from django.conf import settings
-from django.apps import apps
-from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse_lazy
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404
-from django.template.loader import render_to_string
-from django.core.mail import send_mail
-
 import django.contrib.auth.views as auth_views
+from django.apps import apps
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.mail import send_mail
+from django.core.urlresolvers import reverse_lazy
+from django.http import Http404
+from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
 
+from dataset import constants
+from dataset.utilities import delete_instance
 from main.context_processors import baseurl
-
-from urn.validators import (
-    MAVEDB_EXPERIMENTSET_URN_PATTERN,
-    MAVEDB_EXPERIMENT_URN_PATTERN,
-    MAVEDB_SCORESET_URN_PATTERN
-)
-
-from .permissions import (
-    GroupTypes, PermissionTypes, assign_superusers_as_admin
-)
+from urn.models import get_model_by_urn
 from .forms import (
     RegistrationForm,
     SelectUsersForm,
     ProfileForm
 )
-
+from .permissions import (
+    GroupTypes, PermissionTypes, assign_superusers_as_admin
+)
 
 User = get_user_model()
 logger = logging.getLogger(name="django")
 ExperimentSet = apps.get_model('dataset', 'ExperimentSet')
 Experiment = apps.get_model('dataset', 'Experiment')
 ScoreSet = apps.get_model('dataset', 'ScoreSet')
-
-
-# Utilities
-# ------------------------------------------------------------------------- #
-def get_class_from_urn(urn):
-    """
-    Returns the class matching the urn, if it's either
-    an `ExperimentSet`, `Experiment` or `ScoreSet` otherwise it 
-    returns `None`.
-
-    Parameters
-    ----------
-    urn : `str`
-        The urn for an instance
-
-    Returns
-    -------
-    `cls` or `None`
-        A class that can be instantiated, or None.
-    """
-    if re.fullmatch(MAVEDB_EXPERIMENTSET_URN_PATTERN, urn):
-        return ExperimentSet
-    elif re.fullmatch(MAVEDB_EXPERIMENT_URN_PATTERN, urn):
-        return Experiment
-    elif re.fullmatch(MAVEDB_SCORESET_URN_PATTERN, urn):
-        return ScoreSet
-    else:
-        return None
 
 
 # Profile views
@@ -87,14 +52,15 @@ def login_error(request):
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
-def profile_view(request):
+def profile_settings(request):
     """
-    A simple view, at only one line...
+    Management of the user's `ProfileForm`. Currently only allows an email
+    address to be set.
     """
     profile_form = ProfileForm(instance=request.user.profile)
-    if request.method == 'POST':
+    if request.method == "POST":
         profile_form = ProfileForm(
-            instance=request.user.profile, data=request.POST)
+                instance=request.user.profile, data=request.POST)
         if profile_form.is_valid():
             profile = profile_form.save(commit=True)
             messages.success(request, "Successfully updated your profile.")
@@ -115,7 +81,75 @@ def profile_view(request):
                 "There were errors with your submission. "
                 "Check the profile tab for more detail."
             )
+
     context = {"profile_form": profile_form}
+    return render(request, 'accounts/profile_settings.html', context)
+
+
+@login_required(login_url=reverse_lazy("accounts:login"))
+def profile_view(request):
+    """
+    The dashboard view. The only POST request this should receive is
+    when a user requests for an instance to be deleted.
+    """
+    context = {}
+    if request.method == 'POST':
+        delete_urn = request.POST.get("delete", False)
+        if delete_urn:
+            try:
+                instance = get_model_by_urn(urn=delete_urn)
+                if not request.user.has_perm(
+                        PermissionTypes.CAN_MANAGE, instance):
+                    raise PermissionDenied()
+            except ObjectDoesNotExist:
+                messages.error(
+                    request, "URN {} has already been deleted.".format(
+                        delete_urn))
+                return render(request, 'accounts/profile_home.html', context)
+            except PermissionDenied:
+                messages.error(
+                    request, "You must be an administrator for {} to delete "
+                             "it.".format(delete_urn))
+                return render(request, 'accounts/profile_home.html', context)
+
+            # Check doesn't have children if experiment or experimentset
+            if isinstance(instance, (Experiment, ExperimentSet)):
+                if instance.children.count():
+                    messages.error(
+                        request,
+                        "Child entries must be deleted prior to deleting an "
+                        "Experiment or Experiment Set.")
+                    return render(request, 'accounts/profile_home.html', context)
+
+            # Check the processing state
+            if isinstance(instance, (ExperimentSet, Experiment)):
+                being_processed = (
+                        instance.processing_state == constants.processing or
+                        any([i.processing_state == constants.processing for i in
+                             instance.children])
+                    )
+            else:
+                being_processed = instance.processing_state == constants.processing
+            if being_processed:
+                messages.error(
+                    request,
+                    "Entries or entries with children being processed "
+                    "cannot be deleted. Try again once you submission has "
+                    "been processed.")
+                return render(request, 'accounts/profile_home.html', context)
+
+            # Check the private status
+            if instance.private:
+                delete_instance(instance)
+                messages.success(
+                    request, "Successfully deleted {}".format(delete_urn))
+                return render(request, 'accounts/profile_home.html', context)
+            else:
+                messages.error(
+                    request,
+                    "{} is public and cannot be deleted.".format(instance.urn))
+                return render(request, 'accounts/profile_home.html', context)
+
     return render(request, 'accounts/profile_home.html', context)
 
 
@@ -123,10 +157,10 @@ def profile_view(request):
 def manage_instance(request, urn):
     post_form = None
     context = {}
-    klass = get_class_from_urn(urn)
-    if klass is None:
+    try:
+        instance = get_model_by_urn(urn=urn)
+    except ObjectDoesNotExist:
         raise Http404()
-    instance = get_object_or_404(klass, urn=urn)
 
     has_permission = request.user.has_perm(
         PermissionTypes.CAN_MANAGE, instance)

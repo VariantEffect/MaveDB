@@ -13,6 +13,7 @@ from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, \
 
 RANDOM_CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
 
+
 def get_model_by_urn(urn):
     from variant.models import Variant
     from dataset.models.scoreset import ScoreSet

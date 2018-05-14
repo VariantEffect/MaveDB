@@ -17,7 +17,11 @@ from metadata.models import (
 
 from genome.models import ReferenceGenome, TargetGene
 
-from dataset.mixins import ExperimentSearchMixin
+from dataset.mixins import ExperimentFilterMixin, ScoreSetFilterMixin
+
+
+experiment_filter = ExperimentFilterMixin()
+scoreset_filter = ScoreSetFilterMixin()
 
 
 def parse_char_list(value):
@@ -35,7 +39,16 @@ def parse_char_list(value):
         return [value]
 
 
-class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
+class FormFilterMixin:
+    """Creates filters for experiments and scoresets."""
+    def make_experiment_filters(self, join=True):
+        return self.make_filters(join=join, filter_=experiment_filter)
+
+    def make_scoreset_filters(self, join=True):
+        return self.make_filters(join=join, filter_=scoreset_filter)
+    
+
+class MetadataSearchForm(forms.Form, FormFilterMixin):
     """Search by text fields and keywords."""
     title = forms.CharField(
         max_length=None, label="Title", required=False,
@@ -94,7 +107,7 @@ class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
         instances = list(set([i for i in instances if not is_null(i)]))
         return instances
 
-    def make_filters(self, join=True):
+    def make_filters(self, join=True, filter_=None):
         data = self.cleaned_data
         abstract = {'abstract': data.get('method_abstract', "")}
         method = {'method': data.get('method_abstract', "")}
@@ -102,12 +115,12 @@ class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
         description = {'description': data.get('description', "")}
         keywords = {'keywords': data.get('keywords', [])}
 
-        abstract_q = self.search_all(abstract, join_func=None)
-        method_q = self.search_all(method, join_func=None)
-        title_q = self.search_all(title, join_func=None)
-        description_q = self.search_all(description, join_func=None)
-        keywords_q = self.search_all(keywords, join_func=None)
-        method_abstract_q = self.or_join_qs(abstract_q + method_q)
+        abstract_q = filter_.search_all(abstract, join_func=None)
+        method_q = filter_.search_all(method, join_func=None)
+        title_q = filter_.search_all(title, join_func=None)
+        description_q = filter_.search_all(description, join_func=None)
+        keywords_q = filter_.search_all(keywords, join_func=None)
+        method_abstract_q = filter_.or_join_qs(abstract_q + method_q)
         if not len(method_abstract_q):
             method_abstract_q = []
         else:
@@ -115,12 +128,12 @@ class MetadataSearchForm(forms.Form, ExperimentSearchMixin):
 
         join_func = lambda x: x
         if join:
-            join_func = self.and_join_qs
+            join_func = filter_.and_join_qs
         return join_func(
             method_abstract_q + title_q + description_q + keywords_q)
 
 
-class MetaIdentifiersSearchForm(forms.Form, ExperimentSearchMixin):
+class MetaIdentifiersSearchForm(forms.Form, FormFilterMixin):
     """Search by PubMed, SRA and DOI."""
 
     def __init__(self, *args, **kwargs):
@@ -180,7 +193,7 @@ class MetaIdentifiersSearchForm(forms.Form, ExperimentSearchMixin):
         instances = list(set([i for i in instances if not is_null(i)]))
         return instances
 
-    def make_filters(self, join=True):
+    def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         search_dict = {
             'pubmed': data.get('pubmed_ids', []),
@@ -189,11 +202,11 @@ class MetaIdentifiersSearchForm(forms.Form, ExperimentSearchMixin):
         }
         join_func = None
         if join:
-            join_func = self.and_join_qs
-        return self.search_all(search_dict, join_func=join_func)
+            join_func = filter_.and_join_qs
+        return filter_.search_all(search_dict, join_func=join_func)
 
 
-class TargetIdentifierSearchForm(forms.Form, ExperimentSearchMixin):
+class TargetIdentifierSearchForm(forms.Form, FormFilterMixin):
     """
     Search by uniprot, refseq, ensembl and genome assembly.
     """
@@ -272,7 +285,7 @@ class TargetIdentifierSearchForm(forms.Form, ExperimentSearchMixin):
         instances = list(set([i for i in instances if not is_null(i)]))
         return instances
 
-    def make_filters(self, join=True):
+    def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         search_dict = {
             'uniprot': data.get('uniprot', []),
@@ -282,11 +295,11 @@ class TargetIdentifierSearchForm(forms.Form, ExperimentSearchMixin):
         }
         join_func = None
         if join:
-            join_func = self.and_join_qs
-        return self.search_all(search_dict, join_func=join_func)
+            join_func = filter_.and_join_qs
+        return filter_.search_all(search_dict, join_func=join_func)
 
 
-class GenomeSearchForm(forms.Form, ExperimentSearchMixin):
+class GenomeSearchForm(forms.Form, FormFilterMixin):
     """Search by genome name and assembly"""
     def __init__(self, *args, **kwargs):
         super(GenomeSearchForm, self).__init__(*args, **kwargs)
@@ -345,7 +358,7 @@ class GenomeSearchForm(forms.Form, ExperimentSearchMixin):
         instances = list(set([i for i in instances if not is_null(i)]))
         return instances
 
-    def make_filters(self, join=True):
+    def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         search_dict = {
             'species': data.get('species', []),
@@ -354,5 +367,5 @@ class GenomeSearchForm(forms.Form, ExperimentSearchMixin):
         }
         join_func = None
         if join:
-            join_func = self.and_join_qs
-        return self.search_all(search_dict, join_func=join_func)
+            join_func = filter_.and_join_qs
+        return filter_.search_all(search_dict, join_func=join_func)

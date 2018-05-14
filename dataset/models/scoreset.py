@@ -146,7 +146,7 @@ class ScoreSet(DatasetModel):
         return self
         
     def create_urn(self):
-        if self.private:
+        if self.private or not self.parent.has_public_urn:
             urn = self.create_temp_urn()
         else:
             parent = self.experiment
@@ -226,7 +226,7 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @property
     def has_replacement(self):
-        return getattr(self, 'replced_by', None) is not None
+        return getattr(self, 'replaced_by', None) is not None
 
     @property
     def replaces_previous(self):
@@ -279,6 +279,7 @@ class ScoreSet(DatasetModel):
             return None
         else:
             return public_versions[-1]
+
 
 # --------------------------------------------------------------------------- #
 #                               Post Save

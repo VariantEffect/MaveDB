@@ -82,7 +82,7 @@ class Experiment(DatasetModel):
         super().save(*args, **kwargs)
 
     def create_urn(self):
-        if self.private:
+        if self.private or not self.parent.has_public_urn:
             urn = self.create_temp_urn()
         else:
             parent = self.experimentset
@@ -111,18 +111,19 @@ class Experiment(DatasetModel):
         return TargetGene.objects.filter(pk__in=target_pks)
 
     def get_target_names(self):
-        return [t.get_name() for t in self.get_targets()]
+        return list(sorted(set([t.get_name() for t in self.get_targets()])))
 
     def get_target_organisms(self):
         organism_sets = [
             s.get_target_organisms() for s in self.children]
         return list(
-            sorted(reduce(lambda x, y: x | y, organism_sets, set())))
+            sorted(set(reduce(lambda x, y: x | y, organism_sets, set()))))
 
     def get_display_target_organisms(self):
         organism_sets = [
             s.get_display_target_organisms() for s in self.children]
-        return list(sorted(reduce(lambda x, y: x | y, organism_sets, set())))
+        return list(
+            sorted(set(reduce(lambda x, y: x | y, organism_sets, set()))))
 
     def public_scoresets(self):
         return self.children.exclude(private=True)
