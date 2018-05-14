@@ -19,7 +19,7 @@ from search.forms import parse_char_list
 
 from .utilities import notify_user
 from .models import Profile
-from .mixins import UserSearchMixin
+from .mixins import UserFilterMixin
 from .permissions import (
     GroupTypes,
     user_is_anonymous,
@@ -33,9 +33,10 @@ from .permissions import (
 
 User = get_user_model()
 logger = logging.getLogger("django")
+user_filter = UserFilterMixin()
 
 
-class UserSearchForm(forms.Form, UserSearchMixin):
+class UserSearchForm(forms.Form):
     """Search by text fields and keywords."""
     def __init__(self, *args, **kwargs):
         super(UserSearchForm, self).__init__(*args, **kwargs)
@@ -100,8 +101,8 @@ class UserSearchForm(forms.Form, UserSearchMixin):
         }
         join_func = None
         if join:
-            join_func = self.or_join_qs
-        return self.search_all(search_dict, join_func=join_func)
+            join_func = user_filter.or_join_qs
+        return user_filter.search_all(search_dict, join_func=join_func)
 
 
 class SelectUsersForm(forms.Form):
