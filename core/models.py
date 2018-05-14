@@ -24,7 +24,7 @@ class TimeStampedModel(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        self.modification_date = datetime.datetime.today()
+        self.modification_date = datetime.date.today()
         return super().save(*args, **kwargs)
 
     def format_last_edit_date(self):
