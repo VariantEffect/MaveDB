@@ -1,4 +1,5 @@
 import os
+import sys
 from celery import Celery
 
 if not os.environ.get('DJANGO_SETTINGS_MODULE'):
@@ -11,8 +12,11 @@ app = Celery('mavedb')
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings', namespace='CELERY')
-
-# Load task modules from all registered Django app configs.
-app.autodiscover_tasks()
+if sys.platform == 'win32':
+    app.config_from_object('django.conf:settings')
+    app.autodiscover_tasks(packages=('core.tasks', 'dataset.tasks'))
+else:
+    app.config_from_object('django.conf:settings', namespace='CELERY')
+    # Load task modules from all registered Django app configs.
+    app.autodiscover_tasks()
 
