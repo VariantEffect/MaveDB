@@ -1,4 +1,5 @@
 {% extends "main/base.html" %}
+{% load dataset_tags %}
 
 {% block body %}
 
@@ -84,14 +85,10 @@
 							</td>
               <td>{{ instance.short_description|default:"-" }}</td>
               <td>
-                {% if instance.class_name == 'experiment' %}
-                  {{ instance.get_target_names|join:", "|default:"-" }}
-                {% else %}
-                    {{ instance.get_target.name|default:"-" }}
-                {% endif %}
+                {% display_targets instance request.user %}
               </td>
               <td>
-                {{ instance.get_display_target_organisms|safeseq|join:", "|default:"-"|safe }}
+                {% display_species instance request.user %}
               </td>
               <td>
                 {% for c in instance.contributors %}
@@ -115,14 +112,10 @@
                 </td>
                 <td>{{ instance.short_description|default:"-" }}</td>
                 <td>
-                  {% if instance.class_name == 'experiment' %}
-                    {{ instance.get_target_names|join:", "|default:"-" }}
-                  {% else %}
-                      {{ instance.get_target.name|default:"-" }}
-                  {% endif %}
+                  {% display_targets instance request.user %}
                 </td>
                 <td>
-                  {{ instance.get_display_target_organisms|safeseq|join:", "|default:"-"|safe }}
+                  {% display_species instance request.user %}
                 </td>
                 <td>
                   {% for c in instance.contributors %}
