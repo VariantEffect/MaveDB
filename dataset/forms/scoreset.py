@@ -149,7 +149,29 @@ class ScoreSetForm(DatasetModelForm):
         if not self.fields["licence"].initial:
             self.fields["licence"].initial = Licence.get_default()
         self.fields["licence"].empty_label = 'Default'
-        
+
+    def clean_experiment(self):
+        cleaned_data = super().clean()
+        experiment = cleaned_data.get('experiment', None)
+        existing_experiment = self.instance.parent
+        if self.instance.pk is not None and existing_experiment is not None:
+            if experiment is not None:
+                if existing_experiment.urn != experiment.urn and \
+                        not self.instance.private:
+                    raise ValidationError(
+                        "Changing the parent Experiment of "
+                        "a public Score Set is not supported.")
+                if existing_experiment.urn != experiment.urn and \
+                        self.instance.private:
+                    # Replaces will need to be reset if changing experiments
+                    # because a scoreset being replaces must be a member
+                    # of the same experiment.
+                    self.instance.replaces = None
+                    # Re-trigger clean replaces to make sure the selected
+                    # replaces is a member of the same experiment.
+                    self.cleaned_data['replaces'] = self.clean_replaces()
+        return experiment
+
     def set_initial_keywords(self):
         if self.experiment is not None and self.instance.pk is None:
             self.fields['keywords'].initial = self.experiment.keywords.all()
@@ -246,23 +268,14 @@ class ScoreSetForm(DatasetModelForm):
 
         cleaned_data = super().clean()
 
-        # Ensure the user is not attempting to change an experiment that
-        # has already been set
-        parent = cleaned_data.get('experiment', None)
-        if 'experiment' in self.fields and self.instance.pk is not None:
-            if self.instance.parent != parent:
-                self.add_error(
-                    None if 'experiment' not in self.fields else 'experiment',
-                    "MaveDB does not currently support changing a "
-                    "previously assigned Experiment."
-                )
-                return cleaned_data
-
         # Indicates that a new scoreset is being created or a failed scoreset
         # is being edited. Failed scoresets have not variants.
-        scores_required = self.instance.pk is None or \
-                          not self.instance.has_variants or \
-                          self.instance.processing_state == constants.failed
+        if getattr(self, 'edit_mode', False):
+            scores_required = False
+        else:
+            scores_required = self.instance.pk is None or \
+                              not self.instance.has_variants or \
+                              self.instance.processing_state == constants.failed
 
         hgvs_score_map = cleaned_data.get("score_data", {})
         hgvs_count_map = cleaned_data.get("count_data", {})

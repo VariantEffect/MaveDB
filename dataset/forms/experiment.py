@@ -41,15 +41,17 @@ class ExperimentForm(DatasetModelForm):
             "see once you publish your submission."
         )
 
-
-    def clean(self):
-        cleaned_data = super().clean()
-        experimentset = cleaned_data.get('experimentset', None)
-        if 'experimentset' in self.fields and self.instance.pk is not None:
-            if self.instance.experimentset != experimentset:
-                raise ValidationError(
-                    "MaveDB does not currently support changing a "
-                    "previously assigned Experiment Set.")
+    def clean_experimentset(self):
+        experimentset = self.cleaned_data.get('experimentset', None)
+        existing_experimentset = self.instance.parent
+        if existing_experimentset is not None and self.instance.pk is not None:
+            if experimentset is not None:
+                if existing_experimentset.urn != experimentset and \
+                        not self.instance.private:
+                    raise ValidationError(
+                        "Changing the parent Experiment Set of "
+                        "a public Experiment is not supported.")
+        return experimentset
 
     @transaction.atomic
     def save(self, commit=True):
