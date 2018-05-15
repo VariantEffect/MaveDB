@@ -1,9 +1,9 @@
-import ast
 import json
 import django.forms as forms
 
 from core.utilities import is_null
 
+from main.models import Licence
 from metadata.models import (
     Keyword,
     RefseqIdentifier,
@@ -22,6 +22,10 @@ from dataset.mixins import ExperimentFilterMixin, ScoreSetFilterMixin
 
 experiment_filter = ExperimentFilterMixin()
 scoreset_filter = ScoreSetFilterMixin()
+
+
+def passthrough(x):
+    return x
 
 
 def parse_char_list(value):
@@ -68,6 +72,12 @@ class MetadataSearchForm(forms.Form, FormFilterMixin):
         widget=forms.widgets.TextInput()
     )
 
+    licence = forms.CharField(
+        label='Licence', required=False,
+        help_text="Search for Score Sets with the selected licence type.",
+        widget=forms.widgets.Select(),
+    )
+
     def __init__(self, *args, **kwargs):
         super(MetadataSearchForm, self).__init__(*args, **kwargs)
         self.fields['keywords'] = forms.CharField(
@@ -82,6 +92,10 @@ class MetadataSearchForm(forms.Form, FormFilterMixin):
                 ]))
             ),
         )
+        l_field = self.fields['licence']
+        l_field.widget.choices = \
+            [("", '--------')] + \
+            [(i.long_name, i.long_name) for i in Licence.objects.all()]
 
     def clean_method_abstract(self):
         method_abtract = self.cleaned_data.get("method_abstract", "")
@@ -107,13 +121,14 @@ class MetadataSearchForm(forms.Form, FormFilterMixin):
         instances = list(set([i for i in instances if not is_null(i)]))
         return instances
 
-    def make_filters(self, join=True, filter_=None):
+    def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         abstract = {'abstract': data.get('method_abstract', "")}
         method = {'method': data.get('method_abstract', "")}
         title = {'title': data.get('title', "")}
         description = {'description': data.get('description', "")}
         keywords = {'keywords': data.get('keywords', [])}
+        licence = {'licence': data.get('licence', "")}
 
         abstract_q = filter_.search_all(abstract, join_func=None)
         method_q = filter_.search_all(method, join_func=None)
@@ -121,16 +136,18 @@ class MetadataSearchForm(forms.Form, FormFilterMixin):
         description_q = filter_.search_all(description, join_func=None)
         keywords_q = filter_.search_all(keywords, join_func=None)
         method_abstract_q = filter_.or_join_qs(abstract_q + method_q)
+        licence_q = filter_.search_all(licence, join_func=None)
+
         if not len(method_abstract_q):
             method_abstract_q = []
         else:
             method_abstract_q = [method_abstract_q]
+        qs = method_abstract_q + title_q + description_q + keywords_q + licence_q
 
-        join_func = lambda x: x
+        join_func = passthrough
         if join:
             join_func = filter_.and_join_qs
-        return join_func(
-            method_abstract_q + title_q + description_q + keywords_q)
+        return join_func(qs)
 
 
 class MetaIdentifiersSearchForm(forms.Form, FormFilterMixin):
