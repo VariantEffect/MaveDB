@@ -77,6 +77,8 @@ def valid_group_type(group):
 
 
 def user_is_anonymous(user):
+    if not hasattr(user, 'username'):
+        return
     return isinstance(user, AnonymousUser) or \
         user.username == ANONYMOUS_USER_NAME
 
