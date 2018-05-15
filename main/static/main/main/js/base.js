@@ -291,6 +291,10 @@ $("#id_experiment").on("change", function() {
 $("#id_target").on("change", function() {
   // First get whatever is in the form and send an ajax request
   // to convert it to markdown.
+  if (window.location.href.includes('search')) {
+    return false;
+  }
+  
   var id = this.value;
   var emptySelect = '---------';
 
