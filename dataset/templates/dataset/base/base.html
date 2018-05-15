@@ -187,14 +187,23 @@
       <!-- Renders PubMed references -->
       <h2 id="references" class="underline left-align section-heading">References</h2>
       {% if instance.pubmed_ids.count %}
-        <strong>PubMed:</strong>
-          <ul>
-          {% for pm in instance.pubmed_ids.all %}
-            <li><a href="{{pm.url}}">{{pm.identifier}}</a>: {{ pm.reference_html|safe }}</li>
-          {% endfor %}
-          </ul>
+        <ol>
+        {% for pm in instance.pubmed_ids.all %}
+          <li>{{ pm.reference_html|safe }} PMID: <a href="{{pm.url}}">{{pm.identifier}}</a></li>
+        {% endfor %}
+        </ol>
+        {% if instance.class_name == 'scoreset' %}
+          {% if instance.parent.pubmed_ids.count %}
+            <p>References from {{instance.parent}}:</p>
+            <ol start="{{instance.pubmed_ids.count + 1}}">
+            {% for pm in instance.parent.pubmed_ids.all %}
+              <li>{{ pm.reference_html|safe }} PMID: <a href="{{pm.url}}">{{pm.identifier}}</a></li>
+            {% endfor %}
+            </ol>
+          {% endif %}
+        {% endif %}
       {% else %}
-        <p><strong>PubMed:</strong> No associated publications </p>
+        <p>No associated publications.</p>
       {% endif %}
     {% endif %}
 
