@@ -120,14 +120,17 @@ class TestKeyword(TestCase):
         self.assertEqual(kw.get_association_count(), 0)
         
         exps = ExperimentSetFactory()
+        exps.keywords.clear()
         exps.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 1)
         
         exp = ExperimentFactory()
+        exp.keywords.clear()
         exp.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 2)
         
         scs = ScoreSetFactory()
+        scs.keywords.clear()
         scs.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 3)
         

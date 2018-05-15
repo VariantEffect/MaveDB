@@ -66,9 +66,11 @@ class TestScoreSet(TestCase):
 
     def test_autoassign_does_not_reassign_deleted_urn(self):
         obj = ScoreSetFactory()
+        obj.publish()
         previous = obj.urn
         obj.delete()
         obj = ScoreSetFactory()
+        obj.publish()
         self.assertGreater(obj.urn, previous)
 
     def test_cannot_create_with_duplicate_urn(self):
@@ -192,3 +194,18 @@ class TestScoreSet(TestCase):
         scs_1.delete()
         scs_2.refresh_from_db()
         self.assertIsNone(scs_2.replaces)
+
+    def test_publish_twice_doesnt_change_urn(self):
+        scs = ScoreSetFactory()
+        scs.publish()
+        scs.refresh_from_db()
+        old_urn = scs.urn
+        self.assertTrue(scs.has_public_urn)
+
+        scs = ScoreSet.objects.first()
+        scs.publish()
+        scs.refresh_from_db()
+        new_urn = scs.urn
+
+        self.assertTrue(scs.has_public_urn)
+        self.assertEqual(new_urn, old_urn)

@@ -6,6 +6,8 @@ from metadata.factories import (
     EnsemblIdentifierFactory
 )
 
+from main.models import Licence
+
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..factories import ExperimentWithScoresetFactory, ScoreSetWithTargetFactory
@@ -263,6 +265,64 @@ class TestExperimentSearchMixin(TestCase):
             self.assertIn(obj1, result)
             self.assertNotIn(obj2, result)
 
+    def test_can_search_by_licence_short_name(self):
+        obj1 = self.factory()
+        obj2 = self.factory()
+
+        scs1 = obj1.scoresets.first()
+        scs2 = obj2.scoresets.first()
+        scs1.licence = Licence.get_cc0()
+        scs2.licence = Licence.get_cc4()
+        scs1.save()
+        scs2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={'licence': Licence.get_cc0().short_name},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(obj1, result)
+        self.assertNotIn(obj2, result)
+
+        q = self.searcher.search_all(
+            value_or_dict={'licence': Licence.get_cc4().short_name},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertNotIn(obj1, result)
+        self.assertIn(obj2, result)
+
+    def test_can_search_by_licence_long_name(self):
+        obj1 = self.factory()
+        obj2 = self.factory()
+
+        scs1 = obj1.scoresets.first()
+        scs2 = obj2.scoresets.first()
+        scs1.licence = Licence.get_cc0()
+        scs2.licence = Licence.get_cc4()
+        scs1.save()
+        scs2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={'licence': Licence.get_cc0().long_name},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(obj1, result)
+        self.assertNotIn(obj2, result)
+
+        q = self.searcher.search_all(
+            value_or_dict={'licence': Licence.get_cc4().long_name},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertNotIn(obj1, result)
+        self.assertIn(obj2, result)
+
 
 class TestScoreSetSearchMixin(TestCase):
 
@@ -454,8 +514,6 @@ class TestScoreSetSearchMixin(TestCase):
         self.assertNotIn(obj2, result)
 
     def test_can_search_by_licence_short_name(self):
-        from main.models import Licence
-
         obj1 = self.factory()
         obj2 = self.factory()
         obj1.licence = Licence.get_cc0()
@@ -472,9 +530,34 @@ class TestScoreSetSearchMixin(TestCase):
         self.assertIn(obj1, result)
         self.assertNotIn(obj2, result)
 
-
         q = self.searcher.search_all(
             value_or_dict={'licence': Licence.get_cc4().short_name},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertNotIn(obj1, result)
+        self.assertIn(obj2, result)
+
+    def test_can_search_by_licence_long_name(self):
+        obj1 = self.factory()
+        obj2 = self.factory()
+        obj1.licence = Licence.get_cc0()
+        obj2.licence = Licence.get_cc4()
+        obj1.save()
+        obj2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={'licence': Licence.get_cc0().long_name},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(obj1, result)
+        self.assertNotIn(obj2, result)
+
+        q = self.searcher.search_all(
+            value_or_dict={'licence': Licence.get_cc4().long_name},
             join_func=self.searcher.or_join_qs
         )
         result = self.model_class.objects.filter(q)

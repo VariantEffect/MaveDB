@@ -40,9 +40,11 @@ class TestExperimentSet(TestCase):
 
     def test_autoassign_does_not_reassign_deleted_urn(self):
         exps1 = ExperimentSetFactory()
+        exps1.publish()
         previous = exps1.urn
         exps1.delete()
         exps2 = ExperimentSetFactory()
+        exps2.publish()
         self.assertGreater(exps2.urn, previous)
 
     def test_cannot_create_experimentsets_with_duplicate_urn(self):
@@ -59,3 +61,18 @@ class TestExperimentSet(TestCase):
         exp = ExperimentFactory()
         with self.assertRaises(ProtectedError):
             exp.experimentset.delete()
+
+    def test_publish_twice_doesnt_change_urn(self):
+        exps = ExperimentSetFactory()
+        exps.publish()
+        exps.refresh_from_db()
+        old_urn = exps.urn
+        self.assertTrue(exps.has_public_urn)
+
+        exps = ExperimentSet.objects.first()
+        exps.publish()
+        exps.refresh_from_db()
+        new_urn = exps.urn
+
+        self.assertTrue(exps.has_public_urn)
+        self.assertEqual(new_urn, old_urn)

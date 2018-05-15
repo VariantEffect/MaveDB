@@ -88,7 +88,9 @@ class TestScoreSetForm(TestCase):
         assign_user_as_instance_admin(self.user, inst.parent)
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=inst)
-        self.assertFalse(form.is_valid())
+        self.assertTrue(form.is_valid())
+        instance = form.save(commit=True)
+        self.assertEqual(instance.parent.pk, data['experiment'])
 
     def test_error_replaces_does_not_match_experiment_selection(self):
         data, files = self.make_post_data()
@@ -403,4 +405,58 @@ class TestScoreSetForm(TestCase):
         data['experiment'] = scs1.parent.pk
         form = ScoreSetForm(
             data=data, files=files, instance=scs1, user=self.user)
+        self.assertFalse(form.is_valid())
+
+    def test_changing_experiment_sets_replaces_to_none(self):
+        exp1 = ExperimentFactory()
+        exp2 = ExperimentFactory()
+        replaced = ScoreSetFactory(experiment=exp1)
+        obj = ScoreSetFactory(experiment=exp1, replaces=replaced)
+        self.assertEqual(obj.replaces, replaced)
+        self.assertEqual(replaced.replaced_by, obj)
+
+        exp1.add_administrators(self.user)
+        exp2.add_administrators(self.user)
+        replaced.add_administrators(self.user)
+        obj.add_administrators(self.user)
+
+        data, files = self.make_post_data()
+        data['experiment'] = exp2.pk
+        form = ScoreSetForm(data=data, files=files,
+                            user=self.user, instance=obj)
+        self.assertTrue(form.is_valid())
+        instance = form.save(commit=True)
+        self.assertIsNone(instance.replaces)
+        self.assertIsNone(replaced.next_version)
+        self.assertEqual(exp2.urn, instance.parent.urn)
+
+    def test_invalid_set_replaces_that_is_not_member_of_a_changed_experiment(self):
+        exp = ExperimentFactory()
+        obj = ScoreSetFactory(experiment=exp)
+        replaced = ScoreSetFactory(experiment=exp, private=False)
+
+        exp.add_administrators(self.user)
+        replaced.add_administrators(self.user)
+        obj.add_administrators(self.user)
+
+        # Make the data, which also sets the selected experiment
+        data, files = self.make_post_data()
+        # Set the replaces to an option not in the selected experiment
+        data['replaces'] = replaced.pk
+        form = ScoreSetForm(data=data, files=files,
+                            user=self.user, instance=obj)
+        self.assertFalse(form.is_valid())
+
+    def test_invalid_change_experiment_public_scoreset(self):
+        exp = ExperimentFactory()
+        obj = ScoreSetFactory(experiment=exp)
+        obj.publish()
+
+        exp.add_administrators(self.user)
+        obj.add_administrators(self.user)
+
+        # Make the data, which also sets the selected experiment
+        data, files = self.make_post_data()
+        form = ScoreSetForm(data=data, files=files,
+                            user=self.user, instance=obj)
         self.assertFalse(form.is_valid())

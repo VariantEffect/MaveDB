@@ -180,7 +180,7 @@ class TestProfileHomeView(TestCase, TestMessageMixin):
         )
         request.user = user
         response = profile_view(request)
-        self.assertContains(response, "Child entries must be deleted")
+        self.assertContains(response, "Experiments must be deleted")
         self.assertEqual(dataset_models.experimentset.ExperimentSet.objects.count(), 1)
         self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
@@ -197,7 +197,7 @@ class TestProfileHomeView(TestCase, TestMessageMixin):
         )
         request.user = user
         response = profile_view(request)
-        self.assertContains(response, "Child entries must be deleted")
+        self.assertContains(response, "Score Sets must be deleted")
         self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
 
@@ -216,7 +216,7 @@ class TestProfileHomeView(TestCase, TestMessageMixin):
         instance.save()
         response = profile_view(request)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
-        self.assertContains(response, "being processed cannot be deleted.")
+        self.assertContains(response, "currently being processed.")
 
 
 class TestProfileManageInstanceView(TestCase, TestMessageMixin):

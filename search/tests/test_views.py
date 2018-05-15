@@ -1,5 +1,7 @@
 from django.test import TestCase, RequestFactory
 
+from main.models import Licence
+
 from accounts.factories import UserFactory
 from accounts.permissions import assign_user_as_instance_admin
 
@@ -16,34 +18,40 @@ class TestSearchView(TestCase):
         self.exp1 = ExperimentWithScoresetFactory()
         self.exp2 = ExperimentWithScoresetFactory()
         self.exp3 = ExperimentWithScoresetFactory()
+        self.scs1 = self.exp1.scoresets.first()
+        self.scs2 = self.exp2.scoresets.first()
+        self.scs3 = self.exp3.scoresets.first()
 
     def test_private_entries_for_user_have_private_in_name(self):
         user = UserFactory()
-        assign_user_as_instance_admin(user, self.exp1)
+        self.exp1.add_administrators(user)
+        self.scs1.add_administrators(user)
+
         request = self.factory.get(self.path)
         request.user = user
         response = search_view(request)
-        contains = self.exp1.urn + ' [Private]'
-        self.assertContains(response, contains)
+
+        self.assertContains(response, self.exp1.urn + ' [Private]')
         self.assertNotContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
 
-    def test_can_search_by_user_and_dataset_fields(self):
-        self.exp2.private = False
-        self.exp2.save()
-        self.exp1.title = 'Hello world'
-        self.exp1.save()
+        self.assertContains(response, self.scs1.urn + ' [Private]')
+        self.assertNotContains(response, self.scs2.urn)
+        self.assertNotContains(response, self.scs3.urn)
 
+    def test_can_search_by_user_AND_dataset_fields(self):
         user = UserFactory()
-        assign_user_as_instance_admin(user, self.exp1)
-        scs = self.exp1.scoresets.first()
-        scs.publish()
-        self.assertFalse(self.exp1.private)
+        self.scs1.publish()
+        self.scs2.publish()
+        self.scs3.publish()
 
-        assign_user_as_instance_admin(user, self.exp2)
-        scs = self.exp2.scoresets.first()
-        scs.publish()
-        self.assertFalse(self.exp2.private)
+        self.exp1.add_administrators(user)
+        self.exp2.add_administrators(user)
+        self.scs1.add_viewers(user)
+        self.exp1.title = 'Hello world'
+        self.scs1.title = 'Hello world'
+        self.scs1.save()
+        self.exp1.save()
 
         assign_user_as_instance_admin(user, self.exp1)
         request = self.factory.get(
@@ -56,17 +64,23 @@ class TestSearchView(TestCase):
         self.assertNotContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
 
+        self.assertContains(response, self.scs1.urn)
+        self.assertNotContains(response, self.scs2.urn)
+        self.assertNotContains(response, self.scs3.urn)
+
     def test_search_all_searches_all_fields_using_OR(self):
-        self.exp1.private = False
-        self.exp2.private = False
+        self.scs1.publish()
+        self.scs2.publish()
+        self.scs3.publish()
+
         self.exp2.title = 'Hello world'
-        self.exp3.private = False
-        self.exp1.save()
+        self.scs2.title = 'hello world foo bar'
+        self.scs2.save()
         self.exp2.save()
-        self.exp3.save()
 
         user = UserFactory()
-        assign_user_as_instance_admin(user, self.exp1)
+        self.exp1.add_administrators(user)
+        self.scs1.add_administrators(user)
         request = self.factory.get(
             self.path + '/?search={}&search={}'.format(
                 user.username, self.exp2.title))
@@ -76,18 +90,24 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
 
+        self.assertContains(response, self.scs1.urn)
+        self.assertContains(response, self.scs2.urn)
+        self.assertNotContains(response, self.scs3.urn)
+
     def test_can_search_comma_sep_input(self):
-        self.exp1.private = False
+        self.scs1.publish()
+        self.scs2.publish()
+        self.scs3.publish()
+
         self.exp1.title = "foo bar"
-        self.exp2.private = False
-        self.exp2.title = 'Hello world'
-        self.exp3.private = False
+        self.exp2.title = 'Hello,World'
+        self.scs1.title = 'foo bar'
+        self.exp3.title = ""
+        self.scs1.save()
         self.exp1.save()
         self.exp2.save()
         self.exp3.save()
 
-        user = UserFactory()
-        assign_user_as_instance_admin(user, self.exp1)
         request = self.factory.get(
             self.path + '/?search={}%2C{}'.format(
                 self.exp1.title,
@@ -99,15 +119,21 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
 
+        self.assertContains(response, self.scs1.urn)
+        self.assertNotContains(response, self.scs2.urn)
+        self.assertNotContains(response, self.scs3.urn)
+
     def test_double_quoted_comma_sep_not_split_input(self):
-        self.exp1.private = False
+        self.scs1.publish()
+        self.scs2.publish()
+        self.scs3.publish()
+
         self.exp1.title = "foo bar"
-        self.exp2.private = False
         self.exp2.title = '"Hello,world"'
-        self.exp3.private = False
+        self.scs1.title = 'foo bar'
+        self.scs1.save()
         self.exp1.save()
         self.exp2.save()
-        self.exp3.save()
 
         request = self.factory.get(
             self.path + '?search={}%2C{}'.format(
@@ -120,16 +146,45 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
 
+        self.assertContains(response, self.scs1.urn)
+        self.assertNotContains(response, self.scs2.urn)
+        self.assertNotContains(response, self.scs3.urn)
+
     def test_can_search_empty(self):
-        self.exp1.private = False
-        self.exp2.private = False
-        self.exp3.private = False
-        self.exp1.save()
-        self.exp2.save()
-        self.exp3.save()
+        self.scs1.publish()
+        self.scs2.publish()
+        self.scs3.publish()
 
         request = self.factory.get(self.path + '/?search=')
         response = search_view(request)
         self.assertContains(response, self.exp1.urn)
         self.assertContains(response, self.exp2.urn)
         self.assertContains(response, self.exp3.urn)
+
+        self.assertContains(response, self.scs1.urn)
+        self.assertContains(response, self.scs2.urn)
+        self.assertContains(response, self.scs3.urn)
+
+    def test_can_search_by_licence(self):
+        self.scs1.publish()
+        self.scs2.publish()
+        self.scs3.publish()
+
+        self.scs1.licence = Licence.get_cc0()
+        self.scs2.licence = Licence.get_cc4()
+        self.scs3.licence = Licence.get_cc4()
+        self.scs1.save()
+        self.scs2.save()
+        self.scs3.save()
+
+        request = self.factory.get(self.path + '/?licence={}'.format(
+            Licence.get_cc0().long_name
+        ))
+        response = search_view(request)
+        self.assertContains(response, self.exp1.urn)
+        self.assertNotContains(response, self.exp2.urn)
+        self.assertNotContains(response, self.exp3.urn)
+
+        self.assertContains(response, self.scs1.urn)
+        self.assertNotContains(response, self.scs2.urn)
+        self.assertNotContains(response, self.scs3.urn)

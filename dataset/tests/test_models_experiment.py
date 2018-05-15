@@ -101,3 +101,18 @@ class TestExperiment(TestCase):
             [genome2.get_species_name()]
         ))
         self.assertEqual(exp.get_target_organisms(), expected)
+
+    def test_publish_twice_doesnt_change_urn(self):
+        exp = ExperimentFactory()
+        exp.publish()
+        exp.refresh_from_db()
+        old_urn = exp.urn
+        self.assertTrue(exp.has_public_urn)
+
+        exp = Experiment.objects.first()
+        exp.publish()
+        exp.refresh_from_db()
+        new_urn = exp.urn
+
+        self.assertTrue(exp.has_public_urn)
+        self.assertEqual(new_urn, old_urn)

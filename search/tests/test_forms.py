@@ -7,6 +7,8 @@ from dataset.factories import (
     ScoreSetWithTargetFactory
 )
 
+from main.models import Licence
+
 from genome.factories import TargetGeneFactory
 
 from metadata.factories import (
@@ -192,6 +194,42 @@ class TestMetadataSearchForm(TestCase):
         self.assertIn(obj1, result)
         self.assertNotIn(obj2, result)
         self.assertNotIn(obj3, result)
+
+    def test_can_search_by_licence_short_name(self):
+        obj1 = ExperimentWithScoresetFactory()
+        obj2 = ExperimentWithScoresetFactory()
+
+        scs = obj2.children.first()
+        scs.licence = Licence.get_cc0()
+        scs.save()
+
+        data = {'licence': obj1.children.first().licence.short_name}
+        form = MetadataSearchForm(data=data)
+        self.assertTrue(form.is_valid())
+
+        q = form.make_filters(join=True)
+        result = Experiment.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(obj1, result)
+        self.assertNotIn(obj2, result)
+
+    def test_can_search_by_licence_long_name(self):
+        obj1 = ExperimentWithScoresetFactory()
+        obj2 = ExperimentWithScoresetFactory()
+
+        scs = obj2.children.first()
+        scs.licence = Licence.get_cc0()
+        scs.save()
+
+        data = {'licence': obj1.children.first().licence.long_name}
+        form = MetadataSearchForm(data=data)
+        self.assertTrue(form.is_valid())
+
+        q = form.make_filters(join=True)
+        result = Experiment.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(obj1, result)
+        self.assertNotIn(obj2, result)
 
 
 class TestMetaIdentifiersSearchForm(TestCase):

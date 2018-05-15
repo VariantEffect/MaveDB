@@ -57,14 +57,20 @@ class TestGroupPermisionMixin(TestCase):
         self.instance_a.add_viewers(self.joe)
         result = self.instance_a.contributors()
         expected = [self.alice, self.bob, self.joe]
-        self.assertEqual(expected, list(result.all()))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
     def test_can_remove_admin(self):
         self.instance_a.add_administrators(self.alice)
         self.instance_a.add_administrators(self.bob)
         result = self.instance_a.administrators()
         expected = [self.alice, self.bob]
-        self.assertEqual(expected, list(result.all()))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
         self.instance_a.remove_administrators(self.alice)
         result = self.instance_a.administrators()
@@ -76,7 +82,10 @@ class TestGroupPermisionMixin(TestCase):
         self.instance_a.add_editors(self.bob)
         result = self.instance_a.editors()
         expected = [self.alice, self.bob]
-        self.assertEqual(expected, list(result.all()))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
         self.instance_a.remove_editors(self.alice)
         result = self.instance_a.editors()
@@ -88,7 +97,10 @@ class TestGroupPermisionMixin(TestCase):
         self.instance_a.add_viewers(self.bob)
         result = self.instance_a.viewers()
         expected = [self.alice, self.bob]
-        self.assertEqual(expected, list(result.all()))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
         self.instance_a.remove_viewers(self.alice)
         result = self.instance_a.viewers()
@@ -99,18 +111,27 @@ class TestGroupPermisionMixin(TestCase):
         self.instance_a.add_administrators(User.objects.all())
         result = self.instance_a.administrators()
         expected = [self.alice, self.bob, self.joe]
-        self.assertListEqual(sorted(expected), sorted(list(result.all())))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
     def test_can_remove_list(self):
         self.instance_a.add_administrators(User.objects.all())
         result = self.instance_a.administrators()
         expected = [self.alice, self.bob, self.joe]
-        self.assertListEqual(expected, list(result.all()))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
         self.instance_a.remove_administrators(User.objects.all())
         result = self.instance_a.administrators()
         expected = []
-        self.assertListEqual(sorted(expected), sorted(list(result.all())))
+        self.assertListEqual(
+            sorted(list(expected), key=lambda x: x.username),
+            sorted(list(result.all()), key=lambda x: x.username)
+        )
 
     def test_typeerror_add_or_remove_non_user_or_iterable(self):
         with self.assertRaises(TypeError):
