@@ -115,6 +115,7 @@ class ExperimentFilterMixin(DatasetModelFilterMixin):
         'refseq': 'scoresets__target__refseq_id__identifier',
         'assembly': 'scoresets__target__reference_maps__genome__genome_id__identifier',
         'genome': 'scoresets__target__reference_maps__genome__short_name',
+        'licence': 'scoresets__licence__short_name' || 'scoresets__licence__long_name'
 
     Expects the above :class:`Experiment` field names to work correctly.
     """
@@ -129,6 +130,7 @@ class ExperimentFilterMixin(DatasetModelFilterMixin):
             'uniprot': self.filter_target_uniprot,
             'ensembl': self.filter_target_ensembl,
             'refseq': self.filter_target_refseq,
+            'licence': self.filter_licence,
         })
         return dict_
 
@@ -166,6 +168,14 @@ class ExperimentFilterMixin(DatasetModelFilterMixin):
         field_name = 'scoresets__target__reference_maps__genome__genome_id__identifier'
         filter_type = 'iexact'
         return self.search_to_q(value, field_name, filter_type)
+
+    def filter_licence(self, value):
+        filter_type = 'icontains'
+        return self.or_join_qs([
+            self.search_to_q(value, 'scoresets__licence__short_name', filter_type),
+            self.search_to_q(value, 'scoresets__licence__long_name', filter_type),
+        ])
+
 
 
 class ScoreSetFilterMixin(DatasetModelFilterMixin):
@@ -244,9 +254,11 @@ class ScoreSetFilterMixin(DatasetModelFilterMixin):
         return self.search_to_q(value, field_name, filter_type)
 
     def filter_licence(self, value):
-        field_name = 'licence__short_name'
         filter_type = 'icontains'
-        return self.search_to_q(value, field_name, filter_type)
+        return self.or_join_qs([
+            self.search_to_q(value, 'licence__short_name', filter_type),
+            self.search_to_q(value, 'licence__long_name', filter_type),
+        ])
 
 
 class DatasetUrnMixin:
