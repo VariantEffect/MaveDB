@@ -68,6 +68,7 @@ class ScoreSetSerializer(DatasetModelSerializer):
             'previous_version', 'next_version',
             'current_version', 'variant_count', 'experiment',
         )
+        fields = tuple([f for f in fields if f != 'sra_ids'])
 
 
 class ExperimentSerializer(DatasetModelSerializer):
