@@ -115,10 +115,17 @@ def profile_view(request):
             # Check doesn't have children if experiment or experimentset
             if isinstance(instance, (Experiment, ExperimentSet)):
                 if instance.children.count():
-                    messages.error(
-                        request,
-                        "Child entries must be deleted prior to deleting an "
-                        "Experiment or Experiment Set.")
+                    if isinstance(instance, Experiment):
+                        message = (
+                            "Score Sets must be deleted prior to deleting "
+                            "this Experiment"
+                        )
+                    if isinstance(instance, ExperimentSet):
+                        message = (
+                            "Experiments must be deleted prior to deleting "
+                            "this Experiment Set"
+                        )
+                    messages.error(request, message)
                     return render(request, 'accounts/profile_home.html', context)
 
             # Check the processing state
@@ -133,9 +140,9 @@ def profile_view(request):
             if being_processed:
                 messages.error(
                     request,
-                    "Entries or entries with children being processed "
-                    "cannot be deleted. Try again once you submission has "
-                    "been processed.")
+                    "{} cannot be deleted because it is currently being "
+                    "processed. Try again once your submission has "
+                    "been processed.".format(instance.urn))
                 return render(request, 'accounts/profile_home.html', context)
 
             # Check the private status
