@@ -1,3 +1,4 @@
+import sys
 import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -35,3 +36,12 @@ def format_delta(ta, tb=None):
         return "{} {} ago".format(delta, units)
 
 
+def run_delayed_task(task, *args, **kwargs):
+    """
+    Windows has touble running Celery tasks due to dropped support. This should
+    be used during development on windows platforms.
+    """
+    if sys.platform == 'win32':
+        return task(*args, **kwargs)
+    else:
+        return task.delay(*args, **kwargs)
