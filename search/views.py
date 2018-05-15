@@ -147,7 +147,7 @@ def search_view(request):
                     experiments = experiments.union(user_experiments)
                     scoresets = scoresets.union(user_scoresets)
 
-    instances = list(scoresets) + list(experiments)
+    instances = list(scoresets.distinct()) + list(experiments.distinct())
     context = {
         "meta_search_form": meta_search_form,
         "meta_id_search_form": meta_id_search_form,
