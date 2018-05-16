@@ -17,7 +17,7 @@ from genome.models import TargetGene
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_experiment
 
-from ..models.base import DatasetModel
+from ..models.base import DatasetModel, PublicDatasetCounter
 from ..models.experimentset import ExperimentSet
 
 
@@ -80,27 +80,33 @@ class Experiment(DatasetModel):
         if self.experimentset is None:
             self.experimentset = ExperimentSet.objects.create()
         super().save(*args, **kwargs)
-
+    
+    @transaction.atomic
     def create_urn(self):
-        if self.private or not self.parent.has_public_urn:
+        if self.private or not self.experimentset.has_public_urn:
             urn = self.create_temp_urn()
         else:
             parent = self.experimentset
             child_value = parent.last_child_value + 1
-    
+        
             # convert child_value to letters
             suffix = ""
             x = child_value
             while x > 0:
                 x, y = divmod(x - 1, len(string.ascii_lowercase))
                 suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
-    
+        
             urn = "{}-{}".format(parent.urn, suffix)
-    
+        
             # update parent
             parent.last_child_value = child_value
             parent.save()
-
+            
+            # Add new public dataset to counter
+            counter = PublicDatasetCounter.load()
+            counter.experiments += 1
+            counter.save()
+    
         return urn
 
     def get_targets(self):

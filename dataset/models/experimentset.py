@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
@@ -9,9 +9,9 @@ from accounts.permissions import (
 )
 
 from urn.models import UrnModel
-from urn.validators import validate_mavedb_urn_experimentset
+from urn.validators import MAVEDB_URN_NAMESPACE, validate_mavedb_urn_experimentset
 
-from ..models.base import DatasetModel
+from ..models.base import DatasetModel, PublicDatasetCounter
 
 
 class ExperimentSet(DatasetModel):
@@ -46,14 +46,18 @@ class ExperimentSet(DatasetModel):
         if self.private:
             urn = self.create_temp_urn()
         else:
-            expset_number = str(self.pk)
-            padded_expset_number = expset_number.zfill(self.URN_DIGITS)
+            counter = PublicDatasetCounter.load()
+            
+            expset_number = counter.experimentsets + 1
+            padded_expset_number = str(expset_number).zfill(self.URN_DIGITS)
             urn = "{}{}".format(self.URN_PREFIX, padded_expset_number)
+            
+            counter.experimentsets += 1
+            counter.save()
         return urn
 
     def public_experiments(self):
         return self.children.exclude(private=True)
-
 
 # --------------------------------------------------------------------------- #
 #                            Post Save

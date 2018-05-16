@@ -18,7 +18,7 @@ from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
 
 from dataset import constants as constants
-from ..models.base import DatasetModel
+from ..models.base import DatasetModel, PublicDatasetCounter
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json
 
@@ -146,7 +146,7 @@ class ScoreSet(DatasetModel):
         return self
         
     def create_urn(self):
-        if self.private or not self.parent.has_public_urn:
+        if self.private or not self.experiment.has_public_urn:
             urn = self.create_temp_urn()
         else:
             parent = self.experiment
@@ -157,6 +157,11 @@ class ScoreSet(DatasetModel):
             # update parent
             parent.last_child_value = child_value
             parent.save()
+
+            # Add new public dataset to counter
+            counter = PublicDatasetCounter.load()
+            counter.scoresets += 1
+            counter.save()
 
         return urn
 
