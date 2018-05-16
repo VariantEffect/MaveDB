@@ -205,10 +205,7 @@ REST_FRAMEWORK = {
 CELERY_BROKER_URL = "amqp://localhost:5672//"
 CELERY_RESULT_BACKEND = "amqp://localhost:5672//"
 
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
 
-if sys.platform == 'win32':
-    # Windows cannot run celery so make all tasks synchronous
-    CELERY_TASK_ALWAYS_EAGER = True

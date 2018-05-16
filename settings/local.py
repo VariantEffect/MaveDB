@@ -56,3 +56,13 @@ LOGGING = {
         },
     },
 }
+
+# Allows tasks to be run synchronously for local tests
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_ALWAYS_EAGER = True
+
+if sys.platform == 'win32':
+    # Windows cannot run celery so make all tasks synchronous
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_ALWAYS_EAGER = True
+
