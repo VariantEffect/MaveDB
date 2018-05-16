@@ -1,15 +1,43 @@
-from django.contrib.auth.models import User
+import logging
+
+from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.core.mail import send_mail
 
 from urn.models import get_model_by_urn
-from core.utilities import logger
 from dataset import models
 from mavedb import celery_app
 
+User = get_user_model()
+logger = logging.getLogger("django")
+
 
 @celery_app.task(ignore_result=True)
-def send_admin_email(user, urn, base_url=""):
+def email_user(user, **kwargs):
+    if isinstance(user, int):
+        if User.objects.filter(pk=user).count():
+            user = User.objects.get(pk=user)
+        else:
+            return False
+    return user.profile.email_user(**kwargs)
+
+
+@celery_app.task(ignore_result=True)
+def send_to_email(subject, message, from_email, recipient_list, **kwargs):
+    if recipient_list:
+        return send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            **kwargs
+        )
+    return False
+    
+
+@celery_app.task(ignore_result=True)
+def email_admins(user, urn, base_url=""):
     """
     Sends an email to all admins.
 
