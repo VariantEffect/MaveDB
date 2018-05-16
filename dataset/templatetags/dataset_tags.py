@@ -48,3 +48,12 @@ def visible_children(instance, user):
             children.append(child)
     return list(sorted(children, key=lambda i: i.urn))
 
+
+@register.assignment_tag
+def parent_references(instance):
+    parent_refs = set()
+    for pmid in instance.parent.pubmed_ids.all():
+        if pmid not in instance.pubmed_ids.all():
+            parent_refs.add(pmid)
+    return list(parent_refs)
+    
