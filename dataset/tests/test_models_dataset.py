@@ -3,10 +3,12 @@ import datetime
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.db import transaction
 
 from accounts.factories import UserFactory
 from accounts.permissions import GroupTypes
 
+from dataset import models
 from dataset.factories import ExperimentSetFactory, ScoreSetFactory
 from metadata.factories import KeywordFactory
 
@@ -147,4 +149,12 @@ class TestDatasetModel(TestCase):
         self.assertFalse(instance.experiment.private)
         self.assertFalse(instance.experiment.experimentset.private)
 
-
+    def test_transaction_rolls_back_if_exception(self):
+        try:
+            with transaction.atomic():
+                ScoreSetFactory()
+                raise AttributeError()
+        except AttributeError:
+            self.assertEqual(models.scoreset.ScoreSet.objects.count(), 0)
+            self.assertEqual(models.experiment.Experiment.objects.count(), 0)
+            self.assertEqual(models.experimentset.ExperimentSet.objects.count(), 0)

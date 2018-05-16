@@ -1,5 +1,9 @@
-from django.test import TestCase
+from django.test import TestCase, mock, RequestFactory
 
+from accounts.factories import UserFactory
+from core.utilities.tests import TestMessageMixin
+
+from .. import views
 from ..models import News, SiteInformation
 
 
@@ -53,3 +57,34 @@ class HomePageTest(TestCase):
         )
         response = self.client.get('/')
         self.assertContains(response, 'refactor:')
+        
+        
+class TestContactView(TestCase, TestMessageMixin):
+    @staticmethod
+    def mock_data():
+        return {
+            'name': "John Smith",
+            'email': 'John@smith.com',
+            'message': 'This is a test',
+            'subject': 'Hello, world!'
+        }
+    
+    def setUp(self):
+        self.factory = RequestFactory()
+    
+    @mock.patch('core.tasks.email_user.delay')
+    def test_calls_email_admin_task(self, mock_patch):
+        data = self.mock_data()
+        admin = UserFactory(is_superuser=True)
+        admin.save()
+        
+        request = self.create_request('post', data=data, path='/contact/')
+        response = views.help_contact_view(request)
+        mock_patch.assert_called()
+        
+    @mock.patch('core.tasks.send_to_email.delay')
+    def test_calls_send_to_email_reply_task(self, mock_patch):
+        data = self.mock_data()
+        request = self.create_request('post', data=data, path='/contact/')
+        response = views.help_contact_view(request)
+        mock_patch.assert_called()

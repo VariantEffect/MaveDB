@@ -1,7 +1,7 @@
 import datetime
 
 from django.contrib.auth.models import Group
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 
@@ -76,3 +76,14 @@ class TestExperimentSet(TestCase):
 
         self.assertTrue(exps.has_public_urn)
         self.assertEqual(new_urn, old_urn)
+
+    def test_can_assign_perma_urns_in_order_in_atomic_transaction(self):
+        with transaction.atomic():
+            instance1 = ExperimentSet(private=False)
+            instance2 = ExperimentSet(private=False)
+            
+            instance1.save()
+            self.assertIn('1', instance1.urn)
+            
+            instance2.save()
+            self.assertIn('2', instance2.urn)

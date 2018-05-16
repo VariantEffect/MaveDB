@@ -148,7 +148,7 @@ class TestPublishScoresetTask(TestCase):
         self.assertEqual(scoreset.parent.private, False)
         self.assertEqual(scoreset.parent.parent.private, False)
 
-    @mock.patch('core.tasks.send_admin_email.delay')
+    @mock.patch('core.tasks.email_admins.delay')
     def test_sends_admin_emails(self, mock_patch):
         publish_scoreset(
             scoreset_urn=self.scoreset.urn, user_pk=self.user.pk, base_url="")

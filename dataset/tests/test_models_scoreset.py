@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
+from django.db import transaction
 
 from genome.models import TargetGene
 
@@ -209,3 +210,20 @@ class TestScoreSet(TestCase):
 
         self.assertTrue(scs.has_public_urn)
         self.assertEqual(new_urn, old_urn)
+
+    def test_publish_increments_id_by_one(self):
+        instance1 = ScoreSetFactory()
+        instance2 = ScoreSetFactory()
+        instance2.publish()
+        self.assertIn('1-a-1', instance2.urn)
+        instance1.publish()
+        self.assertIn('2-a-1', instance1.urn)
+
+    def test_publish_in_transaction(self):
+        with transaction.atomic():
+            instance1 = ScoreSetFactory()
+            instance2 = ScoreSetFactory()
+            instance2.publish()
+            self.assertIn('1-a-1', instance2.urn)
+            instance1.publish()
+            self.assertIn('2-a-1', instance1.urn)

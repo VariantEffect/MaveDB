@@ -2,6 +2,8 @@ from django.test import TestCase
 
 from accounts.factories import UserFactory
 
+from metadata.factories import PubmedIdentifierFactory
+
 from ..factories import ExperimentWithScoresetFactory
 from ..templatetags import dataset_tags
 
@@ -77,3 +79,23 @@ class TestVisibleChildren(TestCase):
         exp.children.first().publish()
         result = dataset_tags.visible_children(exp, UserFactory())
         self.assertEqual(len(result), 1)
+
+
+class TestParentReferences(TestCase):
+    def test_excludes_duplicated_references_in_child(self):
+        instance = ExperimentWithScoresetFactory()
+        
+        instance.pubmed_ids.clear()
+        instance.children.first().pubmed_ids.clear()
+        
+        pm1 = PubmedIdentifierFactory(identifier="25075907")
+        pm2 = PubmedIdentifierFactory(identifier="20711194")
+        pm3 = PubmedIdentifierFactory(identifier="29269382")
+        instance.add_identifier(pm1)
+        instance.add_identifier(pm2)
+        instance.children.first().add_identifier(pm2)
+        instance.children.first().add_identifier(pm3)
+        
+        pmids = dataset_tags.parent_references(instance.children.first())
+        self.assertEqual(len(pmids), 1)
+        self.assertEqual(pmids[0], pm1)
