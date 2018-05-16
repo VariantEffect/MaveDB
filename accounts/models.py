@@ -41,14 +41,15 @@ class Profile(TimeStampedModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)
     
-    def email_user(self, message, subject, from_email=None):
+    def email_user(self, message, subject, from_email=None, **kwargs):
         email = self.email or self.user.email
         if email:
             send_mail(
                 subject=subject,
                 message=message,
                 from_email=from_email,
-                recipient_list=[email]
+                recipient_list=[email],
+                **kwargs
             )
         else:
             logger.error(
