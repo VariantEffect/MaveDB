@@ -50,7 +50,7 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div id='abstract-modal-body' class="modal-body">
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div id='method-modal-body' class="modal-body">
           </div>
         </div>
       </div>
@@ -232,28 +232,18 @@
 
         <div class="col-12 col-md">
           <div class="row">
-            <div class="col">
+            <div class="col text-center">
               <h5>Documentation</h5>
               <ul class="list-unstyled text-small">
-                <li><a class="text-muted" href="#">API</a></li>
-                <li><a class="text-muted" href="#">MaveVis</a></li>
-                <li><a class="text-muted" href="#">Registration</a></li>
-                <li><a class="text-muted" href="#">Uploading data</a></li>
-                <li><a class="text-muted" href="#">User management</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">Registration</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">Uploading data</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">User management</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">API guide</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">MaveVis</a></li>
               </ul>
             </div>
 
-            <div class="col">
-              <h5>Resources</h5>
-              <ul class="list-unstyled text-small">
-                <li><a class="text-muted" href="#">Help</a></li>
-                <li><a class="text-muted" href="https://github.com/FowlerLab/">Source</a></li>
-                <li><a class="text-muted" href="#">Contact</a></li>
-                <li><a class="text-muted" href="#">Downloads</a></li>
-              </ul>
-            </div>
-
-            <div class="col">
+            <div class="col text-center">
               <h5>About</h5>
               <ul class="list-unstyled text-small">
                 <li><a class="text-muted" href="{% url 'main:terms_privacy'%}#terms">Terms</a></li>
