@@ -8,7 +8,7 @@ spin up a server using CentOS 6 and Apache can be found
 then you can skip this setup and start below.
 
  MaveDB was developed with to target python 3.4, but should be compatible with
- any python 3 install. Python 2 is not supported. Once . Running MaveDB requires 
+ any python 3 install. Python 2 is not supported. Running MaveDB requires 
  the following software:
  - [Python 3](https://www.python.org/downloads/)
  - [Mercurial](https://www.mercurial-scm.org/) (required to install the [metapub](http://bitbucket.org/afrubin/metapub) python package)
@@ -20,13 +20,13 @@ then you can skip this setup and start below.
  By default the local server will use the following PostgreSQL settings:
 
 ```json
-    "default": {
+    {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "mavedb",
         "USER": "mave_admin",
         "PASSWORD": "abc123",
         "HOST": "localhost",
-        "PORT": "",
+        "PORT": ""
     }
 ```
 
@@ -78,7 +78,7 @@ Running a live server will require some additional packages:
 # 4. Management commands
 Before starting the server you will need to run the following commands:
 
-```python
+```bash
 python managy.py migrate
 python manage.py createsuperuser
 python manage.py createreferences
@@ -90,7 +90,7 @@ Additional utility commands have been created that can serialize reference
 genomes in the database and serialize the current `SiteInformation` 
 singleton to JSON:
 
-```python
+```bash
 python manage.py savereferences
 python manage.py savesiteinfo
 ```
@@ -98,7 +98,7 @@ python manage.py savesiteinfo
 To update or create the `SiteInformation` singleton from a JSON file, use the
 command:
 
-```python
+```bash
 python manage.py updatesiteinfo
 ```
 
@@ -117,8 +117,8 @@ python manage.py createinitialrevisions
 
 To delete recorded history for a particular model:
 
-```python
-python manage.py deleterevisions <appname.modelname> --keep=<int> --days=<int>
+```bash
+python manage.py deleterevisions <appname.modelname> --keep=[int] --days=[int]
 ```
 
 This will keep anything from last *n* `days` or `keep` at least *n* history 
