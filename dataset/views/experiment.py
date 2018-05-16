@@ -4,7 +4,7 @@ from django.db import transaction
 
 from accounts.permissions import assign_user_as_instance_admin
 
-from core.tasks import send_admin_email
+from core.tasks import email_admins
 from core.utilities.versioning import track_changes
 
 from ..forms.experiment import ExperimentForm, ExperimentEditForm
@@ -79,7 +79,7 @@ class ExperimentCreateView(CreateDatasetModelView):
         
         if not self.request.POST['experimentset']:
             assign_user_as_instance_admin(user, experiment.experimentset)
-            send_admin_email(self.request.user, experiment.experimentset)
+            email_admins(self.request.user, experiment.experimentset)
             propagate = True
             save_parents = True
         else:
@@ -91,7 +91,7 @@ class ExperimentCreateView(CreateDatasetModelView):
         experiment.save(save_parents=save_parents)
         track_changes(instance=experiment, user=self.request.user)
         track_changes(instance=experiment.parent, user=self.request.user)
-        send_admin_email(self.request.user, experiment)
+        email_admins(self.request.user, experiment)
         self.kwargs['urn'] = experiment.urn
         return forms
 

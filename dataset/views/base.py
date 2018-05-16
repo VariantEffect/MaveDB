@@ -14,7 +14,6 @@ from dataset.mixins import DatasetUrnMixin, DatasetPermissionMixin, \
 
 from ..forms.base import DatasetModelForm
 from ..models.base import DatasetModel
-from ..utilities import delete_instance
 
 
 logger = logging.getLogger("django")

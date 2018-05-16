@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
-from core.tasks import send_admin_email
+from core.tasks import email_admins
 from core.utilities import run_delayed_task
 
 from mavedb import celery_app
@@ -44,14 +44,14 @@ class BaseCreateVariants(Task):
     
     
 @celery_app.task(ignore_result=True, base=BaseCreateVariants)
-def publish_scoreset(user_pk, scoreset_urn, base_url="", email_admins=True):
+def publish_scoreset(user_pk, scoreset_urn, base_url="", notify_admins=True):
     user = User.objects.get(pk=user_pk)
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
     scoreset.publish()
     scoreset.set_modified_by(user, propagate=True)
     scoreset.save(save_parents=True)
-    if email_admins:
-        send_admin_email.delay(
+    if notify_admins:
+        email_admins.delay(
             user=user.pk, urn=scoreset.urn, base_url=base_url)
     return scoreset
 
@@ -76,7 +76,7 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
             # to refresh the urn.
             scoreset = publish_scoreset(
                 user_pk=user_pk, scoreset_urn=scoreset_urn,
-                base_url=base_url, email_admins=False
+                base_url=base_url, notify_admins=False
             )
             
         # Delete existing variants and create new ones.
@@ -92,7 +92,7 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
         if publish:
             # Send an email last to ensure that all the above has worked
             # without error.
-            send_admin_email.delay(
+            email_admins.delay(
                 user=user.pk, urn=scoreset.urn, base_url=base_url)
 
 
