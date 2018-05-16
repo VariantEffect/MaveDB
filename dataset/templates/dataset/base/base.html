@@ -1,4 +1,5 @@
 {% extends "main/base.html" %}
+{% load dataset_tags %}
 
 {% block body %}
 <div class="right-align">
@@ -193,10 +194,11 @@
         {% endfor %}
         </ol>
         {% if instance.class_name == 'scoreset' %}
-          {% if instance.parent.pubmed_ids.count %}
-            <p>References from {{instance.parent}}:</p>
-            <ol start="{{instance.pubmed_ids.count + 1}}">
-            {% for pm in instance.parent.pubmed_ids.all %}
+          {% parent_references instance as parent_refs %}
+          {% if parent_refs|length %}
+            <p class="pl-4">References from <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:</p>
+            <ol start="{{instance.pubmed_ids.count|add:1}}">
+            {% for pm in parent_refs %}
               <li>{{ pm.reference_html|safe }} PMID: <a href="{{pm.url}}">{{pm.identifier}}</a></li>
             {% endfor %}
             </ol>
