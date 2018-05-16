@@ -9,27 +9,31 @@ from django.contrib.sessions.backends.db import SessionStore
 User = get_user_model()
 
 
-def authenticate_webdriver(username, password, test_class):
+def authenticate_webdriver(username, password, test_class, drvr_attr):
     session_cookie = create_session_cookie(
         username=username,
         password=password
     )
     # Visit your domain to setup Selenium.
-    test_class.selenium.get(test_class.live_server_url)
+    getattr(test_class, drvr_attr).get(test_class.live_server_url)
 
     # Add the newly created session cookie to selenium webdriver.
-    test_class.selenium.add_cookie(session_cookie)
+    getattr(test_class, drvr_attr).add_cookie(session_cookie)
 
     # Refresh to exchange cookies with the server.
-    test_class.selenium.refresh()
+    getattr(test_class, drvr_attr).refresh()
 
     return test_class
 
 
 def create_session_cookie(username, password):
-
     # First, create a new test user
-    user = User.objects.create_user(username=username, password=password)
+    if User.objects.filter(username=username).count():
+        user = User.objects.get(username=username)
+        user.set_password(password)
+        user.save()
+    else:
+        user = User.objects.create_user(username=username, password=password)
 
     # Then create the authenticated session using the new user credentials
     session = SessionStore()
