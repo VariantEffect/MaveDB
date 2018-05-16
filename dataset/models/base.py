@@ -6,6 +6,9 @@ from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 
+from core.mixins import SingletonMixin
+from core.models import TimeStampedModel
+
 from accounts.mixins import GroupPermissionMixin
 from accounts import permissions
 
@@ -33,6 +36,15 @@ parent_attr_map = {
     'Variant': 'scoreset'
 }
 
+
+class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
+    """
+    Keeps track of the number of public datasets for each model type.
+    """
+    scoresets = models.IntegerField(default=0)
+    experiments = models.IntegerField(default=0)
+    experimentsets = models.IntegerField(default=0)
+    
 
 class DatasetModel(UrnModel, GroupPermissionMixin):
     """
