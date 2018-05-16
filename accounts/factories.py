@@ -25,7 +25,7 @@ def AnonymousUserFactory():
 
 
 def UserFactory(username=None, password=None, first_name=None,
-                last_name=None, email=None):
+                last_name=None, email=None, **kwargs):
     """
     Test fixture factory for the user class which sets username,
     first_name, last_name and password.
@@ -54,7 +54,8 @@ def UserFactory(username=None, password=None, first_name=None,
         username=username,
         first_name=first_name,
         last_name=last_name,
-        email=email
+        email=email,
+        **kwargs,
     )
     user.set_password(password)
     return user
