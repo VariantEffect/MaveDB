@@ -81,13 +81,28 @@ class PubmedIdentifierFactory(ExternalIdentifierFactory):
         model = PubmedIdentifier
         django_get_or_create = ('identifier',)
 
-    reference_html = (
-        "Rubin AF, <i>et al</i>. Correction to: A statistical framework for "
-        "analyzing deep mutational scanning data. <i>Genome Biol</i>. 2018; "
-        "<b>19</b>:17."
-    )
+    reference_html = factory.fuzzy.FuzzyChoice([
+        "Rubin AF, <i>et al</i>. A statistical framework for analyzing deep "
+        "mutational scanning data. <i>Genome Biol</i>. 2017; "
+        "<b>18</b>:150.",
+        
+        "Weile J, <i>et al</i>. A framework for exhaustively mapping "
+        "functional missense variants. <i>Mol. Syst. Biol</i>. 2017; "
+        "<b>13</b>:957.",
+        
+        'Fowler DM and Fields S. Deep mutational scanning: a new style of '
+        'protein science. <i>Nat. Methods</i>. 2014; <b>11</b>:801-7.',
+
+        'Fowler DM, <i>et al</i>. High-resolution mapping of protein '
+        'sequence-function relationships. <i>Nat. Methods</i>. 2010; '
+        '<b>7</b>:741-6.',
+
+        'Fowler DM, <i>et al</i>. Enrich: software for analysis of protein '
+        'function by enrichment and depletion of variants. '
+        '<i>Bioinformatics</i>. 2011; <b>27</b>:3430-1.',
+    ])
     identifier = factory.fuzzy.FuzzyChoice([
-        '29086305', '29103961', '29269382', '29415752', '29525204'
+        '25075907', '20711194', '29269382', '28784151', '22006916'
     ])
 
 
