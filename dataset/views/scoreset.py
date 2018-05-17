@@ -2,9 +2,7 @@ import logging
 
 from django.db import transaction
 
-from accounts.permissions import (
-    PermissionTypes, assign_user_as_instance_admin
-)
+from accounts.permissions import PermissionTypes
 
 from core.utilities.versioning import track_changes
 
@@ -17,9 +15,10 @@ from metadata.forms import (
 
 from genome.forms import PimraryReferenceMapForm, TargetGeneForm
 
-from dataset import constants
 # Absolute import tasks for celery to work
 from dataset.tasks import create_variants, publish_scoreset
+from dataset import constants
+
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
 from ..forms.scoreset import ScoreSetForm, ScoreSetEditForm
@@ -110,7 +109,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
             if Experiment.objects.filter(urn=urn).count():
                 experiment = Experiment.objects.get(urn=urn)
                 has_permission = self.request.user.has_perm(
-                    PermissionTypes.CAN_VIEW, experiment)
+                    PermissionTypes.CAN_EDIT, experiment)
                 if has_permission:
                     self.kwargs['experiment'] = experiment
         return super().dispatch(request, *args, **kwargs)
@@ -164,7 +163,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
             create_variants.delay(**create_variants_kwargs)
 
         scoreset.save()
-        assign_user_as_instance_admin(self.request.user, scoreset)
+        scoreset.add_administrators(self.request.user)
         track_changes(instance=scoreset, user=self.request.user)
         self.kwargs['urn'] = scoreset.urn
         return forms
@@ -262,14 +261,16 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 dataset_columns=scoreset_form.dataset_columns.copy(),
                 base_url=baseurl(self.request)['BASE_URL'],
             )
-        elif (not scoreset_form.get_variants()) and publish:
+        elif publish:
+            scoreset.processing_state = constants.processing
+            scoreset.save()
             publish_scoreset.delay(
                 scoreset_urn=scoreset.urn,
                 user_pk=self.request.user.pk,
                 base_url=baseurl(self.request)['BASE_URL'],
             )
 
-        assign_user_as_instance_admin(self.request.user, scoreset)
+        scoreset.add_administrators(self.request.user)
         track_changes(instance=scoreset, user=self.request.user)
         return forms
 

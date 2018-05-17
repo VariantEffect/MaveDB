@@ -2,8 +2,6 @@ from django.http import HttpRequest
 from django.urls import reverse_lazy
 from django.db import transaction
 
-from accounts.permissions import assign_user_as_instance_admin
-
 from core.tasks import email_admins
 from core.utilities.versioning import track_changes
 
@@ -36,7 +34,8 @@ class ExperimentDetailView(DatasetModelView):
         context = super().get_context_data(**kwargs)
         instance = self.get_object()
         keywords = set([kw for kw in instance.keywords.all()])
-        keywords = sorted(keywords, key=lambda kw: -1 * kw.get_association_count())
+        keywords = sorted(
+            keywords, key=lambda kw: -1 * kw.get_association_count())
         context['keywords'] = keywords
         return context
 
@@ -71,27 +70,27 @@ class ExperimentCreateView(CreateDatasetModelView):
         # Save and update permissions. If no experimentset was selected,
         # by default a new experimentset is created with the current user
         # as it's administrator.
-        user = self.request.user
-        assign_user_as_instance_admin(user, experiment)
-        experiment.set_created_by(user, propagate=False)
-        experiment.set_modified_by(user, propagate=False)
+        experiment.add_administrators(self.request.user)
+        experiment.set_created_by(self.request.user, propagate=False)
+        experiment.set_modified_by(self.request.user, propagate=False)
         experiment.save(save_parents=False)
         
         if not self.request.POST['experimentset']:
-            assign_user_as_instance_admin(user, experiment.experimentset)
-            email_admins(self.request.user, experiment.experimentset)
+            experiment.experimentset.add_administrators(self.request.user)
+            email_admins.delay(self.request.user.pk,
+                               experiment.experimentset.urn)
             propagate = True
             save_parents = True
         else:
             propagate = False
             save_parents = False
 
-        experiment.set_created_by(user, propagate=propagate)
-        experiment.set_modified_by(user, propagate=propagate)
+        experiment.set_created_by(self.request.user, propagate=propagate)
+        experiment.set_modified_by(self.request.user, propagate=propagate)
         experiment.save(save_parents=save_parents)
         track_changes(instance=experiment, user=self.request.user)
         track_changes(instance=experiment.parent, user=self.request.user)
-        email_admins(self.request.user, experiment)
+        email_admins.delay(self.request.user.pk, experiment.urn)
         self.kwargs['urn'] = experiment.urn
         return forms
 
