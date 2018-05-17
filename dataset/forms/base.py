@@ -36,8 +36,8 @@ class DatasetModelForm(forms.ModelForm):
         'method_text',
         'keywords',
         'doi_ids',
-        'pubmed_ids',
         'sra_ids',
+        'pubmed_ids',
     )
 
     class Meta:
