@@ -17,6 +17,8 @@ from main.models import Licence
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
 
+from variant.models import Variant
+
 from dataset import constants as constants
 from ..models.base import DatasetModel, PublicDatasetCounter
 from ..models.experiment import Experiment
@@ -140,8 +142,9 @@ class ScoreSet(DatasetModel):
     @transaction.atomic
     def publish(self):
         super().publish()
-        for child in self.children:
-            child.urn = child.create_urn()
+        urns = Variant.bulk_create_urns(self.children.count(), self)
+        for urn, child in zip(urns, self.children.all()):
+            child.urn = urn
             child.save()
         return self
         
