@@ -495,7 +495,8 @@ class ScoreSetAjaxMixin:
                 experiment = Experiment.objects.get(pk=pk)
                 scoresets = [
                     (s.pk, s.urn) for s in experiment.scoresets.order_by('urn')
-                    if self.request.user.has_perm(PermissionTypes.CAN_EDIT, s)
+                    if self.request.user.has_perm(PermissionTypes.CAN_EDIT, s) \
+                    and not s.private
                 ]
                 data.update({'scoresets': scoresets})
                 data.update(
