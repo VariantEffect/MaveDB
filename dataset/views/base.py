@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 
+from dataset import constants
 from dataset.mixins import DatasetUrnMixin, DatasetPermissionMixin, \
     DatasetFormViewContextMixin, MultiFormMixin
 
@@ -130,10 +131,10 @@ class CreateDatasetModelView(LoginRequiredMixin, DatasetModelFormView):
     login_url = '/login/'
     success_message = (
         "Successfully created a new {model_name}, which has been assigned a "
-        "temporary URN {urn}. You can freely edit this submission until you "
-        "choose to publish it. You can access the draft submission from "
-        "your profile. Once published, your submission will be assigned a "
-        "permanent URN."
+        "temporary URN {urn}. Once this submission has been processed, it may "
+        "be freely edited until you choose to publish. You can access the draft "
+        "submission from your profile. Once published, your submission will "
+        "be assigned a permanent URN."
     )
 
     def format_success_message(self):
@@ -164,6 +165,13 @@ class UpdateDatasetModelView(DatasetPermissionMixin,
     def dispatch(self, request, *args, **kwargs):
         try:
             self.instance = self.get_object()
+            if self.instance.processing_state == constants.processing:
+                messages.error(
+                    request,
+                    "{} is being processed cannot be edited.".format(
+                        self.instance.urn)
+                )
+                return HttpResponseRedirect(reverse("accounts:profile"))
             return super().dispatch(request, *args, **kwargs)
         except PermissionDenied:
             urn = self.kwargs.get('urn', None)
@@ -174,7 +182,13 @@ class UpdateDatasetModelView(DatasetPermissionMixin,
             return HttpResponseRedirect(reverse("accounts:profile"))
 
     def format_success_message(self):
-        return self.success_message.format(urn=self.instance.urn)
+        if self.instance.processing_state == constants.processing:
+            return '{} Further editing has been disabled until your ' \
+                      'submission has been processed.'.format(
+                self.success_message.format(urn=self.instance.urn)
+            )
+        else:
+            return self.success_message.format(urn=self.instance.urn)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
