@@ -106,10 +106,10 @@
 {% block extra-buttons-block %}
   {% if instance.private %}
     <div class="col-auto">
-      <input type="submit" value="Publish" class="btn btn-outline-danger white-button" data-toggle="tooltip"
+      <input id='publish' type="submit" value="Publish" class="btn btn-outline-danger red-btn" data-toggle="tooltip"
         data-placement="top|right|bottom|left" name="publish"
         title="Publish your entry. This action is final and will freeze your certain aspects of your entry."
-        style="width:150px;margin-bottom:5px;" id="publish">
+        style="width:150px;margin-bottom:5px;">
     </div>
   {% endif %}
 {% endblock %}
