@@ -735,7 +735,15 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             publish_mock.assert_called_once()
-            publish_scoreset(**publish_mock.call_args[1])
+            
+            scs.refresh_from_db()
+            self.assertEqual(scs.processing_state, constants.processing)
+            
+            scoreset = publish_scoreset(**publish_mock.call_args[1])
+            self.assertTrue(scoreset.has_public_urn)
+            self.assertTrue(scoreset.parent.has_public_urn)
+            self.assertTrue(scoreset.parent.parent.has_public_urn)
+            self.assertEqual(scoreset.processing_state, constants.success)
 
     def test_publish_propagates_modified_by(self):
         data = self.post_data.copy()
@@ -853,12 +861,16 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()
+            scs.refresh_from_db()
+            self.assertEqual(scs.processing_state, constants.processing)
             with mock.patch('dataset.tasks.notify_user_upload_status.delay') as notify_patch:
                 create_variants(**create_mock.call_args[1])
                 self.assertEqual(notify_patch.call_count, 2)
                 notify_user_upload_status(**notify_patch.call_args_list[0][1])
                 notify_user_upload_status(**notify_patch.call_args_list[1][1])
                 self.assertEqual(len(mail.outbox), 2)
+                scs.refresh_from_db()
+                self.assertEqual(scs.processing_state, constants.success)
 
     def test_published_instance_returns_edit_only_mode_form(self):
         scs = ScoreSetFactory(private=False)
@@ -999,3 +1011,15 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
 
         scs = ScoreSet.objects.first()
         self.assertIsNone(scs.target.get_ensembl_offset_annotation())
+    
+    def test_cannot_edit_processing_scoreset(self):
+        scs = ScoreSetWithTargetFactory()
+        scs.processing_state = constants.processing
+        scs.save()
+        path = self.path.format(scs.urn)
+        assign_user_as_instance_admin(self.user, scs)
+        self.client.login(
+            username=self.user.username, password=self.user._password)
+        response = self.client.get(path)
+        self.assertEqual(response.status_code, 302)
+        
