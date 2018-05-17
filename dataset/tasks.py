@@ -28,16 +28,20 @@ class BaseCreateVariants(Task):
         user_pk = kwargs['user_pk']
         base_url = kwargs.get('base_url', "")
         user = User.objects.get(pk=user_pk)
-        scoreset = ScoreSet.objects.get(urn=scoreset_urn)
-        scoreset.processing_state = constants.failed
-        scoreset.save()
+
+        if ScoreSet.objects.filter(urn=scoreset_urn).count():
+            scoreset = ScoreSet.objects.get(urn=scoreset_urn)
+            scoreset.processing_state = constants.failed
+            scoreset_urn = scoreset.urn
+            scoreset.save()
+        
         notify_user_upload_status.delay(
             user_pk=user_pk, scoreset_urn=scoreset_urn,
             step='end', base_url=base_url)
         logger.exception(
             "CELERY: Task {} raised exception while saving "
             "variants to ScoreSet {} from user {}:\n{!r}\n{!r}.".format(
-                task_id, scoreset.urn, user.username, str(exc), einfo)
+                task_id, scoreset_urn, user.username, str(exc), einfo)
         )
         return super(BaseCreateVariants, self).on_failure(
             exc, task_id, args, kwargs, einfo)
@@ -49,7 +53,9 @@ def publish_scoreset(user_pk, scoreset_urn, base_url="", notify_admins=True):
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
     scoreset.publish()
     scoreset.set_modified_by(user, propagate=True)
+    scoreset.processing_state = constants.success
     scoreset.save(save_parents=True)
+    scoreset.refresh_from_db()
     if notify_admins:
         email_admins.delay(
             user=user.pk, urn=scoreset.urn, base_url=base_url)
@@ -62,7 +68,6 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
     """Bulk creates and emails the user the processing status."""
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
     user = User.objects.get(pk=user_pk)
-    
     notify_user_upload_status.delay(
         user_pk=user_pk, scoreset_urn=scoreset_urn,
         step='start', base_url=base_url)
@@ -75,7 +80,7 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
             # Re-assign to refresh the current in-memory object to
             # to refresh the urn.
             scoreset = publish_scoreset(
-                user_pk=user_pk, scoreset_urn=scoreset_urn,
+                user_pk=user_pk, scoreset_urn=scoreset.urn,
                 base_url=base_url, notify_admins=False
             )
             
@@ -86,7 +91,7 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
         scoreset.processing_state = constants.success
         scoreset.save()
         notify_user_upload_status.delay(
-            user_pk=user_pk, scoreset_urn=scoreset_urn,
+            user_pk=user_pk, scoreset_urn=scoreset.urn,
             step='end', base_url=base_url)
         
         if publish:
