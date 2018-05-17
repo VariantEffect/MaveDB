@@ -201,7 +201,8 @@ class ScoreSetForm(DatasetModelForm):
                         "Replaces field selection must be a member of the "
                         "selected experiment."
                     ))
-            if replaces.next_version is not None:
+            if replaces.next_version is not None and \
+                    replaces.next_version != self.instance:
                 raise ValidationError(
                     ugettext(
                         "{} has already been replaced by "
