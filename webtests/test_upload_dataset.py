@@ -1,15 +1,18 @@
 import os
+import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
-from django.test import LiveServerTestCase
+from django.test import LiveServerTestCase, mock
 
 from accounts.factories import UserFactory
 
 from dataset import models as data_models
 from dataset import factories as data_factories
+from dataset import tasks
+from dataset import constants
 
 from metadata import models as meta_models
 from metadata import factories as meta_factories
@@ -19,13 +22,6 @@ from .utilities import authenticate_webdriver
 
 class TestCreateExperimentAndScoreSet(LiveServerTestCase):
     
-    def mock_data(self):
-        return {
-            "title": "A new experiment",
-            "description": "Hello, world!",
-            "pubmed_ids": ['29269382'],
-        }
-    
     def setUp(self):
         self.user = UserFactory()
         self.browser = webdriver.Firefox()
@@ -33,8 +29,12 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
     def authenticate(self):
         authenticate_webdriver(
             self.user.username, self.user._password, self, 'browser')
-        
-    def test_create_experiment_flow(self):
+
+    @mock.patch('dataset.tasks.create_variants.delay')
+    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
+    @mock.patch('core.tasks.email_admins.delay')
+    def test_create_experiment_flow(self, email_admins_patch, notify_patch,
+                                    variants_patch):
         # Create some experimentsets that the user should not be able to see
         exps1 = data_factories.ExperimentSetFactory(private=False)
         exps2 = data_factories.ExperimentSetFactory()
@@ -42,50 +42,95 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         exps2.add_administrators(self.user)
         exps3.add_viewers(self.user)
         
+        # Make one entry for each
+        kw = meta_factories.KeywordFactory()
+        pm = meta_factories.PubmedIdentifierFactory()
+        doi = meta_factories.DoiIdentifierFactory()
+        sra = meta_factories.SraIdentifierFactory()
+        meta_models.Keyword.objects.all().delete()
+        meta_models.SraIdentifier.objects.all().delete()
+        meta_models.DoiIdentifier.objects.all().delete()
+        meta_models.PubmedIdentifier.objects.all().delete()
+        
+        # Store the text only which selenium will use to input new entries
+        kw_text = kw.text
+        pm_identifier = pm.identifier
+        sra_identifier = sra.identifier
+        doi_identifier = doi.identifier
+        
         self.authenticate()
         self.browser.get(self.live_server_url + '/experiment/new/')
-
+        
+        # Check that only exps2 is visible as this is the only editable one.
         exps_select = Select(self.browser.find_element_by_id('id_experimentset'))
         options = [o.text for o in exps_select.options]
         self.assertIn(exps2.urn, options)
         self.assertNotIn(exps1.urn, options)
         self.assertNotIn(exps3.urn, options)
         
+        # Fill in the fields.
         title = self.browser.find_element_by_id('id_title')
         title.send_keys("Experiment 1")
         
         description = self.browser.find_element_by_id('id_short_description')
         description.send_keys("hello, world!")
         
+        
+        # Ordering is important as it replicates the form field ordering
+        # in `DatasetModelForm`
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[0].send_keys(kw_text)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+        
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[1].send_keys(doi_identifier)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+        
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[2].send_keys(sra_identifier)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+        
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[3].send_keys(pm_identifier)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+        
         submit = self.browser.find_element_by_id('submit-form')
         submit.click()
         
-        # After creating a new experiment, we should now be at the create
-        # scoreset view.
+        # One email for the experiment, and one email for the experimentset
+        self.assertEqual(email_admins_patch.call_count, 2)
+        
+        # Delete uneccessary objects
         exps1.delete()
         exps2.delete()
         exps3.delete()
+    
+        # Check the experiment has been configured properly
+        kw = meta_models.Keyword.objects.all().first()
+        sra = meta_models.SraIdentifier.objects.all().first()
+        doi = meta_models.DoiIdentifier.objects.all().first()
+        pm = meta_models.PubmedIdentifier.objects.all().first()
         
         experiment = data_models.experiment.Experiment.objects.first()
         messages = self.browser.find_elements_by_class_name('alert-success')
         self.assertEqual(len(messages), 1)
         self.assertIsNotNone(experiment)
         self.assertFalse(experiment.has_public_urn)
+        self.assertEqual(list(experiment.keywords.all()), [kw])
+        self.assertEqual(list(experiment.sra_ids.all()), [sra])
+        self.assertEqual(list(experiment.doi_ids.all()), [doi])
+        self.assertEqual(list(experiment.pubmed_ids.all()), [pm])
+        
+        # Should be on the scoreset creation page - check the correct M2M
+        # elements are selected.
         self.assertIn(
             'scoreset/new/?experiment={}'.format(experiment.urn),
             self.browser.current_url
         )
-        
-        # Add in some ids to see if they are loaded and selected.
-        kw = meta_factories.KeywordFactory()
-        pm = meta_factories.PubmedIdentifierFactory()
-        doi = meta_factories.DoiIdentifierFactory()
-        experiment.add_keyword(kw)
-        experiment.add_identifier(pm)
-        experiment.add_identifier(doi)
-        
-        # Refresh the page. And check the correct elements are selected.
-        self.browser.refresh()
         exp_select = Select(self.browser.find_element_by_id('id_experiment'))
         self.assertEqual(
             [o.text for o in exp_select.all_selected_options], [experiment.urn]
@@ -111,6 +156,9 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         # Edit: Couldn't find a way, might be better to test this with a
         # javascript front end testing framework?
         scs = data_factories.ScoreSetWithTargetFactory()
+        ensembl = meta_models.EnsemblIdentifier.objects.first()
+        uniprot = meta_models.UniprotIdentifier.objects.first()
+        refseq = meta_models.RefseqIdentifier.objects.first()
         scs.add_viewers(self.user)
         self.authenticate()
         self.browser.get(
@@ -118,6 +166,11 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
             '/scoreset/new/?experiment={}'.format(experiment.urn)
         )
         
+        # At least check if the target is clickable.
+        target_select = Select(self.browser.find_element_by_id('id_target'))
+        self.assertEqual(len([o.text for o in target_select.options]), 2)
+        self.assertIn(scs.urn, target_select.options[1].text)
+
         # Fill in the remaining fields
         title = self.browser.find_element_by_id('id_title')
         title.send_keys("Score Set 1")
@@ -131,15 +184,42 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         genome_select = Select(self.browser.find_element_by_id('id_genome'))
         genome_select.select_by_index(1)
         
-        # At least check if the target is clickable.
-        target_select = Select(self.browser.find_element_by_id('id_target'))
-        self.assertEqual(len([o.text for o in target_select.options]), 2)
-        self.assertIn(scs.urn, target_select.options[1].text)
+        # Add an extra keyword
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[0].send_keys("new kw")
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
         
         target_name = self.browser.find_element_by_id('id_name')
         target_name.send_keys("BRCA1")
         target_seq = self.browser.find_element_by_id('id_wt_sequence')
         target_seq.send_keys("atcg")
+        
+        # Fill in the offset fields. Open the select2 container, and then
+        # click the second option (first@0 is the null option)
+        self.browser.find_element_by_id(
+            'select2-id_uniprot-offset-identifier-container').click()
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[1].click()
+        uniprot_offset = self.browser.find_element_by_id(
+            'id_uniprot-offset-offset')
+        uniprot_offset.send_keys(10)
+        
+        self.browser.find_element_by_id(
+            'select2-id_refseq-offset-identifier-container').click()
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[1].click()
+        refseq_offset = self.browser.find_element_by_id(
+            'id_refseq-offset-offset')
+        refseq_offset.send_keys(20)
+        
+        self.browser.find_element_by_id(
+            'select2-id_ensembl-offset-identifier-container').click()
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[1].click()
+        ensembl_offset = self.browser.find_element_by_id(
+            'id_ensembl-offset-offset')
+        ensembl_offset.send_keys(30)
         
         # Upload a local file.
         self.browser.find_element_by_id("id_score_data").\
@@ -148,10 +228,61 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         submit = self.browser.find_element_by_id('submit-form')
         submit.click()
 
-        # Check dashboard to see if correct processing state and visibility
-        # is set.
+        # Check dashboard to see if success message and processing-icon shown
         messages = self.browser.find_elements_by_class_name('alert-success')
         self.assertEqual(len(messages), 1)
+        processing = self.browser.find_element_by_class_name('processing-icon')
+        self.assertIsNotNone(processing)
         
-
-        self.fail()
+        # Run the create_variants tasks manually
+        scs.delete()  # Delete test replaces
+        self.assertEqual(data_models.scoreset.ScoreSet.objects.count(), 1)
+        
+        scoreset = data_models.scoreset.ScoreSet.objects.first()
+        self.assertIsNotNone(scoreset)
+        self.assertFalse(scoreset.has_public_urn)
+        self.assertIn('new kw', [k.text for k in scoreset.keywords.all()])
+        self.assertEqual(scoreset.processing_state, constants.processing)
+        tasks.create_variants(**variants_patch.call_args[1])
+        
+        # Check to see if the notify emails were sent
+        self.assertEqual(notify_patch.call_count, 2)
+        
+        # Refresh scoreset and check fields
+        self.assertEqual(data_models.scoreset.ScoreSet.objects.count(), 1)
+        
+        scoreset = data_models.scoreset.ScoreSet.objects.first()
+        self.assertEqual(scoreset.processing_state, constants.success)
+        self.assertEqual(scoreset.variants.count(), 100)
+        self.assertEqual(
+            scoreset.dataset_columns[constants.score_columns],
+            ['score', 'SE', 'epsilon'])
+        self.assertEqual(
+            scoreset.dataset_columns[constants.count_columns], [])
+        
+        # Check that the target is properly configured
+        targetgene = scoreset.get_target()
+        self.assertIsNotNone(targetgene)
+        
+        uniprot_offset = targetgene.get_uniprot_offset_annotation()
+        self.assertIsNotNone(uniprot_offset)
+        self.assertEqual(uniprot_offset.offset, 10)
+        self.assertEqual(uniprot_offset.identifier, uniprot)
+        self.assertEqual(targetgene.uniprot_id, uniprot)
+        
+        refseq_offset = targetgene.get_refseq_offset_annotation()
+        self.assertIsNotNone(refseq_offset)
+        self.assertEqual(refseq_offset.offset, 20)
+        self.assertEqual(refseq_offset.identifier, refseq)
+        self.assertEqual(targetgene.refseq_id, refseq)
+        
+        ensembl_offset = targetgene.get_ensembl_offset_annotation()
+        self.assertIsNotNone(ensembl_offset)
+        self.assertEqual(ensembl_offset.offset, 30)
+        self.assertEqual(ensembl_offset.identifier, ensembl)
+        self.assertEqual(targetgene.ensembl_id, ensembl)
+               
+        # Check browser shows smiley-icon
+        self.browser.refresh()
+        success = self.browser.find_element_by_class_name('success-icon')
+        self.assertIsNotNone(success)
