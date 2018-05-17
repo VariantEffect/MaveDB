@@ -43,7 +43,7 @@ def _add_users(instance, users, group):
         func = assign_user_as_instance_viewer
     else:
         raise ValueError("Unrecognised permission group {}.".format(group))
-    if hasattr(users, '__iter__'):
+    if isinstance(users, (list, set, tuple, QuerySet)):
         all_assigned = True
         for u in users:
             all_assigned &= func(user=u, instance=instance)
@@ -64,7 +64,7 @@ def _remove_users(instance, users, group):
         func = remove_user_as_instance_viewer
     else:
         raise ValueError("Unrecognised permission group {}.".format(group))
-    if hasattr(users, '__iter__'):
+    if isinstance(users, (list, set, tuple, QuerySet)):
         all_removed = True
         for u in users:
             all_removed &= func(user=u, instance=instance)
