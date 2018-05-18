@@ -1,6 +1,11 @@
+from enum import Enum
+
 from django import forms as forms
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext
+
+from core.mixins import NestedEnumMixin
 
 from ..forms.base import DatasetModelForm
 from ..models.base import DatasetModel
@@ -8,6 +13,20 @@ from ..models.experiment import Experiment
 from ..models.experimentset import ExperimentSet
 
 
+class ErrorMessages(NestedEnumMixin, Enum):
+    """ScoreSet field specific error messages."""
+    class Field(Enum):
+        invalid_choice = ugettext(
+            forms.ModelChoiceField.default_error_messages['invalid_choice']
+        )
+        
+    class ExperimentSet(Enum):
+        public_experiment = ugettext(
+            "Changing the parent Experiment Set of "
+            "a public Experiment is not supported."
+        )
+    
+    
 class ExperimentForm(DatasetModelForm):
     """
     Docstring
@@ -50,7 +69,8 @@ class ExperimentForm(DatasetModelForm):
                         not self.instance.private:
                     raise ValidationError(
                         "Changing the parent Experiment Set of "
-                        "a public Experiment is not supported.")
+                        "a public Experiment is not supported."
+                    )
         return experimentset
 
     @transaction.atomic
@@ -71,11 +91,7 @@ class ExperimentForm(DatasetModelForm):
     @classmethod
     def from_request(cls, request, instance=None, prefix=None, initial=None):
         form = super().from_request(request, instance, prefix, initial)
-        if 'experimentset' in form.fields and instance is not None:
-            choices_qs = ExperimentSet.objects.filter(
-                pk__in=[instance.experimentset.pk]).order_by("urn")
-            form.fields["experimentset"].queryset = choices_qs
-            form.fields["experimentset"].initial = instance.experimentset
+        form.set_experimentset_options()
         return form
 
 

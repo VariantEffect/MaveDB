@@ -1,11 +1,13 @@
 import json
 from collections import OrderedDict
+from enum import Enum
 
 from django import forms as forms
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import ugettext
 
+from core.mixins import NestedEnumMixin
 
 from main.models import Licence
 
@@ -24,6 +26,52 @@ from ..validators import (
     validate_scoreset_json,
 )
 
+
+class ErrorMessages(NestedEnumMixin, Enum):
+    """ScoreSet field specific error messages."""
+    class Field(Enum):
+        invalid_choice = ugettext(
+            forms.ModelChoiceField.default_error_messages['invalid_choice']
+        )
+        
+    class Experiment(Enum):
+        public_scoreset = ugettext(
+            "Changing the parent Experiment of "
+            "a public Score Set is not supported."
+        )
+    
+    class Replaces(Enum):
+        different_experiment = ugettext(
+            "Replaces field selection must be a member of the "
+            "selected experiment."
+        )
+        already_replaced = ugettext("{} has already been replaced.")
+        is_not_public = ugettext("Only public entries can be replaced.")
+        replacing_self = ugettext("A Score Set cannot replace itself.")
+    
+    class MetaData(Enum):
+        incorrect_format = ugettext("Incorrectly formatted json file: {}")
+        
+    class ScoreData(Enum):
+        score_file_required = ugettext(
+            "You must upload a non-empty scores data file.")
+        no_variants = ugettext(
+            'No variants could be parsed from your input file. '
+            'Please upload a non-empty file.'
+        )
+    
+    class CountData(Enum):
+        no_score_file = ugettext(
+            "You must upload an accompanying score data file when "
+            "uploading a new count data file or replacing an "
+            "existing one."
+        )
+        no_variants = ugettext(
+            'No variants could be parsed from your input file. '
+            'Please upload a non-empty file.'
+        )
+    
+    
 
 class ScoreSetForm(DatasetModelForm):
     """
@@ -159,8 +207,8 @@ class ScoreSetForm(DatasetModelForm):
                 if existing_experiment.urn != experiment.urn and \
                         not self.instance.private:
                     raise ValidationError(
-                        "Changing the parent Experiment of "
-                        "a public Score Set is not supported.")
+                        ErrorMessages.Experiment.public_scoreset
+                    )
                 if existing_experiment.urn != experiment.urn and \
                         self.instance.private:
                     # Replaces will need to be reset if changing experiments
@@ -197,23 +245,16 @@ class ScoreSetForm(DatasetModelForm):
             if experiment is not None and \
                     replaces not in experiment.scoresets.all():
                 raise ValidationError(
-                    ugettext(
-                        "Replaces field selection must be a member of the "
-                        "selected experiment."
-                    ))
+                    ErrorMessages.Replaces.different_experiment)
             if replaces.next_version is not None and \
                     replaces.next_version != self.instance:
                 raise ValidationError(
-                    ugettext(
-                        "{} has already been replaced by "
-                        "{}.".format(replaces.urn, replaces.next_version.urn)
-                    ))
+                    ErrorMessages.Replaces.already_replaced.format(replaces.urn)
+                )
             if replaces.private:
-                raise ValidationError(
-                    ugettext("Only public entries can be replaced."))
+                raise ValidationError(ErrorMessages.Replaces.is_not_public)
             if replaces.pk == self.instance.pk:
-                raise ValidationError(
-                    ugettext("A Score Set cannot replace itself."))
+                raise ValidationError(ErrorMessages.Replaces.replacing_self)
         return replaces
 
     def clean_score_data(self):
@@ -250,7 +291,7 @@ class ScoreSetForm(DatasetModelForm):
             return dict_
         except ValueError as error:
             raise ValidationError(
-                "Incorrectly formatted json file: {}".format(error)
+                ErrorMessages.MetaData.incorrect_format.format(error)
             )
 
     @staticmethod
@@ -294,7 +335,7 @@ class ScoreSetForm(DatasetModelForm):
         if scores_required and not has_score_data:
             self.add_error(
                 None if 'score_data' not in self.fields else 'score_data',
-                "You must upload a non-empty scores data file."
+                ErrorMessages.ScoreData.score_file_required
             )
             return cleaned_data
 
@@ -305,9 +346,7 @@ class ScoreSetForm(DatasetModelForm):
         if has_count_data and not has_score_data:
             self.add_error(
                 None if 'score_data' not in self.fields else 'score_data',
-                "You must upload an accompanying score data file when "
-                "uploading a new count data file or replacing an "
-                "existing one."
+                ErrorMessages.CountData.no_score_file
             )
             return cleaned_data
 
@@ -365,6 +404,10 @@ class ScoreSetForm(DatasetModelForm):
                 choices &= set(
                     [i.pk for i in self.experiment.scoresets.all()]
                 )
+            elif self.instance.parent is not None:
+                choices &= set(
+                    [i.pk for i in self.instance.parent.scoresets.all()]
+                )
             scoresets_qs = ScoreSet.objects\
                 .filter(pk__in=choices)\
                 .exclude(private=True)\
@@ -393,12 +436,7 @@ class ScoreSetForm(DatasetModelForm):
     def from_request(cls, request, instance=None, prefix=None, initial=None):
         form = super().from_request(request, instance, prefix, initial)
         form.set_replaces_options()
-        if 'experiment' in form.fields and instance is not None:
-            choices_qs = Experiment.objects.filter(
-                pk__in=[instance.experiment.pk]).order_by("urn")
-            form.fields["experiment"].queryset = choices_qs
-            form.fields["experiment"].initial = instance.experiment
-
+        form.set_experiment_options()
         return form
 
 
