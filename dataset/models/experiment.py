@@ -79,7 +79,7 @@ class Experiment(DatasetModel):
     def save(self, *args, **kwargs):
         if self.experimentset is None:
             self.experimentset = ExperimentSet.objects.create()
-        super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
     
     @transaction.atomic
     def create_urn(self):

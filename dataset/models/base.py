@@ -274,6 +274,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         if save_parents:
             self.save_parents(*args, **kwargs)
         super().save(*args, **kwargs)
+        return self
 
     def create_urn(self):
         raise NotImplementedError()
