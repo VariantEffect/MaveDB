@@ -1,18 +1,14 @@
 from django.test import TestCase, RequestFactory
 from django.core.exceptions import ValidationError
 from accounts.factories import UserFactory
-from accounts.permissions import (
-    assign_user_as_instance_viewer,
-    assign_user_as_instance_editor,
-    assign_user_as_instance_admin
-)
+
 from main.models import Licence
 from variant.factories import generate_hgvs, VariantFactory
 
 import dataset.constants as constants
 
 from ..factories import ExperimentFactory, ScoreSetFactory
-from ..forms.scoreset import ScoreSetForm
+from ..forms.scoreset import ScoreSetForm, ErrorMessages
 
 from .utility import make_files
 
@@ -42,11 +38,15 @@ class TestScoreSetForm(TestCase):
 
         make_exp : bool
             If True, makes an experiment, otherwise leaves this as None
+            
+        meta_data : dict or None,
+            None to use default, otherwise supply a dictionary to save as
+            the extra_metadata field.
         """
         experiment = None
         if make_exp:
             experiment = ExperimentFactory()
-            assign_user_as_instance_admin(self.user, experiment)
+            experiment.add_administrators(self.user)
         data = {
             'short_description': 'experiment',
             'title': 'title',
@@ -76,19 +76,24 @@ class TestScoreSetForm(TestCase):
         model = form.save()
         self.assertEqual(model.licence, Licence.get_cc0())
 
-    def test_not_valid_experiment_selection_is_not_in_list(self):
+    def test_invalid_experiment_selection_is_not_in_list(self):
         data, files = self.make_post_data()
         data["experiment"] = 100
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertIn("not one of the available choices",
+                      form.errors['experiment'][0])
 
-    def test_not_valid_change_experiment_from_saved_instance(self):
-        data, files = self.make_post_data()  # new experiment
-        inst = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, inst.parent)
+    def test_can_change_experiment_on_saved_instance(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        self.assertNotEqual(instance.parent.pk, data['experiment'])
+
+        instance.parent.add_administrators(self.user)
         form = ScoreSetForm(
-            data=data, files=files, user=self.user, instance=inst)
+            data=data, files=files, user=self.user, instance=instance)
         self.assertTrue(form.is_valid())
+        
         instance = form.save(commit=True)
         self.assertEqual(instance.parent.pk, data['experiment'])
 
@@ -96,16 +101,41 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data()
         new_exp = ExperimentFactory()
         new_scs = ScoreSetFactory(experiment=new_exp)
+        new_scs.publish()
 
-        assign_user_as_instance_admin(self.user, new_scs)
-        assign_user_as_instance_admin(self.user, new_exp)
+        new_scs.add_administrators(self.user)
+        new_exp.add_administrators(self.user)
         data["replaces"] = new_scs.pk
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertEqual(ErrorMessages.Replaces.different_experiment,
+                      form.errors['replaces'][0])
+        
+    def test_valid_replaces_has_not_changed_on_preexisting_instance(self):
+        data, files = self.make_post_data()
+        new_exp = ExperimentFactory()
+        new_scs = ScoreSetFactory(experiment=new_exp)
+        edit_scs = ScoreSetFactory(experiment=new_exp)
+        new_scs.publish()
+        edit_scs.publish()
+
+        new_scs.add_administrators(self.user)
+        new_exp.add_administrators(self.user)
+        edit_scs.add_administrators(self.user)
+
+        data["experiment"] = new_exp.pk
+        data["replaces"] = new_scs.pk
+        form = ScoreSetForm(
+            data=data, instance=edit_scs, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
 
     def test_admin_experiments_appear_in_options(self):
         data, files = self.make_post_data()
-        assign_user_as_instance_viewer(self.user, ExperimentFactory())
+        
+        # Should not appear
+        viewer_exps = ExperimentFactory()
+        viewer_exps.add_viewers(self.user)
+        
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['experiment'].queryset.count(), 1)
         self.assertEqual(
@@ -114,10 +144,15 @@ class TestScoreSetForm(TestCase):
 
     def test_editor_experiments_appear_in_options(self):
         data, files = self.make_post_data(make_exp=False)
+        
+        # Should not appear
+        viewer_exps = ExperimentFactory()
+        viewer_exps.add_viewers(self.user)
+        
+        # Should appear
         obj1 = ExperimentFactory()
-
-        assign_user_as_instance_editor(self.user, obj1)
-        assign_user_as_instance_viewer(self.user, ExperimentFactory())
+        obj1.add_editors(self.user)
+        
         data['experiment'] = obj1.pk
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['experiment'].queryset.count(), 1)
@@ -128,32 +163,44 @@ class TestScoreSetForm(TestCase):
 
     def test_private_entries_not_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
+        
+        # Should not appear
         obj1 = ScoreSetFactory(private=True)
-        assign_user_as_instance_admin(self.user, obj1)
-        assign_user_as_instance_admin(self.user, obj1.parent)
+        obj1.add_administrators(self.user)
+        obj1.parent.add_administrators(self.user)
+        
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['replaces'].queryset.count(), 0)
 
     def test_replaces_options_can_be_seeded_from_experiment(self):
         data, files = self.make_post_data(make_exp=False)
+        
         exp = ExperimentFactory()
+        exp.add_administrators(self.user)
+        
+        # Should appear
         scs = ScoreSetFactory(private=False, experiment=exp)
-        scs2 = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, exp)
-        assign_user_as_instance_admin(self.user, scs)
+        scs.add_administrators(self.user)
+        
+        # Should not appear since not a member of experiment
+        scs2 = ScoreSetFactory(private=False)
+        scs2.add_administrators(self.user)
 
-        form = ScoreSetForm(data=data, files=files, user=self.user)
-        self.assertEqual(form.fields['replaces'].queryset.count(), 1)
-        self.assertEqual(
-            form.fields['replaces'].queryset.first().pk, scs.pk)
+        form = ScoreSetForm(data=data, files=files,
+                            experiment=exp, user=self.user)
+        self.assertIn(scs, form.fields['replaces'].queryset)
+        self.assertNotIn(scs2, form.fields['replaces'].queryset)
 
     def test_admin_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()
+        exp.add_administrators(self.user)
         scs = ScoreSetFactory(private=False, experiment=exp)
-        _ = ScoreSetFactory(private=False, experiment=exp)
-        assign_user_as_instance_admin(self.user, exp)
-        assign_user_as_instance_admin(self.user, scs)
+        scs.add_administrators(self.user)
+        
+        # Should not appear
+        scs2 = ScoreSetFactory(private=False, experiment=exp)
+        scs2.add_viewers(self.user)
 
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['replaces'].queryset.count(), 1)
@@ -163,10 +210,13 @@ class TestScoreSetForm(TestCase):
     def test_editor_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()
+        exp.add_editors(self.user)
         scs = ScoreSetFactory(private=False, experiment=exp)
-        _ = ScoreSetFactory(private=False, experiment=exp)
-        assign_user_as_instance_editor(self.user, exp)
-        assign_user_as_instance_editor(self.user, scs)
+        scs.add_editors(self.user)
+        
+        # should not appear
+        scs2 = ScoreSetFactory(private=False, experiment=exp)
+        scs2.add_viewers(self.user)
 
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['replaces'].queryset.count(), 1)
@@ -176,23 +226,12 @@ class TestScoreSetForm(TestCase):
     def test_viewer_scoresets_do_not_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         obj1 = ScoreSetFactory(private=False)
-        assign_user_as_instance_viewer(self.user, obj1)
-        assign_user_as_instance_viewer(self.user, obj1.parent)
+
+        obj1.add_viewers(self.user)
+        obj1.parent.parent.add_viewers(self.user)
+
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['replaces'].queryset.count(), 0)
-
-    def test_from_request_locks_experiment_to_instance_experiment(self):
-        inst = ScoreSetFactory()
-        data, files = self.make_post_data()
-        request = self.factory.post('/path/', data=data)
-        request.user = self.user
-        form = ScoreSetForm.from_request(request, inst)
-        self.assertEqual(
-            form.fields['experiment'].initial, inst.experiment)
-        self.assertEqual(
-            form.fields['experiment'].queryset.count(), 1)
-        self.assertIn(
-            inst.experiment, form.fields['experiment'].queryset)
 
     def test_variant_data_is_cross_populated_with_nones(self):
         score_hgvs = generate_hgvs()
@@ -232,6 +271,8 @@ class TestScoreSetForm(TestCase):
         files.pop(constants.variant_score_data)
         form = ScoreSetForm(data=data, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertEqual(ErrorMessages.ScoreData.score_file_required,
+                      form.errors['score_data'][0])
 
     def test_valid_no_score_file_when_instance_supplied(self):
         data, files = self.make_post_data()
@@ -239,7 +280,7 @@ class TestScoreSetForm(TestCase):
 
         instance = ScoreSetFactory()
         VariantFactory(scoreset=instance)
-        assign_user_as_instance_admin(self.user, instance.experiment)
+        instance.experiment.add_administrators(self.user)
         data['experiment'] = instance.experiment.pk
 
         form = ScoreSetForm(
@@ -253,11 +294,13 @@ class TestScoreSetForm(TestCase):
         instance = ScoreSetFactory()
         instance.processing_state = constants.failed
         instance.save()
-        assign_user_as_instance_admin(self.user, instance.experiment)
+        instance.experiment.add_administrators(self.user)
         data['experiment'] = instance.experiment.pk
 
         form = ScoreSetForm(data=data, user=self.user, instance=instance)
         self.assertFalse(form.is_valid())
+        self.assertEqual(ErrorMessages.ScoreData.score_file_required,
+                      form.errors['score_data'][0])
 
     def test_uploads_disabled_instance_in_processing_state(self):
         instance = ScoreSetFactory()
@@ -272,12 +315,15 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(count_data=True)
         files.pop(constants.variant_score_data)
         instance = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, instance.experiment)
+        VariantFactory(scoreset=instance)
+        instance.experiment.add_administrators(self.user)
         data['experiment'] = instance.experiment.pk
 
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=instance)
         self.assertFalse(form.is_valid())
+        self.assertEqual(ErrorMessages.CountData.no_score_file,
+                      form.errors['score_data'][0])
 
     def test_variants_correctly_parsed_integration_test(self):
         # Generate distinct hgvs strings
@@ -314,6 +360,8 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(score_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertEqual(ErrorMessages.ScoreData.no_variants,
+                      form.errors['score_data'][0])
         
     def test_new_scores_resets_dataset_columns(self):
         scs = ScoreSetFactory()
@@ -323,8 +371,8 @@ class TestScoreSetForm(TestCase):
 
         data, files = self.make_post_data()
         data['experiment'] = scs.experiment.pk
-        assign_user_as_instance_admin(self.user, scs.experiment)
-        assign_user_as_instance_admin(self.user, scs)
+        scs.experiment.add_administrators(self.user)
+        scs.add_administrators(self.user)
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=scs)
         self.assertTrue(form.is_valid())
@@ -352,6 +400,8 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(meta_data="{not valid}")
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertIn(ErrorMessages.MetaData.incorrect_format[:-4],
+                      form.errors['meta_data'][0])
 
     def test_valid_meta(self):
         dict_ = {"foo": ["bar"]}
@@ -366,46 +416,57 @@ class TestScoreSetForm(TestCase):
         scs1 = ScoreSetFactory(private=False)
         scs2 = ScoreSetFactory(
             private=False, experiment=scs1.parent, replaces=scs1)
-        assign_user_as_instance_admin(self.user, scs1)
-        assign_user_as_instance_admin(self.user, scs2)
-        assign_user_as_instance_admin(self.user, scs1.parent)
+        scs1.add_administrators(self.user)
+        scs1.parent.add_administrators(self.user)
+        scs2.add_administrators(self.user)
 
         data, files = self.make_post_data(make_exp=False)
         data['replaces'] = scs1.pk
         data['experiment'] = scs1.parent.pk
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertIn(ErrorMessages.Replaces.already_replaced[3:],
+                      form.errors['replaces'][0])
 
     def test_cannot_replace_a_private_scoreset(self):
         scs1 = ScoreSetFactory(private=True)
-        assign_user_as_instance_admin(self.user, scs1)
-        assign_user_as_instance_admin(self.user, scs1.parent)
+        scs1.add_administrators(self.user)
+        scs1.parent.add_administrators(self.user)
 
         data, files = self.make_post_data(make_exp=False)
         data['replaces'] = scs1.pk
         data['experiment'] = scs1.parent.pk
+        
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertEqual(
+            ErrorMessages.Field.invalid_choice, form.errors['replaces'][0])
 
     def test_form_scoreset_instance_not_in_replace_options(self):
         scs = ScoreSetFactory(private=False)
         data, files = self.make_post_data()
-        assign_user_as_instance_admin(self.user, scs.experiment)
-        assign_user_as_instance_admin(self.user, scs)
+        
+        scs.add_administrators(self.user)
+        scs.parent.add_administrators(self.user)
+        
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=scs)
         self.assertNotIn(scs, form.fields['replaces'].queryset.all())
 
     def test_cant_replace_self(self):
         scs1 = ScoreSetFactory(private=False)
-        assign_user_as_instance_admin(self.user, scs1)
-        assign_user_as_instance_admin(self.user, scs1.parent)
+        scs1.add_administrators(self.user)
+        scs1.parent.add_administrators(self.user)
+        
         data, files = self.make_post_data(make_exp=False)
         data['replaces'] = scs1.pk
         data['experiment'] = scs1.parent.pk
+        
         form = ScoreSetForm(
             data=data, files=files, instance=scs1, user=self.user)
         self.assertFalse(form.is_valid())
+        self.assertEqual(
+            ErrorMessages.Field.invalid_choice, form.errors['replaces'][0])
 
     def test_changing_experiment_sets_replaces_to_none(self):
         exp1 = ExperimentFactory()
@@ -446,17 +507,37 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(data=data, files=files,
                             user=self.user, instance=obj)
         self.assertFalse(form.is_valid())
+        self.assertEqual(
+            ErrorMessages.Replaces.different_experiment,
+            form.errors['replaces'][0])
 
     def test_invalid_change_experiment_public_scoreset(self):
-        exp = ExperimentFactory()
-        obj = ScoreSetFactory(experiment=exp)
-        obj.publish()
-
-        exp.add_administrators(self.user)
+        obj = ScoreSetFactory()
+        obj.parent.add_administrators(self.user)
         obj.add_administrators(self.user)
+        obj.publish()
 
         # Make the data, which also sets the selected experiment
         data, files = self.make_post_data()
         form = ScoreSetForm(data=data, files=files,
-                            user=self.user, instance=obj)
+                              user=self.user, instance=obj)
         self.assertFalse(form.is_valid())
+        self.assertEqual(
+            ErrorMessages.Experiment.public_scoreset,
+            form.errors['experiment'][0])
+
+    def test_from_request_modifies_existing_instance(self):
+        scs = ScoreSetFactory()
+        scs.add_administrators(self.user)
+        scs.parent.add_administrators(self.user)
+        VariantFactory(scoreset=scs)  # Create variant to bypass the file upload
+    
+        data, files = self.make_post_data(make_exp=True)
+        request = self.factory.post('/path/', data=data, files=files)
+        request.user = self.user
+    
+        form = ScoreSetForm.from_request(request, scs)
+        instance = form.save(commit=True)
+        self.assertEqual(instance.parent.pk, data['experiment'])
+        self.assertEqual(instance.get_title(), data['title'])
+        self.assertEqual(instance.get_description(), data['short_description'])

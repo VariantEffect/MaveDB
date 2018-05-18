@@ -1,4 +1,6 @@
+import io
 import json
+import csv
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -92,15 +94,6 @@ class TestScoreSetAPIViews(TestCase):
         )
         self.assertTrue(response.status_code, 404)
 
-    def test_empty_text_response_download_counts_but_has_no_counts(self):
-        instance = ScoreSetFactory()
-        instance.publish()
-        instance.refresh_from_db()
-        response = self.client.get(
-            "/api/scoreset/{}/counts/".format(instance.urn)
-        )
-        self.assertEqual(list(response.streaming_content), [])
-
     def test_404_not_found(self):
         response = self.client.get("/api/scoreset/dddd/")
         self.assertEqual(response.status_code, 404)
@@ -121,13 +114,12 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {"count": "1"}
             }
         )
-        response = self.client.get(
-            "/api/scoreset/{}/scores/".format(scs.urn)
-        )
-        self.assertEqual(
-            list(response.streaming_content),
-            [b'hgvs,score\n', b'"test",1\n']
-        )
+        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+        self.assertEqual(rows, [['hgvs', 'score'], ['test', '1']])
 
     def test_can_download_counts(self):
         scs = ScoreSetFactory()
@@ -142,16 +134,84 @@ class TestScoreSetAPIViews(TestCase):
             scoreset=scs, hgvs="test",
             data={
                 constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {"count": "1"}
+                constants.variant_count_data: {"count": "4"}
             }
         )
-        response = self.client.get(
-            "/api/scoreset/{}/counts/".format(scs.urn)
+        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+        self.assertEqual(rows, [['hgvs', 'count'], ['test', '4']])
+    
+    def test_no_variants_empty_file(self):
+        scs = ScoreSetFactory()
+        scs.publish()
+        scs.refresh_from_db()
+        scs.dataset_columns = {
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count"]
+        }
+        scs.save(save_parents=True)
+        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+        self.assertEqual(rows, [])
+        
+        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+        self.assertEqual(rows, [])
+
+    def test_empty_scores_returns_empty_file(self):
+        scs = ScoreSetFactory()
+        scs.publish()
+        scs.refresh_from_db()
+        scs.dataset_columns = {
+            constants.score_columns: [],
+            constants.count_columns: ['count']
+        }
+        scs.save(save_parents=True)
+        _ = VariantFactory(
+            scoreset=scs, hgvs="test",
+            data={
+                constants.variant_score_data: {},
+                constants.variant_count_data: {"count": "4"}
+            }
         )
-        self.assertEqual(
-            list(response.streaming_content),
-            [b'hgvs,count\n', b'"test",1\n']
+        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+        self.assertEqual(rows, [])
+        
+    def test_empty_counts_returns_empty_file(self):
+        scs = ScoreSetFactory()
+        scs.publish()
+        scs.refresh_from_db()
+        scs.dataset_columns = {
+            constants.score_columns: ["score"],
+            constants.count_columns: []
+        }
+        scs.save(save_parents=True)
+        _ = VariantFactory(
+            scoreset=scs, hgvs="test",
+            data={
+                constants.variant_score_data: {"score": "1"},
+                constants.variant_count_data: {}
+            }
         )
+        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+        self.assertEqual(rows, [])
 
     def test_can_download_metadata(self):
         scs = ScoreSetFactory(private=False)

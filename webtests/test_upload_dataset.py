@@ -1,8 +1,6 @@
 import os
-import time
 
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from django.test import LiveServerTestCase, mock
@@ -16,6 +14,8 @@ from dataset import constants
 
 from metadata import models as meta_models
 from metadata import factories as meta_factories
+
+from genome import factories as genome_factories
 
 from .utilities import authenticate_webdriver
 
@@ -67,8 +67,8 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.assertIn(exps2.urn, options)
         self.assertNotIn(exps1.urn, options)
         self.assertNotIn(exps3.urn, options)
-        
-        # Fill in the fields.
+
+        # ----- REQUIRED FIELDS ------- #
         title = self.browser.find_element_by_id('id_title')
         title.send_keys("Experiment 1")
         
@@ -76,6 +76,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         description.send_keys("hello, world!")
         
         
+        # ------ M2M fields ------- #
         # Ordering is important as it replicates the form field ordering
         # in `DatasetModelForm`
         self.browser.find_elements_by_class_name(
@@ -103,7 +104,8 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         
         # One email for the experiment, and one email for the experimentset
         self.assertEqual(email_admins_patch.call_count, 2)
-        
+
+        # ------ CHECK EXPERIMENT IS CONFIGURED CORRECTLY ------ #
         # Delete uneccessary objects
         exps1.delete()
         exps2.delete()
@@ -125,6 +127,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.assertEqual(list(experiment.doi_ids.all()), [doi])
         self.assertEqual(list(experiment.pubmed_ids.all()), [pm])
         
+        # ----- MAKE SCORESET ------- #
         # Should be on the scoreset creation page - check the correct M2M
         # elements are selected.
         self.assertIn(
@@ -156,9 +159,6 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         # Edit: Couldn't find a way, might be better to test this with a
         # javascript front end testing framework?
         scs = data_factories.ScoreSetWithTargetFactory()
-        ensembl = meta_models.EnsemblIdentifier.objects.first()
-        uniprot = meta_models.UniprotIdentifier.objects.first()
-        refseq = meta_models.RefseqIdentifier.objects.first()
         scs.add_viewers(self.user)
         self.authenticate()
         self.browser.get(
@@ -171,7 +171,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.assertEqual(len([o.text for o in target_select.options]), 2)
         self.assertIn(scs.urn, target_select.options[1].text)
 
-        # Fill in the remaining fields
+        # ----- REQUIRED FIELDS ------- #
         title = self.browser.find_element_by_id('id_title')
         title.send_keys("Score Set 1")
 
@@ -184,23 +184,34 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         genome_select = Select(self.browser.find_element_by_id('id_genome'))
         genome_select.select_by_index(1)
         
+        target_name = self.browser.find_element_by_id('id_name')
+        target_name.send_keys("BRCA1")
+        target_seq = self.browser.find_element_by_id('id_wt_sequence')
+        target_seq.send_keys("atcg")
+        
+        # Upload a local file.
+        self.browser.find_element_by_id("id_score_data").\
+            send_keys(os.getcwd() + "/webtests/scores.csv")
+        
+        # ----- M2M AND OFFSET FIELDS ----- #
+        # Fill in the offset fields. Open the select2 container, and then
+        # click the second option (first@0 is the null option)
+        ensembl = meta_models.EnsemblIdentifier.objects.first()
+        uniprot = meta_models.UniprotIdentifier.objects.first()
+        refseq = meta_models.RefseqIdentifier.objects.first()
+        
         # Add an extra keyword
         self.browser.find_elements_by_class_name(
             'select2-search__field')[0].send_keys("new kw")
         self.browser.find_elements_by_class_name(
             'select2-results__option')[0].click()
         
-        target_name = self.browser.find_element_by_id('id_name')
-        target_name.send_keys("BRCA1")
-        target_seq = self.browser.find_element_by_id('id_wt_sequence')
-        target_seq.send_keys("atcg")
-        
-        # Fill in the offset fields. Open the select2 container, and then
-        # click the second option (first@0 is the null option)
         self.browser.find_element_by_id(
             'select2-id_uniprot-offset-identifier-container').click()
         self.browser.find_elements_by_class_name(
-            'select2-results__option')[1].click()
+            'select2-search__field')[-1].send_keys(uniprot.identifier)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
         uniprot_offset = self.browser.find_element_by_id(
             'id_uniprot-offset-offset')
         uniprot_offset.send_keys(10)
@@ -208,7 +219,9 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.browser.find_element_by_id(
             'select2-id_refseq-offset-identifier-container').click()
         self.browser.find_elements_by_class_name(
-            'select2-results__option')[1].click()
+            'select2-search__field')[-1].send_keys(refseq.identifier)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
         refseq_offset = self.browser.find_element_by_id(
             'id_refseq-offset-offset')
         refseq_offset.send_keys(20)
@@ -216,18 +229,22 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.browser.find_element_by_id(
             'select2-id_ensembl-offset-identifier-container').click()
         self.browser.find_elements_by_class_name(
-            'select2-results__option')[1].click()
+            'select2-search__field')[-1].send_keys(ensembl.identifier)
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
         ensembl_offset = self.browser.find_element_by_id(
             'id_ensembl-offset-offset')
         ensembl_offset.send_keys(30)
         
-        # Upload a local file.
-        self.browser.find_element_by_id("id_score_data").\
-            send_keys(os.getcwd() + "/webtests/scores.csv")
-    
+        # Delete these identifier to see if new ones will be created
+        uniprot.delete()
+        refseq.delete()
+        ensembl.delete()
+        
         submit = self.browser.find_element_by_id('submit-form')
         submit.click()
-
+        
+        # ------ CHECK SCORESET IS CONFIGURED CORRECTLY ------ #
         # Check dashboard to see if success message and processing-icon shown
         messages = self.browser.find_elements_by_class_name('alert-success')
         self.assertEqual(len(messages), 1)
@@ -264,18 +281,21 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         targetgene = scoreset.get_target()
         self.assertIsNotNone(targetgene)
         
+        uniprot = meta_models.UniprotIdentifier.objects.first()
         uniprot_offset = targetgene.get_uniprot_offset_annotation()
         self.assertIsNotNone(uniprot_offset)
         self.assertEqual(uniprot_offset.offset, 10)
         self.assertEqual(uniprot_offset.identifier, uniprot)
         self.assertEqual(targetgene.uniprot_id, uniprot)
-        
+
+        refseq = meta_models.RefseqIdentifier.objects.first()
         refseq_offset = targetgene.get_refseq_offset_annotation()
         self.assertIsNotNone(refseq_offset)
         self.assertEqual(refseq_offset.offset, 20)
         self.assertEqual(refseq_offset.identifier, refseq)
         self.assertEqual(targetgene.refseq_id, refseq)
-        
+
+        ensembl = meta_models.EnsemblIdentifier.objects.first()
         ensembl_offset = targetgene.get_ensembl_offset_annotation()
         self.assertIsNotNone(ensembl_offset)
         self.assertEqual(ensembl_offset.offset, 30)
@@ -286,3 +306,178 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.browser.refresh()
         success = self.browser.find_element_by_class_name('success-icon')
         self.assertIsNotNone(success)
+        
+        self.assertIn(self.user, scoreset.administrators())
+        self.assertIn(self.user, scoreset.experiment.administrators())
+        self.assertIn(self.user, scoreset.experiment.experimentset.administrators())
+
+
+class TestJavaScriptOnCreatePage(LiveServerTestCase):
+    
+    def setUp(self):
+        self.user = UserFactory()
+        self.browser = webdriver.Firefox()
+    
+    def authenticate(self):
+        authenticate_webdriver(
+            self.user.username, self.user._password, self, 'browser')
+        
+    def test_failed_experiment_submission_repops_m2m_fields(self):
+        self.authenticate()
+        self.browser.get(self.live_server_url + '/experiment/new/')
+
+        # Fill in the fields.
+        title = self.browser.find_element_by_id('id_title')
+        title.send_keys("Experiment 1")
+
+        description = self.browser.find_element_by_id('id_short_description')
+        description.send_keys("hello, world!")
+        
+        # Ordering is important as it replicates the form field ordering
+        # in `DatasetModelForm`
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[0].send_keys('new keyword')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+    
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[1].send_keys('bad doi')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+    
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[2].send_keys('bad sra')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+    
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[3].send_keys('bad pm')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+    
+        submit = self.browser.find_element_by_id('submit-form')
+        submit.click()
+        
+        messages = self.browser.find_elements_by_class_name('invalid-feedback')
+        self.assertGreater(len(messages), 0)
+        
+        select = Select(self.browser.find_element_by_id('id_keywords'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['new keyword'])
+
+        select = Select(self.browser.find_element_by_id('id_sra_ids'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['bad sra'])
+        
+        select = Select(self.browser.find_element_by_id('id_doi_ids'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['bad doi'])
+        
+        select = Select(self.browser.find_element_by_id('id_pubmed_ids'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['bad pm'])
+
+    def test_failed_scoreset_submission_repops_m2m_fields(self):
+        # Create a genome to select as this is a required field
+        genome_factories.ReferenceGenomeFactory()
+        
+        # Create an experiment we can select
+        experiment = data_models.experiment.Experiment(
+            title='Hello', short_description='world')
+        experiment.save()
+        experiment.add_administrators(self.user)
+  
+        self.authenticate()
+        self.browser.get(self.live_server_url + '/scoreset/new/')
+
+        # Fill in required fields.
+        title = self.browser.find_element_by_id('id_title')
+        title.send_keys("Experiment 1")
+
+        description = self.browser.find_element_by_id('id_short_description')
+        description.send_keys("hello, world!")
+        
+        target_name = self.browser.find_element_by_id('id_name')
+        target_name.send_keys("BRCA1")
+        target_seq = self.browser.find_element_by_id('id_wt_sequence')
+        target_seq.send_keys("atcg")
+        
+        genome_select = Select(self.browser.find_element_by_id('id_genome'))
+        genome_select.select_by_index(1)
+        
+        exp_select = Select(self.browser.find_element_by_id('id_experiment'))
+        exp_select.select_by_index(1)
+        
+        self.browser.find_element_by_id("id_score_data").\
+            send_keys(os.getcwd() + "/webtests/scores.csv")
+        
+        # Ordering is important as it replicates the form field ordering
+        # in `DatasetModelForm`
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[0].send_keys('new keyword')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+    
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[1].send_keys('invalid doi')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+       
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[2].send_keys('invalid pm')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+
+        self.browser.find_element_by_id(
+            'select2-id_uniprot-offset-identifier-container').click()
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1].send_keys('invalid uniprot')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+
+        self.browser.find_element_by_id(
+            'select2-id_refseq-offset-identifier-container').click()
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1].send_keys('invalid refseq')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+
+        self.browser.find_element_by_id(
+            'select2-id_ensembl-offset-identifier-container').click()
+        self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1].send_keys('invalid ensembl')
+        self.browser.find_elements_by_class_name(
+            'select2-results__option')[0].click()
+    
+        submit = self.browser.find_element_by_id('submit-form')
+        submit.click()
+
+        messages = self.browser.find_elements_by_class_name('invalid-feedback')
+        self.assertGreater(len(messages), 0)
+    
+        select = Select(self.browser.find_element_by_id('id_keywords'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['new keyword'])
+    
+        select = Select(self.browser.find_element_by_id('id_doi_ids'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['invalid doi'])
+    
+        select = Select(self.browser.find_element_by_id('id_pubmed_ids'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['invalid pm'])
+
+        select = Select(
+            self.browser.find_element_by_id('id_uniprot-offset-identifier'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['invalid uniprot'])
+
+        select = Select(
+            self.browser.find_element_by_id('id_refseq-offset-identifier'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['invalid refseq'])
+
+        select = Select(
+            self.browser.find_element_by_id('id_ensembl-offset-identifier'))
+        self.assertEqual(
+            [o.text for o in select.all_selected_options], ['invalid ensembl'])
