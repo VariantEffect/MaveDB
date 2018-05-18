@@ -27,14 +27,14 @@
             {% include 'core/bs_form.html' with form=admin_select_form %}
             <div class="row">
               <div class="col-auto">
-                <input class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
+                <input id="submit-admin-form" class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
                        style="width:150px;margin-bottom:5px;" data-toggle="tooltip"
                        data-placement="top|right|bottom|left" title="Save your changes."
                        onclick="validateAdminSubmit();"
                 />
               </div>
               <div class="col-auto">
-                <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                <input id="cancel" class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
                        style="width:150px" data-toggle="tooltip"
                        data-placement="top|right|bottom|left" title="Cancel your changes."
                        onclick="window.location.assign('{% url 'accounts:profile' %}')"
@@ -54,14 +54,14 @@
             {% include 'core/bs_form.html' with form=editor_select_form %}
             <div class="row">
               <div class="col-auto">
-                <input class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
+                <input id="submit-editor-form" class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
                        style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
                        data-placement="top|right|bottom|left" title="Save your changes."
                        onclick="validateEditorSubmit();"
                 />
               </div>
               <div class="col-auto">
-                <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                <input id="cancel" class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
                        style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
                        data-placement="top|right|bottom|left" title="Cancel your changes."
                        onclick="window.location.assign('{% url 'accounts:profile' %}')"
@@ -81,14 +81,14 @@
             {% include 'core/bs_form.html' with form=viewer_select_form %}
             <div class="row">
               <div class="col-auto">
-                <input class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
+                <input id="submit-viewer-form" class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
                        style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
                        data-placement="top|right|bottom|left" title="Save your changes."
                        onclick="validateViewerSubmit();"
                 />
               </div>
               <div class="col-auto">
-                <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                <input id="cancel" class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
                        style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
                        data-placement="top|right|bottom|left" title="Cancel your changes."
                        onclick="window.location.assign('{% url 'accounts:profile' %}')"

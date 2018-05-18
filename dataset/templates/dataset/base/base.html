@@ -70,6 +70,8 @@
     <a href="#contributors">Contributors</a>
 
     {% if instance.class_name != "experimentset" %}
+      <a href="#title">Title</a>
+      <a href="#description">Description</a>
       <a href="#abstract">Abstract</a>
       <a href="#method">Method</a>
     {% endif %}
@@ -112,14 +114,14 @@
 
     <!-- Renders markdown abstract text -->
     {% if instance.class_name != "experimentset" %}
-      <h2 id="Title" class="underline left-align section-heading">Title</h2>
+      <h2 id="title" class="underline left-align section-heading">Title</h2>
       {% if not instance.title %}
         <p class="text-muted">This entry does not have a title.</p>
       {% else %}
         <p>{{ instance.title}}</p>
       {% endif %}
 
-      <h2 id="Description" class="underline left-align section-heading">Description</h2>
+      <h2 id="description" class="underline left-align section-heading">Description</h2>
       {% if not instance.title %}
         <p class="text-muted">This entry does not have a description.</p>
       {% else %}
