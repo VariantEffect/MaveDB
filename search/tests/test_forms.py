@@ -423,13 +423,16 @@ class TestGenomeSearchForm(TestCase):
 
         g1 = obj1.get_targets().first().get_reference_genomes().first()
         g2 = obj2.get_targets().first().get_reference_genomes().first()
-        g3 = obj2.get_targets().first().get_reference_genomes().first()
+        g3 = obj3.get_targets().first().get_reference_genomes().first()
+        
         g1.short_name = 'HG16'
-        g1.species_name = 'HUman'
+        g1.species_name = 'Human'
         g1.save()
+        
         g2.short_name = 'HG17'
-        g2.species_name = 'HUman'
+        g2.species_name = 'Human'
         g2.save()
+        
         g3.short_name = 'HG16'
         g3.species_name = 'CHIMP'
         g3.save()
