@@ -14,13 +14,9 @@ def authenticate_webdriver(username, password, test_class, drvr_attr):
         username=username,
         password=password
     )
-    # Visit your domain to setup Selenium.
+    # Visit home page to trigger a Selenium setup first.
     getattr(test_class, drvr_attr).get(test_class.live_server_url)
-
-    # Add the newly created session cookie to selenium webdriver.
     getattr(test_class, drvr_attr).add_cookie(session_cookie)
-
-    # Refresh to exchange cookies with the server.
     getattr(test_class, drvr_attr).refresh()
 
     return test_class
