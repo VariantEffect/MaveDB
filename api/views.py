@@ -117,16 +117,30 @@ def _format_csv_rows(variants, columns, variant_column):
     return rows
 
 
+def validate_request(urn, user):
+    if not ScoreSet.objects.filter(urn=urn).count():
+        response = JsonResponse({'detail': '{} does not exist.'.format(urn)})
+        response.status_code = 404
+        return response
+    scoreset = ScoreSet.objects.get(urn=urn)
+    has_permission = user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
+    if scoreset.private and not has_permission:
+        response = JsonResponse({'detail': '{} is private.'.format(urn)})
+        response.status_code = 404
+        return response
+    return scoreset
+
+
 def scoreset_score_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
         'attachment; filename="{}_scores.csv"'.format(urn)
     
-    scoreset = get_object_or_404(ScoreSet, urn=urn)
-    has_permission = request.user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
-    if scoreset.private and not has_permission:
-        raise Http404()
-    
+    scoreset_or_response = validate_request(urn, request.user)
+    if not isinstance(scoreset_or_response, ScoreSet):
+        return scoreset_or_response
+
+    scoreset = scoreset_or_response
     variants = scoreset.children.order_by("urn")
     columns = scoreset.score_columns
     variant_column = constants.variant_score_data
@@ -145,12 +159,12 @@ def scoreset_count_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
         'attachment; filename="{}_counts.csv"'.format(urn)
+
+    scoreset_or_response = validate_request(urn, request.user)
+    if not isinstance(scoreset_or_response, ScoreSet):
+        return scoreset_or_response
     
-    scoreset = get_object_or_404(ScoreSet, urn=urn)
-    has_permission = request.user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
-    if scoreset.private and not has_permission:
-        raise Http404()
-    
+    scoreset = scoreset_or_response
     variants = scoreset.children.order_by("urn")
     columns = scoreset.count_columns
     variant_column = constants.variant_count_data
@@ -166,8 +180,8 @@ def scoreset_count_data(request, urn):
 
 
 def scoreset_metadata(request, urn):
-    scoreset = get_object_or_404(ScoreSet, urn=urn)
-    has_permission = request.user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
-    if scoreset.private and not has_permission:
-        raise Http404()
+    scoreset_or_response = validate_request(urn, request.user)
+    if not isinstance(scoreset_or_response, ScoreSet):
+        return scoreset_or_response
+    scoreset = scoreset_or_response
     return JsonResponse(scoreset.extra_metadata)
