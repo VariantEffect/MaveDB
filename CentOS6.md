@@ -207,7 +207,31 @@ where Apache can find them.
     python manage.py createreferences
 
 ## Configuring Celery
+Running celery as a daemon process will requrie additional configuration. First
+copy the celeryd configuration file (no extension) to `/etc/default/celeryd`. Next
+you will need to copy the celeryd bash script to `/etc/init.d/celeryd`. You may
+need to make the celeryd bash script executable
 
+	sudo chmod 755 /etc/init.d/celeryd
+	sudo chown root:root /etc/init.d/celeryd
+	
+Running the script will require you to create an new unprivileged user named `celery`
+
+	sudo adduser -r celery
+	
+You will also need to create a group `celery` which has read permissions on the mavedb
+app directory `/usr/local/webapps/mavedb` and then add user `celery` to this group. This is
+required so that tasks can be discovered by the daemon.
+	
+You may also need to grant write privileges for the celery user to the log 
+default directories
+
+	chown -R celery:celery /var/log/celery/
+	chown -R celery:celery /var/run/celery/ 
+	
+To use the celery script
+
+	sudo /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
 
 ### Starting the server
 
