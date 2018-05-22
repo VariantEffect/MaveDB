@@ -144,20 +144,37 @@ can be copied from another system if it was built with
 
 ## Installing and configuring RabbitMQ (Incomplete)
 Using celery to run long running processes requires the broker-messaging backend RabbitMQ.
-Installing RabbitMQ requires the installation of Erlang as a dependency.
+Installing RabbitMQ requires the installation of Erlang as a dependency. RabbitMQ has 
+provided a minial dependency-free version of Erlang. You will need to add an additional
+repository by following the CentOS 6 instructions [here](https://github.com/rabbitmq/erlang-rpm#bintray-yum-repositories). 
+Once you have added the additional repository you can install erlang by invoking the `yum` command
 
     sudo yum -y install erlang
-    sudo yum -y install rabbitmq
     
-Here are further instructions:
-    
-    https://github.com/rabbitmq/erlang-rpm
-    http://www.rabbitmq.com/install-rpm.html
+There are several ways to install the `rabbitmq-server`. The quickest is to download
+the `3.7.5` rpm
+
+	wget https://dl.bintray.com/rabbitmq/all/rabbitmq-server/3.7.5/rabbitmq-server-3.7.5-1.el6.noarch.rpm
+   
+If you need a later version, you can check the available rps [here](https://www.rabbitmq.com/install-rpm.html#install-rabbitmq).
+Once you have downloaded the rpm, follow [these](https://www.rabbitmq.com/install-rpm.html#install-rabbitmq) instructions. To
+summarize
+
+	rpm --import https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+	yum install rabbitmq-server-3.7.5-1.el6.noarch.rpm
 
 Once the installation has completed, you will need to start the RabbitMQ service. By default,
-this service listens on port 5672, which you may need to configure.
+this service listens on port 5672, which you may need to configure. To start the daemon by default 
+when the system boots, as an administrator run
 
-    service rabbitmq-server start
+    chkconfig rabbitmq-server on
+    
+As an administrator, you can start or stop the service with:
+
+	/sbin/service rabbitmq-server start
+	/sbin/service rabbitmq-server stop
+	
+For additional information see [here](https://www.rabbitmq.com/install-rpm.html#running-rpm).
 
 ## Setting up the MAVEDB virtual environment
 
@@ -189,6 +206,9 @@ where Apache can find them.
     python manage.py createlicences
     python manage.py createreferences
 
+## Configuring Celery
+
+
 ### Starting the server
 
 We can start now the server using the `mod_wsgi-express` wrapper. The `mod_wsgi` 
@@ -202,3 +222,5 @@ following command can successfully start the server after a reboot.
         --working-directory mavedb \
         --url-alias /static mavedb/static \
         --application-type module mavedb.wsgi
+
+
