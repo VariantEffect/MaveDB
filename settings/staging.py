@@ -52,7 +52,7 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': './info.log',
+            'filename': '/usr/local/webapps/logs/mavedb.log',
             'formatter': 'verbose'
         },
     },
