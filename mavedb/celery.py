@@ -2,9 +2,8 @@ import os
 import sys
 from celery import Celery
 
-if not os.environ.get('DJANGO_SETTINGS_MODULE'):
-    # Default to production
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'mavedb.settings'
+# set the default Django settings module for the 'celery' program.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mavedb.settings')
 
 app = Celery('mavedb')
 
