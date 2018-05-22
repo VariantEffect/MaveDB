@@ -1,3 +1,5 @@
+import logging
+
 from django.http import HttpRequest
 from django.urls import reverse_lazy
 from django.db import transaction
@@ -11,6 +13,8 @@ from ..models.experiment import Experiment
 from .base import (
     DatasetModelView, CreateDatasetModelView, UpdateDatasetModelView
 )
+
+logger = logging.getLogger("django")
 
 
 class ExperimentDetailView(DatasetModelView):
@@ -77,6 +81,7 @@ class ExperimentCreateView(CreateDatasetModelView):
         
         if not self.request.POST['experimentset']:
             experiment.experimentset.add_administrators(self.request.user)
+            logger.warning("Submitting to celery.")
             email_admins.delay(self.request.user.pk,
                                experiment.experimentset.urn)
             propagate = True
@@ -85,11 +90,13 @@ class ExperimentCreateView(CreateDatasetModelView):
             propagate = False
             save_parents = False
 
+        logger.warning("Saving experiment")
         experiment.set_created_by(self.request.user, propagate=propagate)
         experiment.set_modified_by(self.request.user, propagate=propagate)
         experiment.save(save_parents=save_parents)
         track_changes(instance=experiment, user=self.request.user)
         track_changes(instance=experiment.parent, user=self.request.user)
+        logger.warning("Submitting to celery again.")
         email_admins.delay(self.request.user.pk, experiment.urn)
         self.kwargs['urn'] = experiment.urn
         return forms
