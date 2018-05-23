@@ -200,11 +200,10 @@ REST_FRAMEWORK = {
     },
 }
 
-
 # ------ CELERY CONFIG ------------------- #
-CELERY_BROKER_URL = 'amqp://esposito.d:abc123@ec2-13-210-169-246.ap-southeast-2.compute.amazonaws.com:5672//'
+CELERY_BROKER_URL = 'amqp://@localhost:5672/'
 CELERY_IGNORE_RESULT = True
-# CELERY_RESULT_BACKEND = 'amqp://guest:guest@localhost:5672/'
+# CELERY_RESULT_BACKEND = 'amqp://@localhost:5672//'
 
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ('json', 'pickle',)
