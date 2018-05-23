@@ -100,6 +100,9 @@ def create_variants(user_pk, variants, scoreset_urn, dataset_columns,
             email_admins.delay(
                 user=user.pk, urn=scoreset.urn, base_url=base_url)
 
+    scoreset.processing_state = constants.success
+    scoreset.save()
+    
 
 @celery_app.task(ignore_result=True)
 def notify_user_upload_status(user_pk, scoreset_urn,
