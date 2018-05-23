@@ -65,6 +65,3 @@ LOGGING = {
         },
     },
 }
-
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_ALWAYS_EAGER = True
