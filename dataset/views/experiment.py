@@ -82,8 +82,12 @@ class ExperimentCreateView(CreateDatasetModelView):
         if not self.request.POST['experimentset']:
             experiment.experimentset.add_administrators(self.request.user)
             logger.warning("Submitting to celery.")
-            email_admins.delay(self.request.user.pk,
-                               experiment.experimentset.urn)
+            email_admins.apply_async(
+                kwargs={
+                    "user": self.request.user.pk,
+                    "urn": experiment.experimentset.urn
+                }
+            )
             propagate = True
             save_parents = True
         else:
