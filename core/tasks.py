@@ -50,6 +50,7 @@ def email_admins(user, urn, base_url=""):
     base_url : `str`
         Host domain name
     """
+    logger.warning("Entered delay call")
     if isinstance(user, int):
         user = User.objects.get(pk=user)
     instance = get_model_by_urn(urn)
@@ -71,7 +72,7 @@ def email_admins(user, urn, base_url=""):
         'url': url,
         'class_name': type(instance).__name__,
     })
-
+    
     subject = "[MAVEDB ADMIN] New entry requires your attention."
     for admin in admins:
         logger.info("Sending email to {}".format(admin.username))
