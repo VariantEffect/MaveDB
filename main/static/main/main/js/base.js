@@ -330,17 +330,22 @@ $("#id_target").on("change", function() {
         var targetName = data.name;
         var wildTypeSequence = data.wt_sequence.sequence;
         var referenceGenome = data.genome;
-
-        var uniprot_id = data.uniprot.identifier;
-        var uniprot_offset = data.uniprot.offset;
-
-        var refseq_id = data.refseq.identifier;
-        var refseq_offset = data.refseq.offset;
-
-        var ensembl_id = data.ensembl.identifier;
-        var ensembl_offset = data.ensembl.offset;
-
-
+        
+        var uniprot_id, refseq_id, ensembl_id = null;
+        var uniprot_offset, refseq_offset, ensembl_offset = null;
+        if (data.uniprot != null) {
+          uniprot_id = data.uniprot.identifier;
+          uniprot_offset = data.uniprot.offset;
+        }
+        if (data.refseq != null) {
+          refseq_id = data.refseq.identifier;
+          refseq_offset = data.refseq.offset;
+        }
+        if (data.ensembl != null) {
+          ensembl_id = data.ensembl.identifier;
+          ensembl_offset = data.ensembl.offset;
+        }
+        
         if (uniprot_id) {
           for(i=0; i<options.length; i++) {
             if (options[i].value === uniprot_id) {
