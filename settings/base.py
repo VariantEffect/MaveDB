@@ -201,7 +201,7 @@ REST_FRAMEWORK = {
 }
 
 # ------ CELERY CONFIG ------------------- #
-CELERY_BROKER_URL = 'amqp://@localhost:5672/'
+CELERY_BROKER_URL = 'amqp://rabbitmq:5672/'
 CELERY_IGNORE_RESULT = True
 # CELERY_RESULT_BACKEND = 'amqp://@localhost:5672//'
 
