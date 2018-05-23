@@ -9,7 +9,8 @@ USE_SOCIAL_AUTH = True
 
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.compute.amazonaws.com',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
+                 '.compute.amazonaws.com', '13.210.169.246',]
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
