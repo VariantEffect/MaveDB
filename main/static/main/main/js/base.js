@@ -324,7 +324,7 @@ $("#id_target").on("change", function() {
       data: {"targetId": id},
       dataType: "json",
       success: function (data) {
-        // console.log(data);
+        console.log(data);
         var i = 0;
         var options = document.getElementsByTagName('OPTION');
         var targetName = data.name;

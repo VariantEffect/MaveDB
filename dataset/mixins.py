@@ -177,7 +177,6 @@ class ExperimentFilterMixin(DatasetModelFilterMixin):
         ])
 
 
-
 class ScoreSetFilterMixin(DatasetModelFilterMixin):
     """
     Filter :class:`ScoreSet` instances by common fields in
