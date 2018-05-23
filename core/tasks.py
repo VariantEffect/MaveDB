@@ -72,7 +72,7 @@ def email_admins(user, urn, base_url=""):
         'url': url,
         'class_name': type(instance).__name__,
     })
-    
+
     subject = "[MAVEDB ADMIN] New entry requires your attention."
     for admin in admins:
         logger.info("Sending email to {}".format(admin.username))
