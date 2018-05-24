@@ -185,7 +185,6 @@ EMAIL_USE_SSL = False
 # REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')
 REPLY_TO_EMAIL = "alan.rubin@wehi.edu.au"
 
-
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -201,9 +200,9 @@ REST_FRAMEWORK = {
 }
 
 # ------ CELERY CONFIG ------------------- #
-CELERY_BROKER_URL = 'amqp://@localhost:5672//'
+CELERY_BROKER_URL = 'amqp://localhost:5672//'
 CELERY_IGNORE_RESULT = True
-# CELERY_RESULT_BACKEND = 'amqp://@localhost:5672//'
+# CELERY_RESULT_BACKEND = 'amqp://localhost:5672//'
 
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ('json', 'pickle',)
