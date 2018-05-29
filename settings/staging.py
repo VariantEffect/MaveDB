@@ -51,7 +51,7 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'WARNING',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': '/usr/local/webapps/logs/mavedb.log',
             'formatter': 'verbose'
@@ -60,8 +60,9 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'WARNING',
+            'level': 'DEBUG',
             'propagate': True
         },
     },
 }
+
