@@ -182,24 +182,21 @@ class TestNotifyUserTask(TestCase):
         }
 
     def test_renders_url_correctly(self):
-        notify_user_upload_status(
-            self.user.pk,
-            self.scoreset.urn, step='start', base_url="http://base")
+        notify_user_upload_status(self.user.pk, self.scoreset.urn,
+                                  base_url="http://base")
         expected = "http://base" + \
                    reverse("dataset:scoreset_detail", args=(self.scoreset.urn,))
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(expected, mail.outbox[0].body)
 
     def test_delegates_correct_template_start(self):
-        notify_user_upload_status(
-            self.user.pk,
-            self.scoreset.urn, step='start', base_url="http://base")
+        notify_user_upload_status(self.user.pk, self.scoreset.urn,
+                                  base_url="http://base")
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("being processed", mail.outbox[0].body)
 
     def test_delegates_correct_template_end(self):
-        notify_user_upload_status(
-            self.user.pk,
-            self.scoreset.urn, step='end', base_url="http://base")
+        notify_user_upload_status(self.user.pk, self.scoreset.urn,
+                                  base_url="http://base")
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("has been processed", mail.outbox[0].body)

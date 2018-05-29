@@ -866,8 +866,8 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
             with mock.patch('dataset.tasks.notify_user_upload_status.delay') as notify_patch:
                 create_variants(**create_mock.call_args[1])
                 self.assertEqual(notify_patch.call_count, 2)
-                notify_user_upload_status(**notify_patch.call_args_list[0][1])
-                notify_user_upload_status(**notify_patch.call_args_list[1][1])
+                notify_user_upload_status(,
+                notify_user_upload_status(,
                 self.assertEqual(len(mail.outbox), 2)
                 scs.refresh_from_db()
                 self.assertEqual(scs.processing_state, constants.success)
