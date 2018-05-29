@@ -11,6 +11,13 @@ os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org',]
 
+# Email these users whenever an exception is raised causing a 500 error. This will
+# email the stack trace.
+ADMINS = [
+    ('Alan', 'alan.rubin@wehi.edu.au'),
+    ('Daniel', 'esposito.d@wehi.edu.au')
+]
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/Los_Angeles'
@@ -64,3 +71,19 @@ LOGGING = {
         },
     },
 }
+
+# Email setup
+# DEBUG email server, set to something proper when DEBUG = FALSE
+# DEFAULT_FROM_EMAIL = "mavedb@mavedb.org"
+# SERVER_EMAIL = "admin@mavedb.org"
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#
+# # Host for sending e-mail
+# EMAIL_HOST = 'localhost'
+# EMAIL_PORT = 1025
+#
+# # Optional SMTP authentication information for EMAIL_HOST
+# EMAIL_HOST_USER = ''
+# EMAIL_HOST_PASSWORD = ''
+# EMAIL_USE_TLS = False
+# EMAIL_USE_SSL = False
