@@ -84,6 +84,19 @@ function confirmDelete(urn) {
   }
 }
 
+function confirmPublish(urn) {
+  var yes = confirm(
+    "WARNING! Proceeding will freeze your upload and limit which fields " +
+    "can be edited. If this score set is part of a private experiment, " +
+    "this experiment will also be published and frozen. " +
+    "Please make sure you have read the documentation before proceeding." +
+    " This action cannot be undone. Would you like to proceed?"
+  );
+  if (yes) {
+    return document.getElementById(urn + "-publish").submit();
+  }
+}
+
 // Check management form submission
 // ----------------------------------------------------------------------- //
 // `user` is a global defined in base.html using Django"s templating system.
@@ -145,18 +158,6 @@ function validateViewerSubmit(e) {
   }
   return $("#viewer-form").submit();
 }
-
-// Check Publish is ok with user
-$("#publish").click(function (event) {
-  var saidYes = confirm(
-    "WARNING! Proceeding will freeze your upload and limit which fields " +
-    "can be edited. If this score set is part of a private experiment, " +
-    "this experiment will also be published and frozen. " +
-    "Please make sure you have read the documentation before proceeding." +
-    " This action cannot be undone. Would you like to proceed?"
-  );
-  return saidYes;
-});
 
 
 // Dynaimic form selection

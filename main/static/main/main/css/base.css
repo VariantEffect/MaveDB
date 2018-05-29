@@ -452,13 +452,14 @@ span.select2.select2-container.select2-container--default {
     background-color: #dc3545;
 }
 
-.delete-urn {
+.delete-urn, .publish-urn {
     cursor: pointer;
     color: #dc3545 !important;
 }
-.delete-urn:hover {
+.delete-urn:hover, .publish-urn:hover {
     color: darkred !important;
 }
+
 
 
 /* Management CSS Elements */
@@ -532,6 +533,10 @@ span.select2.select2-container.select2-container--default {
     font-size: 24px;
 }
 .trash-icon {
+    font-size: 20px !important;
+}
+
+.publish-icon {
     font-size: 20px !important;
 }
 
