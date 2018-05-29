@@ -18,22 +18,20 @@ def email_user(user, **kwargs):
     if isinstance(user, int):
         if User.objects.filter(pk=user).count():
             user = User.objects.get(pk=user)
-        else:
-            return False
-    return user.profile.email_user(**kwargs)
+    if isinstance(user, User):
+        user.profile.email_user(**kwargs)
 
 
 @celery_app.task(ignore_result=True)
 def send_to_email(subject, message, from_email, recipient_list, **kwargs):
     if recipient_list:
-        return send_mail(
+        send_mail(
             subject=subject,
             message=message,
             from_email=from_email,
             recipient_list=recipient_list,
             **kwargs
         )
-    return False
     
 
 @celery_app.task(ignore_result=True)
