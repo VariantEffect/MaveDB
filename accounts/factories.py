@@ -55,7 +55,7 @@ def UserFactory(username=None, password=None, first_name=None,
         first_name=first_name,
         last_name=last_name,
         email=email,
-        **kwargs,
+        **kwargs
     )
     user.set_password(password)
     return user
