@@ -65,11 +65,11 @@ class ExperimentCreateView(CreateDatasetModelView):
     model_class_name = 'Experiment'
     # -------
 
-    forms = {"experiment_form": ExperimentForm}
+    forms = {"experiment": ExperimentForm}
 
     @transaction.atomic
     def save_forms(self, forms):
-        experiment_form = forms['experiment_form']
+        experiment_form = forms['experiment']
         experiment = experiment_form.save(commit=True)
         # Save and update permissions. If no experimentset was selected,
         # by default a new experimentset is created with the current user
@@ -130,29 +130,29 @@ class ExperimentEditView(UpdateDatasetModelView):
     model_class = Experiment
     # -------
 
-    forms = {"experiment_form": ExperimentForm}
-    restricted_forms = {"experiment_form": ExperimentEditForm}
+    forms = {"experiment": ExperimentForm}
+    restricted_forms = {"experiment": ExperimentEditForm}
 
     @transaction.atomic
     def save_forms(self, forms):
-        experiment_form = forms['experiment_form']
+        experiment_form = forms['experiment']
         experiment = experiment_form.save(commit=True)
         experiment.set_modified_by(self.request.user, propagate=False)
         track_changes(instance=experiment, user=self.request.user)
         self.kwargs['urn'] = experiment.urn
         return forms
 
-    def get_experiment_form_form(self, form_class, **form_kwargs):
+    def get_experiment_form(self, form_class, **form_kwargs):
         if self.request.method == "POST":
             if self.instance.private:
                 return ExperimentForm.from_request(
                     self.request, self.instance, initial=None,
-                    prefix=self.prefixes.get('experiment_form', None)
+                    prefix=self.prefixes.get('experiment', None)
                 )
             else:
                 return ExperimentEditForm.from_request(
                     self.request, self.instance, initial=None,
-                    prefix=self.prefixes.get('experiment_form', None)
+                    prefix=self.prefixes.get('experiment', None)
                 )
         else:
             if 'user' not in form_kwargs:

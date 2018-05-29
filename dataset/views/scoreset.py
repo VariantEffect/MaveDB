@@ -90,17 +90,17 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     # -------
 
     prefixes = {
-        'uniprot_offset_form': 'uniprot-offset',
-        'refseq_offset_form': 'refseq-offset',
-        'ensembl_offset_form': 'ensembl-offset',
+        'uniprot_offset': 'uniprot-offset',
+        'refseq_offset': 'refseq-offset',
+        'ensembl_offset': 'ensembl-offset',
     }
     forms = {
-        "scoreset_form": ScoreSetForm,
-        "target_gene_form": TargetGeneForm,
-        "reference_map_form": PimraryReferenceMapForm,
-        "uniprot_offset_form": UniprotOffsetForm,
-        "refseq_offset_form": RefseqOffsetForm,
-        "ensembl_offset_form": EnsemblOffsetForm,
+        "scoreset": ScoreSetForm,
+        "target_gene": TargetGeneForm,
+        "reference_map": PimraryReferenceMapForm,
+        "uniprot_offset": UniprotOffsetForm,
+        "refseq_offset": RefseqOffsetForm,
+        "ensembl_offset": EnsemblOffsetForm,
     }
 
     def dispatch(self, request, *args, **kwargs):
@@ -116,12 +116,12 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
 
     @transaction.atomic
     def save_forms(self, forms):
-        scoreset_form = forms['scoreset_form']
-        target_gene_form = forms['target_gene_form']
-        reference_map_form = forms['reference_map_form']
-        uniprot_offset_form = forms['uniprot_offset_form']
-        refseq_offset_form = forms['refseq_offset_form']
-        ensembl_offset_form = forms['ensembl_offset_form']
+        scoreset_form = forms['scoreset']
+        target_gene_form = forms['target_gene']
+        reference_map_form = forms['reference_map']
+        uniprot_offset_form = forms['uniprot_offset']
+        refseq_offset_form = forms['refseq_offset']
+        ensembl_offset_form = forms['ensembl_offset']
 
         scoreset = scoreset_form.save(commit=True)
         scoreset.set_created_by(self.request.user)
@@ -195,20 +195,20 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     # -------
 
     prefixes = {
-        'uniprot_offset_form': 'uniprot',
-        'refseq_offset_form': 'refseq',
-        'ensembl_offset_form': 'ensembl',
+        'uniprot_offset': 'uniprot',
+        'refseq_offset': 'refseq',
+        'ensembl_offset': 'ensembl',
     }
     forms = {
-        "scoreset_form": ScoreSetForm,
-        "target_gene_form": TargetGeneForm,
-        "reference_map_form": PimraryReferenceMapForm,
-        "uniprot_offset_form": UniprotOffsetForm,
-        "refseq_offset_form": RefseqOffsetForm,
-        "ensembl_offset_form": EnsemblOffsetForm,
+        "scoreset": ScoreSetForm,
+        "target_gene": TargetGeneForm,
+        "reference_map": PimraryReferenceMapForm,
+        "uniprot_offset": UniprotOffsetForm,
+        "refseq_offset": RefseqOffsetForm,
+        "ensembl_offset": EnsemblOffsetForm,
     }
     restricted_forms = {
-        "scoreset_form": ScoreSetEditForm,
+        "scoreset": ScoreSetEditForm,
     }
 
     # Dispatch/Post/Get
@@ -216,17 +216,17 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     @transaction.atomic
     def save_forms(self, forms):
         publish = bool(self.request.POST.get('publish', False))
-        scoreset_form = forms['scoreset_form']
+        scoreset_form = forms['scoreset']
         scoreset = scoreset_form.save(commit=True)
         scoreset.set_modified_by(self.request.user)
         scoreset.save()
 
         if self.instance.private:
-            target_gene_form = forms['target_gene_form']
-            reference_map_form = forms['reference_map_form']
-            uniprot_offset_form = forms['uniprot_offset_form']
-            refseq_offset_form = forms['refseq_offset_form']
-            ensembl_offset_form = forms['ensembl_offset_form']
+            target_gene_form = forms['target_gene']
+            reference_map_form = forms['reference_map']
+            uniprot_offset_form = forms['uniprot_offset']
+            refseq_offset_form = forms['refseq_offset']
+            ensembl_offset_form = forms['ensembl_offset']
 
             target_gene_form.instance.scoreset = scoreset
             targetgene = target_gene_form.save(commit=True)
@@ -261,16 +261,8 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 dataset_columns=scoreset_form.dataset_columns.copy(),
                 base_url=baseurl(self.request)['BASE_URL'],
             )
-        elif publish:
-            scoreset.processing_state = constants.processing
-            scoreset.save()
-            publish_scoreset.delay(
-                scoreset_urn=scoreset.urn,
-                user_pk=self.request.user.pk,
-                base_url=baseurl(self.request)['BASE_URL'],
-            )
 
-        scoreset.add_administrators(self.request.user)
+        scoreset.save()
         track_changes(instance=scoreset, user=self.request.user)
         return forms
 
@@ -288,15 +280,15 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 ensembl_offset = targetgene.get_ensembl_offset_annotation()
                 refseq_offset = targetgene.get_refseq_offset_annotation()
         dict_ = {
-            'reference_map_form': ref_map,
-            'uniprot_offset_form': uniprot_offset,
-            'ensembl_offset_form': ensembl_offset,
-            'refseq_offset_form': refseq_offset,
-            'target_gene_form': targetgene
+            'reference_map': ref_map,
+            'uniprot_offset': uniprot_offset,
+            'ensembl_offset': ensembl_offset,
+            'refseq_offset': refseq_offset,
+            'target_gene': targetgene
         }
         return dict_.get(form_key, None)
 
-    def get_scoreset_form_form(self, form_class, **form_kwargs):
+    def get_scoreset_form(self, form_class, **form_kwargs):
         if self.request.method == "POST":
             if self.instance.private:
                 return ScoreSetForm.from_request(
