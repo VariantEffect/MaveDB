@@ -105,6 +105,14 @@
                                      title="Delete this Score Set. This action is final."></i>
                                 </a>
                               </form>
+                              <form id="{{ instance.urn }}-publish" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
+                               {% csrf_token %}
+                                <input value="{{ instance.urn }}" title="publish" name="publish" hidden />
+                                <a class="publish-urn" onclick="confirmPublish('{{ instance.urn }}');" id="publish-btn">
+                                  <i class="publish-icon fa fa-lock pl-1" data-toggle="tooltip" data-placement="top"
+                                     title="Publish this Score Set. This action is final."></i>
+                                </a>
+                              </form>
                             {% endif %}
                           </small>
                         </div> <!-- end card foorter -->
