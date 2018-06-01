@@ -17,7 +17,7 @@ from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 from search.forms import parse_char_list
 
-from .utilities import notify_user
+from accounts.tasks import notify_user_group_change
 from .models import Profile
 from .mixins import UserFilterMixin
 from .permissions import (
@@ -254,20 +254,20 @@ class SelectUsersForm(forms.Form):
 
             for user in existing:
                 if user not in users:
-                    notify_user(
+                    notify_user_group_change(
                         base_url, user, self.instance,
                         action='removed', group=self.group
                     )
             for user in users:
                 reassigned = user_reassigned.get(user, False)
                 if reassigned:
-                    notify_user(
+                    notify_user_group_change(
                         base_url, user, self.instance,
                         action='re-assigned', group=self.group
                     )
                 else:
                     if user not in existing:
-                        notify_user(
+                        notify_user_group_change(
                             base_url, user, self.instance,
                             action='added', group=self.group
                         )

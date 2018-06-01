@@ -15,15 +15,15 @@ class TestContactForm(TestCase):
             'subject': 'Hello, world!'
         }
     
-    @mock.patch('core.tasks.email_user.delay')
-    def test_emails_admins_task(self, mock_patch):
+    @mock.patch('accounts.tasks.email_user.delay')
+    def test_emails_admins(self, mock_patch):
         UserFactory(is_superuser=True)
         form = ContactForm(data=self.mock_data())
         form.send_mail()
         mock_patch.assert_called()
         
     @mock.patch('core.tasks.send_to_email.delay')
-    def test_emails_requester_task(self, mock_patch):
+    def test_emails_requester(self, mock_patch):
         UserFactory(is_superuser=True)
         UserFactory(is_superuser=True)
         
@@ -32,8 +32,8 @@ class TestContactForm(TestCase):
         mock_patch.assert_called()
         self.assertEqual(mock_patch.call_count, 1)
         
-    @mock.patch('core.tasks.email_user.delay')
-    def test_only_class_task_if_valid(self, mock_patch):
+    @mock.patch('accounts.tasks.email_user.delay')
+    def test_send_admin_email_if_valid_email_supplied(self, mock_patch):
         data = self.mock_data()
         data['email'] = ""
         form = ContactForm(data=data)

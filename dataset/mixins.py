@@ -328,6 +328,8 @@ class DatasetFormViewContextMixin:
         # Below is invoked if paired with a MultiFormMixin
         if hasattr(self, 'get_forms'):
             for key, form in self.get_forms().items():
+                if not key.endswith('_form'):
+                    key += '_form'
                 if key not in context:
                     context[key] = form
 
@@ -390,7 +392,7 @@ class MultiFormMixin:
     restricted_forms = {}
     prefixes = {}
     form_string = 'get_{}_form'
-    kwargs_string = 'get_{}_kwargs'
+    kwargs_string = 'get_{}_form_kwargs'
 
     def get_generic_form(self, form_class, **form_kwargs):
         if 'data' not in form_kwargs:

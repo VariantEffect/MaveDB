@@ -72,7 +72,7 @@ class TestContactView(TestCase, TestMessageMixin):
     def setUp(self):
         self.factory = RequestFactory()
     
-    @mock.patch('core.tasks.email_user.delay')
+    @mock.patch('accounts.tasks.email_user.delay')
     def test_calls_email_admin_task(self, mock_patch):
         data = self.mock_data()
         admin = UserFactory(is_superuser=True)

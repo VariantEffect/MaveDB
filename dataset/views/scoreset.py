@@ -16,7 +16,7 @@ from metadata.forms import (
 from genome.forms import PimraryReferenceMapForm, TargetGeneForm
 
 # Absolute import tasks for celery to work
-from dataset.tasks import create_variants, publish_scoreset
+from dataset.tasks import create_variants
 from dataset import constants
 
 from ..models.scoreset import ScoreSet
@@ -215,7 +215,6 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save_forms(self, forms):
-        publish = bool(self.request.POST.get('publish', False))
         scoreset_form = forms['scoreset']
         scoreset = scoreset_form.save(commit=True)
         scoreset.set_modified_by(self.request.user)
@@ -257,7 +256,6 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 user_pk=self.request.user.pk,
                 variants=scoreset_form.get_variants().copy(),
                 scoreset_urn=scoreset.urn,
-                publish=publish,
                 dataset_columns=scoreset_form.dataset_columns.copy(),
                 base_url=baseurl(self.request)['BASE_URL'],
             )
@@ -293,12 +291,12 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             if self.instance.private:
                 return ScoreSetForm.from_request(
                     self.request, self.instance, initial=None,
-                    prefix=self.prefixes.get('scoreset_form', None)
+                    prefix=self.prefixes.get('scoreset', None)
                 )
             else:
                 return ScoreSetEditForm.from_request(
                     self.request, self.instance, initial=None,
-                    prefix=self.prefixes.get('scoreset_form', None)
+                    prefix=self.prefixes.get('scoreset', None)
                 )
         else:
             if 'user' not in form_kwargs:

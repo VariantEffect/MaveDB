@@ -76,11 +76,11 @@ class TestPublishScoreSet(LiveServerTestCase):
             self.browser.find_element_by_id("id_uniprot-offset")
             self.browser.find_element_by_id("id_refseq-offset")
             self.browser.find_element_by_id("id_ensembl-offset")
-            
-            
+
+    @mock.patch('accounts.tasks.notify_user_upload_status.delay')
     @mock.patch('core.tasks.email_admins.delay')
     @mock.patch('dataset.tasks.publish_scoreset.delay')
-    def test_publish_updates_states(self, publish_patch, email_patch):
+    def test_publish_updates_states(self, publish_patch, email_patch, notify_patch):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.experiment.add_administrators(self.user)
         scoreset.add_administrators(self.user)
@@ -92,11 +92,11 @@ class TestPublishScoreSet(LiveServerTestCase):
         self.authenticate()
         self.browser.get(
             self.live_server_url +
-            '/profile/edit/scoreset/{}/'.format(scoreset.urn)
+            '/profile/'.format(scoreset.urn)
         )
         
         # Try publishing
-        submit = self.browser.find_element_by_id('publish')
+        submit = self.browser.find_element_by_id('publish-btn')
         submit.click()
         self.browser.switch_to.alert.accept()
         self.browser.get(
@@ -111,8 +111,9 @@ class TestPublishScoreSet(LiveServerTestCase):
         
         # Manually invoke the task
         publish_patch.assert_called()
-        tasks.publish_scoreset(**publish_patch.call_args[1])
+        tasks.publish_scoreset.apply(kwargs=publish_patch.call_args[1])
         email_patch.assert_called()
+        notify_patch.assert_called()
         
         # Check to see if the publish worked
         scoreset = data_models.scoreset.ScoreSet.objects.first()

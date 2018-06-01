@@ -1,70 +1,153 @@
-import logging
+from django.contrib import messages
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.shortcuts import reverse
+from main.context_processors import baseurl
 
-from dataset import models
+from accounts.permissions import PermissionTypes
+
+from dataset import constants
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
+from dataset.models.scoreset import ScoreSet
+from dataset.tasks import publish_scoreset
+from dataset.utilities import delete_instance
+
+from urn.models import get_model_by_urn
 
 
-logger = logging.getLogger('django')
+def delete(urn, request):
+    """
+    Validates a request to delete an instance. Checks:
+        - urn exists
+        - requesting user has permission
+        - Does not have children (experiments and experimentsets only)
+        - is not being processed by celery
+        - does not have children being processed
+    """
+    try:
+        instance = get_model_by_urn(urn=urn)
+        if not request.user.has_perm(
+                PermissionTypes.CAN_MANAGE, instance):
+            raise PermissionDenied()
+    except ObjectDoesNotExist:
+        messages.error(request, "{} has already been deleted.".format(urn))
+        return False
+    except PermissionDenied:
+        messages.error(
+            request, "You must be an administrator for {} to delete "
+                     "it.".format(urn))
+        return False
+
+    # Check doesn't have children if experiment or experimentset
+    if isinstance(instance, (Experiment, ExperimentSet)):
+        if instance.children.count():
+            message = (
+                "Child {child_class}s must be deleted prior "
+                "to deleting this {parent_class}."
+            ).format(
+                child_class=instance.children.first().__class__.__name__,
+                parent_class=instance.__class__.__name__,
+            )
+            messages.error(request, message)
+            return False
+
+    # Check the processing state
+    being_processed = instance.processing_state == constants.processing
+    if being_processed:
+        messages.error(
+            request,
+            "{} cannot be deleted because it is currently being "
+            "processed. Try again once your submission has "
+            "been processed.".format(instance.urn))
+        return False
+
+    # Check the private status
+    if instance.private:
+        delete_instance(instance)
+        messages.success(
+            request, "Successfully deleted {}.".format(urn))
+        return True
+    else:
+        messages.error(
+            request, "{} is public and cannot be deleted.".format(instance.urn))
+        return False
 
 
-def notify_user(base_url, user, instance, action, group):
-    if not hasattr(instance, 'urn'):
-        logger.error(
-            "{} passed to accounts.utilities.notify_user "
-            "has no attribute urn".format(type(instance).__name__)
+def publish(urn, request):
+    """
+    Validates a request to publish a scoreset. Checks:
+        - urn exists and is a score set
+        - requesting user has permission
+        - is not being processed by celery
+        - has variants that are associated
+        - is not in the 'failed' celery state
+        - has not been published already
+    """
+    try:
+        instance = get_model_by_urn(urn=urn)
+        if not request.user.has_perm(
+                PermissionTypes.CAN_MANAGE, instance):
+            raise PermissionDenied()
+    except ObjectDoesNotExist:
+        messages.error(request, "Could not find {}. It may have been "
+                                "deleted.".format(urn))
+        return False
+    except PermissionDenied:
+        messages.error(
+            request, "You must be an administrator for {} to publish "
+                     "it.".format(urn))
+        return False
+    
+    if not isinstance(instance, ScoreSet):
+        messages.error(request, "Only Score Sets can be published.".format(urn))
+        return False
+  
+    # Check the processing state
+    being_processed = instance.processing_state == constants.processing
+    if being_processed:
+        messages.error(
+            request,
+            "{} cannot be publish because it is currently being "
+            "processed. Try again once your processing has completed.".format(
+                urn))
+        return False
+    
+    # check if in fail state
+    failed = instance.processing_state == constants.failed
+    if failed:
+        messages.error(
+            request,
+            "{} cannot be publish because there were errors during "
+            "the previous submission attempt. You will need to complete your "
+            "submission before publishing.".format(urn))
+        return False
+    
+    # Check if has variants
+    has_variants = instance.has_variants
+    if not has_variants:
+        messages.error(
+            request,
+            "{} cannot be publish because there are no associated variants. "
+            "You will need to complete your submission before "
+            "publishing.".format(urn))
+        return False
+    
+    # Check the private status
+    if instance.private:
+        instance.processing_state = constants.processing
+        instance.save()
+        publish_scoreset.delay(
+            scoreset_urn=instance.urn,
+            user_pk=request.user.pk,
+            base_url=baseurl(request)['BASE_URL'],
         )
-        return
-
-    if isinstance(instance, models.experiment.Experiment):
-        path = reverse("dataset:experiment_detail", args=(instance.urn,))
-    elif isinstance(instance, models.scoreset.ScoreSet):
-        path = reverse("dataset:scoreset_detail", args=(instance.urn,))
-    elif isinstance(instance, models.experimentset.ExperimentSet):
-        path = reverse("dataset:experimentset_detail", args=(instance.urn,))
+        messages.success(
+            request,
+            "{} has been queued for publication. Editing has been "
+            "disabled until your submission has been processed. A public urn "
+            "will be assigned upon successful completion.".format(urn))
+        return True
     else:
-        logger.error(
-            "{} passed to accounts.utlitiles.notify_user "
-            "is not a valid viewable instance.".format(type(instance).__name__)
-        )
-        return
-
-    if isinstance(base_url, dict):
-        base_url = base_url['BASE_URL']
-    if isinstance(base_url, str):
-        absolute_url = base_url + path
-    else:
-        logger.error("Unkown base_url type '{}'".format(
-            type(base_url).__name__))
-        return
-
-    email = user.profile.email or user.email
-    if action == 'removed':
-        conjunction = 'from'
-    else:
-        conjunction = 'for'
-
-    if group in ('administrator', 'editor'):
-        group = 'an {}'.format(group)
-    else:
-        group = 'a {}'.format(group)
-
-    if email:
-        template_name = "accounts/added_removed_as_contributor.html"
-        message = render_to_string(template_name, {
-            'user': user, 'group': group, 'conjunction': conjunction,
-            'url': absolute_url, 'action': action, 'urn': instance.urn
-        })
-        send_mail(
-            subject='Updates to entry {}.'.format(instance.urn),
-            message=message,
-            from_email=None,
-            recipient_list=[email]
-        )
-    else:
-        logger.error(
-            "Tried to notify user '{}' from accounts.utilities.notify_user "
-            "but could not find an email address.".format(user.username)
-        )
+        messages.error(
+            request, "{} is public and cannot be published again.".format(urn))
+        return False

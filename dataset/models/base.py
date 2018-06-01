@@ -294,27 +294,30 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     @transaction.atomic
     def publish(self):
-        # Need to traverse to the root of the ancestral tree first because
-        # urns are recursively generated from parents.
-        self.private = False
-        self.publish_date = datetime.date.today()
-        if self.parent:
-            self.parent.publish()
-        if not self.has_public_urn:
-            admins = self.administrators()
-            editors = self.editors()
-            viewers = self.viewers()
-
-            # The old groups associated with the tmp urn must be deleted
-            permissions.delete_all_groups_for_instance(self)
-
-            self.urn = self.create_urn()
-            self.save()  # New groups will be created as a post-save signal
-
-            # Re-assign contributors to the new groups.
-            self.add_administrators(admins)
-            self.add_editors(editors)
-            self.add_viewers(viewers)
+        if self.has_public_urn or not self.private:
+            return self
+        else:
+            # Need to traverse to the root of the ancestral tree first because
+            # urns are recursively generated from parents.
+            self.private = False
+            self.publish_date = datetime.date.today()
+            if self.parent:
+                self.parent.publish()
+            if not self.has_public_urn:
+                admins = self.administrators()
+                editors = self.editors()
+                viewers = self.viewers()
+    
+                # The old groups associated with the tmp urn must be deleted
+                permissions.delete_all_groups_for_instance(self)
+    
+                self.urn = self.create_urn()
+                self.save()  # New groups will be created as a post-save signal
+    
+                # Re-assign contributors to the new groups.
+                self.add_administrators(admins)
+                self.add_editors(editors)
+                self.add_viewers(viewers)
         
     def set_modified_by(self, user, propagate=False):
         if propagate:

@@ -141,12 +141,15 @@ class ScoreSet(DatasetModel):
     
     @transaction.atomic
     def publish(self):
-        super().publish()
-        urns = Variant.bulk_create_urns(self.children.count(), self)
-        for urn, child in zip(urns, self.children.all()):
-            child.urn = urn
-            child.save()
-        return self
+        if self.has_public_urn or not self.private:
+            return self
+        else:
+            super().publish()
+            urns = Variant.bulk_create_urns(self.children.count(), self)
+            for urn, child in zip(urns, self.children.all()):
+                child.urn = urn
+                child.save()
+            return self
         
     def create_urn(self):
         if self.private or not self.experiment.has_public_urn:

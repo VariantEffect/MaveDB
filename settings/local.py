@@ -28,6 +28,12 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
 # Set up logging
 LOGGING = {
     'version': 1,
@@ -58,6 +64,4 @@ LOGGING = {
 }
 
 # Allows tasks to be run synchronously for local tests
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_ALWAYS_EAGER = True
-
+CELERY_TASK_ALWAYS_EAGER = False

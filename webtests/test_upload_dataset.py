@@ -31,10 +31,8 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
             self.user.username, self.user._password, self, 'browser')
 
     @mock.patch('dataset.tasks.create_variants.delay')
-    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
-    @mock.patch('core.tasks.email_admins.delay')
-    def test_create_experiment_flow(self, email_admins_patch, notify_patch,
-                                    variants_patch):
+    @mock.patch('accounts.tasks.notify_user_upload_status.delay')
+    def test_create_experiment_flow(self, notify_patch, variants_patch):
         # Create some experimentsets that the user should not be able to see
         exps1 = data_factories.ExperimentSetFactory(private=False)
         exps2 = data_factories.ExperimentSetFactory()
@@ -75,7 +73,6 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         description = self.browser.find_element_by_id('id_short_description')
         description.send_keys("hello, world!")
         
-        
         # ------ M2M fields ------- #
         # Ordering is important as it replicates the form field ordering
         # in `DatasetModelForm`
@@ -102,9 +99,6 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         submit = self.browser.find_element_by_id('submit-form')
         submit.click()
         
-        # One email for the experiment, and one email for the experimentset
-        self.assertEqual(email_admins_patch.call_count, 2)
-
         # ------ CHECK EXPERIMENT IS CONFIGURED CORRECTLY ------ #
         # Delete uneccessary objects
         exps1.delete()
@@ -260,10 +254,10 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.assertFalse(scoreset.has_public_urn)
         self.assertIn('new kw', [k.text for k in scoreset.keywords.all()])
         self.assertEqual(scoreset.processing_state, constants.processing)
-        tasks.create_variants(**variants_patch.call_args[1])
+        tasks.create_variants.apply(kwargs=variants_patch.call_args[1])
         
         # Check to see if the notify emails were sent
-        self.assertEqual(notify_patch.call_count, 2)
+        self.assertEqual(notify_patch.call_count, 1)
         
         # Refresh scoreset and check fields
         self.assertEqual(data_models.scoreset.ScoreSet.objects.count(), 1)

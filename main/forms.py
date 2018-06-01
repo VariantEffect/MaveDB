@@ -4,7 +4,8 @@ from django import forms
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 
-from core.tasks import email_user, send_to_email
+from core.tasks import send_to_email
+from accounts.tasks import email_user
 
 User = get_user_model()
 logger = logging.getLogger("django")

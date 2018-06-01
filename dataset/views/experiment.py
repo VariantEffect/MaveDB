@@ -94,7 +94,6 @@ class ExperimentCreateView(CreateDatasetModelView):
         experiment.save(save_parents=save_parents)
         track_changes(instance=experiment, user=self.request.user)
         track_changes(instance=experiment.parent, user=self.request.user)
-        email_admins.delay(self.request.user.pk, experiment.urn)
         self.kwargs['urn'] = experiment.urn
         return forms
 

@@ -14,7 +14,6 @@ from accounts.permissions import (
     user_is_admin_for_instance
 )
 
-from core.tasks import email_admins
 from core.utilities.tests import TestMessageMixin
 
 from genome.factories import ReferenceGenomeFactory
@@ -29,7 +28,8 @@ from metadata.factories import (
 from variant.factories import VariantFactory
 
 import dataset.constants as constants
-from ..tasks import create_variants, publish_scoreset, notify_user_upload_status
+from ..tasks import create_variants, publish_scoreset
+from accounts.tasks import notify_user_upload_status
 from ..forms.scoreset import ScoreSetForm
 from ..factories import (
     ScoreSetFactory, ExperimentFactory, ScoreSetWithTargetFactory
@@ -718,129 +718,7 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         response = ScoreSetEditView.as_view()(request, urn=scs.urn)
         self.assertEqual(response.status_code, 302)
 
-    def test_calls_publish_with_no_new_variants_uploaded(self):
-        data = self.post_data.copy()
-        scs = ScoreSetFactory()
-        VariantFactory(scoreset=scs)
-
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['experiment'] = [scs.experiment.pk]
-        data['publish'] = ['publish']
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-
-        with mock.patch('dataset.tasks.publish_scoreset.delay') as publish_mock:
-            ScoreSetEditView.as_view()(request, urn=scs.urn)
-            publish_mock.assert_called_once()
-            
-            scs.refresh_from_db()
-            self.assertEqual(scs.processing_state, constants.processing)
-            
-            scoreset = publish_scoreset(**publish_mock.call_args[1])
-            self.assertTrue(scoreset.has_public_urn)
-            self.assertTrue(scoreset.parent.has_public_urn)
-            self.assertTrue(scoreset.parent.parent.has_public_urn)
-            self.assertEqual(scoreset.processing_state, constants.success)
-
-    def test_publish_propagates_modified_by(self):
-        data = self.post_data.copy()
-        scs = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['experiment'] = [scs.experiment.pk]
-        data['publish'] = ['publish']
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
-            ScoreSetEditView.as_view()(request, urn=scs.urn)
-            create_mock.assert_called_once()
-            create_variants(**create_mock.call_args[1])
-
-        scs = ScoreSet.objects.all()[0]
-        self.assertEqual(scs.modified_by, self.user)
-        self.assertEqual(scs.parent.modified_by, self.user)
-        self.assertEqual(scs.parent.parent.modified_by, self.user)
-
-    def test_publish_propagates_private_as_false(self):
-        data = self.post_data.copy()
-        scs = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['experiment'] = [scs.experiment.pk]
-        data['publish'] = ['publish']
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
-            ScoreSetEditView.as_view()(request, urn=scs.urn)
-            create_mock.assert_called_once()
-            create_variants(**create_mock.call_args[1])
-
-        scs = ScoreSet.objects.all()[0]
-        self.assertFalse(scs.private)
-        self.assertFalse(scs.parent.private)
-        self.assertFalse(scs.parent.parent.private)
-
-    def test_publish_does_not_propagate_created_by(self):
-        data = self.post_data.copy()
-        scs = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['experiment'] = [scs.experiment.pk]
-        data['publish'] = ['publish']
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-        _ = ScoreSetEditView.as_view()(request, urn=scs.urn)
-
-        scs = ScoreSet.objects.all()[0]
-        self.assertEqual(scs.created_by, self.user)
-        self.assertNotEqual(scs.parent.created_by, scs.created_by)
-        self.assertNotEqual(scs.parent.parent.created_by, scs.created_by)
-    
-    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
-    def test_publish_button_sends_admin_emails(self, notify_patch):
-        # Catch notify patch and prevent it being called
-        data = self.post_data.copy()
-        user = UserFactory(is_superuser=True)
-        user.email = "admin@admin.com"
-        user.save()
-
-        scs = ScoreSetFactory()
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['publish'] = ['publish']
-        data['experiment'] = [scs.parent.pk]
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
-            response = ScoreSetEditView.as_view()(request, urn=scs.urn)
-            create_mock.assert_called_once()
-            with mock.patch('core.tasks.email_admins.delay') as send_mock:
-                create_variants(**create_mock.call_args[1])
-                send_mock.assert_called_once()
-                email_admins(**send_mock.call_args[1])
-                self.assertEqual(response.status_code, 302)
-                self.assertEqual(len(mail.outbox), 1)
-
-    @mock.patch('dataset.tasks.email_admins.delay')
-    def test_create_variants_notifies_user(self, admin_patch):
+    def test_create_variants_notifies_user(self):
         # Catch admin patch and prevent it being called
         data = self.post_data.copy()
         user = UserFactory(is_superuser=True)
@@ -864,11 +742,10 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
             scs.refresh_from_db()
             self.assertEqual(scs.processing_state, constants.processing)
             with mock.patch('dataset.tasks.notify_user_upload_status.delay') as notify_patch:
-                create_variants(**create_mock.call_args[1])
-                self.assertEqual(notify_patch.call_count, 2)
-                notify_user_upload_status(,
-                notify_user_upload_status(,
-                self.assertEqual(len(mail.outbox), 2)
+                create_variants.apply(kwargs=create_mock.call_args[1])
+                self.assertEqual(notify_patch.call_count, 1)
+                notify_user_upload_status.apply(kwargs=notify_patch.call_args[1])
+                self.assertEqual(len(mail.outbox), 1)
                 scs.refresh_from_db()
                 self.assertEqual(scs.processing_state, constants.success)
 
@@ -886,52 +763,6 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         self.assertNotContains(response, 'id_score_data')
         self.assertNotContains(response, 'id_count_data')
         self.assertNotContains(response, 'id_meta_data')
-
-    def test_publishing_sets_child_and_parents_to_public(self):
-        scs = ScoreSetFactory()
-        data = self.post_data.copy()
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['publish'] = ['publish']
-        data['experiment'] = [scs.parent.pk]
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
-            ScoreSetEditView.as_view()(request, urn=scs.urn)
-            create_mock.assert_called_once()
-            create_variants(**create_mock.call_args[1])
-
-        obj = ScoreSet.objects.first()
-        self.assertFalse(obj.private)
-        self.assertFalse(obj.parent.private)
-        self.assertFalse(obj.parent.parent.private)
-
-    def test_publishing_propagates_modified_by(self):
-        scs = ScoreSetFactory()
-        data = self.post_data.copy()
-        assign_user_as_instance_admin(self.user, scs)
-        assign_user_as_instance_admin(self.user, scs.parent)
-        data['publish'] = ['publish']
-        data['experiment'] = [scs.parent.pk]
-
-        path = self.path.format(scs.urn)
-        request = self.create_request(method='post', path=path, data=data)
-        request.user = self.user
-        request.FILES.update(self.files)
-
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
-            ScoreSetEditView.as_view()(request, urn=scs.urn)
-            create_mock.assert_called_once()
-            create_variants(**create_mock.call_args[1])
-
-        obj = ScoreSet.objects.first()
-        self.assertEqual(obj.modified_by, self.user)
-        self.assertEqual(obj.experiment.modified_by, self.user)
-        self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
 
     def test_resubmit_blank_uniprot_id_deletes_offset_instance(self):
         data = self.post_data.copy()
