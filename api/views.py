@@ -3,9 +3,8 @@ import csv
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django.contrib.auth import get_user_model
-from django.http import Http404
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.views.decorators.cache import cache_page
 
 from accounts.mixins import UserFilterMixin
 
@@ -131,6 +130,7 @@ def validate_request(urn, user):
     return scoreset
 
 
+@cache_page(60 * 1440) # 24 hour cache
 def scoreset_score_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
@@ -155,6 +155,7 @@ def scoreset_score_data(request, urn):
     return response
 
 
+@cache_page(60 * 1440) # 24 hour cache
 def scoreset_count_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
@@ -179,6 +180,7 @@ def scoreset_count_data(request, urn):
     return response
 
 
+@cache_page(60 * 1440) # 24 hour cache
 def scoreset_metadata(request, urn):
     scoreset_or_response = validate_request(urn, request.user)
     if not isinstance(scoreset_or_response, ScoreSet):
