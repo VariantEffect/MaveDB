@@ -16,8 +16,6 @@
     <!-- fonts/icons -->
     <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600|Material+Icons"
           rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet">
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
@@ -35,12 +33,13 @@
           href="{% static 'main/main/img/dna.png' %}"/>
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.16/datatables.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
+          integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
   </head>
 
   <body>
     <!-- Modal for abstract preview -->
-    <div class="modal fade" id="abstract-markdown-modal" tabindex="-1" role="dialog" 
+    <div class="modal fade" id="abstract-markdown-modal" tabindex="-1" role="dialog"
         aria-labelledby="modelTitleId" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -261,6 +260,7 @@
     <!-- Ask user confirmation to remove themself as an instance admin -->
     <!-- This needs to be here in order to record the user pk from django -->
     <script type="text/javascript">
+        FontAwesomeConfig = { searchPseudoElements: true };
         user = parseInt({{ request.user.pk }});
         {% if request.user.is_superuser %}
             ignore = true;

@@ -23,7 +23,7 @@
 
     <div class="col-md-6">
       <div class="container">
-        <h1> News <i class="material-icons">announcement</i> </h1>
+        <h1> News <i class="far fa-newspaper" style="font-size: 32px"></i> </h1>
         <div class="news hover-card">
           {% if news_items %}
             {% for news_item in news_items %}
@@ -31,10 +31,10 @@
                 <div class="row">
                   <div class="col-1 align-self-center">
                     {% if news_item.level == 'Critical' %}
-                      <i class="material-icons">warning</i>
+                      <i class="fas fa-exclamation-circle"></i>
                     {% endif %}
                     {% if news_item.level == 'Important' %}
-                      <i class="material-icons">feedback</i>
+                      <i class="fas fa-exclamation"></i>
                     {% endif %}
                   </div>
                   <div class="col-10">
@@ -51,7 +51,7 @@
       </div>
 
       <div class="container pt-1">
-        <h1> Highlights <i class="material-icons">search</i> </h1>
+        <h1> Highlights <i class="fas fa-search" style="font-size: 32px"></i> </h1>
         <div class="container highlights hover-card">
           <div class="row">
             <div class="col">
@@ -92,7 +92,7 @@
       </div>
 
     <div class="container pt-1">
-      <span><h1> Quick search <i class="material-icons">search</i> </h1></span>
+      <span><h1> Quick search <i class="fas fa-search" style="font-size: 32px"></i> </h1></span>
       <div class="container hover-card quick-search">
         <div class="row">
           <div class="col">

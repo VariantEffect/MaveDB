@@ -8,7 +8,7 @@
     {% if instance.class_name == "scoreset" %}
       <div class="dropdown">
         <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Downloads
+          <i class="fas fa-download"></i>
         </button>
         <div class="dropdown-menu" aria-labelledby="scoresetDropDown">
           <a class="dropdown-item" href="{% url 'dataset:scores_download' instance.urn %}">Scores</a>
