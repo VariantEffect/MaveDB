@@ -1,15 +1,23 @@
 from django.core.urlresolvers import reverse_lazy
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
 from django.core import mail
 from django.core.exceptions import PermissionDenied
 
 from dataset import constants
+from dataset.utilities import delete_instance
 from dataset import models as dataset_models
-from dataset.factories import ExperimentSetFactory, ScoreSetFactory
+from dataset.tasks import publish_scoreset, email_admins
+from accounts.tasks import notify_user_upload_status
+from dataset.models.scoreset import ScoreSet
+from dataset.factories import (
+    ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory
+)
+from variant.factories import VariantFactory
 
 from core.utilities.tests import TestMessageMixin
+from core.models import FailedTask
 
 from ..factories import UserFactory
 from ..permissions import (
@@ -83,7 +91,7 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         self.assertContains(response, user.profile.email)
 
 
-class TestProfileHomeView(TestCase, TestMessageMixin):
+class TestProfileDeleteInstance(TestCase, TestMessageMixin):
     """
     Test the home view loads the correct template and requires a login.
     """
@@ -180,12 +188,12 @@ class TestProfileHomeView(TestCase, TestMessageMixin):
         )
         request.user = user
         response = profile_view(request)
-        self.assertContains(response, "Experiments must be deleted")
+        self.assertContains(response, "Child Experiments must be deleted")
         self.assertEqual(dataset_models.experimentset.ExperimentSet.objects.count(), 1)
         self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
 
-    def test_can_delete_experiment_if_it_has_children(self):
+    def test_cannot_delete_experiment_if_it_has_children(self):
         user = UserFactory()
         instance = ScoreSetFactory()
         instance.publish()
@@ -197,7 +205,7 @@ class TestProfileHomeView(TestCase, TestMessageMixin):
         )
         request.user = user
         response = profile_view(request)
-        self.assertContains(response, "Score Sets must be deleted")
+        self.assertContains(response, "Child Score Sets must be deleted")
         self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
 
@@ -517,3 +525,132 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         request.user = self.alice
         response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
+
+
+
+class TestPublish(TestCase, TestMessageMixin):
+    
+    def setUp(self):
+        self.user = UserFactory()
+        self.scoreset = ScoreSetWithTargetFactory()
+        self.path = '/profile/'
+        self.factory = RequestFactory()
+        self.post_data = {'publish': [self.scoreset.urn]}
+        for i in range(3):
+            VariantFactory(scoreset=self.scoreset)
+            
+    def make_request(self, user=None):
+        data = self.post_data.copy()
+        self.scoreset.add_administrators(self.user if user is None else user)
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user if user is None else user
+        return request
+    
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publishing_updates_states_success(self, publish_mock):
+        profile_view(self.make_request())
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.processing)
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.success)
+        
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publishing_updates_states_fail(self, publish_mock):
+        profile_view(self.make_request())
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.processing)
+        publish_mock.assert_called_once()
+
+        publish_scoreset.scoreset = self.scoreset
+        publish_scoreset.base_url = ""
+        publish_scoreset.user = self.user
+        publish_scoreset.urn = self.scoreset.urn
+        publish_scoreset.on_failure(
+            exc=None, task_id=1, args=(), einfo=None, kwargs={})
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.failed)
+        
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publishing_sets_child_and_parents_to_public(self, publish_mock):
+        self.assertTrue(self.scoreset.private)
+        self.assertTrue(self.scoreset.parent.private)
+        self.assertTrue(self.scoreset.parent.parent.private)
+        
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+
+        obj = ScoreSet.objects.first()
+        self.assertFalse(obj.private)
+        self.assertFalse(obj.parent.private)
+        self.assertFalse(obj.parent.parent.private)
+
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publishing_propagates_modified_by(self, publish_mock):
+        self.assertIsNone(self.scoreset.modified_by)
+        self.assertIsNone(self.scoreset.parent.modified_by)
+        self.assertIsNone(self.scoreset.parent.parent.modified_by)
+        
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+
+        obj = ScoreSet.objects.first()
+        self.assertEqual(obj.modified_by, self.user)
+        self.assertEqual(obj.experiment.modified_by, self.user)
+        self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
+
+    @mock.patch('core.tasks.email_admins.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publish_emails_admins_on_success(self, publish_mock, email_mock):
+        user = UserFactory(is_superuser=True)
+        user.email = "admin@admin.com"
+        user.save()
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        email_mock.assert_called_once()
+        email_admins.apply(kwargs=email_mock.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+
+    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publish_emails_user_on_success(self, publish_mock, email_mock):
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        
+        email_mock.assert_called_once()
+        notify_user_upload_status.apply(kwargs=email_mock.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertIn('processed successfully', mail.outbox[0].body)
+    
+    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publish_emails_user_on_fail(self, publish_mock, email_mock):
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        
+        delete_instance(self.scoreset)
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        
+        email_mock.assert_called_once()
+        notify_user_upload_status.apply(kwargs=email_mock.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertIn('could not be processed', mail.outbox[0].body)
+        self.assertEqual(FailedTask.objects.count(), 1)
+
+    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    def test_publish_failure_saves_task(self, publish_mock):
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+    
+        delete_instance(self.scoreset)
+        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        self.assertEqual(FailedTask.objects.count(), 1)
