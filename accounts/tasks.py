@@ -10,12 +10,10 @@ from mavedb import celery_app
 
 from dataset import models
 
-from variant.models import Variant
-
 from urn.models import get_model_by_urn
 
 
-logger = get_task_logger(__name__)
+logger = get_task_logger('accounts.tasks')
 User = get_user_model()
 
 
@@ -86,8 +84,9 @@ def notify_user_group_change(base_url, user, urn, action, group):
         )
     else:
         logger.error(
-            "Tried to notify user '{}' from accounts.utilities.notify_user_group_change "
-            "but could not find an email address.".format(user.username)
+            "Tried to notify user '{}' from accounts.utilities.notify_"
+            "user_group_change but could not find an email "
+            "address.".format(user.username)
         )
 
 

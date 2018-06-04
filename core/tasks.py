@@ -16,7 +16,7 @@ from .models import FailedTask
 
 
 User = get_user_model()
-logger = get_task_logger(__name__)
+logger = get_task_logger('core.tasks')
 
 
 class LogErrorsTask(Task):
@@ -90,7 +90,7 @@ class LogErrorsTask(Task):
             name=self.name.split('.')[-1],
             exception_class=exc.__class__.__name__,
             exception_msg=str(exc).strip(),
-            traceback=str(traceback).strip(), # einfo
+            traceback=str(traceback).strip(),  # einfo
             user=user,
         )
         if args:

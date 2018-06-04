@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
+from celery.utils.log import get_task_logger
+
 from accounts.tasks import notify_user_upload_status
 from core.tasks import email_admins, LogErrorsTask
 
@@ -13,6 +15,7 @@ from .models.scoreset import ScoreSet
 
 
 User = get_user_model()
+logger = get_task_logger('dataset.tasks')
 
 
 class BaseDatasetTask(LogErrorsTask):
