@@ -72,14 +72,24 @@ class LogErrorsTask(Task):
             The return value of this handler is ignored.
         """
         user = self.get_user(user)
+
+        # The kwargs can be potentially big in dataset tasks so truncate
+        # the variants key before logging.
+        str_kwargs = kwargs.copy()
+        if 'variants' in str_kwargs:
+            str_kwargs['variants'] = {
+                k: v for (k, v) in str_kwargs['variants'].items()[: 100]}
+
         logger.exception("{0} with id {1} called with args={2}, kwargs={3} "
                          "raised:\n\n{4}\n\nInfo:\n\n{5}".format(
-            self.name, task_id, args, kwargs, exc, einfo
+            self.name, task_id, args, str_kwargs, exc, einfo
         ))
         self.save_failed_task(exc, task_id, args, kwargs, einfo, user)
-        super(LogErrorsTask, self).on_failure(exc, task_id, args, kwargs, einfo)
+        super(LogErrorsTask, self).on_failure(
+            exc, task_id, args, kwargs, einfo)
     
-    def save_failed_task(self, exc, task_id, args, kwargs, traceback, user=None):
+    def save_failed_task(self, exc, task_id, args, kwargs, traceback,
+                         user=None):
         """
         Save a failed task. If it exists, the modification_date and failure
         counter are updated.
