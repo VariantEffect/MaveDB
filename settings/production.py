@@ -1,5 +1,4 @@
 # settings/production.py
-
 from .base import *
 
 DEBUG = False
@@ -131,3 +130,51 @@ LOGGING = {
 # EMAIL_HOST_PASSWORD = ''
 # EMAIL_USE_TLS = False
 # EMAIL_USE_SSL = False
+
+
+# ------ CELERY CONFIG ------------------- #
+# Celery needs these in each settings file
+
+broker_url = 'amqp://localhost:5672//'
+task_ignore_result = True
+worker_hijack_root_logger = False
+
+task_serializer = 'json'
+accept_content = ('json',)
+result_serializer = 'json'
+
+task_create_missing_queues = True
+task_routes = {
+    'dataset.tasks.*': {'queue': 'long'},
+    'core.tasks.*': {'queue': 'quick'},
+    'accounts.tasks.*': {'queue': 'quick'},
+}
+
+# Celery needs this for autodiscover to work
+INSTALLED_APPS = [
+    'metadata',
+    'main',
+    'genome',
+    'urn',
+    'variant',
+    'dataset',
+    'search',
+    'api',
+    'accounts',
+    'core',
+
+    'guardian',
+    'reversion',
+    'social_django',
+    'django_extensions',
+    'widget_tweaks',
+    'rest_framework',
+    'django_filters',
+
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]

@@ -106,6 +106,3 @@ LOGGING = {
         },
     },
 }
-
-# Allows tasks to be run synchronously for local tests
-task_always_eager = True

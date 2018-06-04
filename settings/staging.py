@@ -1,5 +1,4 @@
 # settings/staging.py
-
 from .base import *
 
 DEBUG = False
@@ -9,8 +8,7 @@ USE_SOCIAL_AUTH = True
 
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
-                 '.compute.amazonaws.com', '13.210.169.246',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.compute.amazonaws.com',]
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -110,3 +108,49 @@ LOGGING = {
     },
 }
 
+# ------ CELERY CONFIG ------------------- #
+# Celery needs these in each settings file
+
+broker_url = 'amqp://localhost:5672//'
+task_ignore_result = True
+worker_hijack_root_logger = False
+
+task_serializer = 'json'
+accept_content = ('json',)
+result_serializer = 'json'
+
+task_create_missing_queues = True
+task_routes = {
+    'dataset.tasks.*': {'queue': 'long'},
+    'core.tasks.*': {'queue': 'quick'},
+    'accounts.tasks.*': {'queue': 'quick'},
+}
+
+# Celery needs this for autodiscover to work
+INSTALLED_APPS = [
+    'metadata',
+    'main',
+    'genome',
+    'urn',
+    'variant',
+    'dataset',
+    'search',
+    'api',
+    'accounts',
+    'core',
+
+    'guardian',
+    'reversion',
+    'social_django',
+    'django_extensions',
+    'widget_tweaks',
+    'rest_framework',
+    'django_filters',
+
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
