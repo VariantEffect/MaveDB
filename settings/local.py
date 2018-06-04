@@ -53,6 +53,30 @@ LOGGING = {
             'filename': './info.log',
             'formatter': 'verbose'
         },
+        'celery': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './celery.log',
+            'formatter': 'verbose'
+        },
+        'core.tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './celery_core_tasks.log',
+            'formatter': 'verbose'
+        },
+        'accounts.tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './celery_accounts_tasks.log',
+            'formatter': 'verbose'
+        },
+        'dataset.tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './celery_dataset_tasks.log',
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django': {
@@ -60,8 +84,28 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True
         },
+        'celery': {
+            'handlers': ['celery'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'core.tasks': {
+            'handlers': ['core.tasks'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'accounts.tasks': {
+            'handlers': ['accounts.tasks'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'dataset.tasks': {
+            'handlers': ['dataset.tasks'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
     },
 }
 
 # Allows tasks to be run synchronously for local tests
-CELERY_TASK_ALWAYS_EAGER = True
+task_always_eager = True

@@ -209,9 +209,17 @@ REST_FRAMEWORK = {
 }
 
 # ------ CELERY CONFIG ------------------- #
-CELERY_BROKER_URL = 'amqp://localhost:5672//'
-CELERY_IGNORE_RESULT = True
+broker_url = 'amqp://localhost:5672//'
+task_ignore_result = True
+worker_hijack_root_logger = False
 
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ('json', 'pickle',)
-CELERY_RESULT_SERIALIZER = 'json'
+task_serializer = 'json'
+accept_content = ('json',)
+result_serializer = 'json'
+
+task_create_missing_queues = True
+task_routes = {
+    'dataset.tasks.*': {'queue': 'long'},
+    'core.tasks.*': {'queue': 'quick'},
+    'accounts.tasks.*': {'queue': 'quick'},
+}

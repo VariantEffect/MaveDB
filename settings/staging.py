@@ -56,12 +56,56 @@ LOGGING = {
             'filename': '/usr/local/webapps/logs/mavedb.log',
             'formatter': 'verbose'
         },
+        'celery': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/usr/local/webapps/logs/celery.log',
+            'formatter': 'verbose'
+        },
+        'core.tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/usr/local/webapps/logs/celery_core_tasks.log',
+            'formatter': 'verbose'
+        },
+        'accounts.tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/usr/local/webapps/logs/celery_accounts_tasks.log',
+            'formatter': 'verbose'
+        },
+        'dataset.tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/usr/local/webapps/logs/celery_dataset_tasks.log',
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
             'level': 'DEBUG',
-            'propagate': True
+            'propagate': False
+        },
+        'celery': {
+            'handlers': ['celery'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'core.tasks': {
+            'handlers': ['core.tasks'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'accounts.tasks': {
+            'handlers': ['accounts.tasks'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'dataset.tasks': {
+            'handlers': ['dataset.tasks'],
+            'level': 'DEBUG',
+            'propagate': False
         },
     },
 }
