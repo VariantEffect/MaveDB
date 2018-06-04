@@ -149,6 +149,15 @@ provided a minial dependency-free version of Erlang. You will need to add an add
 repository by following the CentOS 6 instructions [here](https://github.com/rabbitmq/erlang-rpm#bintray-yum-repositories). 
 Once you have added the additional repository you can install erlang by invoking the `yum` command
 
+	# In /etc/yum.repos.d/rabbitmq-erlang.repo
+	[rabbitmq-erlang]
+	name=rabbitmq-erlang
+	baseurl=https://dl.bintray.com/rabbitmq/rpm/erlang/20/el/6
+	gpgcheck=1
+	gpgkey=https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc
+	repo_gpgcheck=0
+	enabled=1
+
     sudo yum -y install erlang
     
 There are several ways to install the `rabbitmq-server`. The quickest is to download
@@ -161,18 +170,18 @@ Once you have downloaded the rpm, follow [these](https://www.rabbitmq.com/instal
 summarize
 
 	rpm --import https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
-	yum install rabbitmq-server-3.7.5-1.el6.noarch.rpm
+	sudo yum -y install rabbitmq-server-3.7.5-1.el6.noarch.rpm
 
 Once the installation has completed, you will need to start the RabbitMQ service. By default,
 this service listens on port 5672, which you may need to configure. To start the daemon by default 
 when the system boots, as an administrator run
 
-    chkconfig rabbitmq-server on
+    sudo chkconfig rabbitmq-server on
     
 As an administrator, you can start or stop the service with:
 
-	/sbin/service rabbitmq-server start
-	/sbin/service rabbitmq-server stop
+	sudo /sbin/service rabbitmq-server start
+	sudo /sbin/service rabbitmq-server stop
 	
 For additional information see [here](https://www.rabbitmq.com/install-rpm.html#running-rpm).
 
