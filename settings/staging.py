@@ -83,27 +83,27 @@ LOGGING = {
         'django': {
             'handlers': ['file'],
             'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         },
         'celery': {
             'handlers': ['celery'],
             'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         },
         'core.tasks': {
             'handlers': ['core.tasks'],
             'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         },
         'accounts.tasks': {
             'handlers': ['accounts.tasks'],
             'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         },
         'dataset.tasks': {
             'handlers': ['dataset.tasks'],
             'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         },
     },
 }
