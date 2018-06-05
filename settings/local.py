@@ -50,31 +50,31 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': './info.log',
+            'filename': 'logs/info.log',
             'formatter': 'verbose'
         },
         'celery': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': './celery.log',
+            'filename': 'logs/celery.log',
             'formatter': 'verbose'
         },
         'core.tasks': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': './celery_core_tasks.log',
+            'filename': 'logs/celery_core_tasks.log',
             'formatter': 'verbose'
         },
         'accounts.tasks': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': './celery_accounts_tasks.log',
+            'filename': 'logs/celery_accounts_tasks.log',
             'formatter': 'verbose'
         },
         'dataset.tasks': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': './celery_dataset_tasks.log',
+            'filename': 'logs/celery_dataset_tasks.log',
             'formatter': 'verbose'
         },
     },
