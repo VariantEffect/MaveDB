@@ -601,3 +601,8 @@ span.select2.select2-container.select2-container--default {
     }
 }
 
+a[href^="http://"]:after,
+a[href^="https://"]:after {
+  content: url('../img/external_link.png');
+  margin: 0 0 0 5px;
+}
