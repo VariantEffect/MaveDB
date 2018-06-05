@@ -4,7 +4,7 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-auto">
-        <h2> {{ request.user.get_display_name }} </h2>
+        <h2> {{ request.user.profile.get_display_name_hyperlink }} </h2>
       </div>
       <div class="col-auto">
         <div class="dropdown pull-left">
