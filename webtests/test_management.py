@@ -15,7 +15,7 @@ class TestPublishScoreSet(LiveServerTestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox()
+        self.browser = webdriver.Firefox(log_path='./logs/geckodriver.log')
     
     def authenticate(self):
         authenticate_webdriver(
