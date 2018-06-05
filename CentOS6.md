@@ -1,5 +1,4 @@
 # MAVEDB installation notes
-
 MAVEDB is Django website with Postgres as the backend. Its purpose is to allow 
 researchers to deposit and retrieve deep mutational scanning datasets. This file 
 provides step-by-step instructions for installing MAVEDB starting with the 
@@ -42,7 +41,6 @@ to disable all `iptables` firewall rules using the following script:
 
 
 ## Updating yum and adding basic dependencies
-
 Since this is a fresh installation of CentOS, first update the package manager 
 and add some basic dependencies.
 
@@ -54,8 +52,8 @@ and add some basic dependencies.
     sudo yum -y install wget
     sudo yum -y install httpd-devel
 
-## Adding Python 3.4
 
+## Adding Python 3.4
 Python 3.4 is the earliest version of Python supported by the version of Django 
 (1.11) that we are using. We will also need `pip` to install `virtualenv`. All 
 further Python packages will be added within a new virtual environment that 
@@ -66,8 +64,8 @@ contains the project.
     sudo python3 easy_install.py pip
     sudo pip3 install virtualenv
 
-## Installing Postgres using yum
 
+## Installing Postgres using yum
 We need a newer version of PostgreSQL than is available on `yum`, so we can 
 follow the 
 [guide on postgresl.org](https://wiki.postgresql.org/wiki/YUM_Installation). 
@@ -85,8 +83,8 @@ add them ourselves.
     sudo /usr/sbin/update-alternatives --install /usr/bin/pg_ctl pgsql-pg_ctl /usr/pgsql-9.6/bin/pg_ctl 960
     sudo /usr/sbin/update-alternatives --install /usr/bin/pg_isready pgsql-pg_isready /usr/pgsql-9.6/bin/pg_isready 960
 
-### Postgres server setup
 
+### Postgres server setup
 This section gets the Postgres install ready for the Django project. First, set 
 up and started the server.
 
@@ -121,8 +119,8 @@ There were issues with authentication using `ident` so I use `md5` instead.
 Depending on the details of your installation, more sophisticated access 
 control may be necessary.
 
-## Installing pandoc
 
+## Installing pandoc
 The latest version of `pandoc` that was available through `yum` is 1.9 and it 
 doesn't support some of the features we need. This step builds `pandoc` from 
 source using `stack`. The `--flag pandoc:embed_data_files` option creates a 
@@ -141,6 +139,7 @@ This was by far the most time consuming part of the whole process. Users on a
 low-memory EC2 instance will not have enough memory to build `pandoc`, but it 
 can be copied from another system if it was built with 
 `--flag pandoc:embed_data_files`.
+
 
 ## Installing and configuring RabbitMQ (Incomplete)
 Using celery to run long running processes requires the broker-messaging backend RabbitMQ.
@@ -185,42 +184,80 @@ As an administrator, you can start or stop the service with:
 	
 For additional information see [here](https://www.rabbitmq.com/install-rpm.html#running-rpm).
 
-## Setting up the MAVEDB virtual environment
 
+## Setting up the MAVEDB virtual environment
 Having installed all the dependencies, we can create and activate the Python 
 virtual environment and install dependencies.
 
-    mkdir ~/mavedb_project
-    cd ~/mavedb_project
-    virtualenv mavedb_venv
-    source mavedb_venv/bin/activate
+    mkdir ~/usr/local/venvs/
+    cd ~/usr/local/venvs/
+    virtualenv mavedb
+    source mavedb/bin/activate
 
-# Documentation updated for AWS up to this point
 
 ## Installing MAVEDB
-
 Next I downloaded the source code for the project (note: this is in a private 
 GitHub repository) and set up the database. Database login details are stored 
-in `'~/mavedb_project/mavedb/mavedb/settings.py'`.
+in `settings/secrets.json`. This file is not tracked by GitHub. First create
+the directories:
+
+    sudo mkdir /usr/local/webapps/
+    sudo mkdir /usr/local/webapps/logs
+
+The user responsible for these directories should be the owner. In our case this
+was the default `centos` user.
+
+    sudo chown centos:centos -R /usr/local/webapps/
+
+To clone the project. **Warning: Do not install the requirements with `sudo` as this
+will use the system python, and not the one in your mavedb environment. This
+will cause issues with mod-wsgi and Apache later on.**
 
     git clone -b develop https://afrubin@github.com/fowlerlab/mavedb
     pip3 install -r mavedb/requirements.txt
     cd mavedb
     python manage.py migrate
 
+Note you will need to create the `settings/secrets.json` file following the format:
+
+    {
+      "orcid_key": "", 
+      "orcid_secret": "",
+      "secret_key": <django-generated private key>,
+      "database_user": "mave_admin",
+      "database_password": "abc123",
+      "database_host": "localhost",
+      "database_port": ""
+    }
+    
+You can generate a random key using the following code snippet in a python shell:
+
+    from django.utils.crypto import get_random_string
+    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+    get_random_string(256, chars)
+
 Since the website contains static images, these need to be placed in a location 
 where Apache can find them.
 
-    python manage.py collectstatic
-    python manage.py createlicences
-    python manage.py createreferences
+    python manage.py collectstatic --settings=<optional|default:settings.production>
+    python manage.py createlicences --settings=<optional|default:settings.production>
+    python manage.py createreferences --settings=<optional|default:settings.production>
+    
+Once these have been run the log files should have been created. There were permission issues 
+when Apache tries to write to the `logs` folder. Ensure that were resolved by 
+giving `rwx` permission to anyone. This is not ideal in a production environment however.
+
+    sudo chown 777 -R /usr/local/webapps/logs/
+
 
 ## Configuring Celery
 Running celery as a daemon process will requrie additional configuration. First
 copy the celeryd configuration file (no extension) to `/etc/default/celeryd`. Next
 you will need to copy the celeryd bash script to `/etc/init.d/celeryd`. You may
 need to make the celeryd bash script executable
-
+       
+    sudo cp /usr/local/webapps/mavedb/celeryd /etc/default/celeryd
+    sudo cp /usr/local/webapps/mavedb/celeryd.sh /etc/init.d/celeryd
 	sudo chmod 755 /etc/init.d/celeryd
 	sudo chown root:root /etc/init.d/celeryd
 	
@@ -235,15 +272,36 @@ required so that tasks can be discovered by the daemon.
 You may also need to grant write privileges for the celery user to the log 
 default directories
 
-	chown -R celery:celery /var/log/celery/
-	chown -R celery:celery /var/run/celery/ 
+	sudo chown -R celery:celery /var/log/celery/
+	sudo chown -R celery:celery /var/run/celery/ 
 	
 To use the celery script
 
 	sudo /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
+	
+	
+## Issues with SELinux
+SElinux restricted Apache's access to the mavedb project files, mavedb log files and the pandoc binary. 
+I had to run these two commands on the mavedb project folder, log folder and non-recusrively 
+for the pandoc binary in `/usr/local/bin`. Make sure the log file has already
+been created. You can do this by first spinning up the local server via
+`python manage.py runserver --settings=settings.local`.
 
-### Starting the server
+    sudo semanage fcontext -a -t httpd_sys_rw_content_t '/usr/local/webapps/mavedb(/.*)?'
+    sudo restorecon -R -v /usr/local/webapps/mavedb
 
+    sudo semanage fcontext -a -t httpd_sys_rw_content_t '/usr/local/webapps/logs(/.*)?'
+    sudo restorecon -R -v /usr/local/webapps/logs
+    
+    sudo semanage fcontext -a -t httpd_sys_rw_content_t '/usr/local/bin/pandoc'
+    sudo restorecon -v /usr/local/bin/pandoc
+
+Additonally run this command to allow connections on port 80
+    
+    sudo setsebool -P httpd_can_network_connect 1
+
+
+## Quick webserver spin-up
 We can start now the server using the `mod_wsgi-express` wrapper. The `mod_wsgi` 
 [documentation pages](http://modwsgi.readthedocs.io/en/develop/index.html) have 
 details about how to install it from source and modify Apache's settings. The 
@@ -254,6 +312,66 @@ following command can successfully start the server after a reboot.
     mod_wsgi-express start-server \
         --working-directory mavedb \
         --url-alias /static mavedb/static \
-        --application-type module mavedb.wsgi
+        --application-type module mavedb.wsgi        
+        
+
+## Server Daemonization and Apache config
+To install the mod_wsgi-express module run the following comand with the mavedb
+environment activated.
+    
+    mod_wsgi-express install-module # note the install path name
+
+Open `/etc/httpd/conf/httpd.conf` and paste the following contents to the
+bottom of the file:
+
+    LoadModule wsgi_module modules/<name of mod_wsgi_module>
+    WSGISocketPrefix run/wsgi
+    WSGIDaemonProcess mavedb python-path=/usr/local/webapps/mavedb:/usr/local/venvs/mavedb/lib/python3.4/site-packages
+    WSGIProcessGroup mavedb
+    
+    Alias /static/ /usr/local/webapps/mavedb/static/
+    
+    <Directory /usr/local/webapps/mavedb/static>
+        Allow from all
+    </Directory>
+    
+    <Directory /usr/local/webapps/mavedb/media>
+        Allow from all
+    </Directory>
+    
+    WSGIScriptAlias / /usr/local/webapps/mavedb/mavedb/wsgi.py
+    
+    <Directory /usr/local/webapps/mavedb/mavedb>
+        <Files wsgi.py>
+            Allow from all
+        </Files>
+    </Directory>
+
+Make sure to replace `<name of mod_wsgi_module>` with you mod-wsgi module file
+name.
 
 
+# .bashrc Time-Savers
+You can copy these commands into your `~/.bashrc` file. 
+Make sure to run `source ~/.bashrc` to load the changes into your current shell
+session.
+
+    export DJANGO_SETTINGS_MODULE=settings.staging
+    alias mavedbenv='source /usr/local/venvs/mavedb/bin/activate'
+    alias update-mavedb='cd-mavedb; sudo git pull; sudo apachectl restart; cd $OLDPWD'
+   
+    alias mavedblog='sudo vi /usr/local/webapps/logs/mavedb.log'
+    alias httperrorlog='sudo vi /var/log/httpd/error_log'
+    alias httpaccesslog='sudo vi /var/log/httpd/access_log'
+    alias celerylog='sudo vi /var/log/celery/worker1.log'
+    
+    alias edit-celerycfg='sudo vi /etc/default/celeryd'
+    alias edit-celeryinit='sudo vi /etc/init.d/celeryd'
+    alias run-celery='sudo /etc/init.d/celeryd'
+    alias run-rabbitmq='sudo /sbin/service rabbitmq-server'
+        
+    alias cd-mavedb='cd /usr/local/webapps/mavedb/'
+    alias cd-mavedb-logs='cd /usr/local/webapps/mavedb/'
+    alias cd-rmq-logs='sudo cd /var/log/rabbitmq/'
+    alias cd-celery-logs='sudo cd /var/log/celery/'
+    
