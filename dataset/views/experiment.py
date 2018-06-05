@@ -9,6 +9,7 @@ from core.utilities.versioning import track_changes
 
 from ..forms.experiment import ExperimentForm, ExperimentEditForm
 from ..models.experiment import Experiment
+from ..mixins import ExperimentAjaxMixin
 
 from .base import (
     DatasetModelView, CreateDatasetModelView, UpdateDatasetModelView
@@ -44,7 +45,7 @@ class ExperimentDetailView(DatasetModelView):
         return context
 
 
-class ExperimentCreateView(CreateDatasetModelView):
+class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
     """
     This view serves up the form:
         - `ExperimentForm` for the instantiation of an Experiment instnace.
@@ -107,7 +108,7 @@ class ExperimentCreateView(CreateDatasetModelView):
         )
 
 
-class ExperimentEditView(UpdateDatasetModelView):
+class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetModelView):
     """
     This view serves up the form:
         - `ExperimentForm` for the instantiation of an Experiment instnace.
