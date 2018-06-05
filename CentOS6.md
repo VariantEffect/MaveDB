@@ -192,8 +192,12 @@ virtual environment and install dependencies.
 
     mkdir ~/usr/local/venvs/
     cd ~/usr/local/venvs/
+    sudo chown centos:centos -R /usr/local/venvs/
     virtualenv mavedb
     source mavedb/bin/activate
+    
+**Warning:** Do not run virtualenv with `sudo` as this might initialize the
+environment with the incorrect Python version.
 
 
 ## Installing MAVEDB
@@ -372,7 +376,7 @@ session.
     alias run-rabbitmq='sudo /sbin/service rabbitmq-server'
         
     alias cd-mavedb='cd /usr/local/webapps/mavedb/'
-    alias cd-mavedb-logs='cd /usr/local/webapps/logs/'
+    alias cd-mavedb-logs='cd /usr/local/webapps/logsv/'
     alias cd-rmq-logs='sudo cd /var/log/rabbitmq/'
     alias cd-celery-logs='sudo cd /var/log/celery/'
     
