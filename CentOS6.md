@@ -51,6 +51,7 @@ and add some basic dependencies.
     sudo yum -y install zlib-devel
     sudo yum -y install wget
     sudo yum -y install httpd-devel
+    sudo yum -y install hg
 
 
 ## Adding Python 3.4
