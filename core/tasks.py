@@ -72,14 +72,12 @@ class LogErrorsTask(Task):
             The return value of this handler is ignored.
         """
         user = self.get_user(user)
-
         # The kwargs can be potentially big in dataset tasks so truncate
         # the variants key before logging.
         str_kwargs = kwargs.copy()
-        if 'variants' in str_kwargs:
-            str_kwargs['variants'] = {
-                k: v for (k, v) in str_kwargs['variants'].items()[: 100]}
-
+        variants = str(str_kwargs.get('variants', {}))[0:250]
+        if variants in str_kwargs:
+            str_kwargs['variants'] = variants
         logger.exception("{0} with id {1} called with args={2}, kwargs={3} "
                          "raised:\n\n{4}\n\nInfo:\n\n{5}".format(
             self.name, task_id, args, str_kwargs, exc, einfo
