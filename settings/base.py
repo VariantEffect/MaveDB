@@ -209,6 +209,7 @@ REST_FRAMEWORK = {
 }
 
 # ------ CELERY CONFIG ------------------- #
+# Celery needs these in each settings file
 broker_url = 'amqp://localhost:5672//'
 task_ignore_result = True
 worker_hijack_root_logger = False
@@ -217,6 +218,7 @@ task_serializer = 'json'
 accept_content = ('json',)
 result_serializer = 'json'
 
+task_always_eager = True
 task_create_missing_queues = True
 task_routes = {
     'dataset.tasks.publish_variants': {'queue': 'long'},
