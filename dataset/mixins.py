@@ -1,5 +1,4 @@
 import json
-import logging
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
@@ -8,9 +7,14 @@ from django.db import transaction
 
 from accounts.permissions import user_is_anonymous, PermissionTypes
 from search.mixins import logger, FilterMixin
+
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
+
 from dataset.models.experiment import Experiment
+from dataset.forms.experiment import ExperimentForm, ExperimentEditForm
+from dataset.forms.scoreset import ScoreSetForm, ScoreSetEditForm
+
 from genome.models import TargetGene
 from genome.serializers import TargetGeneSerializer
 
@@ -264,7 +268,7 @@ class DatasetUrnMixin:
     """
     Overrides the `get_object` method of a detail-based view. Expects either
     `model` or `model_class` to be defined. `model` is defined by Django in
-    DetailView.
+    DetailView. `model` is prioritized over `model_class`.
     """
     model_class = None
 
@@ -303,10 +307,7 @@ class DatasetPermissionMixin(PermissionRequiredMixin):
         elif is_private and perm != 'dataset.can_view' and anon_user:
             return False
         else:
-            perms = self.get_permission_required()
-            if instance.private:
-                return user.has_perms(perms, instance)
-            return True
+            return user.has_perms(self.get_permission_required(), instance)
 
 
 class DatasetFormViewContextMixin:
@@ -374,7 +375,7 @@ class DatasetFormViewContextMixin:
 class MultiFormMixin:
     """
     Mixin contains a helper function to instantiate an arbitrary form. For
-    each form in `forms`you must define:
+    each key in `forms` you must define:
 
     - `get_<key>_form` : Instantiates the form referenced by `key`.
        Must have the parameters `**kwargs` and `form_class`.
@@ -385,6 +386,10 @@ class MultiFormMixin:
 
     Generic methods with only pass on POST data/files. Write a custom function
     if you need GET data passed to the class constructor.
+    
+    Notes
+    -----
+    `restricted_forms` is currently unused.
     """
     forms = {}
     # Forms for update views form when an instance if not private.
@@ -395,10 +400,6 @@ class MultiFormMixin:
     kwargs_string = 'get_{}_form_kwargs'
 
     def get_generic_form(self, form_class, **form_kwargs):
-        if 'data' not in form_kwargs:
-            form_kwargs['data'] = self.get_form_data()
-        if 'files' not in form_kwargs:
-            form_kwargs['files'] = self.get_form_files()
         return form_class(**form_kwargs)
 
     def get_generic_kwargs(self, key, **kwargs):
@@ -410,6 +411,14 @@ class MultiFormMixin:
             kwargs['files'] = self.get_form_files()
         if 'prefix' not in kwargs:
             kwargs['prefix'] = self.prefixes.get(key, None)
+        
+        form_class = self.forms[key]
+        has_attr = form_class in \
+                   (ExperimentForm, ScoreSetForm,
+                    ExperimentEditForm, ScoreSetEditForm,)
+        if has_attr and 'user' not in kwargs:
+            kwargs['user'] = self.request.user
+        
         return kwargs
 
     def get_form_files(self):
@@ -464,22 +473,14 @@ class MultiFormMixin:
         for key, form in forms.items():
             form.save()
         return forms
-
-
-class ScoreSetAjaxMixin:
-    def get_ajax(self, request, *args, **kwargs):
+    
+    
+class DataSetAjaxMixin:
+    def get_ajax(self, request, return_dict=False, *args, **kwargs):
         # If the request is ajax, then it's for previewing the abstract
         # or method description. This code is coupled with base.js. Changes
         # here might break the javascript code.
         data = {}
-        if 'targetId' in request.GET:
-            pk = request.GET.get("targetId", "")
-            if pk and TargetGene.objects.filter(pk=pk).count():
-                targetgene = TargetGene.objects.get(pk=pk)
-                data.update(TargetGeneSerializer(targetgene).data)
-                map = targetgene.reference_maps.first()
-                if map is not None:
-                    data['genome'] = map.genome.pk
         if 'abstractText' in request.GET:
             data.update({
                 "abstractText": convert_md_to_html(
@@ -490,13 +491,47 @@ class ScoreSetAjaxMixin:
                 "methodText": convert_md_to_html(
                     request.GET.get("methodText", "")),
             })
+        if return_dict:
+            return data
+        else:
+            return HttpResponse(
+                json.dumps(data), content_type="application/json")
+
+
+class ExperimentAjaxMixin(DataSetAjaxMixin):
+    pass
+
+
+class ExperimentSetAjaxMixin(DataSetAjaxMixin):
+    pass
+
+
+class ScoreSetAjaxMixin(DataSetAjaxMixin):
+    """
+    Simple mixin to serialize a target gene for form target autocomplete and
+    also to obtain the scoresets for a selected experiment to dynamically fill
+    the replaces options with allowable selections.
+    """
+    def get_ajax(self, request, *args, **kwargs):
+        # If the request is ajax, then it's for previewing the abstract
+        # or method description. This code is coupled with base.js. Changes
+        # here might break the javascript code.
+        data = super().get_ajax(request, return_dict=True, *args, **kwargs)
+        if 'targetId' in request.GET:
+            pk = request.GET.get("targetId", "")
+            if pk and TargetGene.objects.filter(pk=pk).count():
+                targetgene = TargetGene.objects.get(pk=pk)
+                data.update(TargetGeneSerializer(targetgene).data)
+                map = targetgene.reference_maps.first()
+                if map is not None:
+                    data['genome'] = map.genome.pk
         if 'experiment' in request.GET:
             pk = request.GET.get("experiment", "")
             if pk and Experiment.objects.filter(pk=pk).count():
                 experiment = Experiment.objects.get(pk=pk)
                 scoresets = [
                     (s.pk, s.urn) for s in experiment.scoresets.order_by('urn')
-                    if self.request.user.has_perm(PermissionTypes.CAN_EDIT, s) \
+                    if request.user.has_perm(PermissionTypes.CAN_EDIT, s) \
                     and not s.private
                 ]
                 data.update({'scoresets': scoresets})
