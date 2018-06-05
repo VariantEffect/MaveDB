@@ -27,9 +27,6 @@
 #
 # You can then configure this by manipulating /etc/default/little-worker.
 
-# IMPORTANT: You will need to set the appropriate settings file if not using production
-export DJANGO_SETTINGS_MODULE="settings.staging"
-
 VERSION=10.1
 echo "celery init v${VERSION}."
 if [ $(id -u) -ne 0 ]; then
