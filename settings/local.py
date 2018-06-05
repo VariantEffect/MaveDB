@@ -48,31 +48,31 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': 'logs/info.log',
             'formatter': 'verbose'
         },
         'celery': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': 'logs/celery.log',
             'formatter': 'verbose'
         },
         'core.tasks': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': 'logs/celery_core_tasks.log',
             'formatter': 'verbose'
         },
         'accounts.tasks': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': 'logs/celery_accounts_tasks.log',
             'formatter': 'verbose'
         },
         'dataset.tasks': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': 'logs/celery_dataset_tasks.log',
             'formatter': 'verbose'
@@ -81,28 +81,75 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True
+            'level': 'INFO',
+            'propagate': False
         },
         'celery': {
             'handlers': ['celery'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
         'core.tasks': {
             'handlers': ['core.tasks'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
         'accounts.tasks': {
             'handlers': ['accounts.tasks'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
         'dataset.tasks': {
             'handlers': ['dataset.tasks'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
     },
 }
+
+# ------ CELERY CONFIG ------------------- #
+# Celery needs these in each settings file
+broker_url = 'amqp://localhost:5672//'
+task_ignore_result = True
+worker_hijack_root_logger = False
+
+task_serializer = 'json'
+accept_content = ('json',)
+result_serializer = 'json'
+
+task_always_eager = True
+task_create_missing_queues = True
+task_routes = {
+    'dataset.tasks.*': {'queue': 'long'},
+    'core.tasks.*': {'queue': 'quick'},
+    'accounts.tasks.*': {'queue': 'quick'},
+}
+
+# Celery needs this for autodiscover to work
+INSTALLED_APPS = [
+    'metadata',
+    'main',
+    'genome',
+    'urn',
+    'variant',
+    'dataset',
+    'search',
+    'api',
+    'accounts',
+    'core',
+
+    'guardian',
+    'reversion',
+    'social_django',
+    'django_extensions',
+    'widget_tweaks',
+    'rest_framework',
+    'django_filters',
+
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]

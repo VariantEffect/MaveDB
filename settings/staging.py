@@ -49,31 +49,31 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/usr/local/webapps/logs/mavedb.log',
             'formatter': 'verbose'
         },
         'celery': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/usr/local/webapps/logs/celery.log',
             'formatter': 'verbose'
         },
         'core.tasks': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/usr/local/webapps/logs/celery_core_tasks.log',
             'formatter': 'verbose'
         },
         'accounts.tasks': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/usr/local/webapps/logs/celery_accounts_tasks.log',
             'formatter': 'verbose'
         },
         'dataset.tasks': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/usr/local/webapps/logs/celery_dataset_tasks.log',
             'formatter': 'verbose'
@@ -82,27 +82,27 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True
+            'level': 'INFO',
+            'propagate': False
         },
         'celery': {
             'handlers': ['celery'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
         'core.tasks': {
             'handlers': ['core.tasks'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
         'accounts.tasks': {
             'handlers': ['accounts.tasks'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
         'dataset.tasks': {
             'handlers': ['dataset.tasks'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True
         },
     },
