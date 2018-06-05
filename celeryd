@@ -20,7 +20,7 @@ CELERY_APP="mavedb"
 CELERYD_CHDIR="/usr/local/webapps/mavedb/"
 
 # Extra command-line arguments to the worker
-CELERYD_OPTS="--time-limit=300 -c:worker1 2 -c:worker2 1 -Q:worker1 long -Q:worker2 quick"
+CELERYD_OPTS="--time-limit=300 -c:worker1 2 -c:worker2 1 -Q:worker1 long,celery -Q:worker2 celery"
 # Configure node-specific settings by appending node name to arguments:
 #CELERYD_OPTS="--time-limit=300 -c 8 -c:worker2 4 -c:worker3 2 -Ofair:worker1"
 

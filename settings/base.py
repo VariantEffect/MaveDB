@@ -219,7 +219,6 @@ result_serializer = 'json'
 
 task_create_missing_queues = True
 task_routes = {
-    'dataset.tasks.*': {'queue': 'long'},
-    'core.tasks.*': {'queue': 'quick'},
-    'accounts.tasks.*': {'queue': 'quick'},
+    'dataset.tasks.publish_variants': {'queue': 'long'},
+    'dataset.tasks.create_variants': {'queue': 'long'},
 }
