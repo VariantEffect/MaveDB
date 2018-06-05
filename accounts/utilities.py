@@ -45,8 +45,10 @@ def delete(urn, request):
                 "Child {child_class}s must be deleted prior "
                 "to deleting this {parent_class}."
             ).format(
-                child_class=instance.children.first().__class__.__name__,
-                parent_class=instance.__class__.__name__,
+                child_class=instance.children.first().__class__
+                    .__name__.replace('Set', ' Set'),  # Add a space before 'Set'
+                parent_class=instance.__class__
+                    .__name__.replace('Set', ' Set'),
             )
             messages.error(request, message)
             return False
