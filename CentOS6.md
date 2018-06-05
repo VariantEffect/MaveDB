@@ -324,12 +324,14 @@ following command can successfully start the server after a reboot.
 To install the mod_wsgi-express module run the following comand with the mavedb
 environment activated.
     
+    sudo chown centos:centos /usr/lib64/httpd/modules/
     mod_wsgi-express install-module # note the install path name
+    sudo chown root:root /usr/lib64/httpd/modules/
 
 Open `/etc/httpd/conf/httpd.conf` and paste the following contents to the
 bottom of the file:
 
-    LoadModule wsgi_module modules/<name of mod_wsgi_module>
+    LoadModule wsgi_module modules/mod_wsgi-py34.cpython-34m.so
     WSGISocketPrefix run/wsgi
     WSGIDaemonProcess mavedb python-path=/usr/local/webapps/mavedb:/usr/local/venvs/mavedb/lib/python3.4/site-packages
     WSGIProcessGroup mavedb
@@ -352,7 +354,7 @@ bottom of the file:
         </Files>
     </Directory>
 
-Make sure to replace `<name of mod_wsgi_module>` with you mod-wsgi module file
+Make sure to replace `mod_wsgi-py34.cpython-34m.so` with your specific mod-wsgi module file
 name.
 
 
@@ -377,6 +379,6 @@ session.
         
     alias cd-mavedb='cd /usr/local/webapps/mavedb/'
     alias cd-mavedb-logs='cd /usr/local/webapps/logsv/'
-    alias cd-rmq-logs='sudo cd /var/log/rabbitmq/'
-    alias cd-celery-logs='sudo cd /var/log/celery/'
+    alias cd-rmq-logs='cd /var/log/rabbitmq/'
+    alias cd-celery-logs='cd /var/log/celery/'
     
