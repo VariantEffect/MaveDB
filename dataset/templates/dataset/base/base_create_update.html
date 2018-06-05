@@ -29,13 +29,13 @@
           enctype="multipart/form-data">
 			{% csrf_token %}
 			
-			<div id="keywords-to-add" hidden>{{ repop_keywords }}</div>
-			<div id="sra-identifiers-to-add" hidden>{{ repop_sra_identifiers }}</div>
-			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers }}</div>
-			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers }}</div>
-      <div id="uniprot-identifier-to-add" hidden>{{ repop_uniprot_identifier }}</div>
-      <div id="ensembl-identifier-to-add" hidden>{{ repop_ensembl_identifier }}</div>
-      <div id="refseq-identifier-to-add" hidden>{{ repop_refseq_identifier }}</div>
+			<div id="keywords-to-add" hidden>{{ repop_keywords|default:"" }}</div>
+			<div id="sra-identifiers-to-add" hidden>{{ repop_sra_identifiers|default:"" }}</div>
+			<div id="doi-identifiers-to-add" hidden>{{ repop_doi_identifiers|default:"" }}</div>
+			<div id="pubmed-identifiers-to-add" hidden>{{ repop_pubmed_identifiers|default:"" }}</div>
+      <div id="uniprot-identifier-to-add" hidden>{{ repop_uniprot_identifier|default:"" }}</div>
+      <div id="ensembl-identifier-to-add" hidden>{{ repop_ensembl_identifier|default:"" }}</div>
+      <div id="refseq-identifier-to-add" hidden>{{ repop_refseq_identifier|default:"" }}</div>
 
       {% block top-instructions %}
 
