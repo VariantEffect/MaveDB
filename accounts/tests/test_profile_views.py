@@ -56,7 +56,7 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         )
         request.user = user
         response = profile_settings(request)
-        self.assertContains(response, 'email@email.com')
+        self.assertEqual(response.status_code, 302)
 
     def test_cannot_set_invalid_email(self):
         user = UserFactory()
@@ -176,7 +176,7 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
         self.assertContains(response, "You must be an administrator")
 
-    def test_can_delete_experimentset_if_it_has_children(self):
+    def test_cannot_delete_experimentset_if_it_has_children(self):
         user = UserFactory()
         instance = ScoreSetFactory()
         instance.publish()

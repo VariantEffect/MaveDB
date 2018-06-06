@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse_lazy
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
@@ -74,6 +74,8 @@ def profile_settings(request):
                     from_email=None,
                     recipient_list=[profile.email]
                 )
+                return HttpResponseRedirect(
+                    reverse_lazy("accounts:profile_settings"))
         else:
             messages.error(
                 request,
@@ -96,9 +98,13 @@ def profile_view(request):
         delete_urn = request.POST.get("delete", False)
         publish_urn = request.POST.get("publish", False)
         if delete_urn:
-            delete(delete_urn, request)
+            deleted = delete(delete_urn, request)
+            if deleted:
+                return HttpResponseRedirect(reverse_lazy("accounts:profile"))
         if publish_urn:
-            publish(publish_urn, request)
+            published = publish(publish_urn, request)
+            if published:
+                return HttpResponseRedirect(reverse_lazy("accounts:profile"))
     return render(request, 'accounts/profile_home.html', context)
 
 
@@ -180,7 +186,8 @@ def manage_instance(request, urn):
             instance.save()
             messages.success(
                 request, "Management updated for {}.".format(instance.urn))
-            return redirect("accounts:profile")
+            return HttpResponseRedirect(
+                reverse_lazy("accounts:manage_instance", args=(instance.urn,)))
         else:
             messages.error(
                 request,
