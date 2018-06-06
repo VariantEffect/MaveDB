@@ -66,9 +66,5 @@ coverage.xml
 docs/_build/
 
 # Ignore secrets
-settings/secrets.json
 secrets.json
-/logs/
-logs/*
-logs/
-metadata/templates/
+!/logs/
