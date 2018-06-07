@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 
 from celery.utils.log import get_task_logger
 
-from accounts.tasks import notify_user_upload_status
-from core.tasks import email_admins, LogErrorsTask
+from core.utilities import notify_admins
+from core.tasks import BaseTask
 
 from mavedb import celery_app
 
@@ -18,21 +18,20 @@ User = get_user_model()
 logger = get_task_logger('dataset.tasks')
 
 
-class BaseDatasetTask(LogErrorsTask):
+class BaseDatasetTask(BaseTask):
     """
     Edits the scoreset processing state and emails user.
-    Delegates task logging and saving to LogErrorsTask.
+    Delegates task logging and saving to BaseTask.
     """
-    def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
         if isinstance(self.scoreset, ScoreSet):
             self.scoreset.processing_state = constants.failed
             self.scoreset.save()
         
         if isinstance(self.user, User):
-            notify_user_upload_status.delay(
-                user_pk=self.user.pk, scoreset_urn=self.urn,
-                success=False, base_url=self.base_url)
-        
+            self.user.profile.notify_user_upload_status(kwargs=dict(
+                success=False, instance=self.scoreset,
+            ))
         return super(BaseDatasetTask, self).on_failure(
             exc, task_id, args, kwargs, einfo, user=self.user)
 
@@ -42,10 +41,9 @@ class BaseCreateVariants(BaseDatasetTask):
     def on_success(self, retval, task_id, args, kwargs):
         self.scoreset.processing_state = constants.success
         self.scoreset.save()
-        notify_user_upload_status.delay(
-            user_pk=self.user.pk, scoreset_urn=self.scoreset.urn,
-            base_url=self.base_url, success=True
-        )
+        self.user.profile.notify_user_upload_status(kwargs=dict(
+            success=True, instance=self.scoreset,
+        ))
         return super(BaseCreateVariants, self).on_success(
             retval, task_id, args, kwargs)
 
@@ -55,15 +53,10 @@ class BasePublish(BaseDatasetTask):
     def on_success(self, retval, task_id, args, kwargs):
         self.scoreset.processing_state = constants.success
         self.scoreset.save()
-        notify_user_upload_status.delay(
-            user_pk=self.user.pk, scoreset_urn=self.scoreset.urn,
-            base_url=self.base_url, success=True
-        )
-        email_admins.delay(
-            user=self.user.pk,
-            urn=self.scoreset.urn,
-            base_url=self.base_url
-        )
+        self.user.profile.notify_user_upload_status(kwargs=dict(
+            success=True, instance=self.scoreset,
+        ))
+        notify_admins(user=self.user, instance=self.scoreset)
         return super(BasePublish, self).on_success(
             retval, task_id, args, kwargs)
     
@@ -71,10 +64,9 @@ class BasePublish(BaseDatasetTask):
 # Note: don't remove unused arguments for the tasks below. They are required
 # for the on_failure and on_success callbacks.
 @celery_app.task(bind=True, ignore_result=True, base=BasePublish)
-def publish_scoreset(self, user_pk, scoreset_urn, base_url=""):
+def publish_scoreset(self, user_pk, scoreset_urn):
     # Bind task instance variables
     self.urn = scoreset_urn
-    self.base_url = base_url
     self.scoreset = None
     self.user = None
     
@@ -92,18 +84,16 @@ def publish_scoreset(self, user_pk, scoreset_urn, base_url=""):
     
     # Bound to `BasePublish`
     scoreset = ScoreSet.objects.get(urn=scoreset.urn)
-    self.scoreset = scoreset # Refreshes bound instance
+    self.scoreset = scoreset  # Refreshes bound instance
     self.urn = scoreset.urn
     return scoreset
 
 
 @celery_app.task(bind=True, ignore_result=True, base=BaseCreateVariants)
-def create_variants(self, user_pk, variants, scoreset_urn, dataset_columns,
-                    base_url=""):
+def create_variants(self, user_pk, variants, scoreset_urn, dataset_columns):
     """Bulk creates and emails the user the processing status."""
     # Bind task instance variables
     self.urn = scoreset_urn
-    self.base_url = base_url
     self.scoreset = None
     self.user = None
 
