@@ -1,15 +1,18 @@
-import json
+import traceback
+import logging
+
+from kombu.exceptions import (
+    OperationalError, ConnectionLimitExceeded, ConnectionError,
+    LimitExceeded,
+)
 
 from celery.utils.log import get_task_logger
 from celery.task import Task
 
 from django.contrib.auth import get_user_model
-from django.template.loader import render_to_string
-from django.urls import reverse
-from django.core.mail import send_mail
+from django.contrib import messages
+from django.core.mail import send_mail as django_send_mail
 
-from urn.models import get_model_by_urn
-from dataset import models
 from mavedb import celery_app
 
 from .models import FailedTask
@@ -17,9 +20,24 @@ from .models import FailedTask
 
 User = get_user_model()
 logger = get_task_logger('core.tasks')
+django_logger = logging.getLogger('django')
+error_message = (
+    "Submitting task {name} raised a {exc_name} error. "
+    "Failed task has been saved."
+)
+network_message = (
+    "We are experiencing network issues at the moment. "
+    "It may take longer than usual for your submission to be "
+    "processed. Contact support if your submission has not "
+    "been processed within the week."
+)
+kombu_errors = (
+    OperationalError, ConnectionLimitExceeded, ConnectionError,
+    LimitExceeded,
+)
 
 
-class LogErrorsTask(Task):
+class BaseTask(Task):
     """
     Base task that will save the task to the database and log the error.
     """
@@ -78,12 +96,14 @@ class LogErrorsTask(Task):
         variants = str(str_kwargs.get('variants', {}))[0:250]
         if variants in str_kwargs:
             str_kwargs['variants'] = variants
-        logger.exception("{0} with id {1} called with args={2}, kwargs={3} "
-                         "raised:\n\n{4}\n\nInfo:\n\n{5}".format(
-            self.name, task_id, args, str_kwargs, exc, einfo
-        ))
+        logger.exception(
+            "{0} with id {1} called with args={2}, kwargs={3} "
+            "raised:\n\n{4}\n\nInfo:\n\n{5}".format(
+                self.name, task_id, args, str_kwargs, exc, einfo
+            )
+        )
         self.save_failed_task(exc, task_id, args, kwargs, einfo, user)
-        super(LogErrorsTask, self).on_failure(
+        super(BaseTask, self).on_failure(
             exc, task_id, args, kwargs, einfo)
     
     def save_failed_task(self, exc, task_id, args, kwargs, traceback,
@@ -92,80 +112,82 @@ class LogErrorsTask(Task):
         Save a failed task. If it exists, the modification_date and failure
         counter are updated.
         """
-        task = FailedTask(
-            celery_task_id=task_id,
-            full_name=self.name,
+        task = FailedTask.instantiate_task(
             name=self.name.split('.')[-1],
-            exception_class=exc.__class__.__name__,
-            exception_msg=str(exc).strip(),
+            full_name=self.name,
+            exc=exc,
+            task_id=task_id,
+            args=args,
+            kwargs=kwargs,
             traceback=str(traceback).strip(),  # einfo
             user=user,
         )
-        if args:
-            task.args = json.dumps(list(args))
-        if kwargs:
-            task.kwargs = json.dumps(kwargs, sort_keys=True)
-        
-        # Find if task with same args, name and exception already exists
-        # If it does, update failures count and last updated_at
-        existing_task = task.find_existing()
-        if existing_task is not None:
-            existing_task.failures += 1
-            existing_task.save(force_update=True, update_fields=('failures',))
-        else:
-            task.save(force_insert=True)
+        task, _ = FailedTask.update_or_create(task)
+        return task
+
+    def submit_task(self, args=None, kwargs=None, async_options=None,
+                    request=None):
+        """
+        Calls `task.apply_async` and handles any connection errors by
+        logging the error to the `django` default log and saving the
+        failed task.
+
+        Parameters
+        ----------
+        args : tuple, optional, Default: None
+            Unamed task arguments.
+        kwargs : dict, optional. Default: None
+            Task keyword arguments.
+        async_options : dict, optional, Default: None
+            Additional kwargs that `apply_async` accepts.
+        request : Request, optional. Default: None
+            Request object from the view calling this function.
+
+        Returns
+        -------
+        tuple[bool, Union[FailedTask, Any]]
+            FailedTask or task result.
+        """
+        if not async_options:
+            async_options = {}
+        try:
+            return True, self.apply_async(
+                args=args, kwargs=kwargs, **async_options)
+        except kombu_errors as e:
+            logger.exception(error_message.format(
+                name=self.name, exc_name=e.__class__.__name__))
+            if request:
+                messages.warning(request, network_message)
+            task = FailedTask.instantiate_task(
+                name=self.name.split('.')[-1],
+                full_name=self.name,
+                exc=e,
+                task_id='-1',
+                args=args,
+                kwargs=kwargs,
+                traceback=traceback.format_exc(),
+                user=None if not request else request.user
+            )
+            task, _ = FailedTask.update_or_create(task)
+            return False, task
 
 
-@celery_app.task(ignore_result=True, base=LogErrorsTask)
-def send_to_email(subject, message, from_email, recipient_list, **kwargs):
+@celery_app.task(ignore_result=True, base=BaseTask)
+def send_mail(subject, message, from_email, recipient_list, **kwargs):
     """Sends a message to all emails in the recipient list."""
-    if recipient_list:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=from_email,
-            recipient_list=recipient_list,
-            **kwargs
-        )
+    django_send_mail(
+        subject=subject,
+        message=message,
+        from_email=from_email,
+        recipient_list=recipient_list,
+        **kwargs
+    )
 
 
-@celery_app.task(ignore_result=True, base=LogErrorsTask)
-def email_admins(user, urn, base_url=""):
-    """
-    Sends an email to all admins.
+@celery_app.task(ignore_result=True, base=BaseTask)
+def add(a, b, raise_=False):
+    """Debug test task."""
+    if raise_:
+        raise AttributeError("Test Error")
+    return a + b
 
-    Parameters
-    ----------
-    user : `auth.User`
-        The user who published the instance.
-    urn : `str`
-        URN of the instance created.
-    base_url : `str`
-        Host domain name
-    """
-    if isinstance(user, int):
-        user = User.objects.get(pk=user)
-    instance = get_model_by_urn(urn)
-    
-    url = base_url
-    if isinstance(instance, models.scoreset.ScoreSet):
-        url += reverse('dataset:scoreset_detail', args=(instance.urn,))
-    elif isinstance(instance, models.experiment.Experiment):
-        url += reverse('dataset:experiment_detail', args=(instance.urn,))
-    elif isinstance(instance, models.experimentset.ExperimentSet):
-        url += reverse('dataset:experimentset_detail', args=(instance.urn,))
-    else:
-        return
-    
-    template_name = "core/alert_admin_new_entry_email.html"
-    admins = User.objects.filter(is_superuser=True)
-    message = render_to_string(template_name, {
-        'user': user,
-        'url': url,
-        'class_name': type(instance).__name__,
-    })
-    
-    subject = "[MAVEDB ADMIN] New entry requires your attention."
-    for admin in admins:
-        logger.info("Sending email to {}".format(admin.username))
-        admin.email_user(subject, message)
