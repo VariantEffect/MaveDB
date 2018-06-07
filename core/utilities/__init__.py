@@ -1,10 +1,16 @@
-import sys
 import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-import dataset.constants as constants
+from django.shortcuts import reverse
+from django.template.loader import render_to_string
+from django.contrib.auth import get_user_model
 
+from dataset import constants
+from dataset import models
+
+
+User = get_user_model()
 logger = logging.getLogger("django")
 
 
@@ -36,12 +42,41 @@ def format_delta(ta, tb=None):
         return "{} {} ago".format(delta, units)
 
 
-def run_delayed_task(task, *args, **kwargs):
+def notify_admins(user, instance):
     """
-    Windows has touble running Celery tasks due to dropped support. This should
-    be used during development on windows platforms.
+    Sends an email to all admins.
+
+    Parameters
+    ----------
+    user : `User`
+        The user who published the instance.
+    instance : `DatasetModel`
+        instance that was published
     """
-    if sys.platform == 'win32':
-        return task(*args, **kwargs)
+    from main.context_processors import baseurl
+
+    url = baseurl(request=None)['base_url']
+
+    if isinstance(instance, models.scoreset.ScoreSet):
+        url += reverse('dataset:scoreset_detail', args=(instance.urn,))
+    elif isinstance(instance, models.experiment.Experiment):
+        url += reverse('dataset:experiment_detail', args=(instance.urn,))
+    elif isinstance(instance, models.experimentset.ExperimentSet):
+        url += reverse('dataset:experimentset_detail', args=(instance.urn,))
     else:
-        return task.delay(*args, **kwargs)
+        raise TypeError("{} does not have a reverse url".format(
+            type(instance).__name__
+        ))
+
+    template_name = "core/alert_admin_new_entry_email.html"
+    admins = User.objects.filter(is_superuser=True)
+    message = render_to_string(template_name, {
+        'user': user,
+        'url': url,
+        'class_name': type(instance).__name__,
+    })
+
+    subject = "[MAVEDB ADMIN] New entry requires your attention."
+    for admin in admins:
+        logger.info("Sending email to {}".format(admin.username))
+        admin.profile.email_user(subject=subject, message=message)
