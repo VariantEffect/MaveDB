@@ -7,7 +7,6 @@ from django.contrib import messages
 from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
-from django.core.mail import send_mail
 from django.core.urlresolvers import reverse_lazy
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -68,11 +67,9 @@ def profile_settings(request):
                 message = render_to_string(template_name, {
                     'user': request.user,
                 })
-                send_mail(
-                    subject='Confirm email update.',
+                request.user.profile.email_user(
+                    subject='Profile email updated.',
                     message=message,
-                    from_email=None,
-                    recipient_list=[profile.email]
                 )
                 return HttpResponseRedirect(
                     reverse_lazy("accounts:profile_settings"))
@@ -180,7 +177,7 @@ def manage_instance(request, urn):
 
         if post_form is not None and post_form.is_valid():
             base_url = baseurl(request)['BASE_URL']
-            post_form.process_user_list(base_url)
+            post_form.process_user_list()
             instance.last_edit_by = request.user
             assign_superusers_as_admin(instance)
             instance.save()

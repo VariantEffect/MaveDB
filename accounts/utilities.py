@@ -1,9 +1,9 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
-from main.context_processors import baseurl
-
 from accounts.permissions import PermissionTypes
+
+from main.context_processors import baseurl
 
 from dataset import constants
 from dataset.models.experimentset import ExperimentSet
@@ -46,9 +46,9 @@ def delete(urn, request):
                 "to deleting this {parent_class}."
             ).format(
                 child_class=instance.children.first().__class__
-                    .__name__.replace('Set', ' Set'),  # Add a space before 'Set'
+                                    .__name__.replace('Set', ' Set'),
                 parent_class=instance.__class__
-                    .__name__.replace('Set', ' Set'),
+                                    .__name__.replace('Set', ' Set'),
             )
             messages.error(request, message)
             return False
@@ -138,10 +138,14 @@ def publish(urn, request):
     if instance.private:
         instance.processing_state = constants.processing
         instance.save()
-        publish_scoreset.delay(
+        task_kwargs = dict(
             scoreset_urn=instance.urn,
             user_pk=request.user.pk,
             base_url=baseurl(request)['BASE_URL'],
+        )
+        success, _ = publish_scoreset.submit_task(
+            kwargs=task_kwargs,
+            request=request,
         )
         messages.success(
             request,

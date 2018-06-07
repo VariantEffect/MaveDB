@@ -13,11 +13,11 @@ from metadata.forms import (
     RefseqOffsetForm,
 )
 
-from genome.forms import PimraryReferenceMapForm, TargetGeneForm
-
 # Absolute import tasks for celery to work
 from dataset.tasks import create_variants
 from dataset import constants
+
+from genome.forms import PimraryReferenceMapForm, TargetGeneForm
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
@@ -153,14 +153,14 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         if scoreset_form.get_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
-            create_variants_kwargs = {
+            task_kwargs = {
                 "user_pk": self.request.user.pk,
                 "variants": scoreset_form.get_variants().copy(),
                 "scoreset_urn": scoreset.urn,
                 "dataset_columns": scoreset_form.dataset_columns.copy(),
-                "base_url": baseurl(self.request)['BASE_URL'],
             }
-            create_variants.delay(**create_variants_kwargs)
+            success, _ = create_variants.submit_task(
+                kwargs=task_kwargs, request=self.request)
 
         scoreset.save()
         scoreset.add_administrators(self.request.user)
@@ -252,13 +252,15 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
         if scoreset_form.get_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
-            create_variants.delay(
+            task_kwargs = dict(
                 user_pk=self.request.user.pk,
                 variants=scoreset_form.get_variants().copy(),
                 scoreset_urn=scoreset.urn,
                 dataset_columns=scoreset_form.dataset_columns.copy(),
                 base_url=baseurl(self.request)['BASE_URL'],
             )
+            success, _ = create_variants.submit_task(
+                kwargs=task_kwargs, request=self.request)
 
         scoreset.save()
         track_changes(instance=scoreset, user=self.request.user)
