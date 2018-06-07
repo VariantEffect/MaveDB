@@ -4,8 +4,7 @@ from django import forms
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 
-from core.tasks import send_to_email
-from accounts.tasks import email_user
+from core.tasks import send_mail
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -47,10 +46,9 @@ class ContactForm(forms.Form):
             if email and message and subject and name:
                 admins = User.objects.filter(is_superuser=True).all()
                 for admin in admins:
-                    logger.info("Sending contact email to {} from {}".format(
+                    logger.debug("Sending contact email to {} from {}".format(
                         admin.username, email))
-                    email_user.delay(
-                        user=admin.pk,
+                    admin.profile.email_user(
                         subject='[MaveDB Help] ' + subject,
                         message=message,
                         from_email=email
@@ -62,9 +60,9 @@ class ContactForm(forms.Form):
                     'name': name,
                     'message': message,
                 })
-                send_to_email.delay(
+                send_mail.submit_task(kwargs=dict(
                     subject="Your message has been recieved.",
                     message=fmt_message,
-                    from_email="no-reply@mavedb.org",
+                    from_email="noreply@mavedb.org",
                     recipient_list=[email],
-                )
+                ))
