@@ -17,7 +17,6 @@ from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 from search.forms import parse_char_list
 
-from accounts.tasks import notify_user_group_change
 from .models import Profile
 from .mixins import UserFilterMixin
 from .permissions import (
@@ -40,7 +39,7 @@ class UserSearchForm(forms.Form):
     """Search by text fields and keywords."""
     def __init__(self, *args, **kwargs):
         super(UserSearchForm, self).__init__(*args, **kwargs)
-        self.fields['username']  = forms.CharField(
+        self.fields['username'] = forms.CharField(
             max_length=None, label="ORCID", required=False,
             initial=None, empty_value="",
             widget=forms.SelectMultiple(
@@ -212,7 +211,7 @@ class SelectUsersForm(forms.Form):
                         )
         return cleaned_data
 
-    def process_user_list(self, base_url=''):
+    def process_user_list(self):
         """
         Defer the call to the appropriate update function for the input
         user list based on the initialised group type.
@@ -246,29 +245,25 @@ class SelectUsersForm(forms.Form):
                 update_viewer_list_for_instance(users, self.instance)
 
             else:
-                logger.error(
-                    "Unrecognised group '{}' found when "
-                    "calling 'process_user_list' in SelectUsersForm.".format(
-                        self.group))
-                return
+                raise ValueError("Unrecognised group '{}'".format(self.group))
 
             for user in existing:
                 if user not in users:
-                    notify_user_group_change(
-                        base_url, user, self.instance,
+                    user.profile.notify_user_group_change(
+                        instance=self.instance,
                         action='removed', group=self.group
                     )
             for user in users:
                 reassigned = user_reassigned.get(user, False)
                 if reassigned:
-                    notify_user_group_change(
-                        base_url, user, self.instance,
+                    user.profile.notify_user_group_change(
+                        instance=self.instance,
                         action='re-assigned', group=self.group
                     )
                 else:
                     if user not in existing:
-                        notify_user_group_change(
-                            base_url, user, self.instance,
+                        user.profile.notify_user_group_change(
+                            instance=self.instance,
                             action='added', group=self.group
                         )
 
