@@ -2,6 +2,8 @@
 import os
 import json
 
+from kombu import Queue, Exchange
+
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -30,6 +32,7 @@ def get_secret(setting, secrets=secrets):
         raise ImproperlyConfigured(error_message)
 
 
+HOST_NAME = get_secret('host_name')
 SECRET_KEY = get_secret('secret_key')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -211,6 +214,7 @@ REST_FRAMEWORK = {
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
 broker_url = 'amqp://localhost:5672//'
+
 task_ignore_result = True
 worker_hijack_root_logger = False
 
@@ -218,9 +222,10 @@ task_serializer = 'json'
 accept_content = ('json',)
 result_serializer = 'json'
 
-task_always_eager = True
+task_always_eager = False
 task_create_missing_queues = True
-task_routes = {
-    'dataset.tasks.publish_variants': {'queue': 'long'},
-    'dataset.tasks.create_variants': {'queue': 'long'},
-}
+
+long_exchange = Exchange('long_tasks', type='direct')
+task_queues = (
+    Queue('long_tasks', long_exchange, routing_key='long_tasks'),
+)
