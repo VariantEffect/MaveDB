@@ -1,5 +1,4 @@
 import string
-import reversion
 from functools import reduce
 
 from django.db import models, transaction
@@ -38,8 +37,6 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
     # ---------------------------------------------------------------------- #
-    # TODO: Update TRACKED_FIELDS in all classes to use inheritance
-
     class Meta:
         verbose_name = "Experiment"
         verbose_name_plural = "Experiments"
