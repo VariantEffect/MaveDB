@@ -108,7 +108,7 @@ class TestSelectUsersForm(TestCase):
             instance=instance,
             required=False
         )
-        form.process_user_list("http://test/")
+        form.process_user_list()
         self.assertTrue(user_is_contributor_for_instance(self.alice, instance))
 
     def test_anon_not_in_queryset(self):

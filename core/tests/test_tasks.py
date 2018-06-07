@@ -8,7 +8,7 @@ from accounts.factories import UserFactory
 from dataset.factories import ScoreSetFactory
 
 from core import models
-from core.tasks import email_admins, send_to_email, LogErrorsTask
+from core.tasks import email_admins, send_mail, BaseTask
 
 
 User = get_user_model()
@@ -35,7 +35,7 @@ class TestLogErrorTaskClass(TestCase):
             user=None,
         ) # type: models.FailedTask
         
-        send_to_email.on_failure(
+        send_mail.on_failure(
             exc=exc,
             task_id=task.id,
             args=[],
@@ -55,15 +55,15 @@ class TestLogErrorTaskClass(TestCase):
             'recipient_list': 1, # should cause a typeerror
         }
         self.assertEqual(models.FailedTask.objects.count(), 0)
-        send_to_email.apply(kwargs=kwargs)
+        send_mail.apply(kwargs=kwargs)
         self.assertEqual(models.FailedTask.objects.count(), 1)
         
     def test_get_user_search_by_pk_or_username(self):
         user = UserFactory()
-        self.assertIsInstance(LogErrorsTask.get_user(user), User)
-        self.assertIsInstance(LogErrorsTask.get_user(user.pk), User)
-        self.assertIsInstance(LogErrorsTask.get_user(user.username), User)
-        self.assertIsNone(LogErrorsTask.get_user(user.get_full_name()), User)
+        self.assertIsInstance(BaseTask.get_user(user), User)
+        self.assertIsInstance(BaseTask.get_user(user.pk), User)
+        self.assertIsInstance(BaseTask.get_user(user.username), User)
+        self.assertIsNone(BaseTask.get_user(user.get_full_name()), User)
         
 
 class TestEmailAdminTask(TestCase):
@@ -92,7 +92,7 @@ class TestEmailAdminTask(TestCase):
       
 class TestSendToEmailTask(TestCase):
     def test_can_send_to_standalone_email(self):
-        send_to_email(
+        send_mail(
             subject="Hello world",
             message="foo bar",
             from_email='from@email.com',
@@ -101,7 +101,7 @@ class TestSendToEmailTask(TestCase):
         self.assertEqual(len(mail.outbox), 1)
 
     def test_can_no_outbox_if_recipient_list_is_empty(self):
-        send_to_email(
+        send_mail(
             subject="Hello world",
             message="foo bar",
             from_email='from@email.com',
