@@ -69,10 +69,81 @@ class FailedTask(models.Model):
         return super().save(*args, **kwargs)
     
     def __str__(self):
-        return '{0} {1} [{2}]'.format(
-            self.name, self.args, self.exception_class)
-    
+        return '{0} {1} {2}, [{3}], failures:{4}'.format(
+            self.name, self.args, self.kwargs, self.exception_class,
+            self.failures
+        )
+
+    @classmethod
+    def update_or_create(cls, task):
+        """
+        Save a failed task. If it exists, the modification_date and failure
+        counter are updated.
+        """
+        # Find if task with same args, name and exception already exists
+        # If it does, update failures count and last updated_at
+        existing_task = task.find_existing()
+        if existing_task is not None:
+            existing_task.failures += 1
+            existing_task.save(force_update=True, update_fields=('failures',))
+            task = existing_task
+            created = False
+        else:
+            task.save(force_insert=True)
+            created = True
+        return task, created
+
+    @classmethod
+    def instantiate_task(cls, name, full_name, exc, task_id, args, kwargs,
+                         traceback=None, user=None):
+        """
+        Convenience function to instantiate a task, handling the `json.dumps`
+        process of args and kwargs.
+
+        Parameters
+        ----------
+        name : str
+            Task function name
+        full_name : str
+            Task full import name with format `module.tasks.function_name`
+        exc : Exception
+            The exception raised at runtime.
+        task_id : str
+            Character task id given by celery.
+        args : tuple
+            Task arguments
+        kwargs : dict
+            Task kwargs
+        traceback : ~billiard.einfo.ExceptionInfo`, optional.
+            Traceback object
+        user : User, optional.
+            The user from the request that triggered the task submission.
+
+        Returns
+        -------
+        FailedTask
+        """
+        task = cls(
+            celery_task_id=task_id,
+            full_name=full_name,
+            name=name,
+            exception_class=exc.__class__.__name__,
+            exception_msg=str(exc).strip(),
+            traceback=str(traceback).strip(),
+            user=user,
+        )
+        if args:
+            task.args = json.dumps(list(args))
+        if kwargs:
+            task.kwargs = json.dumps(kwargs, sort_keys=True)
+
+        return task
+
     def find_existing(self):
+        """
+        Finds the first matching task according to `args`, `kwargs`,
+        `exception_class` and `exception_msg`
+        """
         existing_tasks = FailedTask.objects.filter(
             args=self.args,
             full_name=self.full_name,
@@ -81,6 +152,7 @@ class FailedTask(models.Model):
         )
         # Do a dictionary comparison instead since dict
         # keys might not have a deterministic ordering.
+        # Breaks on first match.
         existing_task = None
         for task in existing_tasks.all():
             task_kwargs = None
@@ -90,14 +162,13 @@ class FailedTask(models.Model):
                 task_kwargs = json.loads(task.kwargs)
             if self.kwargs:
                 self_kwargs = json.loads(self.kwargs)
-            
-            if task_kwargs is None or self_kwargs is None:
-                continue
-            elif task_kwargs == self_kwargs:
+
+            if task_kwargs == self_kwargs:
                 existing_task = task
                 break
+
         return existing_task
-    
+
     def retry(self, inline=False):
         """
         Re-loads the task parameters and tries again. Executes task
@@ -123,14 +194,14 @@ class FailedTask(models.Model):
         if inline:
             return func(*args, **kwargs)
         else:
-            return func.delay(*args, **kwargs)
+            return func.submit_task(args=args, kwargs=kwargs)
 
     def retry_and_delete(self, inline=False):
         """
-        Retry a task and delete it. Setting `inline` to true will call
-        the task synchronously without celery in a try/except block and
-        only delete on success. A new task will be created on additional
-        failures when `inline` is False.
+        Retry a task and delete it upon submission.
+        Setting `inline` to true will call the task synchronously without
+        celery in a try/except block and only delete on success. A new task
+        will be created on additional failures when `inline` is False.
         
         Parameters
         ----------
