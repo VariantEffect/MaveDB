@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+from django.conf import settings
 from django.shortcuts import reverse
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
@@ -80,3 +81,14 @@ def notify_admins(user, instance):
     for admin in admins:
         logger.info("Sending email to {}".format(admin.username))
         admin.profile.email_user(subject=subject, message=message)
+
+
+def base_url(request=None):
+    if request is None:
+        scheme = 'http://'
+    else:
+        if request.is_secure():
+            scheme = 'https://'
+        else:
+            scheme = 'http://'
+    return scheme + settings.BASE_URL
