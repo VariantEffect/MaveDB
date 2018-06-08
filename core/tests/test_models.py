@@ -1,87 +1,153 @@
 import json
+
 from django.test import TestCase, mock
 
 from .. import models
 
+
 class TestFailedTaskModel(TestCase):
-    
-    @mock.patch('core.tasks.send_to_email.delay')
-    def test_can_retry_task(self, email_patch):
-        kwargs = {
-            'subject': 'Test',
-            'message': 'Hello world',
-            'from_email': 'admin@email.com',
-            'recipient_list': ['dudeman@email.com'],
-        }
-        task = models.FailedTask.objects.create(
-            name='send_to_email',
-            full_name='core.tasks.send_to_email',
-            args=json.dumps([]),
-            kwargs=json.dumps(kwargs),
-            exception_class=Exception,
-            exception_msg='This is an exception',
+    def test_instantiate_task_converts_args_to_str(self):
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[1, 2],
+            kwargs={},
+            exc=Exception("This is a test"),
             traceback=None,
-            celery_task_id=1,
+            task_id="1",
             user=None,
-        ) # type: models.FailedTask
+        )
+        self.assertEqual(task.args, json.dumps([1, 2]))
+        
+    def test_instantiate_task_converts_kwargs_to_str(self):
+        kwargs = {'a': 1, 'b': 2}
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        self.assertEqual(task.kwargs, json.dumps(kwargs, sort_keys=True))
+        
+    def test_false_args_kwargs_initialised_as_none(self):
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs={},
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        self.assertIsNone(task.args)
+        self.assertIsNone(task.kwargs)
+        
+    def test_update_or_create_creates_new_task(self):
+        task, created = models.FailedTask.update_or_create(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs={},
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        self.assertTrue(created)
+        self.assertEqual(task.failures, 1)
+        
+    def test_update_or_create_creates_updates_existing_task(self):
+        models.FailedTask.update_or_create(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs={},
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        
+        # Creates the task twice, updating the original.
+        task, created = models.FailedTask.update_or_create(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs={},
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        self.assertFalse(created)
+        self.assertEqual(task.failures, 2)
+    
+    @mock.patch('core.tasks.add.apply_async')
+    def test_can_retry_task(self, patch):
+        kwargs = {'a': 1, 'b': 2}
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        task.save()
         
         task.retry_and_delete()
-        email_patch.assert_called()
-        self.assertEqual(email_patch.call_args[1], kwargs)
+        patch.assert_called()
+        self.assertEqual(patch.call_args[1],
+                         {'args': (), 'kwargs': kwargs})
         self.assertEqual(models.FailedTask.objects.count(), 0)
 
     def test_inline_retry_does_not_delete_if_failure(self):
-        kwargs = {
-            'subject': 'Test',
-            'message': 'Hello world',
-            'from_email': 'admin@email.com',
-            'recipient_list': 1, # should cause a typeerror
-        }
-        task = models.FailedTask.objects.create(
-            name='send_to_email',
-            full_name='core.tasks.send_to_email',
-            args=json.dumps([]),
-            kwargs=json.dumps(kwargs),
-            exception_class=Exception,
-            exception_msg='This is an exception',
+        kwargs = {'a': 1, 'b': "1"} # type error
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
             traceback=None,
-            celery_task_id=1,
+            task_id="1",
             user=None,
-        )  # type: models.FailedTask
+        )
+        task.save()
         
         with self.assertRaises(TypeError):
             task.retry_and_delete(inline=True)
             self.assertEqual(models.FailedTask.objects.count(), 1)
             
     def test_can_find_existing_task(self):
-        kwargs = {
-            'subject': 'Test',
-            'message': 'Hello world',
-            'from_email': 'admin@email.com',
-            'recipient_list': [],
-        }
-        exc = Exception("Test")
-        existing = models.FailedTask.objects.create(
-            name='send_to_email',
-            full_name='core.tasks.send_to_email',
-            args=None,
-            kwargs=json.dumps(kwargs),
-            exception_class=exc.__class__.__name__,
-            exception_msg=str(exc).strip(),
+        kwargs = {'a': 1, 'b': 2}
+        existing = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
             traceback=None,
-            celery_task_id=1,
+            task_id="1",
             user=None,
-        ) # type: models.FailedTask
+        )
+        existing.save()
         
-        task = models.FailedTask(
-            name='send_to_email',
-            full_name='core.tasks.send_to_email',
-            args=None,
-            kwargs=json.dumps(kwargs),
-            exception_class=exc.__class__.__name__,
-            exception_msg=str(exc).strip(),
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
             traceback=None,
-            celery_task_id=1,
+            task_id="1",
             user=None,
-        ) # type: models.FailedTask
+        )
         self.assertEqual(task.find_existing(), existing)

@@ -1,20 +1,18 @@
-import json
-
 from django.test import TestCase
 from django.core import mail
 from django.contrib.auth import get_user_model
 
 from accounts.factories import UserFactory
-from dataset.factories import ScoreSetFactory
 
 from core import models
-from core.tasks import email_admins, send_mail, BaseTask
+from core.tasks import send_mail, BaseTask
 
 
 User = get_user_model()
 
 
-class TestLogErrorTaskClass(TestCase):
+class TestBaseTask(TestCase):
+    
     def test_save_failed_task_updates_existing(self):
         kwargs = {
             'subject': 'Test',
@@ -23,21 +21,21 @@ class TestLogErrorTaskClass(TestCase):
             'recipient_list': 1, # should cause a typeerror
         }
         exc = Exception("Test")
-        task = models.FailedTask.objects.create(
-            name='send_to_email',
-            full_name='core.tasks.send_to_email',
+        task, created = models.FailedTask.update_or_create(
+            name='send_mail',
+            full_name='core.tasks.send_mail',
             args=None,
-            kwargs=json.dumps(kwargs),
-            exception_class=exc.__class__.__name__,
-            exception_msg=str(exc).strip(),
+            kwargs=kwargs,
             traceback=None,
-            celery_task_id=1,
+            task_id=1,
             user=None,
-        ) # type: models.FailedTask
+            exc=exc
+        )
+        self.assertTrue(created)
         
         send_mail.on_failure(
             exc=exc,
-            task_id=task.id,
+            task_id=task.celery_task_id,
             args=[],
             kwargs=kwargs,
             einfo=None,
@@ -65,32 +63,8 @@ class TestLogErrorTaskClass(TestCase):
         self.assertIsInstance(BaseTask.get_user(user.username), User)
         self.assertIsNone(BaseTask.get_user(user.get_full_name()), User)
         
-
-class TestEmailAdminTask(TestCase):
-    def test_send_admin_email_emails_all_admins(self):
-        user1 = UserFactory()
-        user1.is_superuser = True
-        user1.save()
-
-        user2 = UserFactory()
-        user2.is_superuser = True
-        user2.save()
-
-        obj = ScoreSetFactory()
-        email_admins(user1, obj.urn)
-        self.assertEqual(len(mail.outbox), 2)
-
-    def test_send_admin_email_can_get_user_by_pk(self):
-        user1 = UserFactory()
-        user1.is_superuser = True
-        user1.save()
-
-        obj = ScoreSetFactory()
-        email_admins(user1.pk, obj.urn)
-        self.assertEqual(len(mail.outbox), 1)
         
-      
-class TestSendToEmailTask(TestCase):
+class TestSendMailTask(TestCase):
     def test_can_send_to_standalone_email(self):
         send_mail(
             subject="Hello world",

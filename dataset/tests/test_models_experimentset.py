@@ -4,6 +4,9 @@ from django.contrib.auth.models import Group
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
+from django.shortcuts import reverse
+
+from core.utilities import base_url
 
 from ..models.experimentset import ExperimentSet
 from ..factories import ExperimentSetFactory, ExperimentFactory
@@ -87,3 +90,10 @@ class TestExperimentSet(TestCase):
             
             instance2.save()
             self.assertIn('2', instance2.urn)
+
+    def test_can_get_url(self):
+        obj = ExperimentSetFactory()
+        self.assertEqual(
+            obj.get_url(),
+            base_url() + reverse('dataset:experimentset_detail', args=(obj.urn,))
+        )

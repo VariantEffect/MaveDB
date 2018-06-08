@@ -1,12 +1,17 @@
-from django.test import TestCase
+from django.test import TestCase, mock
 from django.core import mail
 from django.contrib.auth import get_user_model
 
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
+from accounts.factories import UserFactory
+
+from core.tasks import send_mail
+
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
+from dataset import factories
 
 from ..models import Profile, user_is_anonymous
 from ..permissions import (
@@ -60,7 +65,8 @@ class TestUserProfile(TestCase):
         )
         self.assertEqual(bob.profile.get_short_name(), "Smith, D")
 
-    def test_send_email_uses_profile_by_email_by_default(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_send_email_uses_profile_by_email_by_default(self, patch):
         bob = User.objects.create(
             username="bob", password="secretkey",
             first_name="daniel", last_name="smith"
@@ -68,10 +74,15 @@ class TestUserProfile(TestCase):
         bob.profile.email = "email@email.com"
         bob.profile.save()
         bob.profile.email_user(message="hello", subject="None")
+        
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [bob.profile.email])
 
-    def test_send_email_uses_user_email_as_backup(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_send_email_uses_user_email_as_backup(self, patch):
         bob = User.objects.create(
             username="bob", password="secretkey",
             first_name="daniel", last_name="smith", email="bob@email.com"
@@ -80,10 +91,15 @@ class TestUserProfile(TestCase):
         bob.profile.save()
 
         bob.profile.email_user(message="hello", subject="None")
+
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [bob.email])
 
-    def test_email_user_sends_no_email_if_no_email_present(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_email_user_sends_no_email_if_no_email_present(self, patch):
         bob = User.objects.create(
             username="bob", password="secretkey",
             first_name="daniel", last_name="smith",
@@ -92,7 +108,8 @@ class TestUserProfile(TestCase):
         bob.profile.email = None
         bob.profile.save()
         bob.profile.email_user(message="hello", subject="None")
-        self.assertEqual(len(mail.outbox), 0)
+        with self.assertRaises(AssertionError):
+            patch.assert_called()
 
     def test_name_methods_default_to_username(self):
         bob = User.objects.create(username="bob", password="secretkey")
@@ -256,3 +273,48 @@ class TestUserProfile(TestCase):
 
         remove_user_as_instance_viewer(bob, self.exps_1)
         self.assertEqual(len(bob.profile.viewer_experimentsets()), 0)
+    
+    # ------ Group change
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_notify_group_change_full_url_rendererd_in_template(self, patch):
+        user = UserFactory()
+        instance = factories.ExperimentFactory()
+        user.profile.notify_user_group_change(
+            instance, 'added', 'administrator')
+        patch.assert_called()
+        self.assertIn(
+            instance.get_url(),
+            patch.call_args[1]['kwargs']['message']
+        )
+        
+    # --- Upload status
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_renders_url_correctly(self, patch):
+        user = UserFactory()
+        instance = factories.ExperimentFactory()
+        user.profile.notify_user_upload_status(True, instance)
+        patch.assert_called()
+        self.assertIn(
+            instance.get_url(),
+            patch.call_args[1]['kwargs']['message']
+        )
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_delegates_correct_template_fail(self, patch):
+        user = UserFactory()
+        instance = factories.ExperimentSetFactory()
+        user.profile.notify_user_upload_status(success=False, instance=instance)
+        
+        patch.assert_called()
+        message = patch.call_args[1]['kwargs']['message']
+        self.assertIn("could not be processed", message)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_delegates_correct_template_success(self, patch):
+        user = UserFactory()
+        instance = factories.ExperimentSetFactory()
+        user.profile.notify_user_upload_status(success=True, instance=instance)
+    
+        patch.assert_called()
+        message = patch.call_args[1]['kwargs']['message']
+        self.assertIn("has been processed successfully", message)

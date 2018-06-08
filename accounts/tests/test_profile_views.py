@@ -4,12 +4,12 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
 from django.core import mail
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import reverse
 
 from dataset import constants
 from dataset.utilities import delete_instance
 from dataset import models as dataset_models
-from dataset.tasks import publish_scoreset, email_admins
-from accounts.tasks import notify_user_upload_status
+from dataset.tasks import publish_scoreset
 from dataset.models.scoreset import ScoreSet
 from dataset.factories import (
     ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory
@@ -18,6 +18,7 @@ from variant.factories import VariantFactory
 
 from core.utilities.tests import TestMessageMixin
 from core.models import FailedTask
+from core.tasks import send_mail
 
 from ..factories import UserFactory
 from ..permissions import (
@@ -68,8 +69,9 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         request.user = user
         response = profile_settings(request)
         self.assertContains(response, 'There were errors')
-
-    def test_setting_email_emails_user(self):
+    
+    @mock.patch("core.tasks.send_mail.apply_async")
+    def test_setting_email_emails_user(self, patch):
         user = UserFactory()
         request = self.create_request(
             method='post',
@@ -78,7 +80,7 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         )
         request.user = user
         _ = profile_settings(request)
-        self.assertEqual(len(mail.outbox), 1)
+        patch.assert_called()
 
     def test_users_email_appears_in_profile(self):
         user = UserFactory()
@@ -274,7 +276,8 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
             manage_instance(request, urn=obj.urn)
 
     # --- Removing
-    def test_removes_existing_admin(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_removes_existing_admin(self, patch):
         group = GroupTypes.ADMIN
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
@@ -291,13 +294,19 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.client.post(path=path, data=data)
         self.assertFalse(user_is_admin_for_instance(self.alice, obj))
         self.assertTrue(user_is_admin_for_instance(self.bob, obj))
+        
+        self.assertEqual(patch.call_count, 2)
+        send_mail.apply(**patch.call_args_list[0][1])
+        send_mail.apply(**patch.call_args_list[1][1])
+        
         self.assertEqual(len(mail.outbox), 2)
         self.assertIn(self.alice.first_name, mail.outbox[0].body)
         self.assertIn(self.bob.first_name, mail.outbox[1].body)
         self.assertIn('removed', mail.outbox[0].body)
         self.assertIn('added', mail.outbox[1].body)
 
-    def test_removes_existing_editor(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_removes_existing_editor(self, patch):
         group = GroupTypes.EDITOR
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
@@ -315,11 +324,15 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.client.post(path=path, data=data)
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertFalse(user_is_editor_for_instance(self.bob, obj))
+
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.bob.first_name, mail.outbox[0].body)
         self.assertIn('removed', mail.outbox[0].body)
 
-    def test_removes_existing_viewer(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_removes_existing_viewer(self, patch):
         group = GroupTypes.VIEWER
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
@@ -337,6 +350,9 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.client.post(path=path, data=data)
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertFalse(user_is_viewer_for_instance(self.bob, obj))
+        
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.bob.first_name, mail.outbox[0].body)
         self.assertIn('removed', mail.outbox[0].body)
@@ -369,7 +385,8 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_reassign_removes_from_existing_group(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_reassign_removes_from_existing_group(self, patch):
         group = GroupTypes.EDITOR
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
@@ -388,13 +405,17 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertFalse(user_is_viewer_for_instance(self.bob, obj))
         self.assertTrue(user_is_editor_for_instance(self.bob, obj))
+        
         # Removal email and addition email should be sent
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.bob.first_name, mail.outbox[0].body)
         self.assertIn('re-assigned', mail.outbox[0].body)
 
     # --- Adding
-    def test_appends_new_admin(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_appends_new_admin(self, patch):
         group = GroupTypes.ADMIN
         obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
@@ -411,11 +432,15 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.client.post(path=path, data=data)
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertTrue(user_is_admin_for_instance(self.bob, obj))
+        
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
         self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
         self.assertIn(self.bob.first_name, mail.outbox[0].body)
         self.assertIn('added', mail.outbox[0].body)
 
-    def test_appends_new_viewer(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_appends_new_viewer(self, patch):
         group = GroupTypes.VIEWER
         userc = UserFactory()
         obj = ExperimentSetFactory()
@@ -435,12 +460,15 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertTrue(user_is_viewer_for_instance(self.bob, obj))
         self.assertTrue(user_is_viewer_for_instance(userc, obj))
-
+    
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
         self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
         self.assertIn(self.bob.first_name, mail.outbox[0].body)
         self.assertIn('added', mail.outbox[0].body)
 
-    def test_appends_new_editor(self):
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_appends_new_editor(self, patch):
         group = GroupTypes.EDITOR
         userc = UserFactory()
         obj = ExperimentSetFactory()
@@ -461,6 +489,8 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         self.assertTrue(user_is_editor_for_instance(self.bob, obj))
         self.assertTrue(user_is_editor_for_instance(userc, obj))
 
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
         self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
         self.assertIn(self.bob.first_name, mail.outbox[0].body)
         self.assertIn('added', mail.outbox[0].body)
@@ -529,7 +559,6 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
 
 
 class TestPublish(TestCase, TestMessageMixin):
-    
     def setUp(self):
         self.user = UserFactory()
         self.scoreset = ScoreSetWithTargetFactory()
@@ -546,17 +575,17 @@ class TestPublish(TestCase, TestMessageMixin):
         request.user = self.user if user is None else user
         return request
     
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publishing_updates_states_success(self, publish_mock):
         profile_view(self.make_request())
         self.assertEqual(
             ScoreSet.objects.first().processing_state, constants.processing)
         publish_mock.assert_called_once()
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        publish_scoreset.apply(**publish_mock.call_args[1])
         self.assertEqual(
             ScoreSet.objects.first().processing_state, constants.success)
         
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publishing_updates_states_fail(self, publish_mock):
         profile_view(self.make_request())
         self.assertEqual(
@@ -572,7 +601,7 @@ class TestPublish(TestCase, TestMessageMixin):
         self.assertEqual(
             ScoreSet.objects.first().processing_state, constants.failed)
         
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publishing_sets_child_and_parents_to_public(self, publish_mock):
         self.assertTrue(self.scoreset.private)
         self.assertTrue(self.scoreset.parent.private)
@@ -580,14 +609,14 @@ class TestPublish(TestCase, TestMessageMixin):
         
         profile_view(self.make_request())
         publish_mock.assert_called_once()
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        publish_scoreset.apply(**publish_mock.call_args[1])
 
         obj = ScoreSet.objects.first()
         self.assertFalse(obj.private)
         self.assertFalse(obj.parent.private)
         self.assertFalse(obj.parent.parent.private)
 
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publishing_propagates_modified_by(self, publish_mock):
         self.assertIsNone(self.scoreset.modified_by)
         self.assertIsNone(self.scoreset.parent.modified_by)
@@ -595,62 +624,77 @@ class TestPublish(TestCase, TestMessageMixin):
         
         profile_view(self.make_request())
         publish_mock.assert_called_once()
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        publish_scoreset.apply(**publish_mock.call_args[1])
 
         obj = ScoreSet.objects.first()
         self.assertEqual(obj.modified_by, self.user)
         self.assertEqual(obj.experiment.modified_by, self.user)
         self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
 
-    @mock.patch('core.tasks.email_admins.delay')
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publish_emails_admins_on_success(self, publish_mock, email_mock):
         user = UserFactory(is_superuser=True)
-        user.email = "admin@admin.com"
-        user.save()
         profile_view(self.make_request())
         publish_mock.assert_called_once()
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
-        email_mock.assert_called_once()
-        email_admins.apply(kwargs=email_mock.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, [user.email])
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        
+        self.assertEqual(
+            email_mock.call_args_list[1][1]['kwargs']['recipient_list'],
+            [user.profile.email]
+        )
+        
 
-    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publish_emails_user_on_success(self, publish_mock, email_mock):
         profile_view(self.make_request())
         publish_mock.assert_called_once()
         
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
-        
-        email_mock.assert_called_once()
-        notify_user_upload_status.apply(kwargs=email_mock.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, [self.user.email])
-        self.assertIn('processed successfully', mail.outbox[0].body)
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        email_mock.assert_called()
+        self.assertEqual(
+            email_mock.call_args[1]['kwargs']['recipient_list'],
+            [self.user.email]
+        )
+        self.assertIn(
+            'processed successfully',
+            email_mock.call_args[1]['kwargs']['message']
+        )
+        self.scoreset.refresh_from_db()
+        self.assertIn(
+            self.scoreset.get_url(),
+            email_mock.call_args[1]['kwargs']['message']
+        )
     
-    @mock.patch('dataset.tasks.notify_user_upload_status.delay')
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publish_emails_user_on_fail(self, publish_mock, email_mock):
         profile_view(self.make_request())
         publish_mock.assert_called_once()
         
         delete_instance(self.scoreset)
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        publish_scoreset.apply(**publish_mock.call_args[1])
         
-        email_mock.assert_called_once()
-        notify_user_upload_status.apply(kwargs=email_mock.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, [self.user.email])
-        self.assertIn('could not be processed', mail.outbox[0].body)
-        self.assertEqual(FailedTask.objects.count(), 1)
+        email_mock.assert_called()
+        self.assertEqual(
+            email_mock.call_args[1]['kwargs']['recipient_list'],
+            [self.user.email]
+        )
+        self.assertIn(
+            'could not be processed',
+            email_mock.call_args[1]['kwargs']['message']
+        )
+        self.assertIn(
+            reverse('accounts:profile'),
+            email_mock.call_args[1]['kwargs']['message']
+        )
 
-    @mock.patch('dataset.tasks.publish_scoreset.delay')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
     def test_publish_failure_saves_task(self, publish_mock):
         profile_view(self.make_request())
         publish_mock.assert_called_once()
     
         delete_instance(self.scoreset)
-        publish_scoreset.apply(kwargs=publish_mock.call_args[1])
+        publish_scoreset.apply(**publish_mock.call_args[1])
         self.assertEqual(FailedTask.objects.count(), 1)

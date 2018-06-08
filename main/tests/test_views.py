@@ -72,7 +72,7 @@ class TestContactView(TestCase, TestMessageMixin):
     def setUp(self):
         self.factory = RequestFactory()
     
-    @mock.patch('accounts.tasks.email_user.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
     def test_calls_email_admin_task(self, mock_patch):
         data = self.mock_data()
         admin = UserFactory(is_superuser=True)
@@ -81,8 +81,12 @@ class TestContactView(TestCase, TestMessageMixin):
         request = self.create_request('post', data=data, path='/contact/')
         response = views.help_contact_view(request)
         mock_patch.assert_called()
+        self.assertEqual(
+            mock_patch.call_args_list[0][1]['kwargs']['recipient_list'],
+            [admin.profile.email]
+        )
         
-    @mock.patch('core.tasks.send_to_email.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
     def test_calls_send_to_email_reply_task(self, mock_patch):
         data = self.mock_data()
         request = self.create_request('post', data=data, path='/contact/')

@@ -5,6 +5,9 @@ from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.db import transaction
+from django.shortcuts import reverse
+
+from core.utilities import base_url
 
 from genome.models import TargetGene
 
@@ -227,3 +230,10 @@ class TestScoreSet(TestCase):
             self.assertIn('1-a-1', instance2.urn)
             instance1.publish()
             self.assertIn('2-a-1', instance1.urn)
+
+    def test_can_get_url(self):
+        obj = ScoreSetFactory()
+        self.assertEqual(
+            obj.get_url(),
+            base_url() + reverse('dataset:scoreset_detail', args=(obj.urn,))
+        )

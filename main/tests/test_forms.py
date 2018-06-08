@@ -15,24 +15,25 @@ class TestContactForm(TestCase):
             'subject': 'Hello, world!'
         }
     
-    @mock.patch('accounts.tasks.email_user.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
     def test_emails_admins(self, mock_patch):
-        UserFactory(is_superuser=True)
+        admin = UserFactory(is_superuser=True)
         form = ContactForm(data=self.mock_data())
         form.send_mail()
         mock_patch.assert_called()
+        self.assertEqual(
+            mock_patch.call_args_list[0][1]['kwargs']['recipient_list'],
+            [admin.profile.email]
+        )
         
-    @mock.patch('core.tasks.send_to_email.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
     def test_emails_requester(self, mock_patch):
-        UserFactory(is_superuser=True)
-        UserFactory(is_superuser=True)
-        
         form = ContactForm(data=self.mock_data())
         form.send_mail()
         mock_patch.assert_called()
         self.assertEqual(mock_patch.call_count, 1)
         
-    @mock.patch('accounts.tasks.email_user.delay')
+    @mock.patch('core.tasks.send_mail.apply_async')
     def test_send_admin_email_if_valid_email_supplied(self, mock_patch):
         data = self.mock_data()
         data['email'] = ""

@@ -30,8 +30,8 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         authenticate_webdriver(
             self.user.username, self.user._password, self, 'browser')
 
-    @mock.patch('dataset.tasks.create_variants.delay')
-    @mock.patch('accounts.tasks.notify_user_upload_status.delay')
+    @mock.patch('dataset.tasks.create_variants.apply_async')
+    @mock.patch('core.tasks.send_mail.apply_async')
     def test_create_experiment_flow(self, notify_patch, variants_patch):
         # Create some experimentsets that the user should not be able to see
         exps1 = data_factories.ExperimentSetFactory(private=False)
@@ -254,7 +254,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         self.assertFalse(scoreset.has_public_urn)
         self.assertIn('new kw', [k.text for k in scoreset.keywords.all()])
         self.assertEqual(scoreset.processing_state, constants.processing)
-        tasks.create_variants.apply(kwargs=variants_patch.call_args[1])
+        tasks.create_variants.apply(**variants_patch.call_args[1])
         
         # Check to see if the notify emails were sent
         self.assertEqual(notify_patch.call_count, 1)

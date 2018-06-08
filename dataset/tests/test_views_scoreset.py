@@ -15,6 +15,7 @@ from accounts.permissions import (
 )
 
 from core.utilities.tests import TestMessageMixin
+from core.tasks import send_mail
 
 from genome.factories import ReferenceGenomeFactory
 
@@ -28,8 +29,7 @@ from metadata.factories import (
 from variant.factories import VariantFactory
 
 import dataset.constants as constants
-from ..tasks import create_variants, publish_scoreset
-from accounts.tasks import notify_user_upload_status
+from ..tasks import create_variants
 from ..forms.scoreset import ScoreSetForm
 from ..factories import (
     ScoreSetFactory, ExperimentFactory, ScoreSetWithTargetFactory
@@ -372,7 +372,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         form = ScoreSetForm(files=self.files, data=form_data, user=self.user)
         self.assertTrue(form.is_valid())
 
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+        with mock.patch('dataset.tasks.create_variants.apply_async') as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
             self.assertEqual(
@@ -381,9 +381,8 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
                     "scoreset_urn": ScoreSet.objects.first().urn,
                     "variants": form.get_variants(),
                     "dataset_columns": form.dataset_columns,
-                    "base_url": "http://" + request.get_host(),
                 },
-                create_mock.call_args[1]
+                create_mock.call_args[1]['kwargs']
             )
 
     def test_invalid_form_does_not_redirect(self):
@@ -736,15 +735,16 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
 
-        with mock.patch('dataset.tasks.create_variants.delay') as create_mock:
+        with mock.patch('dataset.tasks.create_variants.apply_async') as create_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()
             scs.refresh_from_db()
             self.assertEqual(scs.processing_state, constants.processing)
-            with mock.patch('dataset.tasks.notify_user_upload_status.delay') as notify_patch:
-                create_variants.apply(kwargs=create_mock.call_args[1])
+            
+            with mock.patch('core.tasks.send_mail.apply_async') as notify_patch:
+                create_variants.apply(**create_mock.call_args[1])
                 self.assertEqual(notify_patch.call_count, 1)
-                notify_user_upload_status.apply(kwargs=notify_patch.call_args[1])
+                send_mail.apply(**notify_patch.call_args[1])
                 self.assertEqual(len(mail.outbox), 1)
                 scs.refresh_from_db()
                 self.assertEqual(scs.processing_state, constants.success)
