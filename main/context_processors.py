@@ -1,21 +1,14 @@
 """
 Add any functions here which you would like for use in templates.
 """
-from django.conf import settings
+from core.utilities import base_url
 
 
-def baseurl(request):
+def baseurl(request=None):
     """
     Return a base_url template context for the current request.
     """
-    if request is None:
-        scheme = 'http://'
-    else:
-        if request.is_secure():
-            scheme = 'https://'
-        else:
-            scheme = 'http://'
-    return {'base_url': scheme + settings.HOST_NAME}
+    return {'base_url': base_url(request)}
 
 
 def site_information(request):

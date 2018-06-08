@@ -106,3 +106,6 @@ LOGGING = {
         },
     },
 }
+
+# Celery conifg
+task_always_eager = True

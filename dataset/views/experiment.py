@@ -4,7 +4,6 @@ from django.http import HttpRequest
 from django.urls import reverse_lazy
 from django.db import transaction
 
-from core.tasks import email_admins
 from core.utilities.versioning import track_changes
 
 from ..forms.experiment import ExperimentForm, ExperimentEditForm
@@ -82,8 +81,6 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
         
         if not self.request.POST['experimentset']:
             experiment.experimentset.add_administrators(self.request.user)
-            email_admins.delay(self.request.user.pk,
-                               experiment.experimentset.urn)
             propagate = True
             save_parents = True
         else:

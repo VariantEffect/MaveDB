@@ -5,15 +5,14 @@ from social_django.models import UserSocialAuth
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 from django.db import models
-from django.shortcuts import reverse
 from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.html import format_html
+from django.shortcuts import reverse
 
 from core.models import TimeStampedModel
 from core.tasks import send_mail
-from main.context_processors import baseurl
 
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
@@ -47,13 +46,14 @@ class Profile(TimeStampedModel):
     def email_user(self, subject, message, from_email=None, **kwargs):
         email = self.email or self.user.email
         if email:
-            send_mail.submit_task(
+            task_kwargs = dict(
                 subject=subject,
                 message=message,
                 from_email=from_email,
                 recipient_list=[email],
-                **kwargs
             )
+            task_kwargs.update(**kwargs)
+            send_mail.submit_task(kwargs=task_kwargs)
         else:
             logger.error(
                 "Tried email user {} from Profile but could not find an "
@@ -66,27 +66,18 @@ class Profile(TimeStampedModel):
         else:
             template_name = "accounts/celery_complete_email_failed.html"
         subject = "Your submission has been processed."
+        
+        if not hasattr(instance, 'get_url'):
+            url = reverse('accounts:profile')
+        else:
+            url = instance.get_url()
+            
         message = render_to_string(template_name, {
-            'urn': instance.urn, 'user': self,
-            'base_url': baseurl(request=None)['base_url']
+            'user': self, 'url': url
         })
         self.email_user(subject=subject, message=message)
 
     def notify_user_group_change(self, instance, action, group):
-        base_url = baseurl(request=None)['base_url']
-
-        if isinstance(instance, Experiment):
-            path = reverse("dataset:experiment_detail", args=(instance.urn,))
-        elif isinstance(instance, ScoreSet):
-            path = reverse("dataset:scoreset_detail", args=(instance.urn,))
-        elif isinstance(instance, ExperimentSet):
-            path = reverse("dataset:experimentset_detail",
-                           args=(instance.urn,))
-        else:
-            raise TypeError("{} does not have a reverse url".format(
-                type(instance).__name__
-            ))
-
         if action == 'removed':
             conjunction = 'from'
         else:
@@ -96,12 +87,12 @@ class Profile(TimeStampedModel):
             group = 'an {}'.format(group)
         else:
             group = 'a {}'.format(group)
-
+            
         template_name = "accounts/added_removed_as_contributor.html"
         subject = 'Updates to entry {}.'.format(instance.urn)
         message = render_to_string(template_name, {
-            'user': self, 'group': group, 'conjunction': conjunction,
-            'url': base_url + path, 'action': action, 'urn': instance.urn
+            'user': self.user, 'group': group, 'conjunction': conjunction,
+            'url': instance.get_url(), 'action': action, 'urn': instance.urn
         })
         self.email_user(subject=subject, message=message)
 

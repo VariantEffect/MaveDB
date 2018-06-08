@@ -12,7 +12,8 @@ from urn.validators import (
 nan_col_values = {
     '', ' ',
     'nan', 'na', 'none', 'null',
-    'NaN', 'None', 'Na', 'NA', 'NULL'
+    'NaN', 'None', 'Na', 'NA', 'NULL',
+    'undefined',
 }
 hgvs_column = "hgvs"
 meta_data = "meta_data"

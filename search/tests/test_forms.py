@@ -171,7 +171,7 @@ class TestMetadataSearchForm(TestCase):
         self.assertIn(obj1, result)
         self.assertNotIn(obj2, result)
 
-    def test_can_search_multiple_fields(self):
+    def test_multiple_field_search_uses_AND(self):
         obj1 = ExperimentFactory(method_text='foobar')
         kw1 = obj1.keywords.first()
         kw1.text = 'Hello\'s'
@@ -416,7 +416,7 @@ class TestGenomeSearchForm(TestCase):
         self.assertIn(obj1, result)
         self.assertNotIn(obj2, result)
 
-    def test_can_search_multiple(self):
+    def test_multiple_field_search_uses_AND(self):
         obj1 = ExperimentWithScoresetFactory()
         obj2 = ExperimentWithScoresetFactory()
         obj3 = ExperimentWithScoresetFactory()
@@ -438,7 +438,7 @@ class TestGenomeSearchForm(TestCase):
         g3.save()
 
         data = {
-            'assembly': g1.genome_id.identifier,
+            'species': g1.species_name.lower(),
             'genome': g1.short_name.lower()
         }
         form = GenomeSearchForm(data=data)

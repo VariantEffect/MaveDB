@@ -252,13 +252,12 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
         if scoreset_form.get_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
-            task_kwargs = dict(
-                user_pk=self.request.user.pk,
-                variants=scoreset_form.get_variants().copy(),
-                scoreset_urn=scoreset.urn,
-                dataset_columns=scoreset_form.dataset_columns.copy(),
-                base_url=baseurl(self.request)['BASE_URL'],
-            )
+            task_kwargs = {
+                "user_pk": self.request.user.pk,
+                "variants": scoreset_form.get_variants().copy(),
+                "scoreset_urn": scoreset.urn,
+                "dataset_columns": scoreset_form.dataset_columns.copy(),
+            }
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
 

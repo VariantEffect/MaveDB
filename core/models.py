@@ -45,6 +45,9 @@ class FailedTask(models.Model):
     """
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(null=True, blank=True)
+    failures = models.PositiveSmallIntegerField(default=1)
+    
+    # Required by instantiate method
     name = models.CharField(max_length=125)
     full_name = models.TextField()
     args = models.TextField(null=True, blank=True)
@@ -53,7 +56,6 @@ class FailedTask(models.Model):
     exception_msg = models.TextField()
     traceback = models.TextField(null=True, blank=True)
     celery_task_id = models.CharField(max_length=36)
-    failures = models.PositiveSmallIntegerField(default=1)
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
@@ -73,15 +75,21 @@ class FailedTask(models.Model):
             self.name, self.args, self.kwargs, self.exception_class,
             self.failures
         )
-
+    
     @classmethod
-    def update_or_create(cls, task):
+    def update_or_create(cls, name, full_name, exc, task_id, args, kwargs,
+                         traceback=None, user=None):
         """
         Save a failed task. If it exists, the modification_date and failure
         counter are updated.
         """
         # Find if task with same args, name and exception already exists
         # If it does, update failures count and last updated_at
+        task = cls.instantiate_task(
+            name=name, full_name=full_name, exc=exc,
+            task_id=task_id, args=args, kwargs=kwargs,
+            traceback=traceback, user=user
+        )
         existing_task = task.find_existing()
         if existing_task is not None:
             existing_task.failures += 1
@@ -98,7 +106,8 @@ class FailedTask(models.Model):
                          traceback=None, user=None):
         """
         Convenience function to instantiate a task, handling the `json.dumps`
-        process of args and kwargs.
+        process of args and kwargs and the extraction of exception traceback,
+        message and class.
 
         Parameters
         ----------
@@ -157,16 +166,16 @@ class FailedTask(models.Model):
         for task in existing_tasks.all():
             task_kwargs = None
             self_kwargs = None
-            
+        
             if task.kwargs:
                 task_kwargs = json.loads(task.kwargs)
             if self.kwargs:
                 self_kwargs = json.loads(self.kwargs)
-
+        
             if task_kwargs == self_kwargs:
                 existing_task = task
                 break
-
+    
         return existing_task
 
     def retry(self, inline=False):

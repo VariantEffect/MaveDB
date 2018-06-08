@@ -32,7 +32,7 @@ def get_secret(setting, secrets=secrets):
         raise ImproperlyConfigured(error_message)
 
 
-HOST_NAME = get_secret('host_name')
+BASE_URL = get_secret('base_url')
 SECRET_KEY = get_secret('secret_key')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -213,19 +213,14 @@ REST_FRAMEWORK = {
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
+DATASET_TASK_SOFT_TIME_LIMIT =  10 * 60  # In seconds
 broker_url = 'amqp://localhost:5672//'
-
-task_ignore_result = True
-worker_hijack_root_logger = False
-
-task_serializer = 'json'
 accept_content = ('json',)
 result_serializer = 'json'
 
+task_ignore_result = True
+task_serializer = 'json'
+worker_hijack_root_logger = False
+task_soft_time_limit = 60  # seconds
 task_always_eager = False
 task_create_missing_queues = True
-
-long_exchange = Exchange('long_tasks', type='direct')
-task_queues = (
-    Queue('long_tasks', long_exchange, routing_key='long_tasks'),
-)

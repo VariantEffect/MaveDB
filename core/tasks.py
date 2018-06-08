@@ -1,5 +1,6 @@
 import traceback
 import logging
+import time
 
 from kombu.exceptions import (
     OperationalError, ConnectionLimitExceeded, ConnectionError,
@@ -98,13 +99,12 @@ class BaseTask(Task):
             str_kwargs['variants'] = variants
         logger.exception(
             "{0} with id {1} called with args={2}, kwargs={3} "
-            "raised:\n\n{4}\n\nInfo:\n\n{5}".format(
+            "raised:\n'{4}' with traceback:\n{5}".format(
                 self.name, task_id, args, str_kwargs, exc, einfo
             )
         )
         self.save_failed_task(exc, task_id, args, kwargs, einfo, user)
-        super(BaseTask, self).on_failure(
-            exc, task_id, args, kwargs, einfo)
+        super(BaseTask, self).on_failure(exc, task_id, args, kwargs, einfo)
     
     def save_failed_task(self, exc, task_id, args, kwargs, traceback,
                          user=None):
@@ -112,7 +112,7 @@ class BaseTask(Task):
         Save a failed task. If it exists, the modification_date and failure
         counter are updated.
         """
-        task = FailedTask.instantiate_task(
+        task, _ = FailedTask.update_or_create(
             name=self.name.split('.')[-1],
             full_name=self.name,
             exc=exc,
@@ -122,7 +122,6 @@ class BaseTask(Task):
             traceback=str(traceback).strip(),  # einfo
             user=user,
         )
-        task, _ = FailedTask.update_or_create(task)
         return task
 
     def submit_task(self, args=None, kwargs=None, async_options=None,
@@ -130,7 +129,9 @@ class BaseTask(Task):
         """
         Calls `task.apply_async` and handles any connection errors by
         logging the error to the `django` default log and saving the
-        failed task.
+        failed task. If a request object is passed in a warning message will be
+        shown to the user using the `messages` contrib module and the task
+        will be initialised with the authenticated user as a foreign key.
 
         Parameters
         ----------
@@ -146,7 +147,7 @@ class BaseTask(Task):
         Returns
         -------
         tuple[bool, Union[FailedTask, Any]]
-            FailedTask or task result.
+            Boolean indicating success or failure, FailedTask or task result.
         """
         if not async_options:
             async_options = {}
@@ -158,7 +159,7 @@ class BaseTask(Task):
                 name=self.name, exc_name=e.__class__.__name__))
             if request:
                 messages.warning(request, network_message)
-            task = FailedTask.instantiate_task(
+            task, _ = FailedTask.update_or_create(
                 name=self.name.split('.')[-1],
                 full_name=self.name,
                 exc=e,
@@ -168,7 +169,6 @@ class BaseTask(Task):
                 traceback=traceback.format_exc(),
                 user=None if not request else request.user
             )
-            task, _ = FailedTask.update_or_create(task)
             return False, task
 
 
@@ -185,9 +185,11 @@ def send_mail(subject, message, from_email, recipient_list, **kwargs):
 
 
 @celery_app.task(ignore_result=True, base=BaseTask)
-def add(a, b, raise_=False):
+def add(a, b, raise_=False, wait=False):
     """Debug test task."""
     if raise_:
         raise AttributeError("Test Error")
+    if wait:
+        time.sleep(wait)
     return a + b
 
