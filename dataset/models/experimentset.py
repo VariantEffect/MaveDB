@@ -1,6 +1,7 @@
-from django.db import models, transaction
+from django.db import models
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from django.shortcuts import reverse
 
 from accounts.permissions import (
     PermissionTypes,
@@ -8,8 +9,10 @@ from accounts.permissions import (
     delete_all_groups_for_instance,
 )
 
+from core.utilities import base_url
+
 from urn.models import UrnModel
-from urn.validators import MAVEDB_URN_NAMESPACE, validate_mavedb_urn_experimentset
+from urn.validators import validate_mavedb_urn_experimentset
 
 from ..models.base import DatasetModel, PublicDatasetCounter
 
@@ -58,6 +61,10 @@ class ExperimentSet(DatasetModel):
 
     def public_experiments(self):
         return self.children.exclude(private=True)
+    
+    def get_url(self, request=None):
+        base = base_url(request)
+        return base + reverse("dataset:experimentset_detail", args=(self.urn,))
 
 # --------------------------------------------------------------------------- #
 #                            Post Save

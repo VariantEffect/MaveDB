@@ -1,16 +1,17 @@
-import reversion
-
 from django.contrib.postgres.fields import JSONField
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from django.shortcuts import reverse
 
 from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
     delete_all_groups_for_instance,
 )
+
+from core.utilities import base_url
 
 from main.models import Licence
 
@@ -209,6 +210,10 @@ class ScoreSet(DatasetModel):
             for r in self.get_target().get_reference_maps()
         ]))
 
+    def get_url(self, request=None):
+        base = base_url(request)
+        return base + reverse("dataset:scoreset_detail", args=(self.urn,))
+    
     # JSON field related methods
     # ---------------------------------------------------------------------- #
     @property

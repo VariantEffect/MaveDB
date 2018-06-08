@@ -1,6 +1,7 @@
 import string
 from functools import reduce
 
+from django.shortcuts import reverse
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -10,6 +11,8 @@ from accounts.permissions import (
     create_all_groups_for_instance,
     delete_all_groups_for_instance,
 )
+
+from core.utilities import base_url
 
 from genome.models import TargetGene
 
@@ -130,6 +133,10 @@ class Experiment(DatasetModel):
 
     def public_scoresets(self):
         return self.children.exclude(private=True)
+    
+    def get_url(self, request=None):
+        base = base_url(request)
+        return base + reverse("dataset:experiment_detail", args=(self.urn,))
 
 
 # --------------------------------------------------------------------------- #

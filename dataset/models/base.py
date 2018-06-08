@@ -291,7 +291,10 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             self.experiment.save_parents(*args, **kwargs)
         if hasattr(self, 'experimentset'):
             self.experimentset.save(*args, **kwargs)
-
+            
+    def get_url(self):
+        raise NotImplementedError
+        
     @transaction.atomic
     def publish(self):
         if self.has_public_urn or not self.private:
