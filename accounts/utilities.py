@@ -3,8 +3,6 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
 from accounts.permissions import PermissionTypes
 
-from main.context_processors import baseurl
-
 from dataset import constants
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
@@ -141,7 +139,6 @@ def publish(urn, request):
         task_kwargs = dict(
             scoreset_urn=instance.urn,
             user_pk=request.user.pk,
-            base_url=baseurl(request)['BASE_URL'],
         )
         success, _ = publish_scoreset.submit_task(
             kwargs=task_kwargs,

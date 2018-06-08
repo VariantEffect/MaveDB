@@ -13,8 +13,8 @@ from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
 from accounts.utilities import delete, publish
-from main.context_processors import baseurl
 from urn.models import get_model_by_urn
+
 from .forms import (
     RegistrationForm,
     SelectUsersForm,
@@ -176,7 +176,6 @@ def manage_instance(request, urn):
             )
 
         if post_form is not None and post_form.is_valid():
-            base_url = baseurl(request)['BASE_URL']
             post_form.process_user_list()
             instance.last_edit_by = request.user
             assign_superusers_as_admin(instance)
