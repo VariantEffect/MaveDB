@@ -19,9 +19,19 @@
     {% endif %}
   </h1>
   <p class="text-muted urn-detail">
+    <span>
+      Created
+      <a target="_blank" href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    </span>
+    <br>
 
-    Created <a href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a><br>
-    Last updated <a href="{{instance.modified_by.profile.get_orcid_url}}">{{instance.modification_date}}</a><br>
+    <span>
+      Last updated
+      <a target="_blank" href="{{instance.modified_by.profile.get_orcid_url}}">{{instance.modification_date}}</a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    </span>
+    <br>
 
     {% if instance.private %}
       Private entry
@@ -108,7 +118,10 @@
     <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
     <ul>
       {% for contributor in instance.contributors %}
-      <li>{{ contributor.profile.get_display_name_hyperlink }}</li>
+      <li>
+        {{ contributor.profile.get_display_name_hyperlink }}
+        <i class="external-link fas fa-external-link-alt"></i>
+      </li>
       {% endfor %}
     </ul>
 
@@ -167,7 +180,10 @@
         <strong>DOI:</strong>
           <ul>
           {% for doi in instance.doi_ids.all %}
-            <li><a href="{{doi.url}}">{{doi.identifier}}</a></li>
+            <li>
+              <a target="_blank" href="{{doi.url}}">{{doi.identifier}}</a>
+              <i class="external-link fas fa-external-link-alt"></i>
+            </li>
           {% endfor %}
           </ul>
       {% else %}
@@ -179,7 +195,10 @@
           <strong>SRA:</strong>
             <ul>
             {% for sra in instance.sra_ids.all %}
-              <li><a href="{{sra.url}}">{{sra.identifier}}</a></li>
+              <li>
+                <a target='_blank' href="{{sra.url}}">{{sra.identifier}}</a>
+                <i class="external-link fas fa-external-link-alt"></i>
+              </li>
             {% endfor %}
             </ul>
         {% else %}
@@ -192,7 +211,10 @@
       {% if instance.pubmed_ids.count %}
         <ol>
         {% for pm in instance.pubmed_ids.all %}
-          <li>{{ pm.reference_html|safe }} PMID: <a href="{{pm.url}}">{{pm.identifier}}</a></li>
+          <li>{{ pm.reference_html|safe }} PMID:
+            <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </li>
         {% endfor %}
         </ol>
         {% if instance.class_name == 'scoreset' %}
@@ -201,7 +223,10 @@
             <p class="pl-4">References from <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:</p>
             <ol start="{{instance.pubmed_ids.count|add:1}}">
             {% for pm in parent_refs %}
-              <li>{{ pm.reference_html|safe }} PMID: <a href="{{pm.url}}">{{pm.identifier}}</a></li>
+              <li>{{ pm.reference_html|safe }} PMID:
+                <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
+                <i class="external-link fas fa-external-link-alt"></i>
+              </li>
             {% endfor %}
             </ol>
           {% endif %}

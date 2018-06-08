@@ -92,7 +92,10 @@
               </td>
               <td>
                 {% for c in instance.contributors %}
-                  {{ c.profile.get_display_name_hyperlink|safe }}
+                  <span>
+                    {{ c.profile.get_display_name_hyperlink|safe }}
+                    <i class="external-link-small fas fa-external-link-alt"></i>
+                  </span>
                 {% endfor %}
               </td>
             </tr>
@@ -119,7 +122,10 @@
                 </td>
                 <td>
                   {% for c in instance.contributors %}
-                    {{ c.profile.get_display_name_hyperlink|safe }}
+                    <span>
+                      {{ c.profile.get_display_name_hyperlink|safe }}
+                      <i class="external-link-small fas fa-external-link-alt"></i>
+                    </span>
                   {% endfor %}
                 </td>
               </tr>

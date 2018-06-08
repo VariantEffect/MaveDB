@@ -152,9 +152,10 @@ class Profile(TimeStampedModel):
         if self.is_anon():
             return 'anonymous user'
         else:
-            return format_html('<a href="{url}">{name}</a>'.format(
-                url=self.get_orcid_url(),
-                name=self.get_display_name()))
+            return format_html(
+                '<a target="_blank" href="{url}">{name}</a>'.format(
+                    url=self.get_orcid_url(),
+                    name=self.get_display_name()))
 
     def get_full_name_hyperlink(self):
         """
@@ -170,9 +171,10 @@ class Profile(TimeStampedModel):
         if self.is_anon():
             return 'anonymous user'
         else:
-            return format_html('<a href="{url}">{name}</a>'.format(
-                url=self.get_orcid_url(),
-                name=self.get_full_name()))
+            return format_html(
+                '<a target="_blank" href="{url}">{name}</a>'.format(
+                    url=self.get_orcid_url(),
+                    name=self.get_full_name()))
 
     def get_display_name(self):
         """
