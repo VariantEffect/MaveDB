@@ -4,7 +4,7 @@ Hi {{ user.first_name }},
 {% else %}
 Hi,
 {% endif %}
-Your <a href="{{ base_url|safe }}{% url 'dataset:scoreset_detail' urn %}">submission</a> could not be processed. Try uploading your variant files again or contacting support if the issue persists.
+Your <a href="{{ url|safe }}">submission</a> could not be processed. Try uploading your variant files again or contacting support if the issue persists.
 
 Regards,
 The Mave team.
