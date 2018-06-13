@@ -142,7 +142,7 @@ can be copied from another system if it was built with
 `--flag pandoc:embed_data_files`.
 
 
-## Installing and configuring RabbitMQ (Incomplete)
+## Installing and configuring RabbitMQ
 Using celery to run long running processes requires the broker-messaging backend RabbitMQ.
 Installing RabbitMQ requires the installation of Erlang as a dependency. RabbitMQ has 
 provided a minial dependency-free version of Erlang. You will need to add an additional
