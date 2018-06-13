@@ -8,6 +8,8 @@ from .dna import deletion as dna_deletion
 from .dna import insertion as dna_insertion
 from .dna import delins as dna_delins
 from .dna import substitution as dna_substitution
+from .dna import any_event as dna_any_event
+from .dna import any_event_type as dna_any_event_type
 
 nucleotides = 'augcxn'
 
@@ -16,19 +18,8 @@ deletion = dna_deletion.replace('ATCGXN', nucleotides)
 insertion = dna_insertion.replace('ATCGXN', nucleotides)
 delins = dna_delins.replace('ATCGXN', nucleotides)
 substitution = dna_substitution.replace('ATCGXN', nucleotides)
-
-# Expression capture groups used for joining and multi-variant matching
-# where re-defined capture groups are not valid regex.
-any_event = r"({0})?({1})".format(
-    utr_descriptor,
-    r"|".join([insertion, deletion, delins, substitution]))
-any_event, _ = re.subn(r"P<\w+(_\w+)?>", ':', any_event)
-
-any_event_type = r"({0})?({1})".format(
-    utr_descriptor,
-    r"|".join([insertion, deletion, delins, substitution]))
-any_event_type, _ = re.subn(
-    r"P<(utr|base|end|start|pos|bases|ref|new)>", ':', any_event_type)
+any_event = dna_any_event.replace('ATCGXN', nucleotides)
+any_event_type = dna_any_event_type.replace('ATCGXN', nucleotides)
 
 # ---- Compiled Regexes
 deletion_re = re.compile(
