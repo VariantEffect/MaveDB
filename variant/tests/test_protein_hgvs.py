@@ -22,16 +22,15 @@ class TestVariantRegexPatterns(TestCase):
 
 class TestEventValidators(TestCase):
     def test_valid_substitutions_pass(self):
-        validate_substitution('123a>g')
-        validate_substitution('123a>x')
-        validate_substitution('123a>n')
-        validate_substitution('54g>h')
-        validate_substitution('54=')
-        validate_substitution('54=/u>c')
-        validate_substitution('54=//u>c')
+        validate_substitution('Trp24Cys')
+        validate_substitution('Cys188=')
+        validate_substitution('Trp24*')
+        validate_substitution('Trp24Ter')
+        validate_substitution('Trp24?')
+        validate_substitution('Trp24=/Cys')
         validate_substitution('0')
         validate_substitution('?')
-        validate_substitution('spl')
+        
     
     def test_error_invalid_substitutions(self):
         with self.assertRaises(ValidationError):
@@ -54,12 +53,11 @@ class TestEventValidators(TestCase):
             validate_substitution('+12a>g')
     
     def test_valid_deletions_pass(self):
-        validate_deletion('10del')
-        validate_deletion('6_8del')
-        validate_deletion('19_21del')
-        validate_deletion('(4072_5145)del')
-        validate_deletion('=/6_8del')
-        validate_deletion('1704del')
+        validate_deletion('Val7del')
+        validate_deletion('Lys23_Val25del')
+        validate_deletion('Trp4del')
+        validate_deletion('Gly2_Met46del')
+        validate_deletion('Val7=/del')
     
     def test_error_invalid_deletions(self):
         with self.assertRaises(ValidationError):

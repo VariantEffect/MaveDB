@@ -8,8 +8,6 @@ utr_descriptor = r"(?P<utr>[*-])"
 position = r"(?:(\d+)|\?)"
 interval = r"(?:(({0})_({0})))".format(position)
 fragment = r"(?:\({0}\))".format(interval)
-breakpoint_ = r"(?:({0}_{0}))".format(fragment)
-
 intronic_position = r"(?:((\d+)|\?|\d+([\+-]?(\d+|\?))?))"
 intronic_interval = r"(?:(({0})_({0})))".format(intronic_position)
 
@@ -76,13 +74,13 @@ multi_variant =  (
 
 # ---- Compiled Regexes
 deletion_re = re.compile(
-    r"(?P<prefix>r\.)?({0})?({1})".format(utr_descriptor, deletion))
+    r"(r\.)?({0})?({1})".format(utr_descriptor, deletion))
 insertion_re = re.compile(
-    r"(?P<prefix>r\.)?({0})?({1})".format(utr_descriptor, insertion))
+    r"(r\.)?({0})?({1})".format(utr_descriptor, insertion))
 delins_re = re.compile(
-    r"(?P<prefix>r\.)?({0})?({1})".format(utr_descriptor, delins))
+    r"(r\.)?({0})?({1})".format(utr_descriptor, delins))
 substitution_re = re.compile(
-    r"(?P<prefix>r\.)?({0})?({1})".format(utr_descriptor, substitution))
+    r"(r\.)?({0})?({1})".format(utr_descriptor, substitution))
 single_variant_re = re.compile(single_variant)
 multi_variant_re = re.compile(multi_variant)
 

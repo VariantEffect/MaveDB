@@ -83,7 +83,7 @@ def validate_substitution(hgvs):
     ref_nt = match.groupdict().get('ref', None)
     new_nt = match.groupdict().get('new', None)
     silent = match.groupdict().get('silent', None)
-    if not silent and (ref_nt is not None and new_nt is not None):
+    if not silent and (ref_nt is not None and new_nt):
         if ref_nt == new_nt:
             raise ValidationError(
                 "Reference nucleotide cannot be the same as the "

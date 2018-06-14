@@ -29,26 +29,24 @@ AA_CODES = {
 }
 
 AA_TRI = set(AA_CODES.keys())
-amino_acids = '|'.join(AA_TRI).replace('?', '\?')
+amino_acids = '|'.join(AA_TRI).replace('?', '\?').replace('*', '\*')
 
 
-utr_descriptor = r"(?P<utr>[*-])"
-position = r"(?:((\d+)|\?|([*-]?\d+([\+-]?(\d+|\?))?)))"
+position = r"(?:(({0})\d+)|\?)".format(amino_acids)
 interval = r"(?:(({0})_({0})))".format(position)
-fragment = r"(?:\({0}\))".format(interval)
-breakpoint_ = r"(?:({0}_{0}))".format(fragment)
+unknown_aa = r"(?:({0}){{1}}(\^({0}))+(?!\^))".format(amino_acids)
 
 
 # Expression with capture groups
 deletion = (
     r"(?P<del>"
         r"("
-            r"((?P<aa_start>{0})(?P<start>\d+)_(?P<aa_end>{0})(?P<end>\d+))"
+            r"(?P<interval>{0})"
             r"|"
-            r"((?P<aa>{0})(?P<pos>\d+)(?P<mosaic>\=/)?)"
+            r"((?P<position>{1})(?P<mosaic>\=/)?)"
         r")"
         r"del"
-    r")".format(amino_acids)
+    r")".format(interval, position)
 )
 insertion = (
     r"(?P<ins>"
@@ -83,7 +81,7 @@ substitution = (
         r"("
             r"(?P<ref>{0})(?P<pos>\d+)"
             r"("
-                r"(?P<new>((?P<mosaic>\=/)?({0}))|(({0}){{1}}(\^({0}))+(?!\^))|(\*))"
+                r"(?P<new>((?P<mosaic>\=/)?({0}))|((({0}){{1}}\^({0}))+(?!\^))|(\*))"
                 r"|"
                 r"(?P<silent>\=)"
             r")"
@@ -101,26 +99,24 @@ frame_shift = (
     r")"
 ).format(amino_acids)
 
+
 # Expression capture groups used for joining and multi-variant matching
 # where re-defined capture groups are not valid regex.
-any_event = r"({0})?({1})".format(
-    utr_descriptor,
-    r"|".join([insertion, deletion, delins, substitution, frame_shift]))
+any_event = r"({0})".format(
+    r"|".join([insertion, deletion, delins, substitution, frame_shift])
+)
 any_event, _ = re.subn(r"P<\w+(_\w+)?>", ':', any_event)
 single_variant = r"(p\.{0})|(p.\({0}\))".format(any_event)
 multi_variant =  r"p\.\[({0})(;{0}){{1,}}(?!;)\]".format(any_event)
 
+
 # ---- Compiled Regexes
-deletion_re = re.compile(
-    r"(?P<prefix>p\.)?({0})?({1})".format(utr_descriptor, deletion))
-insertion_re = re.compile(
-    r"(?P<prefix>p\.)?({0})?({1})".format(utr_descriptor, insertion))
-delins_re = re.compile(
-    r"(?P<prefix>p\.)?({0})?({1})".format(utr_descriptor, delins))
-substitution_re = re.compile(
-    r"(?P<prefix>p\.)?({0})?({1})".format(utr_descriptor, substitution))
-frame_shift_re = re.compile(
-    r"(?P<prefix>p\.)?({0})?({1})".format(utr_descriptor, frame_shift))
+deletion_re = re.compile(r"(p\.)?({0})".format(deletion))
+insertion_re = re.compile(r"(p\.)?({0})".format(insertion))
+delins_re = re.compile(r"(p\.)?({0})".format(delins))
+substitution_re = re.compile(r"(p\.)?({0})".format(substitution))
+frame_shift_re = re.compile(r"(p\.)?({0})".format(frame_shift))
+
 single_variant_re = re.compile(single_variant)
 multi_variant_re = re.compile(multi_variant)
 
