@@ -2,33 +2,49 @@ import re
 
 from django.core.exceptions import ValidationError
 
-from . import parse_positions, position, utr_descriptor, validate_event
 
-
-nucleotides = 'ATCGXN'
-
+nucleotides = 'ATCGXNH'
+utr_descriptor = r"(?P<utr>[*-])"
+position = r"(?:((\d+)|\?|([*-]?\d+([\+-]?(\d+|\?))?)))"
+interval = r"(?:(({0})_({0})))".format(position)
+fragment = r"(?:\({0}\))".format(interval)
+breakpoint_ = r"(?:({0}_{0}))".format(fragment)
 
 # Expression with capture groups
 deletion = (
-    r"(?P<start>{0})_(?P<end>{0})(?P<del>del)"
-    r"|"
-    r"(?P<pos>{0})(?P<del_single>del)(?P<base>[{1}])".format(
-        position, nucleotides)
+    r"(?P<del>"
+        r"((?P<interval>{0})((\=/)|(\=//)|(del\=//)|(del\=/))?del)"
+        r"|"
+        r"((?P<breakpoint>{1})del)"
+        r"|"
+        r"((?P<position>{2})del(?P<base>[{3}])?)"
+    r")".format(interval, breakpoint_, position, nucleotides)
 )
 insertion = (
-    r"(?P<start>{0})_(?P<end>{0})(?P<ins>ins)"
-    r"(?P<bases>[{1}]+)".format(position, nucleotides)
+    r"(?P<ins>"
+        r"("
+            r"((?P<interval>{0})ins)"
+            r"|"
+            r"((?P<fragment>{1})ins)"
+        r")"
+        r"((?P<bases>[{2}]+)|(?P<length>\(\d+\)))"
+    r")".format(interval, fragment, nucleotides)
 )
 delins = (
-    r"(?P<start>{0})_(?P<end>{0})(?P<delins>delins)"
-    r"(?P<bases>[{1}]+)".format(position, nucleotides)
+    r"(?P<delins>"
+        r"("
+            r"((?P<interval>{0})delins)"
+            r"|"
+            r"((?P<position>{1})delins)"
+        r")"
+        r"((?P<bases>[{2}]+)|(?P<length>\(\d+\)))"
+    r")".format(interval, position, nucleotides)
 )
 substitution = (
     r"(?P<sub>"
-        r"(?P<pos>{0})"
-        r"(?P<ref>[{1}])"
+        r"(?P<position>{0})"
         r"("
-            r"((>|\=/|\=//)(?P<new>[{1}]))"
+            r"((?P<mosaic>(\=/)|(\=//))?(?P<ref>[{1}])>(?P<new>[{1}]))"
             r"|"
             r"(?P<silent>\=)"
         r")"
@@ -42,11 +58,9 @@ any_event = r"({0})?({1})".format(
     r"|".join([insertion, deletion, delins, substitution]))
 any_event, _ = re.subn(r"P<\w+(_\w+)?>", ':', any_event)
 
-any_event_type = r"({0})?({1})".format(
-    utr_descriptor,
-    r"|".join([insertion, deletion, delins, substitution]))
-any_event_type, _ = re.subn(
-    r"P<(utr|base|end|start|pos|bases|ref|new|silent)>", ':', any_event_type)
+single_variant = r"[cngm]\.{0}".format(any_event)
+multi_variant =  r"[cngm]\.\[({0})(;{0}){{1,}}(?!;)\]".format(any_event)
+
 
 # ---- Compiled Regexes
 deletion_re = re.compile(
@@ -57,81 +71,43 @@ delins_re = re.compile(
     r"(?P<prefix>[cngm]\.)?({0})?({1})".format(utr_descriptor, delins))
 substitution_re = re.compile(
     r"(?P<prefix>[cngm]\.)?({0})?({1})".format(utr_descriptor, substitution))
+single_variant_re = re.compile(single_variant)
+multi_variant_re = re.compile(multi_variant)
 
 
-def validate_substitution(event):
-    event = validate_event(event, regex=substitution_re)
-    ref_nt = event.groupdict().get('ref', None)
-    new_nt = event.groupdict().get('new', None)
-    silent = event.groupdict().get('silent', None)
-    if not silent:
-        if not ref_nt or not new_nt:
-            raise ValidationError(
-                "Invalid nucleotides for variant '{}'".format(event.string)
-            )
+def validate_substitution(hgvs):
+    match = substitution_re.fullmatch(hgvs)
+    if match is None:
+        raise ValidationError(
+            "'{}' is not a supported substitution syntax.".format(hgvs))
+    ref_nt = match.groupdict().get('ref', None)
+    new_nt = match.groupdict().get('new', None)
+    silent = match.groupdict().get('silent', None)
+    if not silent and (ref_nt is not None and new_nt is not None):
         if ref_nt == new_nt:
             raise ValidationError(
                 "Reference nucleotide cannot be the same as the "
-                "new nucleotide for variant '{}'.".format(event.string)
+                "new nucleotide for variant '{}'.".format(hgvs)
             )
 
 
-def validate_deletion(event):
-    event = validate_event(event, regex=deletion_re)
-    start = event.groupdict().get('start', None)
-    end = event.groupdict().get('end', None)
-    single = event.groupdict().get('del_single', False)
-    base = event.groupdict().get('base', None)
-    if (start is None or end is None) and not single:
-        raise ValidationError("Invalid deletion variant '{}',".format(
-            event.string))
-    if single and not base:
+def validate_deletion(hgvs):
+    match = deletion_re.fullmatch(hgvs)
+    if match is None:
         raise ValidationError(
-            "Single base deletion variant '{}' must specify "
-            "the deleted base.".format(event.string)
-        )
-    if not single:
-        start, end = parse_positions(start, end)
-        if start >= end:
-            raise ValidationError(
-                "Deletion starting position must be less than the ending "
-                "position in variant '{}'.".format(event.string)
-            )
+            "'{}' is not a supported deletion syntax.".format(hgvs))
 
 
-def validate_insertion(event):
-    event = validate_event(event, regex=insertion_re)
-    start = event.groupdict().get('start', None)
-    end = event.groupdict().get('end', None)
-    if start is None or end is None:
-        raise ValidationError("Invalid insertion variant '{}',".format(
-            event.string))
-    
-    start, end = parse_positions(start, end)
-    if start >= end:
+def validate_insertion(hgvs):
+    match = insertion_re.fullmatch(hgvs)
+    if match is None:
         raise ValidationError(
-            "Insertion starting position must be less than the ending "
-            "position in variant '{}'.".format(event.string)
-        )
-    flanking = start == (end - 1)
-    if not flanking:
-        raise ValidationError(
-            "Interval must define a flanking insertion site in '{}'.".format(
-                event.string)
-        )
+            "'{}' is not a supported insertion syntax.".format(hgvs))
 
 
-def validate_delins(event):
-    event = validate_event(event, regex=delins_re)
-    start = event.groupdict().get('start', None)
-    end = event.groupdict().get('end', None)
-    if start is None or end is None:
-        raise ValidationError("Invalid indel variant '{}',".format(
-            event.string))
-    
-    start, end = parse_positions(start, end)
-    if start >= end:
+
+def validate_delins(hgvs):
+    match = delins_re.fullmatch(hgvs)
+    if match is None:
         raise ValidationError(
-            "Indel starting position must be less than the ending "
-            "position in variant '{}'.".format(event.string)
-        )
+            "'{}' is not a supported deletion-insertion syntax.".format(hgvs))

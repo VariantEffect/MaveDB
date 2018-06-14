@@ -7,13 +7,23 @@ from .dna import validate_deletion as dna_validate_deletion
 from .dna import validate_insertion as dna_validate_insertion
 from .dna import validate_delins as dna_validate_delins
 from .dna import validate_substitution as dna_validate_substitution
+from .dna import single_variant as dna_single_variant
+from .dna import multi_variant as dna_multi_variant
 
 from .rna import validate_deletion as rna_validate_deletion
 from .rna import validate_insertion as rna_validate_insertion
 from .rna import validate_delins as rna_validate_delins
 from .rna import validate_substitution as rna_validate_substitution
+from .rna import single_variant as rna_single_variant
+from .rna import multi_variant as rna_multi_variant
 
-from .protein import *
+from .protein import validate_deletion as protein_validate_deletion
+from .protein import validate_insertion as protein_validate_insertion
+from .protein import validate_delins as protein_validate_delins
+from .protein import validate_substitution as protein_validate_substitution
+from .protein import validate_frame_shift as protein_validate_frame_shift
+from .protein import single_variant as protein_single_variant
+from .protein import multi_variant as protein_multi_variant
 
 
 class Event(Enum):
@@ -43,17 +53,20 @@ class Level(Enum):
 
 # Expression capture groups used for joining and multi-variant matching
 # where re-defined capture groups are not valid regex.
-utr_descriptor = r"(?P<utr>[*-])"
-position = r"(\d+)|(\d+(\+|-)\d+)"
+single_variant = r"({0})|({1})|({2})".format(
+    dna_single_variant,
+    rna_single_variant,
+    protein_single_variant
+)
+multi_variant = r"({0})|({1})|({2})".format(
+    dna_multi_variant,
+    rna_multi_variant,
+    protein_multi_variant
+)
 
-single_variant = r"[cngmrp]\.{event}".format(event=any_event_type)
-multi_variant = r"[cngmrp]\.\[({event})(;{event}){{1,}}(?!;)\]".format(
-    event=any_event)
-
-any_event_type_re = re.compile(any_event_type)
+# ---- Compiled Regex Expressions
 single_variant_re = re.compile(single_variant)
 multi_variant_re = re.compile(multi_variant)
-
 
 
 validate_event_functions = {
@@ -64,48 +77,53 @@ validate_event_functions = {
         Event.SUBSTITUTION: dna_validate_substitution,
     },
     Level.RNA: {
-    
+        Event.INSERTION: rna_validate_insertion,
+        Event.DELETION: rna_validate_deletion,
+        Event.DELINS: rna_validate_delins,
+        Event.SUBSTITUTION: rna_validate_substitution,
     },
     Level.PROTEIN: {
-    
+        Event.INSERTION: protein_validate_deletion,
+        Event.DELETION: protein_validate_insertion,
+        Event.DELINS: protein_validate_delins,
+        Event.SUBSTITUTION: protein_validate_substitution,
+        Event.FRAME_SHIFT: protein_validate_frame_shift,
     }
 }
 
 
+def infer_type(hgvs):
+    """
+    Infer the type of hgvs variant as supported by `Event`. The order of
+    this if/elif block is important: DELINS should come before INSERTION and
+    DELETION since DELINS events contain INSERTION and DELETION event values
+    as substrings.
+    
+    Parameters
+    ----------
+    hgvs : str
+        The hgvs string to infer from.
+    
+    Returns
+    -------
+    `Event`
+        An `Enum` value from the `Event` enum.
+    """
+    if Event.DELINS.value in hgvs:
+        return Event.DELINS
+    elif Event.INSERTION.value in hgvs:
+        return Event.INSERTION
+    elif Event.DELETION.value in hgvs:
+        return Event.DELETION
+    elif Event.FRAME_SHIFT.value in hgvs:
+        return Event.FRAME_SHIFT
+    else:
+        return Event.SUBSTITUTION
+        
+        
+
 def is_multi(hgvs):
     return bool(multi_variant_re.fullmatch(hgvs))
-
-
-def validate_event(event, regex):
-    if isinstance(event, str):
-        match = regex.fullmatch(event)
-        if not match:
-            raise ValidationError("Invalid variant '{}'.".format(event))
-        return match
-    elif hasattr(event, 'groupdict'):
-        return event
-    else:
-        raise TypeError(
-            "Expected `event` to be str or an re match object. "
-            "Found {}.".format(type(event).__name__)
-        )
-
-
-def parse_positions(start, end):
-    if start is None or end is None:
-        return None, None
-    start = re.split(r"[\+-]", start)
-    end = re.split(r"[\+-]", end)
-    intronic = any([len(x) >= 2 for x in [start, end]])
-    if intronic and len(start) < 2:
-        start = 1
-    else:
-        start = int(start[-1])
-    if intronic and len(end) < 2:
-        end = start + 1
-    else:
-        end = int(end[-1])
-    return int(start), int(end)
 
 
 def validate_multi_variant(hgvs):
@@ -120,11 +138,12 @@ def validate_multi_variant(hgvs):
         else:
             raise ValidationError(
                 "Variant '{}' has an unsupported prefix '{}'. "
-                "Supported prefixes are 'cngmp'".format(hgvs, hgvs[0])
+                "Supported prefixes are 'cngmpr'".format(hgvs, hgvs[0])
             )
-        validate_single_variants(hgvs or hgvs, level, multi=True)
+        validate_single_variants(hgvs, level, multi=True)
     else:
-        raise ValidationError("Invalid HGVS string '{}'.".format(hgvs))
+        raise ValidationError(
+            "'{}' is not a supported HGVS syntax.".format(hgvs))
 
 
 def validate_single_variants(hgvs, level, multi=False):
@@ -147,27 +166,11 @@ def validate_single_variants(hgvs, level, multi=False):
     
     if matches:
         for event in matches:
-            match = any_event_type_re.fullmatch(event)
+            match = single_variant_re.fullmatch(event)
             if not match:
                 raise ValidationError(
                     "Invalid event '{}' in '{}'.".format(event, hgvs))
-            
-            if match.groupdict().get(Event.INSERTION.value, None):
-                type_ = Event.INSERTION
-            elif match.groupdict().get(Event.DELETION.value, None):
-                type_ = Event.DELETION
-            elif match.groupdict().get(Event.SUBSTITUTION.value, None):
-                type_ = Event.SUBSTITUTION
-            elif match.groupdict().get(Event.DELINS.value, None):
-                type_ = Event.DELINS
-            else:
-                type_ = None
-            
-            if not type_:
-                raise ValidationError(
-                    "MaveDB does not currently support variants "
-                    "with syntax like '{}'.".format(event)
-                )
+            type_ = infer_type(event)
             validate_event_functions[level][type_](event)
     else:
         raise ValidationError(
