@@ -83,29 +83,31 @@ class SiteInformation(TimeStampedModel):
 
     Parameters
     ----------
-    about : `TextField`
-       The `about` markdown text.
-    citation : `TextField`
-       The citation for researches to use.
+    md_about : `TextField`
+       The about this site text (Markdown format).
+    md_citation : `TextField`
+       The citation for researches to use (Markdown format).
     md_usage_guide : `TextField`
-       A basic guide on how to use the website and api.
-    documentation : `TextField`
-       API documentation
-    terms : `TextField`
-       The terms and conditions text blob.
-    privacy : `TextField`
-        The privacy text blob.
+       A basic guide on how to use the website and api (Markdown format).
+    md_documentation : `TextField`
+       API documentation (Markdown format).
+    md_terms : `TextField`
+       The terms and conditions text blob (Markdown format).
+    md_privacy : `TextField`
+        The privacy text blob (Markdown format).
     version : `CharField`
         MaveDB release version.
     version_date : `DateTimeField`
         MaveDB version release date.
+    branch : `CharField`
+        MaveDB active git branch.
     """
-    about = models.TextField(default="")
-    citation = models.TextField(default="")
-    usage_guide = models.TextField(default="")
-    documentation = models.TextField(default="")
-    terms = models.TextField(default="")
-    privacy = models.TextField(default="")
+    md_about = models.TextField(default="")
+    md_citation = models.TextField(default="")
+    md_usage_guide = models.TextField(default="")
+    md_documentation = models.TextField(default="")
+    md_terms = models.TextField(default="")
+    md_privacy = models.TextField(default="")
     email = models.EmailField(default="")
     version = models.CharField(default="", max_length=250)
     version_date = models.DateField(default=datetime.date.today)
@@ -125,26 +127,28 @@ class SiteInformation(TimeStampedModel):
             return SiteInformation.objects.first()
         return SiteInformation.objects.create()
 
-    def md_about(self):
+    @property
+    def about(self):
         return convert_md_to_html(self.about)
 
-    def md_citation(self):
+    @property
+    def citation(self):
         return convert_md_to_html(self.citation)
 
     @property
-    def md_usage_guide(self):
+    def usage_guide(self):
         return convert_md_to_html(self.usage_guide)
 
     @property
-    def md_documentation(self):
+    def documentation(self):
         return convert_md_to_html(self.documentation)
 
     @property
-    def md_terms(self):
+    def terms(self):
         return convert_md_to_html(self.terms)
 
     @property
-    def md_privacy(self):
+    def privacy(self):
         return convert_md_to_html(self.privacy)
 
     @property
