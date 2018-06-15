@@ -29,12 +29,14 @@ AA_CODES = {
 }
 
 AA_TRI = set(AA_CODES.keys())
-amino_acids = '|'.join(AA_TRI).replace('?', '\?').replace('*', '\*')
+amino_acids = '({})'.format(
+    '|'.join(AA_TRI).replace('?', '\?').replace('*', '\*')
+)
 
 
 position = r"(?:(({0})\d+)|\?)".format(amino_acids)
 interval = r"(?:(({0})_({0})))".format(position)
-unknown_aa = r"(?:({0}){{1}}(\^({0}))+(?!\^))".format(amino_acids)
+amino_acid_choice = r"(?:({0}){{1}}(\^({0}))+(?!\^))".format(amino_acids)
 
 
 # Expression with capture groups
@@ -50,51 +52,61 @@ deletion = (
 )
 insertion = (
     r"(?P<ins>"
-        r"(?P<aa_start>{0})(?P<start>\d+)_(?P<aa_end>{0})(?P<end>\d+)"
+        r"(?P<interval>{0})"
         r"ins"
         r"("
-            r"(?P<aas>[{0}]+)"
+            r"(?P<inserted>{1}+|{2})"
             r"|"
             r"(?P<length>\d+)"
             r"|"
             r"(?P<unknown>(\(\d+\))|X+)"
         r")"
-    r")".format(amino_acids)
+    r")".format(interval, amino_acids, amino_acid_choice)
 )
 delins = (
     r"(?P<delins>"
-        r"((?P<aa_start>{0})(?P<start>\d+)(_(?P<aa_end>{0})(?P<end>\d+))?)"
+        r"("
+            r"(?P<interval>{0})"
+            r"|"
+            r"(?P<position>{1})"
+        r")"
         r"delins"
         r"("
-            r"(?P<aas>[{0}]+)"
+            r"(?P<inserted>{2}+|{3})"
             r"|"
             r"(?P<length>\d+)"
             r"|"
-            r"(?P<unknown>X+)"
+            r"(?P<unknown>(\(\d+\))|X+)"
         r")"
-    r")".format(amino_acids)
+    r")".format(interval, position, amino_acids, amino_acid_choice)
 )
 substitution = (
     r"(?P<sub>"
-        r"((?P<no_protein>0)|(?P<unknown>\?))"
+        r"((?P<no_protein>0)|(?P<not_predicted>\?))"
         r"|"
         r"("
             r"(?P<ref>{0})(?P<pos>\d+)"
             r"("
-                r"(?P<new>((?P<mosaic>\=/)?({0}))|((({0}){{1}}\^({0}))+(?!\^))|(\*))"
+                r"(?P<new>((?P<mosaic>\=/)?({0}))|(?P<choice>{1})|(\*))"
                 r"|"
                 r"(?P<silent>\=)"
+                r"|"
+                r"(?P<unknown>\?)"
             r")"
         r")"
-    r")".format(amino_acids)
+    r")".format(amino_acids, amino_acid_choice)
 )
 frame_shift = (
     r"(?P<fs>"
-        r"(?P<aa_1>{0})(?P<pos>\d+)(?P<aa_2>{0})fs"
+        r"(?P<left_aa>{0})(?P<position>\d+)(?P<right_aa>{0})?fs"
         r"(?P<shift>"
-            r"(({0})(\d+))"
-            r"(\*\?)"
-            r"(\*\d+)"
+            r"("
+                r"({0}\d+)"
+                r"|"
+                r"(\*\?)"
+                r"|"
+                r"(\*\d+)"
+            r")"
         r")?"
     r")"
 ).format(amino_acids)

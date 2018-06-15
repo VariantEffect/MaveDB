@@ -119,8 +119,7 @@ def infer_type(hgvs):
         return Event.FRAME_SHIFT
     else:
         return Event.SUBSTITUTION
-        
-        
+    
 
 def is_multi(hgvs):
     return bool(multi_variant_re.fullmatch(hgvs))

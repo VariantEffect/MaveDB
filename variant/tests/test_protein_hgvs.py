@@ -14,10 +14,27 @@ from ..hgvs.protein import (
 
 class TestVariantRegexPatterns(TestCase):
     def test_single_var_re_matches_each_event(self):
-        self.assertIsNotNone(None)
-    
+        self.assertIsNotNone(single_variant_re.fullmatch('p.Trp24Cys^Gly'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.(Trp24Cys)'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.Lys23_Val25del'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.(Lys23_Val25del)'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.His4_Gln5insAla'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.(His4_Gln5insAla)'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.Cys28delinsVal'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.(Cys28delinsVal)'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.Cys28fs'))
+        self.assertIsNotNone(single_variant_re.fullmatch('p.(Cys28fs)'))
+        
     def test_multi_var_re_matches_each_event(self):
-        self.assertIsNotNone(None)
+        self.assertIsNotNone(
+            multi_variant_re.fullmatch(
+                'p.[Trp24Cys;Lys23_Val25del;His4_Gln5insAla;Cys28fs;Cys28delinsVal]'
+            ))
+        # Non-multi should be none
+        self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys;]'))
+        self.assertIsNone(multi_variant_re.fullmatch('p.[(Trp24Cys)]'))
+        self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys,]'))
+        self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys]'))
 
 
 class TestEventValidators(TestCase):
@@ -26,6 +43,7 @@ class TestEventValidators(TestCase):
         validate_substitution('Cys188=')
         validate_substitution('Trp24*')
         validate_substitution('Trp24Ter')
+        validate_substitution('Trp24Ter^Ala^G')
         validate_substitution('Trp24?')
         validate_substitution('Trp24=/Cys')
         validate_substitution('0')
@@ -78,72 +96,72 @@ class TestEventValidators(TestCase):
             validate_deletion('19_21deluuu')
     
     def test_valid_insertions_pass(self):
-        validate_insertion('426_427insa')
-        validate_insertion('756_757insuacu')
-        validate_insertion('(222_226)insg')
-        validate_insertion('549_550insn')
-        validate_insertion('761_762insnnnnn')
-        validate_insertion('761_762ins(5)')
-        validate_insertion('2949_2950ins[2950-30_2950-12;2950-4_2950-1]')
+        validate_insertion('His4_Gln5insAla')
+        validate_insertion('His4_Gln5insAla^Gly^Ser')
+        validate_insertion('Lys2_Gly3insGlnSerLys')
+        validate_insertion('Met3_His4insGlyTer')
+        validate_insertion('Arg78_Gly79ins23')
+        validate_insertion('Ser332_Ser333ins(1)')
+        validate_insertion('Val582_Asn583ins(5)')
+        validate_insertion('Val582_Asn583insX')
+        validate_insertion('Val582_Asn583insXXXXX')
     
     def test_error_invalid_insertions(self):
         with self.assertRaises(ValidationError):
-            validate_insertion('19insR')
+            validate_insertion('Val582insXXXXX')
         with self.assertRaises(ValidationError):
             validate_insertion('')
         with self.assertRaises(ValidationError):
-            validate_insertion('insa')
+            validate_insertion('ins')
         with self.assertRaises(ValidationError):
-            validate_insertion('(4071+1_4072)-(1_5154+1_5155-1)ins')
+            validate_insertion('(Val582_Asn583)insXXXXX')
         with self.assertRaises(ValidationError):
-            validate_insertion('(?_-1)_(+1_?)ins')
+            validate_insertion('Val582_Asn583ins')
         with self.assertRaises(ValidationError):
-            validate_insertion('1704+1insaaa')
+            validate_insertion('Val582+1_Asn583insXXXXX')
     
     def test_valid_delins_passes(self):
-        validate_delins('6775delinsga')
-        validate_delins('6775_6777delinsc')
-        validate_delins('?_6777delinsc')
-        validate_delins('?_?delinsc')
-        validate_delins('142_144delinsugg')
-        validate_delins('9002_9009delinsuuu')
-        validate_delins('9002_9009delins(5)')
+        validate_delins('Cys28delinsTrpVal')
+        validate_delins('C28_L29delinsT')
+        validate_delins('C28_L29delins*')
+        validate_delins('Cys28delinsTrpVal')
+        validate_delins('Glu125_Ala132delinsGlyLeuHisArgPheIleValLeu')
+        validate_delins('C28_L29delinsT^G^L')
 
     def test_error_invalid_delins(self):
         with self.assertRaises(ValidationError):
-            validate_delins('19delinsR')
+            validate_delins('Cys28delinsZ')
         with self.assertRaises(ValidationError):
             validate_delins('')
         with self.assertRaises(ValidationError):
-            validate_delins('delinsa')
+            validate_delins('(Cys28_Cys)delinsTrpVal')
         with self.assertRaises(ValidationError):
-            validate_delins('(4071+1_4072)-(1_5154+1_5155-1)delins')
+            validate_delins('C28_L29delinsTG^G^L')
         with self.assertRaises(ValidationError):
-            validate_delins('(?_-1)_(+1_?)delins')
+            validate_delins('Cys28+5delinsZ')
         with self.assertRaises(ValidationError):
-            validate_delins('*?_45+1delinsc')
+            validate_delins('*?_45+1delinsg')
     
-    # TODO: Write these.
     def test_valid_frameshift_passes(self):
-        validate_frame_shift('6775delinsga')
-        validate_frame_shift('6775_6777delinsc')
-        validate_frame_shift('?_6777delinsc')
-        validate_frame_shift('?_?delinsc')
-        validate_frame_shift('142_144delinsugg')
-        validate_frame_shift('9002_9009delinsuuu')
-        validate_frame_shift('9002_9009delins(5)')
+        validate_frame_shift('Arg97ProfsTer23')
+        validate_frame_shift('Glu5ValfsTer5')
+        validate_frame_shift('Ile327Argfs*?')
+        validate_frame_shift('Ile327fs')
+        validate_frame_shift('Gln151Thrfs*9')
 
     def test_error_invalid_frameshift(self):
         with self.assertRaises(ValidationError):
-            validate_frame_shift('19delinsR')
+            validate_frame_shift('Arg97ProfsTer23Pro')
         with self.assertRaises(ValidationError):
             validate_frame_shift('')
         with self.assertRaises(ValidationError):
-            validate_frame_shift('delinsa')
+            validate_frame_shift('fsTer')
         with self.assertRaises(ValidationError):
-            validate_frame_shift('(4071+1_4072)-(1_5154+1_5155-1)delins')
+            validate_frame_shift('Glu5_Val7fsTer5')
         with self.assertRaises(ValidationError):
-            validate_frame_shift('(?_-1)_(+1_?)delins')
+            validate_frame_shift('Ile327Argfs*?Ter')
+        with self.assertRaises(ValidationError):
+            validate_frame_shift('Ile327fs(4)')
         with self.assertRaises(ValidationError):
             validate_frame_shift('*?_45+1delinsc')
 

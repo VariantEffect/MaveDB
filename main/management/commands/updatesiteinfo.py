@@ -21,4 +21,4 @@ class Command(BaseCommand):
                 sys.stdout.write("Setting field '{}'.\n".format(field))
                 setattr(instance, field, value)
             instance.save()
-        sys.stdout.write("Updated 'data/site_info.json'.\n".format(field))
+        sys.stdout.write("Updated 'data/site_info.json'.\n")
