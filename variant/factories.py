@@ -7,7 +7,6 @@ any updates to the models which will have an impact on the tests, then they
 can be changed once here instead of throughout all the tests. This will help
 with future maintainability.
 """
-import re
 from random import choice
 
 import factory
