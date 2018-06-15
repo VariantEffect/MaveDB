@@ -146,6 +146,10 @@ class TestVariantRowValidator(TestCase):
     def test_validationerror_invalid_hgvs(self):
         with self.assertRaises(ValidationError):
             validate_hgvs_string('c.1A>G (p.Lys4Gly)')
+            
+    def test_valid_wt_sy(self):
+        validate_hgvs_string('_wt')
+        validate_hgvs_string('_sy')
 
     def test_validationerror_non_numeric_values_in_non_meta_input(self):
         data = "{},{}\n{},hello world".format(

@@ -4,7 +4,7 @@ from accounts.factories import UserFactory
 from core.utilities.tests import TestMessageMixin
 
 from .. import views
-from ..models import News, SiteInformation
+from ..factories import SiteInformationFactory, NewsFactory
 
 
 class HomePageTest(TestCase):
@@ -13,17 +13,16 @@ class HomePageTest(TestCase):
     and that site-wide information such as News, About and Citations
     can be created/updated/rendered correctly.
     """
-
     def test_uses_home_template(self):
         response = self.client.get('/')
         self.assertTemplateUsed(response, 'main/home.html')
 
     def test_news_items_display(self):
-        News.objects.create(text="Hello World!")
-        News.objects.create(text="Greetings Space Ranger!")
-
+        n1 = NewsFactory()
+        n2 = NewsFactory()
         response = self.client.get('/')
-        self.assertEquals(response.context['news_items'].count(), 2)
+        self.assertContains(response, 'id="news-item-1')
+        self.assertContains(response, 'id="news-item-2')
 
     def test_NO_news_items_display(self):
         response = self.client.get('/')
@@ -31,32 +30,27 @@ class HomePageTest(TestCase):
         self.assertNotContains(response, 'id="news-item-')
 
     def test_about_site_info_displays(self):
-        site_info = SiteInformation.objects.create(
-            about="This is the about text.",
-            citation="This is the citation text."
-        )
+        site_info = SiteInformationFactory()
         response = self.client.get('/')
         self.assertContains(response, site_info.about)
 
     def test_citation_site_info_displays(self):
-        site_info = SiteInformation.objects.create(
-            about="This is the about text.",
-            citation="This is the citation text."
-        )
+        site_info = SiteInformationFactory()
         response = self.client.get('/')
         self.assertContains(response, site_info.citation)
     
     def test_version_hidden_when_empty(self):
-        site_info = SiteInformation.objects.create(branch='refactor')
+        site_info = SiteInformationFactory()
+        site_info.version = ''
+        site_info.save()
         response = self.client.get('/')
-        self.assertNotContains(response, 'refactor:')
+        self.assertNotContains(response, site_info.branch + ':')
         
     def test_version_shown_when_not_empty(self):
-        site_info = SiteInformation.objects.create(
-            branch='refactor', version='acb1234'
-        )
+        site_info = SiteInformationFactory()
         response = self.client.get('/')
-        self.assertContains(response, 'refactor:')
+        self.assertContains(
+            response, site_info.branch + ': ')
         
         
 class TestContactView(TestCase, TestMessageMixin):

@@ -264,7 +264,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         
         scoreset = data_models.scoreset.ScoreSet.objects.first()
         self.assertEqual(scoreset.processing_state, constants.success)
-        self.assertEqual(scoreset.variants.count(), 100)
+        self.assertEqual(scoreset.variants.count(), 7)
         self.assertEqual(
             scoreset.dataset_columns[constants.score_columns],
             ['score', 'SE', 'epsilon'])
