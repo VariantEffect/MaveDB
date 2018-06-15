@@ -64,7 +64,7 @@ class News(TimeStampedModel):
         """
         Property for obtaining the text of a news item instance.
         """
-        return str(self)
+        return convert_md_to_html(self.text)
 
     def save(self, *args, **kwargs):
         if self.text is None:
@@ -129,27 +129,27 @@ class SiteInformation(TimeStampedModel):
 
     @property
     def about(self):
-        return convert_md_to_html(self.about)
+        return convert_md_to_html(self.md_about)
 
     @property
     def citation(self):
-        return convert_md_to_html(self.citation)
+        return convert_md_to_html(self.md_citation)
 
     @property
     def usage_guide(self):
-        return convert_md_to_html(self.usage_guide)
+        return convert_md_to_html(self.md_usage_guide)
 
     @property
     def documentation(self):
-        return convert_md_to_html(self.documentation)
+        return convert_md_to_html(self.md_documentation)
 
     @property
     def terms(self):
-        return convert_md_to_html(self.terms)
+        return convert_md_to_html(self.md_terms)
 
     @property
     def privacy(self):
-        return convert_md_to_html(self.privacy)
+        return convert_md_to_html(self.md_privacy)
 
     @property
     def contact_email(self):
