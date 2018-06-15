@@ -7,6 +7,7 @@ any updates to the models which will have an impact on the tests, then they
 can be changed once here instead of throughout all the tests. This will help
 with future maintainability.
 """
+import re
 from random import choice
 
 import factory
@@ -20,7 +21,10 @@ from dataset.factories import ScoreSetFactory
 from .models import Variant
 
 
-sample_hgvs = ['c.101G>C', 'c.10C>A', 'c.41G>A', 'c.53G>T', 'c.17C>G']
+dna_to_rna = "ATCG".maketrans({'A': 'a', 'T': 'u', 'G': 'g', 'C': 'c'})
+dna_hgvs = ['c.101G>C', 'c.10C>A', 'c.41G>A', 'c.53G>T', 'c.17C>G']
+rna_hgvs = [x.replace('c', 'r').translate(dna_to_rna) for x in dna_hgvs]
+protein_hgvs = ['p.Ala4Leu', 'p.G78L', 'p.(Ala32*)', 'p.C28_L29delinsT']
 
 
 #  Instance is passed in by default by factory_boy
@@ -34,9 +38,14 @@ def make_data(instance=None):
     }
 
 
-def generate_hgvs():
+def generate_hgvs(prefix='c'):
     """Generates a random hgvs string from a small sample."""
-    return choice(sample_hgvs)
+    if prefix  == 'r':
+        return choice(rna_hgvs)
+    elif prefix == 'p':
+        return choice(protein_hgvs)
+    else:
+        return choice(dna_hgvs)
 
 
 class VariantFactory(DjangoModelFactory):
@@ -48,5 +57,5 @@ class VariantFactory(DjangoModelFactory):
 
     urn = None
     scoreset = factory.SubFactory(ScoreSetFactory)
-    hgvs = factory.fuzzy.FuzzyChoice(sample_hgvs)
+    hgvs = factory.fuzzy.FuzzyChoice(dna_hgvs)
     data = factory.lazy_attribute(make_data)
