@@ -15,9 +15,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         path = os.path.join(settings.MAIN_DIR, 'site_info.json')
         with open(path, 'wt') as fp:
-            instance = SiteInformation.objects.first()
+            instance = SiteInformation.get_instance()
             if instance:
                 data = SiteInformationSerializer(instance).data
                 json.dump(data, fp, indent=4, sort_keys=True)
-            else:
-                sys.stdout.write("No instance to save.\n")
+        sys.stdout.write("Site information saved to 'data/site_info.json'.\n")
