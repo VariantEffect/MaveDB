@@ -200,6 +200,8 @@ def validate_multi_variant(hgvs):
                 "event more than once.".format(hgvs)
             )
         for event in matches:
+            if event in ('_wt', '_sy'):
+                continue
             type_ = infer_type(event)
             validate_event_functions[level][type_](event)
     else:
@@ -208,14 +210,11 @@ def validate_multi_variant(hgvs):
     
     
 def validate_single_variants(hgvs):
+    if hgvs in ('_wt', '_sy'):
+        return
     type_ = infer_type(hgvs)
     level = infer_level(hgvs)
     if type_ is None or level is None:
         raise ValidationError(
             "'{}' is not a supported HGVS syntax.".format(hgvs))
     validate_event_functions[level][type_](hgvs)
-    
-    
-
-    
-

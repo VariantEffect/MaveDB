@@ -40,6 +40,8 @@ def validate_hgvs_string(value):
             "Variant HGVS values input must be strings. ",
             "Found '{}'.".format(type(value).__name__)
         )
+    if value in ('_wt', '_sy'):
+        return
     if is_multi(value):
         validate_multi_variant(value)
     else:
