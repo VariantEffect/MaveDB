@@ -38,7 +38,7 @@
                     {% endif %}
                   </div>
                   <div class="col-10">
-                    {{ news_item.message }}
+                    {{ news_item.message|safe|escape }}
                   </div>
                 </div>
               </div>
