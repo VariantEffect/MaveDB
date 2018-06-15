@@ -13,7 +13,7 @@ from ..hgvs.protein import (
 
 
 class TestVariantRegexPatterns(TestCase):
-    def test_single_var_re_matches_each_event(self):
+    def test_single_var_re_matches_each_variant_type(self):
         self.assertIsNotNone(single_variant_re.fullmatch('p.Trp24Cys^Gly'))
         self.assertIsNotNone(single_variant_re.fullmatch('p.(Trp24Cys)'))
         self.assertIsNotNone(single_variant_re.fullmatch('p.Lys23_Val25del'))
@@ -25,10 +25,11 @@ class TestVariantRegexPatterns(TestCase):
         self.assertIsNotNone(single_variant_re.fullmatch('p.Cys28fs'))
         self.assertIsNotNone(single_variant_re.fullmatch('p.(Cys28fs)'))
         
-    def test_multi_var_re_matches_each_event(self):
+    def test_multi_var_re_matches_multi_variants(self):
         self.assertIsNotNone(
             multi_variant_re.fullmatch(
-                'p.[Trp24Cys;Lys23_Val25del;His4_Gln5insAla;Cys28fs;Cys28delinsVal]'
+                'p.[Trp24Cys;Lys23_Val25del;His4_Gln5insAla;'
+                'Cys28fs;Cys28delinsVal]'
             ))
         # Non-multi should be none
         self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys;]'))
@@ -46,9 +47,14 @@ class TestEventValidators(TestCase):
         validate_substitution('Trp24Ter^Ala^G')
         validate_substitution('Trp24?')
         validate_substitution('Trp24=/Cys')
+        validate_substitution('p.Trp24=/Cys')
+        validate_substitution('p.(Trp24=/Cys)')
         validate_substitution('0')
         validate_substitution('?')
-        
+    
+    def test_validation_error_ref_same_as_new(self):
+        with self.assertRaises(ValidationError):
+            validate_substitution('Val5Val')
     
     def test_error_invalid_substitutions(self):
         with self.assertRaises(ValidationError):
@@ -76,6 +82,8 @@ class TestEventValidators(TestCase):
         validate_deletion('Trp4del')
         validate_deletion('Gly2_Met46del')
         validate_deletion('Val7=/del')
+        validate_deletion('p.Val7=/del')
+        validate_deletion('p.(Val7=/del)')
     
     def test_error_invalid_deletions(self):
         with self.assertRaises(ValidationError):
@@ -105,6 +113,9 @@ class TestEventValidators(TestCase):
         validate_insertion('Val582_Asn583ins(5)')
         validate_insertion('Val582_Asn583insX')
         validate_insertion('Val582_Asn583insXXXXX')
+        validate_insertion('p.Val582_Asn583ins(5)')
+        validate_insertion('p.(Val582_Asn583ins(5))')
+
     
     def test_error_invalid_insertions(self):
         with self.assertRaises(ValidationError):
@@ -127,6 +138,8 @@ class TestEventValidators(TestCase):
         validate_delins('Cys28delinsTrpVal')
         validate_delins('Glu125_Ala132delinsGlyLeuHisArgPheIleValLeu')
         validate_delins('C28_L29delinsT^G^L')
+        validate_delins('p.C28_L29delinsT^G^L')
+        validate_delins('p.(C28_L29delinsT^G^L)')
 
     def test_error_invalid_delins(self):
         with self.assertRaises(ValidationError):
@@ -148,6 +161,8 @@ class TestEventValidators(TestCase):
         validate_frame_shift('Ile327Argfs*?')
         validate_frame_shift('Ile327fs')
         validate_frame_shift('Gln151Thrfs*9')
+        validate_frame_shift('p.Ile327fs')
+        validate_frame_shift('p.(Ile327fs)')
 
     def test_error_invalid_frameshift(self):
         with self.assertRaises(ValidationError):

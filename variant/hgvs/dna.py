@@ -64,15 +64,16 @@ multi_variant =  r"[cngm]\.\[({0})(;{0}){{1,}}(?!;)\]".format(any_event)
 
 # ---- Compiled Regexes
 deletion_re = re.compile(
-    r"(?P<prefix>[cngm]\.)?({0})?({1})".format(utr_descriptor, deletion))
+    r"([cngm]\.)?({0})?({1})".format(utr_descriptor, deletion))
 insertion_re = re.compile(
-    r"(?P<prefix>[cngm]\.)?({0})?({1})".format(utr_descriptor, insertion))
+    r"([cngm]\.)?({0})?({1})".format(utr_descriptor, insertion))
 delins_re = re.compile(
-    r"(?P<prefix>[cngm]\.)?({0})?({1})".format(utr_descriptor, delins))
+    r"([cngm]\.)?({0})?({1})".format(utr_descriptor, delins))
 substitution_re = re.compile(
-    r"(?P<prefix>[cngm]\.)?({0})?({1})".format(utr_descriptor, substitution))
+    r"([cngm]\.)?({0})?({1})".format(utr_descriptor, substitution))
 single_variant_re = re.compile(single_variant)
 multi_variant_re = re.compile(multi_variant)
+any_event_re = re.compile(any_event)
 
 
 def validate_substitution(hgvs):
@@ -103,7 +104,6 @@ def validate_insertion(hgvs):
     if match is None:
         raise ValidationError(
             "'{}' is not a supported insertion syntax.".format(hgvs))
-
 
 
 def validate_delins(hgvs):

@@ -144,7 +144,8 @@ class TestVariantRowValidator(TestCase):
             validate_variant_rows(BytesIO(data.encode()))
 
     def test_validationerror_invalid_hgvs(self):
-        self.fail("Write this when you have written the hgvs validator.")
+        with self.assertRaises(ValidationError):
+            validate_hgvs_string('c.1A>G (p.Lys4Gly)')
 
     def test_validationerror_non_numeric_values_in_non_meta_input(self):
         data = "{},{}\n{},hello world".format(
@@ -204,7 +205,7 @@ class TestVariantRowValidator(TestCase):
         self.assertIsInstance(value, float)
 
     def test_does_not_split_double_quoted_variants(self):
-        hgvs = '{},{}'.format(generate_hgvs(), generate_hgvs())
+        hgvs = 'r.[123a>g,19del,9002_9009delins(5)]'
         data = '{},{}\n"{}",1.0'.format(
             hgvs_column, required_score_column, hgvs)
         _, hgvs_map = validate_variant_rows(BytesIO(data.encode()))

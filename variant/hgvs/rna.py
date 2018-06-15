@@ -67,10 +67,11 @@ any_event = r"({})".format(
 any_event, _ = re.subn(r"P<\w+(_\w+)?>", ':', any_event)
 
 single_variant = r"r\.{0}".format(any_event)
+comma_separated = r"(({0})(,{0}){{1,}}(?!,))".format(any_event)
+semi_colon_separated = r"({0})(;{0}){{1,}}(?!;)".format(any_event)
 multi_variant =  (
-    r"r\.((\[({0})(;{0}){{1,}}(?!;)\])|(\[({0})(,{0}){{1,}}(?!,)\]))".format(
-        any_event)
-)
+    r"r\.((\[{0}\])|(\[{1}\]))".format(
+        semi_colon_separated, comma_separated))
 
 # ---- Compiled Regexes
 deletion_re = re.compile(
@@ -83,6 +84,9 @@ substitution_re = re.compile(
     r"(r\.)?({0})?({1})".format(utr_descriptor, substitution))
 single_variant_re = re.compile(single_variant)
 multi_variant_re = re.compile(multi_variant)
+comma_separated_re = re.compile(comma_separated)
+semi_colon_separated_re = re.compile(semi_colon_separated)
+any_event_re = re.compile(any_event)
 
 
 def validate_substitution(hgvs):

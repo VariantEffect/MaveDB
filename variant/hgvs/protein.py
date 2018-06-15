@@ -118,7 +118,8 @@ any_event = r"({0})".format(
     r"|".join([insertion, deletion, delins, substitution, frame_shift])
 )
 any_event, _ = re.subn(r"P<\w+(_\w+)?>", ':', any_event)
-single_variant = r"(p\.{0})|(p.\({0}\))".format(any_event)
+predicted_variant = r"p.\({0}\)".format(any_event)
+single_variant = r"(p\.{0})|({1})".format(any_event, predicted_variant)
 multi_variant =  r"p\.\[({0})(;{0}){{1,}}(?!;)\]".format(any_event)
 
 
@@ -131,6 +132,8 @@ frame_shift_re = re.compile(r"(p\.)?({0})".format(frame_shift))
 
 single_variant_re = re.compile(single_variant)
 multi_variant_re = re.compile(multi_variant)
+any_event_re = re.compile(any_event)
+predicted_variant_re = re.compile(predicted_variant)
 
 
 def split_amino_acids(aa_str):
@@ -138,7 +141,11 @@ def split_amino_acids(aa_str):
 
 
 def validate_substitution(hgvs):
-    match = substitution_re.fullmatch(hgvs)
+    if predicted_variant_re.match(hgvs):
+        match = substitution_re.fullmatch(hgvs[3:-1])
+    else:
+        match = substitution_re.fullmatch(hgvs)
+        
     if match is None:
         raise ValidationError(
             "'{}' is not a supported substitution syntax.".format(hgvs))
@@ -160,28 +167,40 @@ def validate_substitution(hgvs):
 
 
 def validate_deletion(hgvs):
-    match = deletion_re.fullmatch(hgvs)
+    if predicted_variant_re.match(hgvs):
+        match = deletion_re.fullmatch(hgvs[3:-1])
+    else:
+        match = deletion_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
             "'{}' is not a supported deletion syntax.".format(hgvs))
 
 
 def validate_insertion(hgvs):
-    match = insertion_re.fullmatch(hgvs)
+    if predicted_variant_re.match(hgvs):
+        match = insertion_re.fullmatch(hgvs[3:-1])
+    else:
+        match = insertion_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
             "'{}' is not a supported insertion syntax.".format(hgvs))
 
 
 def validate_delins(hgvs):
-    match = delins_re.fullmatch(hgvs)
+    if predicted_variant_re.match(hgvs):
+        match = delins_re.fullmatch(hgvs[3:-1])
+    else:
+        match = delins_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
             "'{}' is not a supported deletion-insertion syntax.".format(hgvs))
 
 
 def validate_frame_shift(hgvs):
-    match = frame_shift_re.fullmatch(hgvs)
+    if predicted_variant_re.match(hgvs):
+        match = frame_shift_re.fullmatch(hgvs[3:-1])
+    else:
+        match = frame_shift_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
             "'{}' is not a supported frame shift syntax.".format(hgvs))

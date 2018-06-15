@@ -12,17 +12,18 @@ from ..hgvs.rna import (
 
 
 class TestVariantRegexPatterns(TestCase):
-    def test_single_var_re_matches_each_event(self):
+    def test_single_var_re_matches_each_variant_type(self):
         self.assertIsNotNone(
             single_variant_re.fullmatch('r.123a>g'))
         self.assertIsNotNone(
             single_variant_re.fullmatch('r.=/6_8del'))
         self.assertIsNotNone(
-            single_variant_re.fullmatch('r.2949_2950ins[2950-30_2950-12;2950-4_2950-1]'))
+            single_variant_re.fullmatch(
+                'r.2949_2950ins[2950-30_2950-12;2950-4_2950-1]'))
         self.assertIsNotNone(
             single_variant_re.fullmatch('r.9002_9009delins(5)'))
     
-    def test_multi_var_re_matches_each_event(self):
+    def test_multi_var_re_matches_multi_variants(self):
         self.assertIsNotNone(
             multi_variant_re.fullmatch(
                 'r.[123a>g;19del;'
@@ -45,6 +46,7 @@ class TestVariantRegexPatterns(TestCase):
 class TestEventValidators(TestCase):
     def test_valid_substitutions_pass(self):
         validate_substitution('123a>g')
+        validate_substitution('r.123a>g')
         validate_substitution('123a>x')
         validate_substitution('123a>n')
         validate_substitution('54g>h')
@@ -54,6 +56,10 @@ class TestEventValidators(TestCase):
         validate_substitution('0')
         validate_substitution('?')
         validate_substitution('spl')
+        
+    def test_validation_error_ref_same_as_new(self):
+        with self.assertRaises(ValidationError):
+            validate_substitution('123a>a')
     
     def test_error_invalid_substitutions(self):
         with self.assertRaises(ValidationError):
@@ -82,6 +88,7 @@ class TestEventValidators(TestCase):
         validate_deletion('(4072_5145)del')
         validate_deletion('=/6_8del')
         validate_deletion('1704del')
+        validate_deletion('r.1704del')
     
     def test_error_invalid_deletions(self):
         with self.assertRaises(ValidationError):
@@ -103,6 +110,7 @@ class TestEventValidators(TestCase):
     
     def test_valid_insertions_pass(self):
         validate_insertion('426_427insa')
+        validate_insertion('r.426_427insa')
         validate_insertion('756_757insuacu')
         validate_insertion('(222_226)insg')
         validate_insertion('549_550insn')
@@ -126,6 +134,7 @@ class TestEventValidators(TestCase):
     
     def test_valid_delins_passes(self):
         validate_delins('6775delinsga')
+        validate_delins('r.6775delinsga')
         validate_delins('6775_6777delinsc')
         validate_delins('?_6777delinsc')
         validate_delins('?_?delinsc')

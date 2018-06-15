@@ -1,3 +1,12 @@
+"""
+HGVS regex parsing for DNA, RNA and Protein specifications. `Event` refers
+to a specific mutation event which does not contain any prefixes i.e.
+a character from 'pcngmr' prefixing a mutation syntax like p.Leu4Gly. A
+`variant` refers to an `Event` prefixed with a the former characters, which
+may also be enclosed in parentheses or brackets e.g. p.(Leu5Gly)
+or p.[Leu4Gly;Gly7Leu]
+"""
+
 import re
 from enum import Enum
 
@@ -9,6 +18,7 @@ from .dna import validate_delins as dna_validate_delins
 from .dna import validate_substitution as dna_validate_substitution
 from .dna import single_variant as dna_single_variant
 from .dna import multi_variant as dna_multi_variant
+from .dna import any_event_re as dna_any_event_re
 
 from .rna import validate_deletion as rna_validate_deletion
 from .rna import validate_insertion as rna_validate_insertion
@@ -16,6 +26,9 @@ from .rna import validate_delins as rna_validate_delins
 from .rna import validate_substitution as rna_validate_substitution
 from .rna import single_variant as rna_single_variant
 from .rna import multi_variant as rna_multi_variant
+from .rna import comma_separated_re as rna_comma_separated_re
+from .rna import semi_colon_separated_re as rna_semi_colon_separated_re
+from .rna import any_event_re as rna_any_event_re
 
 from .protein import validate_deletion as protein_validate_deletion
 from .protein import validate_insertion as protein_validate_insertion
@@ -24,6 +37,7 @@ from .protein import validate_substitution as protein_validate_substitution
 from .protein import validate_frame_shift as protein_validate_frame_shift
 from .protein import single_variant as protein_single_variant
 from .protein import multi_variant as protein_multi_variant
+from .protein import any_event_re as protein_any_event_re
 
 
 class Event(Enum):
@@ -56,13 +70,14 @@ class Level(Enum):
 single_variant = r"({0})|({1})|({2})".format(
     dna_single_variant,
     rna_single_variant,
-    protein_single_variant
+    protein_single_variant,
 )
 multi_variant = r"({0})|({1})|({2})".format(
     dna_multi_variant,
     rna_multi_variant,
-    protein_multi_variant
+    protein_multi_variant,
 )
+
 
 # ---- Compiled Regex Expressions
 single_variant_re = re.compile(single_variant)
@@ -83,8 +98,8 @@ validate_event_functions = {
         Event.SUBSTITUTION: rna_validate_substitution,
     },
     Level.PROTEIN: {
-        Event.INSERTION: protein_validate_deletion,
-        Event.DELETION: protein_validate_insertion,
+        Event.INSERTION: protein_validate_insertion,
+        Event.DELETION: protein_validate_deletion,
         Event.DELINS: protein_validate_delins,
         Event.SUBSTITUTION: protein_validate_substitution,
         Event.FRAME_SHIFT: protein_validate_frame_shift,
@@ -120,6 +135,31 @@ def infer_type(hgvs):
     else:
         return Event.SUBSTITUTION
     
+    
+def infer_level(hgvs):
+    """
+    Infer the level of hgvs variant as supported by `Level` by inspecting
+    the prefix.
+
+    Parameters
+    ----------
+    hgvs : str
+        The hgvs string to infer from.
+
+    Returns
+    -------
+    `Level`
+        An `Enum` value from the `Level` enum.
+    """
+    if hgvs[0] in 'cgnm':
+        return Level.DNA
+    elif hgvs[0] == 'r':
+        return Level.RNA
+    elif hgvs[0] == 'p':
+        return Level.PROTEIN
+    else:
+        return None
+    
 
 def is_multi(hgvs):
     return bool(multi_variant_re.fullmatch(hgvs))
@@ -128,53 +168,54 @@ def is_multi(hgvs):
 def validate_multi_variant(hgvs):
     match = multi_variant_re.fullmatch(hgvs)
     if match:
-        if hgvs[0] in 'cngm':
-            level = Level.DNA
-        elif hgvs[0] == 'r':
-            level = Level.RNA
-        elif hgvs[0] == 'p':
-            level = Level.PROTEIN
-        else:
+        level = infer_level(hgvs)
+        if level is None:
             raise ValidationError(
                 "Variant '{}' has an unsupported prefix '{}'. "
-                "Supported prefixes are 'cngmpr'".format(hgvs, hgvs[0])
+                "Supported prefixes are 'cngmpr'.".format(hgvs, hgvs[0])
             )
-        validate_single_variants(hgvs, level, multi=True)
-    else:
-        raise ValidationError(
-            "'{}' is not a supported HGVS syntax.".format(hgvs))
 
-
-def validate_single_variants(hgvs, level, multi=False):
-    hgvs_ = hgvs  # Original variant left unmodified for error messages.
-    if multi:
         hgvs_ = hgvs[3:-1]  # removes prefix and square brackets
-    
-    if not multi and level == Level.PROTEIN:
-        # Strip the parentheses since the regex won't work with them.
-        hgvs_ = hgvs_.replace('p.(', 'p.')
-        if hgvs_[-1] == ')':
-            hgvs_ = hgvs_[:-1]
-    
-    matches = hgvs_.split(';')
-    if len(matches) != len(set(matches)):
-        raise ValidationError(
-            "Multi-variant '{}' has defined the same "
-            "event more than once.".format(hgvs)
-        )
-    
-    if matches:
-        for event in matches:
-            match = single_variant_re.fullmatch(event)
-            if not match:
+        if level == Level.PROTEIN:
+            # Strip the parentheses since the regex won't work with them.
+            hgvs_ = hgvs_.replace('p.(', 'p.')
+            if hgvs_[-1] == ')':
+                hgvs_ = hgvs_[:-1]
+
+        if level == Level.RNA:
+            if rna_semi_colon_separated_re.match(hgvs_):
+                matches = hgvs_.split(';')
+            elif rna_comma_separated_re.match(hgvs_):
+                matches = hgvs_.split(',')
+            else:
                 raise ValidationError(
-                    "Invalid event '{}' in '{}'.".format(event, hgvs))
+                    "RNA multi-variant '{}' contains an unknown delimiter. "
+                    "Supported delimiters are ';' and ','.")
+        else:
+            matches = hgvs_.split(';')
+
+        if len(matches) != len(set(matches)):
+            raise ValidationError(
+                "Multi-variant '{}' has defined the same "
+                "event more than once.".format(hgvs)
+            )
+        for event in matches:
             type_ = infer_type(event)
             validate_event_functions[level][type_](event)
     else:
         raise ValidationError(
-            "Variant '{}' has an invalid "
-            "multi-variant format. "
-            "Check that events are "
-            "semi-colon delimited.".format(hgvs)
-        )
+            "'{}' is not a supported HGVS syntax.".format(hgvs))
+    
+    
+def validate_single_variants(hgvs):
+    type_ = infer_type(hgvs)
+    level = infer_level(hgvs)
+    if type_ is None or level is None:
+        raise ValidationError(
+            "'{}' is not a supported HGVS syntax.".format(hgvs))
+    validate_event_functions[level][type_](hgvs)
+    
+    
+
+    
+

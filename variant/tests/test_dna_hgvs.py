@@ -12,7 +12,7 @@ from ..hgvs.dna import (
 
 
 class TestVariantRegexPatterns(TestCase):
-    def test_single_var_re_matches_each_event(self):
+    def test_single_var_re_matches_each_variant_type(self):
         self.assertIsNotNone(
             single_variant_re.fullmatch('c.123A>G'))
         self.assertIsNotNone(
@@ -22,7 +22,7 @@ class TestVariantRegexPatterns(TestCase):
         self.assertIsNotNone(
             single_variant_re.fullmatch('m.9002_9009delins(5)'))
         
-    def test_multi_var_re_matches_each_event(self):
+    def test_multi_var_re_matches_multi_variants(self):
         self.assertIsNotNone(
             multi_variant_re.fullmatch(
                 'c.[123A>G;19del;'
@@ -52,6 +52,8 @@ class TestVariantRegexPatterns(TestCase):
 class TestEventValidators(TestCase):
     def test_valid_substitutions_pass(self):
         validate_substitution('123A>G')
+        for c in 'cngm':
+            validate_substitution('{}.123A>G'.format(c))
         validate_substitution('123A>X')
         validate_substitution('123A>N')
         validate_substitution('*123A>G')
@@ -63,6 +65,10 @@ class TestEventValidators(TestCase):
         validate_substitution('54=')
         validate_substitution('54=/T>C')
         validate_substitution('54=//T>C')
+        
+    def test_validation_error_ref_same_as_new(self):
+        with self.assertRaises(ValidationError):
+            validate_substitution('1A>A')
         
     def test_error_invalid_substitutions(self):
         with self.assertRaises(ValidationError):
@@ -86,6 +92,8 @@ class TestEventValidators(TestCase):
         
     def test_valid_deletions_pass(self):
         validate_deletion('19del')
+        for c in 'cngm':
+            validate_deletion('{}.123delA'.format(c))
         validate_deletion('19delT')
         validate_deletion('19_21del')
         validate_deletion('*183_186+48del')
@@ -124,6 +132,8 @@ class TestEventValidators(TestCase):
         validate_insertion('32717298_32717299ins(100)')
         validate_insertion('761_762insN')
         validate_insertion('(222_226)insG')
+        for c in 'cngm':
+            validate_insertion('{}.123_124insA'.format(c))
         
     def test_error_invalid_insertions(self):
         with self.assertRaises(ValidationError):
@@ -143,10 +153,13 @@ class TestEventValidators(TestCase):
         validate_delins('6775delinsGA')
         validate_delins('6775_6777delinsC')
         validate_delins('?_6777delinsC')
+        validate_delins('*?_45+1delinsC')
         validate_delins('?_?delinsC')
         validate_delins('142_144delinsTGG')
         validate_delins('9002_9009delinsTTT')
         validate_delins('9002_9009delins(5)')
+        for c in 'cngm':
+            validate_delins('{}.123_127delinsA'.format(c))
         
     def test_error_invalid_delins(self):
         with self.assertRaises(ValidationError):
@@ -159,5 +172,3 @@ class TestEventValidators(TestCase):
             validate_delins('(4071+1_4072)-(1_5154+1_5155-1)delins')
         with self.assertRaises(ValidationError):
             validate_delins('(?_-1)_(+1_?)delins')
-        with self.assertRaises(ValidationError):
-            validate_delins('*?_45+1delinsC')
