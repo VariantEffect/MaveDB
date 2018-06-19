@@ -103,19 +103,6 @@ class UserViewset(ReadOnlyModelViewSet, UserFilterMixin):
         return queryset
 
 
-def _format_csv_rows(variants, columns, variant_column):
-    rows = []
-    for variant in variants:
-        data = []
-        for column_key in columns:
-            if column_key == constants.hgvs_column:
-                data.append('{}'.format(variant.hgvs))
-            else:
-                data.append(str(variant.data[variant_column][column_key]))
-        rows.append(data)
-    return rows
-
-
 def validate_request(urn, user):
     if not ScoreSet.objects.filter(urn=urn).count():
         response = JsonResponse({'detail': '{} does not exist.'.format(urn)})
@@ -130,7 +117,7 @@ def validate_request(urn, user):
     return scoreset
 
 
-@cache_page(60 * 1440) # 24 hour cache
+@cache_page(60 * 15) # 15 minute cache
 def scoreset_score_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
@@ -143,19 +130,19 @@ def scoreset_score_data(request, urn):
     scoreset = scoreset_or_response
     variants = scoreset.children.order_by("urn")
     columns = scoreset.score_columns
-    variant_column = constants.variant_score_data
-    if not variants or len(columns) <= 1:  # HGVS is present by default
+    type_column = constants.variant_score_data
+    # hgvs_nt and hgvs_pro present by default, hence <= 2
+    if not variants or len(columns) <= 2:
         return response
     
-    writer = csv.writer(response)
-    writer.writerow(columns)
-    rows = _format_csv_rows(variants, columns, variant_column)
-    for row in rows:
-        writer.writerow(row)
+    writer = csv.DictWriter(
+        response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
+    writer.writeheader()
+    writer.writerows(_format_csv_rows(variants, columns, type_column))
     return response
 
 
-@cache_page(60 * 1440) # 24 hour cache
+@cache_page(60 * 15) # 15 minute cache
 def scoreset_count_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
@@ -168,19 +155,34 @@ def scoreset_count_data(request, urn):
     scoreset = scoreset_or_response
     variants = scoreset.children.order_by("urn")
     columns = scoreset.count_columns
-    variant_column = constants.variant_count_data
-    if not variants or len(columns) <= 1:  # HGVS is present by default
+    type_column = constants.variant_count_data
+    # hgvs_nt and hgvs_pro present by default, hence <= 2
+    if not variants or len(columns) <= 2:
         return response
     
-    writer = csv.writer(response)
-    writer.writerow(columns)
-    rows = _format_csv_rows(variants, columns, variant_column)
-    for row in rows:
-        writer.writerow(row)
+    writer = csv.DictWriter(
+        response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
+    writer.writeheader()
+    writer.writerows(_format_csv_rows(variants, columns, type_column))
     return response
 
 
-@cache_page(60 * 1440) # 24 hour cache
+def _format_csv_rows(variants, columns, type_column):
+    rowdicts = []
+    for variant in variants:
+        data = {}
+        for column_key in columns:
+            if column_key == constants.hgvs_nt_column:
+                data[column_key] = variant.hgvs_nt
+            elif column_key == constants.hgvs_pro_column:
+                data[column_key] = variant.hgvs_pro
+            else:
+                data[column_key] = str(variant.data[type_column][column_key])
+        rowdicts.append(data)
+    return rowdicts
+
+
+@cache_page(60 * 15) # 24 hour cache
 def scoreset_metadata(request, urn):
     scoreset_or_response = validate_request(urn, request.user)
     if not isinstance(scoreset_or_response, ScoreSet):
