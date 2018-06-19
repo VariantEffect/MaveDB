@@ -147,7 +147,7 @@ Using celery to run long running processes requires the broker-messaging backend
 Installing RabbitMQ requires the installation of Erlang as a dependency. RabbitMQ has 
 provided a minial dependency-free version of Erlang. You will need to add an additional
 repository by following the CentOS 6 instructions [here](https://github.com/rabbitmq/erlang-rpm#bintray-yum-repositories). 
-Once you have added the additional repository you can install erlang by invoking the `yum` command
+To summarize:
 
 	# In /etc/yum.repos.d/rabbitmq-erlang.repo
 	[rabbitmq-erlang]
@@ -157,6 +157,8 @@ Once you have added the additional repository you can install erlang by invoking
 	gpgkey=https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc
 	repo_gpgcheck=0
 	enabled=1
+
+Once you have added the additional repository you can install erlang by invoking the `yum` command
 
     sudo yum -y install erlang
     
