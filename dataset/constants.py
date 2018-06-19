@@ -15,6 +15,12 @@ nan_col_values = {
     'NaN', 'None', 'Na', 'NA', 'NULL',
     'undefined',
 }
+readable_nan_values = [
+    "'{}'".format(v)
+    for v in set([v.lower() for v in nan_col_values])
+    if v.strip()
+]
+
 hgvs_nt_column = "hgvs_nt"
 hgvs_pro_column = "hgvs_pro"
 hgvs_columns = sorted([hgvs_nt_column, hgvs_pro_column])
