@@ -22,9 +22,14 @@ class TestCreateVariantsTask(TestCase):
             }
         )
         self.scoreset.save()
-        self.hgvs = generate_hgvs()
+        self.hgvs_nt = generate_hgvs(prefix='c')
+        self.hgvs_pro = generate_hgvs(prefix='p')
         self.variants = {
-            self.hgvs: {constants.hgvs_column: self.hgvs, 'data': make_data()}
+            self.hgvs_nt: {
+                constants.hgvs_nt_column: self.hgvs_nt,
+                constants.hgvs_pro_column: self.hgvs_pro,
+                'data': make_data()
+            }
         }
 
     def test_create_variants_resets_dataset_columns(self):
@@ -122,9 +127,14 @@ class TestPublishScoresetTask(TestCase):
             }
         )
         self.scoreset.save()
-        self.hgvs = generate_hgvs()
+        self.hgvs_nt = generate_hgvs(prefix='c')
+        self.hgvs_pro = generate_hgvs(prefix='p')
         self.variants = {
-            self.hgvs: {constants.hgvs_column: self.hgvs, 'data': make_data()}
+            self.hgvs_nt: {
+                constants.hgvs_nt_column: self.hgvs_nt,
+                constants.hgvs_pro_column: self.hgvs_pro,
+                'data': make_data()
+            }
         }
 
     def test_propagates_modified(self):

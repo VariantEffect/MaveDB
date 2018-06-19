@@ -107,7 +107,8 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         request.user = UserFactory()
         response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
         # Remove '>' because it gets escaped.
-        self.assertContains(response, var.hgvs[:-2])
+        self.assertContains(response, var.hgvs_nt[:-2])
+        self.assertContains(response, var.hgvs_pro[:-2])
 
     # --- Next version links
     def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(self):

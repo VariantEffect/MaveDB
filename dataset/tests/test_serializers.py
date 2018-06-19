@@ -98,5 +98,8 @@ class TestScoreSetSerializer(TestCase):
     def test_columns_contains_hgvs(self):
         scs = ScoreSetFactory(private=False)
         data = ScoreSetSerializer(scs).data
-        self.assertIn(constants.hgvs_column, data['score_columns'])
-        self.assertIn(constants.hgvs_column, data['count_columns'])
+        self.assertIn(constants.hgvs_nt_column, data['score_columns'])
+        self.assertIn(constants.hgvs_pro_column, data['score_columns'])
+        
+        self.assertIn(constants.hgvs_nt_column, data['count_columns'])
+        self.assertIn(constants.hgvs_pro_column, data['count_columns'])

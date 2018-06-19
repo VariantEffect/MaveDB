@@ -5,8 +5,7 @@ from accounts.factories import UserFactory
 from main.models import Licence
 from variant.factories import generate_hgvs, VariantFactory
 
-import dataset.constants as constants
-
+from .. import constants
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm, ErrorMessages
 
@@ -233,38 +232,22 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertEqual(form.fields['replaces'].queryset.count(), 0)
 
-    def test_variant_data_is_cross_populated_with_nones(self):
+    def test_invalid_different_variants_in_score_and_count_files(self):
         score_hgvs = generate_hgvs()
         count_hgvs = generate_hgvs()
         scores = "{},{}\n{},1.0".format(
-            constants.hgvs_column, constants.required_score_column, score_hgvs)
+            constants.hgvs_nt_column,
+            constants.required_score_column, score_hgvs)
+        
+        # Generate a unique count hgvs variant.
         while count_hgvs == score_hgvs:
             count_hgvs = generate_hgvs()
         counts = "{},{}\n{},2.0".format(
-            constants.hgvs_column, 'count', count_hgvs)
+            constants.hgvs_nt_column, 'count', count_hgvs)
+        
         data, files = self.make_post_data(scores, counts)
         form = ScoreSetForm(data=data, files=files, user=self.user)
-        self.assertTrue(form.is_valid())
-        variants = form.get_variants()
-
-        # Check score data parsed correctly
-        self.assertEqual(
-            1.0,
-            variants[score_hgvs]['data'][constants.variant_score_data][
-                constants.required_score_column
-            ])
-        # Check count data for score_hgvs is set to None
-        self.assertIsNone(
-            variants[score_hgvs]['data'][constants.variant_count_data]['count'])
-
-        # Check count data parsed correctly
-        self.assertEqual(
-            2.0,
-            variants[count_hgvs]['data'][constants.variant_count_data]['count'])
-        # Check score data for count_hgvs is set to None
-        self.assertIsNone(
-            variants[count_hgvs]['data'][constants.variant_score_data][
-                constants.required_score_column])
+        self.assertFalse(form.is_valid())
 
     def test_invalid_no_score_file(self):
         data, files = self.make_post_data()
@@ -327,35 +310,38 @@ class TestScoreSetForm(TestCase):
 
     def test_variants_correctly_parsed_integration_test(self):
         # Generate distinct hgvs strings
-        score_hgvs = generate_hgvs()
-        count_hgvs = generate_hgvs()
-        while count_hgvs == score_hgvs:
-            count_hgvs = generate_hgvs()
+        hgvs_nt = generate_hgvs(prefix='r')
+        hgvs_pro = generate_hgvs(prefix='p')
 
-        score_data = "{},{},se\n{},1,".format(
-            constants.hgvs_column, constants.required_score_column, score_hgvs
+        score_data = "{},{},{},se\n{},{},1,".format(
+            constants.hgvs_nt_column, constants.hgvs_pro_column,
+            constants.required_score_column, hgvs_nt, hgvs_pro
         )
-        count_data = "{},{},sig\n{},None,-1".format(
-            constants.hgvs_column, 'count', count_hgvs
+        count_data = "{},{},count,sig\n{},{},-1,None".format(
+            constants.hgvs_nt_column, constants.hgvs_pro_column,
+            hgvs_nt, hgvs_pro
         )
         data, files = self.make_post_data(score_data, count_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
+        
+        print(form.errors)
         self.assertTrue(form.is_valid())
 
-        data_1 = {
+        expected_data = {
             'score_data': {'se': None, 'score': 1.0},
-            'count_data': {'sig': None, 'count': None},
+            'count_data': {'sig': None, 'count': -1.0},
         }
-        data_2 = {
-            'score_data': {'se': None, 'score': None},
-            'count_data': {'sig': -1.0, 'count': None},
-        }
-        self.assertEqual(form.get_variants()[score_hgvs]['data'], data_1)
-        self.assertEqual(form.get_variants()[count_hgvs]['data'], data_2)
+        
+        self.assertEqual(len(form.get_variants()), 1)
+        self.assertEqual(form.get_variants()[hgvs_nt]['data'], expected_data)
+        self.assertEqual(
+            form.get_variants()[hgvs_nt][constants.hgvs_nt_column], hgvs_nt)
+        self.assertEqual(
+            form.get_variants()[hgvs_nt][constants.hgvs_pro_column], hgvs_pro)
 
     def test_invalid_empty_score_file(self):
         score_data = "{},{},se\n".format(
-            constants.hgvs_column, constants.required_score_column
+            constants.hgvs_nt_column, constants.required_score_column
         )
         data, files = self.make_post_data(score_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
@@ -396,7 +382,7 @@ class TestScoreSetForm(TestCase):
         with self.assertRaises(ValidationError):
             form.clean()
     
-    def test_ve_invalid_meta(self):
+    def test_form_invalid_when_invalid_metadata_file_supplied(self):
         data, files = self.make_post_data(meta_data="{not valid}")
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())

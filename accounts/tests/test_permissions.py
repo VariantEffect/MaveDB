@@ -44,9 +44,9 @@ from accounts.permissions import (
 )
 
 from dataset.models.experimentset import ExperimentSet
-from dataset.models.experiment import Experiment
-from dataset.models.scoreset import ScoreSet
-from variant.models import Variant
+
+from dataset import factories as ds_factories
+from variant import factories as v_factories
 
 
 User = get_user_model()
@@ -56,10 +56,10 @@ class UtilitiesTest(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
-        self.exps = ExperimentSet.objects.create()
-        self.exp = Experiment.objects.create(experimentset=self.exps)
-        self.scs = ScoreSet.objects.create(experiment=self.exp)
-        self.var = Variant.objects.create(scoreset=self.scs, hgvs="test")
+        self.exps = ds_factories.ExperimentSetFactory()
+        self.exp = ds_factories.ExperimentFactory(experimentset=self.exps)
+        self.scs = ds_factories.ScoreSetFactory(experiment=self.exp)
+        self.var = v_factories.VariantFactory(scoreset=self.scs)
 
     def test_can_detect_valid_instance(self):
         self.assertTrue(valid_model_instance(self.exps))

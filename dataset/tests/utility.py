@@ -4,8 +4,9 @@ from io import StringIO
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from dataset.constants import hgvs_column, required_score_column
 from variant.factories import generate_hgvs
+
+from .. import constants
 
 
 def make_files(score_data=None, count_data=None, meta_data=None):
@@ -13,10 +14,13 @@ def make_files(score_data=None, count_data=None, meta_data=None):
     Make mock file objects used by django during a request post with a file
     input from text data.
     """
-    hgvs = generate_hgvs()
+    hgvs_nt = generate_hgvs(prefix='c')
+    hgvs_pro = generate_hgvs(prefix='p')
+    
     if not score_data:
-        string_io = StringIO("{},{},se\n{},0.5,0.4\n".format(
-            hgvs_column, required_score_column, hgvs
+        string_io = StringIO("{},{},{},se\n{},{},0.5,0.4\n".format(
+            constants.hgvs_nt_column, constants.hgvs_pro_column,
+            constants.required_score_column, hgvs_nt, hgvs_pro,
         ))
     else:
         string_io = StringIO(score_data)
@@ -32,8 +36,9 @@ def make_files(score_data=None, count_data=None, meta_data=None):
     )
 
     if isinstance(count_data, bool) and count_data:
-        string_io = StringIO("{},count,sig\n{},10,-1\n".format(
-            hgvs_column, hgvs
+        string_io = StringIO("{},{},count,sig\n{},{},10,-1\n".format(
+            constants.hgvs_nt_column, constants.hgvs_pro_column,
+            hgvs_nt, hgvs_pro,
         ))
         size = string_io.seek(0, os.SEEK_END)
         string_io.seek(0)

@@ -13,10 +13,8 @@ class TestNewsModel(TestCase):
     def test_message_property_displays_date_and_text(self):
         message = "Hello World!"
         date = datetime.date.today().replace(1985, 7, 10)
-        expected = "[{}]: {}".format(str(date), message)
-
         item = NewsFactory(text=message, creation_date=date)
-        self.assertEqual(expected, item.message)
+        self.assertIn(str(item.creation_date), item.message)
 
     def test_can_retrieve_all_news_items_in_date_order(self):
         item_1 = NewsFactory()

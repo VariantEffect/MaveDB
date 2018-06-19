@@ -51,6 +51,7 @@ class TestEventValidators(TestCase):
         validate_substitution('p.(Trp24=/Cys)')
         validate_substitution('0')
         validate_substitution('?')
+        validate_substitution('p.=')
     
     def test_validation_error_ref_same_as_new(self):
         with self.assertRaises(ValidationError):

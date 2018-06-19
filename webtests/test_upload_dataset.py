@@ -303,7 +303,8 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         
         self.assertIn(self.user, scoreset.administrators())
         self.assertIn(self.user, scoreset.experiment.administrators())
-        self.assertIn(self.user, scoreset.experiment.experimentset.administrators())
+        self.assertIn(self.user,
+                      scoreset.experiment.experimentset.administrators())
 
 
 class TestJavaScriptOnCreatePage(LiveServerTestCase):

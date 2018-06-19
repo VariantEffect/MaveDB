@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
+from dataset import constants
+
 from ..hgvs import (
     infer_type, Event, Level, is_multi, validate_multi_variant,
     validate_single_variants, infer_level
@@ -22,6 +24,10 @@ class TestInferLevel(TestCase):
 
     def test_infers_none(self):
         self.assertEqual(None, infer_level('t'))
+        
+    def test_none_null_value(self):
+        for v in constants.nan_col_values:
+            self.assertIsNone(infer_level(v))
     
 
 class TestInferType(TestCase):
@@ -48,6 +54,10 @@ class TestInferType(TestCase):
     def test_infers_frame_shift(self):
         self.assertEqual(Event.FRAME_SHIFT, infer_type('Glu5ValfsTer5'))
         self.assertEqual(Event.FRAME_SHIFT, infer_type('p.Ile327Argfs*?'))
+        
+    def test_none_null_value(self):
+        for v in constants.nan_col_values:
+            self.assertIsNone(infer_type(v))
 
 
 class TestIsMulti(TestCase):
@@ -86,6 +96,15 @@ class TestIsMulti(TestCase):
 
 
 class TestValidateMulti(TestCase):
+    def test_error_level_not_enum(self):
+        with self.assertRaises(TypeError):
+            validate_multi_variant('c.[1A>G;2A>G]', level='dna')
+            
+    def test_can_set_level_through_argument(self):
+        # Validation error when attempting to validate dna as a protein hgvs
+        with self.assertRaises(ValidationError):
+            validate_multi_variant('c.[1A>G;2A>G]', level=Level.PROTEIN)
+            
     def test_validationerror_invalid_prefix(self):
         with self.assertRaises(ValidationError):
             validate_multi_variant('f.1A>G')
@@ -116,9 +135,22 @@ class TestValidateMulti(TestCase):
     def test_validationerror_redefined_event(self):
         with self.assertRaises(ValidationError):
             validate_multi_variant('c.[1A>G;1A>G]')
+            
+    def test_passes_wt_and_sy(self):
+        validate_multi_variant('_wt')
+        validate_multi_variant('_sy')
 
 
 class TestValidateSingle(TestCase):
+    def test_error_level_not_enum(self):
+        with self.assertRaises(TypeError):
+            validate_single_variants('c.1A>G', level='dna')
+            
+    def test_can_set_level_through_argument(self):
+        # Validation error when attempting to validate dna as a protein hgvs
+        with self.assertRaises(ValidationError):
+            validate_single_variants('c.2A>G', level=Level.PROTEIN)
+            
     def test_validationerror_invalid_prefix(self):
         with self.assertRaises(ValidationError):
             validate_single_variants('f.1A>G')
@@ -145,3 +177,7 @@ class TestValidateSingle(TestCase):
     def test_validationerror_invalid(self):
         with self.assertRaises(ValidationError):
             validate_single_variants('c.')
+            
+    def test_passes_wt_and_sy(self):
+        validate_single_variants('_wt')
+        validate_single_variants('_sy')

@@ -5,8 +5,7 @@ from accounts.permissions import assign_user_as_instance_admin
 from main.models import Licence
 from variant.factories import VariantFactory
 
-import dataset.constants as constants
-
+from .. import constants
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetEditForm
 

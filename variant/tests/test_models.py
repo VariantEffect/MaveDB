@@ -46,10 +46,6 @@ class TestVariant(TestCase):
         with self.assertRaises(IntegrityError):
             _ = VariantFactory(scoreset=None)
 
-    def test_cannot_save_without_hgvs(self):
-        with self.assertRaises(IntegrityError):
-            _ = VariantFactory(hgvs=None)
-
     def test_validation_error_json_has_no_scores_key(self):
         var = VariantFactory(data={
             constants.variant_count_data: {},
@@ -96,3 +92,11 @@ class TestVariant(TestCase):
             experiment__experimentset__private=False,
         )
         self.assertTrue(obj.has_public_urn)
+        
+    def test_hgvs_property_returns_nt_if_both_protein_defined(self):
+        obj = VariantFactory()
+        self.assertEqual(obj.hgvs, obj.hgvs_nt)
+        
+    def test_hgvs_property_returns_pro_if_nt_column_not_defined(self):
+        obj = VariantFactory(hgvs_nt=None)
+        self.assertEqual(obj.hgvs, obj.hgvs_pro)

@@ -107,8 +107,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save()
-        _ = VariantFactory(
-            scoreset=scs, hgvs="test",
+        variant = VariantFactory(
+            scoreset=scs, hgvs_nt="1A>G",
             data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count": "1"}
@@ -119,7 +119,36 @@ class TestScoreSetAPIViews(TestCase):
             csv.reader(
                 io.TextIOWrapper(
                     io.BytesIO(response.content), encoding='utf-8')))
-        self.assertEqual(rows, [['hgvs', 'score'], ['test', '1']])
+        
+        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'score']
+        data = [variant.hgvs_nt, variant.hgvs_pro, '1']
+        self.assertEqual(rows, [header, data])
+        
+    def test_comma_in_value_enclosed_by_quotes(self):
+        scs = ScoreSetFactory()
+        scs.publish()
+        scs.refresh_from_db()
+        scs.dataset_columns = {
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count,count"]
+        }
+        scs.save(save_parents=True)
+        variant = VariantFactory(
+            scoreset=scs, hgvs_nt="r.[897u>g,832_960del]",
+            data={
+                constants.variant_score_data: {"score": "1"},
+                constants.variant_count_data: {"count,count": "4"}
+            }
+        )
+        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+
+        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'count,count']
+        data = [variant.hgvs_nt, variant.hgvs_pro, '4']
+        self.assertEqual(rows, [header, data])
 
     def test_can_download_counts(self):
         scs = ScoreSetFactory()
@@ -130,8 +159,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save(save_parents=True)
-        _ = VariantFactory(
-            scoreset=scs, hgvs="test",
+        variant = VariantFactory(
+            scoreset=scs, hgvs_nt="1A>G",
             data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count": "4"}
@@ -142,7 +171,38 @@ class TestScoreSetAPIViews(TestCase):
             csv.reader(
                 io.TextIOWrapper(
                     io.BytesIO(response.content), encoding='utf-8')))
-        self.assertEqual(rows, [['hgvs', 'count'], ['test', '4']])
+        
+        
+        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'count']
+        data = [variant.hgvs_nt, variant.hgvs_pro, '4']
+        self.assertEqual(rows, [header, data])
+        
+    def test_none_hgvs_written_as_blank(self):
+        scs = ScoreSetFactory()
+        scs.publish()
+        scs.refresh_from_db()
+        scs.dataset_columns = {
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count"]
+        }
+        scs.save(save_parents=True)
+        variant = VariantFactory(
+            scoreset=scs, hgvs_nt="1A>G", hgvs_pro=None,
+            data={
+                constants.variant_score_data: {"score": "1"},
+                constants.variant_count_data: {"count": "4"}
+            }
+        )
+        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        rows = list(
+            csv.reader(
+                io.TextIOWrapper(
+                    io.BytesIO(response.content), encoding='utf-8')))
+    
+        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'score']
+        data = [variant.hgvs_nt, '', '1']
+        self.assertEqual(rows, [header, data])
+        
     
     def test_no_variants_empty_file(self):
         scs = ScoreSetFactory()
@@ -177,7 +237,7 @@ class TestScoreSetAPIViews(TestCase):
         }
         scs.save(save_parents=True)
         _ = VariantFactory(
-            scoreset=scs, hgvs="test",
+            scoreset=scs, hgvs_nt="1A>G",
             data={
                 constants.variant_score_data: {},
                 constants.variant_count_data: {"count": "4"}
@@ -200,7 +260,7 @@ class TestScoreSetAPIViews(TestCase):
         }
         scs.save(save_parents=True)
         _ = VariantFactory(
-            scoreset=scs, hgvs="test",
+            scoreset=scs, hgvs_nt="1A>G",
             data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {}
