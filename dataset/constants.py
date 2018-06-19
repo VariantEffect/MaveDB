@@ -15,7 +15,9 @@ nan_col_values = {
     'NaN', 'None', 'Na', 'NA', 'NULL',
     'undefined',
 }
-hgvs_column = "hgvs"
+hgvs_nt_column = "hgvs_nt"
+hgvs_pro_column = "hgvs_pro"
+hgvs_columns = sorted([hgvs_nt_column, hgvs_pro_column])
 meta_data = "meta_data"
 score_columns = "score_columns"
 count_columns = "count_columns"
@@ -58,7 +60,7 @@ scoreset_to_variant_column = {
     v: k for k, v in variant_to_scoreset_column.items()
 }
 
-# Celery dataset statuses
+# Celery dataset status
 processing = "processing"
 failed = "failed"
 success = "success"
