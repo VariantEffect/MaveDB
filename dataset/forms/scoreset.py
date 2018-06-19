@@ -95,12 +95,14 @@ class ScoreSetForm(DatasetModelForm):
         required=False, label="Variant score data",
         help_text=(
             "A valid CSV file containing variant score information. "
-            "The file must at least specify the columns 'hgvs' and "
-            "'score'. There are no constraints on other column names. "
-            "Apart from the 'hgvs' column, all data must be numeric.\n\n"
-            "Row scores that are empty, or the the strings None, Null, Na and "
-            "NaN (case-insensitive) will be converted to a null score."
-        ),
+            "The file must at least specify the columns 'hgvs_nt' or 'hgvs_pro' "
+            "(or both) and 'score'. There are no constraints on other column "
+            "names. Apart from the 'hgvs' column, all data must be numeric.\n\n"
+            "Row scores that are empty, whitespace or the strings {} "
+            "(case-insensitive) will be converted to a null score. The columns "
+            "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
+            "the count file below."
+        ).format(', '.join(constants.readable_nan_values)),
         validators=[
             validate_scoreset_score_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
@@ -109,12 +111,14 @@ class ScoreSetForm(DatasetModelForm):
         required=False, label="Variant count data",
         help_text=(
             "A valid CSV file containing variant count information. " 
-            "The file must at least specify the column 'hgvs' and "
-            "one additional column containing numeric count data. "
+            "The file must at least specify the column 'hgvs_nt' or 'hgvs_pro' "
+            "(or both) and one additional column containing numeric count data. "
             "There are no constraints on the other column names.\n\n"
-            "Row counts that are empty, or the the strings None, Null, Na and "
-            "NaN (case-insensitive) will be converted to a null score."
-        ),
+            "Row counts that are empty, whitepace or any of the strings {} "
+            "(case-insensitive) will be converted to a null score. The columns "
+            "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
+            "the score file above."
+        ).format(', '.join(constants.readable_nan_values)),
         validators=[
             validate_scoreset_count_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
