@@ -20,13 +20,16 @@ from dataset.factories import ScoreSetFactory
 from .models import Variant
 
 
-dna_to_rna = "ATCG".maketrans({'A': 'a', 'T': 'u', 'G': 'g', 'C': 'c'})
+dna_to_rna = "ATCGXN".maketrans(
+    {'A': 'a', 'T': 'u', 'G': 'g', 'C': 'c', 'X': 'x', 'N': 'n', 'H': 'h'}
+)
 dna_hgvs = ['c.101G>C', 'c.10C>A', 'c.41G>A', 'c.53G>T', 'c.17C>G']
 rna_hgvs = [x.replace('c', 'r').translate(dna_to_rna) for x in dna_hgvs]
-protein_hgvs = ['p.Ala4Leu', 'p.G78L', 'p.(Ala32*)', 'p.C28_L29delinsT']
+protein_hgvs = ['p.Ala4Leu', 'p.G78L', 'p.(Ala32*)',
+                'p.C28_L29delinsTGL', 'p.(Ala32_Leu33ins(5))']
 
 
-#  Instance is passed in by default by factory_boy
+# Instance is passed in by default by factory_boy
 def make_data(instance=None):
     return {
         constants.variant_score_data: {
@@ -37,9 +40,11 @@ def make_data(instance=None):
     }
 
 
-def generate_hgvs(prefix='c'):
+def generate_hgvs(prefix='c', comma_in_rna=False):
     """Generates a random hgvs string from a small sample."""
     if prefix  == 'r':
+        if comma_in_rna:
+            return 'r.[897u>g,832_960del]'
         return choice(rna_hgvs)
     elif prefix == 'p':
         return choice(protein_hgvs)
@@ -56,5 +61,6 @@ class VariantFactory(DjangoModelFactory):
 
     urn = None
     scoreset = factory.SubFactory(ScoreSetFactory)
-    hgvs = factory.fuzzy.FuzzyChoice(dna_hgvs)
+    hgvs_nt = factory.fuzzy.FuzzyChoice(dna_hgvs)
+    hgvs_pro = factory.fuzzy.FuzzyChoice(protein_hgvs)
     data = factory.lazy_attribute(make_data)

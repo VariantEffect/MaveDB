@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db import models, transaction
 from django.contrib.postgres.fields import JSONField
 
@@ -7,6 +9,11 @@ from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_variant
 
 from .validators import validate_hgvs_string
+
+
+# 'score' should be the first column in a score dataset
+column_order = defaultdict(lambda: 1)
+column_order[constants.required_score_column] = 0
 
 
 class Variant(UrnModel):
@@ -43,9 +50,14 @@ class Variant(UrnModel):
         **UrnModel.default_urn_kwargs
     )
 
-    hgvs = models.TextField(
-        blank=False,
-        null=False,
+    hgvs_nt = models.TextField(
+        null=True,
+        default=None,
+        validators=[validate_hgvs_string],
+    )
+
+    hgvs_pro = models.TextField(
+        null=True,
         default=None,
         validators=[validate_hgvs_string],
     )
@@ -80,7 +92,11 @@ class Variant(UrnModel):
     @property
     def parent(self):
         return self.scoreset
-
+    
+    @property
+    def hgvs(self):
+        return self.hgvs_nt or self.hgvs_pro
+    
     @classmethod
     @transaction.atomic
     def bulk_create(cls, parent, variant_kwargs_list, batch_size=None):
@@ -117,31 +133,40 @@ class Variant(UrnModel):
             # update parent
             parent.last_child_value = child_value
             parent.save()
-
         return urn
 
     @property
     def score_columns(self):
-        return [constants.hgvs_column]+ \
-               list(self.data[constants.variant_score_data].keys())
+        return [constants.hgvs_nt_column, constants.hgvs_pro_column] + \
+               list(sorted(
+                   self.data[constants.variant_score_data].keys(),
+                   key=lambda x: column_order[x]
+               ))
 
     @property
     def score_data(self):
         for column in self.scoreset.score_columns:
-            if column == constants.hgvs_column:
-                yield self.hgvs
+            if column == constants.hgvs_nt_column:
+                yield self.hgvs_nt
+            elif column == constants.hgvs_pro_column:
+                yield self.hgvs_pro
             else:
                 yield self.data[constants.variant_score_data][column]
 
     @property
     def count_columns(self):
-        return [constants.hgvs_column] + \
-               list(self.data[constants.variant_count_data].keys())
+        return [constants.hgvs_nt_column, constants.hgvs_pro_column] + \
+               list(sorted(
+                   self.data[constants.variant_count_data].keys(),
+                   key=lambda x: column_order[x]
+               ))
 
     @property
     def count_data(self):
         for column in self.scoreset.count_columns:
-            if column == constants.hgvs_column:
-                yield self.hgvs
+            if column == constants.hgvs_nt_column:
+                yield self.hgvs_nt
+            elif column == constants.hgvs_pro_column:
+                yield self.hgvs_pro
             else:
                 yield self.data[constants.variant_count_data][column]
