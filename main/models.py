@@ -64,7 +64,10 @@ class News(TimeStampedModel):
         """
         Property for obtaining the text of a news item instance.
         """
-        return convert_md_to_html(self.text)
+        return '[{}]: {}'.format(
+            self.creation_date,
+            convert_md_to_html(self.text)
+        )
 
     def save(self, *args, **kwargs):
         if self.text is None:
