@@ -29,10 +29,6 @@ from ..validators import validate_scoreset_json
 User = get_user_model()
 
 
-def _add_hgvs(ls):
-    return [constants.hgvs_column] + ls
-
-
 def default_dataset():
     return dict({
         constants.score_columns: [constants.required_score_column],
@@ -218,11 +214,13 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @property
     def score_columns(self):
-        return _add_hgvs(self.dataset_columns[constants.score_columns])
+        return [constants.hgvs_nt_column, constants.hgvs_pro_column] + \
+               self.dataset_columns[constants.score_columns]
 
     @property
     def count_columns(self):
-        return _add_hgvs(self.dataset_columns[constants.count_columns])
+        return [constants.hgvs_nt_column, constants.hgvs_pro_column] + \
+               self.dataset_columns[constants.count_columns]
 
     @property
     def has_score_dataset(self):
