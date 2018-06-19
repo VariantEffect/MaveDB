@@ -1,68 +1,103 @@
+import io
+import csv
+
 from django.utils.translation import ugettext
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
-from dataset import constants as constants
 from core.utilities import is_null
+
+from . import constants
 
 validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
 validate_json_extension = FileExtensionValidator(allowed_extensions=['json'])
 
 
 def read_header_from_io(file, label=None, msg=None):
-    params = {}
+    if label is None:
+        label = 'Uploaded'
     try:
         header_line = file.readline()
         if isinstance(header_line, bytes):
             header_line = header_line.decode()
         file.seek(0)
-        return [
-            l.strip().replace("'", '').replace('"', '')
-            for l in header_line.strip().split(',')
-        ]
-    except Exception as e:
-        if msg is None:
-            msg = (
-                "Encountered an error while reading %(label)s file header: "
-                "%(reason)s."
-            )
-            params = {'reason': str(e), 'label': label}
-        raise ValidationError(msg, params=params)
+        f = io.StringIO(header_line.strip())
+        return [h.strip() for h in csv.DictReader(f, delimiter=',').fieldnames]
+    except Exception:
+        if not msg:
+            msg = "A header could not be parsed from your {} file. Make sure" \
+                  "Columns are comma delimited. Column names with commas must be" \
+                  "escaped by enclosing them in double quotes.".format(label)
+        raise ValidationError(msg)
 
 
 def validate_has_hgvs_in_header(header, label=None, msg=None):
+    if label is None:
+        label = 'Uploaded'
     params = {}
     if msg is None:
         msg = (
-            "%(label)s file is missing the required column '%(col)s'. "
+            "Your %(label)s file must define either a nucleotide hgvs column "
+            "'%(col_nt)s' or a protein hgvs column '%(col_p)s'. "
             "Columns are case-sensitive and must be comma delimited."
         )
-        params = {'label': label, 'col': constants.hgvs_column}
-    if constants.hgvs_column not in header:
+        params = {
+            'label': label,
+            'col_nt': constants.hgvs_nt_column,
+            'col_p': constants.hgvs_pro_column,
+        }
+    if not set(header) & set(constants.hgvs_columns):
         raise ValidationError(msg, params=params)
 
 
-def validate_at_least_two_columns(header, label=None, msg=None):
+def validate_at_least_one_numeric_column(header, label=None, msg=None):
+    if label is None:
+        label = 'Uploaded'
     params = {}
-    if msg is None:
-        msg = "%(label)s file header must have at least 2 columns."
-        params = {'label': label}
-    if len(header) < 2:
+    if not any(v not in constants.hgvs_columns for v in header):
+        if msg is None:
+            msg = "Your %(label)s file header must define at " \
+                  "least one numeric column."
+            params = {'label': label}
         raise ValidationError(msg, params=params)
 
 
 def validate_header_contains_no_null_columns(header, label=None, msg=None):
-    params = {}
-    for i, value in enumerate(header):
-        if is_null(value):
-            if msg is None:
-                msg = (
-                    "The header of your %(label)s file cannot contain "
-                    "null values. Found null value '%(value)s' at "
-                    "position %(i)s."
-                )
-                params = {'value': value, 'i': i, 'label': label}
-            raise ValidationError(msg, params=params)
+    if label is None:
+        label = 'uploaded'
+
+    any_null = any([is_null(v) for v in header])
+    if any_null:
+        if msg is None:
+            readable_null_values = set([
+                x.lower().strip()
+                for x in constants.nan_col_values if x.strip()
+            ])
+            msg = (
+                "Header cannot contain blank/empty/whitespace only columns "
+                "or the following case-insensitive null values: [{}].".format(
+                    ', '.join(readable_null_values))
+            )
+        raise ValidationError(msg)
+    
+    
+def validate_datasets_define_same_variants(scores, counts):
+    vs_score = set([
+        (v.get(constants.hgvs_nt_column, None),
+         v.get(constants.hgvs_pro_column, None))
+        for k, v in scores.items()
+    ])
+    
+    vs_count = set([
+        (v.get(constants.hgvs_nt_column, None),
+         v.get(constants.hgvs_pro_column, None))
+        for k, v in counts.items()
+    ])
+    if vs_score.difference(vs_count) or vs_count.difference(vs_score):
+        raise ValidationError(
+            "Your score and counts files do not define the same variants. "
+            "Check that the hgvs columns in both files match."
+        )
 
 
 def validate_scoreset_score_data_input(file):
@@ -80,7 +115,7 @@ def validate_scoreset_score_data_input(file):
     header = read_header_from_io(file, label='Score')
     validate_header_contains_no_null_columns(header, label='Score')
     validate_has_hgvs_in_header(header, label='Score')
-    validate_at_least_two_columns(header, label='Score')
+    validate_at_least_one_numeric_column(header, label='Score')
 
     if constants.required_score_column not in header:
         raise ValidationError(
@@ -107,7 +142,7 @@ def validate_scoreset_count_data_input(file):
     header = read_header_from_io(file, label='Count')
     validate_header_contains_no_null_columns(header, label='Count')
     validate_has_hgvs_in_header(header, label='Count')
-    validate_at_least_two_columns(header, label='Count')
+    validate_at_least_one_numeric_column(header, label='Count')
 
 
 def validate_scoreset_json(dict_):
@@ -146,15 +181,6 @@ def validate_scoreset_json(dict_):
 
         # Check score columns is not-empty and at least contains hgvs and score
         if key == constants.score_columns:
-            if not columns:
-                raise ValidationError(
-                    ugettext(
-                        "Missing required columns '%(col1)s' and '%(col2)s' "
-                        "for score dataset."),
-                    params={
-                        "col1": constants.hgvs_column,
-                        "col2": constants.required_score_column
-                    })
             if constants.required_score_column not in columns:
                 raise ValidationError(
                     ugettext(
