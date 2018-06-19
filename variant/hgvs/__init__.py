@@ -12,6 +12,8 @@ from enum import Enum
 
 from django.core.exceptions import ValidationError
 
+from core.utilities import is_null
+
 from .dna import validate_deletion as dna_validate_deletion
 from .dna import validate_insertion as dna_validate_insertion
 from .dna import validate_delins as dna_validate_delins
@@ -38,6 +40,8 @@ from .protein import validate_frame_shift as protein_validate_frame_shift
 from .protein import single_variant as protein_single_variant
 from .protein import multi_variant as protein_multi_variant
 from .protein import any_event_re as protein_any_event_re
+
+from . import constants
 
 
 class Event(Enum):
@@ -124,6 +128,8 @@ def infer_type(hgvs):
     `Event`
         An `Enum` value from the `Event` enum.
     """
+    if is_null(hgvs):
+        return None
     if Event.DELINS.value in hgvs:
         return Event.DELINS
     elif Event.INSERTION.value in hgvs:
@@ -151,6 +157,8 @@ def infer_level(hgvs):
     `Level`
         An `Enum` value from the `Level` enum.
     """
+    if is_null(hgvs):
+        return None
     if hgvs[0] in 'cgnm':
         return Level.DNA
     elif hgvs[0] == 'r':
@@ -165,10 +173,20 @@ def is_multi(hgvs):
     return bool(multi_variant_re.fullmatch(hgvs))
 
 
-def validate_multi_variant(hgvs):
+def validate_multi_variant(hgvs, level=None):
+    if level and not isinstance(level, Level):
+        raise TypeError(
+            "`level` must be a valid Level enum. Found '{}'".format(
+                type(level).__name__
+            ))
+    
+    if hgvs in (constants.synonymous, constants.wildtype):
+        return
+    
     match = multi_variant_re.fullmatch(hgvs)
     if match:
-        level = infer_level(hgvs)
+        if not level:
+            level = infer_level(hgvs)
         if level is None:
             raise ValidationError(
                 "Variant '{}' has an unsupported prefix '{}'. "
@@ -209,12 +227,24 @@ def validate_multi_variant(hgvs):
             "'{}' is not a supported HGVS syntax.".format(hgvs))
     
     
-def validate_single_variants(hgvs):
-    if hgvs in ('_wt', '_sy'):
+def validate_single_variants(hgvs, level=None):
+    if level and not isinstance(level, Level):
+        raise TypeError(
+            "`level` must be a valid Level enum. Found '{}'".format(
+                type(level).__name__
+            ))
+    
+    if hgvs in (constants.synonymous, constants.wildtype):
         return
-    type_ = infer_type(hgvs)
-    level = infer_level(hgvs)
-    if type_ is None or level is None:
+    match = single_variant_re.fullmatch(hgvs)
+    if match:
+        type_ = infer_type(hgvs)
+        if not level:
+            level = infer_level(hgvs)
+        if type_ is None or level is None:
+            raise ValidationError(
+                "'{}' is not a supported HGVS syntax.".format(hgvs))
+        validate_event_functions[level][type_](hgvs)
+    else:
         raise ValidationError(
             "'{}' is not a supported HGVS syntax.".format(hgvs))
-    validate_event_functions[level][type_](hgvs)

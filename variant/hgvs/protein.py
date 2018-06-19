@@ -82,7 +82,7 @@ delins = (
 )
 substitution = (
     r"(?P<sub>"
-        r"((?P<no_protein>0)|(?P<not_predicted>\?))"
+        r"((?P<no_protein>0)|(?P<not_predicted>\?)|(?P<equal>=))"
         r"|"
         r"("
             r"(?P<ref>{0})(?P<pos>\d+)"
