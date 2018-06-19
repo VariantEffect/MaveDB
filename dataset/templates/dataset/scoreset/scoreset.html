@@ -115,10 +115,10 @@
               {% for var in variants %}
                 <tr>
                   {% for data in var.score_data %}
-                    {% if forloop.counter >= 2 %}
+                    {% if forloop.counter0 >= 2 %}
                       <td> {{ data|stringformat:"#.3g" }} </td>
                     {% else %}
-                      <td> {{ data }} </td>
+                      <td> {{ data|default:'None' }} </td>
                     {% endif %}
                   {% endfor %}
                 </tr>
@@ -156,10 +156,10 @@
               {% for var in variants %}
                 <tr>
                   {% for data in var.count_data %}
-                    {% if forloop.counter >= 2 %}
+                    {% if forloop.counter0 >= 2 %}
                       <td> {{ data|stringformat:"6g" }} </td>
                     {% else %}
-                      <td> {{ data }} </td>
+                      <td> {{ data|default:'None' }} </td>
                     {% endif %}
                   {% endfor %}
                 </tr>
