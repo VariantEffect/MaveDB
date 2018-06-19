@@ -24,6 +24,7 @@ from ..validators import (
     validate_csv_extension, validate_json_extension,
     validate_scoreset_count_data_input,
     validate_scoreset_json,
+    validate_datasets_define_same_variants,
 )
 
 
@@ -261,15 +262,7 @@ class ScoreSetForm(DatasetModelForm):
         score_file = self.cleaned_data.get("score_data", None)
         if not score_file:
             return {}
-        # Don't need to wrap this in a try/catch as the form
-        # will catch any Validation errors automagically.
-        #   Valdator must check the following:
-        #       Header has hgvs and at least one other column
-        #       Number of rows does not match header
-        #       Datatypes of rows match
-        #       HGVS string is a valid hgvs string
-        #       Hgvs appears more than once in rows
-        header, hgvs_score_map = validate_variant_rows(score_file)
+        header, _, hgvs_score_map = validate_variant_rows(score_file)
         self.dataset_columns[constants.score_columns] = header
         return hgvs_score_map
 
@@ -278,7 +271,7 @@ class ScoreSetForm(DatasetModelForm):
         if not count_file:
             self.dataset_columns[constants.count_columns] = []
             return {}
-        header, hgvs_count_map = validate_variant_rows(count_file)
+        header, _, hgvs_count_map = validate_variant_rows(count_file)
         self.dataset_columns[constants.count_columns] = header
         return hgvs_count_map
 
@@ -293,14 +286,6 @@ class ScoreSetForm(DatasetModelForm):
             raise ValidationError(
                 ErrorMessages.MetaData.incorrect_format.format(error)
             )
-
-    @staticmethod
-    def _fill_in_missing(hgvs_keys, mapping):
-        # This function has side-effects - it creates new keys in the default
-        # dict `mapping`.
-        for key in hgvs_keys:
-            _ = mapping[key]
-        return mapping
 
     def clean(self):
         if self.errors:
@@ -349,15 +334,10 @@ class ScoreSetForm(DatasetModelForm):
                 ErrorMessages.CountData.no_score_file
             )
             return cleaned_data
-
+        
         if has_count_data:
-            # Cross-populate the hgvs_score_map with every hgvs in counts
-            # but not in scores.
-            self._fill_in_missing(hgvs_count_map.keys(), hgvs_score_map)
-        if has_count_data:
-            # hgvs_score_map now contains all variants. We can then fill in the
-            # missing hgvs values in the other maps.
-            self._fill_in_missing(hgvs_score_map.keys(), hgvs_count_map)
+            validate_datasets_define_same_variants(
+                hgvs_score_map, hgvs_count_map)
 
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
@@ -367,15 +347,34 @@ class ScoreSetForm(DatasetModelForm):
             variants = OrderedDict()
 
             for hgvs in hgvs_score_map.keys():
-                scores_json = hgvs_score_map[hgvs]
-                counts_json = hgvs_count_map[hgvs] if has_count_data else {}
+                score_variants = hgvs_score_map[hgvs].copy()
+                if has_count_data:
+                    count_variants = hgvs_count_map[hgvs].copy()
+                else:
+                    count_variants = {
+                        constants.hgvs_nt_column: None,
+                        constants.hgvs_pro_column: None,
+                    }
+                    
+                # Remove the hgvs columns from the parsed row data.
+                # Pop from scores incase counts was not uploaded.
+                hgvs_nt = score_variants.pop(constants.hgvs_nt_column)
+                hgvs_pro = score_variants.pop(constants.hgvs_pro_column)
+                count_variants.pop(constants.hgvs_nt_column)
+                count_variants.pop(constants.hgvs_pro_column)
+                
                 data = {
-                    constants.variant_score_data: scores_json,
-                    constants.variant_count_data: counts_json,
+                    constants.variant_score_data: score_variants,
+                    constants.variant_count_data: count_variants,
                 }
                 validate_scoreset_columns_match_variant(
                     self.dataset_columns, data)
-                variant = {'hgvs': hgvs, 'data': data}
+
+                variant = {
+                    constants.hgvs_nt_column: hgvs_nt,
+                    constants.hgvs_pro_column: hgvs_pro,
+                    'data': data
+                }
                 variants[hgvs] = variant
 
             cleaned_data["variants"] = variants
