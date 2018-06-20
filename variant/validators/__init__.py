@@ -6,6 +6,8 @@ from collections import defaultdict
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext
 
+from core.utilities import is_null
+
 from dataset import constants as constants
 from dataset.validators import (
     read_header_from_io,
@@ -14,12 +16,10 @@ from dataset.validators import (
     validate_header_contains_no_null_columns
 )
 
-from variant.validators.hgvs import (
-    validate_multi_variant, validate_single_variant)
-from core.utilities import is_null
-
-
 from variant import constants as hgvs_constants
+from variant.validators.hgvs import (
+    validate_multi_variant, validate_single_variant, infer_level, Level
+)
 
 sy_or_wt = (hgvs_constants.wildtype, hgvs_constants.synonymous)
 
@@ -124,7 +124,7 @@ def validate_variant_rows(file):
         List of parsed header columns, and a dictionary mapping a hgvs string
         to a dictionary of column value pairs.
     """
-    from .models import column_order
+    from ..models import column_order
 
     validate_hgvs = validate_hgvs_string
 
@@ -177,15 +177,16 @@ def validate_variant_rows(file):
             for k, v in row.items()
         }
 
-        # Check that each hgvs_nt and hgvs_p have the syntax for the appropriate
-        # hgvs level.
+        # Check that each hgvs_nt and hgvs_p have the syntax for the
+        # appropriate hgvs level.
         hgvs_nt = row.get(constants.hgvs_nt_column, None)
         hgvs_p = row.get(constants.hgvs_pro_column, None)
         if not is_null(hgvs_nt):
             level = infer_level(hgvs_nt)
             if hgvs_nt not in sy_or_wt and level not in [Level.DNA, Level.RNA]:
                 raise ValidationError(
-                    message="Column '%(col)s' only supports DNA/RNA HGVS syntax.",
+                    message=(
+                        "Column '%(col)s' only supports DNA/RNA HGVS syntax."),
                     params={'col': constants.hgvs_nt_column}
                 )
             validate_hgvs(hgvs_nt)
@@ -196,7 +197,8 @@ def validate_variant_rows(file):
             level = infer_level(hgvs_p)
             if hgvs_p not in sy_or_wt and level != Level.PROTEIN:
                 raise ValidationError(
-                    message="Column '%(col)s' only supports Protein HGVS syntax.",
+                    message=(
+                        "Column '%(col)s' only supports Protein HGVS syntax."),
                     params={'col': constants.hgvs_pro_column}
                 )
             validate_hgvs(hgvs_p)

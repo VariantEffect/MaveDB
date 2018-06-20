@@ -1,4 +1,4 @@
-from hgvsp.dna import substitution_re, delins_re, deletion_re, insertion_re
+from hgvsp.rna import substitution_re, delins_re, deletion_re, insertion_re
 
 from django.core.exceptions import ValidationError
 
