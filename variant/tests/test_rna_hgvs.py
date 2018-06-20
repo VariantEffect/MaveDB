@@ -1,46 +1,12 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from ..hgvs.rna import (
+from ..validators.hgvs.rna import (
     validate_substitution,
     validate_deletion,
     validate_delins,
     validate_insertion,
-    single_variant_re,
-    multi_variant_re,
 )
-
-
-class TestVariantRegexPatterns(TestCase):
-    def test_single_var_re_matches_each_variant_type(self):
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('r.123a>g'))
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('r.=/6_8del'))
-        self.assertIsNotNone(
-            single_variant_re.fullmatch(
-                'r.2949_2950ins[2950-30_2950-12;2950-4_2950-1]'))
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('r.9002_9009delins(5)'))
-    
-    def test_multi_var_re_matches_multi_variants(self):
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'r.[123a>g;19del;'
-                '2949_2950ins[2950-30_2950-12;2950-4_2950-1];'
-                '9002_9009delins(5)]'
-            ))
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'r.[123a>g,19del,'
-                '2949_2950ins[2950-30_2950-12;2950-4_2950-1],'
-                '9002_9009delins(5)]'
-            ))
-        
-        # Non-multi should be none
-        self.assertIsNone(multi_variant_re.fullmatch('r.[123=;]'))
-        self.assertIsNone(multi_variant_re.fullmatch('r.[123=,]'))
-        self.assertIsNone(multi_variant_re.fullmatch('r.[123a>g]'))
 
 
 class TestEventValidators(TestCase):

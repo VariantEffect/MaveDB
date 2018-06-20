@@ -1,41 +1,13 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from ..hgvs.protein import (
+from ..validators.hgvs.protein import (
     validate_substitution,
     validate_deletion,
     validate_delins,
     validate_insertion,
     validate_frame_shift,
-    single_variant_re,
-    multi_variant_re,
 )
-
-
-class TestVariantRegexPatterns(TestCase):
-    def test_single_var_re_matches_each_variant_type(self):
-        self.assertIsNotNone(single_variant_re.fullmatch('p.Trp24Cys^Gly'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.(Trp24Cys)'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.Lys23_Val25del'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.(Lys23_Val25del)'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.His4_Gln5insAla'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.(His4_Gln5insAla)'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.Cys28delinsVal'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.(Cys28delinsVal)'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.Cys28fs'))
-        self.assertIsNotNone(single_variant_re.fullmatch('p.(Cys28fs)'))
-        
-    def test_multi_var_re_matches_multi_variants(self):
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'p.[Trp24Cys;Lys23_Val25del;His4_Gln5insAla;'
-                'Cys28fs;Cys28delinsVal]'
-            ))
-        # Non-multi should be none
-        self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys;]'))
-        self.assertIsNone(multi_variant_re.fullmatch('p.[(Trp24Cys)]'))
-        self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys,]'))
-        self.assertIsNone(multi_variant_re.fullmatch('p.[Trp24Cys]'))
 
 
 class TestEventValidators(TestCase):

@@ -1,53 +1,13 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from ..hgvs.dna import (
+from ..validators.hgvs.dna import (
     validate_substitution,
     validate_deletion,
     validate_delins,
     validate_insertion,
-    single_variant_re,
-    multi_variant_re,
 )
 
-
-class TestVariantRegexPatterns(TestCase):
-    def test_single_var_re_matches_each_variant_type(self):
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('c.123A>G'))
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('g.(4071+1_4072-1)_(5154+1_5155-1)del'))
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('n.240_241insAGG'))
-        self.assertIsNotNone(
-            single_variant_re.fullmatch('m.9002_9009delins(5)'))
-        
-    def test_multi_var_re_matches_multi_variants(self):
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'c.[123A>G;19del;'
-                '240_241insAGG;9002_9009delins(5)]'
-            ))
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'g.[123=/A>G;19delT;'
-                '240_241insAGG;9002_9009delins(5)]'
-            ))
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'm.[123=;(?_-1)_(*1_?)del;'
-                '(?_-245)_(31+1_32-1)del;9002_9009delinsGGG]'
-            ))
-        self.assertIsNotNone(
-            multi_variant_re.fullmatch(
-                'n.[54=//T>C;*183+45_186del;'
-                '32717298_32717299ins(100);6775delinsGA]'
-            ))
-        
-        # Non-multi should be none
-        self.assertIsNone(multi_variant_re.fullmatch('c.[123=;]'))
-        self.assertIsNone(multi_variant_re.fullmatch('c.[123A>G]'))
-        
 
 class TestEventValidators(TestCase):
     def test_valid_substitutions_pass(self):

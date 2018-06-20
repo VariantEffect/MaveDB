@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from dataset import constants
 from dataset.constants import required_score_column
 
-from ..hgvs import constants as hgvs_constants
+from variant import constants as hgvs_constants
 from ..factories import generate_hgvs, VariantFactory
 from ..validators import (
     validate_hgvs_string,
