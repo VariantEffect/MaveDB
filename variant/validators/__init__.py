@@ -1,4 +1,5 @@
 import csv
+from hgvsp import is_multi
 
 from collections import defaultdict
 
@@ -13,14 +14,12 @@ from dataset.validators import (
     validate_header_contains_no_null_columns
 )
 
+from variant.validators.hgvs import (
+    validate_multi_variant, validate_single_variant)
 from core.utilities import is_null
 
-from variant.hgvs import (
-    is_multi, infer_level, Level,
-    validate_multi_variant, validate_single_variants
-)
-from variant.hgvs import constants as hgvs_constants
 
+from variant import constants as hgvs_constants
 
 sy_or_wt = (hgvs_constants.wildtype, hgvs_constants.synonymous)
 
@@ -49,12 +48,12 @@ def validate_hgvs_string(value, level=None):
             "HGVS values cannot be empty or one of '{}'.".format(
                 ', '.join([v for v in constants.nan_col_values if v.strip()])
             ))
-    if value in ('_wt', '_sy'):
+    if value in sy_or_wt:
         return
     if is_multi(value):
         validate_multi_variant(value, level=level)
     else:
-        validate_single_variants(value, level=level)
+        validate_single_variant(value, level=level)
 
 
 def validate_variant_json(dict_):
@@ -126,7 +125,7 @@ def validate_variant_rows(file):
         to a dictionary of column value pairs.
     """
     from .models import column_order
-    
+
     validate_hgvs = validate_hgvs_string
 
     # Read header, validate and iterate one line since `read_header_from_io`
@@ -144,7 +143,7 @@ def validate_variant_rows(file):
         for line in file.readlines()
     )
     hgvs_map = defaultdict(lambda: dict(**{c: None for c in header}))
-    
+
     # Determine which is the primary hgvs column. Defaults to _nt. _p is only
     # selected when _nt is not provided.
     defines_nt_hgvs = constants.hgvs_nt_column in header
@@ -192,7 +191,7 @@ def validate_variant_rows(file):
             validate_hgvs(hgvs_nt)
         else:
             hgvs_nt = None
-        
+
         if not is_null(hgvs_p):
             level = infer_level(hgvs_p)
             if hgvs_p not in sy_or_wt and level != Level.PROTEIN:
@@ -218,7 +217,7 @@ def validate_variant_rows(file):
                 "Row %(i)s is missing the HGVS string for column '%(col)s'.",
                 params={'col': primary_hgvs_column, 'i': i + 1}
             )
-        
+
         # Ensure all values for columns other than 'hgvs' are either an int,
         # float or None
         for k, v in row.items():
@@ -230,12 +229,13 @@ def validate_variant_rows(file):
                     row[k] = v
                 except ValueError:
                     raise ValidationError(
-                       (
+                        (
                             "The type for column '%(col)s' at line %(i)s is "
                             "'%(dtype)s'. Non-HGVS columns must be either "
                             "an integer or floating point number."
-                       ),
-                       params={'col': k, 'i': i + 1, 'dtype': type(v).__name__}
+                        ),
+                        params={'col': k, 'i': i + 1,
+                                'dtype': type(v).__name__}
                     )
 
         # Make sure the variant has been defined more than one time.
