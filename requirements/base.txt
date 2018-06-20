@@ -20,3 +20,4 @@ whitenoise
 dj-database-url
 git+https://github.com/afrubin/idutils.git@bio
 hg+http://bitbucket.org/afrubin/metapub@html_citation
+git+https://github.com/FowlerLab/hgvs-patterns.git
