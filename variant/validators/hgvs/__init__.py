@@ -15,7 +15,7 @@ from django.core.exceptions import ValidationError
 
 from . import dna, rna, protein
 
-from .. import constants
+from variant import constants
 
 validate_event_functions = {
     Level.DNA: {
@@ -47,7 +47,7 @@ def validate_multi_variant(hgvs, level=None):
                 type(level).__name__
             ))
 
-    if hgvs in (constants.synonymous, constants.wildtype):
+    if hgvs in constants.wt_or_sy:
         return
 
     match = multi_variant_re.fullmatch(hgvs)
@@ -85,7 +85,7 @@ def validate_multi_variant(hgvs, level=None):
                 "event more than once.".format(hgvs)
             )
         for event in matches:
-            if event in ('_wt', '_sy'):
+            if event in constants.wt_or_sy:
                 continue
             type_ = infer_type(event)
             validate_event_functions[level][type_](event)
@@ -101,7 +101,7 @@ def validate_single_variant(hgvs, level=None):
                 type(level).__name__
             ))
 
-    if hgvs in (constants.synonymous, constants.wildtype):
+    if hgvs in constants.wt_or_sy:
         return
     match = single_variant_re.fullmatch(hgvs)
     if match:
