@@ -1,0 +1,11 @@
+{% autoescape off %}
+{% if user.first_name %}
+Hi {{ user.first_name }},
+{% else %}
+Hi,
+{% endif %}
+Your <a href="{{ url|safe }}">submission</a> has been processed successfully.
+
+Regards,
+The Mave team.
+{% endautoescape %}

@@ -1,0 +1,4 @@
+{% autoescape off %}
+A new {{ class_name }} has been published by {{ user.profile.get_full_name_hyperlink }}. You have been automatically added as an administrator for this {{ class_name }}. You can view the entry <a href="{{ url|safe }}">Here</a>
+
+{% endautoescape %}

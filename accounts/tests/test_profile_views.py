@@ -1,397 +1,700 @@
-
+from django.core.urlresolvers import reverse_lazy
+from django.test import TestCase, RequestFactory, mock
+from django.contrib.auth.models import AnonymousUser
+from django.http import Http404
 from django.core import mail
-from django.core.urlresolvers import reverse_lazy, reverse
-from django.test import TestCase, RequestFactory
-from django.utils.functional import SimpleLazyObject
-from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import reverse
 
-from ..views import (
-    manage_instance,
-    edit_instance,
-    profile_view,
-    view_instance,
-    get_class_for_accession
+from dataset import constants
+from dataset.utilities import delete_instance
+from dataset import models as dataset_models
+from dataset.tasks import publish_scoreset
+from dataset.models.scoreset import ScoreSet
+from dataset.factories import (
+    ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory
 )
+from variant.factories import VariantFactory
 
-from main.models import ReferenceMapping
-from experiment.models import ExperimentSet, Experiment
-from scoreset.models import ScoreSet
-from scoreset.validators import Constants
-from scoreset.tests.utility import make_score_count_files
+from core.utilities.tests import TestMessageMixin
+from core.models import FailedTask
+from core.tasks import send_mail
 
-from ..models import Profile, user_is_anonymous
+from ..factories import UserFactory
 from ..permissions import (
+    GroupTypes,
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer,
-    remove_user_as_instance_admin,
-    remove_user_as_instance_viewer,
-    instances_for_user_with_group_permission,
+    assign_user_as_instance_editor,
     user_is_admin_for_instance,
-    user_is_viewer_for_instance
+    user_is_viewer_for_instance,
+    user_is_editor_for_instance,
 )
 
-
-User = get_user_model()
-
-
-def experimentset():
-    return ExperimentSet.objects.create()
+from ..views import manage_instance, profile_view, profile_settings
 
 
-def experiment():
-    return Experiment.objects.create(target="test", wt_sequence="AT")
-
-
-def scoreset():
-    return ScoreSet.objects.create(
-        experiment=Experiment.objects.create(
-            target="test", wt_sequence="AT"
-        )
-    )
-
-
-class TestProfileHomeView(TestCase):
-
+class TestProfileSettings(TestCase, TestMessageMixin):
+    """
+    Test the settings view forms.
+    """
     def setUp(self):
-        self.path = reverse_lazy("accounts:profile")
+        self.path = reverse_lazy("accounts:profile_settings")
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
-        self.bob = User.objects.create(username="bob")
+        self.template = 'accounts/profile_settings.html'
+        self.alice = UserFactory(username="alice")
 
     def test_requires_login(self):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
-
-class TestProfileManageInstanceView(TestCase):
-
-    def setUp(self):
-        self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice", password="secret")
-        self.bob = User.objects.create(username="bob", password="secret")
-        self.client.logout()
-
-    def test_requires_login(self):
-        obj = ExperimentSet.objects.create()
-        assign_user_as_instance_admin(self.bob, obj)
-        response = self.client.get(
-            '/accounts/profile/manage/{}/'.format(obj.accession)
+    def test_can_set_email(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='post',
+            path='/profile/',
+            data={'email': 'email@email.com'}
         )
+        request.user = user
+        response = profile_settings(request)
         self.assertEqual(response.status_code, 302)
 
-    def test_404_if_no_admin_permissions(self):
-        obj = ExperimentSet.objects.create()
-        assign_user_as_instance_viewer(self.alice, obj)
-        request = self.factory.get(
-            '/accounts/profile/manage/{}/'.format(obj.accession)
+    def test_cannot_set_invalid_email(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='post',
+            path='/profile/',
+            data={'email': 'not an email.com'}
         )
-        request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
-        self.assertEqual(response.status_code, 404)
+        request.user = user
+        response = profile_settings(request)
+        self.assertContains(response, 'There were errors')
+    
+    @mock.patch("core.tasks.send_mail.apply_async")
+    def test_setting_email_emails_user(self, patch):
+        user = UserFactory()
+        request = self.create_request(
+            method='post',
+            path='/profile/',
+            data={'email': 'email@email.com'}
+        )
+        request.user = user
+        _ = profile_settings(request)
+        patch.assert_called()
 
-    def test_404_if_klass_cannot_be_inferred_from_accession(self):
-        obj = ExperimentSet.objects.create()
-        assign_user_as_instance_viewer(self.alice, obj)
-        request = self.factory.get(
-            '/accounts/profile/manage/NOT_ACCESSION/'
+    def test_users_email_appears_in_profile(self):
+        user = UserFactory()
+        request = self.create_request(
+            method='get',
+            path='/profile/',
         )
+        request.user = user
+        response = profile_settings(request)
+        self.assertContains(response, user.profile.email)
+
+
+class TestProfileDeleteInstance(TestCase, TestMessageMixin):
+    """
+    Test the home view loads the correct template and requires a login.
+    """
+    def setUp(self):
+        self.path = reverse_lazy("accounts:profile")
+        self.factory = RequestFactory()
+        self.template = 'accounts/profile_home.html'
+        self.alice = UserFactory(username="alice")
+
+    def test_requires_login(self):
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 302)
+
+    def test_can_delete_private_entry(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 0)
+
+    def test_cannot_delete_public_entry(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        instance.save(save_parents=True)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "is public and cannot be deleted.")
+
+    def test_returns_error_message_if_urn_does_not_exist(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        instance.delete()
+        response = profile_view(request)
+        self.assertContains(response, "already been deleted.")
+
+    def test_cannot_delete_if_not_an_admin(self):
+        editor = UserFactory()
+        viewer = UserFactory()
+        instance = ScoreSetFactory()
+        assign_user_as_instance_editor(editor, instance)
+        assign_user_as_instance_viewer(viewer, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = editor
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "You must be an administrator")
+
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = viewer
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "You must be an administrator")
+
+    def test_cannot_delete_experimentset_if_it_has_children(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        assign_user_as_instance_admin(user, instance.experiment.experimentset)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.experiment.experimentset.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertContains(response, "Child Experiments must be deleted")
+        self.assertEqual(dataset_models.experimentset.ExperimentSet.objects.count(), 1)
+        self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+
+    def test_cannot_delete_experiment_if_it_has_children(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        assign_user_as_instance_admin(user, instance.experiment)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.experiment.urn},
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_view(request)
+        self.assertContains(response, "Child Score Sets must be deleted")
+        self.assertEqual(dataset_models.experiment.Experiment.objects.count(), 1)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+
+    def test_cannot_delete_entry_being_processed(self):
+        user = UserFactory()
+        instance = ScoreSetFactory()
+        instance.publish()
+        assign_user_as_instance_admin(user, instance)
+        request = self.create_request(
+            method='post',
+            data={"delete": instance.urn},
+            path='/profile/',
+        )
+        request.user = user
+        instance.processing_state = constants.processing
+        instance.save()
+        response = profile_view(request)
+        self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
+        self.assertContains(response, "currently being processed.")
+
+
+class TestProfileManageInstanceView(TestCase, TestMessageMixin):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.alice = UserFactory(username="alice", password="secret")
+        self.bob = UserFactory(username="bob", password="secret")
+        self.raw_password = 'secret'
+        self.client.logout()
+
+    def login(self, user):
+        return self.client.login(
+            username=user.username, password=self.raw_password)
+
+    def test_requires_login(self):
+        obj = ExperimentSetFactory()
+        request = self.create_request(
+            method='get', path='/profile/manage/{}/'.format(obj.urn))
+        request.user = AnonymousUser()
+        response = manage_instance(request, urn=obj.urn)
+        self.assertEqual(response.status_code, 302)
+
+    def test_403_if_user_does_not_have_manage_permissions(self):
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_viewer(self.alice, obj)
+        request = self.create_request(
+            method='get', path='/profile/manage/{}/'.format(obj.urn))
         request.user = self.alice
-        response = manage_instance(request, accession='NOT_ACCESSION')
-        self.assertEqual(response.status_code, 404)
+        with self.assertRaises(PermissionDenied):
+            manage_instance(request, urn=obj.urn)
+
+    def test_404_if_klass_cannot_be_inferred_from_urn(self):
+        request = self.create_request(
+            method='get', path='/profile/manage/NOT_ACCESSION/')
+        request.user = self.alice
+        with self.assertRaises(Http404):
+            manage_instance(request, urn='NOT_ACCESSION')
 
     def test_404_if_instance_not_found(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_viewer(self.alice, obj)
         obj.delete()
-        request = self.factory.get(
-            '/accounts/profile/manage/{}/'.format(obj.accession)
-        )
+        request = self.create_request(
+            method='get', path='/profile/manage/{}/'.format(obj.urn))
         request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
-        self.assertEqual(response.status_code, 404)
+        with self.assertRaises(Http404):
+            manage_instance(request, urn=obj.urn)
 
-    def test_updates_admins_with_valid_post_data(self):
-        obj = ExperimentSet.objects.create()
+    # --- Removing
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_removes_existing_admin(self, patch):
+        group = GroupTypes.ADMIN
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.accession),
-            data={
-                "administrators[]": [self.bob.pk],
-                "administrator_management-users": [self.bob.pk]
-            }
-        )
-        request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [self.bob.pk]
+        }
+
+        self.client.post(path=path, data=data)
         self.assertFalse(user_is_admin_for_instance(self.alice, obj))
         self.assertTrue(user_is_admin_for_instance(self.bob, obj))
+        
+        self.assertEqual(patch.call_count, 2)
+        send_mail.apply(**patch.call_args_list[0][1])
+        send_mail.apply(**patch.call_args_list[1][1])
+        
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn(self.alice.first_name, mail.outbox[0].body)
+        self.assertIn(self.bob.first_name, mail.outbox[1].body)
+        self.assertIn('removed', mail.outbox[0].body)
+        self.assertIn('added', mail.outbox[1].body)
 
-    def test_updates_viewers_with_valid_post_data(self):
-        obj = ExperimentSet.objects.create()
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_removes_existing_editor(self, patch):
+        group = GroupTypes.EDITOR
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.accession),
-            data={
-                "viewers[]": [self.bob.pk],
-                "viewer_management-users": [self.bob.pk]
-            }
-        )
-        request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
+        assign_user_as_instance_editor(self.bob, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): []
+        }
+
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertFalse(user_is_editor_for_instance(self.bob, obj))
+
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.bob.first_name, mail.outbox[0].body)
+        self.assertIn('removed', mail.outbox[0].body)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_removes_existing_viewer(self, patch):
+        group = GroupTypes.VIEWER
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_viewer(self.bob, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): []
+        }
+
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertFalse(user_is_viewer_for_instance(self.bob, obj))
+        
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.bob.first_name, mail.outbox[0].body)
+        self.assertIn('removed', mail.outbox[0].body)
+
+    # --- Re-assign
+    def test_error_reassign_only_admin(self):
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        group = GroupTypes.EDITOR
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [self.alice.pk]
+        }
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertEqual(len(mail.outbox), 0)
+
+        group = GroupTypes.VIEWER
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [self.alice.pk]
+        }
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertEqual(len(mail.outbox), 0)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_reassign_removes_from_existing_group(self, patch):
+        group = GroupTypes.EDITOR
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_viewer(self.bob, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [self.bob.pk]
+        }
+
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertFalse(user_is_viewer_for_instance(self.bob, obj))
+        self.assertTrue(user_is_editor_for_instance(self.bob, obj))
+        
+        # Removal email and addition email should be sent
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.bob.first_name, mail.outbox[0].body)
+        self.assertIn('re-assigned', mail.outbox[0].body)
+
+    # --- Adding
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_appends_new_admin(self, patch):
+        group = GroupTypes.ADMIN
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [self.alice.pk, self.bob.pk]
+        }
+
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertTrue(user_is_admin_for_instance(self.bob, obj))
+        
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
+        self.assertIn(self.bob.first_name, mail.outbox[0].body)
+        self.assertIn('added', mail.outbox[0].body)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_appends_new_viewer(self, patch):
+        group = GroupTypes.VIEWER
+        userc = UserFactory()
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+        assign_user_as_instance_viewer(userc, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [userc.pk, self.bob.pk]
+        }
+
+        self.client.post(path=path, data=data)
         self.assertTrue(user_is_admin_for_instance(self.alice, obj))
         self.assertTrue(user_is_viewer_for_instance(self.bob, obj))
+        self.assertTrue(user_is_viewer_for_instance(userc, obj))
+    
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
+        self.assertIn(self.bob.first_name, mail.outbox[0].body)
+        self.assertIn('added', mail.outbox[0].body)
 
-    def test_redirects_to_manage_page_valid_submission(self):
-        obj = ExperimentSet.objects.create()
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_appends_new_editor(self, patch):
+        group = GroupTypes.EDITOR
+        userc = UserFactory()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.accession),
+        assign_user_as_instance_editor(userc, obj)
+
+        success = self.login(self.alice)
+        self.assertTrue(success)
+
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [userc.pk, self.bob.pk]
+        }
+
+        self.client.post(path=path, data=data)
+        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
+        self.assertTrue(user_is_editor_for_instance(self.bob, obj))
+        self.assertTrue(user_is_editor_for_instance(userc, obj))
+
+        patch.assert_called()
+        send_mail.apply(**patch.call_args[1])
+        self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
+        self.assertIn(self.bob.first_name, mail.outbox[0].body)
+        self.assertIn('added', mail.outbox[0].body)
+
+    # --- Redirects
+    def test_redirects_valid_submission(self):
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+        request = self.create_request(
+            method='post',
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
-                "administrators[]": [self.alice.pk, self.bob.pk],
+                "administrator[]": [''],
                 "administrator_management-users": [self.alice.pk, self.bob.pk]
             }
         )
         request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
+        response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 302)
 
     def test_returns_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.accession),
+        request = self.create_request(
+            method='post',
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
-                "administrators[]": [10000],
+                "administrator[]": [10000],
                 "administrator_management-users": [10000]
             }
         )
         request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
+        response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
 
     def test_returns_viewer_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSet.objects.create()
+        obj = ExperimentSetFactory()
         assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.post(
-            path='/accounts/profile/manage/{}/'.format(obj.accession),
+        request = self.create_request(
+            method='post',
+            path='/profile/manage/{}/'.format(obj.urn),
             data={
-                "viewers[]": [10000],
+                "viewer[]": [10000],
                 "viewer_management-users": [10000]
             }
         )
         request.user = self.alice
-        response = manage_instance(request, accession=obj.accession)
+        response = manage_instance(request, urn=obj.urn)
+        self.assertEqual(response.status_code, 200)
+
+    def test_returns_editor_admin_form_when_inputting_invalid_data(self):
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+        request = self.create_request(
+            method='post',
+            path='/profile/manage/{}/'.format(obj.urn),
+            data={
+                "editor[]": [10000],
+                "editor_management-users": [10000]
+            }
+        )
+        request.user = self.alice
+        response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
 
 
-class TestProfileEditInstanceView(TestCase):
 
+class TestPublish(TestCase, TestMessageMixin):
     def setUp(self):
-        self.path = reverse_lazy("accounts:edit_instance")
+        self.user = UserFactory()
+        self.scoreset = ScoreSetWithTargetFactory()
+        self.path = '/profile/'
         self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
-        self.alice.set_password("secret_key")
-        self.alice.save()
-        self.bob = User.objects.create(username="bob")
-        self.experiment_post_data = {
-            'doi_id': [""],
-            'sra_id': [""],
-            "target": ["brca1"],
-            'wt_sequence': ["atcg"],
-            "target_organism": [''],
-            'keywords': [''],
-            'external_accessions': [''],
-            'abstract': [""],
-            'method_desc': [""],
-            'reference_mapping-TOTAL_FORMS': ['0'],
-            'reference_mapping-INITIAL_FORMS': ['0'],
-            'reference_mapping-MIN_NUM_FORMS': ['0'],
-            'reference_mapping-MAX_NUM_FORMS': ['1000'],
-            'reference_mapping-__prefix__-reference': [''],
-            'reference_mapping-__prefix__-target_start': [''],
-            'reference_mapping-__prefix__-target_end': [''],
-            'reference_mapping-__prefix__-reference_start': [''],
-            'reference_mapping-__prefix__-reference_end': [''],
-            'submit': ['submit'],
-            'publish': ['']
-        }
+        self.post_data = {'publish': [self.scoreset.urn]}
+        for i in range(3):
+            VariantFactory(scoreset=self.scoreset)
+            
+    def make_request(self, user=None):
+        data = self.post_data.copy()
+        self.scoreset.add_administrators(self.user if user is None else user)
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user if user is None else user
+        return request
+    
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publishing_updates_states_success(self, publish_mock):
+        profile_view(self.make_request())
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.processing)
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.success)
+        
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publishing_updates_states_fail(self, publish_mock):
+        profile_view(self.make_request())
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.processing)
+        publish_mock.assert_called_once()
 
-        score_file, count_file = make_score_count_files()
-        self.scoreset_post_data = {
-            'replaces': [''],
-            'abstract': [''],
-            'method_desc': [''],
-            'doi_id': [''],
-            'keywords': [''],
-            'submit': ['submit'],
-            'publish': ['']
-        }
+        publish_scoreset.scoreset = self.scoreset
+        publish_scoreset.base_url = ""
+        publish_scoreset.user = self.user
+        publish_scoreset.urn = self.scoreset.urn
+        publish_scoreset.on_failure(
+            exc=None, task_id=1, args=(), einfo=None, kwargs={})
+        self.assertEqual(
+            ScoreSet.objects.first().processing_state, constants.failed)
+        
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publishing_sets_child_and_parents_to_public(self, publish_mock):
+        self.assertTrue(self.scoreset.private)
+        self.assertTrue(self.scoreset.parent.private)
+        self.assertTrue(self.scoreset.parent.parent.private)
+        
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(**publish_mock.call_args[1])
 
-    def make_scores_test_data(self, scores_data=None, counts_data=None):
-        data = self.scoreset_post_data.copy()
-        s_file, c_file = make_score_count_files(scores_data, counts_data)
-        files = {Constants.SCORES_DATA: s_file}
-        if c_file is not None:
-            files[Constants.COUNTS_DATA] = c_file
-        return data, files
-
-    def test_404_object_not_found(self):
-        obj = experiment()
-        accession = obj.accession
-        assign_user_as_instance_viewer(self.alice, obj)
-        request = self.factory.get(
-            '/accounts/profile/edit/{}/'.format(accession)
-        )
-        request.user = self.alice
-        obj.delete()
-        response = edit_instance(request, accession=accession)
-        self.assertEqual(response.status_code, 404)
-
-    def test_publish_button_sends_admin_emails(self):
-        admin = User.objects.create(
-            username="admin", email="admin@admin.com"
-        )
-        admin.is_superuser = True
-        admin.save()
-
-        obj = scoreset()
-        assign_user_as_instance_admin(self.alice, obj)
-        data, _ = self.make_scores_test_data()
-        score_file, count_file = make_score_count_files()
-        data['scores_data'] = score_file
-        data['counts_data'] = count_file
-        data['publish'] = ['publish']
-        path = '/accounts/profile/edit/{}/'.format(obj.accession)
-        self.client.login(username="alice", password="secret_key")
-        response = self.client.post(path=path, data=data)
-
-        obj.refresh_from_db()
+        obj = ScoreSet.objects.first()
         self.assertFalse(obj.private)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertFalse(obj.parent.private)
+        self.assertFalse(obj.parent.parent.private)
 
-    def test_requires_login(self):
-        obj = experiment()
-        response = self.client.get(
-            '/accounts/profile/edit/{}/'.format(obj.accession)
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publishing_propagates_modified_by(self, publish_mock):
+        self.assertIsNone(self.scoreset.modified_by)
+        self.assertIsNone(self.scoreset.parent.modified_by)
+        self.assertIsNone(self.scoreset.parent.parent.modified_by)
+        
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(**publish_mock.call_args[1])
+
+        obj = ScoreSet.objects.first()
+        self.assertEqual(obj.modified_by, self.user)
+        self.assertEqual(obj.experiment.modified_by, self.user)
+        self.assertEqual(obj.experiment.experimentset.modified_by, self.user)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publish_emails_admins_on_success(self, publish_mock, email_mock):
+        user = UserFactory(is_superuser=True)
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        
+        self.assertEqual(
+            email_mock.call_args_list[1][1]['kwargs']['recipient_list'],
+            [user.profile.email]
         )
-        self.assertEqual(response.status_code, 302)
+        
 
-    def test_can_defer_instance_type_from_accession(self):
-        accession = experiment().accession
-        self.assertEqual(get_class_for_accession(accession), Experiment)
-
-        accession = experimentset().accession
-        self.assertEqual(get_class_for_accession(accession), ExperimentSet)
-
-        accession = scoreset().accession
-        self.assertEqual(get_class_for_accession(accession), ScoreSet)
-
-        accession = "exp12012.1A"
-        self.assertEqual(get_class_for_accession(accession), None)
-
-    def test_404_edit_an_experimentset(self):
-        obj = experimentset()
-        request = self.factory.get(
-            '/accounts/profile/edit/{}/'.format(obj.accession)
+    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publish_emails_user_on_success(self, publish_mock, email_mock):
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        email_mock.assert_called()
+        self.assertEqual(
+            email_mock.call_args[1]['kwargs']['recipient_list'],
+            [self.user.email]
         )
-        request.user = self.alice
-        response = edit_instance(request, accession=obj.accession)
-        self.assertEqual(response.status_code, 404)
-
-    def test_published_scoreset_instance_returns_edit_only_mode_form(self):
-        obj = scoreset()
-        obj.private = False
-        obj.save()
-        assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.get(
-            '/accounts/profile/edit/{}/'.format(obj.accession)
+        self.assertIn(
+            'processed successfully',
+            email_mock.call_args[1]['kwargs']['message']
         )
-        request.user = self.alice
-        response = edit_instance(request, accession=obj.accession)
-        self.assertNotContains(response, 'Score data')
-        self.assertNotContains(response, 'Count data')
-
-    def test_published_experiment_instance_returns_edit_only_mode_form(self):
-        obj = experiment()
-        obj.private = False
-        obj.save()
-        assign_user_as_instance_admin(self.alice, obj)
-        request = self.factory.get(
-            '/accounts/profile/edit/{}/'.format(obj.accession)
+        self.scoreset.refresh_from_db()
+        self.assertIn(
+            self.scoreset.get_url(),
+            email_mock.call_args[1]['kwargs']['message']
         )
-        request.user = self.alice
-        response = edit_instance(request, accession=obj.accession)
-        self.assertNotContains(response, 'Target')
-
-    def test_refmapping_update_deletes_removed_mappings(self):
-        obj = experiment()
-        assign_user_as_instance_admin(self.alice, obj)
-        data = self.experiment_post_data.copy()
-        data['reference_mapping-TOTAL_FORMS'] = ['1']
-        data['reference_mapping-0-reference'] = ['test1']
-        data['reference_mapping-0-is_alternate'] = ['off']
-        data['reference_mapping-0-target_start'] = [0]
-        data['reference_mapping-0-target_end'] = [10]
-        data['reference_mapping-0-reference_start'] = [0]
-        data['reference_mapping-0-reference_end'] = [10]
-        request = self.factory.post(
-            '/accounts/profile/edit/{}/'.format(obj.accession),
-            data=data
+    
+    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publish_emails_user_on_fail(self, publish_mock, email_mock):
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+        
+        delete_instance(self.scoreset)
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        
+        email_mock.assert_called()
+        self.assertEqual(
+            email_mock.call_args[1]['kwargs']['recipient_list'],
+            [self.user.email]
         )
-        request.user = self.alice
-        edit_instance(request, accession=obj.accession)
-
-        # Now delete and add a new one.
-        data = self.experiment_post_data.copy()
-        data['reference_mapping-TOTAL_FORMS'] = ['1']
-        data['reference_mapping-0-reference'] = ['test2']
-        data['reference_mapping-0-is_alternate'] = ['off']
-        data['reference_mapping-0-target_start'] = [0]
-        data['reference_mapping-0-target_end'] = [10]
-        data['reference_mapping-0-reference_start'] = [0]
-        data['reference_mapping-0-reference_end'] = [20]
-        request = self.factory.post(
-            '/accounts/profile/edit/{}/'.format(obj.accession),
-            data=data
+        self.assertIn(
+            'could not be processed',
+            email_mock.call_args[1]['kwargs']['message']
         )
-        request.user = self.alice
-        response = edit_instance(request, accession=obj.accession)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(ReferenceMapping.objects.count(), 1)
-        self.assertEqual(ReferenceMapping.objects.all()[0].reference, 'test2')
-
-
-class TestProfileViewInstanceView(TestCase):
-
-    def setUp(self):
-        self.path = reverse_lazy("accounts:view_instance")
-        self.factory = RequestFactory()
-        self.alice = User.objects.create(username="alice")
-        self.bob = User.objects.create(username="bob")
-
-    def test_requires_login(self):
-        obj = ExperimentSet.objects.create()
-        response = self.client.get(
-            '/accounts/profile/view/{}/'.format(obj.accession)
+        self.assertIn(
+            reverse('accounts:profile'),
+            email_mock.call_args[1]['kwargs']['message']
         )
-        self.assertEqual(response.status_code, 302)
 
-    def test_404_if_no_permissions(self):
-        obj = ExperimentSet.objects.create()
-        request = self.factory.get(
-            '/accounts/profile/view/{}/'.format(obj.accession)
-        )
-        request.user = self.alice
-        response = view_instance(request, accession=obj.accession)
-        self.assertEqual(response.status_code, 404)
-
-    def test_404_if_obj_not_found(self):
-        obj = ExperimentSet.objects.create()
-        accession = obj.accession
-        assign_user_as_instance_viewer(self.alice, obj)
-        request = self.factory.get(
-            '/accounts/profile/view/{}/'.format(accession)
-        )
-        request.user = self.alice
-        obj.delete()
-        response = view_instance(request, accession=accession)
-        self.assertEqual(response.status_code, 404)
+    @mock.patch('dataset.tasks.publish_scoreset.apply_async')
+    def test_publish_failure_saves_task(self, publish_mock):
+        profile_view(self.make_request())
+        publish_mock.assert_called_once()
+    
+        delete_instance(self.scoreset)
+        publish_scoreset.apply(**publish_mock.call_args[1])
+        self.assertEqual(FailedTask.objects.count(), 1)

@@ -1,99 +1,68 @@
-
-import datetime
+import logging
 
 from django import forms
-from django.utils.translation import ugettext as _
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.core.urlresolvers import reverse
+from django.template.loader import render_to_string
+from django.contrib.auth import get_user_model
 
-from .models import (
-    Keyword, ExternalAccession,
-    TargetOrganism, ReferenceMapping
-)
+from core.tasks import send_mail
+
+User = get_user_model()
+logger = logging.getLogger("django")
 
 
-class KeywordForm(forms.ModelForm):
+class ContactForm(forms.Form):
     """
-    Keyword `ModelForm` to be instantiated with a dictionary or an
-    existing instance.
+    Contact form. Emails are send to administrators.
     """
-    class Meta:
-        model = Keyword
-        fields = ("text", )
+    name = forms.CharField(
+        label="Preferred contact name",
+        required=True,
+        max_length=64
+    )
+    email = forms.EmailField(
+        label="Contact Email",
+        required=True,
+        help_text="The email address you would like to be contacted with.",
+        max_length=64
+    )
+    subject = forms.CharField(
+        label="Subject",
+        required=True,
+        max_length=128
+    )
+    message = forms.CharField(
+        label="Message",
+        help_text="Please leave your message below.",
+        required=True,
+        widget=forms.Textarea(attrs={'rows': 20})
+    )
+    
+    def send_mail(self):
+        if self.is_bound and self.is_valid():
+            name = self.cleaned_data.get("name", "")
+            subject = self.cleaned_data.get("subject", "")
+            message = self.cleaned_data.get("message", "")
+            email = self.cleaned_data.get("email", "")
+            if email and message and subject and name:
+                admins = User.objects.filter(is_superuser=True).all()
+                for admin in admins:
+                    logger.debug("Sending contact email to {} from {}".format(
+                        admin.username, email))
+                    admin.profile.email_user(
+                        subject='[MaveDB Help] ' + subject,
+                        message=message,
+                        from_email=email
+                    )
 
-
-class ExternalAccessionForm(forms.ModelForm):
-    """
-    ExternalAccession `ModelForm` to be instantiated with a dictionary or an
-    existing instance.
-    """
-    class Meta:
-        model = ExternalAccession
-        fields = ("text",)
-
-
-class TargetOrganismForm(forms.ModelForm):
-    """
-    TargetOrganism `ModelForm` to be instantiated with a dictionary or an
-    existing instance.
-    """
-    class Meta:
-        model = TargetOrganism
-        fields = ("text",)
-
-
-class ReferenceMappingForm(forms.ModelForm):
-    """
-    ReferenceMapping `ModelForm` to be instantiated with a dictionary or an
-    existing instance. Performs additional cleaned to ensure the mapping
-    ranges are valid intervals.
-    """
-    class Meta:
-        model = ReferenceMapping
-        fields = (
-            "reference",
-            "is_alternate",
-            "target_start",
-            "target_end",
-            "reference_start",
-            "reference_end"
-        )
-
-    def __init__(self, *args, **kwargs):
-        super(ReferenceMappingForm, self).__init__(*args, **kwargs)
-        self.fields["reference"].widget = forms.widgets.TextInput(
-            attrs={"class": "form-control"}
-        )
-        self.fields["is_alternate"].widget = forms.widgets.CheckboxInput(
-            attrs={"class": "form-control"}
-        )
-        self.fields["target_start"].widget = forms.widgets.NumberInput(
-            attrs={"class": "form-control"}
-        )
-        self.fields["target_end"].widget = forms.widgets.NumberInput(
-            attrs={"class": "form-control"}
-        )
-        self.fields["reference_start"].widget = forms.widgets.NumberInput(
-            attrs={"class": "form-control"}
-        )
-        self.fields["reference_end"].widget = forms.widgets.NumberInput(
-            attrs={"class": "form-control"}
-        )
-
-    def clean(self):
-        cleaned_data = super(ReferenceMappingForm, self).clean()
-        target_start = cleaned_data.get("target_start", 0)
-        target_end = cleaned_data.get("target_end", 0)
-        reference_start = cleaned_data.get("reference_start", 0)
-        reference_end = cleaned_data.get("reference_end", 0)
-
-        if target_start >= target_end:
-            self.add_error("target_start", ValidationError(
-                _("Target start must be less than target end."),
-            ))
-        if reference_start >= reference_end:
-            self.add_error("reference_start", ValidationError(
-                _("Reference start must be less than reference end."),
-            ))
-
-        return cleaned_data
+                # Send confirmation response.
+                template = 'main/message_received.html'
+                fmt_message = render_to_string(template, {
+                    'name': name,
+                    'message': message,
+                })
+                send_mail.submit_task(kwargs=dict(
+                    subject="Your message has been recieved.",
+                    message=fmt_message,
+                    from_email="noreply@mavedb.org",
+                    recipient_list=[email],
+                ))

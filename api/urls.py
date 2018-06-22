@@ -1,58 +1,84 @@
-from django.conf.urls import url, include
+from rest_framework.routers import DefaultRouter
+from django.conf.urls import url
 
 
-from .views import (
-    users_all, user_by_username,
-    experimentset_all, experimentset_by_accession,
-    experiments_all, experiment_by_accession,
-    scoresets_all, scoreset_by_accession,
-    scoreset_count_data, scoreset_score_data
+from dataset.constants import (
+    scoreset_url_pattern, experiment_url_pattern,
+    experimentset_url_pattern
 )
 
-urlpatterns = [
-    url(r"get/user/all/$", users_all, name="serialize_all_users"),
-    url(
-        r"get/user/(?P<username>.+)/$", user_by_username,
-        name="serialize_user"
-    ),
+from .views import (
+    UserViewset,
+    ExperimentViewset, ExperimentSetViewset, ScoreSetViewset, UserViewset,
+    scoreset_count_data, scoreset_score_data, scoreset_metadata
+)
 
-    # --- #
-    url(
-        r"get/experimentset/all/$", experimentset_all,
-        name="serialize_all_experimentsets"
-    ),
-    url(
-        r"get/experimentset/(?P<accession>(EXPS|exp)\d{6})/$",
-        experimentset_by_accession,
-        name="serialize_experimentset"
-    ),
+router = DefaultRouter()
+router.register('users', UserViewset)
+router.register('experimentsets', ExperimentSetViewset, base_name='list')
+router.register('experiments', ExperimentViewset, base_name='list')
+router.register('scoresets', ScoreSetViewset)
 
-    # --- #
-    url(
-        r"get/experiment/all/$", experiments_all,
-        name="serialize_all_experiments"
-    ),
-    url(
-        r"get/experiment/(?P<accession>(EXP|exp)\d{6}[A-Z]+)/$",
-        experiment_by_accession,
-        name="serialize_experiment"
-    ),
+experimentset_list = ExperimentSetViewset.as_view({'get': 'list'})
+experimentset_detail = ExperimentSetViewset.as_view({'get': 'retrieve'})
 
-    # --- #
-    url(r"get/scoreset/all/$", scoresets_all, name="serialize_all_scoresets"),
+experiment_list = ExperimentViewset.as_view({'get': 'list'})
+experiment_detail = ExperimentViewset.as_view({'get': 'retrieve'})
+
+scoreset_list = ScoreSetViewset.as_view({'get': 'list'})
+scoreset_detail = ScoreSetViewset.as_view({'get': 'retrieve'})
+
+user_list = UserViewset.as_view({'get': 'list'})
+user_detail = UserViewset.as_view({'get': 'retrieve'})
+
+
+experimentset_urls = [
     url(
-        r"get/scoreset/(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/$",
-        scoreset_by_accession,
-        name="serialize_scoreset"
+        r"experimentsets/$", experimentset_list, name="experimentset_list"
     ),
     url(
-        r"get/scoreset/(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/scores/$",
+        r"(?P<urn>{})/$".format(experimentset_url_pattern),
+        experimentset_detail,
+        name="experimentset_detail"
+    ),
+]
+
+experiment_urls = [
+    url(
+        r"experiments/$", experiment_list, name="experiment_list"
+    ),
+    url(
+        r"(?P<urn>{})/$".format(experiment_url_pattern),
+        experiment_detail,
+        name="experiment_detail"
+    ),
+]
+
+scoreset_urls = [
+    url(
+        r"scoresets/$", scoreset_list, name="scoreset_list"
+    ),
+    url(
+        r"(?P<urn>{})/$".format(scoreset_url_pattern),
+        scoreset_detail,
+        name="scoreset_detail"
+    ),
+    url(
+        r"(?P<urn>{})/scores/$".format(scoreset_url_pattern),
         scoreset_score_data,
         name="api_download_score_data"
     ),
     url(
-        r"get/scoreset/(?P<accession>(SCS|scs)\d{6}[A-Z]+.\d+)/counts/$",
+        r"(?P<urn>{})/counts/$".format(scoreset_url_pattern),
         scoreset_count_data,
         name="api_download_count_data"
+    ),
+    url(
+        r"(?P<urn>{})/metadata/$".format(scoreset_url_pattern),
+        scoreset_metadata,
+        name="api_download_metadata"
     )
 ]
+
+
+urlpatterns = router.urls + experimentset_urls + experiment_urls + scoreset_urls

@@ -1,0 +1,245 @@
+{% extends "main/base.html" %}
+{% load dataset_tags %}
+
+{% block body %}
+<div class="right-align">
+  <h1><span class="underline urn-title" style="word-wrap: break-word;">
+    {{ instance.get_display_urn }}</span>
+    {% if instance.class_name == "scoreset" %}
+      <div class="dropdown">
+        <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-download"></i>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="scoresetDropDown">
+          <a class="dropdown-item" href="{% url 'dataset:scores_download' instance.urn %}">Scores</a>
+          <a class="dropdown-item" href="{% url 'dataset:counts_download' instance.urn %}">Counts</a>
+          <a class="dropdown-item" href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>
+        </div>
+      </div>
+    {% endif %}
+  </h1>
+  <p class="text-muted urn-detail">
+    <span>
+      Created
+      <a target="_blank" href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    </span>
+    <br>
+
+    <span>
+      Last updated
+      <a target="_blank" href="{{instance.modified_by.profile.get_orcid_url}}">{{instance.modification_date}}</a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    </span>
+    <br>
+
+    {% if instance.private %}
+      Private entry
+    {% else %}
+      Published {{ instance.publish_date }}
+    {% endif %}
+    <br>
+
+    {% if instance.class_name == "experiment" %}
+      Member of <a href="{% url 'dataset:experimentset_detail' instance.parent.urn %}">{{instance.parent}}</a><br>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
+      Member of <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a><br>
+      {% if previous_version %}
+        {% if previous_version.private %}
+          Previous version: <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{previous_version}} [Private]</a><br>
+        {% else %}
+          Previous version: <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{previous_version}}</a><br>
+        {% endif %}
+      {% endif %}
+      
+      {% if next_version %}
+        {% if next_version.private %}
+          Previous version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}} [Private]</a><br>
+        {% else %}
+          Previous version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}}</a><br>
+        {% endif %}
+      {% endif %}
+
+      {% if current_version %}
+        {% if current_version.private %}
+          Current version: <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{current_version}} [Private]</a><br>
+        {% else %}
+          Current version: <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{current_version}}</a><br>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+  </p>
+</div>
+
+<div class="row">
+
+  <div class="col-auto sidenav-detail sidenav border-right">
+    <a href="#contributors">Contributors</a>
+
+    {% if instance.class_name != "experimentset" %}
+      <a href="#title">Title</a>
+      <a href="#description">Description</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#method">Method</a>
+    {% endif %}
+
+    {% if instance.class_name == "experiment" %}
+      <a href="#targets">Targets</a>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
+      <a href="#target">Target</a>
+    {% endif %}
+
+    {% if instance.class_name != "experimentset" %}
+      <a href="#metadata">External Identifiers</a>
+      <a href="#references">References</a>
+    {% endif %}
+
+    {% if instance.class_name == "experimentset" %}
+      <a href="#experiments">Experiments</a>
+    {% endif %}
+
+    {% if instance.class_name == "experiment" %}
+      <a href="#scoresets">Score Sets</a>
+    {% endif %}
+
+    {% if instance.class_name == "scoreset" %}
+      <a href="#variants">Variants</a>
+    {% endif %}
+
+  </div>
+
+  <div class="model-detail col-10 pl-4">
+     <!-- Renders contributors as ORCID url-->
+    <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
+    <ul>
+      {% for contributor in instance.contributors %}
+      <li>
+        {{ contributor.profile.get_display_name_hyperlink }}
+        <i class="external-link fas fa-external-link-alt"></i>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Renders markdown abstract text -->
+    {% if instance.class_name != "experimentset" %}
+      <h2 id="title" class="underline left-align section-heading">Title</h2>
+      {% if not instance.title %}
+        <p class="text-muted">This entry does not have a title.</p>
+      {% else %}
+        <p>{{ instance.title}}</p>
+      {% endif %}
+
+      <h2 id="description" class="underline left-align section-heading">Description</h2>
+      {% if not instance.title %}
+        <p class="text-muted">This entry does not have a description.</p>
+      {% else %}
+        <p>{{ instance.short_description}}</p>
+      {% endif %}
+
+      <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
+      {% if not instance.abstract_text %}
+        <p class="text-muted">No abstract has been provided for this entry.</p>
+      {% else %}
+        <p>{{ instance.md_abstract|safe}}</p>
+      {% endif %}
+
+      <!-- Renders markdown method text -->
+      <h2 id="method" class="underline left-align section-heading">Method</h2>
+      {% if not instance.method_text %}
+        <p class="text-muted">No method has been provided for this entry.</p>
+      {% else %}
+        <p>{{ instance.md_method|safe}}</p>
+      {% endif %}
+
+      <!-- Renders Keywords -->
+      <h2 id="method" class="underline left-align section-heading">Keywords</h2>
+      {% if not keywords %}
+        <p class="text-muted">No keywords are associated with this entry.</p>
+      {% else %}
+        <ul>
+          {% for kw in keywords %}
+            <li><a href="/search/?keywords={{ kw.text }}">{{ kw.text }}</a></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endif %}
+
+    {% block target %}
+    <!-- Block for placing experiment target information -->
+    {% endblock %}
+
+    {% if instance.class_name != "experimentset" %}
+      <!-- Renders External Identifier urls -->
+      <h2 id="metadata" class="underline left-align section-heading">External Identifiers</h2>
+      {% if instance.doi_ids.count %}
+        <strong>DOI:</strong>
+          <ul>
+          {% for doi in instance.doi_ids.all %}
+            <li>
+              <a target="_blank" href="{{doi.url}}">{{doi.identifier}}</a>
+              <i class="external-link fas fa-external-link-alt"></i>
+            </li>
+          {% endfor %}
+          </ul>
+      {% else %}
+        <p><strong>DOI:</strong> No associated DOIs </p>
+      {% endif %}
+
+      {% if instance.class_name == 'experiment' %}
+        {% if instance.sra_ids.count %}
+          <strong>SRA:</strong>
+            <ul>
+            {% for sra in instance.sra_ids.all %}
+              <li>
+                <a target='_blank' href="{{sra.url}}">{{sra.identifier}}</a>
+                <i class="external-link fas fa-external-link-alt"></i>
+              </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+          <p><strong>SRA:</strong> No associated SRAs </p>
+        {% endif %}
+      {% endif %}
+
+      <!-- Renders PubMed references -->
+      <h2 id="references" class="underline left-align section-heading">References</h2>
+      {% if instance.pubmed_ids.count %}
+        <ol>
+        {% for pm in instance.pubmed_ids.all %}
+          <li>{{ pm.reference_html|safe }} PMID:
+            <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </li>
+        {% endfor %}
+        </ol>
+        {% if instance.class_name == 'scoreset' %}
+          {% parent_references instance as parent_refs %}
+          {% if parent_refs|length %}
+            <p class="pl-4">References from <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:</p>
+            <ol start="{{instance.pubmed_ids.count|add:1}}">
+            {% for pm in parent_refs %}
+              <li>{{ pm.reference_html|safe }} PMID:
+                <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
+                <i class="external-link fas fa-external-link-alt"></i>
+              </li>
+            {% endfor %}
+            </ol>
+          {% endif %}
+        {% endif %}
+      {% else %}
+        <p>No associated publications.</p>
+      {% endif %}
+    {% endif %}
+
+    {% block child_list %}
+        <!-- Main template body block -->
+    {% endblock %}
+
+  </div>
+</div>
+{% endblock body %}
