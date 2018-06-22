@@ -2,32 +2,145 @@
 
 {% block body %}
 
-<div class="row">
-  <div class="col-md-8 information">
-    <h1> About </h1>
-    <div id="about">
-      {{ site_information.about|safe|escape|default:"None" }}
-    </div>
-    <h1> Citation </h1>
-    <div id="citation">
-      {{ site_information.citation|safe|escape|default:"None" }}
-    </div> 
-  </div> <!-- end column -->
-  
-  <div class="col-md-4 news-panel">
-    <h1> News </h1>
-    <div class="container news">
-      {% if news_items %}
-        {% for news_item in news_items %}
-          <div id="news-item-{{forloop.counter}}" style="margin-bottom: 2em;">
-            {{ news_item.message }}
+  <div class="row">
+
+    <div class="col-md-6">
+      <div class="container">
+        <h1> About </h1>
+        <div id="about">
+          {{ site_information.about|safe|escape|default:"None" }}
+        </div>
+        <hr>
+        <h1> Citation </h1>
+        <div id="citation">
+          {{ site_information.citation|safe|escape|default:"None" }}
+        </div>
+        <hr class="visible-xs invisible">
+      </div>
+    </div> <!-- end left side content -->
+
+
+
+    <div class="col-md-6">
+      <div class="container">
+        <h1> News <i class="far fa-newspaper" style="font-size: 32px"></i> </h1>
+        <div class="news hover-card">
+          {% if news_items %}
+            {% for news_item in news_items %}
+              <div id="news-item-{{forloop.counter}}">
+                <div class="row">
+                  <div class="col-1 align-self-center">
+                    {% if news_item.level == 'Critical' %}
+                      <i class="fas fa-exclamation-circle"></i>
+                    {% endif %}
+                    {% if news_item.level == 'Important' %}
+                      <i class="fas fa-exclamation"></i>
+                    {% endif %}
+                  </div>
+                  <div class="col-10">
+                    {{ news_item.message|safe|escape }}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p> No news at this time. </p>
+          {% endif %}
+        </div>
+        <hr>
+      </div>
+
+      <div class="container pt-1">
+        <h1> Highlights <i class="fas fa-search" style="font-size: 32px"></i> </h1>
+        <div class="container highlights hover-card">
+          <div class="row">
+            <div class="col">
+              <h5>Species</h5>
+              <ul>
+                {% for i in top_species %}
+                  <li>
+                    <a href="/search/?species={{ i|first }}">{{ i|last|safe }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <div class="col">
+              <h5>Target genes</h5>
+              <ul>
+                {% for i in top_targets %}
+                  <li>
+                    <a href="/search/?target={{ i|first }}">{{ i|last }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <div class="col">
+              <h5>Keywords</h5>
+              <ul>
+                {% for i in top_keywords %}
+                  <li>
+                    <a href="/search/?keywords={{ i|first }}">{{ i|last }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div> <!-- end row -->
+        </div> <!-- end container -->
+        <hr>
+      </div>
+
+    <div class="container pt-1">
+      <span><h1> Quick search <i class="fas fa-search" style="font-size: 32px"></i> </h1></span>
+      <div class="container hover-card quick-search">
+        <div class="row">
+          <div class="col">
+            <h5>All species</h5>
+            <form action="/search/" method="GET">
+              <select onchange="this.form.submit()" class="form-control" name="species" title="species">
+                <option value="" selected="">-- Select a species --</option>
+                <optgroup label="Top species" class="form-control">
+                  {% for top in top_species %}
+                    <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
+                  {% endfor %}
+                </optgroup>
+                <optgroup label="All species" class="form-control">
+                  {% for s in all_species %}
+                    <option class="form-control" value="{{ s }}">{{ s }}</option>
+                  {% endfor %}
+                </optgroup>
+              </select>
+              <input type="submit" name="search" value="Search" class="invisible"/>
+            </form>
           </div>
-        {% endfor %}
-      {% else %}
-        <p> No news at this time. </p>
-      {% endif %}
+
+          <div class="col">
+            <h5>All genes</h5>
+            <form action="/search/" method="GET">
+              <select onchange="this.form.submit()" class="form-control" name="target" title="target">
+                <option value="" selected="">-- Select a target gene --</option>
+                <optgroup label="Top genes" class="form-control">
+                  {% for top in top_targets %}
+                    <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
+                  {% endfor %}
+                </optgroup>
+                <optgroup label="All genes" class="form-control">
+                  {% for s in all_targets %}
+                    <option class="form-control" value="{{ s }}">{{ s }}</option>
+                  {% endfor %}
+                </optgroup>
+              </select>
+              <input type="submit" name="search" value="Search" class="invisible"/>
+            </form>
+          </div>
+
+        </div>
+      </div>
+
     </div>
+    </div> <!-- end right side content -->
+
   </div>
-</div>
 
 {% endblock %}

@@ -18,30 +18,35 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-
+from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
 
 
+handler404 = 'main.views.handler404'
+handler403 = 'main.views.handler403'
+handler500 = 'main.views.handler500'
+
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
     url('^', include('social_django.urls', namespace='social')),
     url(r'^', include('main.urls', namespace='main'), name='main'),
-    url(r'^', include('api.urls', namespace='api'), name='api'),
+    url(r'^api/', include('api.urls', namespace='api'), name='api'),
     url(
-        r'^accounts/',
+        r'^',
         include('accounts.urls', namespace='accounts'), name='accounts'
     ),
     url(
-        r'^experiment/',
-        include("experiment.urls", namespace="experiment"), name="experiment"
-    ),
-    url(
-        r'^scoreset/',
-        include("scoreset.urls", namespace="scoreset"), name="scoreset"
+        r'^',
+        include("dataset.urls", namespace="dataset"), name="dataset"
     ),
     url(
         r'^search/',
         include("search.urls", namespace="search"), name="search"
-    )
+    ),
 ]
+
+if settings.ADMIN_ENABLED:
+    urlpatterns += [
+        url(r'^admin/', admin.site.urls),
+    ]
+

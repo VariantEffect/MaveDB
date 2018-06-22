@@ -1,45 +1,55 @@
 {% load static %}
+{% load widget_tweaks %}
+{% load i18n %}
 
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <title>MaveDB</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="MaveDB, a repository for DMS datasets">
-    <meta name="author" content="Daniel C. Esposito">
+    <meta name="description" content="MaveDB - repository for DMS/MAVE assay datasets">
+    <meta name="author" content="Daniel C. Esposito, Alan F. Rubin">
+    <meta name="keywords" content="dms,deep mutational scanning,mave,multiplex assays of variant effect,variant effect,gene,genomic,variants,functional assay,multiplex assay">
     <!-- fonts/icons -->
-    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" 
+    <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600|Material+Icons"
           rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet">
     <!-- Bootstrap -->
-    <link rel="stylesheet" href="{% static 'main/bootstrap4b/css/bootstrap.min.css' %}"> 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
     <!-- tocbot -->
-    <link href="{% static 'main/tocbot/css/tocbot.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.3.0/tocbot.css"
+          rel="stylesheet">
     <!-- Select2 -->
-    <link href="{% static 'main/select2/css/select2.min.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css"
+          rel="stylesheet" />
     <!-- custom css -->
     <link href="{% static 'main/main/css/base.css' %}" rel="stylesheet">
     <!-- favicon -->
     <link rel="icon" type="image/png" 
-          href="{% static 'main/main/img/minilogo.png' %}"/>
-    <title>MaveDB</title>
+          href="{% static 'main/main/img/dna.png' %}"/>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.16/datatables.min.css"/>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
+          integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
   </head>
 
   <body>
     <!-- Modal for abstract preview -->
-    <div class="modal fade" id="abstract-markdown-modal" tabindex="-1" role="dialog" 
+    <div class="modal fade" id="abstract-markdown-modal" tabindex="-1" role="dialog"
         aria-labelledby="modelTitleId" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title" id="modelTitleId">Abstract</h4>
+            <h4 class="modal-title">Abstract</h4>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div id='abstract-modal-body' class="modal-body">
           </div>
         </div>
       </div>
@@ -51,60 +61,57 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title" id="modelTitleId">Method description</h4>
+            <h4 class="modal-title">Method description</h4>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div id='method-modal-body' class="modal-body">
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Body content -->
-    <div class="section header container-fluid">
+    <!-- Body content  sticky-top py-1-->
+    <nav class="header pr-4 pl-4 bg-white border-bottom bottom-shadow">
       <nav class="navbar navbar-expand-md navbar-light">
-        
+
         <!-- MaveDB logo -->
         <a class="navbar-brand" href="{% url 'main:home' %}" style="color: #222 !important;">
-          <img src="{% static 'main/main/img/logo.svg' %}" width="92" height="92">
+          <img src="{% static 'main/main/img/dna.png' %}" width="26" height="40">
           MaveDB
         </a>
-        
+
         <!-- Bootstrap collapse button -->
-        <button class="navbar-toggler" type="button" data-toggle="collapse" 
-                data-target="#navbar-links" aria-controls="navbar-links" 
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+                data-target="#navbar-links" aria-controls="navbar-links"
                 aria-expanded="true" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <!-- Navbar links -->
         <div class="collapse navbar-collapse ml-4" id="navbar-links">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'main:home'%}">Home</a>
+              <a class="nav-link text-muted" href="{% url 'main:home'%}">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'search:search' %}">Search</a>
+              <a class="nav-link text-muted" href="{% url 'search:search' %}">Search</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'accounts:list_accounts' %}">Users</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'main:documentation'%}">Documentation</a>
+             <li class="nav-item">
+              <a class="nav-link text-muted" href="{% url 'main:documentation'%}">Documentation</a>
             </li>
             {% if user.is_authenticated %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:profile'%}">Profile</a>
+                <a class="nav-link text-muted" href="{% url 'accounts:profile'%}">Profile</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'accounts:logout'%}">Logout</a>
+                <a class="nav-link text-muted" href="{% url 'accounts:logout'%}">Logout</a>
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="nav-link" class="btn btn-primary" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
-                  
+                <a class="nav-link text-muted" data-toggle="modal" data-target="#orcid-login" href="">Login</a>
+
                 <!-- Modal -->
                 <div class="modal fade" id="orcid-login" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="modal-dialog" role="document">
@@ -117,8 +124,8 @@
                       </div>
                       <div class="modal-body">
                         <p>
-                          ORCID is an independent non-profit effort to provide an open registry of unique researcher 
-                          identifiers and open services to link research activities and organizations to these 
+                          ORCID is an independent non-profit effort to provide an open registry of unique researcher
+                          identifiers and open services to link research activities and organizations to these
                           identifiers. Learn more at <a href="https://orcid.org/">orcid.org</a>.
                         </p>
                         <button id="connect-orcid-button" onclick="openORCID()">
@@ -132,79 +139,165 @@
               </li>
             {% endif %}
           </ul>
-          
+
           <form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
-            <input class="form-control mr-sm-1" type="text" aria-label="Search"
-                   placeholder="Search..." name="search_all">
-            <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">
-              Search
-            </button>
+            <div class="input-group">
+             <input class="form-control mr-sm-1" type="text" aria-label="Search"
+                   placeholder="Search..." name="search">
+              <button class="btn btn-outline-dark white-button ml-1">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
           </form>
-            
+
         </div> <!-- End navbar links -->
       </nav> <!-- End navbar -->
-    </div> <!-- End Header div -->
+    </nav> <!-- End Header div -->
 
-    <hr> <!-- clear -->
+    <div class="container messages pt-4">
+      {% if messages %}
+        {% for message in messages %}
+          {% if 'success' in message.tags %}
+            <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
 
-    <div class="container-fluid full-height body-block" style="width:95%;">
+          {% if 'error' in message.tags %}
+            <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
+
+          {% if 'warning' in message.tags %}
+            <div class="alert alert-warning alert-dismissible fade show text-center" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
+
+          {% if 'info' in message.tags %}
+            <div class="alert alert-primary alert-dismissible fade show text-center" role="alert">
+              <p>{{ message }}</p>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <div class="container-fluid body-block" style="min-height: 59vh;">
       {% block body %}
         <!-- Main template body block -->
       {% endblock %}
     </div>
-    
-    <hr> <!-- clear -->
 
-    <div class="section footer">
-      <nav class="navbar navbar-expand-md navbar-light">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'main:terms_privacy'%}">Terms</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'main:terms_privacy'%}#privacy">
-              Privacy
+    <footer class="container pr-4 pl-4 pt-4 my-md-5 pt-md-5 border-top">
+      <div class="row">
+        <div class="col-12 col-md-4 pb-4">
+          <div class="row justify-content-center">
+            <img class="mb-2" src="{% static 'main/main/img/dna.png' %}" alt="" width="18" height="24">
+             MaveDB
+            <small class="d-block mb-3 text-muted">&copy; 2017-2018</small>
+          </div>
+
+          {% if site_information.release_version and site_information.release_branch %}
+            <div class="row justify-content-center">
+              <small>
+                <p class="text-muted site-version">
+                  <strong>{{ site_information.release_branch }}: </strong>
+                  {{ site_information.release_version }}
+                </p>
+              </small>
+            </div>
+          {% endif %}
+
+          <div class="row justify-content-center">
+            <a target="_blank" href="https://github.com/FowlerLab/">
+              <img class="mb-2" src="{% static 'main/main/img/GitHub-Mark-64px.png' %}" alt="" width="24" height="24">
             </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'main:contact'%}">Contact</a>
-          </li>
-          <div class="align-self-center float-left">
-            <small>All rights reserved, 2017.</small>
-          </div>   
-        </ul>       
-      </nav>
+          </div>
+        </div>
+
+        <div class="col-12 col-md">
+          <div class="row">
+            <div class="col text-center">
+              <h5>Documentation</h5>
+              <ul class="list-unstyled text-small">
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">Registration</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">Uploading data</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">User management</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">API guide</a></li>
+                <li><a class="text-muted" href="{% url 'main:documentation' %}">MaveVis</a></li>
+              </ul>
+            </div>
+
+            <div class="col text-center">
+              <h5>About</h5>
+              <ul class="list-unstyled text-small">
+                <li><a class="text-muted" href="{% url 'main:terms_privacy'%}#terms">Terms</a></li>
+                <li><a class="text-muted" href="{% url 'main:terms_privacy'%}#privacy">Privacy</a></li>
+                <li><a class="text-muted" href="{% url 'main:contact'%}">Contact</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  
-  <!-- Scripts -->
-  <!-- Ask user confirmation to remove themself as an instance admin -->
-  <!-- This needs to be here in order to record the user pk from the django -->
-  <script type="text/javascript"> userPk = parseInt({{ request.user.pk }}); </script>
-  <!-- JQuery/JQuery UI -->
-  <script type="text/javascript"
-          src="https://code.jquery.com/jquery-3.2.1.min.js"
-          integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-          crossorigin="anonymous"></script>
-  <script type="text/javascript" 
-          src="{% static 'main/jquery/js/jquery-ui.min.js' %}"></script>
-  <!-- Popper.js/Bootstrap -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" 
-          integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" 
-          crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" 
-          integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" 
-          crossorigin="anonymous"></script>
-  <!-- Tocbot -->
-  <script type="text/javascript" 
-          src="{% static 'main/tocbot/js/tocbot.js' %}"></script>
-  <script type="text/javascript"  
-          src="{% static 'main/main/js/init_tocbot.js' %}"></script>
-  <!-- Select2 -->
-  <script type="text/javascript"  
-          src="{% static 'main/select2/js/select2.min.js' %}"></script>         
-  <!-- Cutom -->
-  <script type="text/javascript"  
-          src="{% static 'main/main/js/base.js' %}"></script>
+
+    </footer>
+
+    <!-- Scripts -->
+    <!-- Ask user confirmation to remove themself as an instance admin -->
+    <!-- This needs to be here in order to record the user pk from django -->
+    <script type="text/javascript">
+        FontAwesomeConfig = { searchPseudoElements: true };
+        user = parseInt({{ request.user.pk }});
+        {% if request.user.is_superuser %}
+            ignore = true;
+        {% else %}
+            ignore = false;
+        {% endif %}
+    </script>
+
+    <!-- JQuery/JQuery UI -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+			  crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+			  integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+			  crossorigin="anonymous"></script>
+
+    <!-- Popper.js/Bootstrap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+
+    <!-- Tocbot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.3.0/tocbot.min.js"></script>
+    <script src="{% static 'main/main/js/init_tocbot.js' %}"></script>
+
+    <!-- Select2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+
+    <!-- Formset Jquery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.formset/1.2.2/jquery.formset.min.js"></script>
+
+
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.16/datatables.min.js"></script>
+    <!-- Cutom -->
+    <script src="{% static 'main/main/js/base.js' %}"></script>
   </body>
 </html>

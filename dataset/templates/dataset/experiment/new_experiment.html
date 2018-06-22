@@ -1,0 +1,41 @@
+{% extends "dataset/base/base_create_update.html" %}
+
+
+{% block form-action %}
+  {% url 'dataset:experiment_new' %}
+{% endblock %}
+
+
+{% block side-bar-title %}
+  Create new Experiment
+{% endblock %}
+
+
+{% block side-bar-instructions %}
+  Please fill out the form to the right. All fields will remain editable until published.
+{% endblock %}
+
+
+{% block top-instructions %}
+  <p class="text-muted">
+    Please fill our the form below. Not all fields are required, but filling
+    in as much as your can is strongly recommended to encourage data completeness.
+    You can always fill in the required fields now and then remaining fields
+    at a later date. You can access the edit view for this submission
+    from your <a href="{% url 'accounts:profile' %}">profile</a>
+    once this form has been successfully submitted and processed.
+  </p>
+  <p class="text-muted">
+    <b>Note: </b>You can only attach an Experiment to an Experiment Set for which
+    you have <b>edit</b> permissions on.
+  </p>
+{% endblock %}
+
+
+{% block form-block %}
+  <div class="experiment-form-group">
+    <div class="experiment-form">
+      {% include 'core/bs_form.html' with form=experiment_form %}
+    </div>
+  </div>
+{% endblock %}

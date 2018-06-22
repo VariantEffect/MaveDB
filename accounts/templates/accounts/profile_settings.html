@@ -1,0 +1,36 @@
+{% extends "accounts/profile_base.html" %}
+
+{% block profile_body %}
+  <div class="container">
+
+    <div class="container">
+      <h2> Profile settings
+        <a><i class="icon fas fa-cog" style="font-size: 36px;"></i></a>
+      </h2>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-12 col-xs-12">
+        <form action="{% url 'accounts:profile_settings' %}" method="post">
+          {% csrf_token %}
+          {% include 'core/bs_form.html' with form=profile_form %}
+          <div class="row">
+            <div class="col-auto">
+              <input class="btn btn-outline-dark white-button" type="submit" value="Save"
+                     name="save" style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                     data-placement="top|right|bottom|left" title="Save profile changes.">
+            </div>
+            <div class="col-auto">
+              <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                     style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                     data-placement="top|right|bottom|left" onclick="window.location.assign('{% url 'accounts:profile' %}')"
+                     title="Cancel your changes.">
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+{% endblock profile_body %}

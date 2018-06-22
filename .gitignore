@@ -1,12 +1,14 @@
 venv/
 *.pyc
 staticfiles/
-static/
+/static/
 .env
 debug.log
+.pytest_cache/*
 
 geckodriver.log
 *.pyc
+.sql
 
 # vscode
 .vscode/
@@ -62,3 +64,10 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+# Ignore secrets
+secrets.json
+!/logs/
+/.ipynb_checkpoints/regex-test-checkpoint.ipynb
+*-checkpoint.ipynb
+.ipynb_checkpoints/

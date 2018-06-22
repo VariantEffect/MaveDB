@@ -18,8 +18,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 
-from django.conf.urls import url, include
-from django.urls import reverse_lazy
+from django.conf.urls import url
 
 from .views import search_view
 

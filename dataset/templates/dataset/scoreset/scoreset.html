@@ -1,0 +1,174 @@
+{% extends "dataset/base/base.html" %}
+
+{% block target %}
+  <h2 id="target" class="underline left-align section-heading"> Target </h2>
+    <p>
+      <strong>Target: </strong>
+      <a href="/search/?target={{ instance.get_target.get_name }}">
+        {{ instance.get_target.get_name }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Species: </strong>
+      <a href="/search/?species={{ instance.get_target.get_reference_genomes.first.get_species_name }}">
+        {{ instance.get_target.get_reference_genomes.first.format_species_name_html|safe }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Reference genome: </strong>
+      <a href="/search/?genome={{ instance.get_target.get_reference_genomes.first.get_short_name }}">
+        {{ instance.get_target.get_reference_genomes.first.get_short_name }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Reference assembly: </strong>
+      <a target="_blank" href={{ instance.get_target.get_reference_genomes.first.genome_id.url }}>
+        {{ instance.get_target.get_reference_genomes.first.genome_id.identifier }}
+        <i class="external-link fas fa-external-link-alt"></i>
+      </a>
+    </p>
+
+    <p class="wild-type-sequence">
+      <strong>Wildtype Sequence: </strong>
+      {{ instance.get_target.get_wt_sequence }}
+    </p>
+
+  <p><strong>UniProt: </strong>
+    {% if instance.get_target.uniprot_id %}
+      <a target="_blank" href="{{ instance.get_target.uniprot_id.url }}">
+        {{ instance.get_target.uniprot_id.identifier }}
+      </a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    {% else %}
+        Not associated
+    {% endif %}
+  </p>
+
+  <p><strong>RefSeq: </strong>
+    {% if instance.get_target.refseq_id %}
+      <a target="_blank" href="{{ instance.get_target.refseq_id.url }}">
+        {{ instance.get_target.refseq_id.identifier }}
+      </a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    {% else %}
+        Not associated
+    {% endif %}
+  </p>
+
+  <p><strong>Ensembl: </strong>
+    {% if instance.get_target.ensembl_id %}
+      <a target="_blank" href="{{ instance.get_target.ensembl_id.url }}">
+        {{ instance.get_target.ensembl_id.identifier }}
+      </a>
+      <i class="external-link fas fa-external-link-alt"></i>
+    {% else %}
+        Not associated
+    {% endif %}
+  </p>
+
+{% endblock %}
+
+{% block child_list %}
+  <h2 id="variants" class="underline left-align section-heading"> Variants </h2>
+  <p class="text-muted">
+    Below is a sample of the first 100 variants.
+  </p>
+  <!-- Tab/Pills menu -->
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="scores-tab" data-toggle="tab" href="#scores"
+         role="tab" aria-controls="scores">Scores</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="counts-tab" data-toggle="tab" href="#counts"
+         role="tab" aria-controls="counts">Counts</a>
+    </li>
+  </ul>
+
+<div class="tab-content" id="myTabContent">
+  <!-- Scores data tab -->
+  <div class="tab-pane fade show active" id="scores" role="tabpanel" aria-labelledby="scores-tab">
+    <div class="container-fluid mt-4">
+
+      <div class="row mt-1 mb-3">						
+        <div class="col-sm-3 col-md-3">
+          <h3 style="margin: 0;">Scores dataset</h3>
+        </div>
+      </div>
+
+      {% if not instance.has_score_dataset %}
+        <p class="text-muted"> No score data available.</p>
+      {% else %}
+        <div id="scores-table-container" class="container-fluid">
+          <table id="scores-table" class="styled-table table table-hover">
+            <thead>
+              <tr>
+                {% for column in score_columns %}
+                  <th class="clickable-row"> {{column}} </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for var in variants %}
+                <tr>
+                  {% for data in var.score_data %}
+                    {% if forloop.counter0 >= 2 %}
+                      <td> {{ data|stringformat:"#.3g" }} </td>
+                    {% else %}
+                      <td> {{ data|default:'None' }} </td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}				
+    </div>
+  </div> <!-- End scores data tab -->
+
+  <!-- counts data tab -->
+  <div class="tab-pane fade" id="counts" role="tabpanel" aria-labelledby="counts-tab">
+    <div class="container-fluid mt-4">
+
+      <div class="row mt-1 mb-3">
+        <div class="col-sm-3 col-md-3">
+          <h3 style="margin: 0;">Counts dataset</h3>
+        </div>
+      </div>
+
+      {% if not instance.has_count_dataset %}
+        <p class="text-muted"> No count data available.</p>
+      {% else %}
+        <div id="counts-table-container" class="container-fluid">
+          <table id="counts-table" class="styled-table table table-hover">
+            <thead>
+              <tr>
+                {% for column in count_columns %}
+                  <th class="clickable-row"> {{column}} </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for var in variants %}
+                <tr>
+                  {% for data in var.count_data %}
+                    {% if forloop.counter0 >= 2 %}
+                      <td> {{ data|stringformat:"6g" }} </td>
+                    {% else %}
+                      <td> {{ data|default:'None' }} </td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div> <!-- End count data tab -->
+</div> <!-- End tab/pills content -->
+{% endblock %}

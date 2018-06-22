@@ -2,95 +2,104 @@
 {% load static %}
 
 {% block profile_body %}
-<h3> {{ instance.accession }} </h3>
+  <div class="container">
+    <h2>
+      User Management
+      <a><i class="icon fas fa-users-cog pl-1" style="font-size: 36px;"></i></a>
+    </h2>
+    <hr>
 
-<!-- Admin management -->
-<div class="row" style="margin-top: 25px;">
-	<div class="col-md-10">
+    <nav>
+      <div class="nav nav-tabs" id="nav-tab" role="tablist">
+        <a class="nav-item nav-link active" id="administrators-tab" data-toggle="tab" href="#administrators" role="tab" aria-controls="administrators" aria-selected="true">Administrators</a>
+        <a class="nav-item nav-link" id="editors-tab" data-toggle="tab" href="#editors" role="tab" aria-controls="editors" aria-selected="false">Editors</a>
+        <a class="nav-item nav-link" id="viewers-tab" data-toggle="tab" href="#viewers" role="tab" aria-controls="viewers" aria-selected="false">Viewers</a>
+      </div>
+    </nav>
 
-		{% if admin_select_form.non_field_errors %}
-			<div class="alert alert-danger alert-dismissible fade show" role="alert">
-				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>	
-				<h4> Oh no! </h4>
-				<p> There were some errors with your submission </p>
-				<hr>
-				<p>{{ admin_select_form.non_field_errors }}</p>
-			</div>
-		{% endif %}
+    <div class="tab-content" id="home-pills">
+      <!-- Administrators -->
+      <div class="tab-pane fade show active" id="administrators" role="tabpanel" aria-labelledby="administrators-tab">
+        <div class="admin-select pt-4">
+          <form id="admin-form" action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
+            {% csrf_token %}
+            <input type='hidden' name='{{ group_types.ADMIN }}[]'/>
+            {% include 'core/bs_form.html' with form=admin_select_form %}
+            <div class="row">
+              <div class="col-auto">
+                <input id="submit-admin-form" class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
+                       style="width:150px;margin-bottom:5px;" data-toggle="tooltip"
+                       data-placement="top|right|bottom|left" title="Save your changes."
+                       onclick="validateAdminSubmit();"
+                />
+              </div>
+              <div class="col-auto">
+                <input id="cancel" class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                       style="width:150px" data-toggle="tooltip"
+                       data-placement="top|right|bottom|left" title="Cancel your changes."
+                       onclick="window.location.assign('{% url 'accounts:profile' %}')"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
 
-		{% if viewer_select_form.non_field_errors %}
-			<div class="alert alert-danger alert-dismissible fade show" role="alert">
-				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>	
-				<h4> Oh no! </h4>
-				<p> There were some errors with your submission </p>
-				<hr>
-				<p>{{ viewer_select_form.non_field_errors }}</p>
-			</div>
-		{% endif %}
+      <!-- Editors -->
+      <div class="tab-pane fade" id="editors" role="tabpanel" aria-labelledby="editors-tab">
+        <div class="editor-select pt-4">
+          <form id="editor-form" action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
+            {% csrf_token %}
+            <input type='hidden' name='{{ group_types.EDITOR }}[]'/>
+            {% include 'core/bs_form.html' with form=editor_select_form %}
+            <div class="row">
+              <div class="col-auto">
+                <input id="submit-editor-form" class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
+                       style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                       data-placement="top|right|bottom|left" title="Save your changes."
+                       onclick="validateEditorSubmit();"
+                />
+              </div>
+              <div class="col-auto">
+                <input id="cancel" class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                       style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                       data-placement="top|right|bottom|left" title="Cancel your changes."
+                       onclick="window.location.assign('{% url 'accounts:profile' %}')"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
 
-		<h5> Add/Remove Administrators </h5><hr>
-		<form id="admin-form"
-					action="{% url 'accounts:manage_instance' instance.accession %}" 
-					method="post">
-			{% csrf_token %}
-			<input type='hidden' name='administrators[]'/>
-			{% for field in admin_select_form %}
-				<div class="form-group">
-					{% if field.errors %}
-						<div class="alert alert-danger alert-dismissible fade show" role="alert">
-							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-								<span aria-hidden="true">&times;</span>
-							</button>
-							{{ field.errors }}
-						</div>
-					{% endif %}
-					{{ field }}
-				</div>
-			{% endfor %}
+      <!-- Viewers -->
+      <div class="tab-pane fade" id="viewers" role="tabpanel" aria-labelledby="viewers-tab">
+        <div class="viewer-select pt-4">
+          <form id="viewer-form" action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
+            {% csrf_token %}
+            <input type='hidden' name='{{ group_types.VIEWER }}[]'/>
+            {% include 'core/bs_form.html' with form=viewer_select_form %}
+            <div class="row">
+              <div class="col-auto">
+                <input id="submit-viewer-form" class="btn btn-outline-dark white-button" type="button" value="Save" name="admins"
+                       style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                       data-placement="top|right|bottom|left" title="Save your changes."
+                       onclick="validateViewerSubmit();"
+                />
+              </div>
+              <div class="col-auto">
+                <input id="cancel" class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
+                       style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
+                       data-placement="top|right|bottom|left" title="Cancel your changes."
+                       onclick="window.location.assign('{% url 'accounts:profile' %}')"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div> <!-- end tab pills -->
 
-			<div style="width:100%;margin-top:5px;">
-				<input class="btn btn-outline-dark" type="button" value="Save" 
-							 name="admins" style="width:150px;margin-bottom:35px;" 
-							 onclick="validate_admin_submit();">
-			</div>
-		</form>
-	</div> 
-</div> <!-- End admin management -->
-
-<!-- Viewer management -->
-<div class="row" style="margin-top: 25px;">
-	<div class="col-md-10">
-		<h5> Add/Remove Viewers </h5><hr>
-		<form id="viewer-form"
-					action="{% url 'accounts:manage_instance' instance.accession %}" 
-					method="post">
-			{% csrf_token %}			
-			<input type='hidden' name='viewers[]'/>
-			{% for field in viewer_select_form %}
-				<div class="form-group">
-					{% if field.errors %}
-						<div class="alert alert-danger alert-dismissible fade show" role="alert">
-							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-								<span aria-hidden="true">&times;</span>
-							</button>
-							{{ field.errors }}
-						</div>
-					{% endif %}
-					{{ field }}
-				</div>
-			{% endfor %}
-			
-			<div style="width:100%;margin-top:5px;">
-					<input class="btn btn-outline-dark" type="button" value="Save" 
-								 name="viewer" style="width:150px;margin-bottom:35px;" 
-								 onclick="validate_viewer_submit();">
-			</div>
-		</form>
-	</div> 
-</div> <!-- End Viewer management -->
+  </div>
 
 {% endblock profile_body %}

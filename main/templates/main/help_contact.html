@@ -2,12 +2,16 @@
 
 {% block body %}
 
-<div class="container-fluid terms-privacy-body">
+<div class="container terms-privacy-body">
     <h1 id="contact"> Contact </h1>
-    <p> 
-        Please email us at {{ site_information.email|safe|escape|default:"None" }}
-        if you have any questions or you are having any trouble using the site.
-    </p>
+    <p class="text-muted">If you have a question, an enquiry or have discovered a
+      bug, feel free to leave a message below and we'll contact you as soon
+      as possible.</p>
+    <form action="{% url 'main:contact' %}" method="post">
+      {% csrf_token %}
+      {% include 'core/bs_form.html' with form=contact_form %}
+      <button class="btn btn-outline-dark white-button" type="submit" value="submit">Send</button>
+    </form>
 </div>
 
 {% endblock %}

@@ -1,196 +1,139 @@
 {% extends "main/base.html" %}
+{% load dataset_tags %}
 
 {% block body %}
 
-<div class="container-fluid mb-4" style="width:100%;">
-	<div class="container" style="float: none; margin: 0 auto;">
-		<form class="form-inline my-2 my-lg-0" action="{% url 'search:search' %}" method="GET">
-			<input class="form-control mr-sm-1" type="text" aria-label="Search"
-							placeholder="Search..." name="search_all" style="width:80%;">
-			<button class="btn btn-outline-dark my-2 my-sm-0" type="submit">
-				Search
-			</button>
-			<button data-toggle="collapse" data-target="#search-options" 
-							class="btn btn-outline-primary ml-1">
-					Advanced
-			</button>
-		</form>
-	</div>
-</div>
+<div class="container-fluid">
 
+  <div class="container">
+    <form class="mb-2" action="{% url 'search:search' %}" method="get">
+      <div class="input-group">
+        <input class="form-control" name="search">
+        <button class="btn btn-outline-dark white-button ml-1">
+          <i class="fa fa-search"></i>
+        </button>
+        <button class="btn btn-outline-dark white-button ml-1" data-toggle="collapse" data-target="#search-options" type="button">
+          <i class="fas fa-cog"></i>
+        </button>
+      </div>
+    </form>
+  </div>
 
-<div id="search-options" class="row collapse fade" aria-hidden="true">
+<div id="search-options" class="row collapse fade mt-2" aria-hidden="true">
 	<div class="container card" >
 		<div class="card-body">
 			<div class="card-header bg-white mb-2">
-				<h4> Advanced search </h4>
+				<h4 class="form-title"> Advanced search </h4>
 			</div>
 
-			{% if form.non_field_errors %}
-				<div class="alert alert-danger alert-dismissible fade show" role="alert">
-					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-							<span aria-hidden="true">&times;</span>
-						</button>
-						<h4> Oh no! </h4>
-						<p> There were some errors with your submission </p>
-						<hr>
-						<p>{{ form.non_field_errors }}</p>
-				</div>
-			{% endif %}
-			
 			<form action="{% url 'search:search' %}" method="GET">
-				{% for field in form %}
-					<div class="form-group">
-						<label for="{{ field.id_for_label }}">
-							{{ field.label }}{% if field.field.required %}*{% endif %}
-						</label>
-						{% if field.errors %}
-							<div class="alert alert-danger alert-dismissible fade show" role="alert">
-								<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-									<span aria-hidden="true">&times;</span>
-								</button>
-								{{ field.errors }}
-							</div>
-						{% endif %}
-						<br>
-						{{ field }}
-					</div>
-				{% endfor %}
-				<div class="card-footer bg-white">
-					<input class="btn btn-outline-dark float-right" style="width: 150px;" 
-								 type="submit" name="submit" value="Search">
+        <h5 class="pb-2 form-title">Metadata:</h5>
+        {% include 'core/bs_neutral_form.html' with form=meta_search_form %}
+        <hr>
+        <h5 class="pb-2 form-title">External identifiers:</h5>
+        {% include 'core/bs_inline_form.html' with form=meta_id_search_form %}
+        <hr>
+        <h5 class="pb-2 form-title">Target gene identifiers:</h5>
+        {% include 'core/bs_inline_form.html' with form=target_id_search_form %}
+        <hr>
+        <h5 class="pb-2 form-title">Reference genome:</h5>
+        {% include 'core/bs_inline_form.html' with form=genome_search_form %}
+        <hr>
+        <h5 class="pb-2 form-title">Contributors:</h5>
+        {% include 'core/bs_inline_form.html' with form=user_search_form %}
+
+        <div class="card-footer bg-white">
+					<button class="btn btn-outline-dark float-right white-button" style="width: 150px;" type="submit">Search</button>
 				</div>
 			</form>
 		
 		</div> <!-- End card body -->
 	</div> <!-- End card -->
 </div> <!-- end row -->
+<hr>
 
-<div class="search-results table-container row mt-5">
-	<table id="search-table" class="styled-table table table-hover paginated">
+<div class="styled-table mt-4">
+	<table id="search-table" class="table table-hover">
 		<thead>
 			<tr>
-				<th>Accession</th>
-				<th>Target</th>
-				<th>Contributors</th>
-				<th>Target Organism</th>
-				<th>Keywords</th>
-				<th>External accessions</th>
-			</tr>
+				<th class="clickable-row">Urn</th>
+				<th class="clickable-row">Short description</th>
+        <th class="clickable-row">Target name</th>
+        <th class="clickable-row">Target organisms</th>
+        <th class="clickable-row">Contributors</th>
+      </tr>
 		</thead>
 		<tbody>
-			{% if not has_data %}
+			{% if not instances|length > 0 %}
 				<tr>
 					<td colspan=6> 0 search results returned. </td>
 				</tr>
 			{% else %}
-				{% for exp in experiments  %}
-					{% if not exp.private %}
+				{% for instance in instances  %}
+					{% if not instance.private %}
 						<tr>
 							<td>
-								<a 
-									href="{% url 'experiment:experiment_detail' exp.accession %}">
-									{{ exp.accession }}
-								</a>
+                {% if instance.class_name == 'experiment' %}
+                  <a href="{% url 'dataset:experiment_detail' instance.urn %}">
+                    {{ instance.urn }}
+                  </a>
+                {% else %}
+                  <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
+                    {{ instance.urn }}
+                  </a>
+                {% endif %}
 							</td>
-							<td>{{ exp.target }}</td>
-							<td>{{ exp.get_authors }}</td>
-							<td>
-								{% if exp.get_target_organism != 'None' %}
-									<em>{{ exp.get_target_organism }}</em>
-								{% else %}
-									-
-								{% endif %}
-							</td>
-							<td>{{ exp.get_keywords|default:"-" }}</td>
-							<td>{{ exp.get_other_accessions|default:"-" }}</td>
-						</tr>
-					{% else %}
-						{% if exp in request.user.profile.experiments %}
-							<tr>
-								<td>
-									<a 
-										href="{% url 'experiment:experiment_detail' exp.accession %}">
-										{{ exp.accession }} [P]
-									</a>
-								</td>
-								<td>{{ exp.target }}</td>
-								<td>{{ exp.get_authors }}</td>
-								<td><em>{{ exp.get_target_organism|default:"-" }}</em></td>
-								<td>{{ exp.get_keywords|default:"-" }}</td>
-								<td>{{ exp.get_other_accessions|default:"-" }}</td>
-							</tr>
-						{% endif %}
-					{% endif %}
+              <td>{{ instance.short_description|default:"-" }}</td>
+              <td>
+                {% display_targets instance request.user %}
+              </td>
+              <td>
+                {% display_species instance request.user %}
+              </td>
+              <td>
+                {% for c in instance.contributors %}
+                  <span>
+                    {{ c.profile.get_display_name_hyperlink|safe }}
+                    <i class="external-link-small fas fa-external-link-alt"></i>
+                  </span>
+                {% endfor %}
+              </td>
+            </tr>
+          {% else %}
+            {% if request.user in instance.contributors %}
+              <tr>
+                <td>
+                  {% if instance.class_name == 'experiment' %}
+                    <a href="{% url 'dataset:experiment_detail' instance.urn %}">
+                      {{ instance.urn }} [Private]
+                    </a>
+                  {% else %}
+                    <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
+                      {{ instance.urn }} [Private]
+                    </a>
+                  {% endif %}
+                </td>
+                <td>{{ instance.short_description|default:"-" }}</td>
+                <td>
+                  {% display_targets instance request.user %}
+                </td>
+                <td>
+                  {% display_species instance request.user %}
+                </td>
+                <td>
+                  {% for c in instance.contributors %}
+                    <span>
+                      {{ c.profile.get_display_name_hyperlink|safe }}
+                      <i class="external-link-small fas fa-external-link-alt"></i>
+                    </span>
+                  {% endfor %}
+                </td>
+              </tr>
+            {% endif %}
+          {% endif %}
 				{% endfor %}
-			{% endif %}
+      {% endif %}
 		</tbody>
 	</table>
 </div>
-
-<!-- Pagination -->
-{% if experiments.has_other_pages %}
-<div class="row">
-	<div class="col-md-2 mt-2">
-		<form action="?per-page=" method="GET">
-			<div class="form-inline">
-				<label class="mr-2" for="per-page-select"> Entries per page </label>
-				<select name="per-page" id="per-page-select" onchange="paginationSubmit('search')">
-					{% for i in per_page_selections %}
-						{% if i == per_page %}
-							<option value={{i}} selected="">{{i}}</option>
-						{% else %}
-							<option value={{i}}>{{i}}</option>
-						{% endif %}
-					{% endfor %}
-				</select>
-			</div>
-		</form>
-	</div>
-
-	<div class="col-md-10">
-		<ul class="pagination justify-content-end">
-			{% if experiments.has_previous %}
-				<li class="page-item">
-					<a class="page-link previous" href=""
-						 onclick="return paginationSubmit('search', this);">
-						&laquo;
-						<div id="search-previous" hidden>{{ experiments.previous_page_number }}</div>
-					</a>
-				</li>
-			{% else %}
-				<li class="page-item disabled">
-					<a class="page-link" href="">
-						<span aria-hidden="true">&laquo;</span>
-					</a>
-				</li>
-			{% endif %}
-			
-			{% for i in experiments.paginator.page_range %}
-				<li class="page-item">
-					<a class="page-link {% if experiments.number == i %}search-active{% endif %}" href="" 
-						 onclick="return paginationSubmit('search', this);">{{ i }}</a>
-				</li>
-			{% endfor %}
-			
-			{% if experiments.has_next %}
-				<li class="page-item">
-					<a class="page-link previous" href=""
-						 onclick="return paginationSubmit('search', this);">
-						&raquo;
-						<div id="search-next" hidden>{{ experiments.next_page_number }}</div>
-					</a>
-				</li>
-			{% else %}
-				<li class="page-item disabled">
-					<a class="page-link" href="">
-						<span aria-hidden="true">&raquo;</span>
-					</a>
-				</li>
-			{% endif %}
-		</ul>
-	</div>
-</div>
-{% endif %} <!-- End pagination -->
-
 {% endblock %}

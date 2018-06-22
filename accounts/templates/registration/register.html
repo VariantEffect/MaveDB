@@ -1,4 +1,5 @@
 {% extends "main/base.html" %}
+{% load widget_tweaks %}
 
 {% block body %}
 <div class="row">
@@ -36,7 +37,7 @@
 						</div>
 					{% endif %}
 					<br>
-					{{ field }}
+					{% render_field field class="form-control" %}
 				</div>
 			{% endfor %}
 			<p>
