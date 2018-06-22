@@ -134,20 +134,17 @@ LOGGING = {
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
-
+DATASET_TASK_SOFT_TIME_LIMIT =  10 * 60  # In seconds
 broker_url = 'amqp://localhost:5672//'
-task_ignore_result = True
-worker_hijack_root_logger = False
-
-task_serializer = 'json'
 accept_content = ('json',)
 result_serializer = 'json'
 
+task_ignore_result = True
+task_serializer = 'json'
+worker_hijack_root_logger = False
+task_soft_time_limit = 60  # seconds
+task_always_eager = False
 task_create_missing_queues = True
-task_routes = {
-    'dataset.tasks.publish_variants': {'queue': 'long'},
-    'dataset.tasks.create_variants': {'queue': 'long'},
-}
 
 # Celery needs this for autodiscover to work
 INSTALLED_APPS = [
