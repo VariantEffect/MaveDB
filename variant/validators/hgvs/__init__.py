@@ -75,15 +75,14 @@ def validate_multi_variant(hgvs, level=None):
             else:
                 raise ValidationError(
                     "RNA multi-variant '{}' contains an unknown delimiter. "
-                    "Supported delimiters are ';' and ','.")
+                    "Supported delimiters are ';' and ','.".format(hgvs)
+                )
         else:
             matches = hgvs_.split(';')
 
-        if len(matches) != len(set(matches)):
-            raise ValidationError(
-                "Multi-variant '{}' has defined the same "
-                "event more than once.".format(hgvs)
-            )
+        # This probably isn't needed since the regex has already matched.
+        # Use for validating capture groups within each match but currently
+        # capture groups are not checked against HGVS guidelines.
         for event in matches:
             if event in constants.wt_or_sy:
                 continue
