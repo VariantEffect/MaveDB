@@ -44,9 +44,8 @@ class TestValidateMulti(TestCase):
         with self.assertRaises(ValidationError):
             validate_multi_variant('c.[1A>G;Lys4Gly]')
             
-    def test_validationerror_redefined_event(self):
-        with self.assertRaises(ValidationError):
-            validate_multi_variant('c.[1A>G;1A>G]')
+    def test_passes_redefined_event(self):
+        validate_multi_variant('c.[1A>G;1A>G]')
             
     def test_passes_wt_and_sy(self):
         validate_multi_variant(constants.wildtype)

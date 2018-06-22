@@ -45,17 +45,8 @@ class ScoreSetDetailView(DatasetModelView):
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-
-        # The only time when 'hgvs_nt' is not specified is when 'hgvs_p' is
-        # the only column present. Apart from that, `hgvs_nt` will always
-        # be truthy.
-        first = instance.children.first()
-        if first and first.hgvs_nt:
-            sort_on = constants.hgvs_nt_column
-        else:
-            sort_on = constants.hgvs_pro_column
-        
-        variants = instance.children.all().order_by(sort_on)[:100]
+        variants = instance.children.order_by('{}'.format(
+            instance.primary_hgvs_column))[:100]
         context["variants"] = variants
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns

@@ -235,6 +235,14 @@ class ScoreSet(DatasetModel):
     @property
     def has_metadata(self):
         return len(self.extra_metadata) > 0
+    
+    @property
+    def primary_hgvs_column(self):
+        # Primary hgvs column will be _nt whenever there are any variants
+        # with their `hgvs_nt` field as not None.
+        if self.children.filter(hgvs_nt=None).count() == self.children.count():
+            return constants.hgvs_pro_column
+        return constants.hgvs_nt_column
 
     # replaced_by/replaces chain traversal
     # ---------------------------------------------------------------------- #

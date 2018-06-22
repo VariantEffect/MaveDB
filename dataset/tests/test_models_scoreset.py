@@ -12,7 +12,10 @@ from core.utilities import base_url
 from genome.models import TargetGene
 
 from main.models import Licence
+
 from variant.factories import VariantFactory
+
+from dataset import constants
 
 from ..models.scoreset import default_dataset, ScoreSet
 from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory
@@ -236,4 +239,23 @@ class TestScoreSet(TestCase):
         self.assertEqual(
             obj.get_url(),
             base_url() + reverse('dataset:scoreset_detail', args=(obj.urn,))
+        )
+        
+    def test_primary_column_is_nt_when_nt_is_present(self):
+        obj = ScoreSetFactory()
+        VariantFactory(scoreset=obj, hgvs_nt='a')
+        VariantFactory(scoreset=obj)
+        self.assertEqual(obj.primary_hgvs_column, constants.hgvs_nt_column)
+        
+    def test_primary_column_is_pro_when_nt_is_not_present(self):
+        obj = ScoreSetFactory()
+        VariantFactory(scoreset=obj, hgvs_nt=None)
+        self.assertEqual(obj.primary_hgvs_column, constants.hgvs_pro_column)
+        
+    def test_wt_is_first_when_sorted(self):
+        obj = ScoreSetFactory()
+        v1 = VariantFactory(scoreset=obj, hgvs_nt='c.[9A>T;99G>T]')
+        v2 = VariantFactory(scoreset=obj, hgvs_nt='_wt')
+        self.assertEqual(obj.children.order_by(
+            '{}'.format(obj.primary_hgvs_column)).first(), v2
         )

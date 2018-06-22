@@ -128,7 +128,8 @@ def scoreset_score_data(request, urn):
         return scoreset_or_response
 
     scoreset = scoreset_or_response
-    variants = scoreset.children.order_by("urn")
+    variants = scoreset.children.order_by('{}'.format(
+        scoreset.primary_hgvs_column))
     columns = scoreset.score_columns
     type_column = constants.variant_score_data
     # hgvs_nt and hgvs_pro present by default, hence <= 2
@@ -153,7 +154,8 @@ def scoreset_count_data(request, urn):
         return scoreset_or_response
     
     scoreset = scoreset_or_response
-    variants = scoreset.children.order_by("urn")
+    variants = scoreset.children.order_by('{}'.format(
+        scoreset.primary_hgvs_column))
     columns = scoreset.count_columns
     type_column = constants.variant_count_data
     # hgvs_nt and hgvs_pro present by default, hence <= 2
