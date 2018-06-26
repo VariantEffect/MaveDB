@@ -85,6 +85,29 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
+        
+    def test_user_with_edit_permission_can_see_add_and_edit_button(self):
+        user = UserFactory()
+        obj = ExperimentFactory()
+        assign_user_as_instance_editor(user, obj)
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(obj.urn))
+        request.user = user
+        response = ExperimentDetailView.as_view()(request, urn=obj.urn)
+        self.assertContains(response, 'Add a Score Set')
+        self.assertContains(response, 'Edit this Experiment')
+        
+    def test_user_without_edit_permission_cannot_see_edit_button(self):
+        user = UserFactory()
+        obj = ExperimentFactory()
+        assign_user_as_instance_viewer(user, obj)
+        request = self.create_request(
+            method='get', path='/experiment/{}/'.format(obj.urn))
+        request.user = user
+        response = ExperimentDetailView.as_view()(request, urn=obj.urn)
+        self.assertNotContains(response, 'Add a Score Set')
+        self.assertNotContains(response, 'Edit this Experiment')
+        
 
 
 class TestCreateNewExperimentView(TestCase, TestMessageMixin):
@@ -299,6 +322,29 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
             response = ExperimentCreateView.as_view()(request)
 
             self.assertContains(response, instance.identifier)
+
+    def test_GET_experimentset_param_locks_experiment_choice(self):
+        exp1 = ExperimentSetFactory()
+        exp2 = ExperimentSetFactory()
+        assign_user_as_instance_editor(self.user, exp1)
+        assign_user_as_instance_editor(self.user, exp2)
+        request = self.factory.get(
+            path=self.path + '/?experimentset={}'.format(exp1.urn))
+        request.user = self.user
+        response = ExperimentCreateView.as_view()(request)
+        self.assertContains(response, exp1.urn)
+        self.assertNotContains(response, exp2.urn)
+
+    def test_GET_experimentset_param_ignored_if_no_edit_permissions(self):
+        exp1 = ExperimentSetFactory()
+        exp2 = ExperimentSetFactory()
+        assign_user_as_instance_editor(self.user, exp2)
+        request = self.factory.get(
+            path=self.path + '/?experimentset={}'.format(exp1.urn))
+        request.user = self.user
+        response = ExperimentCreateView.as_view()(request)
+        self.assertNotContains(response, exp1.urn)
+        self.assertContains(response, exp2.urn)
 
 
 class TestEditExperimentView(TestCase, TestMessageMixin):

@@ -1,10 +1,9 @@
 from django.test import TestCase, RequestFactory
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from accounts.factories import UserFactory
-from accounts.permissions import assign_user_as_instance_viewer
+from accounts.permissions import assign_user_as_instance_viewer, assign_user_as_instance_editor
 
 from ..factories import ExperimentSetFactory
 from dataset.views.experimentset import ExperimentSetDetailView
@@ -63,3 +62,21 @@ class TestExperimentSetDetailView(TestCase):
         request.user = user
         response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
+
+    def test_user_with_edit_permission_can_see_add_and_edit_button(self):
+        user = UserFactory()
+        obj = ExperimentSetFactory(private=True)
+        assign_user_as_instance_editor(user, obj)
+        request = self.factory.get('/experimentset/{}/'.format(obj.urn))
+        request.user = user
+        response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
+        self.assertContains(response, 'Add an Experiment')
+
+    def test_user_without_edit_permission_cannot_see_edit_button(self):
+        user = UserFactory()
+        obj = ExperimentSetFactory(private=True)
+        assign_user_as_instance_viewer(user, obj)
+        request = self.factory.get('/experimentset/{}/'.format(obj.urn))
+        request.user = user
+        response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
+        self.assertNotContains(response, 'Add an Experiment')

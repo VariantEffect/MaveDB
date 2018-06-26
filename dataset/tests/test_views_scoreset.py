@@ -529,7 +529,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         response = ScoreSetCreateView.as_view()(request)
         self.assertContains(response, 'pandoc')
 
-    def test_came_from_experiment_locks_experiment_choice(self):
+    def test_GET_experiment_param_locks_experiment_choice(self):
         exp1 = ExperimentFactory()
         exp2 = ExperimentFactory()
         assign_user_as_instance_editor(self.user, exp1)
@@ -542,6 +542,18 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         response = ScoreSetCreateView.as_view()(request)
         self.assertContains(response, exp1.urn)
         self.assertNotContains(response, exp2.urn)
+        
+    def test_GET_experiment_param_ignored_if_no_edit_permissions(self):
+        exp1 = ExperimentFactory()
+        exp2 = ExperimentFactory()
+        assign_user_as_instance_editor(self.user, exp2)
+        request = self.factory.get(
+            path=self.path + '/?experiment={}'.format(exp1.urn))
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetCreateView.as_view()(request)
+        self.assertNotContains(response, exp1.urn)
+        self.assertContains(response, exp2.urn)
 
     def test_create_sets_superusers_as_admins(self):
         su = UserFactory()
