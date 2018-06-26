@@ -20,7 +20,7 @@
 
 * {
     font-family: 'Raleway', sans-serif;
-    border-radius: 0 !important;
+    border-radius: 0px !important;
     /* border: 1px solid red !important; */
 }
 
@@ -605,6 +605,7 @@ span.select2.select2-container.select2-container--default {
     font-size: 12px;
     color: #343a40;
     padding-left: 2px;
+    padding-bottom: 2px;
 }
 .external-link-small {
     font-size: 8px;
