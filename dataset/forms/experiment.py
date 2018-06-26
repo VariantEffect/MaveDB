@@ -39,6 +39,11 @@ class ExperimentForm(DatasetModelForm):
 
     def __init__(self, *args, **kwargs):
         self.field_order = ('experimentset',) + self.FIELD_ORDER
+        # If an experimentset is passed in we can used to it to seed initial
+        # replaces and m2m field selections.
+        self.experimentset = None
+        if 'experimentset' in kwargs:
+            self.experimentset = kwargs.pop('experimentset')
         super().__init__(*args, **kwargs)
 
         self.fields['experimentset'] = forms.ModelChoiceField(
@@ -87,6 +92,12 @@ class ExperimentForm(DatasetModelForm):
             choices_qs = ExperimentSet.objects.filter(
                 pk__in=choices).order_by("urn")
             self.fields["experimentset"].queryset = choices_qs
+            
+            if self.experimentset is not None:
+                choices_qs = ExperimentSet.objects.filter(
+                    pk__in=[self.experimentset.pk]).order_by("urn")
+                self.fields["experimentset"].queryset = choices_qs
+                self.fields["experimentset"].initial = self.experimentset
 
     @classmethod
     def from_request(cls, request, instance=None, prefix=None, initial=None):
