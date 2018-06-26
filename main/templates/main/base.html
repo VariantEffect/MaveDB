@@ -92,6 +92,18 @@
               <li class="nav-item">
                 <a class="nav-link text-muted" href="{% url 'accounts:profile'%}">Profile</a>
               </li>
+
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle text-muted" href="#" id="upload-dd" role="button"
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Upload
+                </a>
+                <div class="dropdown-menu" aria-labelledby="#upload-dd">
+                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:experiment_new' %}">New Experiment</a>
+                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:scoreset_new' %}">New Score Set</a>
+                </div>
+              </li>
+
               <li class="nav-item">
                 <a class="nav-link text-muted" href="{% url 'accounts:logout'%}">Logout</a>
               </li>
