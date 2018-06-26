@@ -68,7 +68,7 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         )
         request.user = user
         response = profile_settings(request)
-        self.assertContains(response, 'There were errors')
+        self.assertContains(response, 'valid email')
     
     @mock.patch("core.tasks.send_mail.apply_async")
     def test_setting_email_emails_user(self, patch):
@@ -658,7 +658,7 @@ class TestPublish(TestCase, TestMessageMixin):
             [self.user.email]
         )
         self.assertIn(
-            'processed successfully',
+            'successfully processed',
             email_mock.call_args[1]['kwargs']['message']
         )
         self.scoreset.refresh_from_db()

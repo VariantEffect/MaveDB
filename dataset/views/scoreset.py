@@ -6,7 +6,6 @@ from accounts.permissions import PermissionTypes
 
 from core.utilities.versioning import track_changes
 
-from main.context_processors import baseurl
 from metadata.forms import (
     UniprotOffsetForm,
     EnsemblOffsetForm,
