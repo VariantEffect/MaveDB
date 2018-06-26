@@ -105,13 +105,10 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     }
     
     success_message = (
-        "Successfully created a new Score Set, which has been assigned a "
-        "temporary URN {urn}. Your uploaded files have been submitted for "
-        "processing. Further uploads have been disabled until processing completes. "
-        "All other fields are freely editable. You will be able to publish this "
-        "Score Set once successfully processed. Once published, your submission "
-        "will be assigned a permanent URN and editing will be limited to a select "
-        "number of fields."
+        "Successfully created a new Score Set with temporary accession number "
+        "{urn}. Uploaded files are being processed and further editing has been "
+        "temporarily disabled. You will receive an email message when "
+        "processing completes."
     )
 
     def dispatch(self, request, *args, **kwargs):
@@ -339,10 +336,10 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     def format_success_message(self):
         if self.instance.processing_state == constants.processing:
             return (
-                "Successfully edited {urn}! Your uploaded files "
-                "have been submitted for processing. Further uploads "
-                "have been disabled until processing completes. All other "
-                "fields are freely editable."
+                "Successfully updated {urn}. "
+                "Uploaded files are being processed and further editing has been "
+                "temporarily disabled. You will receive an email message when "
+                "processing completes."
             ).format(urn=self.instance.urn)
         else:
             return super().format_success_message()
