@@ -103,6 +103,16 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         "refseq_offset": RefseqOffsetForm,
         "ensembl_offset": EnsemblOffsetForm,
     }
+    
+    success_message = (
+        "Successfully created a new Score Set, which has been assigned a "
+        "temporary URN {urn}. Your uploaded files have been submitted for "
+        "processing. Further uploads have been disabled until processing completes. "
+        "All other fields are freely editable. You will be able to publish this "
+        "Score Set once successfully processed. Once published, your submission "
+        "will be assigned a permanent URN and editing will be limited to a select "
+        "number of fields."
+    )
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.GET.get("experiment", ""):
@@ -184,6 +194,9 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
 
     def get_target_gene_form_kwargs(self, key):
         return {'user': self.request.user}
+    
+    def format_success_message(self):
+        return self.success_message.format(urn=self.kwargs.get('urn', None))
 
 
 class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
@@ -211,7 +224,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     restricted_forms = {
         "scoreset": ScoreSetEditForm,
     }
-
+    
     # Dispatch/Post/Get
     # ---------------------------------------------------------------------- #
     @transaction.atomic
@@ -322,3 +335,14 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             'instance': self.get_instance_for_form(key),
             'user': self.request.user
         }
+    
+    def format_success_message(self):
+        if self.instance.processing_state == constants.processing:
+            return (
+                "Successfully edited {urn}! Your uploaded files "
+                "have been submitted for processing. Further uploads "
+                "have been disabled until processing completes. All other "
+                "fields are freely editable."
+            ).format(urn=self.instance.urn)
+        else:
+            return super().format_success_message()

@@ -429,6 +429,7 @@ class ScoreSetForm(DatasetModelForm):
             experiment_qs = Experiment.objects.filter(
                 pk__in=choices).order_by("urn")
             self.fields["experiment"].queryset = experiment_qs
+            
             if self.experiment is not None:
                 choices_qs = Experiment.objects.filter(
                     pk__in=[self.experiment.pk]).order_by("urn")
