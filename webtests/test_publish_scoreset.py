@@ -31,9 +31,6 @@ class TestPublishScoreSet(LiveServerTestCase):
             log_path=LOG_PATH, firefox_options=options,
             firefox_binary=binary
         )
-        if STAGING_OR_PROD:
-            self.browser.set_window_position(0, 0)
-            self.browser.set_window_size(2560, 1440)
     
     def authenticate(self):
         authenticate_webdriver(
