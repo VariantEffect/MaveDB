@@ -294,18 +294,16 @@ Geckodriver needs to be on the system path before being able to run the webtests
 and mv geckodriver to `/usr/local/bin`
 
 
-
-
-## Jenkins, Selenium and Xbvf
+## Jenkins, Selenium and Xbvf (In-progress)
 Jenkin can be configured to periodically run a complete build-test whenever changes
 are made to the development branch. First install Jenkins
 
 ```bash
 sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
 sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo yum -y update
 sudo yum install jenkins
 ```
-
 
 
 ## Issues with SELinux
