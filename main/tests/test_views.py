@@ -79,6 +79,8 @@ class TestContactView(TestCase, TestMessageMixin):
             mock_patch.call_args_list[0][1]['kwargs']['recipient_list'],
             [admin.profile.email]
         )
+        self.assertEqual(response.status_code, 302)
+        
         
     @mock.patch('core.tasks.send_mail.apply_async')
     def test_calls_send_to_email_reply_task(self, mock_patch):
@@ -86,3 +88,4 @@ class TestContactView(TestCase, TestMessageMixin):
         request = self.create_request('post', data=data, path='/contact/')
         response = views.help_contact_view(request)
         mock_patch.assert_called()
+        self.assertEqual(response.status_code, 302)
