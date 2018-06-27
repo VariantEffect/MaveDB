@@ -110,6 +110,7 @@ local install).
     ALTER ROLE mave_admin SET default_transaction_isolation TO 'read committed';
     ALTER ROLE mave_admin SET timezone TO 'UTC';
     GRANT ALL PRIVILEGES ON DATABASE mavedb TO mave_admin;
+    ALTER USER mave_admin CREATEDB;
 
 There were issues with authentication using `ident` so I use `md5` instead.
 
