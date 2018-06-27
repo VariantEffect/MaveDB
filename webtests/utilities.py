@@ -10,7 +10,7 @@ User = get_user_model()
 
 STAGING = getattr(settings, 'STAGING', False)
 PRODUCTION = getattr(settings, 'PRODUCTION', False)
-STAGING_OR_PROD =  STAGING or PRODUCTION
+STAGING_OR_PROD = STAGING or PRODUCTION
 if STAGING:
     LOG_PATH = '../logs/geckodriver.log'
 elif STAGING_OR_PROD:

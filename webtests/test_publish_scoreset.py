@@ -52,7 +52,7 @@ class TestPublishScoreSet(LiveServerTestCase):
         messages = self.browser.find_elements_by_class_name('alert-danger')
         self.assertEqual(len(messages), 1)
         self.assertIn(
-            'being processed cannot be edited.',
+            'being processed and cannot be edited.',
             messages[0].text
         )
 
