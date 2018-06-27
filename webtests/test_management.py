@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException
+from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase
 from django.shortcuts import reverse
@@ -8,14 +9,24 @@ from accounts.factories import UserFactory
 
 from dataset import factories as data_factories
 
-from .utilities import authenticate_webdriver, LOG_PATH
+from .utilities import authenticate_webdriver, LOG_PATH, STAGING_OR_PROD
 
   
 class TestPublishScoreSet(LiveServerTestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path=LOG_PATH)
+        if  STAGING_OR_PROD:
+            binary = FirefoxBinary('/usr/bin/firefox')
+            options = Options()
+            options.add_argument('--headless')
+        else:
+            binary = None
+            options = None
+        self.browser = webdriver.Firefox(
+            log_path=LOG_PATH, firefox_options=options,
+            firefox_binary=binary
+        )
     
     def authenticate(self):
         authenticate_webdriver(

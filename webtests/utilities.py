@@ -7,12 +7,16 @@ from django.contrib.sessions.backends.db import SessionStore
 
 User = get_user_model()
 
-if settings.DEBUG:
-    LOG_PATH = './logs/geckodriver.log'
-elif '.compute.amazonaws.com' in settings.ALLOWED_HOSTS:
+
+STAGING = getattr(settings, 'STAGING', False)
+PRODUCTION = getattr(settings, 'PRODUCTION', False)
+STAGING_OR_PROD =  STAGING or PRODUCTION
+if STAGING:
     LOG_PATH = '../logs/geckodriver.log'
-elif 'www.mavedb.org' in settings.ALLOWED_HOSTS:
+elif STAGING_OR_PROD:
     LOG_PATH = '/data/mavedb_project/mavedb/geckodriver.log'
+else:
+    LOG_PATH = './logs/geckodriver.log'
     
 
 def authenticate_webdriver(username, password, test_class, drvr_attr):

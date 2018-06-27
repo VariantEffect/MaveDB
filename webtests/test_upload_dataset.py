@@ -2,6 +2,7 @@ import os
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase, mock
 
@@ -17,14 +18,24 @@ from metadata import factories as meta_factories
 
 from genome import factories as genome_factories
 
-from .utilities import authenticate_webdriver, LOG_PATH
+from .utilities import authenticate_webdriver, LOG_PATH, STAGING_OR_PROD
 
 
 class TestCreateExperimentAndScoreSet(LiveServerTestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path=LOG_PATH)
+        if  STAGING_OR_PROD:
+            binary = FirefoxBinary('/usr/bin/firefox')
+            options = Options()
+            options.add_argument('--headless')
+        else:
+            binary = None
+            options = None
+        self.browser = webdriver.Firefox(
+            log_path=LOG_PATH, firefox_options=options,
+            firefox_binary=binary
+        )
         
     def authenticate(self):
         authenticate_webdriver(
