@@ -6,7 +6,6 @@ from accounts.permissions import PermissionTypes
 
 from core.utilities.versioning import track_changes
 
-from main.context_processors import baseurl
 from metadata.forms import (
     UniprotOffsetForm,
     EnsemblOffsetForm,
@@ -103,6 +102,13 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         "refseq_offset": RefseqOffsetForm,
         "ensembl_offset": EnsemblOffsetForm,
     }
+    
+    success_message = (
+        "Successfully created a new Score Set with temporary accession number "
+        "{urn}. Uploaded files are being processed and further editing has been "
+        "temporarily disabled. You will receive an email message when "
+        "processing completes."
+    )
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.GET.get("experiment", ""):
@@ -184,6 +190,9 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
 
     def get_target_gene_form_kwargs(self, key):
         return {'user': self.request.user}
+    
+    def format_success_message(self):
+        return self.success_message.format(urn=self.kwargs.get('urn', None))
 
 
 class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
@@ -211,7 +220,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     restricted_forms = {
         "scoreset": ScoreSetEditForm,
     }
-
+    
     # Dispatch/Post/Get
     # ---------------------------------------------------------------------- #
     @transaction.atomic
@@ -322,3 +331,14 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             'instance': self.get_instance_for_form(key),
             'user': self.request.user
         }
+    
+    def format_success_message(self):
+        if self.instance.processing_state == constants.processing:
+            return (
+                "Successfully updated {urn}. "
+                "Uploaded files are being processed and further editing has been "
+                "temporarily disabled. You will receive an email message when "
+                "processing completes."
+            ).format(urn=self.instance.urn)
+        else:
+            return super().format_success_message()

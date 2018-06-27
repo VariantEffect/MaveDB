@@ -100,3 +100,17 @@ class TestExperimentForm(TestCase):
             ErrorMessages.ExperimentSet.public_experiment,
             form.errors['experimentset'][0])
 
+    def test_experimentset_options_frozen_when_passing_instance(self):
+        data = self.make_form_data(create_experimentset=False)
+    
+        exp = ExperimentSetFactory()
+        exp.add_administrators(self.user)
+    
+        # Should not appear since locked to above
+        exp2 = ExperimentSetFactory()
+        exp2.add_administrators(self.user)
+    
+        form = ExperimentForm(data=data, experimentset=exp, user=self.user)
+        self.assertIn(exp, form.fields['experimentset'].queryset)
+        self.assertNotIn(exp2, form.fields['experimentset'].queryset)
+   

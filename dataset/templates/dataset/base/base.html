@@ -3,11 +3,30 @@
 
 {% block body %}
 <div class="right-align">
-  <h1><span class="underline urn-title" style="word-wrap: break-word;">
-    {{ instance.get_display_urn }}</span>
+  <h1>
+    <span class="underline urn-title" style="word-wrap: break-word;">
+      {{ instance.get_display_urn }}
+      {% if instance.class_name != "experimentset" %}
+        {% if request.user in instance.editors or request.user in instance.administrators %}
+          {% if instance.class_name == "scoreset" %}
+             <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
+               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this Score Set."
+                  style="font-size: 42px; padding-bottom: 6px"></i>
+             </a>
+          {% endif %}
+          {% if instance.class_name == "experiment" %}
+             <a href="{% url 'accounts:edit_experiment' instance.urn %}">
+               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this Experiment."
+                  style="font-size: 42px; padding-bottom: 6px"></i>
+             </a>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </span>
     {% if instance.class_name == "scoreset" %}
       <div class="dropdown">
-        <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="fas fa-download"></i>
         </button>
         <div class="dropdown-menu" aria-labelledby="scoresetDropDown">

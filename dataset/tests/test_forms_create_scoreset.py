@@ -190,6 +190,21 @@ class TestScoreSetForm(TestCase):
         self.assertIn(scs, form.fields['replaces'].queryset)
         self.assertNotIn(scs2, form.fields['replaces'].queryset)
 
+    def test_experiment_options_frozen_when_passing_experiment_instance(self):
+        data, files = self.make_post_data(make_exp=False)
+    
+        exp = ExperimentFactory()
+        exp.add_administrators(self.user)
+       
+        # Should not appear since locked to above
+        exp2 = ExperimentFactory()
+        exp2.add_administrators(self.user)
+        
+        form = ScoreSetForm(data=data, files=files,
+                            experiment=exp, user=self.user)
+        self.assertIn(exp, form.fields['experiment'].queryset)
+        self.assertNotIn(exp2, form.fields['experiment'].queryset)
+
     def test_admin_scoresets_appear_in_replaces_options(self):
         data, files = self.make_post_data(make_exp=False)
         exp = ExperimentFactory()

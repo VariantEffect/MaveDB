@@ -1,7 +1,16 @@
 {% extends "dataset/base/base.html" %}
 
 {% block child_list %}
-  <h2 id='scoresets' class="underline left-align section-heading">Experiments</h2>
+  <span>
+    <h2 id='experiments' class="underline left-align section-heading">Experiments
+      {% if request.user in instance.editors or request.user in instance.administrators %}
+        <a href="{% url 'dataset:experiment_new' %}?experimentset={{ instance.urn }}">
+          <i class="icon far fa-plus-square pl-1" data-toggle="tooltip" data-placement="top" title="Add an Experiment."
+             style="font-size: 32px; padding-bottom: 4px"></i>
+        </a>
+      {% endif %}
+    </h2>
+  </span>
   {% if instance.children.count %}
     <ul>
       {% for child in instance.children %}

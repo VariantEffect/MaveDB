@@ -234,7 +234,8 @@ Note you will need to create the `settings/secrets.json` file following the form
       "database_user": "mave_admin",
       "database_password": "abc123",
       "database_host": "localhost",
-      "database_port": ""
+      "database_port": "",
+      'base_url": ""
     }
     
 You can generate a random key using the following code snippet in a python shell:
@@ -246,9 +247,10 @@ You can generate a random key using the following code snippet in a python shell
 Since the website contains static images, these need to be placed in a location 
 where Apache can find them.
 
-    python manage.py collectstatic --settings=<optional|default:settings.production>
+    python manage.py migrate --settings=<optional|default:settings.production>
     python manage.py createlicences --settings=<optional|default:settings.production>
     python manage.py createreferences --settings=<optional|default:settings.production>
+    python manage.py collectstatic --settings=<optional|default:settings.production>
     
 Once these have been run the log files should have been created. There were permission issues 
 when Apache tries to write to the `logs` folder. Ensure that were resolved by 
@@ -365,7 +367,7 @@ You can copy these commands into your `~/.bashrc` file.
 Make sure to run `source ~/.bashrc` to load the changes into your current shell
 session.
 
-    export DJANGO_SETTINGS_MODULE=settings.staging
+    export DJANGO_SETTINGS_MODULE=settings.<staging or production>
     alias mavedbenv='source /usr/local/venvs/mavedb/bin/activate'
     alias update-mavedb='cd-mavedb; sudo git pull; sudo apachectl restart; cd $OLDPWD'
    

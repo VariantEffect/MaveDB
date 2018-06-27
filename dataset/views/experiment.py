@@ -6,8 +6,11 @@ from django.db import transaction
 
 from core.utilities.versioning import track_changes
 
+from accounts.permissions import PermissionTypes
+
 from ..forms.experiment import ExperimentForm, ExperimentEditForm
 from ..models.experiment import Experiment
+from ..models.experimentset import ExperimentSet
 from ..mixins import ExperimentAjaxMixin
 
 from .base import (
@@ -66,6 +69,17 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
     # -------
 
     forms = {"experiment": ExperimentForm}
+    
+    def dispatch(self, request, *args, **kwargs):
+        if self.request.GET.get("experimentset", ""):
+            urn = self.request.GET.get("experimentset")
+            if ExperimentSet.objects.filter(urn=urn).count():
+                experimentset = ExperimentSet.objects.get(urn=urn)
+                has_permission = self.request.user.has_perm(
+                    PermissionTypes.CAN_EDIT, experimentset)
+                if has_permission:
+                    self.kwargs['experimentset'] = experimentset
+        return super().dispatch(request, *args, **kwargs)
 
     @transaction.atomic
     def save_forms(self, forms):
@@ -96,7 +110,10 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
         return forms
 
     def get_experiment_form_kwargs(self, key):
-        return {'user': self.request.user}
+        return {
+            'user': self.request.user,
+            'experimentset': self.kwargs.get('experimentset', None)
+        }
 
     def get_success_url(self):
         return "{}{}".format(

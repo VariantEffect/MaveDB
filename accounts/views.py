@@ -73,12 +73,6 @@ def profile_settings(request):
                 )
                 return HttpResponseRedirect(
                     reverse_lazy("accounts:profile_settings"))
-        else:
-            messages.error(
-                request,
-                "There were errors with your submission. "
-                "Check the profile tab for more detail."
-            )
 
     context = {"profile_form": profile_form}
     return render(request, 'accounts/profile_settings.html', context)
