@@ -55,7 +55,7 @@ class Profile(TimeStampedModel):
             task_kwargs.update(**kwargs)
             send_mail.submit_task(kwargs=task_kwargs)
         else:
-            logger.error(
+            logger.warning(
                 "Tried email user {} from Profile but could not find an "
                 "email address.".format(self.user.username)
             )
