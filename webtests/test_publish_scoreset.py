@@ -12,14 +12,14 @@ from dataset import constants
 
 from variant.factories import VariantFactory
 
-from .utilities import authenticate_webdriver
+from .utilities import authenticate_webdriver, LOG_PATH
 
 
 class TestPublishScoreSet(LiveServerTestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path='./logs/geckodriver.log')
+        self.browser = webdriver.Firefox(log_path=LOG_PATH)
     
     def authenticate(self):
         authenticate_webdriver(

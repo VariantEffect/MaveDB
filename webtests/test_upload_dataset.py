@@ -17,14 +17,14 @@ from metadata import factories as meta_factories
 
 from genome import factories as genome_factories
 
-from .utilities import authenticate_webdriver
+from .utilities import authenticate_webdriver, LOG_PATH
 
 
 class TestCreateExperimentAndScoreSet(LiveServerTestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path='./logs/geckodriver.log')
+        self.browser = webdriver.Firefox(log_path=LOG_PATH)
         
     def authenticate(self):
         authenticate_webdriver(
@@ -311,7 +311,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path='./logs/geckodriver.log')
+        self.browser = webdriver.Firefox(log_path=LOG_PATH)
     
     def authenticate(self):
         authenticate_webdriver(

@@ -5,9 +5,15 @@ from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, \
 from django.contrib.sessions.backends.db import SessionStore
 
 
-
 User = get_user_model()
 
+if settings.DEBUG:
+    LOG_PATH = './logs/geckodriver.log'
+elif '.compute.amazonaws.com' in settings.ALLOWED_HOSTS:
+    LOG_PATH = '../logs/geckodriver.log'
+elif 'www.mavedb.org' in settings.ALLOWED_HOSTS:
+    LOG_PATH = '/data/mavedb_project/mavedb/geckodriver.log'
+    
 
 def authenticate_webdriver(username, password, test_class, drvr_attr):
     session_cookie = create_session_cookie(
