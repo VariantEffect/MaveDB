@@ -18,10 +18,11 @@ from metadata import factories as meta_factories
 
 from genome import factories as genome_factories
 
-from .utilities import authenticate_webdriver, LOG_PATH, STAGING_OR_PROD
+from .utilities import authenticate_webdriver, \
+    LOG_PATH, STAGING_OR_PROD, ActionMixin
 
 
-class TestCreateExperimentAndScoreSet(LiveServerTestCase):
+class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
     
     def setUp(self):
         self.user = UserFactory()
@@ -79,36 +80,44 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
 
         # ----- REQUIRED FIELDS ------- #
         title = self.browser.find_element_by_id('id_title')
-        title.send_keys("Experiment 1")
+        self.perform_action(title, 'send_keys', "Experiment 1")
         
         description = self.browser.find_element_by_id('id_short_description')
-        description.send_keys("hello, world!")
+        self.perform_action(description, 'send_keys', "hello, world!")
         
         # ------ M2M fields ------- #
         # Ordering is important as it replicates the form field ordering
         # in `DatasetModelForm`
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[0].send_keys(kw_text)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[0]
+        self.perform_action(field, 'send_keys', kw_text)
+        search_item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(search_item, 'click')
         
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[1].send_keys(doi_identifier)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[1]
+        self.perform_action(field, 'send_keys', doi_identifier)
+        search_item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(search_item, 'click')
         
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[2].send_keys(sra_identifier)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[2]
+        self.perform_action(field, 'send_keys', sra_identifier)
+        search_item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(search_item, 'click')
         
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[3].send_keys(pm_identifier)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[3]
+        self.perform_action(field, 'send_keys', pm_identifier)
+        search_item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(search_item, 'click')
         
         submit = self.browser.find_element_by_id('submit-form')
-        submit.click()
+        self.perform_action(submit, 'click')
         
         # ------ CHECK EXPERIMENT IS CONFIGURED CORRECTLY ------ #
         # Delete uneccessary objects
@@ -178,25 +187,23 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
 
         # ----- REQUIRED FIELDS ------- #
         title = self.browser.find_element_by_id('id_title')
-        title.send_keys("Score Set 1")
+        self.perform_action(title, 'send_keys', "Score Set 1")
 
         description = self.browser.find_element_by_id('id_short_description')
-        description.send_keys("hello, new world!")
-        
-        description = self.browser.find_element_by_id('id_target')
-        description.send_keys("hello, new world!")
+        self.perform_action(description, 'send_keys', "hello, new world!")
         
         genome_select = Select(self.browser.find_element_by_id('id_genome'))
-        genome_select.select_by_index(1)
+        self.perform_action(genome_select, 'select_by_index', 1)
         
         target_name = self.browser.find_element_by_id('id_name')
-        target_name.send_keys("BRCA1")
+        self.perform_action(target_name, 'send_keys', "BRCA1")
         target_seq = self.browser.find_element_by_id('id_wt_sequence')
-        target_seq.send_keys("atcg")
+        self.perform_action(target_seq, 'send_keys', "atcg")
         
         # Upload a local file.
-        self.browser.find_element_by_id("id_score_data").\
-            send_keys(os.getcwd() + "/webtests/scores.csv")
+        upload = self.browser.find_element_by_id("id_score_data")
+        self.perform_action(
+            upload, 'send_keys', os.getcwd() + "/webtests/scores.csv")
         
         # ----- M2M AND OFFSET FIELDS ----- #
         # Fill in the offset fields. Open the select2 container, and then
@@ -206,40 +213,51 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         refseq = meta_models.RefseqIdentifier.objects.first()
         
         # Add an extra keyword
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[0].send_keys("new kw")
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[0]
+        self.perform_action(field, 'send_keys', "new kw")
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
         
-        self.browser.find_element_by_id(
-            'select2-id_uniprot-offset-identifier-container').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[-1].send_keys(uniprot.identifier)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        id_input = self.browser.find_element_by_id(
+            'select2-id_uniprot-offset-identifier-container')
+        self.perform_action(id_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', uniprot.identifier)
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
         uniprot_offset = self.browser.find_element_by_id(
             'id_uniprot-offset-offset')
-        uniprot_offset.send_keys(10)
+        self.perform_action(uniprot_offset, 'send_keys', 10)
         
-        self.browser.find_element_by_id(
-            'select2-id_refseq-offset-identifier-container').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[-1].send_keys(refseq.identifier)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        id_input = self.browser.find_element_by_id(
+            'select2-id_refseq-offset-identifier-container')
+        self.perform_action(id_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', refseq.identifier)
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
         refseq_offset = self.browser.find_element_by_id(
             'id_refseq-offset-offset')
-        refseq_offset.send_keys(20)
+        self.perform_action(refseq_offset, 'send_keys', 20)
         
-        self.browser.find_element_by_id(
-            'select2-id_ensembl-offset-identifier-container').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[-1].send_keys(ensembl.identifier)
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        id_input = self.browser.find_element_by_id(
+            'select2-id_ensembl-offset-identifier-container')
+        self.perform_action(id_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', ensembl.identifier)
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
         ensembl_offset = self.browser.find_element_by_id(
             'id_ensembl-offset-offset')
-        ensembl_offset.send_keys(30)
+        self.perform_action(ensembl_offset, 'send_keys', 30)
         
         # Delete these identifier to see if new ones will be created
         uniprot.delete()
@@ -247,7 +265,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
         ensembl.delete()
         
         submit = self.browser.find_element_by_id('submit-form')
-        submit.click()
+        self.perform_action(submit, 'click')
         
         # ------ CHECK SCORESET IS CONFIGURED CORRECTLY ------ #
         # Check dashboard to see if success message and processing-icon shown
@@ -318,7 +336,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase):
                       scoreset.experiment.experimentset.administrators())
 
 
-class TestJavaScriptOnCreatePage(LiveServerTestCase):
+class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
     
     def setUp(self):
         self.user = UserFactory()
@@ -334,35 +352,43 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase):
 
         # Fill in the fields.
         title = self.browser.find_element_by_id('id_title')
-        title.send_keys("Experiment 1")
+        self.perform_action(title, 'send_keys', "Experiment 1")
 
         description = self.browser.find_element_by_id('id_short_description')
-        description.send_keys("hello, world!")
+        self.perform_action(description, 'send_keys', "hello, world!")
         
         # Ordering is important as it replicates the form field ordering
         # in `DatasetModelForm`
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[0].send_keys('new keyword')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[0]
+        self.perform_action(field, 'send_keys', 'new keyword')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
     
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[1].send_keys('bad doi')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[1]
+        self.perform_action(field, 'send_keys', 'bad doi')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
     
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[2].send_keys('bad sra')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[2]
+        self.perform_action(field, 'send_keys', 'bad sra')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
     
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[3].send_keys('bad pm')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[3]
+        self.perform_action(field, 'send_keys', 'bad pm')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
     
         submit = self.browser.find_element_by_id('submit-form')
-        submit.click()
+        self.perform_action(submit,'click')
         
         messages = self.browser.find_elements_by_class_name('invalid-feedback')
         self.assertGreater(len(messages), 0)
@@ -398,65 +424,81 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase):
 
         # Fill in required fields.
         title = self.browser.find_element_by_id('id_title')
-        title.send_keys("Experiment 1")
+        self.perform_action(title, 'send_keys', "ScoreSet 1")
 
         description = self.browser.find_element_by_id('id_short_description')
-        description.send_keys("hello, world!")
+        self.perform_action(description, 'send_keys', "hello, world!")
         
         target_name = self.browser.find_element_by_id('id_name')
-        target_name.send_keys("BRCA1")
+        self.perform_action(target_name, 'send_keys', "BRCA1")
         target_seq = self.browser.find_element_by_id('id_wt_sequence')
-        target_seq.send_keys("atcg")
+        self.perform_action(target_seq, 'send_keys', "atcg")
         
         genome_select = Select(self.browser.find_element_by_id('id_genome'))
-        genome_select.select_by_index(1)
+        self.perform_action(genome_select, 'select_by_index', 1)
         
         exp_select = Select(self.browser.find_element_by_id('id_experiment'))
         exp_select.select_by_index(1)
         
-        self.browser.find_element_by_id("id_score_data").\
-            send_keys(os.getcwd() + "/webtests/scores.csv")
+        upload = self.browser.find_element_by_id("id_score_data")
+        self.perform_action(
+            upload, 'send_keys', os.getcwd() + "/webtests/scores.csv")
         
         # Ordering is important as it replicates the form field ordering
         # in `DatasetModelForm`
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[0].send_keys('new keyword')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
-    
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[1].send_keys('invalid doi')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
-       
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[2].send_keys('invalid pm')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[0]
+        self.perform_action(field, 'send_keys', 'new keyword')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
 
-        self.browser.find_element_by_id(
-            'select2-id_uniprot-offset-identifier-container').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[-1].send_keys('invalid uniprot')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[1]
+        self.perform_action(field, 'send_keys', 'invalid doi')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
 
-        self.browser.find_element_by_id(
-            'select2-id_refseq-offset-identifier-container').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[-1].send_keys('invalid refseq')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[2]
+        self.perform_action(field, 'send_keys', 'invalid sra')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
 
-        self.browser.find_element_by_id(
-            'select2-id_ensembl-offset-identifier-container').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[-1].send_keys('invalid ensembl')
-        self.browser.find_elements_by_class_name(
-            'select2-results__option')[0].click()
+        id_input = self.browser.find_element_by_id(
+            'select2-id_uniprot-offset-identifier-container')
+        self.perform_action(id_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', 'invalid uniprot')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
+
+        id_input = self.browser.find_element_by_id(
+            'select2-id_refseq-offset-identifier-container')
+        self.perform_action(id_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', "invalid refseq")
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
+
+        id_input = self.browser.find_element_by_id(
+            'select2-id_ensembl-offset-identifier-container')
+        self.perform_action(id_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', 'invalid ensembl')
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
     
         submit = self.browser.find_element_by_id('submit-form')
-        submit.click()
+        self.perform_action(submit, 'click')
 
         messages = self.browser.find_elements_by_class_name('invalid-feedback')
         self.assertGreater(len(messages), 0)
@@ -471,7 +513,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase):
     
         select = Select(self.browser.find_element_by_id('id_pubmed_ids'))
         self.assertEqual(
-            [o.text for o in select.all_selected_options], ['invalid pm'])
+            [o.text for o in select.all_selected_options], ['invalid sra'])
 
         select = Select(
             self.browser.find_element_by_id('id_uniprot-offset-identifier'))

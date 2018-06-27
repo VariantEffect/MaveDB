@@ -1,3 +1,5 @@
+from selenium.webdriver.common.action_chains import ActionChains
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, \
@@ -18,6 +20,13 @@ elif STAGING_OR_PROD:
 else:
     LOG_PATH = './logs/geckodriver.log'
     
+
+class ActionMixin:
+    def perform_action(self, element, method, *args, **kwargs):
+        # action = ActionChains(self.browser)
+        # move = action.move_to_element(element)
+        getattr(element, method)(*args, **kwargs)
+        
 
 def authenticate_webdriver(username, password, test_class, drvr_attr):
     session_cookie = create_session_cookie(

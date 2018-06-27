@@ -13,10 +13,11 @@ from dataset import constants
 
 from variant.factories import VariantFactory
 
-from .utilities import authenticate_webdriver, LOG_PATH, STAGING_OR_PROD
+from .utilities import authenticate_webdriver, \
+    LOG_PATH, STAGING_OR_PROD, ActionMixin
 
 
-class TestPublishScoreSet(LiveServerTestCase):
+class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     
     def setUp(self):
         self.user = UserFactory()
@@ -109,7 +110,8 @@ class TestPublishScoreSet(LiveServerTestCase):
         
         # Try publishing
         submit = self.browser.find_element_by_id('publish-btn')
-        submit.click()
+        self.perform_action(submit, 'click')
+        
         self.browser.switch_to.alert.accept()
         self.browser.get(
             self.live_server_url + '/profile/'
