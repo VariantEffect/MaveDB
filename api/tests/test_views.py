@@ -150,7 +150,7 @@ class TestScoreSetAPIViews(TestCase):
         print('BEFORE')
         print(variants)
         print([(v.hgvs_pro, v.hgvs_nt) for v in variants])
-        print(scoreset, scoreset.urn, scoreset.children)
+        print(scs, scs.urn, scs.children)
         print("AFTER")
         
         response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
