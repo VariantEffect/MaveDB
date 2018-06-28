@@ -135,11 +135,7 @@ def scoreset_score_data(request, urn):
     # hgvs_nt and hgvs_pro present by default, hence <= 2
     if not variants or len(columns) <= 2:
         return response
-    
-    print(variants)
-    print([(v.hgvs_pro, v.hgvs_nt) for v in variants])
-    print(scoreset, scoreset.urn, scoreset.children)
-    
+       
     writer = csv.DictWriter(
         response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()

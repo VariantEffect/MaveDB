@@ -10,6 +10,13 @@ LOGGING = {
 }
 logging.disable(logging.CRITICAL)
 
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+   }
+}
+
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
 DATASET_TASK_SOFT_TIME_LIMIT =  10 * 60  # In seconds
