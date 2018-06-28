@@ -216,6 +216,8 @@ class TestScoreSetAPIViews(TestCase):
         
     
     def test_no_variants_empty_file(self):
+        Variant.objects.all().delete()
+        
         scs = ScoreSetFactory()
         scs.publish()
         scs.refresh_from_db()
@@ -224,6 +226,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save(save_parents=True)
+        
+        print(Variant.objects.all())
         response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
