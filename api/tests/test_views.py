@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 import dataset.constants as constants
+from dataset.models import scoreset
 from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
@@ -62,9 +63,11 @@ class TestScoreSetAPIViews(TestCase):
     
     def setUp(self):
         Variant.objects.all().delete()
+        scoreset.ScoreSet.objects.all().delete()
     
     def tearDown(self):
         Variant.objects.all().delete()
+        scoreset.ScoreSet.objects.all().delete()
 
     def test_filters_out_private(self):
         instance = ScoreSetFactory()
@@ -134,7 +137,7 @@ class TestScoreSetAPIViews(TestCase):
                     io.BytesIO(response.content), encoding='utf-8')))
         
         header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'score']
-        data = [variant.hgvs_nt, '', '1']
+        data = [variant.hgvs_nt, variant.hgvs_pro, '1']
         self.assertEqual(rows, [header, data])
         
     def test_comma_in_value_enclosed_by_quotes(self):
@@ -159,7 +162,7 @@ class TestScoreSetAPIViews(TestCase):
                     io.BytesIO(response.content), encoding='utf-8')))
 
         header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'count,count']
-        data = [variant.hgvs_nt, '', '4']
+        data = [variant.hgvs_nt, variant.hgvs_pro, '4']
         self.assertEqual(rows, [header, data])
 
     def test_can_download_counts(self):
