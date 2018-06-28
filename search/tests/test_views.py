@@ -99,13 +99,13 @@ class TestSearchView(TestCase):
         self.scs2.publish()
         self.scs3.publish()
         
-        self.exp1.title = "foo bar"
+        self.exp1.title = "Hello"
         self.exp2.title = "Hello,World"
-        self.exp3.title = "should not match"
+        self.exp3.title = ""
     
-        self.scs1.title = 'foo bar'
-        self.scs2.title = "Hello"
-        self.scs3.title = "World"
+        self.scs1.title = 'World'
+        self.scs2.title = ""
+        self.scs3.title = ""
         
         self.scs1.save()
         self.scs2.save()
@@ -115,9 +115,7 @@ class TestSearchView(TestCase):
         self.exp3.save()
 
         request = self.factory.get(
-            self.path + '/?search={}%2C{}'.format(
-                self.exp1.title,
-                self.exp2.title)
+            self.path + '/?search={}'.format(self.exp2.title)
         )
 
         response = search_view(request)
@@ -126,8 +124,8 @@ class TestSearchView(TestCase):
         self.assertNotContains(response, self.exp3.urn + '/')
 
         self.assertContains(response, self.scs1.urn + '/')
-        self.assertContains(response, self.scs2.urn + '/')
-        self.assertContains(response, self.scs3.urn + '/')
+        self.assertNotContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')
 
     def test_double_quoted_comma_sep_not_split_input(self):
         self.scs1.publish()

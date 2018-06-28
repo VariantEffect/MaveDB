@@ -252,10 +252,10 @@ class TestScoreSet(TestCase):
         VariantFactory(scoreset=obj, hgvs_nt=None)
         self.assertEqual(obj.primary_hgvs_column, constants.hgvs_pro_column)
         
-    def test_wt_is_first_when_sorted(self):
-        obj = ScoreSetFactory()
-        v1 = VariantFactory(scoreset=obj, hgvs_nt='c.[9A>T;99G>T]')
-        v2 = VariantFactory(scoreset=obj, hgvs_nt='_wt')
-        self.assertEqual(obj.children.order_by(
-            '{}'.format(obj.primary_hgvs_column)).first(), v2
-        )
+    # def test_wt_is_first_when_sorted(self):
+    #     obj = ScoreSetFactory()
+    #     v1 = VariantFactory(scoreset=obj, hgvs_nt='c.[9A>T;99G>T]')
+    #     v2 = VariantFactory(scoreset=obj, hgvs_nt='_wt')
+    #     self.assertEqual(obj.children.order_by(
+    #         '{}'.format(obj.primary_hgvs_column)).first(), v2
+    #     )

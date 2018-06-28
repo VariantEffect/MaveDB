@@ -11,6 +11,7 @@ from dataset.factories import (
 )
 
 from variant.factories import VariantFactory
+from variant.models import Variant
 
 User = get_user_model()
 
@@ -58,6 +59,9 @@ class TestExperimentAPIViews(TestCase):
 
 
 class TestScoreSetAPIViews(TestCase):
+    
+    def tearDown(self):
+        Variant.objects.all().delete()
 
     def test_filters_out_private(self):
         instance = ScoreSetFactory()
@@ -70,6 +74,13 @@ class TestScoreSetAPIViews(TestCase):
         instance = ScoreSetFactory()
         response = self.client.get(
             "/api/scoreset/{}/".format(instance.urn)
+        )
+        self.assertEqual(response.status_code, 404)
+        
+    def test_404_wrong_address(self):
+        instance = ScoreSetFactory()
+        response = self.client.get(
+            "/api/blahblah/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
@@ -107,7 +118,7 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save()
-        variant = VariantFactory(
+        variant = Variant.objects.create(
             scoreset=scs, hgvs_nt="1A>G",
             data={
                 constants.variant_score_data: {"score": "1"},
