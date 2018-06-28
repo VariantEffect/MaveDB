@@ -1,7 +1,7 @@
-# settings/staging.py
-from .staging import *
-
+# settings/jenkins.py
 import logging
+
+from .staging import *
 
 # Disable logging
 LOGGING = {
@@ -16,6 +16,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
    }
 }
+
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
