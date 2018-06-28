@@ -145,6 +145,14 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {"count": "1"}
             }
         )
+
+        variants = scoreset.children
+        print('BEFORE')
+        print(variants)
+        print([(v.hgvs_pro, v.hgvs_nt) for v in variants])
+        print(scoreset, scoreset.urn, scoreset.children)
+        print("AFTER")
+        
         response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
