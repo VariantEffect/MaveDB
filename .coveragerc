@@ -8,3 +8,4 @@ omit =
     */manage.py
     */settings/*
     */migrations/*
+    */webtests/*
