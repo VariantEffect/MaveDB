@@ -99,11 +99,11 @@ class TestSearchView(TestCase):
         self.scs2.publish()
         self.scs3.publish()
         
-        self.exp1.title = "Hello"
-        self.exp2.title = "Hello,World"
+        self.exp1.title = "reallyreallylongword"
+        self.exp2.title = "reallyreallylongword,anotherreallyreallylongword"
         self.exp3.title = ""
     
-        self.scs1.title = 'World'
+        self.scs1.title = 'anotherreallyreallylongword'
         self.scs2.title = ""
         self.scs3.title = ""
         
