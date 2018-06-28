@@ -11,7 +11,7 @@ from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
 
-from variant.factories import VariantFactory
+from variant.factories import VariantFactory, dna_hgvs, protein_hgvs
 from variant.models import Variant
 
 User = get_user_model()
@@ -30,6 +30,13 @@ class TestExperimentSetAPIViews(TestCase):
         exps = ExperimentSetFactory()
         response = self.client.get(
             "/api/experimentset/{}/".format(exps.urn)
+        )
+        self.assertEqual(response.status_code, 404)
+        
+    def test_404_wrong_address(self):
+        instance = ExperimentSetFactory()
+        response = self.client.get(
+            "/api/blahblah/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
@@ -51,6 +58,13 @@ class TestExperimentAPIViews(TestCase):
         instance = ExperimentFactory()
         response = self.client.get(
             "/api/experimentset/{}/".format(instance.urn)
+        )
+        self.assertEqual(response.status_code, 404)
+        
+    def test_404_wrong_address(self):
+        instance = ExperimentFactory()
+        response = self.client.get(
+            "/api/blahblah/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
@@ -124,7 +138,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save()
-        variant = VariantFactory(
+        variant = Variant.objects.create(
+            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
             scoreset=scs, data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count": "1"}
@@ -149,7 +164,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count,count"]
         }
         scs.save(save_parents=True)
-        variant = VariantFactory(
+        variant = Variant.objects.create(
+            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
             scoreset=scs, data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count,count": "4"}
@@ -174,7 +190,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save(save_parents=True)
-        variant = VariantFactory(
+        variant = Variant.objects.create(
+            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
             scoreset=scs, data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count": "4"}
@@ -185,7 +202,6 @@ class TestScoreSetAPIViews(TestCase):
             csv.reader(
                 io.TextIOWrapper(
                     io.BytesIO(response.content), encoding='utf-8')))
-        
         
         header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'count']
         data = [variant.hgvs_nt, variant.hgvs_pro, '4']
@@ -200,8 +216,9 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save(save_parents=True)
-        variant = VariantFactory(
-            scoreset=scs, hgvs_pro=None,
+        variant = Variant.objects.create(
+            hgvs_nt=dna_hgvs[0], hgvs_pro=None,
+            scoreset=scs,
             data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count": "4"}
@@ -226,6 +243,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save(save_parents=True)
+        scs.children.delete()
+        
         response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
@@ -249,7 +268,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ['count']
         }
         scs.save(save_parents=True)
-        _ = VariantFactory(
+        _ = Variant.objects.create(
+            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
             scoreset=scs, data={
                 constants.variant_score_data: {},
                 constants.variant_count_data: {"count": "4"}
@@ -271,7 +291,8 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: []
         }
         scs.save(save_parents=True)
-        _ = VariantFactory(
+        _ = Variant.objects.create(
+            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
             scoreset=scs, data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {}
