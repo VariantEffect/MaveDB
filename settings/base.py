@@ -2,9 +2,8 @@
 import os
 import json
 
-from kombu import Queue, Exchange
-
 from django.core.exceptions import ImproperlyConfigured
+from main.management.commands.createdefaultsecrets import Command as SecretsCommand
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,9 +14,15 @@ try:
     with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
         secrets = json.load(handle)
 except FileNotFoundError:
-    raise FileNotFoundError("You must create a 'secrets.json' file in the "
-                            "project settings directory.")
-
+    command = SecretsCommand()
+    command.handle(*[], **{})
+    with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
+        secrets = json.load(handle)
+    print("|----------------<WARNING>----------------|")
+    print("IMPORTANT: No secrets file found. Creating from default template. "
+          "Fill this template in with your specific details "
+          "before running tests/server.")
+    print("|----------------</WARNING>---------------|")
 
 def get_secret(setting, secrets=secrets):
     """
