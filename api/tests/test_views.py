@@ -146,7 +146,7 @@ class TestScoreSetAPIViews(TestCase):
             }
         )
 
-        variants = scoreset.children
+        variants = scs.children
         print('BEFORE')
         print(variants)
         print([(v.hgvs_pro, v.hgvs_nt) for v in variants])
