@@ -250,8 +250,7 @@ class TestScoreSetAPIViews(TestCase):
         }
         scs.save(save_parents=True)
         _ = VariantFactory(
-            scoreset=scs, hgvs_nt="1A>G",
-            data={
+            scoreset=scs, data={
                 constants.variant_score_data: {},
                 constants.variant_count_data: {"count": "4"}
             }
