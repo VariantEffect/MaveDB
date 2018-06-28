@@ -121,7 +121,7 @@ class TestScoreSetAPIViews(TestCase):
             constants.count_columns: ["count"]
         }
         scs.save()
-        variant = Variant.objects.create(
+        variant = VariantFactory(
             scoreset=scs, data={
                 constants.variant_score_data: {"score": "1"},
                 constants.variant_count_data: {"count": "1"}
