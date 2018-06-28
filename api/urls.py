@@ -37,7 +37,7 @@ experimentset_urls = [
         r"experimentsets/$", experimentset_list, name="experimentset_list"
     ),
     url(
-        r"(?P<urn>{})/$".format(experimentset_url_pattern),
+        r"experimentset/(?P<urn>{})/$".format(experimentset_url_pattern),
         experimentset_detail,
         name="experimentset_detail"
     ),
@@ -48,7 +48,7 @@ experiment_urls = [
         r"experiments/$", experiment_list, name="experiment_list"
     ),
     url(
-        r"(?P<urn>{})/$".format(experiment_url_pattern),
+        r"experiment/(?P<urn>{})/$".format(experiment_url_pattern),
         experiment_detail,
         name="experiment_detail"
     ),
@@ -59,22 +59,22 @@ scoreset_urls = [
         r"scoresets/$", scoreset_list, name="scoreset_list"
     ),
     url(
-        r"(?P<urn>{})/$".format(scoreset_url_pattern),
+        r"scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
         scoreset_detail,
         name="scoreset_detail"
     ),
     url(
-        r"(?P<urn>{})/scores/$".format(scoreset_url_pattern),
+        r"scoreset/(?P<urn>{})/scores/$".format(scoreset_url_pattern),
         scoreset_score_data,
         name="api_download_score_data"
     ),
     url(
-        r"(?P<urn>{})/counts/$".format(scoreset_url_pattern),
+        r"scoreset/(?P<urn>{})/counts/$".format(scoreset_url_pattern),
         scoreset_count_data,
         name="api_download_count_data"
     ),
     url(
-        r"(?P<urn>{})/metadata/$".format(scoreset_url_pattern),
+        r"scoreset/(?P<urn>{})/metadata/$".format(scoreset_url_pattern),
         scoreset_metadata,
         name="api_download_metadata"
     )
