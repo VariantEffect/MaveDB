@@ -439,6 +439,15 @@ span.select2.select2-container.select2-container--default {
 }
 
 
+.mavevis-ext {
+    transition: color 0.1s ease-in-out;
+}
+.white-button:hover .mavevis-ext {
+    color: white;
+
+}
+
+
 
 /* Management CSS Elements */
 /* ------------------------------------------------------------------------- */
@@ -591,3 +600,5 @@ span.select2.select2-container.select2-container--default {
     padding-left: 2px;
     padding-bottom: 1px;
 }
+
+
