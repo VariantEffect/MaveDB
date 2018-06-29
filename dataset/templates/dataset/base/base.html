@@ -24,10 +24,9 @@
       {% endif %}
     </span>
     {% if instance.class_name == "scoreset" %}
-      <div class="dropdown">
+      <div class="dropdown" data-toggle="tooltip" data-placement="auto" title="Download the scores, counts or metadata files associated with this Score Set.">
         <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
-                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-toggle="tooltip"
-                data-placement="top" title="Download the scores, counts or metadata files associated with this Score Set.">
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="fas fa-download"></i>
         </button>
         <div class="dropdown-menu" aria-labelledby="scoresetDropDown">
