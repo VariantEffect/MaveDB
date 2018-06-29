@@ -251,6 +251,20 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         )
         response = self.client.get(self.path)
         self.assertTemplateUsed(response, self.template)
+        
+    def test_redirects_to_profile_after_success(self):
+        data = self.post_data.copy()
+        exp1 = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, exp1)
+        data['experiment'] = [exp1.pk]
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetCreateView.as_view()(request)
+
+        # Redirects to scoreset_detail
+        self.assertEqual(response.status_code, 302)
 
     def test_reference_map_created(self):
         data = self.post_data.copy()

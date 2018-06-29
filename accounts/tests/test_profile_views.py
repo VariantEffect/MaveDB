@@ -248,6 +248,23 @@ class TestProfileManageInstanceView(TestCase, TestMessageMixin):
         request.user = AnonymousUser()
         response = manage_instance(request, urn=obj.urn)
         self.assertEqual(response.status_code, 302)
+        
+    def test_redirects_to_profile_when_user_removed_as_admin(self):
+        group = GroupTypes.ADMIN
+        obj = ExperimentSetFactory()
+        assign_user_as_instance_admin(self.alice, obj)
+    
+        path = '/profile/manage/{}/'.format(obj.urn)
+        data = {
+            "{}[]".format(group): [''],
+            "{}_management-users".format(group): [self.bob.pk]
+        }
+        request = self.create_request('post', path=path, data=data)
+        request.user = self.alice
+        response = manage_instance(request, urn=obj.urn)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(user_is_admin_for_instance(self.alice, obj))
+        self.assertTrue(user_is_admin_for_instance(self.bob, obj))
 
     def test_403_if_user_does_not_have_manage_permissions(self):
         obj = ExperimentSetFactory()

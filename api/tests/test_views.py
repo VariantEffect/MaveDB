@@ -11,7 +11,7 @@ from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
 
-from variant.factories import VariantFactory, dna_hgvs, protein_hgvs
+from variant.factories import dna_hgvs, protein_hgvs
 from variant.models import Variant
 
 User = get_user_model()
@@ -29,19 +29,19 @@ class TestExperimentSetAPIViews(TestCase):
     def test_404_private_experimentset(self):
         exps = ExperimentSetFactory()
         response = self.client.get(
-            "/api/experimentset/{}/".format(exps.urn)
+            "/api/experimentsets/{}/".format(exps.urn)
         )
         self.assertEqual(response.status_code, 404)
         
     def test_404_wrong_address(self):
         instance = ExperimentSetFactory()
         response = self.client.get(
-            "/api/blahblah/{}/".format(instance.urn)
+            "/api/experimentset/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
     def test_404_experimentset_not_found(self):
-        response = self.client.get("/api/experimentset/dddd/")
+        response = self.client.get("/api/experimentsets/dddd/")
         self.assertEqual(response.status_code, 404)
 
 
@@ -57,19 +57,19 @@ class TestExperimentAPIViews(TestCase):
     def test_404_private(self):
         instance = ExperimentFactory()
         response = self.client.get(
-            "/api/experimentset/{}/".format(instance.urn)
+            "/api/experimentsets/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
         
     def test_404_wrong_address(self):
         instance = ExperimentFactory()
         response = self.client.get(
-            "/api/blahblah/{}/".format(instance.urn)
+            "/api/experiment/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
     def test_404_not_found(self):
-        response = self.client.get("/api/experiment/dddd/")
+        response = self.client.get("/api/experiments/dddd/")
         self.assertEqual(response.status_code, 404)
 
 
@@ -100,33 +100,33 @@ class TestScoreSetAPIViews(TestCase):
     def test_404_wrong_address(self):
         instance = ScoreSetFactory()
         response = self.client.get(
-            "/api/blahblah/{}/".format(instance.urn)
+            "/api/scoreset/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
 
     def test_404_private_download_scores(self):
         instance = ScoreSetFactory()
         response = self.client.get(
-            "/api/scoreset/{}/scores/".format(instance.urn)
+            "/api/scoresets/{}/scores/".format(instance.urn)
         )
         self.assertTrue(response.status_code, 404)
 
     def test_404_private_download_counts(self):
         instance = ScoreSetFactory()
         response = self.client.get(
-            "/api/scoreset/{}/counts/".format(instance.urn)
+            "/api/scoresets/{}/counts/".format(instance.urn)
         )
         self.assertTrue(response.status_code, 404)
 
     def test_404_private_download_meta(self):
         instance = ScoreSetFactory()
         response = self.client.get(
-            "/api/scoreset/{}/metadata/".format(instance.urn)
+            "/api/scoresets/{}/metadata/".format(instance.urn)
         )
         self.assertTrue(response.status_code, 404)
 
     def test_404_not_found(self):
-        response = self.client.get("/api/scoreset/dddd/")
+        response = self.client.get("/api/scoresets/dddd/")
         self.assertEqual(response.status_code, 404)
 
     def test_can_download_scores(self):
@@ -146,7 +146,7 @@ class TestScoreSetAPIViews(TestCase):
             }
         )
         
-        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -172,7 +172,7 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {"count,count": "4"}
             }
         )
-        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -198,7 +198,7 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {"count": "4"}
             }
         )
-        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -225,7 +225,7 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {"count": "4"}
             }
         )
-        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -246,14 +246,14 @@ class TestScoreSetAPIViews(TestCase):
         scs.save(save_parents=True)
         scs.children.delete()
         
-        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
                     io.BytesIO(response.content), encoding='utf-8')))
         self.assertEqual(rows, [])
         
-        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -276,7 +276,7 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {"count": "4"}
             }
         )
-        response = self.client.get("/api/scoreset/{}/scores/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -299,7 +299,7 @@ class TestScoreSetAPIViews(TestCase):
                 constants.variant_count_data: {}
             }
         )
-        response = self.client.get("/api/scoreset/{}/counts/".format(scs.urn))
+        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
         rows = list(
             csv.reader(
                 io.TextIOWrapper(
@@ -311,6 +311,6 @@ class TestScoreSetAPIViews(TestCase):
         scs.publish()
         scs.refresh_from_db()
         response = json.loads(self.client.get(
-            "/api/scoreset/{}/metadata/".format(scs.urn)
+            "/api/scoresets/{}/metadata/".format(scs.urn)
         ).content.decode())
         self.assertEqual(response, scs.extra_metadata)
