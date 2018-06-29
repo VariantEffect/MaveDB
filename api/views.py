@@ -30,6 +30,8 @@ from accounts.permissions import PermissionTypes
 User = get_user_model()
 
 
+# ViewSet CBVs for list/detail views
+# --------------------------------------------------------------------------- #
 class DatasetModelViewSet(ReadOnlyModelViewSet):
     """
     Base API viewset. Must also inherit a subclass of
@@ -103,6 +105,8 @@ class UserViewset(ReadOnlyModelViewSet, UserFilterMixin):
         return queryset
 
 
+# File download FBVs
+# --------------------------------------------------------------------------- #
 def validate_request(urn, user):
     if not ScoreSet.objects.filter(urn=urn).count():
         response = JsonResponse({'detail': '{} does not exist.'.format(urn)})
