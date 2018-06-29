@@ -38,6 +38,9 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
             firefox_binary=binary
         )
         
+    def tearDown(self):
+        self.browser.close()
+        
     def authenticate(self):
         authenticate_webdriver(
             self.user.username, self.user._password, self, 'browser')

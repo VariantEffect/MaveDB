@@ -32,6 +32,9 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             log_path=LOG_PATH, firefox_options=options,
             firefox_binary=binary
         )
+        
+    def tearDown(self):
+        self.browser.close()
     
     def authenticate(self):
         authenticate_webdriver(
