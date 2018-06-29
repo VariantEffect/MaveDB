@@ -23,8 +23,8 @@ from django.conf.urls import url, include
 from django.contrib import admin
 
 
-handler404 = 'main.views.handler404'
 handler403 = 'main.views.handler403'
+handler404 = 'main.views.handler404'
 handler500 = 'main.views.handler500'
 
 urlpatterns = [

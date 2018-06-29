@@ -32,10 +32,10 @@ from dataset.views.scoreset import ScoreSetEditView
 
 urlpatterns = [
     # ------ Register
-    url(r"register/$", views.registration_view, name="register"),
+    url(r"^register/$", views.registration_view, name="register"),
 
     # ------ Social stuff
-    url(r"profile/error/$", views.login_error, name="login_error"),
+    url(r"^profile/error/$", views.login_error, name="login_error"),
     url(
         r'^oauth/', include('social_django.urls', namespace='social'),
         name="social"
@@ -43,27 +43,27 @@ urlpatterns = [
 
     # ------ Login and Logout
     url(r'^logout/$', views.log_user_out, name='logout'),
-    url(r'login/$', views.login_delegator, name='login'),
+    url(r'^login/$', views.login_delegator, name='login'),
 
     # ------ Profile
-    url(r"profile/$", views.profile_view, name="profile"),
+    url(r"^profile/$", views.profile_view, name="profile"),
     url(
-        r"profile/settings/$",
+        r"^profile/settings/$",
         views.profile_settings,
         name="profile_settings"
     ),
     url(
-        r"profile/manage/(?P<urn>{})/$".format(any_url_pattern),
+        r"^profile/manage/(?P<urn>{})/$".format(any_url_pattern),
         views.manage_instance,
         name="manage_instance"
     ),
     url(
-        r"profile/edit/experiment/(?P<urn>{})/$".format(experiment_url_pattern),
+        r"^profile/edit/experiment/(?P<urn>{})/$".format(experiment_url_pattern),
         ExperimentEditView.as_view(),
         name="edit_experiment"
     ),
     url(
-        r"profile/edit/scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
+        r"^profile/edit/scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
         ScoreSetEditView.as_view(),
         name="edit_scoreset"
     ),
