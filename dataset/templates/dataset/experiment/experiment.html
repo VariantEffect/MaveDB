@@ -13,9 +13,14 @@
     {% endif %}
     
     {% for child in visible_scoresets %}
+      <p>
+        <a href={% url 'dataset:scoreset_detail' child.urn %}>
+          {{ child.urn }}
+        </a>
+      </p>
+
       <div class="target-card" data-toggle="popover" title="<b>{{ child.urn }}</b><hr>{{ child.get_title }} {% if child.private %} [Private] {% endif %}"
            data-content="{{ child.get_description }}" data-placement=auto
-           onclick="goToUrl('{% url 'dataset:scoreset_detail' child.urn %}')"
            onmouseover="$(this).popover({trigger:'hover', html:true});" >
         <p>
           <strong>Target: </strong>

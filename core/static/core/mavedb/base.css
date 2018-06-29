@@ -237,23 +237,12 @@ table {
 /* Tocbot
 ---------------------------------------- */
 .js-toc {
-    background: #ffffff;
-    z-index: 999;
+    background: #f7f7f7;
 }
 
-.sidebar {
-    min-height:80vh !important;
-    width:200px !important;
-}
-
-@media (max-width: 800px) {
-    .js-toc {
-        width: 100%;
-        margin-bottom: 25px;
-    }
-    .sidebar {
-        min-height: auto !important;
-        border: 0 !important;
+@media (max-width: 1199px) {
+    .js-toc, .toc-sidenav {
+         display: none;
     }
 }
 
@@ -262,6 +251,7 @@ table {
     -webkit-transition: 0.5s;
     -moz-transition: 0.5s;   
     transition: color 0.5s ease-in-out;
+    hyphens: auto;
 }
 
 .toc-link:hover {
@@ -352,18 +342,6 @@ span.select2.select2-container.select2-container--default {
     color: #343a40 !important;
 }
 
-.target-card:hover {
-    cursor: pointer;
-    color: lightslategray !important;
-    -webkit-transition: 0.5s !important;
-    -moz-transition: 0.5s !important;
-    transition: color 0.1s ease-in-out !important;
-}
-
-.target-card:hover a {
-    color: lightslategray !important;
-}
-
 .clickable-row {
     cursor: pointer;
 }
@@ -405,7 +383,7 @@ span.select2.select2-container.select2-container--default {
     word-wrap: break-word;
 }
 
-@media (max-width: 1400px) {
+@media (max-width: 1200px) {
     .sidenav-detail {
         display: none;
     }

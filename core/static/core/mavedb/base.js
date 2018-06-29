@@ -49,7 +49,6 @@ $("document").ready(function() {
 
 });
 
-
 // Buttons ----------------------------------------------------------------- //
 // ORCID button in base.html
 function openORCID() {
