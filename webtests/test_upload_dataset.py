@@ -344,6 +344,9 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
     def setUp(self):
         self.user = UserFactory()
         self.browser = webdriver.Firefox(log_path=LOG_PATH)
+        
+    def tearDown(self):
+        self.browser.close()
     
     def authenticate(self):
         authenticate_webdriver(
