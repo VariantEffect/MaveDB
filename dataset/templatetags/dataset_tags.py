@@ -56,4 +56,3 @@ def parent_references(instance):
         if pmid not in instance.pubmed_ids.all():
             parent_refs.add(pmid)
     return list(parent_refs)
-    
