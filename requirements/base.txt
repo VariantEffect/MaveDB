@@ -11,11 +11,11 @@ factory-boy>=2.9.2
 numpy>=1.12.1
 celery>=4.1.1
 flower>=0.9.2
-psycopg2-binary
 pypandoc>=1.4
 selenium>=3.4.3
 Faker>=0.7.18
 dj-database-url
+psycopg2
 coverage
 git+https://github.com/afrubin/idutils.git@bio
 hg+http://bitbucket.org/afrubin/metapub@html_citation
