@@ -183,8 +183,8 @@ class TestSearchView(TestCase):
         self.scs3.publish()
 
         self.scs1.licence = Licence.get_cc0()
-        self.scs2.licence = Licence.get_cc4()
-        self.scs3.licence = Licence.get_cc4()
+        self.scs2.licence = Licence.get_cc_by_nc_sa()
+        self.scs3.licence = Licence.get_cc_by_nc_sa()
         self.scs1.save()
         self.scs2.save()
         self.scs3.save()

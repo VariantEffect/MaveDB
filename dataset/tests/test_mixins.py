@@ -711,7 +711,7 @@ class TestExperimentSearchMixin(TestCase):
         scs1 = obj1.scoresets.first()
         scs2 = obj2.scoresets.first()
         scs1.licence = Licence.get_cc0()
-        scs2.licence = Licence.get_cc4()
+        scs2.licence = Licence.get_cc_by_nc_sa()
         scs1.save()
         scs2.save()
 
@@ -725,7 +725,7 @@ class TestExperimentSearchMixin(TestCase):
         self.assertNotIn(obj2, result)
 
         q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc4().short_name},
+            value_or_dict={'licence': Licence.get_cc_by_nc_sa().short_name},
             join_func=self.searcher.or_join_qs
         )
         result = self.model_class.objects.filter(q)
@@ -740,7 +740,7 @@ class TestExperimentSearchMixin(TestCase):
         scs1 = obj1.scoresets.first()
         scs2 = obj2.scoresets.first()
         scs1.licence = Licence.get_cc0()
-        scs2.licence = Licence.get_cc4()
+        scs2.licence = Licence.get_cc_by_nc_sa()
         scs1.save()
         scs2.save()
 
@@ -754,7 +754,7 @@ class TestExperimentSearchMixin(TestCase):
         self.assertNotIn(obj2, result)
 
         q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc4().long_name},
+            value_or_dict={'licence': Licence.get_cc_by_nc_sa().long_name},
             join_func=self.searcher.or_join_qs
         )
         result = self.model_class.objects.filter(q)
@@ -956,7 +956,7 @@ class TestScoreSetSearchMixin(TestCase):
         obj1 = self.factory()
         obj2 = self.factory()
         obj1.licence = Licence.get_cc0()
-        obj2.licence = Licence.get_cc4()
+        obj2.licence = Licence.get_cc_by_nc_sa()
         obj1.save()
         obj2.save()
 
@@ -970,7 +970,7 @@ class TestScoreSetSearchMixin(TestCase):
         self.assertNotIn(obj2, result)
 
         q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc4().short_name},
+            value_or_dict={'licence': Licence.get_cc_by_nc_sa().short_name},
             join_func=self.searcher.or_join_qs
         )
         result = self.model_class.objects.filter(q)
@@ -982,7 +982,7 @@ class TestScoreSetSearchMixin(TestCase):
         obj1 = self.factory()
         obj2 = self.factory()
         obj1.licence = Licence.get_cc0()
-        obj2.licence = Licence.get_cc4()
+        obj2.licence = Licence.get_cc_by_nc_sa()
         obj1.save()
         obj2.save()
 
@@ -996,7 +996,7 @@ class TestScoreSetSearchMixin(TestCase):
         self.assertNotIn(obj2, result)
 
         q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc4().long_name},
+            value_or_dict={'licence': Licence.get_cc_by_nc_sa().long_name},
             join_func=self.searcher.or_join_qs
         )
         result = self.model_class.objects.filter(q)
