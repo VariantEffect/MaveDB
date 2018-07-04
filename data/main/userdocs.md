@@ -118,10 +118,11 @@ and they are not distinguished visually.
 ## Licensing
 
 When uploading score set information to the database, the user can choose one 
-of two licenses:
+of three licenses:
 
-* [CC BY-NC-SA 4.0 non-commercial license](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-* [CC0 public domain license](https://creativecommons.org/licenses/cc0)
+* [CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+* [CC BY 4.0 (Attribution) license](https://creativecommons.org/licenses/by/4.0/)
+* [CC0 (Public domain)](https://creativecommons.org/licenses/cc0)
 
 By default, new score sets will have the non-commercial license. The license 
 can be changed until the score set is published. Note that the non-commercial 
