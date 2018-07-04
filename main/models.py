@@ -292,6 +292,7 @@ class Licence(TimeStampedModel):
                 long_name="CC0 (Public domain)",
                 legal_code=open(
                     os.path.join(settings.MAIN_DIR,
+                                 "licence_legal_code",
                                  "CC0.txt"),
                     mode='rt'
                 ).read(),
@@ -310,6 +311,7 @@ class Licence(TimeStampedModel):
                 long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
                 legal_code=open(
                     os.path.join(settings.MAIN_DIR,
+                                 "licence_legal_code",
                                  "CC_BY-NC-SA_4.0.txt"),
                     mode='rt'
                 ).read(),
