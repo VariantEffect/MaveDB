@@ -296,7 +296,7 @@ class Licence(TimeStampedModel):
                                  "CC0.txt"),
                     mode='rt'
                 ).read(),
-                link="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+                link="https://creativecommons.org/publicdomain/zero/1.0/",
                 version="1.0",
             )
         return licence
@@ -315,7 +315,7 @@ class Licence(TimeStampedModel):
                                  "CC_BY-NC-SA_4.0.txt"),
                     mode='rt'
                 ).read(),
-                link="https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+                link="https://creativecommons.org/licenses/by-nc-sa/4.0/",
                 version="4.0",
             )
         return licence
