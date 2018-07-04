@@ -277,6 +277,7 @@ class Licence(TimeStampedModel):
     def populate(cls):
         cls.get_cc0()
         cls.get_cc_by_nc_sa()
+        cls.get_cc_by()
 
     @classmethod
     def get_default(cls):
@@ -316,6 +317,25 @@ class Licence(TimeStampedModel):
                     mode='rt'
                 ).read(),
                 link="https://creativecommons.org/licenses/by-nc-sa/4.0/",
+                version="4.0",
+            )
+        return licence
+
+    @classmethod
+    def get_cc_by(cls):
+        try:
+            licence = cls.objects.get(short_name="CC BY 4.0")
+        except ObjectDoesNotExist:
+            licence = cls.objects.create(
+                short_name="CC BY 4.0",
+                long_name="CC BY 4.0 (Attribution)",
+                legal_code=open(
+                    os.path.join(settings.MAIN_DIR,
+                                 "licence_legal_code",
+                                 "CC_BY_4.0.txt"),
+                    mode='rt'
+                ).read(),
+                link="https://creativecommons.org/licenses/by/4.0/",
                 version="4.0",
             )
         return licence
