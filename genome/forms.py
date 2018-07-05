@@ -299,7 +299,6 @@ class ReferenceMapForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.field_order = ('is_primary', 'genome',)
         super().__init__(*args, **kwargs)
-
         genome_field = self.fields['genome']
         genome_field.requried = True
         genome_field.queryset = ReferenceGenome.objects.all()

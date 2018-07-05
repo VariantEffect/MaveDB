@@ -276,11 +276,12 @@ class Licence(TimeStampedModel):
     @classmethod
     def populate(cls):
         cls.get_cc0()
-        cls.get_cc4()
+        cls.get_cc_by_nc_sa()
+        cls.get_cc_by()
 
     @classmethod
     def get_default(cls):
-        return cls.get_cc4()
+        return cls.get_cc_by_nc_sa()
 
     @classmethod
     def get_cc0(cls):
@@ -292,16 +293,17 @@ class Licence(TimeStampedModel):
                 long_name="CC0 (Public domain)",
                 legal_code=open(
                     os.path.join(settings.MAIN_DIR,
+                                 "licence_legal_code",
                                  "CC0.txt"),
                     mode='rt'
                 ).read(),
-                link="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+                link="https://creativecommons.org/publicdomain/zero/1.0/",
                 version="1.0",
             )
         return licence
 
     @classmethod
-    def get_cc4(cls):
+    def get_cc_by_nc_sa(cls):
         try:
             licence = cls.objects.get(short_name="CC BY-NC-SA 4.0")
         except ObjectDoesNotExist:
@@ -310,10 +312,30 @@ class Licence(TimeStampedModel):
                 long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
                 legal_code=open(
                     os.path.join(settings.MAIN_DIR,
+                                 "licence_legal_code",
                                  "CC_BY-NC-SA_4.0.txt"),
                     mode='rt'
                 ).read(),
-                link="https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+                link="https://creativecommons.org/licenses/by-nc-sa/4.0/",
+                version="4.0",
+            )
+        return licence
+
+    @classmethod
+    def get_cc_by(cls):
+        try:
+            licence = cls.objects.get(short_name="CC BY 4.0")
+        except ObjectDoesNotExist:
+            licence = cls.objects.create(
+                short_name="CC BY 4.0",
+                long_name="CC BY 4.0 (Attribution)",
+                legal_code=open(
+                    os.path.join(settings.MAIN_DIR,
+                                 "licence_legal_code",
+                                 "CC_BY_4.0.txt"),
+                    mode='rt'
+                ).read(),
+                link="https://creativecommons.org/licenses/by/4.0/",
                 version="4.0",
             )
         return licence

@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.common.exceptions import NoAlertPresentException
+from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase
 from django.shortcuts import reverse
@@ -8,14 +9,27 @@ from accounts.factories import UserFactory
 
 from dataset import factories as data_factories
 
-from .utilities import authenticate_webdriver
+from .utilities import authenticate_webdriver, \
+    LOG_PATH, STAGING_OR_PROD, ActionMixin
 
-
-class TestPublishScoreSet(LiveServerTestCase):
-    
+  
+class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path='./logs/geckodriver.log')
+        if  STAGING_OR_PROD:
+            binary = FirefoxBinary('/usr/bin/firefox')
+            options = Options()
+            options.add_argument('--headless')
+        else:
+            binary = None
+            options = None
+        self.browser = webdriver.Firefox(
+            log_path=LOG_PATH, firefox_options=options,
+            firefox_binary=binary
+        )
+        
+    def tearDown(self):
+        self.browser.close()
     
     def authenticate(self):
         authenticate_webdriver(
@@ -33,13 +47,20 @@ class TestPublishScoreSet(LiveServerTestCase):
         )
         
         # index 1 for editor input, index 1 for search result
-        self.browser.find_element_by_id('editors-tab').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[1].send_keys(self.user.profile.unique_name)
-        self.browser.find_element_by_id(
-            'select2-id_editor_management-users-results').click()
+        tab_button = self.browser.find_element_by_id('editors-tab')
+        self.perform_action(tab_button, 'click')
         
-        self.browser.find_element_by_id('submit-editor-form').click()
+        search_box = self.browser.find_elements_by_class_name(
+            'select2-search__field')[1]
+        self.perform_action(search_box, 'send_keys', self.user.profile.unique_name)
+        
+        list_item = self.browser.find_element_by_id(
+            'select2-id_editor_management-users-results')
+        self.perform_action(list_item, 'click')
+        
+        submit = self.browser.find_element_by_id('submit-editor-form')
+        self.perform_action(submit, 'click')
+        
         self.browser.switch_to.alert.accept()
         
     def test_no_alert_removing_superuser_removing_self_as_admin(self):
@@ -57,12 +78,20 @@ class TestPublishScoreSet(LiveServerTestCase):
         )
     
         # index 1 for editor input, index 1 for search result
-        self.browser.find_element_by_id('editors-tab').click()
-        self.browser.find_elements_by_class_name(
-            'select2-search__field')[1].send_keys(self.user.profile.unique_name)
-        self.browser.find_element_by_id(
-            'select2-id_editor_management-users-results').click()
+        tab_button = self.browser.find_element_by_id('editors-tab')
+        self.perform_action(tab_button, 'click')
+        
+        search_box = self.browser.find_elements_by_class_name(
+            'select2-search__field')[1]
+        self.perform_action(
+            search_box, 'send_keys', self.user.profile.unique_name)
+        
+        item = self.browser.find_element_by_id(
+            'select2-id_editor_management-users-results')
+        self.perform_action(item, 'click')
     
-        self.browser.find_element_by_id('submit-editor-form').click()
+        submit = self.browser.find_element_by_id('submit-editor-form')
+        self.perform_action(submit, 'click')
+        
         with self.assertRaises(NoAlertPresentException):
             self.browser.switch_to.alert.accept()

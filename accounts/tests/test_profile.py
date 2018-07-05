@@ -108,8 +108,7 @@ class TestUserProfile(TestCase):
         bob.profile.email = None
         bob.profile.save()
         bob.profile.email_user(message="hello", subject="None")
-        with self.assertRaises(AssertionError):
-            patch.assert_called()
+        patch.assert_not_called()
 
     def test_name_methods_default_to_username(self):
         bob = User.objects.create(username="bob", password="secretkey")
@@ -317,4 +316,4 @@ class TestUserProfile(TestCase):
     
         patch.assert_called()
         message = patch.call_args[1]['kwargs']['message']
-        self.assertIn("has been processed successfully", message)
+        self.assertIn("has been successfully processed", message)

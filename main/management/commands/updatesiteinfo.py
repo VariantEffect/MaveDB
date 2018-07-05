@@ -18,7 +18,12 @@ class Command(BaseCommand):
             info = json.load(fp)
             instance = SiteInformation.get_instance()
             for field, value in info.items():
-                sys.stdout.write("Setting field '{}'.\n".format(field))
+                sys.stdout.write("Setting field '{}'\n".format(field))
+                file_path = os.path.join(settings.MAIN_DIR, value)
+                if os.path.isfile(file_path):
+                    with open(file_path, 'rt') as fp:
+                        sys.stdout.write("\tReading from file %s\n" % file_path)
+                        value = fp.read()
                 setattr(instance, field, value)
             instance.save()
-        sys.stdout.write("Updated 'data/site_info.json'.\n")
+        sys.stdout.write("Updated from 'data/site_info.json'\n")

@@ -57,7 +57,7 @@ class DatasetModelFormView(DatasetFormViewContextMixin,
     model_class_name = 'dataset'
     # -------
 
-    success_url = '/accounts/profile/'
+    success_url = '/profile/'
     prefix = None
     success_message = None
 

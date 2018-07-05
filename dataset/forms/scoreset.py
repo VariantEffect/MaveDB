@@ -72,7 +72,6 @@ class ErrorMessages(NestedEnumMixin, Enum):
             'Please upload a non-empty file.'
         )
     
-    
 
 class ScoreSetForm(DatasetModelForm):
     """
@@ -201,7 +200,14 @@ class ScoreSetForm(DatasetModelForm):
         self.fields["licence"].required = False
         if not self.fields["licence"].initial:
             self.fields["licence"].initial = Licence.get_default()
-        self.fields["licence"].empty_label = 'Default'
+
+        choices = [("", '--------')]
+        for licence in Licence.objects.all():
+            name = licence.get_long_name()
+            if licence == Licence.get_default():
+                name += ' [Default]'
+            choices.append((licence.pk, name))
+        self.fields['licence'].widget.choices = choices
 
     def clean_experiment(self):
         cleaned_data = super().clean()

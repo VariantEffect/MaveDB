@@ -30,6 +30,8 @@ from accounts.permissions import PermissionTypes
 User = get_user_model()
 
 
+# ViewSet CBVs for list/detail views
+# --------------------------------------------------------------------------- #
 class DatasetModelViewSet(ReadOnlyModelViewSet):
     """
     Base API viewset. Must also inherit a subclass of
@@ -103,6 +105,8 @@ class UserViewset(ReadOnlyModelViewSet, UserFilterMixin):
         return queryset
 
 
+# File download FBVs
+# --------------------------------------------------------------------------- #
 def validate_request(urn, user):
     if not ScoreSet.objects.filter(urn=urn).count():
         response = JsonResponse({'detail': '{} does not exist.'.format(urn)})
@@ -135,7 +139,7 @@ def scoreset_score_data(request, urn):
     # hgvs_nt and hgvs_pro present by default, hence <= 2
     if not variants or len(columns) <= 2:
         return response
-    
+       
     writer = csv.DictWriter(
         response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()

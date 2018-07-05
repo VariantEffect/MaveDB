@@ -49,12 +49,11 @@ $("document").ready(function() {
 
 });
 
-
 // Buttons ----------------------------------------------------------------- //
 // ORCID button in base.html
 function openORCID() {
   var baseUrl = window.location.origin;
-  var loginPath = baseUrl + "/accounts/login/";
+  var loginPath = baseUrl + "/login/";
   window.location.assign(loginPath);
   return false;
 }

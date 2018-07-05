@@ -52,6 +52,7 @@ class ReferenceGenomeFactory(DjangoModelFactory):
     """
     class Meta:
         model = ReferenceGenome
+        # django_get_or_create = ("short_name",)
 
     short_name = factory.fuzzy.FuzzyChoice(['hg38', 'hg37', 'hg36'])
     species_name = factory.fuzzy.FuzzyChoice(['Homo sapiens'])

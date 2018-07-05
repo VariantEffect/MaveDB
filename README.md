@@ -50,11 +50,11 @@ versions of MaveDB:
 - pypandoc>=1.4
 - selenium>=3.4.3
 - Faker>=0.7.18
-- gunicorn
-- whitenoise
 - dj-database-url
+- coverage
 - git+https://github.com/afrubin/idutils.git@bio
 - hg+http://bitbucket.org/afrubin/metapub@html_citation
+- git+https://github.com/FowlerLab/hgvs-patterns.git
 
 Running a live server using Apache requires the following additional packages:
 - mod_wsgi

@@ -110,6 +110,7 @@ local install).
     ALTER ROLE mave_admin SET default_transaction_isolation TO 'read committed';
     ALTER ROLE mave_admin SET timezone TO 'UTC';
     GRANT ALL PRIVILEGES ON DATABASE mavedb TO mave_admin;
+    ALTER USER mave_admin CREATEDB;
 
 There were issues with authentication using `ident` so I use `md5` instead.
 
@@ -287,8 +288,24 @@ default directories
 To use the celery script
 
 	sudo /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
-	
-	
+
+## Selenium and Geckodriver
+Geckodriver needs to be on the system path before being able to run the webtests. Download
+and mv geckodriver to `/usr/local/bin`
+
+
+## Jenkins, Selenium and Xbvf (In-progress)
+Jenkin can be configured to periodically run a complete build-test whenever changes
+are made to the development branch. First install Jenkins
+
+```bash
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo yum -y update
+sudo yum install jenkins
+```
+
+
 ## Issues with SELinux
 SElinux restricted Apache's access to the mavedb project files, mavedb log files and the pandoc binary. 
 I had to run these two commands on the mavedb project folder, log folder and non-recusrively 

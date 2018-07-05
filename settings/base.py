@@ -2,9 +2,8 @@
 import os
 import json
 
-from kombu import Queue, Exchange
-
 from django.core.exceptions import ImproperlyConfigured
+from main.management.commands.createdefaultsecrets import Command as SecretsCommand
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,9 +14,15 @@ try:
     with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
         secrets = json.load(handle)
 except FileNotFoundError:
-    raise FileNotFoundError("You must create a 'secrets.json' file in the "
-                            "project settings directory.")
-
+    command = SecretsCommand()
+    command.handle(*[], **{})
+    with open(SETTINGS_DIR + '/secrets.json', 'rt') as handle:
+        secrets = json.load(handle)
+    print("|----------------<WARNING>----------------|")
+    print("IMPORTANT: No secrets file found. Creating from default template. "
+          "Fill this template in with your specific details "
+          "before running tests/server.")
+    print("|----------------</WARNING>---------------|")
 
 def get_secret(setting, secrets=secrets):
     """
@@ -114,14 +119,6 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'mavedb.urls'
 
 
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-#         'LOCATION': '127.0.0.1:11211',
-#     }
-# }
-
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -213,7 +210,7 @@ REST_FRAMEWORK = {
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
-DATASET_TASK_SOFT_TIME_LIMIT =  10 * 60  # In seconds
+DATASET_TASK_SOFT_TIME_LIMIT = 10 * 60  # In seconds
 broker_url = 'amqp://localhost:5672//'
 accept_content = ('json',)
 result_serializer = 'json'

@@ -42,6 +42,7 @@
         {{ instance.get_target.uniprot_id.identifier }}
       </a>
       <i class="external-link fas fa-external-link-alt"></i>
+      with offset {{ instance.get_target.get_uniprot_offset_annotation.offset }}
     {% else %}
         Not associated
     {% endif %}
@@ -53,6 +54,7 @@
         {{ instance.get_target.refseq_id.identifier }}
       </a>
       <i class="external-link fas fa-external-link-alt"></i>
+      with offset {{ instance.get_target.get_refseq_offset_annotation.offset }}
     {% else %}
         Not associated
     {% endif %}
@@ -64,6 +66,7 @@
         {{ instance.get_target.ensembl_id.identifier }}
       </a>
       <i class="external-link fas fa-external-link-alt"></i>
+      with offset {{ instance.get_target.get_ensembl_offset_annotation.offset }}
     {% else %}
         Not associated
     {% endif %}

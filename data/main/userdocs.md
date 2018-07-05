@@ -106,11 +106,13 @@ fields, such as abstract and methods, after publication.
 
 ## Contributor types
 
-Contributors are tracked and authenticated using ORCID. There are two access 
-levels for each dataset, view and admin. A contributor with view access can 
-access the entry if it is private. A contributor with admin access can fully 
-edit the entry (including adding and removing contributors) and publish it. 
-Each entry must have at least one admin user at all times.
+Contributors are tracked and authenticated using ORCID. There are three roles 
+for each dataset, Viewer, Editor and Administrator. A Viewer can access the 
+entry if it is private. An Editor access can change any of the data or metadata 
+with the exception of adding or removing contributors. An Administrator has all 
+the Editor's permissions and also the ability to change the contributor list 
+and publish Score Sets. Each entry must have at least one admin user at all 
+times.
 
 Both types of contributors appear in the contributor list for a given dataset 
 and they are not distinguished visually.
@@ -118,10 +120,11 @@ and they are not distinguished visually.
 ## Licensing
 
 When uploading score set information to the database, the user can choose one 
-of two licenses:
+of three licenses:
 
-* [CC BY-NC-SA 4.0 non-commercial license](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-* [CC0 public domain license](https://creativecommons.org/licenses/cc0)
+* [CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+* [CC BY 4.0 (Attribution) license](https://creativecommons.org/licenses/by/4.0/)
+* [CC0 (Public domain)](https://creativecommons.org/licenses/cc0)
 
 By default, new score sets will have the non-commercial license. The license 
 can be changed until the score set is published. Note that the non-commercial 

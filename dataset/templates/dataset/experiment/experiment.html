@@ -1,5 +1,6 @@
 {% extends "dataset/base/base.html" %}
 {% load dataset_tags %}
+{% load licence_tags %}
 
 {% block target %}
   <h2 id="targets" class="underline left-align section-heading"> Targets </h2>
@@ -13,47 +14,53 @@
     {% endif %}
     
     {% for child in visible_scoresets %}
-      <div class="target-card" data-toggle="popover" title="<b>{{ child.urn }}</b><hr>{{ child.get_title }} {% if child.private %} [Private] {% endif %}"
+      <div class="target-card" data-toggle="popover" title="<b>{{ child.urn }}</b><hr>{{ child.get_title }}"
            data-content="{{ child.get_description }}" data-placement=auto
-           onclick="goToUrl('{% url 'dataset:scoreset_detail' child.urn %}')"
-           onmouseover="$(this).popover({trigger:'hover', html:true});" >
-        <p>
-          <strong>Target: </strong>
-          <a href="/search/?target={{ child.get_target.get_name }}">
-            {{ child.get_target.get_name }}
-          </a>
-        </p>
+           onmouseover="$(this).popover({trigger:'hover', html:true});" style="cursor: help" >
 
-        <p>
-          <strong>Species: </strong>
-          <a href="/search/?species={{ child.get_target.get_reference_genomes.first.get_species_name }}">
-            {{ child.get_target.get_reference_genomes.first.format_species_name_html|safe }}
-          </a>
-        </p>
+        <a href={% url 'dataset:scoreset_detail' child.urn %}>
+          <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
+        </a>
 
-        <p>
-          <strong>Reference genome: </strong>
-          <a href="/search/?genome={{ child.get_target.get_reference_genomes.first.get_short_name }}">
-            {{ child.get_target.get_reference_genomes.first.get_short_name }}
-          </a>
-        </p>
+        <div style="padding-left: 1em">
+          <p>
+            <strong>Target: </strong>
+            <a href="/search/?target={{ child.get_target.get_name }}">
+              {{ child.get_target.get_name }}
+            </a>
+          </p>
 
-        <p>
-          <strong>Reference assembly: </strong>
-          <a target="_blank" href={{ child.get_target.get_reference_genomes.first.genome_id.url }}>
-            {{ child.get_target.get_reference_genomes.first.genome_id.identifier }}
-          </a>
-          <i class="external-link fas fa-external-link-alt"></i>
-        </p>
+          <p>
+            <strong>Species: </strong>
+            <a href="/search/?species={{ child.get_target.get_reference_genomes.first.get_species_name }}">
+              {{ child.get_target.get_reference_genomes.first.format_species_name_html|safe }}
+            </a>
+          </p>
 
-        <p class="wild-type-sequence">
-          <strong>Wildtype Sequence: </strong>
-          {{ child.get_target.get_wt_sequence }}
-        </p>
+          <p>
+            <strong>Reference genome: </strong>
+            <a href="/search/?genome={{ child.get_target.get_reference_genomes.first.get_short_name }}">
+              {{ child.get_target.get_reference_genomes.first.get_short_name }}
+            </a>
+          </p>
 
-        {% if forloop.counter < visible_scoresets|length %}
-          <hr>
-        {% endif %}
+          <p>
+            <strong>Reference assembly: </strong>
+            <a target="_blank" href={{ child.get_target.get_reference_genomes.first.genome_id.url }}>
+              {{ child.get_target.get_reference_genomes.first.genome_id.identifier }}
+            </a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </p>
+
+          <p class="wild-type-sequence">
+            <strong>Wildtype Sequence: </strong>
+            {{ child.get_target.get_wt_sequence }}
+          </p>
+
+          {% if forloop.counter < visible_scoresets|length %}
+            <hr>
+          {% endif %}
+        </div>
       </div>
     {% endfor %}
   {% else %}
@@ -62,6 +69,7 @@
 {% endblock %}
 
 {% block child_list %}
+  {% visible_children instance user as visible_scoresets %}
   <span>
     <h2 id='scoresets' class="underline left-align section-heading">Score Sets
       {% if request.user in instance.editors or request.user in instance.administrators %}
@@ -72,28 +80,16 @@
       {% endif %}
     </h2>
   </span>
-  {% if instance.children.count %}
+  {% if visible_scoresets|length %}
     <ul>
-      {% for child in instance.children %}
-        {% if child.private %}
-          {% if child in request.user.profile.contributor_scoresets %}
-            <li class="child-list-item">
-              <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
-                <p class="urn-item-link">{{ child.urn }} [Private]</p>
-              </a>
-              <p class="child-list-description"><b>{{ child.get_title }}</b></p>
-              <p class="child-list-description">{{ child.get_description }}</p>
-            </li>
-          {% endif %}
-        {% else %}
-          <li class="child-list-item">
-            <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
-              <p class="urn-item-link">{{ child.urn }}</p>
-            </a>
-            <p class="child-list-description"><b>{{ child.get_title }}</b></p>
-            <p class="child-list-description">{{ child.get_description }}</p>
-          </li>
-        {% endif %}
+      {% for child in visible_scoresets %}
+        <li class="child-list-item">
+          <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
+            <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
+          </a>
+          <p class="child-list-description"><b>{{ child.get_title }}</b></p>
+          <p class="child-list-description">{{ child.get_description }}</p>
+        </li>
       {% endfor %}
     </ul>
   {% else %}

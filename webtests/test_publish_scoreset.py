@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase, mock
 
@@ -12,14 +13,28 @@ from dataset import constants
 
 from variant.factories import VariantFactory
 
-from .utilities import authenticate_webdriver
+from .utilities import authenticate_webdriver, \
+    LOG_PATH, STAGING_OR_PROD, ActionMixin
 
 
-class TestPublishScoreSet(LiveServerTestCase):
+class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     
     def setUp(self):
         self.user = UserFactory()
-        self.browser = webdriver.Firefox(log_path='./logs/geckodriver.log')
+        if  STAGING_OR_PROD:
+            binary = FirefoxBinary('/usr/bin/firefox')
+            options = Options()
+            options.add_argument('--headless')
+        else:
+            binary = None
+            options = None
+        self.browser = webdriver.Firefox(
+            log_path=LOG_PATH, firefox_options=options,
+            firefox_binary=binary
+        )
+        
+    def tearDown(self):
+        self.browser.close()
     
     def authenticate(self):
         authenticate_webdriver(
@@ -41,7 +56,7 @@ class TestPublishScoreSet(LiveServerTestCase):
         messages = self.browser.find_elements_by_class_name('alert-danger')
         self.assertEqual(len(messages), 1)
         self.assertIn(
-            'being processed cannot be edited.',
+            'being processed and cannot be edited.',
             messages[0].text
         )
 
@@ -98,7 +113,8 @@ class TestPublishScoreSet(LiveServerTestCase):
         
         # Try publishing
         submit = self.browser.find_element_by_id('publish-btn')
-        submit.click()
+        self.perform_action(submit, 'click')
+        
         self.browser.switch_to.alert.accept()
         self.browser.get(
             self.live_server_url + '/profile/'

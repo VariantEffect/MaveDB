@@ -32,12 +32,12 @@ class TestSearchView(TestCase):
         response = search_view(request)
 
         self.assertContains(response, self.exp1.urn + ' [Private]')
-        self.assertNotContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertNotContains(response, self.exp2.urn + '/')
+        self.assertNotContains(response, self.exp3.urn + '/')
 
         self.assertContains(response, self.scs1.urn + ' [Private]')
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertNotContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')
 
     def test_can_search_by_user_AND_dataset_fields(self):
         user = UserFactory()
@@ -60,13 +60,13 @@ class TestSearchView(TestCase):
         request.user = user
 
         response = search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertNotContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertNotContains(response, self.exp2.urn + '/')
+        self.assertNotContains(response, self.exp3.urn + '/')
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertContains(response, self.scs1.urn + '/')
+        self.assertNotContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')
 
     def test_search_all_searches_all_fields_using_OR(self):
         self.scs1.publish()
@@ -86,42 +86,46 @@ class TestSearchView(TestCase):
                 user.username, self.exp2.title))
 
         response = search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertContains(response, self.exp2.urn + '/')
+        self.assertNotContains(response, self.exp3.urn + '/')
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertContains(response, self.scs1.urn + '/')
+        self.assertContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')
 
-    def test_can_search_comma_sep_input(self):
+    def test_comma_sep_input_is_split(self):
         self.scs1.publish()
         self.scs2.publish()
         self.scs3.publish()
-
-        self.exp1.title = "foo bar"
-        self.exp2.title = 'Hello,World'
-        self.scs1.title = 'foo bar'
+        
+        self.exp1.title = "reallyreallylongword"
+        self.exp2.title = "reallyreallylongword,anotherreallyreallylongword"
         self.exp3.title = ""
+    
+        self.scs1.title = 'anotherreallyreallylongword'
+        self.scs2.title = ""
+        self.scs3.title = ""
+        
         self.scs1.save()
+        self.scs2.save()
+        self.scs3.save()
         self.exp1.save()
         self.exp2.save()
         self.exp3.save()
 
         request = self.factory.get(
-            self.path + '/?search={}%2C{}'.format(
-                self.exp1.title,
-                self.exp2.title)
+            self.path + '/?search={}'.format(self.exp2.title)
         )
 
         response = search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertContains(response, self.exp2.urn + '/')
+        self.assertNotContains(response, self.exp3.urn + '/')
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertContains(response, self.scs1.urn + '/')
+        self.assertNotContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')
 
     def test_double_quoted_comma_sep_not_split_input(self):
         self.scs1.publish()
@@ -131,9 +135,17 @@ class TestSearchView(TestCase):
         self.exp1.title = "foo bar"
         self.exp2.title = '"Hello,world"'
         self.scs1.title = 'foo bar'
+        
+        self.scs1.title = 'foo bar'
+        self.scs2.title = "Hello"
+        self.scs3.title = "World"
+        
         self.scs1.save()
+        self.scs2.save()
+        self.scs3.save()
         self.exp1.save()
         self.exp2.save()
+        self.exp3.save()
 
         request = self.factory.get(
             self.path + '?search={}%2C{}'.format(
@@ -142,13 +154,13 @@ class TestSearchView(TestCase):
         )
 
         response = search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertContains(response, self.exp2.urn + '/')
+        self.assertNotContains(response, self.exp3.urn + '/')
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertContains(response, self.scs1.urn + '/')
+        self.assertNotContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')
 
     def test_can_search_empty(self):
         self.scs1.publish()
@@ -157,13 +169,13 @@ class TestSearchView(TestCase):
 
         request = self.factory.get(self.path + '/?search=')
         response = search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertContains(response, self.exp2.urn)
-        self.assertContains(response, self.exp3.urn)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertContains(response, self.exp2.urn + '/')
+        self.assertContains(response, self.exp3.urn + '/')
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertContains(response, self.scs2.urn)
-        self.assertContains(response, self.scs3.urn)
+        self.assertContains(response, self.scs1.urn + '/')
+        self.assertContains(response, self.scs2.urn + '/')
+        self.assertContains(response, self.scs3.urn + '/')
 
     def test_can_search_by_licence(self):
         self.scs1.publish()
@@ -171,8 +183,8 @@ class TestSearchView(TestCase):
         self.scs3.publish()
 
         self.scs1.licence = Licence.get_cc0()
-        self.scs2.licence = Licence.get_cc4()
-        self.scs3.licence = Licence.get_cc4()
+        self.scs2.licence = Licence.get_cc_by_nc_sa()
+        self.scs3.licence = Licence.get_cc_by_nc_sa()
         self.scs1.save()
         self.scs2.save()
         self.scs3.save()
@@ -181,10 +193,10 @@ class TestSearchView(TestCase):
             Licence.get_cc0().long_name
         ))
         response = search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertNotContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertNotContains(response, self.exp2.urn + '/')
+        self.assertNotContains(response, self.exp3.urn + '/')
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertContains(response, self.scs1.urn + '/')
+        self.assertNotContains(response, self.scs2.urn + '/')
+        self.assertNotContains(response, self.scs3.urn + '/')

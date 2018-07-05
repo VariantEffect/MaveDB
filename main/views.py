@@ -1,6 +1,6 @@
 from collections import Counter
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib import messages
 
 from dataset.models.scoreset import ScoreSet
@@ -66,7 +66,7 @@ def help_contact_view(request):
                 "Thank you for contacting us. We've sent a confirmation email "
                 "to your nominated contact address."
             )
-            contact_form = ContactForm()  # Resets the contact form.
+            return redirect('main:contact')
 
     return render(request, 'main/help_contact.html', {
         "site_information": SiteInformation.get_instance(),
@@ -80,17 +80,17 @@ def terms_privacy_view(request):
     })
 
 
-def handler404(request, exception=None, template_name='main/404.html'):
-    response = render(
-        request, template_name, context={})
-    response.status_code = 404
-    return response
-
-
 def handler403(request, exception=None, template_name='main/403.html'):
     response = render(
         request, template_name, context={})
     response.status_code = 403
+    return response
+
+
+def handler404(request, exception=None, template_name='main/404.html'):
+    response = render(
+        request, template_name, context={})
+    response.status_code = 404
     return response
 
 

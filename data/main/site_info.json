@@ -1,15 +1,10 @@
 {
     "branch": "",
-    "creation_date": "2018-05-29",
-    "email": "",
-    "id": 1,
     "md_about": "",
     "md_citation": "",
-    "md_documentation": "",
+    "md_documentation": "userdocs.md",
     "md_privacy": "",
     "md_terms": "",
     "md_usage_guide": "",
-    "modification_date": "2018-05-29",
-    "version": "",
-    "version_date": "2018-05-29"
+    "version": ""
 }

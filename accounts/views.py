@@ -176,8 +176,14 @@ def manage_instance(request, urn):
             instance.save()
             messages.success(
                 request, "Management updated for {}.".format(instance.urn))
-            return HttpResponseRedirect(
-                reverse_lazy("accounts:manage_instance", args=(instance.urn,)))
+            
+            if request.user in instance.administrators():
+                return HttpResponseRedirect(
+                    reverse_lazy(
+                        "accounts:manage_instance", args=(instance.urn,)))
+            else:
+                return HttpResponseRedirect(reverse_lazy("accounts:profile"))
+                
         else:
             messages.error(
                 request,

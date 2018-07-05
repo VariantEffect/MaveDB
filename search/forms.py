@@ -1,8 +1,10 @@
 import json
+
 import django.forms as forms
 
 from core.utilities import is_null
-
+from dataset.mixins import ExperimentFilterMixin, ScoreSetFilterMixin
+from genome.models import ReferenceGenome, TargetGene
 from main.models import Licence
 from metadata.models import (
     Keyword,
@@ -14,11 +16,6 @@ from metadata.models import (
     DoiIdentifier,
     PubmedIdentifier,
 )
-
-from genome.models import ReferenceGenome, TargetGene
-
-from dataset.mixins import ExperimentFilterMixin, ScoreSetFilterMixin
-
 
 experiment_filter = ExperimentFilterMixin()
 scoreset_filter = ScoreSetFilterMixin()
