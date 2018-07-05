@@ -133,4 +133,4 @@ license is compatible with commercial relicensing by the data owners.
 # API
 
 MaveDB implements a GET API that can access all fields of published datasets.
-To explore the API, visit https://www.mavedb.org/api/
+To explore the API, visit [https://www.mavedb.org/api/](https://www.mavedb.org/api/)
