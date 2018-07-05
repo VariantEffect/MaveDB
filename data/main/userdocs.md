@@ -106,11 +106,13 @@ fields, such as abstract and methods, after publication.
 
 ## Contributor types
 
-Contributors are tracked and authenticated using ORCID. There are two access 
-levels for each dataset, view and admin. A contributor with view access can 
-access the entry if it is private. A contributor with admin access can fully 
-edit the entry (including adding and removing contributors) and publish it. 
-Each entry must have at least one admin user at all times.
+Contributors are tracked and authenticated using ORCID. There are three roles 
+for each dataset, Viewer, Editor and Administrator. A Viewer can access the 
+entry if it is private. An Editor access can change any of the data or metadata 
+with the exception of adding or removing contributors. An Administrator has all 
+the Editor's permissions and also the ability to change the contributor list 
+and publish Score Sets. Each entry must have at least one admin user at all 
+times.
 
 Both types of contributors appear in the contributor list for a given dataset 
 and they are not distinguished visually.
