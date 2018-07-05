@@ -1,0 +1,28 @@
+{
+  "licences": [
+    {
+      "short_name": "CC0",
+      "long_name": "CC0 (Public domain)",
+      "legal_code": "CC0.txt",
+      "logo": "cc-zero.svg",
+      "link": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "version": "1.0"
+    },
+    {
+      "short_name": "CC BY-NC-SA 4.0",
+      "long_name": "CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
+      "legal_code": "CC_BY-NC-SA_4.0.txt",
+      "logo": "by-nc-sa.svg",
+      "link": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "version": "4.0"
+    },
+    {
+      "short_name": "CC BY 4.0",
+      "long_name": "CC BY 4.0 (Attribution)",
+      "legal_code": "CC_BY_4.0.txt",
+      "logo": "by.svg",
+      "link": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "4.0"
+    }
+  ]
+}
