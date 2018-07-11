@@ -45,7 +45,7 @@ class ScoreSetDetailView(DatasetModelView):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
         variants = instance.children.order_by('{}'.format(
-            instance.primary_hgvs_column))[:100]
+            instance.primary_hgvs_column))[:10]
         context["variants"] = variants
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
