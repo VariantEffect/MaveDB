@@ -3,7 +3,7 @@ from .base import *
 
 DEBUG = False
 PRODUCTION = True
-ADMIN_ENABLED = DEBUG
+ADMIN_ENABLED = not DEBUG
 
 USE_SOCIAL_AUTH = True
 
@@ -11,8 +11,9 @@ os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org',]
 
-# Email these users whenever an exception is raised causing a 500 error. This will
-# email the stack trace.
+
+# Email these users whenever an exception is raised causing a 500 error.
+# This will email the stack trace.
 ADMINS = [
     ('Alan', 'alan.rubin@wehi.edu.au'),
     ('Daniel', 'esposito.d@wehi.edu.au')
