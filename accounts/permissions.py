@@ -386,7 +386,6 @@ def update_admin_list_for_instance(users, instance):
     for user in users:
         if user not in instance.administrators():
             assign_user_as_instance_admin(user, instance)
-    assign_superusers_as_admin(instance)
 
 
 def update_editor_list_for_instance(users, instance):
