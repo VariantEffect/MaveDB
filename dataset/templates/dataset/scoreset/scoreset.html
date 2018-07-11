@@ -119,9 +119,9 @@
                 <tr>
                   {% for data in var.score_data %}
                     {% if forloop.counter0 >= 2 %}
-                      <td> {{ data|stringformat:"#.3g" }} </td>
+                      <td> {{ data|stringformat:"#.3g"|default:'-' }} </td>
                     {% else %}
-                      <td> {{ data|default:'None' }} </td>
+                      <td> {{ data|default:'-' }} </td>
                     {% endif %}
                   {% endfor %}
                 </tr>
@@ -160,9 +160,9 @@
                 <tr>
                   {% for data in var.count_data %}
                     {% if forloop.counter0 >= 2 %}
-                      <td> {{ data|stringformat:"6g" }} </td>
+                      <td> {{ data|stringformat:"6g"|default:'-' }} </td>
                     {% else %}
-                      <td> {{ data|default:'None' }} </td>
+                      <td> {{ data|default:'-' }} </td>
                     {% endif %}
                   {% endfor %}
                 </tr>
