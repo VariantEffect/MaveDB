@@ -38,3 +38,6 @@ class ScoreSetVersion(VersionAdmin):
     pass
 
 
+admin.site.register(models.base.PublicDatasetCounter)
+
+
