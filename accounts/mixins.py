@@ -207,19 +207,16 @@ class UserFilterMixin(FilterMixin):
         'first_name': 'first_name',
         'last_name': 'last_name',
     """
-    @staticmethod
-    def search_field_to_model_field():
-        return {
-            'username': 'username',
-            'first_name': 'first_name',
-            'last_name': 'last_name',
-        }
+    # Get parameter names
+    USERNAME = 'username'
+    FIRST_NAME = 'first_name'
+    LAST_NAME = 'last_name'
 
     def search_field_to_function(self):
         return {
-            'username': self.filter_username,
-            'first_name': self.filter_first_name,
-            'last_name': self.filter_last_name,
+            self.USERNAME: self.filter_username,
+            self.FIRST_NAME: self.filter_first_name,
+            self.LAST_NAME: self.filter_last_name,
         }
 
     def filter_username(self, value):

@@ -35,17 +35,28 @@ class DatasetModelFilterMixin(FilterMixin):
 
     Expects the above :class:`DatasetModel` field names to work correctly.
     """
+    # Get parameter names
+    URN = 'urn'
+    ABSTRACT = 'abstract'
+    METHOD = 'method'
+    TITLE = 'title'
+    DESCRIPTION = 'description'
+    KEYWORDS = 'keywords'
+    SRA = 'sra'
+    DOI = 'doi'
+    PUBMED = 'pubmed'
+    
     def search_field_to_function(self):
         return {
-            'abstract': self.filter_abstract,
-            'method': self.filter_method,
-            'title': self.filter_title,
-            'description': self.filter_description,
-            'keywords': self.filter_keywords,
-            'sra': self.filter_sra,
-            'doi': self.filter_doi,
-            'pubmed': self.filter_pubmed,
-            'urn': self.filter_urn,
+            self.ABSTRACT: self.filter_abstract,
+            self.METHOD: self.filter_method,
+            self.TITLE: self.filter_title,
+            self.DESCRIPTION: self.filter_description,
+            self.KEYWORDS: self.filter_keywords,
+            self.SRA: self.filter_sra,
+            self.DOI: self.filter_doi,
+            self.PUBMED: self.filter_pubmed,
+            self.URN: self.filter_urn,
         }
 
     def filter_abstract(self, value):
@@ -123,18 +134,27 @@ class ExperimentFilterMixin(DatasetModelFilterMixin):
 
     Expects the above :class:`Experiment` field names to work correctly.
     """
+    # Get parameter names
+    TARGET = 'target'
+    SPECIES = 'species'
+    UNIPROT = 'uniprot'
+    ENSEMBL = 'ensembl'
+    REFSEQ = 'refseq'
+    ASSEMBLY = 'assembly'
+    GENOME = 'genome'
+    LICENCE = 'licence'
 
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
-            'species': self.filter_target_species,
-            'target': self.filter_target,
-            'genome': self.filter_reference_genome_name,
-            'assembly': self.filter_reference_genome_id,
-            'uniprot': self.filter_target_uniprot,
-            'ensembl': self.filter_target_ensembl,
-            'refseq': self.filter_target_refseq,
-            'licence': self.filter_licence,
+            self.SPECIES: self.filter_target_species,
+            self.TARGET: self.filter_target,
+            self.GENOME: self.filter_reference_genome_name,
+            self.ASSEMBLY: self.filter_reference_genome_id,
+            self.UNIPROT: self.filter_target_uniprot,
+            self.ENSEMBL: self.filter_target_ensembl,
+            self.REFSEQ: self.filter_target_refseq,
+            self.LICENCE: self.filter_licence,
         })
         return dict_
 
@@ -198,19 +218,29 @@ class ScoreSetFilterMixin(DatasetModelFilterMixin):
 
     Expects the above :class:`ScoreSet` field names to work correctly.
     """
+    # Get parameter names
+    TARGET = 'target'
+    SPECIES = 'species'
+    SEQUENCE = 'sequence'
+    ASSEMBLY = 'assembly'
+    GENOME = 'genome'
+    UNIPROT = 'uniprot'
+    ENSEMBL = 'ensembl'
+    REFSEQ = 'refseq'
+    LICENCE = 'licence'
 
     def search_field_to_function(self):
         dict_ = super().search_field_to_function()
         dict_.update({
-            'species': self.filter_species,
-            'target': self.filter_target,
-            'genome': self.filter_reference_genome_name,
-            'assembly': self.filter_reference_genome_id,
-            'uniprot': self.filter_target_uniprot,
-            'ensembl': self.filter_target_ensembl,
-            'refseq': self.filter_target_refseq,
-            'sequence': self.filter_target_sequence,
-            'licence': self.filter_licence,
+            self.SPECIES: self.filter_species,
+            self.TARGET: self.filter_target,
+            self.GENOME: self.filter_reference_genome_name,
+            self.ASSEMBLY: self.filter_reference_genome_id,
+            self.UNIPROT: self.filter_target_uniprot,
+            self.ENSEMBL: self.filter_target_ensembl,
+            self.REFSEQ: self.filter_target_refseq,
+            self.SEQUENCE: self.filter_target_sequence,
+            self.LICENCE: self.filter_licence,
         })
         return dict_
     
