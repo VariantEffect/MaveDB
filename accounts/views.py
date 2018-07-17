@@ -4,8 +4,10 @@ import django.contrib.auth.views as auth_views
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
+from django.views.generic import DetailView
 from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.urlresolvers import reverse_lazy
 from django.http import Http404, HttpResponseRedirect
@@ -13,6 +15,8 @@ from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
 from accounts.utilities import delete, publish
+from urn.models import get_model_by_urn
+from dataset.mixins import DatasetPermissionMixin
 from urn.models import get_model_by_urn
 
 from .forms import (
@@ -180,7 +184,7 @@ def manage_instance(request, urn):
             if request.user in instance.administrators():
                 return HttpResponseRedirect(
                     reverse_lazy(
-                        "accounts:manage_instance", args=(instance.urn,)))
+                        "accounts:contributor_summary", args=(instance.urn,)))
             else:
                 return HttpResponseRedirect(reverse_lazy("accounts:profile"))
                 
@@ -200,6 +204,34 @@ def manage_instance(request, urn):
         context["viewer_select_form"] = post_form
 
     return render(request, "accounts/profile_manage.html", context)
+
+
+class ContributorSummary(LoginRequiredMixin, DatasetPermissionMixin, DetailView):
+    context_object_name = 'instance'
+    slug_field = 'urn'
+    slug_url_kwarg = 'urn'
+    permission_required = 'dataset.can_view'
+    template_name = 'accounts/contributor_summary.html'
+    queryset = ScoreSet.objects.all()
+    model = ScoreSet
+    
+    def dispatch(self, request, *args, **kwargs):
+        urn = self.kwargs.get('urn', '')
+        try:
+            model = get_model_by_urn(urn)
+        except ObjectDoesNotExist:
+            raise Http404()
+        if isinstance(model, Experiment):
+            self.queryset = Experiment.objects.all()
+            self.model = Experiment
+        elif isinstance(model, ExperimentSet):
+            self.queryset = ExperimentSet.objects.all()
+            self.model = ExperimentSet
+        elif isinstance(model, ScoreSet):
+            pass
+        else:
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
 
 
 # Registration views [DEBUG MODE ONLY]
