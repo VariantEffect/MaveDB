@@ -105,8 +105,8 @@
       {% if not instance.has_score_dataset %}
         <p class="text-muted"> No score data available.</p>
       {% else %}
-        <div id="scores-table-container" class="container-fluid">
-          <table id="scores-table" class="styled-table table table-hover">
+        <div id="scores-table-container" class="table-responsive">
+          <table id="scores-table" class="styled-table table table-hover display" style="width: 100%">
             <thead>
               <tr>
                 {% for column in score_columns %}
@@ -114,19 +114,6 @@
                 {% endfor %}
               </tr>
             </thead>
-            <tbody>
-              {% for var in variants %}
-                <tr>
-                  {% for data in var.score_data %}
-                    {% if forloop.counter0 >= 2 %}
-                      <td> {{ data|stringformat:"#.3g"|default:'-' }} </td>
-                    {% else %}
-                      <td> {{ data|default:'-' }} </td>
-                    {% endif %}
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            </tbody>
           </table>
         </div>
       {% endif %}				
@@ -146,8 +133,8 @@
       {% if not instance.has_count_dataset %}
         <p class="text-muted"> No count data available.</p>
       {% else %}
-        <div id="counts-table-container" class="container-fluid">
-          <table id="counts-table" class="styled-table table table-hover">
+        <div id="counts-table-container" class="table-responsive">
+          <table id="counts-table" class="styled-table table table-hover display" style="width: 100%">
             <thead>
               <tr>
                 {% for column in count_columns %}
@@ -155,23 +142,60 @@
                 {% endfor %}
               </tr>
             </thead>
-            <tbody>
-              {% for var in variants %}
-                <tr>
-                  {% for data in var.count_data %}
-                    {% if forloop.counter0 >= 2 %}
-                      <td> {{ data|stringformat:"6g"|default:'-' }} </td>
-                    {% else %}
-                      <td> {{ data|default:'-' }} </td>
-                    {% endif %}
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            </tbody>
           </table>
         </div>
       {% endif %}
     </div>
   </div> <!-- End count data tab -->
 </div> <!-- End tab/pills content -->
+{% endblock %}
+
+{% block extra_scripts %}
+  <script type="text/javascript">
+    $(window).ready( function (){
+      $.get(window.location.href + '?type=scores', function(response, status){
+        $("#scores-table").DataTable({
+          data: response.data,
+          deferRender: true,
+          dom: "ftr",
+          searching: true,
+          ordering: true,
+          columnDefs: [
+            {% for column in score_columns %}
+              {className: "{{ column }}", targets: [{{ forloop.counter0 }}] },
+            {% endfor %}
+          ]
+        });
+      }).done(function() {
+        console.log('Success');
+      }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.log(jqXHR.status);
+        console.log(textStatus);
+        console.log(errorThrown);
+      });
+
+      $.get(window.location.href + '?type=counts', function(response, status){
+        $("#counts-table").DataTable({
+          data: response.data,
+          deferRender: true,
+          dom: "ftr",
+          searching: true,
+          ordering: true,
+          columnDefs: [
+            {% for column in count_columns %}
+              {className: "{{ column }}", targets: [{{ forloop.counter0 }}] },
+            {% endfor %}
+          ]
+        });
+      }).done(function() {
+        console.log('Success');
+      }).fail(function (jqXHR, textStatus, errorThrown) {
+        console.log(jqXHR.status);
+        console.log(textStatus);
+        console.log(errorThrown);
+      });
+    });
+
+
+  </script>
 {% endblock %}
