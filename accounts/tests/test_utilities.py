@@ -35,6 +35,10 @@ class TestDelete(TestCase, TestMessageMixin):
         instance = ScoreSetFactory()
         instance.add_viewers(self.user)
         self.assertFalse(delete(instance.urn, self.create_request()))
+        
+        instance = ScoreSetFactory()
+        instance.add_editors(self.user)
+        self.assertFalse(delete(instance.urn, self.create_request()))
     
     def test_cannot_delete_experiment_if_has_children(self):
         instance = ScoreSetFactory()  # type: dataset.models.scoreset.ScoreSet
@@ -108,6 +112,10 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
 
+        scoreset = self.create_scoreset()
+        scoreset.add_editors(self.user)
+        self.assertFalse(publish(scoreset.urn, self.create_request()))
+        
         scoreset = self.create_scoreset()
         scoreset.add_viewers(self.user)
         self.assertFalse(publish(scoreset.urn, self.create_request()))

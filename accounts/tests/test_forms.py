@@ -5,6 +5,7 @@ from dataset.factories import ExperimentFactory
 
 from ..factories import UserFactory
 from ..forms import SelectUsersForm, UserSearchForm
+from ..mixins import UserFilterMixin
 from ..permissions import (
     GroupTypes,
     user_is_anonymous,
@@ -183,7 +184,7 @@ class TestUserSearchForm(TestCase):
         u1 = UserFactory(first_name='Bob')
         u2 = UserFactory(first_name='Alice')
 
-        dict_ = {'first_name': 'bob'}
+        dict_ = {UserFilterMixin.FIRST_NAME: 'bob'}
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
         q = form.make_filters(join=True)
@@ -197,7 +198,7 @@ class TestUserSearchForm(TestCase):
         u1 = UserFactory(last_name='Bob')
         u2 = UserFactory(last_name='Alice')
 
-        dict_ = {'last_name': 'bob'}
+        dict_ = {UserFilterMixin.LAST_NAME: 'bob'}
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
         q = form.make_filters(join=True)
@@ -211,7 +212,7 @@ class TestUserSearchForm(TestCase):
         u1 = UserFactory(username='Bob')
         u2 = UserFactory(username='Alice')
 
-        dict_ = {'username': 'bob'}
+        dict_ = {UserFilterMixin.USERNAME: 'bob'}
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
         q = form.make_filters(join=True)
@@ -226,7 +227,10 @@ class TestUserSearchForm(TestCase):
         u2 = UserFactory(first_name='Alice')
         u3 = UserFactory(first_name='Bob')
 
-        dict_ = {'first_name': 'Alice', 'username': 'bob'}
+        dict_ = {
+            UserFilterMixin.FIRST_NAME: 'Alice',
+            UserFilterMixin.USERNAME: 'bob'
+        }
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
         q = form.make_filters(join=True)

@@ -12,7 +12,8 @@ from dataset import models as dataset_models
 from dataset.tasks import publish_scoreset
 from dataset.models.scoreset import ScoreSet
 from dataset.factories import (
-    ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory
+    ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory,
+    ExperimentFactory
 )
 from variant.factories import VariantFactory
 
@@ -31,7 +32,7 @@ from ..permissions import (
     user_is_editor_for_instance,
 )
 
-from ..views import manage_instance, profile_view, profile_settings
+from ..views import manage_instance, profile_view, profile_settings, ContributorSummary
 
 
 class TestProfileSettings(TestCase, TestMessageMixin):
@@ -715,3 +716,59 @@ class TestPublish(TestCase, TestMessageMixin):
         delete_instance(self.scoreset)
         publish_scoreset.apply(**publish_mock.call_args[1])
         self.assertEqual(FailedTask.objects.count(), 1)
+        
+        
+class TestContributorSummaryView(TestCase, TestMessageMixin):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.admin = UserFactory(username="adminman")
+        self.scoreset = ScoreSetFactory()
+        self.experiment = ExperimentFactory()
+        self.experimentset = ExperimentSetFactory()
+        
+    def test_404_cannot_find_urn(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        with self.assertRaises(Http404):
+            ContributorSummary.as_view()(request, urn='urn:maved:00000001-a-1')
+        
+    def test_permission_error_no_view_permissions(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        with self.assertRaises(PermissionDenied):
+            ContributorSummary.as_view()(request, urn=self.scoreset.urn)
+        
+    def test_correctly_sets_model_and_qs_scoreset_urn(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        self.scoreset.add_administrators(self.admin)
+        response = ContributorSummary.as_view()(request, urn=self.scoreset.urn)
+        self.assertContains(response, self.admin.profile.get_display_name())
+        
+    def test_correctly_sets_model_and_qs_experiment_urn(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        self.experiment.add_administrators(self.admin)
+        response = ContributorSummary.as_view()(request, urn=self.experiment.urn)
+        self.assertContains(response, self.admin.profile.get_display_name())
+        
+    def test_correctly_sets_model_and_qs_experimentset_urn(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        self.experimentset.add_administrators(self.admin)
+        response = ContributorSummary.as_view()(request, urn=self.experimentset.urn)
+        self.assertContains(response, self.admin.profile.get_display_name())
+        
+    def test_edit_button_visible_for_admins(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        self.scoreset.add_administrators(self.admin)
+        response = ContributorSummary.as_view()(request, urn=self.scoreset.urn)
+        self.assertContains(response, '>Edit<')
+        
+    def test_edit_button_hidden_for_non_admins(self):
+        request = self.create_request(method='get', path='/',)
+        request.user = self.admin
+        self.scoreset.add_editors(self.admin)
+        response = ContributorSummary.as_view()(request, urn=self.scoreset.urn)
+        self.assertNotContains(response, '>Edit<')
