@@ -1,0 +1,52 @@
+{% extends "accounts/profile_base.html" %}
+{% load static %}
+
+{% block profile_body %}
+  <div class="container" style="min-height: 55vh">
+    <h2>
+      Management summary
+      <a><i class="icon fas fa-users-cog pl-1" style="font-size: 36px;"></i></a>
+    </h2>
+    <hr>
+
+    <h4>Administrators</h4>
+    {% if instance.administrators.count %}
+      <ul>
+        {% for admin in instance.administrators.all %}
+          <li>
+            {{ admin.profile.get_display_name_hyperlink }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted pl-4">There are no administrators</p>
+    {% endif %}
+
+    <h4>Editors</h4>
+    {% if instance.editors.count %}
+      <ul>
+        {% for editor in instance.editors.all %}
+          <li>{{ editor.profile.get_display_name_hyperlink }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted pl-4">There are no editors</p>
+    {% endif %}
+
+    <h4>Viewers</h4>
+    {% if instance.viewers.count %}
+      <ul>
+        {% for viewer in instance.viewers.all %}
+          <li>{{ viewer.profile.get_display_name_hyperlink }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted pl-4">There are no viewers</p>
+    {% endif %}
+
+    <hr>
+    {% if request.user in instance.administrators.all %}
+      <a class="btn btn-outline-dark white-button" href="{% url 'accounts:manage_instance' instance.urn %}">Edit</a>
+    {% endif %}
+    <a class="btn btn-outline-dark white-button" href="{% url 'accounts:profile' %}">Return</a>
+{% endblock profile_body %}
