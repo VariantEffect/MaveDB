@@ -111,6 +111,10 @@ ul {
     max-width: 500px;
 }
 
+code {
+  color: #987cb8;
+}
+
 /* Tables
 ---------------------------------------------------------------------------  */
 table td {
@@ -377,6 +381,7 @@ span.select2.select2-container.select2-container--default {
 
 .wild-type-sequence {
     word-wrap: break-word;
+    hyphens: none;
 }
 
 .urn-title, .urn-detail {
