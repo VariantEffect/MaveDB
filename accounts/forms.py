@@ -39,7 +39,7 @@ class UserSearchForm(forms.Form):
     """Search by text fields and keywords."""
     def __init__(self, *args, **kwargs):
         super(UserSearchForm, self).__init__(*args, **kwargs)
-        self.fields['username'] = forms.CharField(
+        self.fields[user_filter.USERNAME] = forms.CharField(
             max_length=None, label="ORCID", required=False,
             initial=None, empty_value="",
             widget=forms.SelectMultiple(
@@ -51,7 +51,7 @@ class UserSearchForm(forms.Form):
                 ]))
             ),
         )
-        self.fields['first_name'] = forms.CharField(
+        self.fields[user_filter.FIRST_NAME] = forms.CharField(
             max_length=None, label="First name", required=False,
             initial=None, empty_value="",
             widget=forms.SelectMultiple(
@@ -63,7 +63,7 @@ class UserSearchForm(forms.Form):
                 ]))
             ),
         )
-        self.fields['last_name'] = forms.CharField(
+        self.fields[user_filter.LAST_NAME] = forms.CharField(
             max_length=None, label="Last name", required=False,
             initial=None, empty_value="",
             widget=forms.SelectMultiple(
@@ -77,26 +77,26 @@ class UserSearchForm(forms.Form):
         )
 
     def clean_first_name(self):
-        field_name = 'first_name'
+        field_name = user_filter.FIRST_NAME
         instances = parse_char_list(self.cleaned_data.get(field_name, []))
         return list(set([i for i in instances if not is_null(i)]))
 
     def clean_last_name(self):
-        field_name = 'last_name'
+        field_name = user_filter.LAST_NAME
         instances = parse_char_list(self.cleaned_data.get(field_name, []))
         return list(set([i for i in instances if not is_null(i)]))
 
     def clean_username(self):
-        field_name = 'username'
+        field_name = user_filter.USERNAME
         instances = parse_char_list(self.cleaned_data.get(field_name, []))
         return list(set([i for i in instances if not is_null(i)]))
 
     def make_filters(self, join=True):
         data = self.cleaned_data
         search_dict = {
-            'first_name': data.get('first_name', ""),
-            'last_name': data.get('last_name', ""),
-            'username': data.get('username', ""),
+            user_filter.FIRST_NAME: data.get(user_filter.FIRST_NAME, ""),
+            user_filter.LAST_NAME: data.get(user_filter.LAST_NAME, ""),
+            user_filter.USERNAME: data.get(user_filter.USERNAME, ""),
         }
         join_func = None
         if join:

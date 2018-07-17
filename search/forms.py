@@ -3,7 +3,9 @@ import json
 import django.forms as forms
 
 from core.utilities import is_null
-from dataset.mixins import ExperimentFilterMixin, ScoreSetFilterMixin
+from dataset.mixins import (
+    ExperimentFilterMixin, ScoreSetFilterMixin, DatasetModelFilterMixin
+)
 from genome.models import ReferenceGenome, TargetGene
 from main.models import Licence
 from metadata.models import (
@@ -113,19 +115,24 @@ class MetadataSearchForm(forms.Form, FormFilterMixin):
         return title
 
     def clean_keywords(self):
-        field_name = 'keywords'
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
+        instances = parse_char_list(self.cleaned_data.get('keywords', []))
         instances = list(set([i for i in instances if not is_null(i)]))
         return instances
 
     def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
-        abstract = {'abstract': data.get('method_abstract', "")}
-        method = {'method': data.get('method_abstract', "")}
-        title = {'title': data.get('title', "")}
-        description = {'description': data.get('description', "")}
-        keywords = {'keywords': data.get('keywords', [])}
-        licence = {'licence': data.get('licence', "")}
+        abstract = {
+            DatasetModelFilterMixin.ABSTRACT: data.get('method_abstract', "")}
+        method = {
+            DatasetModelFilterMixin.METHOD: data.get('method_abstract', "")}
+        title = {
+            DatasetModelFilterMixin.TITLE: data.get('title', "")}
+        description = {
+            DatasetModelFilterMixin.DESCRIPTION: data.get('description', "")}
+        keywords = {
+            DatasetModelFilterMixin.KEYWORDS: data.get('keywords', [])}
+        licence = {
+            ScoreSetFilterMixin.LICENCE: data.get('licence', "")}
 
         abstract_q = filter_.search_all(abstract, join_func=None)
         method_q = filter_.search_all(method, join_func=None)
@@ -210,9 +217,9 @@ class MetaIdentifiersSearchForm(forms.Form, FormFilterMixin):
     def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         search_dict = {
-            'pubmed': data.get('pubmed_ids', []),
-            'sra': data.get('sra_ids', []),
-            'doi': data.get('doi_ids', []),
+            DatasetModelFilterMixin.PUBMED: data.get('pubmed_ids', []),
+            DatasetModelFilterMixin.SRA: data.get('sra_ids', []),
+            DatasetModelFilterMixin.DOI: data.get('doi_ids', []),
         }
         join_func = None
         if join:
@@ -302,10 +309,10 @@ class TargetIdentifierSearchForm(forms.Form, FormFilterMixin):
     def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         search_dict = {
-            'uniprot': data.get('uniprot', []),
-            'refseq': data.get('refseq', []),
-            'ensembl': data.get('ensembl', []),
-            'target': data.get('target', []),
+            ScoreSetFilterMixin.UNIPROT: data.get('uniprot', []),
+            ScoreSetFilterMixin.REFSEQ: data.get('refseq', []),
+            ScoreSetFilterMixin.ENSEMBL: data.get('ensembl', []),
+            ScoreSetFilterMixin.TARGET: data.get('target', []),
         }
         join_func = None
         if join:
@@ -375,9 +382,9 @@ class GenomeSearchForm(forms.Form, FormFilterMixin):
     def make_filters(self, join=True, filter_=experiment_filter):
         data = self.cleaned_data
         search_dict = {
-            'species': data.get('species', []),
-            'genome': data.get('genome', []),
-            'assembly': data.get('assembly', []),
+            ScoreSetFilterMixin.SPECIES: data.get('species', []),
+            ScoreSetFilterMixin.GENOME: data.get('genome', []),
+            ScoreSetFilterMixin.ASSEMBLY: data.get('assembly', []),
         }
         join_func = None
         if join:
