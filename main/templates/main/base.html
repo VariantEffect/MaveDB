@@ -277,5 +277,7 @@
     <script src="{% static 'core/fontawesome/fontawesome_5.1.0.min.js' %}" type="text/javascript"></script>
     <script src="{% static 'core/mavedb/init_tocbot.js' %}" type="text/javascript"></script>
     <script src="{% static 'core/mavedb/base.js' %}" type="text/javascript"></script>
+    {% block extra_scripts %}
+    {% endblock %}
   </body>
 </html>

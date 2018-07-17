@@ -1,4 +1,5 @@
 {% extends "main/base.html" %}
+{% load static %}
 {% load dataset_tags %}
 {% load licence_tags %}
 
@@ -50,7 +51,8 @@
           <div class="mavevis-link" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
                title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis.">
             <a class="btn btn-outline-dark white-button" target="_blank" href="http://varianteffect.com/?ssid={{ instance.urn }}">
-              MaveVis <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
+              <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
+              <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
             </a>
           </div>
         {% endif %}
