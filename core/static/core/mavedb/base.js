@@ -13,8 +13,6 @@ $("document").ready(function() {
   });
 
   $('#search-table').DataTable();
-  $('#scores-table').DataTable();
-  $('#counts-table').DataTable();
 
   // Re-add any external_accession, keywords or target organism
   // back to failed form submission
