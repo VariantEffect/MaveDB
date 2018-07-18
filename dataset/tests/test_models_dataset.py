@@ -12,6 +12,8 @@ from dataset import models
 from dataset.factories import ExperimentSetFactory, ScoreSetFactory
 from metadata.factories import KeywordFactory
 
+from ..utilities import publish_dataset
+
 User = get_user_model()
 
 
@@ -33,7 +35,7 @@ class TestDatasetModel(TestCase):
 
     def test_publish_sets_private_to_false_and_sets_publish_date(self):
         instance = ExperimentSetFactory()
-        instance.publish()
+        instance = publish_dataset(instance)
         instance.save()
         self.assertEqual(instance.private, False)
         self.assertEqual(instance.publish_date, datetime.date.today())
@@ -42,7 +44,7 @@ class TestDatasetModel(TestCase):
         instance = ScoreSetFactory()
         old_urn = instance.urn
         self.assertEqual(Group.objects.count(), 9)
-        instance.publish()
+        instance = publish_dataset(instance)
         self.assertEqual(Group.objects.count(), 9)
         self.assertFalse(
             Group.objects.filter(
@@ -52,11 +54,11 @@ class TestDatasetModel(TestCase):
     def test_publish_creates_new_perm_groups(self):
         instance = ScoreSetFactory()
         self.assertEqual(Group.objects.count(), 9)
-        instance.publish()
+        instance = publish_dataset(instance)
         self.assertEqual(Group.objects.count(), 9)
         self.assertTrue(
             Group.objects.filter(
-                name='{}-{}'.format(instance.urn, GroupTypes.ADMIN)).exists()
+                name='{}-{}'.format(instance.pk, GroupTypes.ADMIN)).exists()
         )
 
     def test_publish_reassigns_contributors_to_new_perm_groups(self):
@@ -69,7 +71,7 @@ class TestDatasetModel(TestCase):
         instance.add_editors(editor)
         instance.add_viewers(viewer)
 
-        instance.publish()
+        instance = publish_dataset(instance)
         self.assertListEqual(list(instance.administrators()), [admin])
         self.assertListEqual(list(instance.editors()), [editor])
         self.assertListEqual(list(instance.viewers()), [viewer])

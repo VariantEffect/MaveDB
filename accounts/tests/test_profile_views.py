@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import reverse
 
 from dataset import constants
-from dataset.utilities import delete_instance
+from dataset.utilities import delete_instance, publish_dataset
 from dataset import models as dataset_models
 from dataset.tasks import publish_scoreset
 from dataset.models.scoreset import ScoreSet
@@ -125,10 +125,9 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
     def test_cannot_delete_public_entry(self):
         user = UserFactory()
         instance = ScoreSetFactory()
-        instance.publish()
-        instance.save(save_parents=True)
+        instance = publish_dataset(instance)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
-        assign_user_as_instance_admin(user, instance)
+        instance.add_administrators(user)
         request = self.create_request(
             method='post',
             data={"delete": instance.urn},
@@ -182,7 +181,7 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
     def test_cannot_delete_experimentset_if_it_has_children(self):
         user = UserFactory()
         instance = ScoreSetFactory()
-        instance.publish()
+        instance = publish_dataset(instance)
         assign_user_as_instance_admin(user, instance.experiment.experimentset)
         request = self.create_request(
             method='post',
@@ -199,7 +198,7 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
     def test_cannot_delete_experiment_if_it_has_children(self):
         user = UserFactory()
         instance = ScoreSetFactory()
-        instance.publish()
+        instance = publish_dataset(instance)
         assign_user_as_instance_admin(user, instance.experiment)
         request = self.create_request(
             method='post',
@@ -215,7 +214,7 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
     def test_cannot_delete_entry_being_processed(self):
         user = UserFactory()
         instance = ScoreSetFactory()
-        instance.publish()
+        instance = publish_dataset(instance)
         assign_user_as_instance_admin(user, instance)
         request = self.create_request(
             method='post',

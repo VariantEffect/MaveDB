@@ -13,6 +13,8 @@ from ..validators import (
 
 from variant.factories import VariantFactory
 
+from dataset.utilities import publish_dataset
+
 
 class TestURNValidators(TestCase):
     """
@@ -26,7 +28,7 @@ class TestURNValidators(TestCase):
             scoreset__experiment__experimentset__private=False,
         )
         with self.assertRaises(ValidationError):
-            validate_mavedb_urn_experimentset(variant.urn)
+            validate_mavedb_urn_experimentset('not a urn pattern')
         # Should pass
         validate_mavedb_urn_experimentset(
             variant.scoreset.experiment.experimentset.urn)
@@ -38,7 +40,7 @@ class TestURNValidators(TestCase):
             scoreset__experiment__experimentset__private=False,
         )
         with self.assertRaises(ValidationError):
-            validate_mavedb_urn_experiment(variant.urn)
+            validate_mavedb_urn_experiment('not a urn pattern')
         # Should pass
         validate_mavedb_urn_experiment(variant.scoreset.experiment.urn)
 
@@ -48,7 +50,10 @@ class TestURNValidators(TestCase):
             scoreset__experiment__private=False,
             scoreset__experiment__experimentset__private=False,
         )
-        validate_mavedb_urn_experiment(variant.scoreset.experiment.urn + 'a')
+        scoreset = publish_dataset(variant.scoreset)
+        experiment = scoreset.parent
+        experiment.refresh_from_db()
+        validate_mavedb_urn_experiment(scoreset.experiment.urn + 'a')
 
     def test_validationerror_malformed_scoreset_urn(self):
         variant = VariantFactory(
@@ -57,7 +62,7 @@ class TestURNValidators(TestCase):
             scoreset__experiment__experimentset__private=False,
         )
         with self.assertRaises(ValidationError):
-            validate_mavedb_urn_scoreset(variant.urn)
+            validate_mavedb_urn_scoreset('not a urn pattern')
         # Should pass
         validate_mavedb_urn_scoreset(variant.scoreset.urn)
 

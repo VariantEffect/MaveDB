@@ -30,6 +30,7 @@ from metadata.factories import (
 
 from variant.factories import VariantFactory
 
+from ..utilities import publish_dataset
 import dataset.constants as constants
 from ..tasks import create_variants
 from ..forms.scoreset import ScoreSetForm
@@ -65,7 +66,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
 
     def test_uses_correct_template(self):
         obj = ScoreSetFactory()
-        obj.publish()
+        obj = publish_dataset(obj)
         obj.save()
         response = self.client.get('/scoreset/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template)

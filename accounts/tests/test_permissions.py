@@ -72,15 +72,15 @@ class UtilitiesTest(TransactionTestCase):
 
     def test_can_get_admin_group_name_for_instance(self):
         group_name = get_admin_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, '{}-administrator'.format(self.exps.urn))
+        self.assertEqual(group_name, '{}-administrator'.format(self.exps.pk))
 
     def test_can_get_editor_group_name_for_instance(self):
         group_name = get_editor_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, '{}-editor'.format(self.exps.urn))
+        self.assertEqual(group_name, '{}-editor'.format(self.exps.pk))
 
     def test_can_get_viewer_group_name_for_instance(self):
         group_name = get_viewer_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, '{}-viewer'.format(self.exps.urn))
+        self.assertEqual(group_name, '{}-viewer'.format(self.exps.pk))
 
 
 class GroupConstructionTest(TestCase):
@@ -96,7 +96,7 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-{}'.format(self.instance.urn, GroupTypes.ADMIN)
+            '{}-{}'.format(self.instance.pk, GroupTypes.ADMIN)
         )
 
     def test_can_make_contributor_group_for_instance(self):
@@ -104,7 +104,7 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-{}'.format(self.instance.urn, GroupTypes.EDITOR)
+            '{}-{}'.format(self.instance.pk, GroupTypes.EDITOR)
         )
 
     def test_can_make_viewer_group_for_instance(self):
@@ -112,7 +112,7 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-{}'.format(self.instance.urn, GroupTypes.VIEWER)
+            '{}-{}'.format(self.instance.pk, GroupTypes.VIEWER)
         )
 
     def test_can_make_all_groups_for_instance(self):
@@ -131,7 +131,7 @@ class GroupDeletionTest(TestCase):
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
-            '{}-{}'.format(self.instance.urn, GroupTypes.ADMIN)
+            '{}-{}'.format(self.instance.pk, GroupTypes.ADMIN)
         )
 
     def test_can_delete_contributor_group_for_instance(self):
@@ -140,7 +140,7 @@ class GroupDeletionTest(TestCase):
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
-            '{}-{}'.format(self.instance.urn, GroupTypes.EDITOR)
+            '{}-{}'.format(self.instance.pk, GroupTypes.EDITOR)
         )
 
     def test_can_delete_viewer_group_for_instance(self):
@@ -149,7 +149,7 @@ class GroupDeletionTest(TestCase):
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
-            '{}-{}'.format(self.instance.urn, GroupTypes.VIEWER)
+            '{}-{}'.format(self.instance.pk, GroupTypes.VIEWER)
         )
 
     def test_can_delete_all_groups_for_instance(self):

@@ -17,9 +17,11 @@ from main.models import Licence
 
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
-from ..factories import ExperimentWithScoresetFactory, ScoreSetWithTargetFactory
-from ..forms.scoreset import ScoreSetForm, ScoreSetEditForm
-from ..forms.experiment import ExperimentForm, ExperimentEditForm
+from ..factories import (
+    ExperimentWithScoresetFactory, ScoreSetWithTargetFactory
+)
+from ..forms.scoreset import ScoreSetForm
+from ..forms.experiment import ExperimentForm
 from ..mixins import (
     PrivateDatasetFilterMixin, ScoreSetAjaxMixin, MultiFormMixin,
     DatasetUrnMixin, DatasetPermissionMixin, DataSetAjaxMixin,
@@ -58,7 +60,7 @@ class TestPrivateDatasetFilterMixin(TestCase):
     
         i1 = ExperimentWithScoresetFactory()  # type: Experiment
         i2 = ExperimentWithScoresetFactory()  # type: Experiment
-        i1.publish()
+        i1.private = False
         i1.save()
     
         public, private = driver.filter_and_split_instances([i1, i2])
@@ -142,7 +144,7 @@ class TestScoreSetAjaxMixin(TestCase):
         sc4 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         
         # Viewable since user has edit permission and is not private
-        sc1.publish()
+        sc1.private = False
         sc1.add_editors(user)
         sc1.save(save_parents=True)
         
@@ -150,7 +152,7 @@ class TestScoreSetAjaxMixin(TestCase):
         sc2.add_editors(user)
         
         # No edit permission so not viewable
-        sc4.publish()
+        sc4.private = False
         sc4.save(save_parents=True)
         
         request = self.factory.get(
@@ -206,7 +208,8 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
     
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_manage'
         self.assertFalse(driver.has_permission())
 
@@ -217,7 +220,8 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
     
         scoreset.add_administrators(request.user)
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_manage'
         self.assertTrue(driver.has_permission())
 
@@ -247,7 +251,8 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
     
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_edit'
         self.assertFalse(driver.has_permission())
 
@@ -258,7 +263,8 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
     
         scoreset.add_editors(request.user)
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_edit'
         self.assertTrue(driver.has_permission())
     
@@ -284,7 +290,8 @@ class TestDatasetPermissionMixin(TestCase):
 
     def test_true_public_instance_view(self):
         scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         request = self.factory.get('/')
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)

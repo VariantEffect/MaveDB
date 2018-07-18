@@ -17,8 +17,9 @@ from variant.factories import VariantFactory
 
 from dataset import constants
 
-from ..models.scoreset import default_dataset, ScoreSet
+from ..models.scoreset import default_dataset, ScoreSet, assign_public_urn
 from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory
+from ..utilities import publish_dataset
 
 
 class TestScoreSet(TestCase):
@@ -28,38 +29,6 @@ class TestScoreSet(TestCase):
     :py:class:`Variant` objects. We will test correctness of creation,
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
-    def test_publish_updates_published_and_modification_dates(self):
-        scs = ScoreSetFactory()
-        scs.publish()
-        self.assertEqual(scs.publish_date, datetime.date.today())
-        self.assertEqual(scs.modification_date, datetime.date.today())
-
-    def test_publish_updates_private_to_false(self):
-        scs = ScoreSetFactory()
-        scs.publish()
-        self.assertFalse(scs.private)
-        
-    def test_publish_assigns_a_public_urn(self):
-        scs = ScoreSetFactory()
-        self.assertFalse(scs.has_public_urn)
-        scs.publish()
-        self.assertTrue(scs.has_public_urn)
-        self.assertTrue(scs.parent.has_public_urn)
-        self.assertTrue(scs.parent.parent.has_public_urn)
-        
-    def test_publish_assigns_a_public_urn_to_variants(self):
-        scs = ScoreSetFactory()
-        var = VariantFactory(scoreset=scs)
-        self.assertFalse(var.has_public_urn)
-        
-        scs.publish()
-        scs.save(save_parents=True)
-        scs.save_children()
-        
-        scs.refresh_from_db()
-        var.refresh_from_db()
-        self.assertTrue(var.has_public_urn)
-
     def test_new_is_assigned_all_permission_groups(self):
         self.assertEqual(Group.objects.count(), 0)
         _ = ScoreSetFactory()
@@ -70,15 +39,6 @@ class TestScoreSet(TestCase):
         self.assertEqual(Group.objects.count(), 9)
         obj.delete()
         self.assertEqual(Group.objects.count(), 6)
-
-    def test_autoassign_does_not_reassign_deleted_urn(self):
-        obj = ScoreSetFactory()
-        obj.publish()
-        previous = obj.urn
-        obj.delete()
-        obj = ScoreSetFactory()
-        obj.publish()
-        self.assertGreater(obj.urn, previous)
 
     def test_cannot_create_with_duplicate_urn(self):
         obj = ScoreSetFactory()
@@ -202,38 +162,6 @@ class TestScoreSet(TestCase):
         scs_2.refresh_from_db()
         self.assertIsNone(scs_2.replaces)
 
-    def test_publish_twice_doesnt_change_urn(self):
-        scs = ScoreSetFactory()
-        scs.publish()
-        scs.refresh_from_db()
-        old_urn = scs.urn
-        self.assertTrue(scs.has_public_urn)
-
-        scs = ScoreSet.objects.first()
-        scs.publish()
-        scs.refresh_from_db()
-        new_urn = scs.urn
-
-        self.assertTrue(scs.has_public_urn)
-        self.assertEqual(new_urn, old_urn)
-
-    def test_publish_increments_id_by_one(self):
-        instance1 = ScoreSetFactory()
-        instance2 = ScoreSetFactory()
-        instance2.publish()
-        self.assertIn('1-a-1', instance2.urn)
-        instance1.publish()
-        self.assertIn('2-a-1', instance1.urn)
-
-    def test_publish_in_transaction(self):
-        with transaction.atomic():
-            instance1 = ScoreSetFactory()
-            instance2 = ScoreSetFactory()
-            instance2.publish()
-            self.assertIn('1-a-1', instance2.urn)
-            instance1.publish()
-            self.assertIn('2-a-1', instance1.urn)
-
     def test_can_get_url(self):
         obj = ScoreSetFactory()
         self.assertEqual(
@@ -259,3 +187,31 @@ class TestScoreSet(TestCase):
     #     self.assertEqual(obj.children.order_by(
     #         '{}'.format(obj.primary_hgvs_column)).first(), v2
     #     )
+
+
+class TestAssignPublicUrn(TestCase):
+    def test_assign_public_urn_twice_doesnt_change_urn(self):
+        exp = ScoreSetFactory()
+        publish_dataset(exp)
+        exp.refresh_from_db()
+        old_urn = exp.urn
+        self.assertTrue(exp.has_public_urn)
+
+        exp = ScoreSet.objects.first()
+        assign_public_urn(exp)
+        exp.refresh_from_db()
+        new_urn = exp.urn
+
+        self.assertTrue(exp.has_public_urn)
+        self.assertEqual(new_urn, old_urn)
+
+    def test_assigns_sequential_urns(self):
+        instance1 = ScoreSetFactory()
+        instance2 = ScoreSetFactory()
+        instance2.experiment = instance1.experiment
+        instance2.experiment.experimentset = instance1.experiment.experimentset
+        instance2.save()
+        assign_public_urn(instance2)
+        self.assertIn('-1', instance2.urn)
+        assign_public_urn(instance1)
+        self.assertIn('-2', instance1.urn)

@@ -7,6 +7,7 @@ from variant.factories import VariantFactory
 
 import dataset
 from dataset.factories import ScoreSetFactory
+from dataset.utilities import publish_dataset
 
 from ..utilities import delete, publish
 
@@ -72,7 +73,7 @@ class TestDelete(TestCase, TestMessageMixin):
         
     def test_cannot_delete_public_instance(self):
         instance = ScoreSetFactory()  # type: dataset.models.scoreset.ScoreSet
-        instance.publish()
+        instance.private = False
         instance.save()
         instance.add_administrators(self.user)
         self.assertFalse(delete(instance.urn, self.create_request()))
@@ -163,6 +164,5 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_false_already_public(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
-        scoreset.publish()
+        publish_dataset(scoreset)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
-    

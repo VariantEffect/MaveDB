@@ -154,7 +154,7 @@ class TestUserProfile(TestCase):
         assign_user_as_instance_admin(bob, self.exps_1)
         assign_user_as_instance_admin(bob, self.exps_2)
         public = bob.profile.public_contributor_experimentsets()
-        self.exps_1.publish()
+        self.exps_1.private = False
         self.exps_1.save()
         self.assertEqual(len(public), 1)
         self.assertEqual(list(public)[0], self.exps_1)
@@ -189,8 +189,10 @@ class TestUserProfile(TestCase):
         assign_user_as_instance_admin(bob, self.exp_1)
         assign_user_as_instance_admin(bob, self.exp_2)
         public = bob.profile.public_contributor_experiments()
-        self.exp_1.publish()
+
+        self.exp_1.private = False
         self.exp_1.save()
+
         self.assertEqual(len(public), 1)
         self.assertEqual(list(public)[0], self.exp_1)
 
@@ -224,7 +226,7 @@ class TestUserProfile(TestCase):
         assign_user_as_instance_admin(bob, self.scs_1)
         assign_user_as_instance_admin(bob, self.scs_2)
         public = bob.profile.public_contributor_scoresets()
-        self.scs_1.publish()
+        self.scs_1.private = False
         self.scs_1.save()
         self.assertEqual(len(public), 1)
         self.assertEqual(list(public)[0], self.scs_1)

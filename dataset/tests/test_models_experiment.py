@@ -1,5 +1,3 @@
-import datetime
-
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models import ProtectedError
@@ -10,7 +8,9 @@ from core.utilities import base_url
 
 from ..factories import ExperimentFactory, ScoreSetFactory, ScoreSetWithTargetFactory
 from ..models.experimentset import ExperimentSet
-from ..models.experiment import Experiment
+from ..models.experiment import Experiment, assign_public_urn
+
+from dataset.utilities import publish_dataset
 
 
 class TestExperiment(TestCase):
@@ -20,18 +20,6 @@ class TestExperiment(TestCase):
     :py:class:`ScoreSet` objects. We will test correctness of creation,
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
-
-    def test_publish_updates_published_and_modification_dates(self):
-        exp = ExperimentFactory()
-        exp.publish()
-        self.assertEqual(exp.publish_date, datetime.date.today())
-        self.assertEqual(exp.modification_date, datetime.date.today())
-
-    def test_publish_updates_private_to_false(self):
-        exp = ExperimentFactory()
-        exp.publish()
-        self.assertFalse(exp.private)
-
     def test_new_experiment_is_assigned_all_permission_groups(self):
         self.assertEqual(Group.objects.count(), 0)
         _ = ExperimentFactory()
@@ -42,19 +30,6 @@ class TestExperiment(TestCase):
         self.assertEqual(Group.objects.count(), 6)
         obj.delete()
         self.assertEqual(Group.objects.count(), 3)
-
-    def test_autoassign_does_not_reassign_deleted_urn(self):
-        exps1 = ExperimentFactory(
-            private=False,
-            experimentset__private=False
-        )
-        previous = exps1.urn
-        exps1.delete()
-        exps2 = ExperimentFactory(
-            private=False,
-            experimentset__private=False
-        )
-        self.assertGreater(exps2.urn, previous)
 
     def test_cannot_create_with_duplicate_urn(self):
         obj = ExperimentFactory()
@@ -105,24 +80,36 @@ class TestExperiment(TestCase):
         ))
         self.assertEqual(exp.get_target_organisms(), expected)
 
-    def test_publish_twice_doesnt_change_urn(self):
-        exp = ExperimentFactory()
-        exp.publish()
-        exp.refresh_from_db()
-        old_urn = exp.urn
-        self.assertTrue(exp.has_public_urn)
-
-        exp = Experiment.objects.first()
-        exp.publish()
-        exp.refresh_from_db()
-        new_urn = exp.urn
-
-        self.assertTrue(exp.has_public_urn)
-        self.assertEqual(new_urn, old_urn)
-    
     def test_can_get_url(self):
         obj = ExperimentFactory()
         self.assertEqual(
             obj.get_url(),
             base_url() + reverse('dataset:experiment_detail', args=(obj.urn,))
         )
+
+
+class TestAssignPublicUrn(TestCase):
+    def test_assign_public_urn_twice_doesnt_change_urn(self):
+        exp = ExperimentFactory()
+        publish_dataset(exp)
+        exp.refresh_from_db()
+        old_urn = exp.urn
+        self.assertTrue(exp.has_public_urn)
+
+        exp = Experiment.objects.first()
+        assign_public_urn(exp)
+        exp.refresh_from_db()
+        new_urn = exp.urn
+
+        self.assertTrue(exp.has_public_urn)
+        self.assertEqual(new_urn, old_urn)
+
+    def test_assigns_sequential_urns(self):
+        instance1 = ExperimentFactory()
+        instance2 = ExperimentFactory()
+        instance2.experimentset = instance1.experimentset
+        instance2.save()
+        assign_public_urn(instance2)
+        self.assertIn('-a', instance2.urn)
+        assign_public_urn(instance1)
+        self.assertIn('-b', instance1.urn)

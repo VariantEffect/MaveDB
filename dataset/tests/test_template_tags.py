@@ -7,11 +7,13 @@ from metadata.factories import PubmedIdentifierFactory
 from ..factories import ExperimentWithScoresetFactory
 from ..templatetags import dataset_tags
 
+from ..utilities import publish_dataset
+
 
 class TestDisplayTargetsTag(TestCase):
     def test_shows_targets_from_public_scoresets(self):
         exp = ExperimentWithScoresetFactory()
-        exp.scoresets.first().publish()
+        publish_dataset(exp.scoresets.first())
         user = UserFactory()
         result = dataset_tags.display_targets(exp, user)
         self.assertIn(exp.scoresets.first().get_target().get_name(), result)
@@ -33,7 +35,7 @@ class TestDisplayTargetsTag(TestCase):
 class TestDisplaySpeciesTag(TestCase):
     def test_shows_species_from_public_scoresets(self):
         exp = ExperimentWithScoresetFactory()
-        exp.scoresets.first().publish()
+        publish_dataset(exp.scoresets.first())
         user = UserFactory()
         result = dataset_tags.display_species(exp, user)
         self.assertIn(
@@ -76,7 +78,7 @@ class TestVisibleChildren(TestCase):
 
     def test_shows_public(self):
         exp = ExperimentWithScoresetFactory()
-        exp.children.first().publish()
+        publish_dataset(exp.scoresets.first())
         result = dataset_tags.visible_children(exp, UserFactory())
         self.assertEqual(len(result), 1)
 

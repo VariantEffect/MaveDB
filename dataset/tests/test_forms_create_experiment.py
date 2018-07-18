@@ -2,6 +2,7 @@ from django.test import TestCase, RequestFactory
 
 from accounts.factories import UserFactory
 
+from ..utilities import publish_dataset
 from ..factories import ExperimentFactory, ExperimentSetFactory
 from ..forms.experiment import ExperimentForm, ErrorMessages
 from ..models.experiment import Experiment
@@ -90,7 +91,7 @@ class TestExperimentForm(TestCase):
         obj = ExperimentFactory()
         obj.parent.add_administrators(self.user)
         obj.add_administrators(self.user)
-        obj.publish()
+        obj = publish_dataset(obj)
         
         # Make the data, which also sets the selected experiment
         data = self.make_form_data(create_experimentset=True)
