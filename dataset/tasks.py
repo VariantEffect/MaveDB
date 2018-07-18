@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -12,8 +14,8 @@ from mavedb import celery_app
 from variant.models import Variant
 
 from dataset import constants
-from .models.scoreset import ScoreSet
-
+from . import models
+from .utilities import publish_dataset
 
 User = get_user_model()
 logger = get_task_logger('dataset.tasks')
@@ -29,7 +31,7 @@ class BaseDatasetTask(BaseTask):
     Delegates task logging and saving to BaseTask.
     """
     def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
-        if isinstance(self.scoreset, ScoreSet):
+        if isinstance(self.scoreset, models.scoreset.ScoreSet):
             self.scoreset.processing_state = constants.failed
             self.scoreset.save()
             
@@ -80,19 +82,11 @@ def publish_scoreset(self, user_pk, scoreset_urn):
     # Bind ORM objects if they were found
     user = User.objects.get(pk=user_pk)
     self.user = user
-    scoreset = ScoreSet.objects.get(urn=scoreset_urn)
-    self.scoreset = scoreset
-    
+    self.scoreset = models.scoreset.ScoreSet.objects.get(urn=self.urn)
     with transaction.atomic():
-        scoreset.publish()
-        scoreset.set_modified_by(user, propagate=True)
-        scoreset.save(save_parents=True)
-    
-    # Bound to `BasePublish`
-    scoreset = ScoreSet.objects.get(urn=scoreset.urn)
-    self.scoreset = scoreset  # Refreshes bound instance
-    self.urn = scoreset.urn
-    return scoreset
+        self.scoreset = publish_dataset(dataset=self.scoreset, user=self.user)
+        self.urn = self.scoreset.urn
+    return self.scoreset
 
 
 @celery_app.task(bind=True, ignore_result=True,
@@ -108,7 +102,7 @@ def create_variants(self, user_pk, variants, scoreset_urn, dataset_columns):
     # Bind ORM objects if they were found
     user = User.objects.get(pk=user_pk)
     self.user = user
-    scoreset = ScoreSet.objects.get(urn=scoreset_urn)
+    scoreset = models.scoreset.ScoreSet.objects.get(urn=scoreset_urn)
     self.scoreset = scoreset
     
     with transaction.atomic():
