@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 import dataset.constants as constants
+from dataset.utilities import publish_dataset
 from dataset.models import scoreset
 from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
@@ -131,7 +132,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_scores(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -158,7 +159,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_comma_in_value_enclosed_by_quotes(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -184,7 +185,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_counts(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -210,7 +211,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_none_hgvs_written_as_blank(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -237,7 +238,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_no_variants_empty_file(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -262,7 +263,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_empty_scores_returns_empty_file(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: [],
@@ -285,7 +286,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_empty_counts_returns_empty_file(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -308,7 +309,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_metadata(self):
         scs = ScoreSetFactory(private=False)
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         response = json.loads(self.client.get(
             "/api/scoresets/{}/metadata/".format(scs.urn)
