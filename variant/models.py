@@ -16,6 +16,17 @@ column_order = defaultdict(lambda: 1)
 column_order[constants.required_score_column] = 0
 
 
+def assign_public_urn(variant):
+    if not variant.has_public_urn:
+        parent = variant.scoreset
+        child_value = parent.last_child_value + 1
+        variant.urn = "{}#{}".format(parent.urn, child_value)
+        parent.last_child_value = child_value
+        parent.save()
+        variant.save()
+    return variant
+
+
 class Variant(UrnModel):
     """
     This is the class representing an individual variant belonging to one
@@ -120,20 +131,6 @@ class Variant(UrnModel):
         ]
         parent.last_child_value += n
         return child_urns
-
-    def create_urn(self):
-        if self.scoreset.private:
-            urn = self.create_temp_urn()
-        else:
-            parent = self.scoreset
-            child_value = parent.last_child_value + 1
-    
-            urn = "{}#{}".format(parent.urn, child_value)
-    
-            # update parent
-            parent.last_child_value = child_value
-            parent.save()
-        return urn
 
     @property
     def score_columns(self):
