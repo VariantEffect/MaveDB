@@ -19,8 +19,29 @@ from genome.models import TargetGene
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_experiment
 
-from ..models.base import DatasetModel, PublicDatasetCounter
+from ..models.base import DatasetModel
 from ..models.experimentset import ExperimentSet
+
+
+def assign_public_urn(experiment):
+    if experiment.private or not experiment.has_public_urn:
+        # The old groups associated with the tmp urn must be deleted
+        parent = experiment.experimentset
+        child_value = parent.last_child_value + 1
+
+        # Convert child_value to a letter (a-z)
+        suffix = ""
+        x = child_value
+        while x > 0:
+            x, y = divmod(x - 1, len(string.ascii_lowercase))
+            suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
+        experiment.urn = "{}-{}".format(parent.urn, suffix)
+        parent.last_child_value = child_value
+
+        experiment.save()
+        parent.save()
+
+    return experiment
 
 
 class Experiment(DatasetModel):
@@ -81,34 +102,6 @@ class Experiment(DatasetModel):
             self.experimentset = ExperimentSet.objects.create()
         return super().save(*args, **kwargs)
     
-    @transaction.atomic
-    def create_urn(self):
-        if self.private or not self.experimentset.has_public_urn:
-            urn = self.create_temp_urn()
-        else:
-            parent = self.experimentset
-            child_value = parent.last_child_value + 1
-        
-            # convert child_value to letters
-            suffix = ""
-            x = child_value
-            while x > 0:
-                x, y = divmod(x - 1, len(string.ascii_lowercase))
-                suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
-        
-            urn = "{}-{}".format(parent.urn, suffix)
-        
-            # update parent
-            parent.last_child_value = child_value
-            parent.save()
-            
-            # Add new public dataset to counter
-            counter = PublicDatasetCounter.load()
-            counter.experiments += 1
-            counter.save()
-    
-        return urn
-
     def get_targets(self):
         target_pks = set([
             child.get_target().pk for child in self.children

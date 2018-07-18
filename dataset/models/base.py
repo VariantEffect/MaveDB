@@ -37,12 +37,23 @@ parent_attr_map = {
 }
 
 
+def rename_groups(dataset):
+    admins = dataset.administrators()
+    editors = dataset.editors()
+    viewers = dataset.viewers()
+    # The old groups associated with the tmp urn must be deleted
+    permissions.delete_all_groups_for_instance(dataset)
+    # Re-assign contributors to the new groups.
+    dataset.add_administrators(admins)
+    dataset.add_editors(editors)
+    dataset.add_viewers(viewers)
+    return dataset
+
+
 class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
     """
     Keeps track of the number of public datasets for each model type.
     """
-    scoresets = models.IntegerField(default=0)
-    experiments = models.IntegerField(default=0)
     experimentsets = models.IntegerField(default=0)
     
 
@@ -276,9 +287,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         super().save(*args, **kwargs)
         return self
 
-    def create_urn(self):
-        raise NotImplementedError()
-    
     @transaction.atomic
     def save_children(self):
         if self.children:
@@ -291,37 +299,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             self.experiment.save_parents(*args, **kwargs)
         if hasattr(self, 'experimentset'):
             self.experimentset.save(*args, **kwargs)
-            
-    def get_url(self):
-        raise NotImplementedError
-        
-    @transaction.atomic
-    def publish(self):
-        if self.has_public_urn or not self.private:
-            return self
-        else:
-            # Need to traverse to the root of the ancestral tree first because
-            # urns are recursively generated from parents.
-            self.private = False
-            self.publish_date = datetime.date.today()
-            if self.parent:
-                self.parent.publish()
-            if not self.has_public_urn:
-                admins = self.administrators()
-                editors = self.editors()
-                viewers = self.viewers()
-    
-                # The old groups associated with the tmp urn must be deleted
-                permissions.delete_all_groups_for_instance(self)
-    
-                self.urn = self.create_urn()
-                self.save()  # New groups will be created as a post-save signal
-    
-                # Re-assign contributors to the new groups.
-                self.add_administrators(admins)
-                self.add_editors(editors)
-                self.add_viewers(viewers)
-        
+
     def set_modified_by(self, user, propagate=False):
         if propagate:
             self.propagate_set_value('modified_by', user)

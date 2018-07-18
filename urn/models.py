@@ -32,7 +32,7 @@ def generate_tmp_urn():
             random.choice(RANDOM_CHARS)
             for _ in range(MAVEDB_TMP_URN_DIGITS)
     ]))
-    
+
 
 class UrnModel(TimeStampedModel):
     """
@@ -82,12 +82,9 @@ class UrnModel(TimeStampedModel):
         if self.urn is None:
             # This needs access to the PK so the instance must be saved first
             # and then saved again.
-            self.urn = self.create_urn()
+            self.urn = self.create_temp_urn()
             self.save()
 
-    def create_urn(self):
-        raise NotImplementedError()
-    
     @classmethod
     def create_temp_urn(cls):
         urn = generate_tmp_urn()
@@ -102,4 +99,3 @@ class UrnModel(TimeStampedModel):
     @property
     def has_public_urn(self):
         return 'urn:' in str(self.urn)
-    

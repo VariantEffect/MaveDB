@@ -18,10 +18,8 @@ from main.models import Licence
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
 
-from variant.models import Variant
-
 from dataset import constants as constants
-from ..models.base import DatasetModel, PublicDatasetCounter
+from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json
 
@@ -34,6 +32,17 @@ def default_dataset():
         constants.score_columns: [constants.required_score_column],
         constants.count_columns: [],
     })
+
+
+def assign_public_urn(scoreset):
+    if scoreset.private or not scoreset.has_public_urn:
+        parent = scoreset.experiment
+        child_value = parent.last_child_value + 1
+        scoreset.urn = "{}-{}".format(parent.urn, child_value)
+        parent.last_child_value = child_value
+        scoreset.save()
+        parent.save()
+    return scoreset
 
 
 class ScoreSet(DatasetModel):
@@ -136,38 +145,6 @@ class ScoreSet(DatasetModel):
             self.licence = Licence.get_default()
         return super().save(*args, **kwargs)
     
-    @transaction.atomic
-    def publish(self):
-        if self.has_public_urn or not self.private:
-            return self
-        else:
-            super().publish()
-            urns = Variant.bulk_create_urns(self.children.count(), self)
-            for urn, child in zip(urns, self.children.all()):
-                child.urn = urn
-                child.save()
-            return self
-        
-    def create_urn(self):
-        if self.private or not self.experiment.has_public_urn:
-            urn = self.create_temp_urn()
-        else:
-            parent = self.experiment
-            child_value = parent.last_child_value + 1
-    
-            urn = "{}-{}".format(parent.urn, child_value)
-    
-            # update parent
-            parent.last_child_value = child_value
-            parent.save()
-
-            # Add new public dataset to counter
-            counter = PublicDatasetCounter.load()
-            counter.scoresets += 1
-            counter.save()
-
-        return urn
-
     # Variant related methods
     # ---------------------------------------------------------------------- #
     @property
