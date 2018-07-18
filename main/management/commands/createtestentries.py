@@ -11,7 +11,7 @@ from metadata.models import (
     UniprotOffset, RefseqOffset, EnsemblOffset
 )
 
-from dataset import factories
+from dataset import factories, utilities
 from genome import factories as genome_factories
 from genome import models  as genome_models
 from variant.factories import VariantFactory
@@ -65,7 +65,7 @@ class Command(BaseCommand):
                     )
 
                     if publish:
-                        scoreset.publish()
+                        utilities.publish_dataset(scoreset)
 
                     scoreset.set_modified_by(user, propagate=True)
                     scoreset.set_created_by(user, propagate=True)
