@@ -85,17 +85,17 @@ def user_is_anonymous(user):
 
 def get_admin_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.ADMIN)
+        return '{}-{}'.format(instance.pk, GroupTypes.ADMIN)
 
 
 def get_editor_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.EDITOR)
+        return '{}-{}'.format(instance.pk, GroupTypes.EDITOR)
 
 
 def get_viewer_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.VIEWER)
+        return '{}-{}'.format(instance.pk, GroupTypes.VIEWER)
 
 
 def user_is_admin_for_instance(user, instance):
