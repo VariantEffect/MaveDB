@@ -33,49 +33,6 @@ class TestDatasetModel(TestCase):
         self.assertEqual(instance.created_by, user)
         self.assertEqual(instance.creation_date, datetime.date.today())
 
-    def test_publish_sets_private_to_false_and_sets_publish_date(self):
-        instance = ExperimentSetFactory()
-        instance = publish_dataset(instance)
-        instance.save()
-        self.assertEqual(instance.private, False)
-        self.assertEqual(instance.publish_date, datetime.date.today())
-
-    def test_publish_deletes_old_tmp_permission_groups(self):
-        instance = ScoreSetFactory()
-        old_urn = instance.urn
-        self.assertEqual(Group.objects.count(), 9)
-        instance = publish_dataset(instance)
-        self.assertEqual(Group.objects.count(), 9)
-        self.assertFalse(
-            Group.objects.filter(
-                name='{}-{}'.format(old_urn, GroupTypes.ADMIN)).exists()
-        )
-
-    def test_publish_creates_new_perm_groups(self):
-        instance = ScoreSetFactory()
-        self.assertEqual(Group.objects.count(), 9)
-        instance = publish_dataset(instance)
-        self.assertEqual(Group.objects.count(), 9)
-        self.assertTrue(
-            Group.objects.filter(
-                name='{}-{}'.format(instance.pk, GroupTypes.ADMIN)).exists()
-        )
-
-    def test_publish_reassigns_contributors_to_new_perm_groups(self):
-        admin = UserFactory()
-        editor = UserFactory()
-        viewer = UserFactory()
-
-        instance = ScoreSetFactory()
-        instance.add_administrators(admin)
-        instance.add_editors(editor)
-        instance.add_viewers(viewer)
-
-        instance = publish_dataset(instance)
-        self.assertListEqual(list(instance.administrators()), [admin])
-        self.assertListEqual(list(instance.editors()), [editor])
-        self.assertListEqual(list(instance.viewers()), [viewer])
-
     def test_approve_sets_approved_to_true(self):
         instance = ExperimentSetFactory()
         instance.approve()
@@ -86,23 +43,16 @@ class TestDatasetModel(TestCase):
         instance = ExperimentSetFactory()
         with self.assertRaises(TypeError):
             instance.add_keyword('')
-
-        # instance.add_keyword(KeywordFactory())
         self.assertEqual(instance.keywords.count(), 1)
 
     def test_typeerror_add_non_external_identifier_instance(self):
         instance = ExperimentSetFactory()
         with self.assertRaises(TypeError):
             instance.add_identifier(KeywordFactory())
-
-        # instance.add_identifier(DoiIdentifierFactory())
         self.assertEqual(instance.doi_ids.count(), 1)
 
     def test_clear_m2m_clears_m2m_relationships(self):
         instance = ExperimentSetFactory()
-        # instance.add_identifier(DoiIdentifierFactory())
-        # instance.add_identifier(SraIdentifierFactory())
-        # instance.add_identifier(PubmedIdentifierFactory())
 
         self.assertEqual(instance.doi_ids.count(), 1)
         instance.doi_ids.clear()

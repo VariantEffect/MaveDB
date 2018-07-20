@@ -87,7 +87,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
     def test_private_experiment_rendered_if_user_can_view(self):
         user = UserFactory()
         obj = ScoreSetFactory()
-        assign_user_as_instance_viewer(user, obj)
+        obj.add_viewers(user)
         request = self.factory.get('/scoreset/{}/'.format(obj.urn))
         request.user = user
         response = ScoreSetDetailView.as_view()(request, urn=obj.urn)

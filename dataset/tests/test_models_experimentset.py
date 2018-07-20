@@ -1,14 +1,16 @@
 from django.contrib.auth.models import Group
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.shortcuts import reverse
 
 from core.utilities import base_url
 
+from urn.validators import MAVEDB_EXPERIMENTSET_URN_RE
+
+from ..models.base import PublicDatasetCounter
 from ..models.experimentset import ExperimentSet, assign_public_urn
 from ..factories import ExperimentSetFactory, ExperimentFactory
-from ..utilities import publish_dataset
 
 
 class TestExperimentSet(TestCase):
@@ -53,17 +55,34 @@ class TestExperimentSet(TestCase):
 
 
 class TestAssignPublicUrn(TestCase):
-    def test_assign_public_urn_twice_doesnt_change_urn(self):
-        exp = ExperimentSetFactory()
-        publish_dataset(exp)
-        exp.refresh_from_db()
-        old_urn = exp.urn
-        self.assertTrue(exp.has_public_urn)
-
-        exp = ExperimentSet.objects.first()
-        assign_public_urn(exp)
-        exp.refresh_from_db()
-        new_urn = exp.urn
-
-        self.assertTrue(exp.has_public_urn)
-        self.assertEqual(new_urn, old_urn)
+    def setUp(self):
+        self.factory = ExperimentSetFactory
+        self.counter = PublicDatasetCounter.load()
+    
+    def test_assigns_public_urn(self):
+        instance = self.factory()
+        instance = assign_public_urn(instance)
+        self.assertIsNotNone(
+            MAVEDB_EXPERIMENTSET_URN_RE.fullmatch(instance.urn))
+        self.assertTrue(instance.has_public_urn)
+    
+    def test_increments_parent_last_child_value(self):
+        instance = self.factory()
+        self.assertEqual(self.counter.experimentsets, 0)
+        assign_public_urn(instance)
+        self.counter.refresh_from_db()
+        self.assertEqual(self.counter.experimentsets, 1)
+       
+    def test_assigns_sequential_urns(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+        instance1 = assign_public_urn(instance1)
+        instance2 = assign_public_urn(instance2)
+        self.assertEqual(instance1.urn[-1], '1')
+        self.assertEqual(instance2.urn[-1], '2')
+    
+    def test_applying_twice_does_not_change_urn(self):
+        instance = self.factory()
+        i1 = assign_public_urn(instance)
+        i2 = assign_public_urn(instance)
+        self.assertEqual(i1.urn, i2.urn)

@@ -4,8 +4,12 @@ from django.test import TestCase
 
 import dataset.constants as constants
 from dataset.factories import ScoreSetFactory
+from dataset.utilities import publish_dataset
 
 from ..factories import VariantFactory
+from ..models import assign_public_urn
+
+from urn.validators import MAVEDB_VARIANT_URN_RE
 
 
 class TestVariant(TestCase):
@@ -17,25 +21,8 @@ class TestVariant(TestCase):
     """
 
     def test_autoassign_urn_when_save(self):
-        variant = VariantFactory(
-            scoreset__private=False,
-            scoreset__experiment__private=False,
-            scoreset__experiment__experimentset__private=False,
-        )
-        scoreset = variant.scoreset
-        urn = "{}#{}".format(scoreset.urn, scoreset.last_child_value)
-        self.assertEqual(variant.urn, urn)
-
-    def test_create_urn_increments_last_child_value_by_one(self):
-        scoreset = ScoreSetFactory(
-            private=False,
-            experiment__private=False,
-            experiment__experimentset__private=False,
-        )
-        before_variant = scoreset.last_child_value
-        _ = VariantFactory(scoreset=scoreset)
-        after_variant = scoreset.last_child_value
-        self.assertEqual(before_variant + 1, after_variant)
+        variant = VariantFactory()
+        self.assertIsNotNone(variant.urn)
 
     def test_cannot_create_variant_with_duplicate_urn(self):
         variant = VariantFactory()
@@ -68,30 +55,10 @@ class TestVariant(TestCase):
         with self.assertRaises(ValidationError):
             var.full_clean()
             
-    def test_variant_will_get_tmp_urn_if_scoreset_is_private(self):
+    def test_variant_created_with_tmp_urn(self):
         scs = ScoreSetFactory()
         obj = VariantFactory(scoreset=scs)
         self.assertIn('tmp', obj.urn)
-        
-    def test_variant_will_get_public_urn_if_scoreset_is_private(self):
-        scs = ScoreSetFactory(
-            private=False,
-            experiment__private=False,
-            experiment__experimentset__private=False,
-        )
-        obj = VariantFactory(scoreset=scs)
-        self.assertIn('urn', obj.urn)
-        
-    def test_has_public_urn(self):
-        obj = ScoreSetFactory()
-        self.assertFalse(obj.has_public_urn)
-        
-        obj = ScoreSetFactory(
-            private=False,
-            experiment__private=False,
-            experiment__experimentset__private=False,
-        )
-        self.assertTrue(obj.has_public_urn)
         
     def test_hgvs_property_returns_nt_if_both_protein_defined(self):
         obj = VariantFactory()
@@ -100,3 +67,48 @@ class TestVariant(TestCase):
     def test_hgvs_property_returns_pro_if_nt_column_not_defined(self):
         obj = VariantFactory(hgvs_nt=None)
         self.assertEqual(obj.hgvs, obj.hgvs_pro)
+        
+        
+class TestAssignPublicUrn(TestCase):
+    def setUp(self):
+        self.private_scoreset = ScoreSetFactory()
+        self.public_scoreset = publish_dataset(ScoreSetFactory())
+        
+    def test_assigns_public_urn(self):
+        instance = VariantFactory(scoreset=self.public_scoreset)
+        instance = assign_public_urn(instance)
+        self.assertIsNotNone(MAVEDB_VARIANT_URN_RE.fullmatch(instance.urn))
+        self.assertTrue(instance.has_public_urn)
+        
+    def test_increments_parent_last_child_value(self):
+        instance = VariantFactory(scoreset=self.public_scoreset)
+        self.assertEqual(instance.scoreset.last_child_value, 0)
+        instance = assign_public_urn(instance)
+        self.assertEqual(instance.scoreset.last_child_value, 1)
+        
+    def test_attr_error_parent_not_public(self):
+        instance = VariantFactory(scoreset=self.private_scoreset)
+        with self.assertRaises(AttributeError):
+            assign_public_urn(instance)
+        
+    def test_attr_error_parent_has_tmp_urn(self):
+        instance = VariantFactory(scoreset=self.private_scoreset)
+        self.private_scoreset.private = False
+        self.private_scoreset.save()
+        with self.assertRaises(AttributeError):
+            assign_public_urn(instance)
+        
+    def test_assigns_sequential_urns(self):
+        instance1 = VariantFactory(scoreset=self.public_scoreset)
+        instance2 = VariantFactory(scoreset=self.public_scoreset)
+        instance1 = assign_public_urn(instance1)
+        instance2 = assign_public_urn(instance2)
+        self.assertEqual(int(instance1.urn[-1]), 1)
+        self.assertEqual(int(instance2.urn[-1]), 2)
+        
+    def test_applying_twice_does_not_change_urn(self):
+        instance = VariantFactory(scoreset=self.public_scoreset)
+        self.assertEqual(
+            assign_public_urn(instance).urn,
+            assign_public_urn(instance).urn
+        )

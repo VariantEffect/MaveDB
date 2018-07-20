@@ -1,10 +1,7 @@
-import datetime
-
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
-from django.db import transaction
 from django.shortcuts import reverse
 
 from core.utilities import base_url
@@ -15,10 +12,12 @@ from main.models import Licence
 
 from variant.factories import VariantFactory
 
+from urn.validators import MAVEDB_SCORESET_URN_RE
+
 from dataset import constants
 
 from ..models.scoreset import default_dataset, ScoreSet, assign_public_urn
-from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory
+from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory, ExperimentFactory
 from ..utilities import publish_dataset
 
 
@@ -182,36 +181,48 @@ class TestScoreSet(TestCase):
         
     # def test_wt_is_first_when_sorted(self):
     #     obj = ScoreSetFactory()
-    #     v1 = VariantFactory(scoreset=obj, hgvs_nt='c.[9A>T;99G>T]')
-    #     v2 = VariantFactory(scoreset=obj, hgvs_nt='_wt')
+    #     v1 = ScoreSetFactory(experiment=obj, hgvs_nt='c.[9A>T;99G>T]')
+    #     v2 = ScoreSetFactory(experiment=obj, hgvs_nt='_wt')
     #     self.assertEqual(obj.children.order_by(
     #         '{}'.format(obj.primary_hgvs_column)).first(), v2
     #     )
 
 
 class TestAssignPublicUrn(TestCase):
-    def test_assign_public_urn_twice_doesnt_change_urn(self):
-        exp = ScoreSetFactory()
-        publish_dataset(exp)
-        exp.refresh_from_db()
-        old_urn = exp.urn
-        self.assertTrue(exp.has_public_urn)
-
-        exp = ScoreSet.objects.first()
-        assign_public_urn(exp)
-        exp.refresh_from_db()
-        new_urn = exp.urn
-
-        self.assertTrue(exp.has_public_urn)
-        self.assertEqual(new_urn, old_urn)
-
+    def setUp(self):
+        self.factory = ScoreSetFactory
+        self.private_parent = ExperimentFactory()
+        self.public_parent = publish_dataset(ExperimentFactory())
+    
+    def test_assigns_public_urn(self):
+        instance = self.factory(experiment=self.public_parent)
+        instance = assign_public_urn(instance)
+        self.assertIsNotNone(MAVEDB_SCORESET_URN_RE.fullmatch(instance.urn))
+        self.assertTrue(instance.has_public_urn)
+    
+    def test_increments_parent_last_child_value(self):
+        instance = self.factory(experiment=self.public_parent)
+        self.assertEqual(instance.parent.last_child_value, 0)
+        instance = assign_public_urn(instance)
+        self.assertEqual(instance.parent.last_child_value, 1)
+       
+    def test_attr_error_parent_has_tmp_urn(self):
+        instance = self.factory(experiment=self.private_parent)
+        self.private_parent.private = False
+        self.private_parent.save()
+        with self.assertRaises(AttributeError):
+            assign_public_urn(instance)
+    
     def test_assigns_sequential_urns(self):
-        instance1 = ScoreSetFactory()
-        instance2 = ScoreSetFactory()
-        instance2.experiment = instance1.experiment
-        instance2.experiment.experimentset = instance1.experiment.experimentset
-        instance2.save()
-        assign_public_urn(instance2)
-        self.assertIn('-1', instance2.urn)
-        assign_public_urn(instance1)
-        self.assertIn('-2', instance1.urn)
+        instance1 = self.factory(experiment=self.public_parent)
+        instance2 = self.factory(experiment=self.public_parent)
+        instance1 = assign_public_urn(instance1)
+        instance2 = assign_public_urn(instance2)
+        self.assertEqual(int(instance1.urn[-1]), 1)
+        self.assertEqual(int(instance2.urn[-1]), 2)
+    
+    def test_applying_twice_does_not_change_urn(self):
+        instance = self.factory(experiment=self.public_parent)
+        i1 = assign_public_urn(instance)
+        i2 = assign_public_urn(instance)
+        self.assertEqual(i1.urn, i2.urn)

@@ -4,8 +4,13 @@ from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase
 from django.shortcuts import reverse
+from django.contrib.auth.models import Permission
 
 from accounts.factories import UserFactory
+from accounts.permissions import (
+    assign_user_as_instance_admin,
+    PermissionTypes
+)
 
 from dataset import factories as data_factories
 

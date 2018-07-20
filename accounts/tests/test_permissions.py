@@ -11,8 +11,9 @@ from accounts.permissions import (
     contributors_for_instance,
 
     user_is_admin_for_instance,
-    user_is_contributor_for_instance,
+    user_is_editor_for_instance,
     user_is_viewer_for_instance,
+    user_is_contributor_for_instance,
 
     create_all_groups_for_instance,
     create_admin_group_for_instance,
@@ -72,15 +73,21 @@ class UtilitiesTest(TransactionTestCase):
 
     def test_can_get_admin_group_name_for_instance(self):
         group_name = get_admin_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, '{}-administrator'.format(self.exps.pk))
+        self.assertEqual(
+            group_name, '{}:{}-administrator'.format(
+                self.exps.class_name(), self.exps.pk))
 
     def test_can_get_editor_group_name_for_instance(self):
         group_name = get_editor_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, '{}-editor'.format(self.exps.pk))
+        self.assertEqual(
+            group_name, '{}:{}-editor'.format(
+                self.exps.class_name(), self.exps.pk))
 
     def test_can_get_viewer_group_name_for_instance(self):
         group_name = get_viewer_group_name_for_instance(self.exps)
-        self.assertEqual(group_name, '{}-viewer'.format(self.exps.pk))
+        self.assertEqual(
+            group_name, '{}:{}-viewer'.format(
+                self.exps.class_name(), self.exps.pk))
 
 
 class GroupConstructionTest(TestCase):
@@ -96,7 +103,8 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-{}'.format(self.instance.pk, GroupTypes.ADMIN)
+            '{}:{}-{}'.format(
+                self.instance.class_name(), self.instance.pk, GroupTypes.ADMIN)
         )
 
     def test_can_make_contributor_group_for_instance(self):
@@ -104,7 +112,8 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-{}'.format(self.instance.pk, GroupTypes.EDITOR)
+            '{}:{}-{}'.format(
+                self.instance.class_name(), self.instance.pk, GroupTypes.EDITOR)
         )
 
     def test_can_make_viewer_group_for_instance(self):
@@ -112,7 +121,8 @@ class GroupConstructionTest(TestCase):
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(
             Group.objects.all()[0].name,
-            '{}-{}'.format(self.instance.pk, GroupTypes.VIEWER)
+            '{}:{}-{}'.format(
+                self.instance.class_name(), self.instance.pk, GroupTypes.VIEWER)
         )
 
     def test_can_make_all_groups_for_instance(self):
@@ -131,7 +141,8 @@ class GroupDeletionTest(TestCase):
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
-            '{}-{}'.format(self.instance.pk, GroupTypes.ADMIN)
+            '{}:{}-{}'.format(
+                self.instance.class_name(), self.instance.pk, GroupTypes.ADMIN)
         )
 
     def test_can_delete_contributor_group_for_instance(self):
@@ -140,7 +151,8 @@ class GroupDeletionTest(TestCase):
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
-            '{}-{}'.format(self.instance.pk, GroupTypes.EDITOR)
+            '{}:{}-{}'.format(
+                self.instance.class_name(), self.instance.pk, GroupTypes.EDITOR)
         )
 
     def test_can_delete_viewer_group_for_instance(self):
@@ -149,7 +161,8 @@ class GroupDeletionTest(TestCase):
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
-            '{}-{}'.format(self.instance.pk, GroupTypes.VIEWER)
+            '{}:{}-{}'.format(
+                self.instance.class_name(), self.instance.pk, GroupTypes.VIEWER)
         )
 
     def test_can_delete_all_groups_for_instance(self):
@@ -316,16 +329,28 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         user = self.user()
         assign_user_as_instance_admin(user, self.instance_1)
         self.assertTrue(user_is_admin_for_instance(user, self.instance_1))
+        self.assertTrue(
+            user.has_perm(PermissionTypes.CAN_MANAGE, self.instance_1))
+        self.assertTrue(
+            user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertTrue(
+            user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1))
 
-    def test_can_assign_user_as_contributor(self):
+    def test_can_assign_user_as_editor(self):
         user = self.user()
         assign_user_as_instance_editor(user, self.instance_1)
-        self.assertTrue(user_is_contributor_for_instance(user, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(user, self.instance_1))
+        self.assertTrue(
+            user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertTrue(
+            user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1))
 
     def test_can_assign_user_as_viewer(self):
         user = self.user()
         assign_user_as_instance_viewer(user, self.instance_1)
         self.assertTrue(user_is_viewer_for_instance(user, self.instance_1))
+        self.assertTrue(
+            user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1))
 
     def test_can_remove_user_from_admin_group(self):
         user = self.user()
@@ -334,13 +359,13 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         remove_user_as_instance_admin(user, self.instance_1)
         self.assertFalse(user_is_admin_for_instance(user, self.instance_1))
 
-    def test_can_remove_user_from_contributor_group(self):
+    def test_can_remove_user_from_editor_group(self):
         user = self.user()
         assign_user_as_instance_editor(user, self.instance_1)
-        self.assertTrue(user_is_contributor_for_instance(user, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(user, self.instance_1))
 
         remove_user_as_instance_editor(user, self.instance_1)
-        self.assertFalse(user_is_contributor_for_instance(user, self.instance_1))
+        self.assertFalse(user_is_editor_for_instance(user, self.instance_1))
 
     def test_can_remove_user_from_viewer_group(self):
         user = self.user()
@@ -381,31 +406,31 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertFalse(user_is_admin_for_instance(bob, self.instance_1))
         self.assertTrue(user_is_admin_for_instance(alice, self.instance_1))
 
-    def test_update_admin_contributor_empty_list_removes_all(self):
+    def test_update_admin_editor_empty_list_removes_all(self):
         bob = User.objects.create(username="bob")
         alice = User.objects.create(username="alice")
         assign_user_as_instance_editor(bob, self.instance_1)
         assign_user_as_instance_editor(alice, self.instance_1)
 
-        self.assertTrue(user_is_contributor_for_instance(bob, self.instance_1))
-        self.assertTrue(user_is_contributor_for_instance(alice, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(alice, self.instance_1))
 
         update_editor_list_for_instance([], self.instance_1)
-        self.assertFalse(user_is_contributor_for_instance(bob, self.instance_1))
-        self.assertFalse(user_is_contributor_for_instance(alice, self.instance_1))
+        self.assertFalse(user_is_editor_for_instance(bob, self.instance_1))
+        self.assertFalse(user_is_editor_for_instance(alice, self.instance_1))
 
-    def test_can_update_contributor_group_with_user_list(self):
+    def test_can_update_editor_group_with_user_list(self):
         bob = User.objects.create(username="bob")
         alice = User.objects.create(username="alice")
         assign_user_as_instance_editor(bob, self.instance_1)
         assign_user_as_instance_editor(alice, self.instance_1)
 
-        self.assertTrue(user_is_contributor_for_instance(bob, self.instance_1))
-        self.assertTrue(user_is_contributor_for_instance(alice, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(alice, self.instance_1))
 
         update_editor_list_for_instance([alice], self.instance_1)
-        self.assertFalse(user_is_contributor_for_instance(bob, self.instance_1))
-        self.assertTrue(user_is_contributor_for_instance(alice, self.instance_1))
+        self.assertFalse(user_is_editor_for_instance(bob, self.instance_1))
+        self.assertTrue(user_is_editor_for_instance(alice, self.instance_1))
 
     def test_update_viewer_group_empty_list_removes_all(self):
         bob = User.objects.create(username="bob")

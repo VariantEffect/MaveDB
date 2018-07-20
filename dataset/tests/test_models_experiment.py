@@ -6,11 +6,15 @@ from django.shortcuts import reverse
 
 from core.utilities import base_url
 
-from ..factories import ExperimentFactory, ScoreSetFactory, ScoreSetWithTargetFactory
+from urn.validators import MAVEDB_EXPERIMENT_URN_RE
+
 from ..models.experimentset import ExperimentSet
 from ..models.experiment import Experiment, assign_public_urn
-
-from dataset.utilities import publish_dataset
+from ..utilities import publish_dataset
+from ..factories import (
+    ExperimentFactory, ScoreSetFactory, ScoreSetWithTargetFactory,
+    ExperimentSetFactory,
+)
 
 
 class TestExperiment(TestCase):
@@ -89,27 +93,40 @@ class TestExperiment(TestCase):
 
 
 class TestAssignPublicUrn(TestCase):
-    def test_assign_public_urn_twice_doesnt_change_urn(self):
-        exp = ExperimentFactory()
-        publish_dataset(exp)
-        exp.refresh_from_db()
-        old_urn = exp.urn
-        self.assertTrue(exp.has_public_urn)
-
-        exp = Experiment.objects.first()
-        assign_public_urn(exp)
-        exp.refresh_from_db()
-        new_urn = exp.urn
-
-        self.assertTrue(exp.has_public_urn)
-        self.assertEqual(new_urn, old_urn)
-
+    def setUp(self):
+        self.factory = ExperimentFactory
+        self.private_parent = ExperimentSetFactory()
+        self.public_parent = publish_dataset(ExperimentSetFactory())
+    
+    def test_assigns_public_urn(self):
+        instance = self.factory(experimentset=self.public_parent)
+        instance = assign_public_urn(instance)
+        self.assertIsNotNone(MAVEDB_EXPERIMENT_URN_RE.fullmatch(instance.urn))
+        self.assertTrue(instance.has_public_urn)
+    
+    def test_increments_parent_last_child_value(self):
+        instance = self.factory(experimentset=self.public_parent)
+        self.assertEqual(instance.parent.last_child_value, 0)
+        instance = assign_public_urn(instance)
+        self.assertEqual(instance.parent.last_child_value, 1)
+    
+    def test_attr_error_parent_has_tmp_urn(self):
+        instance = self.factory(experimentset=self.private_parent)
+        self.private_parent.private = False
+        self.private_parent.save()
+        with self.assertRaises(AttributeError):
+            assign_public_urn(instance)
+    
     def test_assigns_sequential_urns(self):
-        instance1 = ExperimentFactory()
-        instance2 = ExperimentFactory()
-        instance2.experimentset = instance1.experimentset
-        instance2.save()
-        assign_public_urn(instance2)
-        self.assertIn('-a', instance2.urn)
-        assign_public_urn(instance1)
-        self.assertIn('-b', instance1.urn)
+        instance1 = self.factory(experimentset=self.public_parent)
+        instance2 = self.factory(experimentset=self.public_parent)
+        instance1 = assign_public_urn(instance1)
+        instance2 = assign_public_urn(instance2)
+        self.assertEqual(instance1.urn[-1], 'a')
+        self.assertEqual(instance2.urn[-1], 'b')
+    
+    def test_applying_twice_does_not_change_urn(self):
+        instance = self.factory(experimentset=self.public_parent)
+        i1 = assign_public_urn(instance)
+        i2 = assign_public_urn(instance)
+        self.assertEqual(i1.urn, i2.urn)

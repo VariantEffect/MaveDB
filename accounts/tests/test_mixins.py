@@ -5,6 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from dataset.models.experimentset import ExperimentSet
 
 from ..factories import UserFactory
+from ..permissions import PermissionTypes
 from ..mixins import filter_su, filter_anon, UserFilterMixin
 
 
@@ -26,6 +27,33 @@ class TestGroupPermisionMixin(TestCase):
             username='bob', password='secret_key')
         self.joe = User.objects.create(
             username='joe', password='secret_key')
+        
+    def test_add_administrators_adds_correct_permissions(self):
+        self.instance_a.add_administrators([self.alice])
+        self.assertTrue(self.alice.has_perm(
+            PermissionTypes.CAN_MANAGE, self.instance_a))
+        self.assertTrue(self.alice.has_perm(
+            PermissionTypes.CAN_EDIT, self.instance_a))
+        self.assertTrue(self.alice.has_perm(
+            PermissionTypes.CAN_VIEW, self.instance_a))
+        
+    def test_add_editors_adds_correct_permissions(self):
+        self.instance_a.add_editors([self.alice])
+        self.assertFalse(self.alice.has_perm(
+            PermissionTypes.CAN_MANAGE, self.instance_a))
+        self.assertTrue(self.alice.has_perm(
+            PermissionTypes.CAN_EDIT, self.instance_a))
+        self.assertTrue(self.alice.has_perm(
+            PermissionTypes.CAN_VIEW, self.instance_a))
+
+    def test_add_viewers_adds_correct_permissions(self):
+        self.instance_a.add_viewers([self.alice])
+        self.assertFalse(self.alice.has_perm(
+            PermissionTypes.CAN_MANAGE, self.instance_a))
+        self.assertFalse(self.alice.has_perm(
+            PermissionTypes.CAN_EDIT, self.instance_a))
+        self.assertTrue(self.alice.has_perm(
+            PermissionTypes.CAN_VIEW, self.instance_a))
 
     def test_administrators_returns_admins_only(self):
         self.instance_a.add_administrators(self.alice)
