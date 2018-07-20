@@ -1,5 +1,6 @@
 {% extends "main/base.html" %}
 {% load dataset_tags %}
+{% load list_tags %}
 
 {% block body %}
 
@@ -64,77 +65,6 @@
           <th class="clickable-row">Contributors</th>
         </tr>
       </thead>
-      <tbody>
-        {% if not instances|length > 0 %}
-          <tr>
-            <td colspan=6> 0 search results returned. </td>
-          </tr>
-        {% else %}
-          {% for instance in instances  %}
-            {% if not instance.private %}
-              <tr>
-                <td>
-                  {% if instance.class_name == 'experiment' %}
-                    <a href="{% url 'dataset:experiment_detail' instance.urn %}">
-                      {{ instance.urn }}
-                    </a>
-                  {% else %}
-                    <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
-                      {{ instance.urn }}
-                    </a>
-                  {% endif %}
-                </td>
-                <td>{{ instance.short_description|default:"-" }}</td>
-                <td>
-                  {% display_targets instance request.user %}
-                </td>
-                <td>
-                  {% display_species instance request.user %}
-                </td>
-                <td>
-                  {% for c in instance.contributors %}
-                    <span>
-                      {{ c.profile.get_display_name_hyperlink|safe }}
-                      <i class="external-link-small fas fa-external-link-alt"></i>
-                    </span>
-                  {% endfor %}
-                </td>
-              </tr>
-            {% else %}
-              {% if request.user in instance.contributors %}
-                <tr>
-                  <td>
-                    {% if instance.class_name == 'experiment' %}
-                      <a href="{% url 'dataset:experiment_detail' instance.urn %}">
-                        {{ instance.urn }} [Private]
-                      </a>
-                    {% else %}
-                      <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
-                        {{ instance.urn }} [Private]
-                      </a>
-                    {% endif %}
-                  </td>
-                  <td>{{ instance.short_description|default:"-" }}</td>
-                  <td>
-                    {% display_targets instance request.user %}
-                  </td>
-                  <td>
-                    {% display_species instance request.user %}
-                  </td>
-                  <td>
-                    {% for c in instance.contributors %}
-                      <span>
-                        {{ c.profile.get_display_name_hyperlink|safe }}
-                        <i class="external-link-small fas fa-external-link-alt"></i>
-                      </span>
-                    {% endfor %}
-                  </td>
-                </tr>
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      </tbody>
     </table>
   </div>
 </div>
@@ -142,9 +72,47 @@
 
 {% block extra_scripts %}
 <script type="text/javascript">
+  let instances = [
+    {% for instance in instances %}
+      {% if instance.private and request.user in instance.contributors or not instance.private %}
+        {
+          "0": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
+          "1": "{{ instance.short_description|default:"-"|escapejs }}",
+          "2": {% display_targets instance request.user True %},
+          "3": {% display_species instance request.user True %},
+          "4": "" +
+            {% for c in instance.contributors %}
+              "<span>" +
+              "{{ c.profile.get_display_name_hyperlink|escapejs|safe }}" +
+              "<i class=\"external-link-small fas fa-external-link-alt\"></i>" +
+              "</span><br>" +
+            {% endfor %}
+          ""
+        },
+      {% endif %}
+    {% endfor %}
+  ];
+
+  let data = {
+    draw: 1,
+    data: instances
+  };
+
+  console.log(data);
+
   $("document").ready(function() {
-    $('#search-table').DataTable({});
+    $('#search-table').DataTable({
+      data: instances,
+      columnDefs: [
+        {className: "Urn", targets: [0] },
+        {className: "Short description", targets: [1] },
+        {className: "Target name", targets: [2] },
+        {className: "Target organisms", targets: [3] },
+        {className: "Contributors", targets: [4] }
+      ]
+    });
   });
+
   $(".select2").select2();
   $(".select2-token-select").select2({
     tags: true,

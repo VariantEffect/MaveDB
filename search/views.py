@@ -36,7 +36,6 @@ def search_view(request):
     scoresets = ScoreSet.objects.all()
 
     search_all = 'search' in request.GET
-
     if request.method == "GET" and request.GET:
         if search_all:
             try:
