@@ -4,7 +4,6 @@
 {% block body %}
 
 <div class="container-fluid">
-
   <div class="container">
     <form class="mb-2" action="{% url 'search:search' %}" method="get">
       <div class="input-group">
@@ -20,98 +19,68 @@
     </form>
   </div>
 
-<div id="search-options" class="row collapse fade mt-2" aria-hidden="true">
-	<div class="container card" >
-		<div class="card-body">
-			<div class="card-header bg-white mb-2">
-				<h4 class="form-title"> Advanced search </h4>
-			</div>
+  <div id="search-options" class="row collapse fade mt-2" aria-hidden="true">
+    <div class="container card" >
+      <div class="card-body">
+        <div class="card-header bg-white mb-2">
+          <h4 class="form-title"> Advanced search </h4>
+        </div>
 
-			<form action="{% url 'search:search' %}" method="GET">
-        <h5 class="pb-2 form-title">Metadata:</h5>
-        {% include 'core/bs_neutral_form.html' with form=meta_search_form %}
-        <hr>
-        <h5 class="pb-2 form-title">External identifiers:</h5>
-        {% include 'core/bs_inline_form.html' with form=meta_id_search_form %}
-        <hr>
-        <h5 class="pb-2 form-title">Target gene identifiers:</h5>
-        {% include 'core/bs_inline_form.html' with form=target_id_search_form %}
-        <hr>
-        <h5 class="pb-2 form-title">Reference genome:</h5>
-        {% include 'core/bs_inline_form.html' with form=genome_search_form %}
-        <hr>
-        <h5 class="pb-2 form-title">Contributors:</h5>
-        {% include 'core/bs_inline_form.html' with form=user_search_form %}
+        <form action="{% url 'search:search' %}" method="GET">
+          <h5 class="pb-2 form-title">Metadata:</h5>
+          {% include 'core/bs_neutral_form.html' with form=meta_search_form %}
+          <hr>
+          <h5 class="pb-2 form-title">External identifiers:</h5>
+          {% include 'core/bs_inline_form.html' with form=meta_id_search_form %}
+          <hr>
+          <h5 class="pb-2 form-title">Target gene identifiers:</h5>
+          {% include 'core/bs_inline_form.html' with form=target_id_search_form %}
+          <hr>
+          <h5 class="pb-2 form-title">Reference genome:</h5>
+          {% include 'core/bs_inline_form.html' with form=genome_search_form %}
+          <hr>
+          <h5 class="pb-2 form-title">Contributors:</h5>
+          {% include 'core/bs_inline_form.html' with form=user_search_form %}
 
-        <div class="card-footer bg-white">
-					<button class="btn btn-outline-dark float-right white-button"
-                  style="width: 150px;" type="submit">Search</button>
-				</div>
-			</form>
-		
-		</div> <!-- End card body -->
-	</div> <!-- End card -->
-</div> <!-- end row -->
-<hr>
+          <div class="card-footer bg-white">
+            <button class="btn btn-outline-dark float-right white-button"
+                    style="width: 150px;" type="submit">Search</button>
+          </div>
+        </form>
 
-<div class="styled-table mt-4">
-	<table id="search-table" class="table table-hover">
-		<thead>
-			<tr>
-				<th class="clickable-row">Urn</th>
-				<th class="clickable-row">Short description</th>
-        <th class="clickable-row">Target name</th>
-        <th class="clickable-row">Target organisms</th>
-        <th class="clickable-row">Contributors</th>
-      </tr>
-		</thead>
-		<tbody>
-			{% if not instances|length > 0 %}
-				<tr>
-					<td colspan=6> 0 search results returned. </td>
-				</tr>
-			{% else %}
-				{% for instance in instances  %}
-					{% if not instance.private %}
-						<tr>
-							<td>
-                {% if instance.class_name == 'experiment' %}
-                  <a href="{% url 'dataset:experiment_detail' instance.urn %}">
-                    {{ instance.urn }}
-                  </a>
-                {% else %}
-                  <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
-                    {{ instance.urn }}
-                  </a>
-                {% endif %}
-							</td>
-              <td>{{ instance.short_description|default:"-" }}</td>
-              <td>
-                {% display_targets instance request.user %}
-              </td>
-              <td>
-                {% display_species instance request.user %}
-              </td>
-              <td>
-                {% for c in instance.contributors %}
-                  <span>
-                    {{ c.profile.get_display_name_hyperlink|safe }}
-                    <i class="external-link-small fas fa-external-link-alt"></i>
-                  </span>
-                {% endfor %}
-              </td>
-            </tr>
-          {% else %}
-            {% if request.user in instance.contributors %}
+      </div> <!-- End card body -->
+    </div> <!-- End card -->
+  </div> <!-- end row -->
+  <hr>
+
+  <div class="styled-table mt-4">
+    <table id="search-table" class="table table-hover">
+      <thead>
+        <tr>
+          <th class="clickable-row">Urn</th>
+          <th class="clickable-row">Short description</th>
+          <th class="clickable-row">Target name</th>
+          <th class="clickable-row">Target organisms</th>
+          <th class="clickable-row">Contributors</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if not instances|length > 0 %}
+          <tr>
+            <td colspan=6> 0 search results returned. </td>
+          </tr>
+        {% else %}
+          {% for instance in instances  %}
+            {% if not instance.private %}
               <tr>
                 <td>
                   {% if instance.class_name == 'experiment' %}
                     <a href="{% url 'dataset:experiment_detail' instance.urn %}">
-                      {{ instance.urn }} [Private]
+                      {{ instance.urn }}
                     </a>
                   {% else %}
                     <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
-                      {{ instance.urn }} [Private]
+                      {{ instance.urn }}
                     </a>
                   {% endif %}
                 </td>
@@ -131,12 +100,43 @@
                   {% endfor %}
                 </td>
               </tr>
+            {% else %}
+              {% if request.user in instance.contributors %}
+                <tr>
+                  <td>
+                    {% if instance.class_name == 'experiment' %}
+                      <a href="{% url 'dataset:experiment_detail' instance.urn %}">
+                        {{ instance.urn }} [Private]
+                      </a>
+                    {% else %}
+                      <a href="{% url 'dataset:scoreset_detail' instance.urn %}">
+                        {{ instance.urn }} [Private]
+                      </a>
+                    {% endif %}
+                  </td>
+                  <td>{{ instance.short_description|default:"-" }}</td>
+                  <td>
+                    {% display_targets instance request.user %}
+                  </td>
+                  <td>
+                    {% display_species instance request.user %}
+                  </td>
+                  <td>
+                    {% for c in instance.contributors %}
+                      <span>
+                        {{ c.profile.get_display_name_hyperlink|safe }}
+                        <i class="external-link-small fas fa-external-link-alt"></i>
+                      </span>
+                    {% endfor %}
+                  </td>
+                </tr>
+              {% endif %}
             {% endif %}
-          {% endif %}
-				{% endfor %}
-      {% endif %}
-		</tbody>
-	</table>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
 
@@ -144,6 +144,11 @@
 <script type="text/javascript">
   $("document").ready(function() {
     $('#search-table').DataTable({});
+  });
+  $(".select2").select2();
+  $(".select2-token-select").select2({
+    tags: true,
+    tokenSeparators: [","]
   });
 </script>
 {% endblock %}
