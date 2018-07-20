@@ -69,3 +69,50 @@
 	</div>
 </div>
 {% endblock body %}
+
+
+{% block extra_scripts %}
+  <script type="text/javascript">
+  $("document").ready(function() {
+
+    // Initialise select2
+    $(".select2").select2();
+    $(".select2-token-select").select2({
+      tags: true,
+      tokenSeparators: [","]
+    });
+
+    // Re-add any external_accession, keywords or target organism
+    // back to failed form submission
+    repopulateSelect(
+      "#id_keywords",
+      "#keywords-to-add"
+    );
+    repopulateSelect(
+      "#id_sra_ids",
+      "#sra-identifiers-to-add"
+    );
+    repopulateSelect(
+      "#id_doi_ids",
+      "#doi-identifiers-to-add"
+    );
+    repopulateSelect(
+      "#id_pubmed_ids",
+      "#pubmed-identifiers-to-add"
+    );
+    repopulateSelect(
+      "#id_uniprot-offset-identifier",
+      "#uniprot-identifier-to-add"
+    );
+    repopulateSelect(
+      "#id_ensembl-offset-identifier",
+      "#ensembl-identifier-to-add"
+    );
+    repopulateSelect(
+      "#id_refseq-offset-identifier",
+      "#refseq-identifier-to-add"
+    );
+
+  });
+</script>
+{% endblock %}

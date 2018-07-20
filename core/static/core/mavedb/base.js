@@ -2,51 +2,6 @@
 "use strict";
 jQuery, $;
 
-// On Load ----------------------------------------------------------------- //
-$("document").ready(function() {
-
-  // Initialise select2
-  $(".select2").select2();
-  $(".select2-token-select").select2({
-    tags: true,
-    tokenSeparators: [","]
-  });
-
-  $('#search-table').DataTable();
-
-  // Re-add any external_accession, keywords or target organism
-  // back to failed form submission
-  repopulateSelect(
-    "#id_keywords",
-    "#keywords-to-add"
-  );
-  repopulateSelect(
-    "#id_sra_ids",
-    "#sra-identifiers-to-add"
-  );
-  repopulateSelect(
-    "#id_doi_ids",
-    "#doi-identifiers-to-add"
-  );
-  repopulateSelect(
-    "#id_pubmed_ids",
-    "#pubmed-identifiers-to-add"
-  );
-  repopulateSelect(
-    "#id_uniprot-offset-identifier",
-    "#uniprot-identifier-to-add"
-  );
-  repopulateSelect(
-    "#id_ensembl-offset-identifier",
-    "#ensembl-identifier-to-add"
-  );
-  repopulateSelect(
-    "#id_refseq-offset-identifier",
-    "#refseq-identifier-to-add"
-  );
-
-});
-
 // Buttons ----------------------------------------------------------------- //
 // ORCID button in base.html
 function openORCID() {

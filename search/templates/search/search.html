@@ -139,3 +139,11 @@
 	</table>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+  $("document").ready(function() {
+    $('#search-table').DataTable({});
+  });
+</script>
+{% endblock %}
