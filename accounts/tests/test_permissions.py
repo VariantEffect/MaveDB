@@ -88,7 +88,7 @@ class UtilitiesTest(TransactionTestCase):
         self.assertEqual(
             group_name, '{}:{}-viewer'.format(
                 self.exps.class_name(), self.exps.pk))
-
+        
 
 class GroupConstructionTest(TestCase):
     # Mute pre/post save the signals so we don't create the groups
@@ -227,7 +227,6 @@ class UserAssignmentToInstanceGroupTest(TestCase):
 
     def test_admin_permissions_removed_when_removing_user(self):
         user = self.user()
-        assign_user_as_instance_admin(user, self.instance_1)
         remove_user_as_instance_admin(user, self.instance_1)
         can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, self.instance_1)
         can_edit = user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1)
@@ -528,3 +527,31 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertIn(alice, contributors)
         self.assertIn(farva, contributors)
         self.assertIn(bob, contributors)
+        
+    def test_renaming_group_does_not_alter_permissions(self):
+        user = self.user()
+        assign_user_as_instance_admin(user, self.instance_1)
+        
+        # Test with old name
+        can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, self.instance_1)
+        can_edit = user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1)
+        can_view = user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1)
+        self.assertTrue(can_manage)
+        self.assertTrue(can_edit)
+        self.assertTrue(can_view)
+
+        old_name = '{}:{}-{}'.format(
+            self.instance_1.class_name(), self.instance_1.pk, GroupTypes.ADMIN)
+        new_name = '{}-{}'.format(self.instance_1.urn, GroupTypes.ADMIN)
+        group = Group.objects.get(name=old_name)
+        group.name = new_name
+        group.save()
+        
+        # Test with new name
+        self.instance_1.refresh_from_db()
+        can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, self.instance_1)
+        can_edit = user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1)
+        can_view = user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1)
+        self.assertTrue(can_manage)
+        self.assertTrue(can_edit)
+        self.assertTrue(can_view)
