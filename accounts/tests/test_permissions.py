@@ -530,28 +530,29 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         
     def test_renaming_group_does_not_alter_permissions(self):
         user = self.user()
-        assign_user_as_instance_admin(user, self.instance_1)
+        instance = ds_factories.ScoreSetFactory()
+        assign_user_as_instance_admin(user, instance)
         
         # Test with old name
-        can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, self.instance_1)
-        can_edit = user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1)
-        can_view = user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1)
+        can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, instance)
+        can_edit = user.has_perm(PermissionTypes.CAN_EDIT, instance)
+        can_view = user.has_perm(PermissionTypes.CAN_VIEW, instance)
         self.assertTrue(can_manage)
         self.assertTrue(can_edit)
         self.assertTrue(can_view)
 
         old_name = '{}:{}-{}'.format(
-            self.instance_1.class_name(), self.instance_1.pk, GroupTypes.ADMIN)
-        new_name = '{}-{}'.format(self.instance_1.urn, GroupTypes.ADMIN)
+            instance.class_name(), instance.pk, GroupTypes.ADMIN)
+        new_name = '{}-{}'.format(instance.urn, GroupTypes.ADMIN)
         group = Group.objects.get(name=old_name)
         group.name = new_name
         group.save()
         
         # Test with new name
-        self.instance_1.refresh_from_db()
-        can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, self.instance_1)
-        can_edit = user.has_perm(PermissionTypes.CAN_EDIT, self.instance_1)
-        can_view = user.has_perm(PermissionTypes.CAN_VIEW, self.instance_1)
+        instance.refresh_from_db()
+        can_manage = user.has_perm(PermissionTypes.CAN_MANAGE, instance)
+        can_edit = user.has_perm(PermissionTypes.CAN_EDIT, instance)
+        can_view = user.has_perm(PermissionTypes.CAN_VIEW, instance)
         self.assertTrue(can_manage)
         self.assertTrue(can_edit)
         self.assertTrue(can_view)
