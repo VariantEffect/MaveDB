@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 for _ in [False, True]:
                     # Configure the scoreset first.
                     scoreset = factories.ScoreSetFactory(experiment=instance)
-                    target = genome_factories.TargetGeneFactory()
+                    target = genome_factories.TargetGeneFactory(scoreset=scoreset)
                     genomes = genome_models.ReferenceGenome.objects.all()
                     genome_factories.ReferenceMapFactory(
                         target=target,
@@ -44,7 +44,6 @@ class Command(BaseCommand):
                 
                 for scoreset, publish in zip(
                         instance.children.all(), [True, False]):
-                    scoreset.refresh_from_db()
                     UniprotOffset.objects.create(
                         offset=i*3 + 1,
                         target=scoreset.target,
@@ -82,5 +81,11 @@ class Command(BaseCommand):
                     scoreset.add_administrators(user)
                     scoreset.experiment.add_administrators(user)
                     scoreset.experiment.experimentset.add_administrators(user)
+                    
+                    sys.stdout.write(
+                        "Created {} with target {} and genome {}\n".format(
+                            scoreset.urn, scoreset.target,
+                            scoreset.target.reference_maps.first().genome)
+                    )
 
                 sys.stdout.write("Created {}\n".format(instance.urn))
