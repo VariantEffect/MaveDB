@@ -34,14 +34,54 @@ def default_dataset():
     })
 
 
+@transaction.atomic
 def assign_public_urn(scoreset):
-    if scoreset.private or not scoreset.has_public_urn:
-        parent = scoreset.experiment
+    """
+    Assigns a public urn of the form <parent_urn>-[0-9]+ Blocks until it can
+    place of lock the passed `scoreset` and `experiment` parent. Assumes that
+    the parent is already public with a public urn.
+
+    Does nothing if passed model is already public.
+
+    Parameters
+    ----------
+    scoreset : `ScoreSet`
+        The scoreset instance to assign a public urn to.
+        
+    Raises
+    ------
+    `AttributeError` : Parent does not have a public urn.
+
+    Returns
+    -------
+    `ScoreSet`
+        scoreset with new urn or same urn if already public.
+    """
+    scoreset = ScoreSet.objects.filter(
+        id=scoreset.id
+    ).select_for_update(nowait=False).first()
+
+    if not scoreset.has_public_urn:
+        parent = Experiment.objects.filter(
+            id=scoreset.experiment.id
+        ).select_for_update(nowait=False).first()
+        
+        if not parent.has_public_urn:
+            raise AttributeError(
+                "Cannot assign a public urn when parent has a temporary urn."
+            )
+        
         child_value = parent.last_child_value + 1
         scoreset.urn = "{}-{}".format(parent.urn, child_value)
         parent.last_child_value = child_value
         scoreset.save()
-        parent.save()
+        parent.save(force_update=True)
+    
+        # Refresh the scoreset and nested parents
+        scoreset = ScoreSet.objects.filter(
+            id=scoreset.id
+        ).select_for_update(nowait=False).first()
+    
     return scoreset
 
 
@@ -56,7 +96,8 @@ class ScoreSet(DatasetModel):
     Parameters
     ----------
     urn : `models.CharField`
-        The urn in the format 'SCSXXXXXX[A-Z]+.\d+'
+        The urn, either temporary (auto-assigned) or public (assigned when
+        published).
 
     experiment : `models.ForeignKey`, required.
         The experiment a scoreset is assciated with. Cannot be null.

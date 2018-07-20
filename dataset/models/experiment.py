@@ -23,13 +23,44 @@ from ..models.base import DatasetModel
 from ..models.experimentset import ExperimentSet
 
 
+@transaction.atomic
 def assign_public_urn(experiment):
-    if experiment.private or not experiment.has_public_urn:
-        # The old groups associated with the tmp urn must be deleted
-        parent = experiment.experimentset
-        child_value = parent.last_child_value + 1
+    """
+    Assigns a public urn of the form <parent_urn>-[a-z]+ Blocks until it can
+    place of lock the passed experiment and experimentset parent. Assumes that
+    the parent is already public with a public urn.
 
+    Does nothing if passed model is already public.
+
+    Parameters
+    ----------
+    experiment : `Experiment`
+        The experiment instance to assign a public urn to.
+        
+    Raises
+    ------
+    `AttributeError` : Parent does not have a public urn.
+
+    Returns
+    -------
+    `Experiment`
+        experiment with new urn or same urn if already public.
+    """
+    experiment = Experiment.objects.filter(
+        id=experiment.id
+    ).select_for_update(nowait=False).first()
+    if not experiment.has_public_urn:
+        parent = ExperimentSet.objects.filter(
+            id=experiment.experimentset.id
+        ).select_for_update(nowait=False).first()
+        
+        if not parent.has_public_urn:
+            raise AttributeError(
+                "Cannot assign a public urn when parent has a temporary urn."
+            )
+        
         # Convert child_value to a letter (a-z)
+        child_value = parent.last_child_value + 1
         suffix = ""
         x = child_value
         while x > 0:
@@ -37,10 +68,15 @@ def assign_public_urn(experiment):
             suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
         experiment.urn = "{}-{}".format(parent.urn, suffix)
         parent.last_child_value = child_value
-
+        
         experiment.save()
         parent.save()
-
+        
+        # Refresh the instance and nested parents
+        experiment = Experiment.objects.filter(
+            id=experiment.id
+        ).select_for_update(nowait=False).first()
+    
     return experiment
 
 

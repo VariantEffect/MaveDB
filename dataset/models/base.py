@@ -306,6 +306,14 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         else:
             self.modified_by = user
 
+    def set_publish_date(self, date=None, propagate=False):
+        if not date:
+            date = datetime.date.today()
+        if propagate:
+            self.propagate_set_value('publish_date', date)
+        else:
+            self.publish_date = date
+
     def set_created_by(self, user, propagate=False):
         if propagate:
             self.propagate_set_value('created_by', user)
