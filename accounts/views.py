@@ -15,7 +15,6 @@ from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
 from accounts.utilities import delete, publish
-from urn.models import get_model_by_urn
 from dataset.mixins import DatasetPermissionMixin
 from urn.models import get_model_by_urn
 
@@ -112,8 +111,7 @@ def manage_instance(request, urn):
     except ObjectDoesNotExist:
         raise Http404()
 
-    has_permission = request.user.has_perm(
-        PermissionTypes.CAN_MANAGE, instance)
+    has_permission = request.user.has_perm(PermissionTypes.CAN_MANAGE, instance)
     if not has_permission:
         raise PermissionDenied()
 
