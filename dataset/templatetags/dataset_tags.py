@@ -22,7 +22,7 @@ def display_targets(instance, user, javascript=False):
         return '-'
     if javascript:
         return mark_safe(json.dumps(sorted(list(targets))))
-    return ', '.join(sorted(list(targets)))
+    return mark_safe(', '.join(sorted(list(targets))))
 
 
 @register.simple_tag
