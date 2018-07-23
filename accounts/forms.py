@@ -6,7 +6,6 @@ account editing.
 import logging
 
 from django import forms
-from django.utils.translation import ugettext as _
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -149,8 +148,8 @@ class SelectUsersForm(forms.Form):
             }
         ),
         error_messages={
-            'list': _('Enter a list of values.'),
-            'invalid_pk_value': _('User "%(pk)s" does not exist.')
+            'list': 'Enter a list of values.',
+            'invalid_pk_value': 'User "%(pk)s" does not exist.',
         }
     )
 
@@ -181,7 +180,11 @@ class SelectUsersForm(forms.Form):
              for u in self.fields["users"].queryset]
 
         self.user = user
-        self.fields["users"].required = required
+        if group == GroupTypes.ADMIN:
+            self.fields["users"].required = True
+        else:
+            self.fields["users"].required = False
+        
         self.group = group
         self.instance = instance
 
@@ -194,7 +197,7 @@ class SelectUsersForm(forms.Form):
             if self.group == GroupTypes.ADMIN and users.count() == 0:
                 if not self.user.is_superuser:
                     raise ValidationError(
-                        _("There must be at least one administrator.")
+                        "There must be at least one administrator."
                     )
 
         if users is not None:
@@ -204,10 +207,8 @@ class SelectUsersForm(forms.Form):
                 if admins.count() == 1 and admins[0] in users:
                     if not self.user.is_superuser:
                         raise ValidationError(
-                            _(
-                                "Cannot assign the only administrator "
-                                "to another group."
-                            )
+                            "Cannot assign the only administrator "
+                            "to another group."
                         )
         return cleaned_data
 

@@ -18,13 +18,6 @@ from .permissions import (
 )
 
 
-def filter_su(qs):
-    """filter superusers from a query."""
-    if isinstance(qs, (list, set)):
-        return [u for u in qs if not u.is_superuser]
-    return qs.exclude(is_superuser=True)
-
-
 def filter_anon(qs):
     """filter anon users from a query."""
     if isinstance(qs, (list, set)):
