@@ -32,16 +32,16 @@
           {% include 'core/bs_neutral_form.html' with form=meta_search_form %}
           <hr>
           <h5 class="pb-2 form-title">External identifiers:</h5>
-          {% include 'core/bs_inline_form.html' with form=meta_id_search_form %}
+          {% include 'core/bs_neutral_form.html' with form=meta_id_search_form %}
           <hr>
           <h5 class="pb-2 form-title">Target gene identifiers:</h5>
-          {% include 'core/bs_inline_form.html' with form=target_id_search_form %}
+          {% include 'core/bs_neutral_form.html' with form=target_id_search_form %}
           <hr>
           <h5 class="pb-2 form-title">Reference genome:</h5>
-          {% include 'core/bs_inline_form.html' with form=genome_search_form %}
+          {% include 'core/bs_neutral_form.html' with form=genome_search_form %}
           <hr>
           <h5 class="pb-2 form-title">Contributors:</h5>
-          {% include 'core/bs_inline_form.html' with form=user_search_form %}
+          {% include 'core/bs_neutral_form.html' with form=user_search_form %}
 
           <div class="card-footer bg-white">
             <button class="btn btn-outline-dark float-right white-button"
@@ -68,6 +68,7 @@
     </table>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -78,8 +79,8 @@
         {
           "0": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
           "1": "{{ instance.short_description|default:"-"|escapejs }}",
-          "2": {% display_targets instance request.user True %},
-          "3": {% display_species instance request.user True %},
+          "2": [{% display_targets instance request.user True %}][0].join(', '),
+          "3": [{% display_species instance request.user True %}][0].join(', '),
           "4": "" +
             {% for c in instance.contributors %}
               "<span>" +
@@ -98,8 +99,6 @@
     data: instances
   };
 
-  console.log(data);
-
   $("document").ready(function() {
     $('#search-table').DataTable({
       data: instances,
@@ -111,12 +110,7 @@
         {className: "Contributors", targets: [4] }
       ]
     });
-  });
-
-  $(".select2").select2();
-  $(".select2-token-select").select2({
-    tags: true,
-    tokenSeparators: [","]
+    init_select2();
   });
 </script>
 {% endblock %}

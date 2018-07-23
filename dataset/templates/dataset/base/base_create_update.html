@@ -9,17 +9,13 @@
 <div class="row">
 	<div class="form-sidebar col-xl-2 border-right">
 		<h3 class="sidebar-title">
-			{% block side-bar-title %}
-
-			{% endblock %}
+			{% block side-bar-title %}{% endblock %}
 		</h3>
 		{% if experiment_urn|default:"" %}
 			<a href="{% url "accounts:profile" %}"><h4 class="mt-4">Skip for now</h4></a>
 		{% endif %}
 		<p class="mt-4">
-      {% block side-bar-instructions %}
-
-      {% endblock %}
+      {% block side-bar-instructions %}{% endblock %}
 		</p>
 		<p>* indicates a required field</p>
 	</div>
@@ -75,12 +71,7 @@
   <script type="text/javascript">
   $("document").ready(function() {
 
-    // Initialise select2
-    $(".select2").select2();
-    $(".select2-token-select").select2({
-      tags: true,
-      tokenSeparators: [","]
-    });
+    init_select2();
 
     // Re-add any external_accession, keywords or target organism
     // back to failed form submission

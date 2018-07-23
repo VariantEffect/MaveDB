@@ -384,3 +384,12 @@ $("#id_target").on("change", function() {
   }
   return false;
 });
+
+
+function init_select2(params) {
+  $(".select2").select2();
+  $(".select2-token-select").select2({
+    tags: true,
+    tokenSeparators: [","]
+  });
+}

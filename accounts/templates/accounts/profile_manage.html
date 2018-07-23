@@ -103,3 +103,11 @@
   </div>
 
 {% endblock profile_body %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+  $("document").ready( function () {
+    init_select2();
+  });
+</script>
+{% endblock %}
