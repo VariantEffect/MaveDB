@@ -1,4 +1,5 @@
-from django.test import TestCase
+from django.test import TestCase, mock
+from django.core import mail
 from django.contrib.auth import get_user_model
 
 from dataset.factories import ExperimentFactory
@@ -6,42 +7,33 @@ from dataset.factories import ExperimentFactory
 from ..factories import UserFactory
 from ..forms import SelectUsersForm, UserSearchForm
 from ..mixins import UserFilterMixin
-from ..permissions import (
-    GroupTypes,
-    user_is_anonymous,
-    user_is_contributor_for_instance,
-    assign_user_as_instance_admin,
-    assign_user_as_instance_viewer
-)
+from ..permissions import GroupTypes, user_is_anonymous
 
 User = get_user_model()
 
 
 class TestSelectUsersForm(TestCase):
-
     def setUp(self):
         self.alice = User.objects.create(username="alice")
         self.bob = User.objects.create(username="bob")
 
-    def test_can_admin_form_invalid_blank_data(self):
+    def test_select_admin_form_invalid_blank_data(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
             user=self.alice,
             data={},
             group=GroupTypes.ADMIN,
             instance=instance,
-            required=False
         )
         self.assertFalse(form.is_valid())
 
-    def test_can_non_admin_form_valid_blank_data(self):
+    def test_select_non_admin_form_valid_blank_data(self):
         instance = ExperimentFactory()
         form = SelectUsersForm(
             user=self.alice,
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
-            required=False
         )
         self.assertTrue(form.is_valid())
 
@@ -50,7 +42,6 @@ class TestSelectUsersForm(TestCase):
             data={},
             group=GroupTypes.EDITOR,
             instance=instance,
-            required=False
         )
         self.assertTrue(form.is_valid())
 
@@ -62,7 +53,6 @@ class TestSelectUsersForm(TestCase):
                 data={},
                 group="not a group type",
                 instance=instance,
-                required=False
             )
 
     def test_validation_error_cannot_assign_empty_admin_list(self):
@@ -72,45 +62,68 @@ class TestSelectUsersForm(TestCase):
             data={"users": []},
             group=GroupTypes.ADMIN,
             instance=instance,
-            required=False
         )
         self.assertFalse(form.is_valid())
 
     def test_validation_error_cannot_reassign_only_admin(self):
         instance = ExperimentFactory()
-        assign_user_as_instance_admin(self.alice, instance)
+        instance.add_administrators(self.alice)
         form = SelectUsersForm(
             user=self.alice,
             data={"users": [self.alice.pk]},
             group=GroupTypes.EDITOR,
             instance=instance,
-            required=False
         )
         self.assertFalse(form.is_valid())
 
-    def test_can_set_required_field_param_inside_init(self):
+    def test_can_reassign_viewer_to_editor(self):
         instance = ExperimentFactory()
-        form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.VIEWER,
-            instance=instance,
-            required=True
-        )
-        self.assertFalse(form.is_valid())
-
-    def test_can_successfully_reasign_members(self):
-        instance = ExperimentFactory()
-        assign_user_as_instance_viewer(self.alice, instance)
+        instance.add_viewers(self.alice)
         form = SelectUsersForm(
             user=self.alice,
             data={"users": [self.alice.pk]},
             group=GroupTypes.EDITOR,
             instance=instance,
-            required=False
         )
         form.process_user_list()
-        self.assertTrue(user_is_contributor_for_instance(self.alice, instance))
+        self.assertTrue(self.alice in instance.editors())
+        
+    def test_can_reassign_editor_to_admin(self):
+        instance = ExperimentFactory()
+        instance.add_editors(self.alice)
+        form = SelectUsersForm(
+            user=self.alice,
+            data={"users": [self.alice.pk]},
+            group=GroupTypes.ADMIN,
+            instance=instance,
+        )
+        form.process_user_list()
+        self.assertTrue(self.alice in instance.administrators())
+
+    def test_can_reassign_admin_to_editor(self):
+        instance = ExperimentFactory()
+        instance.add_administrators(self.alice)
+        instance.add_administrators(self.bob)
+        form = SelectUsersForm(
+            user=self.alice,
+            data={"users": [self.alice.pk]},
+            group=GroupTypes.EDITOR,
+            instance=instance,
+        )
+        form.process_user_list()
+        self.assertTrue(self.alice in instance.editors())
+        
+    def test_can_reassign_editor_to_viewer(self):
+        instance = ExperimentFactory()
+        instance.add_editors(self.alice)
+        form = SelectUsersForm(
+            user=self.alice,
+            data={"users": [self.alice.pk]},
+            group=GroupTypes.VIEWER,
+            instance=instance,
+        )
+        form.process_user_list()
+        self.assertTrue(self.alice in instance.viewers())
 
     def test_anon_not_in_queryset(self):
         instance = ExperimentFactory()
@@ -119,12 +132,9 @@ class TestSelectUsersForm(TestCase):
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
-            required=True
         )
         qs = form.fields["users"].queryset.all()
-        self.assertFalse(
-            any([user_is_anonymous(u) for u in qs])
-        )
+        self.assertFalse(any([user_is_anonymous(u) for u in qs]))
 
     def test_superusers_not_in_query_list(self):
         instance = ExperimentFactory()
@@ -133,49 +143,73 @@ class TestSelectUsersForm(TestCase):
             data={},
             group=GroupTypes.VIEWER,
             instance=instance,
-            required=True
         )
         qs = form.fields["users"].queryset.all()
         self.assertTrue(all([not u.is_superuser for u in qs]))
 
     def test_can_set_initial_selected_users_from_instance(self):
         instance = ExperimentFactory()
-        assign_user_as_instance_admin(self.alice, instance)
+        instance.add_administrators(self.alice)
         form = SelectUsersForm(
             user=self.alice,
             data={},
             group=GroupTypes.ADMIN,
             instance=instance,
-            required=False
         )
         self.assertTrue(self.alice.pk in form.initial["users"])
-
-    def test_validation_error_IGNORED_superuser_reassign_only_admin(self):
+    
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_reassigning_user_sends_email(self, patch):
         instance = ExperimentFactory()
-        assign_user_as_instance_admin(self.alice, instance)
-        self.alice.is_superuser = True
-        self.alice.save()
+        instance.add_editors(self.alice)
         form = SelectUsersForm(
             user=self.alice,
             data={"users": [self.alice.pk]},
-            group=GroupTypes.EDITOR,
+            group=GroupTypes.ADMIN,
             instance=instance,
-            required=False
         )
-        self.assertTrue(form.is_valid())
+        form.process_user_list()
+        self.assertTrue(self.alice in instance.administrators())
+        patch.assert_called_with(**{
+            'instance': instance,
+            'action': 're-assigned',
+            'group': GroupTypes.ADMIN,
+        })
 
-    def test_validation_error_IGNORED_superuser_assign_empty_admin_list(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_adding_new_user_sends_email(self, patch):
         instance = ExperimentFactory()
-        self.alice.is_superuser = True
-        self.alice.save()
+        form = SelectUsersForm(
+            user=self.alice,
+            data={"users": [self.alice.pk]},
+            group=GroupTypes.ADMIN,
+            instance=instance,
+        )
+        form.process_user_list()
+        self.assertTrue(self.alice in instance.administrators())
+        patch.assert_called_with(**{
+            'instance': instance,
+            'action': 'added',
+            'group': GroupTypes.ADMIN,
+        })
+        
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_removing_user_sends_email(self, patch):
+        instance = ExperimentFactory()
+        instance.add_editors(self.alice)
         form = SelectUsersForm(
             user=self.alice,
             data={"users": []},
-            group=GroupTypes.ADMIN,
+            group=GroupTypes.EDITOR,
             instance=instance,
-            required=False
         )
-        self.assertTrue(form.is_valid())
+        form.process_user_list()
+        self.assertFalse(self.alice in instance.administrators())
+        patch.assert_called_with(**{
+            'instance': instance,
+            'action': 'removed',
+            'group': GroupTypes.EDITOR,
+        })
 
 
 class TestUserSearchForm(TestCase):
@@ -195,10 +229,10 @@ class TestUserSearchForm(TestCase):
         self.assertNotIn(u2, result)
 
     def test_can_search_by_last_name(self):
-        u1 = UserFactory(last_name='Bob')
-        u2 = UserFactory(last_name='Alice')
+        u1 = UserFactory(last_name='McBob')
+        u2 = UserFactory(last_name='McAlice')
 
-        dict_ = {UserFilterMixin.LAST_NAME: 'bob'}
+        dict_ = {UserFilterMixin.LAST_NAME: 'McBob'}
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
         q = form.make_filters(join=True)
@@ -209,10 +243,10 @@ class TestUserSearchForm(TestCase):
         self.assertNotIn(u2, result)
 
     def test_can_search_by_username(self):
-        u1 = UserFactory(username='Bob')
-        u2 = UserFactory(username='Alice')
+        u1 = UserFactory(username='uBob')
+        u2 = UserFactory(username='uAlice')
 
-        dict_ = {UserFilterMixin.USERNAME: 'bob'}
+        dict_ = {UserFilterMixin.USERNAME: 'ubob'}
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
         q = form.make_filters(join=True)
@@ -223,13 +257,13 @@ class TestUserSearchForm(TestCase):
         self.assertNotIn(u2, result)
 
     def test_can_search_multiple_fields(self):
-        u1 = UserFactory(username='Bob')
+        u1 = UserFactory(username='000-000-X')
         u2 = UserFactory(first_name='Alice')
         u3 = UserFactory(first_name='Bob')
 
         dict_ = {
-            UserFilterMixin.FIRST_NAME: 'Alice',
-            UserFilterMixin.USERNAME: 'bob'
+            UserFilterMixin.FIRST_NAME: 'alice',
+            UserFilterMixin.USERNAME: '000-000-X'
         }
         form = UserSearchForm(data=dict_)
         self.assertTrue(form.is_valid())
@@ -240,3 +274,20 @@ class TestUserSearchForm(TestCase):
         self.assertIn(u1, result)
         self.assertIn(u2, result)
         self.assertNotIn(u3, result)
+
+    def test_search_is_case_insensitive(self):
+        UserFactory(username='USER')
+        UserFactory(first_name='User')
+        UserFactory(first_name='UsEr')
+
+        dict_ = {
+            UserFilterMixin.FIRST_NAME: 'user',
+            UserFilterMixin.LAST_NAME: 'user',
+            UserFilterMixin.USERNAME: 'user'
+        }
+        form = UserSearchForm(data=dict_)
+        self.assertTrue(form.is_valid())
+        q = form.make_filters(join=True)
+
+        result = User.objects.filter(q).distinct()
+        self.assertEqual(result.count(), 3)

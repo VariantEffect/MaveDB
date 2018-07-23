@@ -1,4 +1,4 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 
 from core.utilities.tests import TestMessageMixin
 
@@ -151,7 +151,7 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.save()
         self.assertTrue(publish(scoreset.urn, self.create_request()))
     
-    def test_false_publish_not_variants(self):
+    def test_false_publish_no_variants(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
@@ -166,3 +166,12 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.add_administrators(self.user)
         publish_dataset(scoreset)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
+        
+    def test_sets_status_as_processing(self):
+        scoreset = self.create_scoreset()
+        scoreset.add_administrators(self.user)
+        self.assertTrue(publish(scoreset.urn, self.create_request()))
+        scoreset.refresh_from_db()
+        self.assertEqual(
+            scoreset.processing_state, dataset.constants.processing)
+        

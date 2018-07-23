@@ -88,7 +88,6 @@ class TestDisplaySpeciesTag(TestCase):
         )
 
 
-
 class TestVisibleChildren(TestCase):
     def test_hides_private_when_user_not_contrib(self):
         exp = ExperimentWithScoresetFactory()

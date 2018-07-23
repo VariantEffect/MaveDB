@@ -2,6 +2,7 @@ from django.test import TestCase, mock
 from django.core import mail
 from django.contrib.auth import get_user_model
 
+from social_django.models import UserSocialAuth
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 from accounts.factories import UserFactory
@@ -27,7 +28,6 @@ User = get_user_model()
 
 
 class TestUserProfile(TestCase):
-
     def setUp(self):
         self.exps_1 = ExperimentSet.objects.create()
         self.exps_2 = ExperimentSet.objects.create()
@@ -43,13 +43,21 @@ class TestUserProfile(TestCase):
         self.assertTrue(user_is_anonymous(anon))
 
     def test_profile_gets_users_email_as_default(self):
-        bob = User.objects.create(
-            username="bob", password="secretkey", email='bob@bob.com')
-        self.assertEqual(bob.email, bob.profile.email)
+        user = UserFactory()
+        profile = user.profile
+        profile.email = None
+        profile.save()
+        self.assertIsNone(user.profile.email)
 
-        alice = User.objects.create(
-            username="alice", password="secretkey", email="")
-        self.assertIsNone(alice.profile.email)
+    def test_name_methods_default_to_username(self):
+        bob = User.objects.create(username="bob", password="secretkey")
+        self.assertEqual(bob.profile.get_full_name(), "bob")
+        self.assertEqual(bob.profile.get_short_name(), "bob")
+        self.assertEqual(bob.profile.get_display_name(), "bob")
+
+    def test_save_creates_user_profile(self):
+        User.objects.create(username="bob", password="secretkey")
+        self.assertEqual(len(Profile.non_anonymous_profiles()), 1)
 
     def test_can_get_full_name(self):
         bob = User.objects.create(
@@ -109,20 +117,6 @@ class TestUserProfile(TestCase):
         bob.profile.save()
         bob.profile.email_user(message="hello", subject="None")
         patch.assert_not_called()
-
-    def test_name_methods_default_to_username(self):
-        bob = User.objects.create(username="bob", password="secretkey")
-        self.assertEqual(bob.profile.get_full_name(), "bob")
-        self.assertEqual(bob.profile.get_short_name(), "bob")
-
-    def test_can_create_user_profile(self):
-        bob = User.objects.create(username="bob", password="secretkey")
-        self.assertEqual(len(Profile.non_anonymous_profiles()), 1)
-
-    def test_cannot_create_user_profile_twice(self):
-        bob = User.objects.create(username="bob", password="secretkey")
-        bob.save()  # send another save signal
-        self.assertEqual(len(Profile.non_anonymous_profiles()), 1)
 
     # ----- ExperimentSets
     def test_can_get_all_experimentsets_user_is_admin_on(self):
