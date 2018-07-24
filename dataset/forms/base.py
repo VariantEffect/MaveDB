@@ -132,7 +132,6 @@ class DatasetModelForm(forms.ModelForm):
             if not hasattr(self, 'edit_mode') and not instance.created_by:
                 instance.set_created_by(self.user)
             instance.save()
-            assign_superusers_as_admin(instance)
         return instance
 
     def m2m_instances_for_field(self, field_name, return_new=True):
