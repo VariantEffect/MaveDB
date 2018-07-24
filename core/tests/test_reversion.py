@@ -84,9 +84,9 @@ class TestVersionControl(TestCase):
 
         original.abstract_text = ""
         original.keywords.add(kw)
-        original.add_identifier(pm)
-        original.add_identifier(doi)
-        original.add_identifier(sra)
+        original.pubmed_ids.add(pm)
+        original.doi_ids.add(doi)
+        original.sra_ids.add(sra)
         original.save()
 
         instance = revert(original)
