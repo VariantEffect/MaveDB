@@ -37,19 +37,6 @@ parent_attr_map = {
 }
 
 
-def rename_groups(dataset):
-    admins = dataset.administrators()
-    editors = dataset.editors()
-    viewers = dataset.viewers()
-    # The old groups associated with the tmp urn must be deleted
-    permissions.delete_all_groups_for_instance(dataset)
-    # Re-assign contributors to the new groups.
-    dataset.add_administrators(admins)
-    dataset.add_editors(editors)
-    dataset.add_viewers(viewers)
-    return dataset
-
-
 class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
     """
     Keeps track of the number of public datasets for each model type.
@@ -287,12 +274,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         super().save(*args, **kwargs)
         return self
 
-    @transaction.atomic
-    def save_children(self):
-        if self.children:
-            for child in self.children:
-                child.save()
-       
     def save_parents(self, *args, **kwargs):
         if hasattr(self, 'experiment'):
             self.experiment.save(*args, **kwargs)
@@ -320,12 +301,6 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         else:
             self.created_by = user
 
-    def approve(self, propagate=True):
-        if propagate:
-            self.propagate_set_value('approved', True)
-        else:
-            self.approved = True
-
     def md_abstract(self):
         return pandoc.convert_md_to_html(self.abstract_text)
 
@@ -338,33 +313,8 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     def get_description(self):
         return self.short_description
 
-    def add_keyword(self, keyword):
-        if not isinstance(keyword, Keyword):
-            raise TypeError("`keyword` must be a Keyword instance.")
-        self.keywords.add(keyword)
-
-    def add_identifier(self, instance):
-        if not isinstance(instance, ExternalIdentifier):
-            raise TypeError(
-                "`instance` must be an ExternalIdentifier instance.")
-
-        if isinstance(instance, SraIdentifier):
-            self.sra_ids.add(instance)
-        elif isinstance(instance, PubmedIdentifier):
-            self.pubmed_ids.add(instance)
-        elif isinstance(instance, DoiIdentifier):
-            self.doi_ids.add(instance)
-        else:
-            raise TypeError(
-                "Missing case for class `{}`.".format(
-                    type(instance).__name__
-                ))
-
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
-
-    def clear_keywords(self):
-        self.clear_m2m('keywords')
 
     @property
     def parent(self):
