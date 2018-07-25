@@ -19,11 +19,21 @@ def get_model_by_urn(urn):
     from dataset.models.scoreset import ScoreSet
     from dataset.models.experiment import Experiment
     from dataset.models.experimentset import ExperimentSet
-
+    
+    instance = None
     for model in [ScoreSet, Experiment, ExperimentSet, Variant]:
         if model.objects.filter(urn=urn).exists():
-            return model.objects.get(urn=urn)
-    raise ObjectDoesNotExist("No model found with urn {}.".format(urn))
+            if instance is not None:
+                raise ValueError(
+                    "Multiple instances with different namespaces found "
+                    "with urn {}".format(urn)
+                )
+            else:
+                instance = model.objects.get(urn=urn)
+    if instance:
+        return instance
+    else:
+        raise ObjectDoesNotExist("No model found with urn {}.".format(urn))
 
 
 def generate_tmp_urn():
