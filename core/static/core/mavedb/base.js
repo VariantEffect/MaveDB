@@ -60,58 +60,6 @@ function askConfirmation() {
   );
 }
 
-function validateAdminSubmit(e) {
-  var aSelected = $("#admin-form > div > select option:selected");
-  var aSelectedPks = aSelected.map(function() {
-    return parseInt(this.value);
-  });
-
-  var willRemoveSelfAsAdmin = aSelectedPks.index(user) < 0;
-  if(willRemoveSelfAsAdmin && !ignore) {
-    var submit = askConfirmation();
-    if(submit) {
-      return $("#admin-form").submit();
-    }
-    return false;
-  }
-  return $("#admin-form").submit();
-}
-
-function validateEditorSubmit(e) {
-  var eSelected = $("#editor-form > div > select option:selected");
-  var eSelectedPks = eSelected.map(function() {
-    return parseInt(this.value);
-  });
-
-  var willRemoveSelfAsAdmin = eSelectedPks.index(user) >= 0;
-  if(willRemoveSelfAsAdmin && !ignore) {
-    var submit = askConfirmation();
-    if(submit) {
-      return $("#editor-form").submit();
-    }
-    return false;
-  }
-  return $("#editor-form").submit();
-}
-
-function validateViewerSubmit(e) {
-  var vSelected = $("#viewer-form > div > select option:selected");
-  var vSelectedPks = vSelected.map(function() {
-    return parseInt(this.value);
-  });
-
-  var willRemoveSelfAsAdmin = vSelectedPks.index(user) >= 0;
-  if(willRemoveSelfAsAdmin && !ignore) {
-    var submit = askConfirmation();
-    if(submit) {
-      return $("#viewer-form").submit();
-    }
-    return false;
-  }
-  return $("#viewer-form").submit();
-}
-
-
 // Dynaimic form selection
 // ------------------------------------------------------------------------ //
 // Re-add any external_accession, keywords or target organism

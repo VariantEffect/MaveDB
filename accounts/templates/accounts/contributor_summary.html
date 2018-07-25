@@ -4,49 +4,103 @@
 {% block profile_body %}
   <div class="container" style="min-height: 55vh">
     <h2>
-      Management summary
+      Group membership preview
       <a><i class="icon fas fa-users-cog pl-1" style="font-size: 36px;"></i></a>
     </h2>
+    <p class="text-muted">
+      Group memberships will be updated to contain the users below. Click
+      the 'check' to accept these changes. Click the 'left arrow' to edit
+      these memberships. Click 'cancel' to return to your profile without
+      saving these changes.
+    </p>
     <hr>
 
     <h4>Administrators</h4>
-    {% if instance.administrators.count %}
+    {% if all_data.administrators.count %}
       <ul>
-        {% for admin in instance.administrators.all %}
+        {% for admin in all_data.administrators %}
           <li>
             {{ admin.profile.get_display_name_hyperlink }}
           </li>
         {% endfor %}
       </ul>
     {% else %}
-      <p class="text-muted pl-4">There are no administrators</p>
+      <p class="text-muted pl-4">No administrators have been assigned.</p>
     {% endif %}
 
     <h4>Editors</h4>
-    {% if instance.editors.count %}
+    {% if all_data.editors.count %}
       <ul>
-        {% for editor in instance.editors.all %}
+        {% for editor in all_data.editors %}
           <li>{{ editor.profile.get_display_name_hyperlink }}</li>
         {% endfor %}
       </ul>
     {% else %}
-      <p class="text-muted pl-4">There are no editors</p>
+      <p class="text-muted pl-4">No editors have been assigned.</p>
     {% endif %}
 
     <h4>Viewers</h4>
-    {% if instance.viewers.count %}
+    {% if all_data.viewers.count %}
       <ul>
-        {% for viewer in instance.viewers.all %}
+        {% for viewer in all_data.viewers %}
           <li>{{ viewer.profile.get_display_name_hyperlink }}</li>
         {% endfor %}
       </ul>
     {% else %}
-      <p class="text-muted pl-4">There are no viewers</p>
+      <p class="text-muted pl-4">No viewers have been assigned.</p>
     {% endif %}
 
-    <hr>
-    {% if request.user in instance.administrators.all %}
-      <a class="btn btn-outline-dark white-button" href="{% url 'accounts:manage_instance' instance.urn %}">Edit</a>
-    {% endif %}
-    <a class="btn btn-outline-dark white-button" href="{% url 'accounts:profile' %}">Return</a>
+    {{ wizard.form.media }}
+    <form id='user-management-form'
+          action="{% url 'accounts:manage_instance' instance.urn %}" method="post">
+      {% csrf_token %}
+      {{ wizard.management_form }}
+      <hr>
+      <p class="text-muted float-right">Step {{ wizard.steps.step1 }} of {{ wizard.steps.count }}</p>
+
+      <div class="row">
+        <button class="btn btn-outline-dark white-button mr-2" name="wizard_goto_step" type="submit"
+                value="{{ wizard.steps.first }}">
+          <i class="fa fa-arrow-left"></i>
+        </button>
+        <button id='submit-user-management-form' class="btn btn-outline-dark white-button mr-2" type="submit"
+                data-toggle="tooltip" data-placement="top|right|bottom|left"
+                title="Save your changes.">
+          <i class="fa fa-check" style="color: #28a745;"></i>
+        </button>
+        <button class="btn btn-outline-dark white-button mr-2" type="button" value="Cancel" name="cancel"
+                data-toggle="tooltip" title="Cancel and return to your profile."
+                data-placement="top|right|bottom|left" onclick="cancelSubmission()">
+          <i class="fa fa-ban" style="color: #dc3545;"></i>
+        </button>
+			</div>
+
+    </form>
+  </div>
 {% endblock profile_body %}
+
+
+{% block extra_scripts %}
+  <script type="text/javascript">
+    $('document').ready(function () {
+      $("#submit-user-management-form").click(function (e) {
+        e.preventDefault();
+        var admins = [
+          {% for admin in all_data.administrators %}
+          "{{ admin.username }}",
+          {% endfor %}
+        ];
+        var thisUser = "{{ request.user.username }}";
+        if (admins.indexOf(thisUser) <= -1) {
+          var submit = askConfirmation();
+          console.log(submit)
+          if (submit) {
+            return $("#user-management-form").submit();
+          }
+        } else {
+          return $("#user-management-form").submit();
+        }
+      });
+    });
+  </script>
+{% endblock %}
