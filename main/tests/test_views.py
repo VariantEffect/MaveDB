@@ -51,12 +51,12 @@ class HomePageTest(TestCase):
         site_info.version = ''
         site_info.save()
         response = self.client.get('/')
-        self.assertNotContains(response, site_info.version)
+        self.assertNotContains(response, 'Version:')
         
     def test_version_shown_when_not_empty(self):
         site_info = SiteInformationFactory()
         response = self.client.get('/')
-        self.assertContains(response, site_info.version)
+        self.assertContains(response, 'Version:')
         
     def test_private_not_included_in_top_n(self):
         instance = ScoreSetWithTargetFactory()

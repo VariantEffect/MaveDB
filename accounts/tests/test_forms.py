@@ -14,162 +14,134 @@ User = get_user_model()
 
 class TestSelectUsersForm(TestCase):
     def setUp(self):
-        self.alice = User.objects.create(username="alice")
-        self.bob = User.objects.create(username="bob")
+        self.user1 = UserFactory()
+        self.user2 = UserFactory()
 
-    def test_select_admin_form_invalid_blank_data(self):
+    def test_form_invalid_cannot_assign_empty_admin_list(self):
         instance = ExperimentFactory()
+        form = SelectUsersForm(data={"administrators": []}, instance=instance)
+        self.assertFalse(form.is_valid())
+
+    def test_form_invalid_user_assigned_to_multiple_groups(self):
+        instance = ExperimentFactory()
+        instance.add_administrators(self.user1)
         form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.ADMIN,
+            data={
+                "administrators": [self.user1.pk],
+                "editors": [self.user1.pk]
+            },
             instance=instance,
         )
         self.assertFalse(form.is_valid())
-
-    def test_select_non_admin_form_valid_blank_data(self):
-        instance = ExperimentFactory()
-        form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.VIEWER,
-            instance=instance,
-        )
-        self.assertTrue(form.is_valid())
-
-        form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.EDITOR,
-            instance=instance,
-        )
-        self.assertTrue(form.is_valid())
-
-    def test_error_not_supported_group_type(self):
-        instance = ExperimentFactory()
-        with self.assertRaises(ValueError):
-            SelectUsersForm(
-                user=self.alice,
-                data={},
-                group="not a group type",
-                instance=instance,
-            )
-
-    def test_validation_error_cannot_assign_empty_admin_list(self):
-        instance = ExperimentFactory()
-        form = SelectUsersForm(
-            user=self.alice,
-            data={"users": []},
-            group=GroupTypes.ADMIN,
-            instance=instance,
-        )
-        self.assertFalse(form.is_valid())
-
-    def test_validation_error_cannot_reassign_only_admin(self):
-        instance = ExperimentFactory()
-        instance.add_administrators(self.alice)
-        form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.EDITOR,
-            instance=instance,
-        )
-        self.assertFalse(form.is_valid())
+        print(form.errors)
 
     def test_can_reassign_viewer_to_editor(self):
         instance = ExperimentFactory()
-        instance.add_viewers(self.alice)
+        instance.add_viewers(self.user2)
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.EDITOR,
+            data={
+                "administrators": [self.user1.pk],
+                "editors": [self.user2.pk]
+            },
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.alice in instance.editors())
+        self.assertTrue(self.user2 in instance.editors())
+        self.assertFalse(self.user2 in instance.viewers())
         
     def test_can_reassign_editor_to_admin(self):
         instance = ExperimentFactory()
-        instance.add_editors(self.alice)
+        instance.add_editors(self.user2)
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.ADMIN,
+            data={
+                "administrators": [self.user1.pk, self.user2.pk],
+            },
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.alice in instance.administrators())
+        self.assertTrue(self.user2 in instance.administrators())
+        self.assertFalse(self.user2 in instance.editors())
 
     def test_can_reassign_admin_to_editor(self):
         instance = ExperimentFactory()
-        instance.add_administrators(self.alice)
-        instance.add_administrators(self.bob)
+        instance.add_administrators(self.user2)
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.EDITOR,
+            data={
+                "administrators": [self.user1.pk],
+                "editors": [self.user2.pk]
+            },
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.alice in instance.editors())
+        self.assertTrue(self.user2 in instance.editors())
+        self.assertFalse(self.user2 in instance.administrators())
         
     def test_can_reassign_editor_to_viewer(self):
         instance = ExperimentFactory()
-        instance.add_editors(self.alice)
+        instance.add_editors(self.user2)
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.VIEWER,
+            data={
+                "administrators": [self.user1.pk],
+                "viewers": [self.user2.pk]
+            },
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.alice in instance.viewers())
-
+        self.assertTrue(self.user2 in instance.viewers())
+        self.assertFalse(self.user2 in instance.editors())
+    
     def test_anon_not_in_queryset(self):
         instance = ExperimentFactory()
-        form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.VIEWER,
-            instance=instance,
-        )
-        qs = form.fields["users"].queryset.all()
+        form = SelectUsersForm(data={}, instance=instance,)
+        qs = form.fields["administrators"].queryset.all()
+        self.assertFalse(any([user_is_anonymous(u) for u in qs]))
+        
+        qs = form.fields["editors"].queryset.all()
+        self.assertFalse(any([user_is_anonymous(u) for u in qs]))
+        
+        qs = form.fields["viewers"].queryset.all()
         self.assertFalse(any([user_is_anonymous(u) for u in qs]))
 
     def test_superusers_not_in_query_list(self):
         instance = ExperimentFactory()
-        form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.VIEWER,
-            instance=instance,
-        )
-        qs = form.fields["users"].queryset.all()
-        self.assertTrue(all([not u.is_superuser for u in qs]))
+        form = SelectUsersForm(data={}, instance=instance, )
+        qs = form.fields["administrators"].queryset.all()
+        self.assertFalse(all([u.is_superuser for u in qs]))
+    
+        qs = form.fields["editors"].queryset.all()
+        self.assertFalse(all([u.is_superuser for u in qs]))
+    
+        qs = form.fields["viewers"].queryset.all()
+        self.assertFalse(all([u.is_superuser for u in qs]))
 
     def test_can_set_initial_selected_users_from_instance(self):
         instance = ExperimentFactory()
-        instance.add_administrators(self.alice)
-        form = SelectUsersForm(
-            user=self.alice,
-            data={},
-            group=GroupTypes.ADMIN,
-            instance=instance,
-        )
-        self.assertTrue(self.alice.pk in form.initial["users"])
+        instance.add_administrators(self.user1)
+        form = SelectUsersForm(data={}, instance=instance,)
+        self.assertIn(self.user1.pk, form.initial["administrators"])
+        
+        instance.add_editors(self.user1)
+        form = SelectUsersForm(data={}, instance=instance,)
+        self.assertIn(self.user1.pk, form.initial["editors"])
+        
+        instance.add_viewers(self.user1)
+        form = SelectUsersForm(data={}, instance=instance,)
+        self.assertIn(self.user1.pk, form.initial["viewers"])
     
     @mock.patch("accounts.models.Profile.notify_user_group_change")
     def test_reassigning_user_sends_email(self, patch):
         instance = ExperimentFactory()
-        instance.add_editors(self.alice)
+        instance.add_editors(self.user1)
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.ADMIN,
+            data={"administrators": [self.user1.pk]},
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.alice in instance.administrators())
         patch.assert_called_with(**{
             'instance': instance,
             'action': 're-assigned',
@@ -180,13 +152,11 @@ class TestSelectUsersForm(TestCase):
     def test_adding_new_user_sends_email(self, patch):
         instance = ExperimentFactory()
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": [self.alice.pk]},
-            group=GroupTypes.ADMIN,
+            data={"administrators": [self.user1.pk]},
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.alice in instance.administrators())
         patch.assert_called_with(**{
             'instance': instance,
             'action': 'added',
@@ -196,15 +166,16 @@ class TestSelectUsersForm(TestCase):
     @mock.patch("accounts.models.Profile.notify_user_group_change")
     def test_removing_user_sends_email(self, patch):
         instance = ExperimentFactory()
-        instance.add_editors(self.alice)
+        instance.add_editors(self.user1)
         form = SelectUsersForm(
-            user=self.alice,
-            data={"users": []},
-            group=GroupTypes.EDITOR,
+            data={
+                "administrators": [self.user2.pk],
+                "editors": [],
+            },
             instance=instance,
         )
+        self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertFalse(self.alice in instance.administrators())
         patch.assert_called_with(**{
             'instance': instance,
             'action': 'removed',

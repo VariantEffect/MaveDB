@@ -50,53 +50,31 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             self.live_server_url +
             reverse('accounts:manage_instance', args=(instance.urn,))
         )
-        
-        # index 1 for editor input, index 1 for search result
-        tab_button = self.browser.find_element_by_id('editors-tab')
-        self.perform_action(tab_button, 'click')
-        
+
+        # index 0 for admin input, index 1 for search result
         search_box = self.browser.find_elements_by_class_name(
-            'select2-search__field')[1]
-        self.perform_action(search_box, 'send_keys', self.user.profile.unique_name)
-        
+            'select2-search__field')[0]
+        self.perform_action(search_box, 'send_keys',
+                            self.user.profile.unique_name)
         list_item = self.browser.find_element_by_id(
-            'select2-id_editor_management-users-results')
+            'select2-id_manage_users-administrators-results')
         self.perform_action(list_item, 'click')
         
-        submit = self.browser.find_element_by_id('submit-editor-form')
+        # index 1 for editor input, index 1 for search result
+        search_box = self.browser.find_elements_by_class_name(
+            'select2-search__field')[1]
+        self.perform_action(search_box, 'send_keys',
+                            self.user.profile.unique_name)
+        
+        list_item = self.browser.find_element_by_id(
+            'select2-id_manage_users-editors-results')
+        self.perform_action(list_item, 'click')
+        
+        submit = self.browser.find_element_by_id('submit-user-management-form')
+        self.perform_action(submit, 'click')
+        
+        # Summary step. Click check button with same id below.
+        submit = self.browser.find_element_by_id('submit-user-management-form')
         self.perform_action(submit, 'click')
         
         self.browser.switch_to.alert.accept()
-        
-    def test_no_alert_removing_superuser_removing_self_as_admin(self):
-        second_admin = UserFactory()
-        instance = data_factories.ScoreSetFactory()
-        instance.add_administrators([self.user, second_admin])
-        
-        self.user.is_superuser = True
-        self.user.save()
-    
-        self.authenticate()
-        self.browser.get(
-            self.live_server_url +
-            reverse('accounts:manage_instance', args=(instance.urn,))
-        )
-    
-        # index 1 for editor input, index 1 for search result
-        tab_button = self.browser.find_element_by_id('editors-tab')
-        self.perform_action(tab_button, 'click')
-        
-        search_box = self.browser.find_elements_by_class_name(
-            'select2-search__field')[1]
-        self.perform_action(
-            search_box, 'send_keys', self.user.profile.unique_name)
-        
-        item = self.browser.find_element_by_id(
-            'select2-id_editor_management-users-results')
-        self.perform_action(item, 'click')
-    
-        submit = self.browser.find_element_by_id('submit-editor-form')
-        self.perform_action(submit, 'click')
-        
-        with self.assertRaises(NoAlertPresentException):
-            self.browser.switch_to.alert.accept()
