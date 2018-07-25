@@ -167,6 +167,7 @@ class TestSelectUsersForm(TestCase):
     def test_removing_user_sends_email(self, patch):
         instance = ExperimentFactory()
         instance.add_editors(self.user1)
+        instance.add_administrators(self.user2)
         form = SelectUsersForm(
             data={
                 "administrators": [self.user2.pk],
