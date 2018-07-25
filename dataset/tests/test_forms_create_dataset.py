@@ -7,8 +7,8 @@ from metadata.factories import (
     PubmedIdentifierFactory, DoiIdentifierFactory
 )
 
-from dataset.factories import ExperimentSetFactory
-from dataset.forms.base import DatasetModelForm
+from ..factories import ExperimentSetFactory
+from ..forms.base import DatasetModelForm
 
 
 class TestDataSetModelForm(TestCase):
@@ -56,7 +56,12 @@ class TestDataSetModelForm(TestCase):
         self.data.update(**{"keywords": [kw.text]})
         obj = ExperimentSetFactory()
         form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+
+        before_count = KeywordFactory._meta.model.objects.count()
         obj = form.save(commit=True)
+        after_count = KeywordFactory._meta.model.objects.count()
+
+        self.assertEqual(before_count, after_count)
         self.assertEqual(obj.keywords.first().text, kw.text)
 
     def test_will_associate_existing_identifiers(self):
@@ -69,9 +74,13 @@ class TestDataSetModelForm(TestCase):
             m2m = factory()
             self.data.update(**{attr: [m2m.identifier]})
             obj = ExperimentSetFactory()
-            form = DatasetModelForm(
-                data=self.data, user=self.user, instance=obj)
+            form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+
+            before_count = factory._meta.model.objects.count()
             obj = form.save(commit=True)
+            after_count = factory._meta.model.objects.count()
+
+            self.assertEqual(before_count, after_count)
             self.assertEqual(
                 getattr(obj, attr).first().identifier,
                 self.data[attr][0]
@@ -83,7 +92,12 @@ class TestDataSetModelForm(TestCase):
         obj = ExperimentSetFactory()
         obj.keywords.add(KeywordFactory())
         form = DatasetModelForm(data=self.data, user=self.user, instance=obj)
+
+        before_count = KeywordFactory._meta.model.objects.count()
         obj = form.save(commit=True)
+        after_count = KeywordFactory._meta.model.objects.count()
+
+        self.assertEqual(before_count, after_count)
         self.assertEqual(obj.keywords.first().text, kw.text)
 
     def test_will_clear_existing_identifiers(self):
@@ -98,7 +112,12 @@ class TestDataSetModelForm(TestCase):
             self.assertEqual(getattr(obj, attr).count(), 1)
             form = DatasetModelForm(
                 data=self.data, user=self.user, instance=obj)
+
+            before_count = factory._meta.model.objects.count()
             obj = form.save(commit=True)
+            after_count = factory._meta.model.objects.count()
+
+            self.assertEqual(before_count, after_count)
             self.assertEqual(getattr(obj, attr).count(), 0)
 
     def test_m2m_instances_for_field_returns_new_instances(self):
@@ -157,21 +176,3 @@ class TestDataSetModelForm(TestCase):
         form = DatasetModelForm(self.data, user=self.user, instance=obj)
         form.save(commit=True)
         self.assertEqual(obj.created_by, self.user)
-
-    def test_can_overwrite_abstract_text(self):
-        obj = ExperimentSetFactory()
-        old_abs = obj.abstract_text
-        self.data.update(**{'abstract_text': 'hello'})
-        form = DatasetModelForm(self.data, user=self.user, instance=obj)
-        form.save(commit=True)
-        obj.refresh_from_db()
-        self.assertNotEqual(old_abs, obj.abstract_text)
-
-    def test_can_overwrite_method_text(self):
-        obj = ExperimentSetFactory()
-        old = obj.method_text
-        self.data.update(**{'method_text': "hello world"})
-        form = DatasetModelForm(self.data, user=self.user, instance=obj)
-        form.save(commit=True)
-        obj.refresh_from_db()
-        self.assertNotEqual(old, obj.method_text)

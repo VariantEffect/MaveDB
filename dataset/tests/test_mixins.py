@@ -10,22 +10,25 @@ from accounts.factories import UserFactory, AnonymousUserFactory
 from genome.factories import ReferenceGenomeFactory
 from metadata.factories import (
     UniprotIdentifierFactory, RefseqIdentifierFactory,
-    EnsemblIdentifierFactory
+    EnsemblIdentifierFactory, KeywordFactory,
+    PubmedIdentifierFactory, SraIdentifierFactory, DoiIdentifierFactory
 )
 
 from main.models import Licence
 
+from ..models.experimentset import ExperimentSet
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
-from ..factories import (
-    ExperimentWithScoresetFactory, ScoreSetWithTargetFactory
-)
 from ..forms.scoreset import ScoreSetForm
 from ..forms.experiment import ExperimentForm
+from ..factories import (
+    ExperimentWithScoresetFactory, ScoreSetWithTargetFactory,
+    ExperimentSetFactory,
+)
 from ..mixins import (
     PrivateDatasetFilterMixin, ScoreSetAjaxMixin, MultiFormMixin,
     DatasetUrnMixin, DatasetPermissionMixin, DataSetAjaxMixin,
-    ExperimentFilterMixin, ScoreSetFilterMixin
+    ExperimentFilterMixin, ScoreSetFilterMixin, DatasetModelFilterMixin,
 )
 
 
@@ -43,8 +46,8 @@ class TestPrivateDatasetFilterMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(request)
         
-        i1 = ExperimentWithScoresetFactory() # type: Experiment
-        i2 = ExperimentWithScoresetFactory() # type: Experiment
+        i1 = ExperimentWithScoresetFactory()  # type: Experiment
+        i2 = ExperimentWithScoresetFactory()  # type: Experiment
         i1.add_viewers(request.user)
         
         public, private = driver.filter_and_split_instances([i1, i2])
@@ -113,7 +116,10 @@ class TestDataSetAjaxMixin(TestCase):
 
 
 class TestScoreSetAjaxMixin(TestCase):
-    """Testing ajax response for getting target gene and experiment scoresets."""
+    """
+    Testing ajax response for getting target gene and
+    experiment scoresets.
+    """
     def setUp(self):
         self.factory = RequestFactory()
     
@@ -138,8 +144,8 @@ class TestScoreSetAjaxMixin(TestCase):
         
         user = UserFactory()
         experiment = ExperimentWithScoresetFactory()
-        sc1 = experiment.scoresets.first() # type: ScoreSet
-        sc2 = ScoreSetWithTargetFactory(experiment=experiment) # type: ScoreSet
+        sc1 = experiment.scoresets.first()  # type: ScoreSet
+        sc2 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         sc3 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         sc4 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         
@@ -184,7 +190,7 @@ class TestDatasetPermissionMixin(TestCase):
     
     # Manage
     def test_false_private_and_no_manage_permission(self):
-        scoreset = ScoreSetWithTargetFactory() # type: ScoreSet
+        scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get('/')
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
@@ -193,7 +199,7 @@ class TestDatasetPermissionMixin(TestCase):
         self.assertFalse(driver.has_permission())
         
     def test_true_private_and_mange_permssion_match(self):
-        scoreset = ScoreSetWithTargetFactory() # type: ScoreSet
+        scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get('/')
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
@@ -540,7 +546,7 @@ class TestExperimentSearchMixin(TestCase):
         self.assertIn(obj1, result)
         self.assertIn(obj2, result)
 
-    def test_can_AND_search(self):
+    def test_AND_search_joins_both_queries_via_AND_operator(self):
         obj1 = self.factory()
         target1 = obj1.children.first().get_target()
         target1.name = 'JAK'
@@ -572,7 +578,7 @@ class TestExperimentSearchMixin(TestCase):
         self.assertNotIn(obj2, result)
         self.assertNotIn(obj3, result)
 
-    def test_can_OR_search(self):
+    def test_OR_search_joins_both_queries_via_OR_operator(self):
         obj1 = self.factory()
         target1 = obj1.children.first().get_target()
         target1.name = 'JAK'
@@ -1042,3 +1048,198 @@ class TestScoreSetSearchMixin(TestCase):
             self.assertEqual(result.count(), 1)
             self.assertIn(obj1, result)
             self.assertNotIn(obj2, result)
+
+
+class TestDatasetModelFilterMixin(TestCase):
+    """Test search fields implemented by `ScoreSetSearchMixin."""
+    def setUp(self):
+        self.factory = ExperimentSetFactory
+        self.searcher = DatasetModelFilterMixin()
+        self.model_class = ExperimentSet
+
+    def test_can_partially_search_abstract(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+        instance1.abstract_text = 'helloworld'
+        instance2.abstract_text = 'hellow'
+        instance1.save()
+        instance2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={
+                self.searcher.ABSTRACT: instance1.abstract_text.upper()},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_can_partially_search_title(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+        instance1.title = 'helloworld'
+        instance2.title = 'hellowor'
+        instance1.save()
+        instance2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.TITLE: instance1.title.upper()},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_can_partially_search_description(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+        instance1.short_description = 'helloworld'
+        instance2.short_description = 'hellowor'
+        instance1.save()
+        instance2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={
+                self.searcher.DESCRIPTION: instance1.short_description.upper()},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_can_partially_search_method(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+        instance1.method_text = 'helloworld'
+        instance2.method_text = 'hellowor'
+        instance1.save()
+        instance2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.METHOD: instance1.method_text.upper()},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_search_by_keywords(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+
+        KeywordFactory._meta.model.objects.all().delete()
+        kw1 = KeywordFactory(text='Helloworld')
+        kw2 = KeywordFactory(text='Hellowor')
+        instance1.keywords.add(kw1)
+        instance2.keywords.add(kw2)
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.KEYWORDS: [kw1.text.upper()]},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_search_by_sra(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+
+        SraIdentifierFactory._meta.model.objects.all().delete()
+        o1 = SraIdentifierFactory(identifier='SRX3407687')
+        o2 = SraIdentifierFactory(identifier='SRX3407688')
+        instance1.sra_ids.add(o1)
+        instance2.sra_ids.add(o2)
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.SRA: [o1.identifier.lower()]},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_search_by_doi(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+
+        DoiIdentifierFactory._meta.model.objects.all().delete()
+        o1 = DoiIdentifierFactory(identifier='10.1016/j.cels.2018.01.015')
+        o2 = DoiIdentifierFactory(identifier='10.1016/j.jmb.2018.02.009')
+        instance1.doi_ids.add(o1)
+        instance2.doi_ids.add(o2)
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.DOI: [o1.identifier.lower()]},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_search_by_pubmed(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+
+        PubmedIdentifierFactory._meta.model.objects.all().delete()
+        o1 = PubmedIdentifierFactory(identifier='25075907')
+        o2 = PubmedIdentifierFactory(identifier='25075111')
+        instance1.pubmed_ids.add(o1)
+        instance2.pubmed_ids.add(o2)
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.PUBMED: [o1.identifier.lower()]},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_search_by_urn(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+
+        q = self.searcher.search_all(
+            value_or_dict={self.searcher.URN: [instance1.urn.upper()]},
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)
+
+    def test_search_multiple_fields_via_OR(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+        instance3 = self.factory()
+
+        q = self.searcher.search_all(
+            value_or_dict={
+                self.searcher.URN: [instance1.urn.upper()],
+                self.searcher.TITLE: [instance2.title.upper()]
+            },
+            join_func=self.searcher.or_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 2)
+        self.assertIn(instance1, result)
+        self.assertIn(instance2, result)
+
+    def test_search_multiple_fields_via_AND(self):
+        instance1 = self.factory()
+        instance2 = self.factory()
+
+        instance1.title = 'helloworld'
+        instance2.title = 'helloworld'
+        instance1.save()
+        instance2.save()
+
+        q = self.searcher.search_all(
+            value_or_dict={
+                self.searcher.URN: [instance1.urn.upper()],
+                self.searcher.TITLE: [instance1.title.upper()]
+            },
+            join_func=self.searcher.and_join_qs
+        )
+        result = self.model_class.objects.filter(q)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(instance1, result)

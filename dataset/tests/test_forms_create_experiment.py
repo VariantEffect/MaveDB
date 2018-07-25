@@ -55,10 +55,10 @@ class TestExperimentForm(TestCase):
         
         obj1.add_administrators(self.user)
         obj2.add_viewers(self.user)
-        
+
         form = ExperimentForm(user=self.user)
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
-        self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)
+        self.assertIn(obj1, form.fields['experimentset'].queryset)
     
     def test_editor_experimentset_appear_in_options(self):
         obj1 = ExperimentSetFactory()
@@ -67,10 +67,10 @@ class TestExperimentForm(TestCase):
         
         obj1.add_editors(self.user)
         obj2.add_viewers(self.user)
-        
+
         form = ExperimentForm(user=self.user)
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
-        self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)
+        self.assertIn(obj1, form.fields['experimentset'].queryset)
     
     def test_from_request_modifies_existing_instance(self):
         exp = ExperimentFactory()
@@ -114,4 +114,3 @@ class TestExperimentForm(TestCase):
         form = ExperimentForm(data=data, experimentset=exp, user=self.user)
         self.assertIn(exp, form.fields['experimentset'].queryset)
         self.assertNotIn(exp2, form.fields['experimentset'].queryset)
-   

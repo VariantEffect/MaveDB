@@ -2,17 +2,12 @@ import datetime
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.db import transaction
 
 from accounts.factories import UserFactory
-from accounts.permissions import GroupTypes
 
 from dataset import models
 from dataset.factories import ExperimentSetFactory, ScoreSetFactory
-from metadata.factories import KeywordFactory
-
-from ..utilities import publish_dataset
 
 User = get_user_model()
 
@@ -25,31 +20,25 @@ class TestDatasetModel(TestCase):
         instance.save()
         self.assertEqual(instance.modification_date, time_now)
 
-    def test_set_created_by_sets_updates_created_by_and_time_stamps(self):
+    def test_set_modified_by(self):
+        user = UserFactory()
+        instance = ExperimentSetFactory()
+        instance.set_modified_by(user)
+        instance.save()
+        self.assertEqual(instance.modified_by, user)
+
+    def test_set_created_by(self):
         user = UserFactory()
         instance = ExperimentSetFactory()
         instance.set_created_by(user)
         instance.save()
         self.assertEqual(instance.created_by, user)
-        self.assertEqual(instance.creation_date, datetime.date.today())
 
-    def test_approve_sets_approved_to_true(self):
+    def test_set_publish_date(self):
         instance = ExperimentSetFactory()
-        instance.approve()
+        instance.set_publish_date(datetime.date.today())
         instance.save()
-        self.assertEqual(instance.approved, True)
-
-    def test_typeerror_add_non_keyword_instance(self):
-        instance = ExperimentSetFactory()
-        with self.assertRaises(TypeError):
-            instance.add_keyword('')
-        self.assertEqual(instance.keywords.count(), 1)
-
-    def test_typeerror_add_non_external_identifier_instance(self):
-        instance = ExperimentSetFactory()
-        with self.assertRaises(TypeError):
-            instance.add_identifier(KeywordFactory())
-        self.assertEqual(instance.doi_ids.count(), 1)
+        self.assertEqual(instance.publish_date, datetime.date.today())
 
     def test_clear_m2m_clears_m2m_relationships(self):
         instance = ExperimentSetFactory()

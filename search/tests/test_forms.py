@@ -263,9 +263,9 @@ class TestMetaIdentifiersSearchForm(TestCase):
                     id_3.identifier == id_1.identifier:
                 id_3 = factory()
 
-            obj1.add_identifier(id_1)
-            obj2.add_identifier(id_2)
-            obj3.add_identifier(id_3)
+            getattr(obj1, field_name).add(id_1)
+            getattr(obj2, field_name).add(id_2)
+            getattr(obj3, field_name).add(id_3)
 
             data = {search_name: [id_1.identifier, id_2.identifier.upper()]}
             form = MetaIdentifiersSearchForm(data=data)

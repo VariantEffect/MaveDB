@@ -561,7 +561,7 @@ class ScoreSetAjaxMixin(DataSetAjaxMixin):
                 experiment = Experiment.objects.get(pk=pk)
                 scoresets = [
                     (s.pk, s.urn) for s in experiment.scoresets.order_by('urn')
-                    if request.user.has_perm(PermissionTypes.CAN_EDIT, s) \
+                    if request.user.has_perm(PermissionTypes.CAN_EDIT, s)
                     and not s.private
                 ]
                 data.update({'scoresets': scoresets})
@@ -588,5 +588,4 @@ class PrivateDatasetFilterMixin:
                 public.append(instance)
             elif instance.private and has_perm:
                 private_viewable.append(instance)
-
         return public, private_viewable
