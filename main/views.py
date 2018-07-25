@@ -12,11 +12,13 @@ from .forms import ContactForm
 
 def get_top_n(n, ls):
     counter = list(Counter(ls).items())
-    top_n = [i for i, _ in sorted(counter, key=lambda x: x[1])[0:n]]
-    return top_n
+    return [i for i, count in sorted(counter, key=lambda x: x[1])[-n:]]
 
 
 def home_view(request):
+    # Tuples are required to allow search GET requests to be contructed from the
+    # species raw text instead of the formatted text. The other fields are
+    # tuple-ized for template compatibility.
     news_items = News.recent_news()
     species = [
         (g.get_species_name(), g.format_species_name_html())
