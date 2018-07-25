@@ -54,13 +54,8 @@ urlpatterns = [
     ),
     url(
         r"^profile/manage/(?P<urn>{})/$".format(any_url_pattern),
-        views.manage_instance,
+        views.ManageDatasetUsersView.as_view(),
         name="manage_instance"
-    ),
-    url(
-        r"^profile/manage/(?P<urn>{})/summary/$".format(any_url_pattern),
-        views.ContributorSummary.as_view(),
-        name="contributor_summary"
     ),
     url(
         r"^profile/edit/experiment/(?P<urn>{})/$".format(experiment_url_pattern),

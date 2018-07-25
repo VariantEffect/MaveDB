@@ -1,5 +1,7 @@
 import logging
 
+from formtools.wizard.views import SessionWizardView
+
 import django.contrib.auth.views as auth_views
 from django.apps import apps
 from django.conf import settings
@@ -21,7 +23,8 @@ from urn.models import get_model_by_urn
 from .forms import (
     RegistrationForm,
     SelectUsersForm,
-    ProfileForm
+    ProfileForm,
+    ConfirmationForm,
 )
 from .permissions import (
     GroupTypes, PermissionTypes, assign_superusers_as_admin
@@ -102,135 +105,64 @@ def profile_view(request):
     return render(request, 'accounts/profile_home.html', context)
 
 
-@login_required(login_url=reverse_lazy("accounts:login"))
-def manage_instance(request, urn):
-    post_form = None
-    context = {}
-    try:
-        instance = get_model_by_urn(urn=urn)
-    except ObjectDoesNotExist:
-        raise Http404()
-
-    has_permission = request.user.has_perm(PermissionTypes.CAN_MANAGE, instance)
-    if not has_permission:
-        raise PermissionDenied()
-
-    # Initialise the forms with current group users.
-    admin_select_form = SelectUsersForm(
-        group=GroupTypes.ADMIN,
-        user=request.user,
-        instance=instance,
-        required=True,
-        prefix="{}_management".format(GroupTypes.ADMIN),
+class ManageDatasetUsersView(DatasetPermissionMixin, SessionWizardView):
+    """
+    Multi-step form view allowing a user to edit the group memberships
+    for an instance.
+    """
+    # Second form is a dummy form for the confirmation step
+    login_url = reverse_lazy("accounts:login")
+    form_list = (
+        ('manage_users', SelectUsersForm),
+        ('confirm_changes', ConfirmationForm),
     )
-    editor_select_form = SelectUsersForm(
-        group=GroupTypes.EDITOR,
-        instance=instance,
-        user=request.user,
-        prefix="{}_management".format(GroupTypes.EDITOR),
-    )
-    viewer_select_form = SelectUsersForm(
-        group=GroupTypes.VIEWER,
-        instance=instance,
-        user=request.user,
-        prefix="{}_management".format(GroupTypes.VIEWER),
-    )
-
-    context["instance"] = instance
-    context['group_types'] = GroupTypes
-    context["admin_select_form"] = admin_select_form
-    context["editor_select_form"] = editor_select_form
-    context["viewer_select_form"] = viewer_select_form
-
-    if request.method == "POST":
-        # Hidden list in each form submission so we can determine which
-        # form was submitted
-        if '{}[]'.format(GroupTypes.ADMIN) in request.POST:
-            post_form = SelectUsersForm(
-                data=request.POST,
-                user=request.user,
-                group=GroupTypes.ADMIN,
-                instance=instance,
-                required=True,
-                prefix="{}_management".format(GroupTypes.ADMIN)
-            )
-        elif '{}[]'.format(GroupTypes.EDITOR) in request.POST:
-            post_form = SelectUsersForm(
-                data=request.POST,
-                user=request.user,
-                group=GroupTypes.EDITOR,
-                instance=instance,
-                prefix="{}_management".format(GroupTypes.EDITOR)
-            )
-        elif '{}[]'.format(GroupTypes.VIEWER) in request.POST:
-            post_form = SelectUsersForm(
-                data=request.POST,
-                user=request.user,
-                group=GroupTypes.VIEWER,
-                instance=instance,
-                prefix="{}_management".format(GroupTypes.VIEWER)
-            )
-
-        if post_form is not None and post_form.is_valid():
-            post_form.process_user_list()
-            instance.last_edit_by = request.user
-            assign_superusers_as_admin(instance)
-            instance.save()
-            messages.success(
-                request, "Management updated for {}.".format(instance.urn))
-            
-            if request.user in instance.administrators():
-                return HttpResponseRedirect(
-                    reverse_lazy(
-                        "accounts:contributor_summary", args=(instance.urn,)))
-            else:
-                return HttpResponseRedirect(reverse_lazy("accounts:profile"))
-                
-        else:
-            messages.error(
-                request,
-                "Could not update {} management changes. "
-                "Check your submission for errors.".format(instance.urn))
-
-    # Replace the form that has changed. If it reaches this point,
-    # it means there were errors in the form.
-    if post_form is not None and post_form.group == GroupTypes.ADMIN:
-        context["admin_select_form"] = post_form
-    elif post_form is not None and post_form.group == GroupTypes.EDITOR:
-        context["editor_select_form"] = post_form
-    elif post_form is not None and post_form.group == GroupTypes.VIEWER:
-        context["viewer_select_form"] = post_form
-
-    return render(request, "accounts/profile_manage.html", context)
-
-
-class ContributorSummary(LoginRequiredMixin, DatasetPermissionMixin, DetailView):
-    context_object_name = 'instance'
-    slug_field = 'urn'
-    slug_url_kwarg = 'urn'
-    permission_required = 'dataset.can_view'
-    template_name = 'accounts/contributor_summary.html'
-    queryset = ScoreSet.objects.all()
-    model = ScoreSet
+    permission_required = 'dataset.can_manage'
+    templates = {
+        'manage_users': 'accounts/profile_manage.html',
+        'confirm_changes': 'accounts/contributor_summary.html'
+    }
     
     def dispatch(self, request, *args, **kwargs):
-        urn = self.kwargs.get('urn', '')
+        if not request.user.is_authenticated:
+            return redirect(self.login_url)
+        self.instance = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_object(self):
         try:
-            model = get_model_by_urn(urn)
+          instance = get_model_by_urn(self.kwargs.get('urn', None))
+          if not isinstance(instance, (ExperimentSet, Experiment, ScoreSet)):
+              raise Http404()
+          return instance
         except ObjectDoesNotExist:
             raise Http404()
-        if isinstance(model, Experiment):
-            self.queryset = Experiment.objects.all()
-            self.model = Experiment
-        elif isinstance(model, ExperimentSet):
-            self.queryset = ExperimentSet.objects.all()
-            self.model = ExperimentSet
-        elif isinstance(model, ScoreSet):
-            pass
+            
+    def get_template_names(self):
+        return self.templates[self.steps.current]
+    
+    def get_form_kwargs(self, step=None):
+        kwargs = super().get_form_kwargs(step)
+        if step == 'confirm_changes':
+            return kwargs
+        kwargs['instance'] = self.instance
+        return kwargs
+    
+    def get_context_data(self, form, **kwargs):
+        context = super().get_context_data(form, **kwargs)
+        context['all_data'] = self.get_all_cleaned_data()
+        context['instance'] = self.instance
+        return context
+    
+    def done(self, form_list, **kwargs):
+        list(form_list)[0].process_user_list()
+        messages.success(self.request, "Management updated for '{}'.".format(
+            self.instance.urn))
+        if self.request.user in self.instance.administrators():
+            return redirect('accounts:manage_instance',
+                            *(self.instance.urn,))
         else:
-            raise Http404()
-        return super().dispatch(request, *args, **kwargs)
-
+            return redirect('accounts:profile')
+ 
 
 # Registration views [DEBUG MODE ONLY]
 # ------------------------------------------------------------------------- #
