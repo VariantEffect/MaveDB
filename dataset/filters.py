@@ -43,7 +43,10 @@ class DatasetModelFilter(FilterSet):
     @property
     def qs(self):
         qs = super().qs
-        if not self.request or not self.request.user.is_authenticated:
+        user = getattr(self.request, 'user', None)
+        if not user:
+            return qs.filter(private=False)
+        if not user.is_authenticated:
             return qs.filter(private=False)
         return qs
     
@@ -83,11 +86,51 @@ class ExperimentSetFilterModel(DatasetModelFilter):
 class ExperimentFilterModel(DatasetModelFilter):
     """
     Filter `Experiment` based on the fields in `DatasetModelFilter` plus
-    additional fields:
-        - Blah
+    additional fields on scoresets:
+        - licence
+        - target
+        - species
+        - genome
+        - uniprot
+        - ensembl
+        - refseq
     """
     class Meta:
         model = models.experiment.Experiment
+
+    licence = filters.CharFilter(method='filter_licence')
+    genome = filters.CharFilter(method='filter_genome')
+    target = filters.CharFilter(
+        field_name='scoresets__target__name', lookup_expr='icontains'
+    )
+    species = filters.CharFilter(
+        field_name='scoresets__target__reference_maps__genome__species_name',
+        lookup_expr='icontains'
+    )
+    uniprot = filters.CharFilter(
+        field_name='scoresets__target__uniprot_id__identifier',
+        lookup_expr='iexact'
+    )
+    ensembl = filters.CharFilter(
+        field_name='scoresets__target__ensembl_id__identifier',
+        lookup_expr='iexact'
+    )
+    refseq = filters.CharFilter(
+        field_name='scoresets__target__refseq_id__identifier',
+        lookup_expr='iexact'
+    )
+
+    def filter_licence(self, queryset, name, value):
+        q = Q(**{'scoresets__licence__short_name__icontains': value}) | \
+            Q(**{'scoresets__licence__long_name__icontains': value})
+        return queryset.filter(q)
+
+    def filter_genome(self, queryset, name, value):
+        genome_field = 'scoresets__target__reference_maps__genome'
+        short_name = '{}__short_name__iexact'.format(genome_field)
+        assembly_id = '{}__genome_id__identifier__iexact'.format(genome_field)
+        q = Q(**{short_name: value}) | Q(**{assembly_id: value})
+        return queryset.filter(q)
         
     
 class ScoreSetFilter(DatasetModelFilter):
@@ -108,22 +151,22 @@ class ScoreSetFilter(DatasetModelFilter):
     licence = filters.CharFilter(method='filter_licence')
     genome = filters.CharFilter(method='filter_genome')
     target = filters.CharFilter(
-        field_name='target__name', lookup_expr='icontains'
+        field_name='scoresets__target__name', lookup_expr='icontains'
     )
     species = filters.CharFilter(
-        field_name='target__reference_maps__genome__species_name',
+        field_name='scoresets__target__reference_maps__genome__species_name',
         lookup_expr='icontains'
     )
     uniprot = filters.CharFilter(
-        field_name='target__uniprot_id__identifier',
+        field_name='scoresets__target__uniprot_id__identifier',
         lookup_expr='iexact'
     )
     ensembl = filters.CharFilter(
-        field_name='target__ensembl_id__identifier',
+        field_name='scoresets__target__ensembl_id__identifier',
         lookup_expr='iexact'
     )
     refseq = filters.CharFilter(
-        field_name='target__refseq_id__identifier',
+        field_name='scoresets__target__refseq_id__identifier',
         lookup_expr='iexact'
     )
     
@@ -133,7 +176,7 @@ class ScoreSetFilter(DatasetModelFilter):
         return queryset.filter(q)
         
     def filter_genome(self, queryset, name, value):
-        genome_field = 'target__reference_maps__genome'
+        genome_field = 'scoresets__target__reference_maps__genome'
         short_name = '{}__short_name__iexact'.format(genome_field)
         assembly_id = '{}__genome_id__identifier__iexact'.format(genome_field)
         q = Q(**{short_name: value}) | Q(**{assembly_id: value})
