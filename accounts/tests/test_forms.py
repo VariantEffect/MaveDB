@@ -1,5 +1,4 @@
 from django.test import TestCase, mock
-from django.core import mail
 from django.contrib.auth import get_user_model
 
 from dataset.factories import ExperimentFactory

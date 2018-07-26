@@ -615,17 +615,17 @@ class TestExperimentSearchMixin(TestCase):
 
         genome1 = obj1.children.first().get_target().\
             get_reference_genomes().first()
-        genome1.species_name = 'Human'
+        genome1.species_name = 'Homo sapiens'
         genome1.save()
 
         genome2 = obj2.children.first().get_target().\
             get_reference_genomes().first()
-        genome2.species_name = 'Chimp'
+        genome2.species_name = 'Synthetic sequence'
         genome2.save()
         
         q = self.searcher.search_all(
             value_or_dict={
-                "species": ["human"]
+                "species": [genome1.species_name]
             },
             join_func=self.searcher.or_join_qs
         )
@@ -901,16 +901,16 @@ class TestScoreSetSearchMixin(TestCase):
         obj2 = self.factory()
 
         genome1 = obj1.get_target().get_reference_genomes().first()
-        genome1.species_name = 'Human'
+        genome1.species_name = 'Homo Sapiens'
         genome1.save()
 
         genome2 = obj2.get_target().get_reference_genomes().first()
-        genome2.species_name = 'Chimp'
+        genome2.species_name = 'Synthetic sequence'
         genome2.save()
 
         q = self.searcher.search_all(
             value_or_dict={
-                "species": ["human"]
+                "species": [genome1.species_name,]
             },
             join_func=self.searcher.or_join_qs
         )
