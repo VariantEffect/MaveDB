@@ -32,6 +32,7 @@ def search_view(request):
     meta_id_search_form = MetaIdentifiersSearchForm()
     target_id_search_form = TargetIdentifierSearchForm()
     genome_search_form = GenomeSearchForm()
+
     experiments = Experiment.objects.all()
     scoresets = ScoreSet.objects.all()
 
@@ -52,8 +53,14 @@ def search_view(request):
                         flattened, join_func=experiment_searher.or_join_qs)
                     scs_q = scoreset_searcher.search_all(
                         flattened, join_func=experiment_searher.or_join_qs)
+                    
+                    # Split query assuming first/second name on whitespace
+                    names = [
+                        n for name in flattened
+                        for n in name.split(' ') if n.strip()
+                    ]
                     user_q = user_searcher.search_all(
-                        flattened, join_func=experiment_searher.or_join_qs)
+                        names, join_func=experiment_searher.or_join_qs)
                 else:
                     exp_q = Q()
                     scs_q = Q()
