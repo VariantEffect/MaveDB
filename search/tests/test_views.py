@@ -155,7 +155,7 @@ class TestSearchView(TestCase):
         self.assertNotContains(response, self.scs2.urn + '/')
         self.assertNotContains(response, self.scs3.urn + '/')
 
-    def test_can_search_empty(self):
+    def test_search_empty_returns_all_public_and_private_viewable(self):
         request = self.factory.get(self.path + '/?search=')
         response = search_view(request)
         self.assertContains(response, self.exp1.urn + '/')
@@ -185,3 +185,19 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.scs1.urn + '/')
         self.assertNotContains(response, self.scs2.urn + '/')
         self.assertNotContains(response, self.scs3.urn + '/')
+        
+    def test_generic_search_searches_by_user(self):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        user2.first_name = 'Ronaldo'
+        user2.last_name = 'Romania'
+        user2.save()
+        
+        self.exp1.add_administrators(user1)
+        self.exp2.add_administrators(user2)
+        request = self.factory.get(
+            self.path + '/?search={}'.format(user1.profile.get_full_name()))
+
+        response = search_view(request)
+        self.assertContains(response, self.exp1.urn + '/')
+        self.assertNotContains(response, self.exp2.urn + '/')
