@@ -14,18 +14,18 @@
         <form action="{% url 'accounts:profile_settings' %}" method="post">
           {% csrf_token %}
           {% include 'core/bs_form.html' with form=profile_form %}
-          <div class="row">
-            <div class="col-auto">
-              <input class="btn btn-outline-dark white-button" type="submit" value="Save"
-                     name="save" style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                     data-placement="top|right|bottom|left" title="Save profile changes.">
-            </div>
-            <div class="col-auto">
-              <input class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
-                     style="width:150px;margin-bottom:35px;" data-toggle="tooltip"
-                     data-placement="top|right|bottom|left" onclick="window.location.assign('{% url 'accounts:profile' %}')"
-                     title="Cancel your changes.">
-            </div>
+          <hr>
+          <div class="mb-2">
+            <button id='submit-form' class="btn btn-outline-dark white-button mr-2" type="submit" value="Submit"
+                   name="save" data-toggle="tooltip" data-placement="top|right|bottom|left"
+                    title="Save and update your profile information.">
+              <i class="fa fa-check accept"></i>
+            </button>
+            <button class="btn btn-outline-dark white-button mr-2" type="button" value="Cancel" name="cancel"
+                   data-toggle="tooltip" data-placement="top|right|bottom|left" onclick="cancelSubmission()"
+                   title="Cancel changes and return to your profile.">
+              <i class="fa fa-ban cancel"></i>
+            </button>
           </div>
         </form>
       </div>
