@@ -5,7 +5,6 @@ from main.models import Licence
 from accounts.factories import UserFactory
 
 from metadata import factories as meta_factories
-from genome import factories as genome_factories
 
 from .. import factories, filters, models, utilities
 
