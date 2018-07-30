@@ -116,21 +116,21 @@ class TestKeyword(TestCase):
         self.assertFalse(kw.is_attached())
         
     def test_get_association_count(self):
-        kw = KeywordFactory()
+        kw = KeywordFactory(text='blahblahblah')
         self.assertEqual(kw.get_association_count(), 0)
         
         exps = ExperimentSetFactory()
-        exps.keywords.clear()
+        _ = [kw.delete() for kw in exps.keywords.all()]
         exps.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 1)
         
         exp = ExperimentFactory()
-        exp.keywords.clear()
+        _ = [kw.delete() for kw in exp.keywords.all()]
         exp.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 2)
         
         scs = ScoreSetFactory()
-        scs.keywords.clear()
+        _ = [kw.delete() for kw in scs.keywords.all()]
         scs.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 3)
         
