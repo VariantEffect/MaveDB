@@ -1,7 +1,7 @@
-from django_filters import filters
-from django_filters import FilterSet
-
+from django_filters import FilterSet, filters
 from django.db.models import Q
+
+from core.filters import CSVCharFilter
 
 from . import models
 
@@ -44,7 +44,7 @@ class DatasetModelFilter(FilterSet):
             'username', 'display_name',
         )
         
-    urn = filters.CharFilter(
+    urn = CSVCharFilter(
         field_name='urn', lookup_expr='iexact')
     title = filters.CharFilter(
         field_name='title', lookup_expr='icontains')
@@ -54,22 +54,23 @@ class DatasetModelFilter(FilterSet):
         field_name='abstract_text', lookup_expr='icontains')
     method = filters.CharFilter(
         field_name='method_text', lookup_expr='icontains')
-    doi = filters.CharFilter(
+    doi = CSVCharFilter(
         field_name='doi_ids__identifier', lookup_expr='icontains')
-    sra = filters.CharFilter(
-        field_name='sra_ids__identifier', lookup_expr='icontains')
-    pubmed = filters.CharFilter(
+    sra = CSVCharFilter(
+        field_name='sra_ids__identifier', lookup_expr='icontains',
+    )
+    pubmed = CSVCharFilter(
         field_name='pubmed_ids__identifier', lookup_expr='icontains')
-    keyword = filters.CharFilter(
+    keyword = CSVCharFilter(
         field_name='keywords__text', lookup_expr='icontains')
-    
-    first_name = filters.CharFilter(
+
+    first_name = CSVCharFilter(
         method='filter_contributor', lookup_expr='iexact')
-    last_name = filters.CharFilter(
+    last_name = CSVCharFilter(
         method='filter_contributor', lookup_expr='iexact')
-    username = filters.CharFilter(
+    username = CSVCharFilter(
         method='filter_contributor', lookup_expr='iexact')
-    display_name = filters.CharFilter(method='filter_contributor_display_name')
+    display_name = CSVCharFilter(method='filter_contributor_display_name')
     
     @property
     def qs(self):
@@ -141,24 +142,24 @@ class ExperimentFilter(DatasetModelFilter):
             'uniprot', 'ensembl', 'refseq'
         )
 
-    licence = filters.CharFilter(method='filter_licence')
-    genome = filters.CharFilter(method='filter_genome')
-    target = filters.CharFilter(
+    licence = CSVCharFilter(method='filter_licence')
+    genome = CSVCharFilter(method='filter_genome')
+    target = CSVCharFilter(
         field_name='scoresets__target__name', lookup_expr='icontains'
     )
-    species = filters.CharFilter(
+    species = CSVCharFilter(
         field_name='scoresets__target__reference_maps__genome__species_name',
         lookup_expr='icontains'
     )
-    uniprot = filters.CharFilter(
+    uniprot = CSVCharFilter(
         field_name='scoresets__target__uniprot_id__identifier',
         lookup_expr='iexact'
     )
-    ensembl = filters.CharFilter(
+    ensembl = CSVCharFilter(
         field_name='scoresets__target__ensembl_id__identifier',
         lookup_expr='iexact'
     )
-    refseq = filters.CharFilter(
+    refseq = CSVCharFilter(
         field_name='scoresets__target__refseq_id__identifier',
         lookup_expr='iexact'
     )
@@ -203,24 +204,24 @@ class ScoreSetFilter(DatasetModelFilter):
             'uniprot', 'ensembl', 'refseq'
         )
 
-    licence = filters.CharFilter(method='filter_licence')
-    genome = filters.CharFilter(method='filter_genome')
-    target = filters.CharFilter(
+    licence = CSVCharFilter(method='filter_licence')
+    genome = CSVCharFilter(method='filter_genome')
+    target = CSVCharFilter(
         field_name='target__name', lookup_expr='icontains'
     )
-    species = filters.CharFilter(
+    species = CSVCharFilter(
         field_name='target__reference_maps__genome__species_name',
         lookup_expr='icontains'
     )
-    uniprot = filters.CharFilter(
+    uniprot = CSVCharFilter(
         field_name='target__uniprot_id__identifier',
         lookup_expr='iexact'
     )
-    ensembl = filters.CharFilter(
+    ensembl = CSVCharFilter(
         field_name='target__ensembl_id__identifier',
         lookup_expr='iexact'
     )
-    refseq = filters.CharFilter(
+    refseq = CSVCharFilter(
         field_name='target__refseq_id__identifier',
         lookup_expr='iexact'
     )
