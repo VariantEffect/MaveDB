@@ -22,7 +22,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     
     def setUp(self):
         self.user = UserFactory()
-        if  STAGING_OR_PROD:
+        if STAGING_OR_PROD:
             binary = FirefoxBinary('/usr/bin/firefox')
             options = Options()
             options.add_argument('--headless')
