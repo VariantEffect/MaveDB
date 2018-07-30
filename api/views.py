@@ -1,17 +1,15 @@
 import csv
 
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework import viewsets
+from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.cache import cache_page
 
-from accounts.mixins import UserFilterMixin
+from accounts.filters import UserFilter
 
-from dataset.models.experimentset import ExperimentSet
-from dataset.models.experiment import Experiment
-from dataset.models.scoreset import ScoreSet
-import dataset.constants as constants
+from dataset import models, filters, constants
 from dataset.serializers import (
     UserSerializer,
     ExperimentSetSerializer,
@@ -19,90 +17,55 @@ from dataset.serializers import (
     ScoreSetSerializer,
 )
 
-from dataset.mixins import (
-    ExperimentSetFilterMixin,
-    ExperimentFilterMixin,
-    ScoreSetFilterMixin,
-)
-
 from accounts.permissions import PermissionTypes
 
 User = get_user_model()
+ScoreSet = models.scoreset.ScoreSet
 
 
 # ViewSet CBVs for list/detail views
 # --------------------------------------------------------------------------- #
-class DatasetModelViewSet(ReadOnlyModelViewSet):
+class ListViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Base API viewset. Must also inherit a subclass of
     :class:`DatasetModelFilterMixin`.
     """
+    filter_class = None
+    queryset = None
 
-    def get_queryset(self, exclude_private=True):
-        queryset = super().get_queryset()
-        query_dict = dict()
-
-        if 'search' in self.request.query_params.keys():
-            join_func = self.or_join_qs
-            query_dict['search'] = self.request.query_params.getlist(
-                'search', [])
-        else:
-            join_func = self.and_join_qs
-            for field in self.search_field_to_function():
-                if field in self.request.query_params:
-                    query_dict[field] = self.request.\
-                        query_params.getlist(field, [])
-
-        if query_dict:
-            q = self.search_all(query_dict, join_func)
-            queryset = queryset.filter(q).distinct()
-
-        return queryset.exclude(private=exclude_private)
+    def list(self, request, *args, **kwargs):
+        filter_ = self.filter_class(
+            data=request.GET, queryset=self.queryset, request=request)
+        serializer = self.serializer_class(filter_.qs, many=True)
+        return Response(serializer.data)
 
 
-class ExperimentSetViewset(DatasetModelViewSet, ExperimentSetFilterMixin):
-    queryset = ExperimentSet.objects.filter(private=False)
+class ExperimentSetViewset(ListViewSet):
     serializer_class = ExperimentSetSerializer
+    filter_class = filters.ExperimentSetFilterModel
+    queryset = models.experimentset.ExperimentSet.objects.filter(private=False)
     lookup_field = 'urn'
 
 
-class ExperimentViewset(DatasetModelViewSet, ExperimentFilterMixin):
-    queryset = Experiment.objects.filter(private=False)
+class ExperimentViewset(ListViewSet):
     serializer_class = ExperimentSerializer
+    filter_class = filters.ExperimentFilter
+    queryset = models.experiment.Experiment.objects.filter(private=False)
     lookup_field = 'urn'
 
 
-class ScoreSetViewset(DatasetModelViewSet, ScoreSetFilterMixin):
-    queryset = ScoreSet.objects.filter(private=False)
+class ScoreSetViewset(ListViewSet):
     serializer_class = ScoreSetSerializer
+    filter_class = filters.ScoreSetFilter
+    queryset = models.scoreset.ScoreSet.objects.filter(private=False)
     lookup_field = 'urn'
 
 
-class UserViewset(ReadOnlyModelViewSet, UserFilterMixin):
+class UserViewset(ListViewSet):
     queryset = User.objects.exclude(username='AnonymousUser')
     serializer_class = UserSerializer
+    filter_class = UserFilter
     lookup_field = 'username'
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        query_dict = dict()
-
-        if 'search' in self.request.query_params.keys():
-            join_func = self.or_join_qs
-            query_dict['search'] = self.request.query_params.getlist(
-                'search', [])
-        else:
-            join_func = self.and_join_qs
-            for field in self.search_field_to_function():
-                if field in self.request.query_params:
-                    query_dict[field] = self.request. \
-                        query_params.getlist(field, [])
-
-        if query_dict:
-            q = self.search_all(query_dict, join_func)
-            queryset = queryset.filter(q).distinct()
-
-        return queryset
 
 
 # File download FBVs
