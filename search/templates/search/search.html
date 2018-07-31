@@ -12,7 +12,7 @@
         <button class="btn btn-outline-dark white-button ml-1">
           <i class="fa fa-search"></i>
         </button>
-        <button class="btn btn-outline-dark white-button ml-1" data-toggle="collapse"
+        <button id='adv-search' class="btn btn-outline-dark white-button ml-1" data-toggle="collapse"
                 data-target="#search-options" type="button">
           <i class="fas fa-cog"></i>
         </button>
@@ -28,21 +28,7 @@
         </div>
 
         <form action="{% url 'search:search' %}" method="GET">
-          <h5 class="pb-2 form-title">Metadata:</h5>
-          {% include 'core/bs_neutral_form.html' with form=meta_search_form %}
-          <hr>
-          <h5 class="pb-2 form-title">External identifiers:</h5>
-          {% include 'core/bs_neutral_form.html' with form=meta_id_search_form %}
-          <hr>
-          <h5 class="pb-2 form-title">Target gene identifiers:</h5>
-          {% include 'core/bs_neutral_form.html' with form=target_id_search_form %}
-          <hr>
-          <h5 class="pb-2 form-title">Reference genome:</h5>
-          {% include 'core/bs_neutral_form.html' with form=genome_search_form %}
-          <hr>
-          <h5 class="pb-2 form-title">Contributors:</h5>
-          {% include 'core/bs_neutral_form.html' with form=user_search_form %}
-
+          {% include 'core/bs_neutral_form.html' with form=adv_search_form %}
           <div class="card-footer bg-white">
             <button class="btn btn-outline-dark float-right white-button"
                     style="width: 150px;" type="submit">Search</button>
@@ -100,6 +86,7 @@
   };
 
   $("document").ready(function() {
+    let formInit = false;
     $('#search-table').DataTable({
       data: instances,
       columnDefs: [
@@ -110,7 +97,7 @@
         {className: "Contributors", targets: [4] }
       ]
     });
-    init_select2();
+    setTimeout(init_select2, 2000);
   });
 </script>
 {% endblock %}
