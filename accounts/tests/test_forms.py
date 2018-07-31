@@ -4,8 +4,7 @@ from django.contrib.auth import get_user_model
 from dataset.factories import ExperimentFactory
 
 from ..factories import UserFactory
-from ..forms import SelectUsersForm, UserSearchForm
-from ..mixins import UserFilterMixin
+from ..forms import SelectUsersForm
 from ..permissions import GroupTypes, user_is_anonymous
 
 User = get_user_model()
@@ -32,7 +31,6 @@ class TestSelectUsersForm(TestCase):
             instance=instance,
         )
         self.assertFalse(form.is_valid())
-        print(form.errors)
 
     def test_can_reassign_viewer_to_editor(self):
         instance = ExperimentFactory()
@@ -181,84 +179,3 @@ class TestSelectUsersForm(TestCase):
             'action': 'removed',
             'group': GroupTypes.EDITOR,
         })
-
-
-class TestUserSearchForm(TestCase):
-
-    def test_can_search_by_first_name(self):
-        u1 = UserFactory(first_name='Bob')
-        u2 = UserFactory(first_name='Alice')
-
-        dict_ = {UserFilterMixin.FIRST_NAME: 'bob'}
-        form = UserSearchForm(data=dict_)
-        self.assertTrue(form.is_valid())
-        q = form.make_filters(join=True)
-
-        result = User.objects.filter(q).distinct()
-        self.assertEqual(result.count(), 1)
-        self.assertIn(u1, result)
-        self.assertNotIn(u2, result)
-
-    def test_can_search_by_last_name(self):
-        u1 = UserFactory(last_name='McBob')
-        u2 = UserFactory(last_name='McAlice')
-
-        dict_ = {UserFilterMixin.LAST_NAME: 'McBob'}
-        form = UserSearchForm(data=dict_)
-        self.assertTrue(form.is_valid())
-        q = form.make_filters(join=True)
-
-        result = User.objects.filter(q).distinct()
-        self.assertEqual(result.count(), 1)
-        self.assertIn(u1, result)
-        self.assertNotIn(u2, result)
-
-    def test_can_search_by_username(self):
-        u1 = UserFactory(username='uBob')
-        u2 = UserFactory(username='uAlice')
-
-        dict_ = {UserFilterMixin.USERNAME: 'ubob'}
-        form = UserSearchForm(data=dict_)
-        self.assertTrue(form.is_valid())
-        q = form.make_filters(join=True)
-
-        result = User.objects.filter(q).distinct()
-        self.assertEqual(result.count(), 1)
-        self.assertIn(u1, result)
-        self.assertNotIn(u2, result)
-
-    def test_can_search_multiple_fields(self):
-        u1 = UserFactory(username='000-000-X')
-        u2 = UserFactory(first_name='Alice')
-        u3 = UserFactory(first_name='Bob')
-
-        dict_ = {
-            UserFilterMixin.FIRST_NAME: 'alice',
-            UserFilterMixin.USERNAME: '000-000-X'
-        }
-        form = UserSearchForm(data=dict_)
-        self.assertTrue(form.is_valid())
-        q = form.make_filters(join=True)
-
-        result = User.objects.filter(q).distinct()
-        self.assertEqual(result.count(), 2)
-        self.assertIn(u1, result)
-        self.assertIn(u2, result)
-        self.assertNotIn(u3, result)
-
-    def test_search_is_case_insensitive(self):
-        UserFactory(username='USER')
-        UserFactory(first_name='User')
-        UserFactory(first_name='UsEr')
-
-        dict_ = {
-            UserFilterMixin.FIRST_NAME: 'user',
-            UserFilterMixin.LAST_NAME: 'user',
-            UserFilterMixin.USERNAME: 'user'
-        }
-        form = UserSearchForm(data=dict_)
-        self.assertTrue(form.is_valid())
-        q = form.make_filters(join=True)
-
-        result = User.objects.filter(q).distinct()
-        self.assertEqual(result.count(), 3)

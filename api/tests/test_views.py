@@ -26,6 +26,14 @@ class TestExperimentSetAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = []
         self.assertEqual(expected, result)
+        
+    def test_shows_public(self):
+        instance = ExperimentSetFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get("/api/experimentsets/")
+        result = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(result), 1)
 
     def test_404_private_experimentset(self):
         exps = ExperimentSetFactory()
@@ -44,7 +52,20 @@ class TestExperimentSetAPIViews(TestCase):
     def test_404_experimentset_not_found(self):
         response = self.client.get("/api/experimentsets/dddd/")
         self.assertEqual(response.status_code, 404)
-
+        
+    def test_search_works(self):
+        instance1 = ExperimentSetFactory()
+        instance2 = ExperimentSetFactory()
+        instance1.private = False
+        instance2.private = False
+        instance1.save()
+        instance2.save()
+        response = self.client.get(
+            "/api/experimentsets/?title={}".format(instance1.title)
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertNotContains(response, instance2.urn)
+        
 
 class TestExperimentAPIViews(TestCase):
 
@@ -54,11 +75,19 @@ class TestExperimentAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = []
         self.assertEqual(expected, result)
+        
+    def test_shows_public(self):
+        instance = ExperimentFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get("/api/experiments/")
+        result = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(result), 1)
 
     def test_404_private(self):
         instance = ExperimentFactory()
         response = self.client.get(
-            "/api/experimentsets/{}/".format(instance.urn)
+            "/api/experiments/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
         
@@ -72,6 +101,19 @@ class TestExperimentAPIViews(TestCase):
     def test_404_not_found(self):
         response = self.client.get("/api/experiments/dddd/")
         self.assertEqual(response.status_code, 404)
+        
+    def test_search_works(self):
+        instance1 = ExperimentFactory()
+        instance2 = ExperimentFactory()
+        instance1.private = False
+        instance2.private = False
+        instance1.save()
+        instance2.save()
+        response = self.client.get(
+            "/api/experiments/?title={}".format(instance1.title)
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertNotContains(response, instance2.urn)
 
 
 class TestScoreSetAPIViews(TestCase):
@@ -90,6 +132,14 @@ class TestScoreSetAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = []
         self.assertEqual(expected, result)
+        
+    def test_shows_public(self):
+        instance = ScoreSetFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get("/api/scoresets/")
+        result = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(result), 1)
 
     def test_404_private(self):
         instance = ScoreSetFactory()
@@ -129,6 +179,19 @@ class TestScoreSetAPIViews(TestCase):
     def test_404_not_found(self):
         response = self.client.get("/api/scoresets/dddd/")
         self.assertEqual(response.status_code, 404)
+        
+    def test_search_works(self):
+        instance1 = ScoreSetFactory()
+        instance2 = ScoreSetFactory()
+        instance1.private = False
+        instance2.private = False
+        instance1.save()
+        instance2.save()
+        response = self.client.get(
+            "/api/scoresets/?title={}".format(instance1.title)
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertNotContains(response, instance2.urn)
 
     def test_can_download_scores(self):
         scs = ScoreSetFactory()

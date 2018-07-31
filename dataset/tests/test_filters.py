@@ -20,6 +20,23 @@ class TestDatasetModelFilter(TestCase):
         self.instance1.save()
         self.instance2.save()
         
+    def test_filter_qs_or(self):
+        instance3 = factories.ExperimentSetFactory()
+        instance3.private = False
+        instance3.save()
+        
+        f = filters.ExperimentSetFilterModel(
+            data={
+                filters.DatasetModelFilter.TITLE: self.instance1.title,
+                filters.DatasetModelFilter.DESCRIPTION:
+                    self.instance2.short_description,
+            },
+            queryset=models.experimentset.ExperimentSet.objects.all(),
+        )
+        self.assertEqual(f.qs_or.count(), 2)
+        self.assertIn(self.instance1, f.qs_or.all())
+        self.assertIn(self.instance2, f.qs_or.all())
+        
     def test_filters_out_private_by_default(self):
         self.instance1.private = True
         self.instance2.private = True
