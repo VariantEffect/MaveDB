@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
-from search.mixins import FilterMixin
 from .permissions import (
     GroupTypes,
     user_is_anonymous,
@@ -191,35 +190,3 @@ class GroupPermissionMixin(object):
         Removes user(s) as a viewer.
         """
         return _remove_users(self, users, group=GroupTypes.VIEWER)
-
-
-class UserFilterMixin(FilterMixin):
-    """
-    Filter :class:`User` instances by common fields:
-        'username': 'username',
-        'first_name': 'first_name',
-        'last_name': 'last_name',
-    """
-    # Get parameter names
-    USERNAME = 'username'
-    FIRST_NAME = 'first_name'
-    LAST_NAME = 'last_name'
-
-    def search_field_to_function(self):
-        return {
-            self.USERNAME: self.filter_username,
-            self.FIRST_NAME: self.filter_first_name,
-            self.LAST_NAME: self.filter_last_name,
-        }
-
-    def filter_username(self, value):
-        return self.search_to_q(
-            value, field_name='username', filter_type='iexact')
-
-    def filter_first_name(self, value):
-        return self.search_to_q(
-            value, field_name='first_name', filter_type='icontains')
-
-    def filter_last_name(self, value):
-        return self.search_to_q(
-            value, field_name='last_name', filter_type='icontains')

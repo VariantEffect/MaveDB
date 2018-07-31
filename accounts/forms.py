@@ -9,98 +9,22 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 
-from core.utilities import is_null
-
-from search.forms import parse_char_list
-
 from .models import Profile
-from .mixins import UserFilterMixin, filter_anon
+from .mixins import filter_anon
 from .permissions import (
     GroupTypes,
-    user_is_anonymous,
     update_admin_list_for_instance,
     update_editor_list_for_instance,
     update_viewer_list_for_instance,
     valid_model_instance,
 )
 
-
 User = get_user_model()
 logger = logging.getLogger("django")
-user_filter = UserFilterMixin()
 
 
 class ConfirmationForm(forms.Form):
     pass
-
-
-class UserSearchForm(forms.Form):
-    """Search by text fields and keywords."""
-    def __init__(self, *args, **kwargs):
-        super(UserSearchForm, self).__init__(*args, **kwargs)
-        self.fields[user_filter.USERNAME] = forms.CharField(
-            max_length=None, label="ORCID", required=False,
-            initial=None, empty_value="",
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.username, i.username)
-                    for i in User.objects.all()
-                    if not user_is_anonymous(i)
-                ]))
-            ),
-        )
-        self.fields[user_filter.FIRST_NAME] = forms.CharField(
-            max_length=None, label="First name", required=False,
-            initial=None, empty_value="",
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.first_name, i.first_name)
-                    for i in User.objects.all()
-                    if not user_is_anonymous(i)
-                ]))
-            ),
-        )
-        self.fields[user_filter.LAST_NAME] = forms.CharField(
-            max_length=None, label="Last name", required=False,
-            initial=None, empty_value="",
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.last_name, i.last_name)
-                    for i in User.objects.all()
-                    if not user_is_anonymous(i)
-                ]))
-            ),
-        )
-
-    def clean_first_name(self):
-        field_name = user_filter.FIRST_NAME
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
-        return list(set([i for i in instances if not is_null(i)]))
-
-    def clean_last_name(self):
-        field_name = user_filter.LAST_NAME
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
-        return list(set([i for i in instances if not is_null(i)]))
-
-    def clean_username(self):
-        field_name = user_filter.USERNAME
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
-        return list(set([i for i in instances if not is_null(i)]))
-
-    def make_filters(self, join=True):
-        data = self.cleaned_data
-        search_dict = {
-            user_filter.FIRST_NAME: data.get(user_filter.FIRST_NAME, ""),
-            user_filter.LAST_NAME: data.get(user_filter.LAST_NAME, ""),
-            user_filter.USERNAME: data.get(user_filter.USERNAME, ""),
-        }
-        join_func = None
-        if join:
-            join_func = user_filter.or_join_qs
-        return user_filter.search_all(search_dict, join_func=join_func)
 
 
 class SelectUsersForm(forms.Form):
