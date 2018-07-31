@@ -1,5 +1,7 @@
-from django_filters import FilterSet, filters
+from django_filters import FilterSet, filters, constants
 from django.db.models import Q
+
+from django import forms
 
 from core.filters import CSVCharFilter
 
@@ -81,6 +83,29 @@ class DatasetModelFilter(FilterSet):
         if not user.is_authenticated:
             return qs.filter(private=False)
         return qs
+    
+    @property
+    def qs_or(self):
+        """Patch in the ability for an OR search over all fields"""
+        if not hasattr(self, '_qs_or'):
+            if not self.is_bound:
+                self._qs_or = self.queryset.all()
+                return self._qs_or
+            if not self.form.is_valid():
+                if self.strict == constants.STRICTNESS.RAISE_VALIDATION_ERROR:
+                    raise forms.ValidationError(self.form.errors)
+                elif self.strict == constants.STRICTNESS.RETURN_NO_RESULTS:
+                    self._qs_or = self.queryset.none()
+                    return self._qs_or
+                # else STRICTNESS.IGNORE...  ignoring
+            # start with no results and filter from there
+            qs = self.queryset.none()
+            for name, filter_ in self.filters.items():
+                value = self.form.cleaned_data.get(name)
+                if value:  # valid & clean data
+                    qs |= filter_.filter(self.queryset, value)
+            self._qs_or = qs
+        return self._qs_or
     
     def filter_contributor(self, queryset, name, value):
         instances_pks = []
