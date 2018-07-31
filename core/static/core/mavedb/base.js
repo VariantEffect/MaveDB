@@ -68,7 +68,6 @@ function repopulateSelect(selectId, listId) {
   var selectItems = listId;
   var i,j = 0;
 
-
   if (selectItems !== undefined) {
     if (typeof listId === "string") {
       selectItems = $(listId).text();
@@ -334,8 +333,10 @@ $("#id_target").on("change", function() {
 });
 
 
-function init_select2(params) {
-  $(".select2").select2();
+function init_select2() {
+  $(".select2").select2({
+
+  });
   $(".select2-token-select").select2({
     tags: true,
     tokenSeparators: [","]
