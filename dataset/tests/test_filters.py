@@ -400,6 +400,59 @@ class TestExperimentFilter(TestCase):
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
 
+    def test_hides_hits_based_on_private_non_viewable_scoresets(self):
+        request = RequestFactory().get('/')
+        request.user = self.user1
+
+        scoreset = self.instance1.children.first()
+        scoreset.private = True
+        scoreset.save()
+        self.assertNotIn(self.user1, scoreset.contributors())
+
+        f = filters.ExperimentFilter(
+            data={
+                filters.ExperimentFilter.REFSEQ: self.instance1.
+                    children.first().target.
+                    refseq_id.identifier
+            },
+            queryset=self.queryset,
+            request=request
+        )
+        self.assertNotIn(self.instance1, f.qs.all())
+        self.assertNotIn(self.instance2, f.qs.all())
+
+    def test_shows_hits_based_on_private_viewable_scoresets(self):
+        request = RequestFactory().get('/')
+        request.user = self.user1
+
+        scoreset = self.instance1.children.first()
+        scoreset.private = True
+        scoreset.save()
+        scoreset.add_administrators(self.user1)
+
+        f = filters.ExperimentFilter(
+            data={
+                filters.ExperimentFilter.REFSEQ: self.instance1.
+                    children.first().target.
+                    refseq_id.identifier
+            },
+            queryset=self.queryset,
+            request=request
+        )
+        self.assertIn(self.instance1, f.qs.all())
+        self.assertNotIn(self.instance2, f.qs.all())
+
+    def test_shows_all_public(self):
+        request = RequestFactory().get('/')
+        request.user = self.user1
+        f = filters.ExperimentFilter(
+            data={},
+            queryset=self.queryset,
+            request=request
+        )
+        self.assertIn(self.instance1, f.qs.all())
+        self.assertIn(self.instance2, f.qs.all())
+
 
 class TestScoreSetFilter(TestCase):
     def setUp(self):

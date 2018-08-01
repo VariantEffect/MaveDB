@@ -5,7 +5,7 @@ from django import forms
 
 from core.filters import CSVCharFilter
 
-from . import models
+from . import models, templatetags
 
 
 class DatasetModelFilter(FilterSet):
@@ -159,7 +159,7 @@ class ExperimentFilter(DatasetModelFilter):
     UNIPROT = 'uniprot'
     ENSEMBL = 'ensembl'
     REFSEQ = 'refseq'
-    
+
     class Meta(DatasetModelFilter.Meta):
         model = models.experiment.Experiment
         fields = DatasetModelFilter.Meta.fields + (
@@ -167,41 +167,31 @@ class ExperimentFilter(DatasetModelFilter):
             'uniprot', 'ensembl', 'refseq'
         )
 
-    licence = CSVCharFilter(method='filter_licence')
-    genome = CSVCharFilter(method='filter_genome')
-    target = CSVCharFilter(
-        field_name='scoresets__target__name', lookup_expr='icontains'
-    )
-    species = CSVCharFilter(
-        field_name='scoresets__target__reference_maps__genome__species_name',
-        lookup_expr='icontains'
-    )
-    uniprot = CSVCharFilter(
-        field_name='scoresets__target__uniprot_id__identifier',
-        lookup_expr='iexact'
-    )
-    ensembl = CSVCharFilter(
-        field_name='scoresets__target__ensembl_id__identifier',
-        lookup_expr='iexact'
-    )
-    refseq = CSVCharFilter(
-        field_name='scoresets__target__refseq_id__identifier',
-        lookup_expr='iexact'
-    )
+    licence = CSVCharFilter(method='filter_by_scoreset')
+    genome = CSVCharFilter(method='filter_by_scoreset')
+    target = CSVCharFilter(method='filter_by_scoreset')
+    species = CSVCharFilter(method='filter_by_scoreset')
+    uniprot = CSVCharFilter(method='filter_by_scoreset')
+    ensembl = CSVCharFilter(method='filter_by_scoreset')
+    refseq = CSVCharFilter(method='filter_by_scoreset')
 
-    def filter_licence(self, queryset, name, value):
-        q = Q(**{'scoresets__licence__short_name__icontains': value}) | \
-            Q(**{'scoresets__licence__long_name__icontains': value})
-        return queryset.filter(q)
+    def filter_by_scoreset(self, queryset, name, value):
+        experiments = set()
+        user = getattr(self.request, 'user', None)
+        scoresets = ScoreSetFilter().filters.get(name).filter(
+            qs=models.scoreset.ScoreSet.objects.all(),
+            value=value
+        )
+        for scoreset in scoresets:
+            if scoreset.private:
+                if user is not None and user in scoreset.contributors():
+                    experiments.add(scoreset.parent.pk)
+            else:
+                experiments.add(scoreset.parent.pk)
 
-    def filter_genome(self, queryset, name, value):
-        genome_field = 'scoresets__target__reference_maps__genome'
-        short_name = '{}__short_name__iexact'.format(genome_field)
-        assembly_id = '{}__genome_id__identifier__iexact'.format(genome_field)
-        q = Q(**{short_name: value}) | Q(**{assembly_id: value})
-        return queryset.filter(q)
-        
-    
+        return queryset.filter(pk__in=experiments)
+
+
 class ScoreSetFilter(DatasetModelFilter):
     """
     Filter `ScoreSet` based on the fields in `DatasetModelFilter` plus

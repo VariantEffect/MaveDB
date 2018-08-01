@@ -9,6 +9,7 @@ from . import forms
 
 User = get_user_model()
 
+
 def search_view(request):
     b_search_form = forms.BasicSearchForm()
     adv_search_form = forms.AdvancedSearchForm()
