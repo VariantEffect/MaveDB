@@ -1,3 +1,5 @@
+import csv
+
 from django_filters import FilterSet, filters, constants
 from django.db.models import Q
 
@@ -73,6 +75,13 @@ class DatasetModelFilter(FilterSet):
     username = CSVCharFilter(
         method='filter_contributor', lookup_expr='iexact')
     display_name = CSVCharFilter(method='filter_contributor_display_name')
+
+    @staticmethod
+    def split(value, sep=','):
+        value = list(csv.reader([value], delimiter=sep))[0]
+        if not isinstance(value, list):
+            value = [value]
+        return value
     
     @property
     def qs(self):
@@ -100,11 +109,14 @@ class DatasetModelFilter(FilterSet):
                 # else STRICTNESS.IGNORE...  ignoring
             # start with no results and filter from there
             qs = self.queryset.none()
-            for name, filter_ in self.filters.items():
-                value = self.form.cleaned_data.get(name)
-                if value:  # valid & clean data
-                    qs |= filter_.filter(self.queryset, value)
-            self._qs_or = qs
+            if not self.data:
+                self._qs_or = self.queryset.all()
+            else:
+                for name, filter_ in self.filters.items():
+                    value = self.form.cleaned_data.get(name)
+                    if value:  # valid & clean data
+                        qs |= filter_.filter(self.queryset, value)
+                self._qs_or = qs
         return self._qs_or
     
     def filter_contributor(self, queryset, name, value):
@@ -113,9 +125,10 @@ class DatasetModelFilter(FilterSet):
             return queryset
         model = queryset.first().__class__
         for instance in queryset.all():
-            contributors = instance.contributors().filter(**{name:value})
-            if contributors.count():
-                instances_pks.append(instance.pk)
+            for v in self.split(value):
+                contributors = instance.contributors().filter(**{name: v})
+                if contributors.count():
+                    instances_pks.append(instance.pk)
         return model.objects.filter(pk__in=set(instances_pks))
         
     def filter_contributor_display_name(self, queryset, name, value):
@@ -124,11 +137,12 @@ class DatasetModelFilter(FilterSet):
             return queryset
         model = queryset.first().__class__
         for instance in queryset.all():
-            matches = any(
-                [value.lower() in c.profile.get_display_name().lower()
-                 for c in instance.contributors()])
-            if matches:
-                instances_pks.append(instance.pk)
+            for v in self.split(value):
+                matches = any(
+                    [v.lower() in c.profile.get_display_name().lower()
+                     for c in instance.contributors()])
+                if matches:
+                    instances_pks.append(instance.pk)
         return model.objects.filter(pk__in=set(instances_pks))
         
         
@@ -242,13 +256,17 @@ class ScoreSetFilter(DatasetModelFilter):
     )
     
     def filter_licence(self, queryset, name, value):
-        q = Q(licence__short_name__icontains=value) | \
-             Q(licence__long_name__icontains=value)
+        q = Q()
+        for v in self.split(value):
+            q |= Q(licence__short_name__icontains=v) | \
+                 Q(licence__long_name__icontains=v)
         return queryset.filter(q)
         
     def filter_genome(self, queryset, name, value):
         genome_field = 'target__reference_maps__genome'
         short_name = '{}__short_name__iexact'.format(genome_field)
         assembly_id = '{}__genome_id__identifier__iexact'.format(genome_field)
-        q = Q(**{short_name: value}) | Q(**{assembly_id: value})
+        q = Q()
+        for v in self.split(value):
+            q |= Q(**{short_name: v}) | Q(**{assembly_id: v})
         return queryset.filter(q)
