@@ -2,7 +2,8 @@ import json
 
 from django import forms
 
-def parse_char_list(value):
+
+def parse_json_list(value):
     if isinstance(value, (list, set, tuple)):
         return list(value)
     try:
@@ -25,4 +26,4 @@ class CSVCharField(forms.CharField):
         if value is None:
             return super(CSVCharField, self).clean(value)
         return [super(CSVCharField, self).clean(v)
-                for v in parse_char_list(value)]
+                for v in parse_json_list(value)]
