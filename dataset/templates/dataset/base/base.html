@@ -40,7 +40,7 @@
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fas fa-download"></i>
           </button>
-          <div class="dropdown-menu" aria-labelledby="scoresetDropDown">
+          <div class="dropdown-menu download-menu" aria-labelledby="scoresetDropDown">
             <a class="dropdown-item" href="{% url 'dataset:scores_download' instance.urn %}">Scores</a>
             <a class="dropdown-item" href="{% url 'dataset:counts_download' instance.urn %}">Counts</a>
             <a class="dropdown-item" href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>

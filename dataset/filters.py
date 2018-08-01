@@ -5,7 +5,7 @@ from django import forms
 
 from core.filters import CSVCharFilter
 
-from . import models, templatetags
+from . import models
 
 
 class DatasetModelFilter(FilterSet):
