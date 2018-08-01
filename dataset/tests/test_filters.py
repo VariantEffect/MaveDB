@@ -19,7 +19,15 @@ class TestDatasetModelFilter(TestCase):
         self.instance2.private = False
         self.instance1.save()
         self.instance2.save()
-        
+
+    def test_splits_on_comma(self):
+        res = filters.ExperimentFilter.split("hello,world", sep=',')
+        self.assertEqual(res, ['hello', 'world'])
+
+    def test_does_not_dbl_split_quoted_sep(self):
+        res = filters.ExperimentFilter.split("\"hello,world\",world", sep=',')
+        self.assertEqual(res, ['hello,world', 'world'])
+
     def test_filter_qs_or(self):
         instance3 = factories.ExperimentSetFactory()
         instance3.private = False
@@ -36,7 +44,14 @@ class TestDatasetModelFilter(TestCase):
         self.assertEqual(f.qs_or.count(), 2)
         self.assertIn(self.instance1, f.qs_or.all())
         self.assertIn(self.instance2, f.qs_or.all())
-        
+
+    def test_filter_qs_or_empty_data_returns_all(self):
+        f = filters.ExperimentSetFilterModel(
+            data={},
+            queryset=models.experimentset.ExperimentSet.objects.all(),
+        )
+        self.assertEqual(f.qs_or.count(), 2)
+
     def test_filters_out_private_by_default(self):
         self.instance1.private = True
         self.instance2.private = True
@@ -188,6 +203,20 @@ class TestDatasetModelFilter(TestCase):
         )
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
+
+    def test_search_by_contributor_OR_joins_csv_input(self):
+        self.instance1.add_administrators(self.user1)
+        self.instance2.add_administrators(self.user2)
+        f = filters.ExperimentSetFilterModel(
+            data={filters.DatasetModelFilter.USERNAME:
+                  '{},{}'.format(
+                      self.user1.username,
+                      self.user2.username,)
+            },
+            queryset=models.experimentset.ExperimentSet.objects.all(),
+        )
+        self.assertIn(self.instance1, f.qs.all())
+        self.assertIn(self.instance2, f.qs.all())
         
     def test_search_by_display_name_returns_contributor_instances(self):
         self.instance1.add_administrators(self.user1)
@@ -198,6 +227,20 @@ class TestDatasetModelFilter(TestCase):
         )
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
+
+    def test_search_by_display_OR_joins_csv_input(self):
+        self.instance1.add_administrators(self.user1)
+        self.instance2.add_administrators(self.user2)
+        f = filters.ExperimentSetFilterModel(
+            data={filters.DatasetModelFilter.DISPLAY_NAME:
+                  '{},{}'.format(
+                      self.user1.profile.get_display_name(),
+                      self.user2.profile.get_display_name(),)
+            },
+            queryset=models.experimentset.ExperimentSet.objects.all(),
+        )
+        self.assertIn(self.instance1, f.qs.all())
+        self.assertIn(self.instance2, f.qs.all())
         
     def test_searching_multiple_fields_joins_results_by_AND(self):
         # No results since the two querysets are disjoint
@@ -514,6 +557,36 @@ class TestScoreSetFilter(TestCase):
         )
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
+
+    def test_licence_filter_OR_joins_csv_input(self):
+        f = filters.ScoreSetFilter(
+            data={
+                filters.ScoreSetFilter.LICENCE:
+                    '{},{}'.format(
+                        self.instance1.licence.short_name,
+                        self.instance2.licence.short_name,
+                    )
+            },
+            queryset=self.queryset,
+        )
+        self.assertIn(self.instance1, f.qs.all())
+        self.assertIn(self.instance2, f.qs.all())
+
+    def test_genome_filter_OR_joins_csv_input(self):
+        f = filters.ScoreSetFilter(
+            data={
+                filters.ScoreSetFilter.GENOME:
+                    '{},{}'.format(
+                        self.instance1.target.reference_maps.first().
+                            genome.short_name,
+                        self.instance2.target.reference_maps.first().
+                            genome.short_name,
+                    )
+            },
+            queryset=self.queryset,
+        )
+        self.assertIn(self.instance1, f.qs.all())
+        self.assertIn(self.instance2, f.qs.all())
     
     def test_search_by_licence_long_name(self):
         f = filters.ScoreSetFilter(

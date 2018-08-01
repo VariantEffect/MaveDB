@@ -1,5 +1,7 @@
 from django.test import TestCase, RequestFactory
 
+from main.models import Licence
+
 from dataset import filters as ds_filters
 
 from .. import forms
@@ -184,12 +186,19 @@ class TestBasicSearchForm(TestCase):
         request = RequestFactory().get("/")
         form = forms.BasicSearchForm(request.GET)
         self.assertFalse(form.format_data_for_filter())
-        
+
+    def test_format_for_filters_does_not_split_double_qouted_csvs(self):
+        request = RequestFactory().get("/?{key}=\"Hello,World\"".format(
+            key='search'))
+        form = forms.BasicSearchForm(request.GET)
+        result = form.format_data_for_filter()
+        self.assertEqual(result['title'], '"Hello,World"')
+
     def test_format_for_filters_adds_in_all_fields(self):
-        request = RequestFactory().get("/?{key}=Hello,World".format(
+        request = RequestFactory().get("/?{key}=Hello".format(
             key='search'))
         form = forms.BasicSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertTrue(result)
-        self.assertEqual(result['title'], 'Hello,World')
+        self.assertEqual(result['title'], 'Hello')
         self.assertEqual(len(result), 20)
