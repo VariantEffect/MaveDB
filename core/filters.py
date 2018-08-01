@@ -2,7 +2,7 @@ import csv
 
 from django.core.exceptions import ImproperlyConfigured
 
-from django_filters import filters, FilterSet
+from django_filters import filters
 
 
 class MultiCharFilter(filters.CharFilter):
