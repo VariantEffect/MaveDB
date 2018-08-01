@@ -25,19 +25,20 @@ User = get_user_model()
 
 
 class BasicSearchForm(forms.Form):
-    search = fields.CSVCharField(required=False)
+    search = forms.CharField(required=False)
 
     def format_data_for_filter(self):
         if not self.is_valid():
             return {}
         
-        value = ','.join(self.cleaned_data.get('search', []))
+        value = self.cleaned_data.get('search', "")
         if not value:
             return {}
-        
-        data = {}
+
+        data = dict()
+
         # DatasetModel Filter fields
-        # ------------------------------------------------------------------- #
+        # -------------------------------------------------------------- #
         data[ds_filters.DatasetModelFilter.URN] = value
         data[ds_filters.DatasetModelFilter.TITLE] = value
         data[ds_filters.DatasetModelFilter.DESCRIPTION] = value
@@ -47,16 +48,16 @@ class BasicSearchForm(forms.Form):
         data[ds_filters.DatasetModelFilter.SRA] = value
         data[ds_filters.DatasetModelFilter.DOI] = value
         data[ds_filters.DatasetModelFilter.KEYWORD] = value
-    
+
         # User filter fields
-        # ------------------------------------------------------------------- #
+        # -------------------------------------------------------------- #
         data[ds_filters.DatasetModelFilter.FIRST_NAME] = value
         data[ds_filters.DatasetModelFilter.LAST_NAME] = value
         data[ds_filters.DatasetModelFilter.USERNAME] = value
         data[ds_filters.DatasetModelFilter.DISPLAY_NAME] = value
-    
+
         # ScoreSet/Experiment filter fields
-        # ------------------------------------------------------------------- #
+        # -------------------------------------------------------------- #
         data[ds_filters.ScoreSetFilter.TARGET] = value
         data[ds_filters.ScoreSetFilter.SPECIES] = value
         data[ds_filters.ScoreSetFilter.GENOME] = value
@@ -64,7 +65,7 @@ class BasicSearchForm(forms.Form):
         data[ds_filters.ScoreSetFilter.ENSEMBL] = value
         data[ds_filters.ScoreSetFilter.REFSEQ] = value
         data[ds_filters.ScoreSetFilter.LICENCE] = value
-    
+
         return data
 
 
@@ -362,5 +363,5 @@ class AdvancedSearchForm(forms.Form):
             data[ds_filters.ScoreSetFilter.REFSEQ] = refseq
         if licence:
             data[ds_filters.ScoreSetFilter.LICENCE] = licence
-        
+
         return data

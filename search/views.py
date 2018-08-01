@@ -28,6 +28,7 @@ def search_view(request):
                 data=data, request=request, queryset=experiments)
             scoreset_filter = ScoreSetFilter(
                 data=data, request=request, queryset=scoresets)
+
             if isinstance(form, forms.BasicSearchForm):
                 experiments = experiment_filter.qs_or
                 scoresets = scoreset_filter.qs_or
