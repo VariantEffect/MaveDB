@@ -115,6 +115,12 @@ code {
   color: #987cb8;
 }
 
+.dropdown-menu {
+  width: 125px !important;
+  min-width: 10px !important;
+  transform: translate3d(-35px, 46px, 0px) !important;
+}
+
 
 /* Mixins
 ---------------------------------------------------------------------------  */
