@@ -1,10 +1,12 @@
 import logging
 
 from django.db import transaction
+from django.http import JsonResponse
 
 from accounts.permissions import PermissionTypes
 
 from core.utilities.versioning import track_changes
+from core.mixins import AjaxView
 
 from metadata.forms import (
     UniprotOffsetForm,
@@ -30,7 +32,7 @@ from .base import (
 logger = logging.getLogger("django")
 
 
-class ScoreSetDetailView(DatasetModelView):
+class ScoreSetDetailView(AjaxView, DatasetModelView):
     """
     Simple detail view. See `scoreset/scoreset.html` for the template
     layout.
@@ -79,7 +81,38 @@ class ScoreSetDetailView(DatasetModelView):
         context['previous_version'] = previous_version
         context['next_version'] = next_version
         return context
-
+    
+    def get_ajax(self):
+        type_ = self.request.GET.get('type', False)
+        instance = self.get_object()
+        variants = instance.children.order_by('{}'.format(
+            instance.primary_hgvs_column))[0:10]
+        rows = []
+        
+        for variant in variants:
+            row = {}
+            if type_ == 'counts':
+                v_data = variant.count_data
+            else:
+                v_data = variant.score_data
+            
+            for i, data in enumerate(v_data):
+                if isinstance(data, float):
+                    data = '{:.3f}'.format(data)
+                if isinstance(data, int):
+                    data = '{:.6g}'.format(data)
+                row['{}'.format(i)] = data
+            rows.append(row)
+            
+        response = {
+            'draw': 1,
+            'data': rows,
+            'recordsTotal': len(rows),
+            'recordsFiltered': len(rows),
+        }
+        return JsonResponse(response, safe=False)
+        
+    
 
 class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     # Overridden from `CreateDatasetModelView`

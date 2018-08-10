@@ -12,7 +12,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="MaveDB - repository for DMS/MAVE assay datasets">
     <meta name="author" content="Daniel C. Esposito, Alan F. Rubin">
-    <meta name="keywords" content="dms,deep mutational scanning,mave,multiplex assays of variant effect,variant effect,gene,genomic,variants,functional assay,multiplex assay">
+    <meta name="keywords" content="dms,deep mutational scanning,mave,multiplex assays of
+          variant effect,variant effect,gene,genomic,variants,functional assay,multiplex assay">
 
     <link href="{% static 'core/google/fonts_icons.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'core/bootstrap/bootstrap.min.css' %}" rel="stylesheet" type="text/css">
@@ -214,8 +215,7 @@
             <div class="row justify-content-center">
               <small>
                 <p class="text-muted site-version">
-                  <strong>{{ site_information.release_branch }}: </strong>
-                  {{ site_information.release_version }}
+                  <strong>Version: </strong> {{ site_information.release_version }}
                 </p>
               </small>
             </div>
@@ -258,15 +258,7 @@
     <!-- Scripts -->
     <!-- Ask user confirmation to remove themself as an instance admin -->
     <!-- This needs to be here in order to record the user pk from django -->
-    <script type="text/javascript">
-        FontAwesomeConfig = { searchPseudoElements: true };
-        user = parseInt({{ request.user.pk }});
-        {% if request.user.is_superuser %}
-            ignore = true;
-        {% else %}
-            ignore = false;
-        {% endif %}
-    </script>
+    <script type="text/javascript">FontAwesomeConfig = { searchPseudoElements: true };</script>
     <script src="{% static 'core/jquery/jquery-3.3.1.min.js' %}" type="text/javascript"></script>
     <script src="{% static 'core/jquery/jquery-ui.min.js' %}" type="text/javascript"></script>
     <script src="{% static 'core/bootstrap/popper_1.12.9.min.js' %}" type="text/javascript"></script>
@@ -277,5 +269,7 @@
     <script src="{% static 'core/fontawesome/fontawesome_5.1.0.min.js' %}" type="text/javascript"></script>
     <script src="{% static 'core/mavedb/init_tocbot.js' %}" type="text/javascript"></script>
     <script src="{% static 'core/mavedb/base.js' %}" type="text/javascript"></script>
+    {% block extra_scripts %}
+    {% endblock %}
   </body>
 </html>

@@ -2,6 +2,7 @@ from django.test import TestCase, RequestFactory
 
 from accounts.factories import UserFactory
 
+from ..utilities import publish_dataset
 from ..factories import ExperimentFactory, ExperimentSetFactory
 from ..forms.experiment import ExperimentForm, ErrorMessages
 from ..models.experiment import Experiment
@@ -54,10 +55,10 @@ class TestExperimentForm(TestCase):
         
         obj1.add_administrators(self.user)
         obj2.add_viewers(self.user)
-        
+
         form = ExperimentForm(user=self.user)
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
-        self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)
+        self.assertIn(obj1, form.fields['experimentset'].queryset)
     
     def test_editor_experimentset_appear_in_options(self):
         obj1 = ExperimentSetFactory()
@@ -66,10 +67,10 @@ class TestExperimentForm(TestCase):
         
         obj1.add_editors(self.user)
         obj2.add_viewers(self.user)
-        
+
         form = ExperimentForm(user=self.user)
         self.assertEqual(form.fields['experimentset'].queryset.count(), 1)
-        self.assertEqual(form.fields['experimentset'].queryset.first(), obj1)
+        self.assertIn(obj1, form.fields['experimentset'].queryset)
     
     def test_from_request_modifies_existing_instance(self):
         exp = ExperimentFactory()
@@ -90,7 +91,7 @@ class TestExperimentForm(TestCase):
         obj = ExperimentFactory()
         obj.parent.add_administrators(self.user)
         obj.add_administrators(self.user)
-        obj.publish()
+        obj = publish_dataset(obj)
         
         # Make the data, which also sets the selected experiment
         data = self.make_form_data(create_experimentset=True)
@@ -113,4 +114,3 @@ class TestExperimentForm(TestCase):
         form = ExperimentForm(data=data, experimentset=exp, user=self.user)
         self.assertIn(exp, form.fields['experimentset'].queryset)
         self.assertNotIn(exp2, form.fields['experimentset'].queryset)
-   

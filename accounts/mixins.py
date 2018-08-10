@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
-from search.mixins import FilterMixin
 from .permissions import (
     GroupTypes,
     user_is_anonymous,
@@ -16,13 +15,6 @@ from .permissions import (
     remove_user_as_instance_editor,
     remove_user_as_instance_viewer,
 )
-
-
-def filter_su(qs):
-    """filter superusers from a query."""
-    if isinstance(qs, (list, set)):
-        return [u for u in qs if not u.is_superuser]
-    return qs.exclude(is_superuser=True)
 
 
 def filter_anon(qs):
@@ -198,38 +190,3 @@ class GroupPermissionMixin(object):
         Removes user(s) as a viewer.
         """
         return _remove_users(self, users, group=GroupTypes.VIEWER)
-
-
-class UserFilterMixin(FilterMixin):
-    """
-    Filter :class:`User` instances by common fields:
-        'username': 'username',
-        'first_name': 'first_name',
-        'last_name': 'last_name',
-    """
-    @staticmethod
-    def search_field_to_model_field():
-        return {
-            'username': 'username',
-            'first_name': 'first_name',
-            'last_name': 'last_name',
-        }
-
-    def search_field_to_function(self):
-        return {
-            'username': self.filter_username,
-            'first_name': self.filter_first_name,
-            'last_name': self.filter_last_name,
-        }
-
-    def filter_username(self, value):
-        return self.search_to_q(
-            value, field_name='username', filter_type='iexact')
-
-    def filter_first_name(self, value):
-        return self.search_to_q(
-            value, field_name='first_name', filter_type='icontains')
-
-    def filter_last_name(self, value):
-        return self.search_to_q(
-            value, field_name='last_name', filter_type='icontains')

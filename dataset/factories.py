@@ -40,25 +40,25 @@ class DatasetModelFactory(DjangoModelFactory):
     def keywords(self, create, extracted, **kwargs):
         if create:
             kw = KeywordFactory()
-            self.add_keyword(kw)
+            self.keywords.add(kw)
 
     @factory.post_generation
     def sra_ids(self, create, extracted, **kwargs):
         if create:
             id_ = SraIdentifierFactory()
-            self.add_identifier(id_)
+            self.sra_ids.add(id_)
 
     @factory.post_generation
     def doi_ids(self, create, extracted, **kwargs):
         if create:
             id_ = DoiIdentifierFactory()
-            self.add_identifier(id_)
+            self.doi_ids.add(id_)
 
     @factory.post_generation
     def pubmed_ids(self, create, extracted, **kwargs):
         if create:
             id_ = PubmedIdentifierFactory()
-            self.add_identifier(id_)
+            self.pubmed_ids.add(id_)
 
 
 class ExperimentSetFactory(DatasetModelFactory):

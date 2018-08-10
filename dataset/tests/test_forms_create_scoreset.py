@@ -8,6 +8,7 @@ from variant.factories import generate_hgvs, VariantFactory
 from .. import constants
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm, ErrorMessages
+from ..utilities import publish_dataset
 
 from .utility import make_files
 
@@ -100,7 +101,7 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data()
         new_exp = ExperimentFactory()
         new_scs = ScoreSetFactory(experiment=new_exp)
-        new_scs.publish()
+        new_scs = publish_dataset(new_scs)
 
         new_scs.add_administrators(self.user)
         new_exp.add_administrators(self.user)
@@ -115,8 +116,9 @@ class TestScoreSetForm(TestCase):
         new_exp = ExperimentFactory()
         new_scs = ScoreSetFactory(experiment=new_exp)
         edit_scs = ScoreSetFactory(experiment=new_exp)
-        new_scs.publish()
-        edit_scs.publish()
+
+        new_scs = publish_dataset(new_scs)
+        edit_scs = publish_dataset(edit_scs)
 
         new_scs.add_administrators(self.user)
         new_exp.add_administrators(self.user)
@@ -516,7 +518,7 @@ class TestScoreSetForm(TestCase):
         obj = ScoreSetFactory()
         obj.parent.add_administrators(self.user)
         obj.add_administrators(self.user)
-        obj.publish()
+        obj = publish_dataset(obj)
 
         # Make the data, which also sets the selected experiment
         data, files = self.make_post_data()

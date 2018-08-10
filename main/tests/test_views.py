@@ -2,10 +2,17 @@ from django.test import TestCase, mock, RequestFactory
 
 from accounts.factories import UserFactory
 from core.utilities.tests import TestMessageMixin
+from dataset.factories import ScoreSetWithTargetFactory
 
 from .. import views
 from ..factories import SiteInformationFactory, NewsFactory
 
+
+class TestGetTopN(TestCase):
+    def test_top_n(self):
+        result = views.get_top_n(3, [1,1,2,3,4,5,3,3,3,2])
+        self.assertListEqual(result, [1,2,3])
+    
 
 class HomePageTest(TestCase):
     """
@@ -44,14 +51,25 @@ class HomePageTest(TestCase):
         site_info.version = ''
         site_info.save()
         response = self.client.get('/')
-        self.assertNotContains(response, site_info.branch + ':')
+        self.assertNotContains(response, 'Version:')
         
     def test_version_shown_when_not_empty(self):
         site_info = SiteInformationFactory()
         response = self.client.get('/')
-        self.assertContains(
-            response, site_info.branch + ': ')
+        self.assertContains(response, 'Version:')
         
+    def test_private_not_included_in_top_n(self):
+        instance = ScoreSetWithTargetFactory()
+        response = self.client.get('/')
+        self.assertNotContains(response, instance.target.name)
+        
+    def test_public_included_in_top_n(self):
+        instance = ScoreSetWithTargetFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get('/')
+        self.assertContains(response, instance.target.name)
+       
         
 class TestContactView(TestCase, TestMessageMixin):
     @staticmethod

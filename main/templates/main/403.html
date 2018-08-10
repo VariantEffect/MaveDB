@@ -1,24 +1,12 @@
 {% extends "main/base.html" %}
 
 {% block body %}
-
-<div class=row>
-	<div class="col-auto border-right pr-4" style="height:50vh;">
-		<h5> 403 - Forbidden! </h5>
-	</div>
-
-	<div class="col-10 pl-4">
-		<h3> Restricted access. </h3>
-		{% if instance %}
-			<p> 
-				This is a private entry.
-			</p>
-		{% else %}
-			<p> 
-				This page is restricted and requires user permission.
-			</p>
-		{% endif %}
-	</div>
-</div>
-
+  <div class="container text-center">
+    <h1>403 - Permission Denined </h1>
+    {% if instance %}
+      <p class="text-muted"> This is a private entry. </p>
+    {% else %}
+      <p class="text-muted"> This page is restricted and requires user permission.</p>
+    {% endif %}
+  </div>
 {% endblock body %}

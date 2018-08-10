@@ -7,23 +7,14 @@ from core.utilities.pandoc import convert_md_to_html
 
 from accounts.factories import UserFactory, AnonymousUserFactory
 
-from genome.factories import ReferenceGenomeFactory
-from metadata.factories import (
-    UniprotIdentifierFactory, RefseqIdentifierFactory,
-    EnsemblIdentifierFactory
-)
-
-from main.models import Licence
-
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
+from ..forms.scoreset import ScoreSetForm
+from ..forms.experiment import ExperimentForm
 from ..factories import ExperimentWithScoresetFactory, ScoreSetWithTargetFactory
-from ..forms.scoreset import ScoreSetForm, ScoreSetEditForm
-from ..forms.experiment import ExperimentForm, ExperimentEditForm
 from ..mixins import (
     PrivateDatasetFilterMixin, ScoreSetAjaxMixin, MultiFormMixin,
     DatasetUrnMixin, DatasetPermissionMixin, DataSetAjaxMixin,
-    ExperimentFilterMixin, ScoreSetFilterMixin
 )
 
 
@@ -41,8 +32,8 @@ class TestPrivateDatasetFilterMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(request)
         
-        i1 = ExperimentWithScoresetFactory() # type: Experiment
-        i2 = ExperimentWithScoresetFactory() # type: Experiment
+        i1 = ExperimentWithScoresetFactory()  # type: Experiment
+        i2 = ExperimentWithScoresetFactory()  # type: Experiment
         i1.add_viewers(request.user)
         
         public, private = driver.filter_and_split_instances([i1, i2])
@@ -58,7 +49,7 @@ class TestPrivateDatasetFilterMixin(TestCase):
     
         i1 = ExperimentWithScoresetFactory()  # type: Experiment
         i2 = ExperimentWithScoresetFactory()  # type: Experiment
-        i1.publish()
+        i1.private = False
         i1.save()
     
         public, private = driver.filter_and_split_instances([i1, i2])
@@ -111,7 +102,10 @@ class TestDataSetAjaxMixin(TestCase):
 
 
 class TestScoreSetAjaxMixin(TestCase):
-    """Testing ajax response for getting target gene and experiment scoresets."""
+    """
+    Testing ajax response for getting target gene and
+    experiment scoresets.
+    """
     def setUp(self):
         self.factory = RequestFactory()
     
@@ -136,13 +130,13 @@ class TestScoreSetAjaxMixin(TestCase):
         
         user = UserFactory()
         experiment = ExperimentWithScoresetFactory()
-        sc1 = experiment.scoresets.first() # type: ScoreSet
-        sc2 = ScoreSetWithTargetFactory(experiment=experiment) # type: ScoreSet
+        sc1 = experiment.scoresets.first()  # type: ScoreSet
+        sc2 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         sc3 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         sc4 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
         
         # Viewable since user has edit permission and is not private
-        sc1.publish()
+        sc1.private = False
         sc1.add_editors(user)
         sc1.save(save_parents=True)
         
@@ -150,7 +144,7 @@ class TestScoreSetAjaxMixin(TestCase):
         sc2.add_editors(user)
         
         # No edit permission so not viewable
-        sc4.publish()
+        sc4.private = False
         sc4.save(save_parents=True)
         
         request = self.factory.get(
@@ -182,7 +176,7 @@ class TestDatasetPermissionMixin(TestCase):
     
     # Manage
     def test_false_private_and_no_manage_permission(self):
-        scoreset = ScoreSetWithTargetFactory() # type: ScoreSet
+        scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get('/')
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
@@ -191,7 +185,7 @@ class TestDatasetPermissionMixin(TestCase):
         self.assertFalse(driver.has_permission())
         
     def test_true_private_and_mange_permssion_match(self):
-        scoreset = ScoreSetWithTargetFactory() # type: ScoreSet
+        scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get('/')
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
@@ -206,7 +200,8 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
     
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_manage'
         self.assertFalse(driver.has_permission())
 
@@ -217,7 +212,8 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
     
         scoreset.add_administrators(request.user)
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_manage'
         self.assertTrue(driver.has_permission())
 
@@ -247,7 +243,8 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
     
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_edit'
         self.assertFalse(driver.has_permission())
 
@@ -258,7 +255,8 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
     
         scoreset.add_editors(request.user)
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         driver.permission_required = 'dataset.can_edit'
         self.assertTrue(driver.has_permission())
     
@@ -284,7 +282,8 @@ class TestDatasetPermissionMixin(TestCase):
 
     def test_true_public_instance_view(self):
         scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
-        scoreset.publish()
+        scoreset.private = False
+        scoreset.save()
         request = self.factory.get('/')
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
@@ -451,587 +450,3 @@ class TestMultiFormMixin(TestCase):
         driver.get_forms()
         form_patch.assert_called()
         kwarg_patch.assert_called()
-
-
-class TestExperimentSearchMixin(TestCase):
-    """Test search fields implemented by `ExperimentSearchMixin."""
-    def setUp(self):
-        self.factory = ExperimentWithScoresetFactory
-        self.searcher = ExperimentFilterMixin()
-        self.model_class = Experiment
-
-    def can_filter_by_keywords_in_scoresets(self):
-        obj1 = self.factory()
-        kw1_obj1 = obj1.keywords.first()
-        kw1_obj1.text = 'Protein'
-        kw1_obj1.save()
-
-        scs1 = obj1.children.first()
-        kw1 = scs1.keywords.first()
-        kw1.text = 'Kinase'
-        kw1.save()
-
-        obj2 = self.factory()
-        kw1_obj2 = obj2.keywords.first()
-        kw1_obj2.text = 'Apple'
-        kw1_obj2.save()
-
-        scs2 = obj2.children.first()
-        kw2 = scs2.keywords.first()
-        kw2.text = 'Orange'
-        kw2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={"keywords": kw1.text},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_filter_singular_target(self):
-        obj1 = self.factory()
-        target1 = obj1.children.first().get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.children.first().get_target()
-        target2.name = 'STAT'
-        target2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={"target": target1.get_name().lower()},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_filter_multiple_targets(self):
-        obj1 = self.factory()
-        target1 = obj1.children.first().get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.children.first().get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={"target": [
-                target1.get_name(),
-                target2.get_name(),
-            ]},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 2)
-        self.assertIn(obj1, result)
-        self.assertIn(obj2, result)
-
-    def test_can_AND_search(self):
-        obj1 = self.factory()
-        target1 = obj1.children.first().get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.children.first().get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        obj3 = self.factory()
-        target3 = obj3.children.first().get_target()
-        target3.name = 'STAT'
-        target3.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={
-                "target": [
-                    target1.get_name(),
-                    target2.get_name(),
-                ],
-                'urn': obj1.urn
-            },
-            join_func=self.searcher.and_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-        self.assertNotIn(obj3, result)
-
-    def test_can_OR_search(self):
-        obj1 = self.factory()
-        target1 = obj1.children.first().get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.children.first().get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        obj3 = self.factory()
-        target3 = obj3.children.first().get_target()
-        target3.name = 'STAT'
-        target3.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={
-                "target": [
-                    target2.get_name().lower(),
-                ],
-                'urn': obj1.urn
-            },
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 2)
-        self.assertIn(obj1, result)
-        self.assertIn(obj2, result)
-        self.assertNotIn(obj3, result)
-
-    def test_can_search_by_organism(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-
-        genome1 = obj1.children.first().get_target().\
-            get_reference_genomes().first()
-        genome1.species_name = 'Human'
-        genome1.save()
-
-        genome2 = obj2.children.first().get_target().\
-            get_reference_genomes().first()
-        genome2.species_name = 'Chimp'
-        genome2.save()
-        
-        q = self.searcher.search_all(
-            value_or_dict={
-                "species": ["human"]
-            },
-            join_func=self.searcher.or_join_qs
-        )
-
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_search_by_genome_name(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-
-        genome1 = obj1.children.first().get_target().\
-            get_reference_genomes().first()
-        genome1.short_name = 'Hg16'
-        genome1.save()
-
-        genome2 = obj2.children.first().get_target().\
-            get_reference_genomes().first()
-        genome2.short_name = 'Hg17'
-        genome2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'genome': 'hg16'},
-            join_func=self.searcher.or_join_qs
-        )
-
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_search_by_genome_id(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-        genome1 = obj1.scoresets.first().\
-            get_target().get_reference_genomes().first()
-        genome2 = obj2.scoresets.first().\
-            get_target().get_reference_genomes().first()
-
-        while genome1.get_identifier() == genome2.get_identifier():
-            genome2 = ReferenceGenomeFactory()
-            if genome1.get_identifier() != genome2.get_identifier():
-                rm = obj2.scoresets.first().\
-                        get_target().get_reference_maps().first()
-                rm.genome = genome2
-                rm.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'assembly': genome1.get_identifier()},
-            join_func=self.searcher.or_join_qs
-        )
-
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_search_by_id(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-        id_factories = [
-            (UniprotIdentifierFactory, 'uniprot_id'),
-            (RefseqIdentifierFactory, 'refseq_id'),
-            (EnsemblIdentifierFactory, 'ensembl_id'),
-        ]
-
-        for factory, field in id_factories:
-            id1 = factory()
-            id2 = factory()
-            while id1 == id2:
-                id2 = factory()
-
-            target1 = obj1.children.first().get_target()
-            target2 = obj2.children.first().get_target()
-            setattr(target1, field, id1)
-            target1.save()
-            setattr(target2, field, id2)
-            target2.save()
-
-            q = self.searcher.search_all(
-                value_or_dict={field.replace('_id', ''): id1.identifier},
-                join_func=self.searcher.or_join_qs
-            )
-
-            result = self.model_class.objects.filter(q)
-            self.assertEqual(result.count(), 1)
-            self.assertIn(obj1, result)
-            self.assertNotIn(obj2, result)
-
-    def test_can_search_by_licence_short_name(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-
-        scs1 = obj1.scoresets.first()
-        scs2 = obj2.scoresets.first()
-        scs1.licence = Licence.get_cc0()
-        scs2.licence = Licence.get_cc_by_nc_sa()
-        scs1.save()
-        scs2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc0().short_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc_by_nc_sa().short_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertNotIn(obj1, result)
-        self.assertIn(obj2, result)
-
-    def test_can_search_by_licence_long_name(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-
-        scs1 = obj1.scoresets.first()
-        scs2 = obj2.scoresets.first()
-        scs1.licence = Licence.get_cc0()
-        scs2.licence = Licence.get_cc_by_nc_sa()
-        scs1.save()
-        scs2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc0().long_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc_by_nc_sa().long_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertNotIn(obj1, result)
-        self.assertIn(obj2, result)
-
-
-class TestScoreSetSearchMixin(TestCase):
-    """Test search fields implemented by `ScoreSetSearchMixin."""
-    def setUp(self):
-        self.factory = ScoreSetWithTargetFactory
-        self.searcher = ScoreSetFilterMixin()
-        self.model_class = ScoreSet
-
-    def test_can_filter_singular_target(self):
-        obj1 = self.factory()
-        target1 = obj1.get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={"target": 'JAK'},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_filter_multiple_targets(self):
-        obj1 = self.factory()
-        target1 = obj1.get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        obj3 = self.factory()
-        target3 = obj3.get_target()
-        target3.name = 'STAT'
-        target3.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={"target": [
-                target1.get_name(),
-                target2.get_name(),
-            ]},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 2)
-        self.assertIn(obj1, result)
-        self.assertIn(obj2, result)
-        self.assertNotIn(obj3, result)
-
-    def test_can_AND_search(self):
-        obj1 = self.factory()
-        target1 = obj1.get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        obj3 = self.factory()
-        target3 = obj3.get_target()
-        target3.name = 'STAT'
-        target3.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={
-                "target": [
-                    target1.get_name(),
-                    target2.get_name(),
-                ],
-                'urn': obj1.urn
-            },
-            join_func=self.searcher.and_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-        self.assertNotIn(obj3, result)
-
-    def test_can_OR_search(self):
-        obj1 = self.factory()
-        target1 = obj1.get_target()
-        target1.name = 'JAK'
-        target1.save()
-
-        obj2 = self.factory()
-        target2 = obj2.get_target()
-        target2.name = 'MAP'
-        target2.save()
-
-        obj3 = self.factory()
-        target3 = obj3.get_target()
-        target3.name = 'STAT'
-        target3.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={
-                "target": [
-                    target1.get_name(),
-                    target2.get_name(),
-                ],
-                'urn': obj1.urn
-            },
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 2)
-        self.assertIn(obj1, result)
-        self.assertIn(obj2, result)
-        self.assertNotIn(obj3, result)
-
-    def test_can_search_by_organism(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-
-        genome1 = obj1.get_target().get_reference_genomes().first()
-        genome1.species_name = 'Human'
-        genome1.save()
-
-        genome2 = obj2.get_target().get_reference_genomes().first()
-        genome2.species_name = 'Chimp'
-        genome2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={
-                "species": ["human"]
-            },
-            join_func=self.searcher.or_join_qs
-        )
-
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_search_by_genome_name(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-
-        genome1 = obj1.get_target().get_reference_genomes().first()
-        genome1.short_name = 'Hg16'
-        genome1.save()
-
-        genome2 = obj2.get_target().get_reference_genomes().first()
-        genome2.short_name = 'Hg17'
-        genome2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'genome': 'hg16'},
-            join_func=self.searcher.or_join_qs
-        )
-
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_search_by_genome_id(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-        genome1 = obj1.get_target().get_reference_genomes().first()
-        genome2 = obj2.get_target().get_reference_genomes().first()
-
-        while genome1.get_identifier() == genome2.get_identifier():
-            genome2 = ReferenceGenomeFactory()
-            if genome1.get_identifier() != genome2.get_identifier():
-                rm = obj2.target.get_reference_maps().first()
-                rm.genome = genome2
-                rm.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'assembly': genome1.get_identifier()},
-            join_func=self.searcher.or_join_qs
-        )
-
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-    def test_can_search_by_licence_short_name(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-        obj1.licence = Licence.get_cc0()
-        obj2.licence = Licence.get_cc_by_nc_sa()
-        obj1.save()
-        obj2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc0().short_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc_by_nc_sa().short_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertNotIn(obj1, result)
-        self.assertIn(obj2, result)
-
-    def test_can_search_by_licence_long_name(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-        obj1.licence = Licence.get_cc0()
-        obj2.licence = Licence.get_cc_by_nc_sa()
-        obj1.save()
-        obj2.save()
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc0().long_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertIn(obj1, result)
-        self.assertNotIn(obj2, result)
-
-        q = self.searcher.search_all(
-            value_or_dict={'licence': Licence.get_cc_by_nc_sa().long_name},
-            join_func=self.searcher.or_join_qs
-        )
-        result = self.model_class.objects.filter(q)
-        self.assertEqual(result.count(), 1)
-        self.assertNotIn(obj1, result)
-        self.assertIn(obj2, result)
-
-    def test_can_search_by_external_id(self):
-        obj1 = self.factory()
-        obj2 = self.factory()
-        id_factories = [
-            (UniprotIdentifierFactory, 'uniprot_id'),
-            (RefseqIdentifierFactory, 'refseq_id'),
-            (EnsemblIdentifierFactory, 'ensembl_id'),
-        ]
-
-        for factory, field in id_factories:
-            id1 = factory()
-            id2 = factory()
-            while id1 == id2:
-                id2 = factory()
-
-            target1 = obj1.get_target()
-            target2 = obj2.get_target()
-            setattr(target1, field, id1)
-            target1.save()
-            setattr(target2, field, id2)
-            target2.save()
-
-            q = self.searcher.search_all(
-                value_or_dict={field.replace('_id', ''): id1.identifier},
-                join_func=self.searcher.or_join_qs
-            )
-
-            result = self.model_class.objects.filter(q)
-            self.assertEqual(result.count(), 1)
-            self.assertIn(obj1, result)
-            self.assertNotIn(obj2, result)

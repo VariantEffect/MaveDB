@@ -134,6 +134,7 @@ def publish(urn, request):
     
     # Check the private status
     if instance.private:
+        current_state = instance.processing_state
         instance.processing_state = constants.processing
         instance.save()
         task_kwargs = dict(
@@ -144,12 +145,22 @@ def publish(urn, request):
             kwargs=task_kwargs,
             request=request,
         )
-        messages.success(
-            request,
-            "{} has been queued for publication. Editing has been "
-            "disabled until your submission has been processed. A public urn "
-            "will be assigned upon successful completion.".format(urn))
-        return True
+        if success:
+            messages.success(
+                request,
+                "{} has been queued for publication. Editing has been "
+                "disabled until your submission has been processed. A public urn "
+                "will be assigned upon successful completion.".format(urn))
+            return True
+        else:
+            instance.processing_state = constants.current_state
+            instance.save()
+            messages.error(
+                request,
+                "We are experiencing server issues at the moment. Please try"
+                "again later."
+            )
+            return False
     else:
         messages.error(
             request, "{} is public and cannot be published again.".format(urn))

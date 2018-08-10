@@ -10,6 +10,7 @@ from dataset import models as data_models
 from dataset import factories as data_factories
 from dataset import tasks
 from dataset import constants
+from dataset import utilities
 
 from variant.factories import VariantFactory
 
@@ -21,7 +22,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     
     def setUp(self):
         self.user = UserFactory()
-        if  STAGING_OR_PROD:
+        if STAGING_OR_PROD:
             binary = FirefoxBinary('/usr/bin/firefox')
             options = Options()
             options.add_argument('--headless')
@@ -63,7 +64,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     def test_publish_limits_edit_fields(self):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.add_administrators(self.user)
-        scoreset.publish()
+        scoreset = utilities.publish_dataset(scoreset)
 
         self.authenticate()
         self.browser.get(
@@ -147,7 +148,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     
     def test_no_delete_icon_for_public_entry(self):
         scoreset = data_factories.ScoreSetWithTargetFactory()
-        scoreset.publish()
+        scoreset = utilities.publish_dataset(scoreset)
         scoreset.add_administrators(self.user)
         scoreset.experiment.add_administrators(self.user)
         scoreset.experiment.experimentset.add_administrators(self.user)

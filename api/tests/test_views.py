@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 import dataset.constants as constants
+from dataset.utilities import publish_dataset
 from dataset.models import scoreset
 from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
@@ -25,6 +26,14 @@ class TestExperimentSetAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = []
         self.assertEqual(expected, result)
+        
+    def test_shows_public(self):
+        instance = ExperimentSetFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get("/api/experimentsets/")
+        result = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(result), 1)
 
     def test_404_private_experimentset(self):
         exps = ExperimentSetFactory()
@@ -43,7 +52,20 @@ class TestExperimentSetAPIViews(TestCase):
     def test_404_experimentset_not_found(self):
         response = self.client.get("/api/experimentsets/dddd/")
         self.assertEqual(response.status_code, 404)
-
+        
+    def test_search_works(self):
+        instance1 = ExperimentSetFactory()
+        instance2 = ExperimentSetFactory()
+        instance1.private = False
+        instance2.private = False
+        instance1.save()
+        instance2.save()
+        response = self.client.get(
+            "/api/experimentsets/?title={}".format(instance1.title)
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertNotContains(response, instance2.urn)
+        
 
 class TestExperimentAPIViews(TestCase):
 
@@ -53,11 +75,19 @@ class TestExperimentAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = []
         self.assertEqual(expected, result)
+        
+    def test_shows_public(self):
+        instance = ExperimentFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get("/api/experiments/")
+        result = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(result), 1)
 
     def test_404_private(self):
         instance = ExperimentFactory()
         response = self.client.get(
-            "/api/experimentsets/{}/".format(instance.urn)
+            "/api/experiments/{}/".format(instance.urn)
         )
         self.assertEqual(response.status_code, 404)
         
@@ -71,6 +101,19 @@ class TestExperimentAPIViews(TestCase):
     def test_404_not_found(self):
         response = self.client.get("/api/experiments/dddd/")
         self.assertEqual(response.status_code, 404)
+        
+    def test_search_works(self):
+        instance1 = ExperimentFactory()
+        instance2 = ExperimentFactory()
+        instance1.private = False
+        instance2.private = False
+        instance1.save()
+        instance2.save()
+        response = self.client.get(
+            "/api/experiments/?title={}".format(instance1.title)
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertNotContains(response, instance2.urn)
 
 
 class TestScoreSetAPIViews(TestCase):
@@ -89,6 +132,14 @@ class TestScoreSetAPIViews(TestCase):
         result = json.loads(response.content.decode('utf-8'))
         expected = []
         self.assertEqual(expected, result)
+        
+    def test_shows_public(self):
+        instance = ScoreSetFactory()
+        instance.private = False
+        instance.save()
+        response = self.client.get("/api/scoresets/")
+        result = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(result), 1)
 
     def test_404_private(self):
         instance = ScoreSetFactory()
@@ -128,10 +179,23 @@ class TestScoreSetAPIViews(TestCase):
     def test_404_not_found(self):
         response = self.client.get("/api/scoresets/dddd/")
         self.assertEqual(response.status_code, 404)
+        
+    def test_search_works(self):
+        instance1 = ScoreSetFactory()
+        instance2 = ScoreSetFactory()
+        instance1.private = False
+        instance2.private = False
+        instance1.save()
+        instance2.save()
+        response = self.client.get(
+            "/api/scoresets/?title={}".format(instance1.title)
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertNotContains(response, instance2.urn)
 
     def test_can_download_scores(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -158,7 +222,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_comma_in_value_enclosed_by_quotes(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -184,7 +248,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_counts(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -210,7 +274,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_none_hgvs_written_as_blank(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -237,7 +301,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_no_variants_empty_file(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -262,7 +326,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_empty_scores_returns_empty_file(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: [],
@@ -285,7 +349,7 @@ class TestScoreSetAPIViews(TestCase):
         
     def test_empty_counts_returns_empty_file(self):
         scs = ScoreSetFactory()
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -308,7 +372,7 @@ class TestScoreSetAPIViews(TestCase):
 
     def test_can_download_metadata(self):
         scs = ScoreSetFactory(private=False)
-        scs.publish()
+        scs = publish_dataset(scs)
         scs.refresh_from_db()
         response = json.loads(self.client.get(
             "/api/scoresets/{}/metadata/".format(scs.urn)

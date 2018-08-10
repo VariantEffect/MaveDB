@@ -111,6 +111,27 @@ ul {
     max-width: 500px;
 }
 
+code {
+  color: #987cb8;
+}
+
+.download-menu {
+  width: 125px !important;
+  min-width: 10px !important;
+  transform: translate3d(-35px, 46px, 0px) !important;
+}
+
+
+/* Mixins
+---------------------------------------------------------------------------  */
+.cancel {
+  color: #dc3545;
+}
+.accept {
+  color: #28a745;
+}
+
+
 /* Tables
 ---------------------------------------------------------------------------  */
 table td {
@@ -194,6 +215,7 @@ table {
 .footer {
     margin-bottom: 10px;
 }
+
 
 /* Logo Formatting
 ----------------------------------- */
@@ -377,6 +399,7 @@ span.select2.select2-container.select2-container--default {
 
 .wild-type-sequence {
     word-wrap: break-word;
+    hyphens: none;
 }
 
 .urn-title, .urn-detail {
@@ -446,7 +469,6 @@ span.select2.select2-container.select2-container--default {
     color: white;
 
 }
-
 
 
 /* Management CSS Elements */
@@ -574,17 +596,20 @@ span.select2.select2-container.select2-container--default {
     word-break: break-word;
 }
 
+
+@media (max-width: 1199px) {
+  .form-sidebar {
+    border-right: none !important;
+    padding-bottom: 5px;
+  }
+}
+
 @media (max-width: 1025px) {
     .sidebar-title {
         -webkit-hyphens: auto;
         -moz-hyphens: auto;
         -ms-hyphens: auto;
         hyphens: auto;
-    }
-}
-@media (max-width: 767.98px) {
-    .form-sidebar {
-        border: none !important;
     }
 }
 
@@ -600,5 +625,3 @@ span.select2.select2-container.select2-container--default {
     padding-left: 2px;
     padding-bottom: 1px;
 }
-
-

@@ -7,31 +7,28 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import reverse
 
 from dataset import constants
-from dataset.utilities import delete_instance
+from dataset.utilities import delete_instance, publish_dataset
 from dataset import models as dataset_models
 from dataset.tasks import publish_scoreset
 from dataset.models.scoreset import ScoreSet
 from dataset.factories import (
-    ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory
+    ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory,
+    ExperimentFactory
 )
 from variant.factories import VariantFactory
 
 from core.utilities.tests import TestMessageMixin
 from core.models import FailedTask
-from core.tasks import send_mail
 
 from ..factories import UserFactory
 from ..permissions import (
-    GroupTypes,
     assign_user_as_instance_admin,
     assign_user_as_instance_viewer,
     assign_user_as_instance_editor,
-    user_is_admin_for_instance,
-    user_is_viewer_for_instance,
-    user_is_editor_for_instance,
 )
 
-from ..views import manage_instance, profile_view, profile_settings
+from ..views import ManageDatasetUsersView, \
+    profile_view, profile_settings
 
 
 class TestProfileSettings(TestCase, TestMessageMixin):
@@ -118,16 +115,15 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
             path='/profile/',
         )
         request.user = user
-        response = profile_view(request)
+        _ = profile_view(request)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 0)
 
     def test_cannot_delete_public_entry(self):
         user = UserFactory()
         instance = ScoreSetFactory()
-        instance.publish()
-        instance.save(save_parents=True)
+        instance = publish_dataset(instance)
         self.assertEqual(dataset_models.scoreset.ScoreSet.objects.count(), 1)
-        assign_user_as_instance_admin(user, instance)
+        instance.add_administrators(user)
         request = self.create_request(
             method='post',
             data={"delete": instance.urn},
@@ -180,8 +176,8 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
 
     def test_cannot_delete_experimentset_if_it_has_children(self):
         user = UserFactory()
-        instance = ScoreSetFactory()
-        instance.publish()
+        instance = ScoreSetFactory()  # type: ScoreSet
+        instance = publish_dataset(instance)
         assign_user_as_instance_admin(user, instance.experiment.experimentset)
         request = self.create_request(
             method='post',
@@ -197,8 +193,8 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
 
     def test_cannot_delete_experiment_if_it_has_children(self):
         user = UserFactory()
-        instance = ScoreSetFactory()
-        instance.publish()
+        instance = ScoreSetFactory()  # type: ScoreSet
+        instance = publish_dataset(instance)
         assign_user_as_instance_admin(user, instance.experiment)
         request = self.create_request(
             method='post',
@@ -214,7 +210,7 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
     def test_cannot_delete_entry_being_processed(self):
         user = UserFactory()
         instance = ScoreSetFactory()
-        instance.publish()
+        instance = publish_dataset(instance)
         assign_user_as_instance_admin(user, instance)
         request = self.create_request(
             method='post',
@@ -230,350 +226,78 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
 
 
 class TestProfileManageInstanceView(TestCase, TestMessageMixin):
+    
+    def step_1_data(self):
+        return {
+            'manage_users-administrators': [self.user1.pk],
+            'manage_users-editors': [self.user2.pk],
+            'manage_users-viewers': [self.user3.pk],
+            'manage_dataset_users_view-current_step': ['manage_users'],
+            'submit': ['submit'],
+        }
+    
+    def step_2_data(self):
+        return {
+            'manage_users-administrators': [self.user1.pk],
+            'manage_users-editors': [self.user2.pk],
+            'manage_users-viewers': [self.user3.pk],
+            'manage_dataset_users_view-current_step': ['confirm_changes'],
+            'submit': ['submit']
+        }
+    
     def setUp(self):
         self.factory = RequestFactory()
-        self.alice = UserFactory(username="alice", password="secret")
-        self.bob = UserFactory(username="bob", password="secret")
+        self.user1 = UserFactory(password="secret")
+        self.user2 = UserFactory(password="secret")
+        self.user3 = UserFactory(password="secret")
         self.raw_password = 'secret'
+        self.instance = ExperimentSetFactory()
+        self.variant = VariantFactory()
+        self.path= reverse_lazy(
+            'accounts:manage_instance',
+            args=(self.instance.urn,)
+        )
         self.client.logout()
 
     def login(self, user):
-        return self.client.login(
+        self.client.login(
             username=user.username, password=self.raw_password)
+        self.assertTrue(self.user1.is_authenticated)
 
     def test_requires_login(self):
-        obj = ExperimentSetFactory()
-        request = self.create_request(
-            method='get', path='/profile/manage/{}/'.format(obj.urn))
-        request.user = AnonymousUser()
-        response = manage_instance(request, urn=obj.urn)
+        response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
         
-    def test_redirects_to_profile_when_user_removed_as_admin(self):
-        group = GroupTypes.ADMIN
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-    
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [self.bob.pk]
-        }
-        request = self.create_request('post', path=path, data=data)
-        request.user = self.alice
-        response = manage_instance(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 302)
-        self.assertFalse(user_is_admin_for_instance(self.alice, obj))
-        self.assertTrue(user_is_admin_for_instance(self.bob, obj))
-
-    def test_403_if_user_does_not_have_manage_permissions(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_viewer(self.alice, obj)
-        request = self.create_request(
-            method='get', path='/profile/manage/{}/'.format(obj.urn))
-        request.user = self.alice
-        with self.assertRaises(PermissionDenied):
-            manage_instance(request, urn=obj.urn)
-
-    def test_404_if_klass_cannot_be_inferred_from_urn(self):
-        request = self.create_request(
-            method='get', path='/profile/manage/NOT_ACCESSION/')
-        request.user = self.alice
+    def test_403_no_manage_permission(self):
+        self.instance.add_viewers(self.user1)
+        self.login(self.user1)
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 403)
+        
+    def test_404_object_not_found(self):
+        self.login(self.user1)
+        response = self.client.get(self.path + 'blah')
+        self.assertEqual(response.status_code, 404)
+        
+    def test_404_not_valid_model(self):
+        # Need to use request here. Django client login is much too finicky
+        # and randomly logs out during the request-response cycle.
+        request = self.create_request('get', path=self.path)
+        request.user = self.user1
         with self.assertRaises(Http404):
-            manage_instance(request, urn='NOT_ACCESSION')
-
-    def test_404_if_instance_not_found(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_viewer(self.alice, obj)
-        obj.delete()
-        request = self.create_request(
-            method='get', path='/profile/manage/{}/'.format(obj.urn))
-        request.user = self.alice
-        with self.assertRaises(Http404):
-            manage_instance(request, urn=obj.urn)
-
-    # --- Removing
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_removes_existing_admin(self, patch):
-        group = GroupTypes.ADMIN
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [self.bob.pk]
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertFalse(user_is_admin_for_instance(self.alice, obj))
-        self.assertTrue(user_is_admin_for_instance(self.bob, obj))
-        
-        self.assertEqual(patch.call_count, 2)
-        send_mail.apply(**patch.call_args_list[0][1])
-        send_mail.apply(**patch.call_args_list[1][1])
-        
-        self.assertEqual(len(mail.outbox), 2)
-        self.assertIn(self.alice.first_name, mail.outbox[0].body)
-        self.assertIn(self.bob.first_name, mail.outbox[1].body)
-        self.assertIn('removed', mail.outbox[0].body)
-        self.assertIn('added', mail.outbox[1].body)
-
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_removes_existing_editor(self, patch):
-        group = GroupTypes.EDITOR
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_editor(self.bob, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): []
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertFalse(user_is_editor_for_instance(self.bob, obj))
-
-        patch.assert_called()
-        send_mail.apply(**patch.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn(self.bob.first_name, mail.outbox[0].body)
-        self.assertIn('removed', mail.outbox[0].body)
-
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_removes_existing_viewer(self, patch):
-        group = GroupTypes.VIEWER
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_viewer(self.bob, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): []
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertFalse(user_is_viewer_for_instance(self.bob, obj))
-        
-        patch.assert_called()
-        send_mail.apply(**patch.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn(self.bob.first_name, mail.outbox[0].body)
-        self.assertIn('removed', mail.outbox[0].body)
-
-    # --- Re-assign
-    def test_error_reassign_only_admin(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        group = GroupTypes.EDITOR
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [self.alice.pk]
-        }
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertEqual(len(mail.outbox), 0)
-
-        group = GroupTypes.VIEWER
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [self.alice.pk]
-        }
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertEqual(len(mail.outbox), 0)
-
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_reassign_removes_from_existing_group(self, patch):
-        group = GroupTypes.EDITOR
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_viewer(self.bob, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [self.bob.pk]
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertFalse(user_is_viewer_for_instance(self.bob, obj))
-        self.assertTrue(user_is_editor_for_instance(self.bob, obj))
-        
-        # Removal email and addition email should be sent
-        patch.assert_called()
-        send_mail.apply(**patch.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn(self.bob.first_name, mail.outbox[0].body)
-        self.assertIn('re-assigned', mail.outbox[0].body)
-
-    # --- Adding
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_appends_new_admin(self, patch):
-        group = GroupTypes.ADMIN
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [self.alice.pk, self.bob.pk]
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertTrue(user_is_admin_for_instance(self.bob, obj))
-        
-        patch.assert_called()
-        send_mail.apply(**patch.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
-        self.assertIn(self.bob.first_name, mail.outbox[0].body)
-        self.assertIn('added', mail.outbox[0].body)
-
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_appends_new_viewer(self, patch):
-        group = GroupTypes.VIEWER
-        userc = UserFactory()
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_viewer(userc, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [userc.pk, self.bob.pk]
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertTrue(user_is_viewer_for_instance(self.bob, obj))
-        self.assertTrue(user_is_viewer_for_instance(userc, obj))
+            ManageDatasetUsersView.as_view()(request, self.variant.urn)
+            
+    def test_summary_shows_updated_groups(self):
+        self.instance.add_administrators(self.user1)
+        self.login(self.user1)
+        response = self.client.post(self.path, data=self.step_1_data())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context['wizard']['steps'].current, 'confirm_changes')
+        self.assertContains(response, self.user1.profile.get_display_name())
+        self.assertContains(response, self.user2.profile.get_display_name())
+        self.assertContains(response, self.user3.profile.get_display_name())
     
-        patch.assert_called()
-        send_mail.apply(**patch.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
-        self.assertIn(self.bob.first_name, mail.outbox[0].body)
-        self.assertIn('added', mail.outbox[0].body)
-
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_appends_new_editor(self, patch):
-        group = GroupTypes.EDITOR
-        userc = UserFactory()
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        assign_user_as_instance_editor(userc, obj)
-
-        success = self.login(self.alice)
-        self.assertTrue(success)
-
-        path = '/profile/manage/{}/'.format(obj.urn)
-        data = {
-            "{}[]".format(group): [''],
-            "{}_management-users".format(group): [userc.pk, self.bob.pk]
-        }
-
-        self.client.post(path=path, data=data)
-        self.assertTrue(user_is_admin_for_instance(self.alice, obj))
-        self.assertTrue(user_is_editor_for_instance(self.bob, obj))
-        self.assertTrue(user_is_editor_for_instance(userc, obj))
-
-        patch.assert_called()
-        send_mail.apply(**patch.call_args[1])
-        self.assertEqual(len(mail.outbox), 1)  # only sent to new additions
-        self.assertIn(self.bob.first_name, mail.outbox[0].body)
-        self.assertIn('added', mail.outbox[0].body)
-
-    # --- Redirects
-    def test_redirects_valid_submission(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        request = self.create_request(
-            method='post',
-            path='/profile/manage/{}/'.format(obj.urn),
-            data={
-                "administrator[]": [''],
-                "administrator_management-users": [self.alice.pk, self.bob.pk]
-            }
-        )
-        request.user = self.alice
-        response = manage_instance(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 302)
-
-    def test_returns_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        request = self.create_request(
-            method='post',
-            path='/profile/manage/{}/'.format(obj.urn),
-            data={
-                "administrator[]": [10000],
-                "administrator_management-users": [10000]
-            }
-        )
-        request.user = self.alice
-        response = manage_instance(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 200)
-
-    def test_returns_viewer_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        request = self.create_request(
-            method='post',
-            path='/profile/manage/{}/'.format(obj.urn),
-            data={
-                "viewer[]": [10000],
-                "viewer_management-users": [10000]
-            }
-        )
-        request.user = self.alice
-        response = manage_instance(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 200)
-
-    def test_returns_editor_admin_form_when_inputting_invalid_data(self):
-        obj = ExperimentSetFactory()
-        assign_user_as_instance_admin(self.alice, obj)
-        request = self.create_request(
-            method='post',
-            path='/profile/manage/{}/'.format(obj.urn),
-            data={
-                "editor[]": [10000],
-                "editor_management-users": [10000]
-            }
-        )
-        request.user = self.alice
-        response = manage_instance(request, urn=obj.urn)
-        self.assertEqual(response.status_code, 200)
-
-
 
 class TestPublish(TestCase, TestMessageMixin):
     def setUp(self):
@@ -715,3 +439,4 @@ class TestPublish(TestCase, TestMessageMixin):
         delete_instance(self.scoreset)
         publish_scoreset.apply(**publish_mock.call_args[1])
         self.assertEqual(FailedTask.objects.count(), 1)
+        

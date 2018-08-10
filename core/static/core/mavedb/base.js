@@ -2,53 +2,6 @@
 "use strict";
 jQuery, $;
 
-// On Load ----------------------------------------------------------------- //
-$("document").ready(function() {
-
-  // Initialise select2
-  $(".select2").select2();
-  $(".select2-token-select").select2({
-    tags: true,
-    tokenSeparators: [","]
-  });
-
-  $('#search-table').DataTable();
-  $('#scores-table').DataTable();
-  $('#counts-table').DataTable();
-
-  // Re-add any external_accession, keywords or target organism
-  // back to failed form submission
-  repopulateSelect(
-    "#id_keywords",
-    "#keywords-to-add"
-  );
-  repopulateSelect(
-    "#id_sra_ids",
-    "#sra-identifiers-to-add"
-  );
-  repopulateSelect(
-    "#id_doi_ids",
-    "#doi-identifiers-to-add"
-  );
-  repopulateSelect(
-    "#id_pubmed_ids",
-    "#pubmed-identifiers-to-add"
-  );
-  repopulateSelect(
-    "#id_uniprot-offset-identifier",
-    "#uniprot-identifier-to-add"
-  );
-  repopulateSelect(
-    "#id_ensembl-offset-identifier",
-    "#ensembl-identifier-to-add"
-  );
-  repopulateSelect(
-    "#id_refseq-offset-identifier",
-    "#refseq-identifier-to-add"
-  );
-
-});
-
 // Buttons ----------------------------------------------------------------- //
 // ORCID button in base.html
 function openORCID() {
@@ -107,58 +60,6 @@ function askConfirmation() {
   );
 }
 
-function validateAdminSubmit(e) {
-  var aSelected = $("#admin-form > div > select option:selected");
-  var aSelectedPks = aSelected.map(function() {
-    return parseInt(this.value);
-  });
-
-  var willRemoveSelfAsAdmin = aSelectedPks.index(user) < 0;
-  if(willRemoveSelfAsAdmin && !ignore) {
-    var submit = askConfirmation();
-    if(submit) {
-      return $("#admin-form").submit();
-    }
-    return false;
-  }
-  return $("#admin-form").submit();
-}
-
-function validateEditorSubmit(e) {
-  var eSelected = $("#editor-form > div > select option:selected");
-  var eSelectedPks = eSelected.map(function() {
-    return parseInt(this.value);
-  });
-
-  var willRemoveSelfAsAdmin = eSelectedPks.index(user) >= 0;
-  if(willRemoveSelfAsAdmin && !ignore) {
-    var submit = askConfirmation();
-    if(submit) {
-      return $("#editor-form").submit();
-    }
-    return false;
-  }
-  return $("#editor-form").submit();
-}
-
-function validateViewerSubmit(e) {
-  var vSelected = $("#viewer-form > div > select option:selected");
-  var vSelectedPks = vSelected.map(function() {
-    return parseInt(this.value);
-  });
-
-  var willRemoveSelfAsAdmin = vSelectedPks.index(user) >= 0;
-  if(willRemoveSelfAsAdmin && !ignore) {
-    var submit = askConfirmation();
-    if(submit) {
-      return $("#viewer-form").submit();
-    }
-    return false;
-  }
-  return $("#viewer-form").submit();
-}
-
-
 // Dynaimic form selection
 // ------------------------------------------------------------------------ //
 // Re-add any external_accession, keywords or target organism
@@ -166,7 +67,6 @@ function validateViewerSubmit(e) {
 function repopulateSelect(selectId, listId) {
   var selectItems = listId;
   var i,j = 0;
-
 
   if (selectItems !== undefined) {
     if (typeof listId === "string") {
@@ -431,3 +331,14 @@ $("#id_target").on("change", function() {
   }
   return false;
 });
+
+
+function init_select2() {
+  $(".select2").select2({
+
+  });
+  $(".select2-token-select").select2({
+    tags: true,
+    tokenSeparators: [","]
+  });
+}

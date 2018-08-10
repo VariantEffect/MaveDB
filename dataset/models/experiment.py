@@ -19,8 +19,65 @@ from genome.models import TargetGene
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_experiment
 
-from ..models.base import DatasetModel, PublicDatasetCounter
+from ..models.base import DatasetModel
 from ..models.experimentset import ExperimentSet
+
+
+@transaction.atomic
+def assign_public_urn(experiment):
+    """
+    Assigns a public urn of the form <parent_urn>-[a-z]+ Blocks until it can
+    place of lock the passed experiment and experimentset parent. Assumes that
+    the parent is already public with a public urn.
+
+    Does nothing if passed model is already public.
+
+    Parameters
+    ----------
+    experiment : `Experiment`
+        The experiment instance to assign a public urn to.
+        
+    Raises
+    ------
+    `AttributeError` : Parent does not have a public urn.
+
+    Returns
+    -------
+    `Experiment`
+        experiment with new urn or same urn if already public.
+    """
+    experiment = Experiment.objects.filter(
+        id=experiment.id
+    ).select_for_update(nowait=False).first()
+    if not experiment.has_public_urn:
+        parent = ExperimentSet.objects.filter(
+            id=experiment.experimentset.id
+        ).select_for_update(nowait=False).first()
+        
+        if not parent.has_public_urn:
+            raise AttributeError(
+                "Cannot assign a public urn when parent has a temporary urn."
+            )
+        
+        # Convert child_value to a letter (a-z)
+        child_value = parent.last_child_value + 1
+        suffix = ""
+        x = child_value
+        while x > 0:
+            x, y = divmod(x - 1, len(string.ascii_lowercase))
+            suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
+        experiment.urn = "{}-{}".format(parent.urn, suffix)
+        parent.last_child_value = child_value
+        
+        experiment.save()
+        parent.save()
+        
+        # Refresh the instance and nested parents
+        experiment = Experiment.objects.filter(
+            id=experiment.id
+        ).select_for_update(nowait=False).first()
+    
+    return experiment
 
 
 class Experiment(DatasetModel):
@@ -68,11 +125,6 @@ class Experiment(DatasetModel):
     )
 
     # ---------------------------------------------------------------------- #
-    #                       Optional Model fields
-    # ---------------------------------------------------------------------- #
-    targets = models.ManyToManyField(TargetGene, blank=False)
-
-    # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
     @transaction.atomic
@@ -81,34 +133,6 @@ class Experiment(DatasetModel):
             self.experimentset = ExperimentSet.objects.create()
         return super().save(*args, **kwargs)
     
-    @transaction.atomic
-    def create_urn(self):
-        if self.private or not self.experimentset.has_public_urn:
-            urn = self.create_temp_urn()
-        else:
-            parent = self.experimentset
-            child_value = parent.last_child_value + 1
-        
-            # convert child_value to letters
-            suffix = ""
-            x = child_value
-            while x > 0:
-                x, y = divmod(x - 1, len(string.ascii_lowercase))
-                suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
-        
-            urn = "{}-{}".format(parent.urn, suffix)
-        
-            # update parent
-            parent.last_child_value = child_value
-            parent.save()
-            
-            # Add new public dataset to counter
-            counter = PublicDatasetCounter.load()
-            counter.experiments += 1
-            counter.save()
-    
-        return urn
-
     def get_targets(self):
         target_pks = set([
             child.get_target().pk for child in self.children

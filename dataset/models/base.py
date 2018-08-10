@@ -41,8 +41,6 @@ class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
     """
     Keeps track of the number of public datasets for each model type.
     """
-    scoresets = models.IntegerField(default=0)
-    experiments = models.IntegerField(default=0)
     experimentsets = models.IntegerField(default=0)
     
 
@@ -276,69 +274,32 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         super().save(*args, **kwargs)
         return self
 
-    def create_urn(self):
-        raise NotImplementedError()
-    
-    @transaction.atomic
-    def save_children(self):
-        if self.children:
-            for child in self.children:
-                child.save()
-       
     def save_parents(self, *args, **kwargs):
         if hasattr(self, 'experiment'):
             self.experiment.save(*args, **kwargs)
             self.experiment.save_parents(*args, **kwargs)
         if hasattr(self, 'experimentset'):
             self.experimentset.save(*args, **kwargs)
-            
-    def get_url(self):
-        raise NotImplementedError
-        
-    @transaction.atomic
-    def publish(self):
-        if self.has_public_urn or not self.private:
-            return self
-        else:
-            # Need to traverse to the root of the ancestral tree first because
-            # urns are recursively generated from parents.
-            self.private = False
-            self.publish_date = datetime.date.today()
-            if self.parent:
-                self.parent.publish()
-            if not self.has_public_urn:
-                admins = self.administrators()
-                editors = self.editors()
-                viewers = self.viewers()
-    
-                # The old groups associated with the tmp urn must be deleted
-                permissions.delete_all_groups_for_instance(self)
-    
-                self.urn = self.create_urn()
-                self.save()  # New groups will be created as a post-save signal
-    
-                # Re-assign contributors to the new groups.
-                self.add_administrators(admins)
-                self.add_editors(editors)
-                self.add_viewers(viewers)
-        
+
     def set_modified_by(self, user, propagate=False):
         if propagate:
             self.propagate_set_value('modified_by', user)
         else:
             self.modified_by = user
 
+    def set_publish_date(self, date=None, propagate=False):
+        if not date:
+            date = datetime.date.today()
+        if propagate:
+            self.propagate_set_value('publish_date', date)
+        else:
+            self.publish_date = date
+
     def set_created_by(self, user, propagate=False):
         if propagate:
             self.propagate_set_value('created_by', user)
         else:
             self.created_by = user
-
-    def approve(self, propagate=True):
-        if propagate:
-            self.propagate_set_value('approved', True)
-        else:
-            self.approved = True
 
     def md_abstract(self):
         return pandoc.convert_md_to_html(self.abstract_text)
@@ -352,33 +313,8 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     def get_description(self):
         return self.short_description
 
-    def add_keyword(self, keyword):
-        if not isinstance(keyword, Keyword):
-            raise TypeError("`keyword` must be a Keyword instance.")
-        self.keywords.add(keyword)
-
-    def add_identifier(self, instance):
-        if not isinstance(instance, ExternalIdentifier):
-            raise TypeError(
-                "`instance` must be an ExternalIdentifier instance.")
-
-        if isinstance(instance, SraIdentifier):
-            self.sra_ids.add(instance)
-        elif isinstance(instance, PubmedIdentifier):
-            self.pubmed_ids.add(instance)
-        elif isinstance(instance, DoiIdentifier):
-            self.doi_ids.add(instance)
-        else:
-            raise TypeError(
-                "Missing case for class `{}`.".format(
-                    type(instance).__name__
-                ))
-
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
-
-    def clear_keywords(self):
-        self.clear_m2m('keywords')
 
     @property
     def parent(self):

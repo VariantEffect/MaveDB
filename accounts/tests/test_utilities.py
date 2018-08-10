@@ -1,4 +1,4 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 
 from core.utilities.tests import TestMessageMixin
 
@@ -7,6 +7,7 @@ from variant.factories import VariantFactory
 
 import dataset
 from dataset.factories import ScoreSetFactory
+from dataset.utilities import publish_dataset
 
 from ..utilities import delete, publish
 
@@ -34,6 +35,10 @@ class TestDelete(TestCase, TestMessageMixin):
 
         instance = ScoreSetFactory()
         instance.add_viewers(self.user)
+        self.assertFalse(delete(instance.urn, self.create_request()))
+        
+        instance = ScoreSetFactory()
+        instance.add_editors(self.user)
         self.assertFalse(delete(instance.urn, self.create_request()))
     
     def test_cannot_delete_experiment_if_has_children(self):
@@ -68,7 +73,7 @@ class TestDelete(TestCase, TestMessageMixin):
         
     def test_cannot_delete_public_instance(self):
         instance = ScoreSetFactory()  # type: dataset.models.scoreset.ScoreSet
-        instance.publish()
+        instance.private = False
         instance.save()
         instance.add_administrators(self.user)
         self.assertFalse(delete(instance.urn, self.create_request()))
@@ -109,6 +114,10 @@ class TestPublish(TestCase, TestMessageMixin):
         self.assertTrue(publish(scoreset.urn, self.create_request()))
 
         scoreset = self.create_scoreset()
+        scoreset.add_editors(self.user)
+        self.assertFalse(publish(scoreset.urn, self.create_request()))
+        
+        scoreset = self.create_scoreset()
         scoreset.add_viewers(self.user)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
         
@@ -142,7 +151,7 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.save()
         self.assertTrue(publish(scoreset.urn, self.create_request()))
     
-    def test_false_publish_not_variants(self):
+    def test_false_publish_no_variants(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
@@ -155,6 +164,14 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_false_already_public(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
-        scoreset.publish()
+        publish_dataset(scoreset)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
-    
+        
+    def test_sets_status_as_processing(self):
+        scoreset = self.create_scoreset()
+        scoreset.add_administrators(self.user)
+        self.assertTrue(publish(scoreset.urn, self.create_request()))
+        scoreset.refresh_from_db()
+        self.assertEqual(
+            scoreset.processing_state, dataset.constants.processing)
+        

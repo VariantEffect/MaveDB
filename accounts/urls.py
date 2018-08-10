@@ -54,7 +54,7 @@ urlpatterns = [
     ),
     url(
         r"^profile/manage/(?P<urn>{})/$".format(any_url_pattern),
-        views.manage_instance,
+        views.ManageDatasetUsersView.as_view(),
         name="manage_instance"
     ),
     url(

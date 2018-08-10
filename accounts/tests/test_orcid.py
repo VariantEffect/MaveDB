@@ -179,7 +179,7 @@ class TestOrcidLogin(TestCase):
         session.save()
 
     @mock.patch('social_core.backends.base.BaseAuth.request')
-    def test_complete(self, mock_request):
+    def test_sets_credit_name_extra_data(self, mock_request):
         url = reverse('social:complete', kwargs={'backend': 'orcid'})
         url += '?code=2&state=1'
         mock_request.return_value.json.return_value = {
@@ -193,7 +193,33 @@ class TestOrcidLogin(TestCase):
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, '/profile/')
             self.assertEqual(UserSocialAuth.objects.count(), 1)
-
+        
             social = UserSocialAuth.objects.first()
             user = social.user
             self.assertEqual(user.profile.get_display_name(), 'Dudebroman')
+
+    @mock.patch('social_core.backends.base.BaseAuth.request')
+    def test_get_display_reverts_to_full_name_if_none(self, mock_request):
+        url = reverse('social:complete', kwargs={'backend': 'orcid'})
+        url += '?code=2&state=1'
+        mock_request.return_value.json.return_value = {
+            'access_token': '123',
+            'orcid': '0000-0002-0001-0003',
+            'person': mock_person,
+        }
+        with mock.patch('django.contrib.sessions.backends.base.SessionBase'
+                        '.set_expiry', side_effect=[OverflowError, None]):
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, '/profile/')
+            self.assertEqual(UserSocialAuth.objects.count(), 1)
+        
+            social = UserSocialAuth.objects.first()
+            social.extra_data['credit-name'] = None
+            social.save()
+            user = social.user
+            self.assertEqual(
+                user.profile.get_display_name(),
+                user.profile.get_full_name()
+            )
+            

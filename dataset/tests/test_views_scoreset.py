@@ -1,3 +1,5 @@
+import json
+
 from django.core import mail
 from django.test import TestCase, RequestFactory, mock
 from django.urls import reverse_lazy
@@ -28,6 +30,7 @@ from metadata.factories import (
 
 from variant.factories import VariantFactory
 
+from ..utilities import publish_dataset
 import dataset.constants as constants
 from ..tasks import create_variants
 from ..forms.scoreset import ScoreSetForm
@@ -63,7 +66,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
 
     def test_uses_correct_template(self):
         obj = ScoreSetFactory()
-        obj.publish()
+        obj = publish_dataset(obj)
         obj.save()
         response = self.client.get('/scoreset/{}/'.format(obj.urn))
         self.assertTemplateUsed(response, self.template)
@@ -84,13 +87,13 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
     def test_private_experiment_rendered_if_user_can_view(self):
         user = UserFactory()
         obj = ScoreSetFactory()
-        assign_user_as_instance_viewer(user, obj)
+        obj.add_viewers(user)
         request = self.factory.get('/scoreset/{}/'.format(obj.urn))
         request.user = user
         response = ScoreSetDetailView.as_view()(request, urn=obj.urn)
         self.assertEqual(response.status_code, 200)
 
-    def test_variants_are_in_response(self):
+    def test_scores_get_ajax(self):
         scs = ScoreSetFactory(private=False)
         scs.dataset_columns = {
             constants.score_columns: ["score"],
@@ -103,12 +106,42 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
                 constants.variant_score_data: {"score": "1"},
             }
         )
-        request = self.factory.get('/scoreset/{}/'.format(scs.urn))
+        request = self.factory.get(
+            '/scoreset/{}/'.format(scs.urn),
+            data={'type': 'scores'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
         request.user = UserFactory()
         response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
-        # Remove '>' because it gets escaped.
-        self.assertContains(response, var.hgvs_nt[:-2])
-        self.assertContains(response, var.hgvs_pro[:-2])
+        data = json.loads(response.content.decode())['data']
+        
+        for i, value in enumerate(var.score_data):
+            self.assertIn(str(value), data[0][str(i)])
+
+    def test_counts_get_ajax(self):
+        scs = ScoreSetFactory(private=False)
+        scs.dataset_columns = {
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count"],
+        }
+        scs.save()
+        var = VariantFactory(
+            scoreset=scs,
+            data={
+                constants.variant_score_data: {"score": "1"},
+                constants.variant_count_data: {"count": "45"},
+            }
+        )
+        request = self.factory.get(
+            '/scoreset/{}/'.format(scs.urn),
+            data={'type': 'counts'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs.urn)
+        data = json.loads(response.content.decode())['data']
+        for i, value in enumerate(var.count_data):
+            self.assertIn(str(value), data[0][str(i)])
 
     # --- Next version links
     def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(self):

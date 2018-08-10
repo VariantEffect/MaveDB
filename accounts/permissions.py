@@ -33,6 +33,9 @@ class GroupTypes:
     ADMIN = "administrator"
     EDITOR = "editor"
     VIEWER = "viewer"
+    
+    def __iter__(self):
+        return iter([self.ADMIN, self.EDITOR, self.VIEWER])
 
     @staticmethod
     def admin_permissions():
@@ -85,17 +88,20 @@ def user_is_anonymous(user):
 
 def get_admin_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.ADMIN)
+        klass = instance.__class__.__name__.lower()
+        return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.ADMIN)
 
 
 def get_editor_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.EDITOR)
+        klass = instance.__class__.__name__.lower()
+        return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.EDITOR)
 
 
 def get_viewer_group_name_for_instance(instance):
     if valid_model_instance(instance):
-        return '{}-{}'.format(instance.urn, GroupTypes.VIEWER)
+        klass = instance.__class__.__name__.lower()
+        return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.VIEWER)
 
 
 def user_is_admin_for_instance(user, instance):
@@ -160,11 +166,11 @@ def instances_for_user_with_group_permission(user, model, group_type):
         return []
 
     if model == ExperimentSet:
-        instances = ExperimentSet.objects.all().order_by("urn")
+        instances = ExperimentSet.objects.all()
     elif model == Experiment:
-        instances = Experiment.objects.all().order_by("urn")
+        instances = Experiment.objects.all()
     elif model == ScoreSet:
-        instances = ScoreSet.objects.all().order_by("urn")
+        instances = ScoreSet.objects.all()
     else:
         raise TypeError("Unrecognised model type {}.".format(model))
 
@@ -386,7 +392,6 @@ def update_admin_list_for_instance(users, instance):
     for user in users:
         if user not in instance.administrators():
             assign_user_as_instance_admin(user, instance)
-    assign_superusers_as_admin(instance)
 
 
 def update_editor_list_for_instance(users, instance):

@@ -43,6 +43,9 @@ class Profile(TimeStampedModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)
     
+    def __str__(self):
+        return "{}_profile".format(self.user.username)
+    
     def email_user(self, subject, message, from_email=None, **kwargs):
         email = self.email or self.user.email
         if email:
@@ -96,15 +99,15 @@ class Profile(TimeStampedModel):
         })
         self.email_user(subject=subject, message=message)
 
-    @property
-    def unique_name(self):
-        return '{} | {}'.format(self.get_display_name(), self.user.username)
-
     @classmethod
     def non_anonymous_profiles(cls):
         """Returns a list of all non-anonymous profiles."""
         return [p for p in cls.objects.all() if not p.is_anon()]
 
+    @property
+    def unique_name(self):
+        return '{} | {}'.format(self.get_display_name(), self.user.username)
+    
     def is_anon(self):
         """
         Checks if the user associated with this profile is anonymous.
@@ -252,14 +255,6 @@ class Profile(TimeStampedModel):
                 self.user.last_name.capitalize(),
                 self.user.first_name[0].capitalize()
             )
-
-    def __str__(self):
-        return "{}_profile".format(self.user.username)
-
-    @staticmethod
-    def _iterable_to_queryset(iterable, klass):
-        pks = set([i.pk for i in iterable])
-        return klass.objects.filter(pk__in=pks).order_by('-modification_date')
 
     # Contributor
     # ----------------------------------------------------------------------- #

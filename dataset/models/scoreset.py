@@ -18,10 +18,8 @@ from main.models import Licence
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
 
-from variant.models import Variant
-
 from dataset import constants as constants
-from ..models.base import DatasetModel, PublicDatasetCounter
+from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json
 
@@ -36,6 +34,57 @@ def default_dataset():
     })
 
 
+@transaction.atomic
+def assign_public_urn(scoreset):
+    """
+    Assigns a public urn of the form <parent_urn>-[0-9]+ Blocks until it can
+    place of lock the passed `scoreset` and `experiment` parent. Assumes that
+    the parent is already public with a public urn.
+
+    Does nothing if passed model is already public.
+
+    Parameters
+    ----------
+    scoreset : `ScoreSet`
+        The scoreset instance to assign a public urn to.
+        
+    Raises
+    ------
+    `AttributeError` : Parent does not have a public urn.
+
+    Returns
+    -------
+    `ScoreSet`
+        scoreset with new urn or same urn if already public.
+    """
+    scoreset = ScoreSet.objects.filter(
+        id=scoreset.id
+    ).select_for_update(nowait=False).first()
+
+    if not scoreset.has_public_urn:
+        parent = Experiment.objects.filter(
+            id=scoreset.experiment.id
+        ).select_for_update(nowait=False).first()
+        
+        if not parent.has_public_urn:
+            raise AttributeError(
+                "Cannot assign a public urn when parent has a temporary urn."
+            )
+        
+        child_value = parent.last_child_value + 1
+        scoreset.urn = "{}-{}".format(parent.urn, child_value)
+        parent.last_child_value = child_value
+        scoreset.save()
+        parent.save(force_update=True)
+    
+        # Refresh the scoreset and nested parents
+        scoreset = ScoreSet.objects.filter(
+            id=scoreset.id
+        ).select_for_update(nowait=False).first()
+    
+    return scoreset
+
+
 class ScoreSet(DatasetModel):
     """
     This is the class representing a set of scores for an experiment.
@@ -47,7 +96,8 @@ class ScoreSet(DatasetModel):
     Parameters
     ----------
     urn : `models.CharField`
-        The urn in the format 'SCSXXXXXX[A-Z]+.\d+'
+        The urn, either temporary (auto-assigned) or public (assigned when
+        published).
 
     experiment : `models.ForeignKey`, required.
         The experiment a scoreset is assciated with. Cannot be null.
@@ -136,38 +186,6 @@ class ScoreSet(DatasetModel):
             self.licence = Licence.get_default()
         return super().save(*args, **kwargs)
     
-    @transaction.atomic
-    def publish(self):
-        if self.has_public_urn or not self.private:
-            return self
-        else:
-            super().publish()
-            urns = Variant.bulk_create_urns(self.children.count(), self)
-            for urn, child in zip(urns, self.children.all()):
-                child.urn = urn
-                child.save()
-            return self
-        
-    def create_urn(self):
-        if self.private or not self.experiment.has_public_urn:
-            urn = self.create_temp_urn()
-        else:
-            parent = self.experiment
-            child_value = parent.last_child_value + 1
-    
-            urn = "{}-{}".format(parent.urn, child_value)
-    
-            # update parent
-            parent.last_child_value = child_value
-            parent.save()
-
-            # Add new public dataset to counter
-            counter = PublicDatasetCounter.load()
-            counter.scoresets += 1
-            counter.save()
-
-        return urn
-
     # Variant related methods
     # ---------------------------------------------------------------------- #
     @property

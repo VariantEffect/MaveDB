@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
@@ -15,6 +15,50 @@ from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_experimentset
 
 from ..models.base import DatasetModel, PublicDatasetCounter
+
+
+@transaction.atomic
+def assign_public_urn(experimentset):
+    """
+    Assigns a public urn of the form urn:mavedb:0000000X. Blocks until it can
+    place of lock the passed experimentset and `PublicDatasetCounter` singleton.
+    
+    Does nothing if passed model is already public.
+    
+    Parameters
+    ----------
+    experimentset : `ExperimentSet`
+        The experimentset instance to assign a public urn to.
+
+    Returns
+    -------
+    `ExperimentSet`
+        experimentset with new urn or same urn if already public.
+    """
+    experimentset = ExperimentSet.objects.filter(
+        id=experimentset.id
+    ).select_for_update(nowait=False).first()
+    if not experimentset.has_public_urn:
+        counter = PublicDatasetCounter.objects.filter(
+            id=PublicDatasetCounter.load().id
+        ).select_for_update(nowait=False).first()
+        
+        expset_number = counter.experimentsets + 1
+        padded_expset_number = str(expset_number).zfill(
+            ExperimentSet.URN_DIGITS)
+        urn = "{}{}".format(ExperimentSet.URN_PREFIX, padded_expset_number)
+        
+        experimentset.urn = urn
+        counter.experimentsets += 1
+        experimentset.save()
+        counter.save()
+        
+        # Refresh the instance.
+        experimentset = ExperimentSet.objects.filter(
+            id=experimentset.id
+        ).select_for_update(nowait=False).first()
+    
+    return experimentset
 
 
 class ExperimentSet(DatasetModel):
@@ -45,26 +89,13 @@ class ExperimentSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
-    def create_urn(self):
-        if self.private:
-            urn = self.create_temp_urn()
-        else:
-            counter = PublicDatasetCounter.load()
-            
-            expset_number = counter.experimentsets + 1
-            padded_expset_number = str(expset_number).zfill(self.URN_DIGITS)
-            urn = "{}{}".format(self.URN_PREFIX, padded_expset_number)
-            
-            counter.experimentsets += 1
-            counter.save()
-        return urn
-
     def public_experiments(self):
         return self.children.exclude(private=True)
     
     def get_url(self, request=None):
         base = base_url(request)
         return base + reverse("dataset:experimentset_detail", args=(self.urn,))
+
 
 # --------------------------------------------------------------------------- #
 #                            Post Save

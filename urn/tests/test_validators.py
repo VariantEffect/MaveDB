@@ -13,6 +13,8 @@ from ..validators import (
 
 from variant.factories import VariantFactory
 
+from dataset.utilities import publish_dataset
+
 
 class TestURNValidators(TestCase):
     """
@@ -20,53 +22,36 @@ class TestURNValidators(TestCase):
     :class:`variant.models.Variant` as the driver.
     """
     def test_validationerror_malformed_experimentset_urn(self):
-        variant = VariantFactory(
-            scoreset__private=False,
-            scoreset__experiment__private=False,
-            scoreset__experiment__experimentset__private=False,
-        )
+        variant = VariantFactory()
         with self.assertRaises(ValidationError):
-            validate_mavedb_urn_experimentset(variant.urn)
+            validate_mavedb_urn_experimentset('not a urn pattern')
         # Should pass
         validate_mavedb_urn_experimentset(
             variant.scoreset.experiment.experimentset.urn)
 
     def test_validationerror_malformed_experiment_urn(self):
-        variant = VariantFactory(
-            scoreset__private=False,
-            scoreset__experiment__private=False,
-            scoreset__experiment__experimentset__private=False,
-        )
+        variant = VariantFactory()
         with self.assertRaises(ValidationError):
-            validate_mavedb_urn_experiment(variant.urn)
+            validate_mavedb_urn_experiment('not a urn pattern')
         # Should pass
         validate_mavedb_urn_experiment(variant.scoreset.experiment.urn)
 
     def test_wrapped_experiment_urn_does_not_raise_error(self):
-        variant = VariantFactory(
-            scoreset__private=False,
-            scoreset__experiment__private=False,
-            scoreset__experiment__experimentset__private=False,
-        )
-        validate_mavedb_urn_experiment(variant.scoreset.experiment.urn + 'a')
+        variant = VariantFactory()
+        scoreset = publish_dataset(variant.scoreset)
+        experiment = scoreset.parent
+        experiment.refresh_from_db()
+        validate_mavedb_urn_experiment(experiment.urn + 'a')
 
     def test_validationerror_malformed_scoreset_urn(self):
-        variant = VariantFactory(
-            scoreset__private=False,
-            scoreset__experiment__private=False,
-            scoreset__experiment__experimentset__private=False,
-        )
+        variant = VariantFactory()
         with self.assertRaises(ValidationError):
-            validate_mavedb_urn_scoreset(variant.urn)
+            validate_mavedb_urn_scoreset('not a urn pattern')
         # Should pass
         validate_mavedb_urn_scoreset(variant.scoreset.urn)
 
     def test_validationerror_malformed_variant_urn(self):
-        variant = VariantFactory(
-            scoreset__private=False,
-            scoreset__experiment__private=False,
-            scoreset__experiment__experimentset__private=False,
-        )
+        variant = VariantFactory()
         with self.assertRaises(ValidationError):
             validate_mavedb_urn_variant(variant.urn + 'extra')
         # Should pass

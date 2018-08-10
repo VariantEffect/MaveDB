@@ -1,10 +1,7 @@
-import datetime
-
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
-from django.db import transaction
 from django.shortcuts import reverse
 
 from core.utilities import base_url
@@ -15,10 +12,13 @@ from main.models import Licence
 
 from variant.factories import VariantFactory
 
+from urn.validators import MAVEDB_SCORESET_URN_RE
+
 from dataset import constants
 
-from ..models.scoreset import default_dataset, ScoreSet
-from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory
+from ..models.scoreset import default_dataset, ScoreSet, assign_public_urn
+from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory, ExperimentFactory
+from ..utilities import publish_dataset
 
 
 class TestScoreSet(TestCase):
@@ -28,38 +28,6 @@ class TestScoreSet(TestCase):
     :py:class:`Variant` objects. We will test correctness of creation,
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
-    def test_publish_updates_published_and_modification_dates(self):
-        scs = ScoreSetFactory()
-        scs.publish()
-        self.assertEqual(scs.publish_date, datetime.date.today())
-        self.assertEqual(scs.modification_date, datetime.date.today())
-
-    def test_publish_updates_private_to_false(self):
-        scs = ScoreSetFactory()
-        scs.publish()
-        self.assertFalse(scs.private)
-        
-    def test_publish_assigns_a_public_urn(self):
-        scs = ScoreSetFactory()
-        self.assertFalse(scs.has_public_urn)
-        scs.publish()
-        self.assertTrue(scs.has_public_urn)
-        self.assertTrue(scs.parent.has_public_urn)
-        self.assertTrue(scs.parent.parent.has_public_urn)
-        
-    def test_publish_assigns_a_public_urn_to_variants(self):
-        scs = ScoreSetFactory()
-        var = VariantFactory(scoreset=scs)
-        self.assertFalse(var.has_public_urn)
-        
-        scs.publish()
-        scs.save(save_parents=True)
-        scs.save_children()
-        
-        scs.refresh_from_db()
-        var.refresh_from_db()
-        self.assertTrue(var.has_public_urn)
-
     def test_new_is_assigned_all_permission_groups(self):
         self.assertEqual(Group.objects.count(), 0)
         _ = ScoreSetFactory()
@@ -70,15 +38,6 @@ class TestScoreSet(TestCase):
         self.assertEqual(Group.objects.count(), 9)
         obj.delete()
         self.assertEqual(Group.objects.count(), 6)
-
-    def test_autoassign_does_not_reassign_deleted_urn(self):
-        obj = ScoreSetFactory()
-        obj.publish()
-        previous = obj.urn
-        obj.delete()
-        obj = ScoreSetFactory()
-        obj.publish()
-        self.assertGreater(obj.urn, previous)
 
     def test_cannot_create_with_duplicate_urn(self):
         obj = ScoreSetFactory()
@@ -202,38 +161,6 @@ class TestScoreSet(TestCase):
         scs_2.refresh_from_db()
         self.assertIsNone(scs_2.replaces)
 
-    def test_publish_twice_doesnt_change_urn(self):
-        scs = ScoreSetFactory()
-        scs.publish()
-        scs.refresh_from_db()
-        old_urn = scs.urn
-        self.assertTrue(scs.has_public_urn)
-
-        scs = ScoreSet.objects.first()
-        scs.publish()
-        scs.refresh_from_db()
-        new_urn = scs.urn
-
-        self.assertTrue(scs.has_public_urn)
-        self.assertEqual(new_urn, old_urn)
-
-    def test_publish_increments_id_by_one(self):
-        instance1 = ScoreSetFactory()
-        instance2 = ScoreSetFactory()
-        instance2.publish()
-        self.assertIn('1-a-1', instance2.urn)
-        instance1.publish()
-        self.assertIn('2-a-1', instance1.urn)
-
-    def test_publish_in_transaction(self):
-        with transaction.atomic():
-            instance1 = ScoreSetFactory()
-            instance2 = ScoreSetFactory()
-            instance2.publish()
-            self.assertIn('1-a-1', instance2.urn)
-            instance1.publish()
-            self.assertIn('2-a-1', instance1.urn)
-
     def test_can_get_url(self):
         obj = ScoreSetFactory()
         self.assertEqual(
@@ -254,8 +181,48 @@ class TestScoreSet(TestCase):
         
     # def test_wt_is_first_when_sorted(self):
     #     obj = ScoreSetFactory()
-    #     v1 = VariantFactory(scoreset=obj, hgvs_nt='c.[9A>T;99G>T]')
-    #     v2 = VariantFactory(scoreset=obj, hgvs_nt='_wt')
+    #     v1 = ScoreSetFactory(experiment=obj, hgvs_nt='c.[9A>T;99G>T]')
+    #     v2 = ScoreSetFactory(experiment=obj, hgvs_nt='_wt')
     #     self.assertEqual(obj.children.order_by(
     #         '{}'.format(obj.primary_hgvs_column)).first(), v2
     #     )
+
+
+class TestAssignPublicUrn(TestCase):
+    def setUp(self):
+        self.factory = ScoreSetFactory
+        self.private_parent = ExperimentFactory()
+        self.public_parent = publish_dataset(ExperimentFactory())
+    
+    def test_assigns_public_urn(self):
+        instance = self.factory(experiment=self.public_parent)
+        instance = assign_public_urn(instance)
+        self.assertIsNotNone(MAVEDB_SCORESET_URN_RE.fullmatch(instance.urn))
+        self.assertTrue(instance.has_public_urn)
+    
+    def test_increments_parent_last_child_value(self):
+        instance = self.factory(experiment=self.public_parent)
+        self.assertEqual(instance.parent.last_child_value, 0)
+        instance = assign_public_urn(instance)
+        self.assertEqual(instance.parent.last_child_value, 1)
+       
+    def test_attr_error_parent_has_tmp_urn(self):
+        instance = self.factory(experiment=self.private_parent)
+        self.private_parent.private = False
+        self.private_parent.save()
+        with self.assertRaises(AttributeError):
+            assign_public_urn(instance)
+    
+    def test_assigns_sequential_urns(self):
+        instance1 = self.factory(experiment=self.public_parent)
+        instance2 = self.factory(experiment=self.public_parent)
+        instance1 = assign_public_urn(instance1)
+        instance2 = assign_public_urn(instance2)
+        self.assertEqual(int(instance1.urn[-1]), 1)
+        self.assertEqual(int(instance2.urn[-1]), 2)
+    
+    def test_applying_twice_does_not_change_urn(self):
+        instance = self.factory(experiment=self.public_parent)
+        i1 = assign_public_urn(instance)
+        i2 = assign_public_urn(instance)
+        self.assertEqual(i1.urn, i2.urn)

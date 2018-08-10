@@ -16,6 +16,54 @@ column_order = defaultdict(lambda: 1)
 column_order[constants.required_score_column] = 0
 
 
+@transaction.atomic
+def assign_public_urn(variant):
+    """
+    Assigns a public urn of the form <parent_urn>-#[0-9]+ Blocks until it can
+    place of lock the passed `variant's` and `scoreset` parent. Assumes that
+    the parent is already public with a public urn.
+
+    Does nothing if passed model is already public.
+
+    Parameters
+    ----------
+    variant : `Variant`
+        The variant instance to assign a public urn to.
+        
+    Raises
+    ------
+    `AttributeError` : Parent does not have a public urn.
+
+    Returns
+    -------
+    `Variant`
+        variant with new urn or same urn if already public.
+    """
+    from dataset.models.scoreset import ScoreSet
+    if not variant.has_public_urn:
+        parent = ScoreSet.objects.filter(
+            id=variant.scoreset.id
+        ).select_for_update(nowait=False).first()
+        
+        if not parent.has_public_urn:
+            raise AttributeError(
+                "Cannot assign a public urn when parent has a temporary urn."
+            )
+        
+        child_value = parent.last_child_value + 1
+        variant.urn = "{}#{}".format(parent.urn, child_value)
+        parent.last_child_value = child_value
+        parent.save()
+        variant.save()
+        
+        # Refresh the variant and nested parents
+        variant = Variant.objects.filter(
+            id=variant.id
+        ).select_for_update(nowait=False).first()
+        
+    return variant
+
+
 class Variant(UrnModel):
     """
     This is the class representing an individual variant belonging to one
@@ -120,20 +168,6 @@ class Variant(UrnModel):
         ]
         parent.last_child_value += n
         return child_urns
-
-    def create_urn(self):
-        if self.scoreset.private:
-            urn = self.create_temp_urn()
-        else:
-            parent = self.scoreset
-            child_value = parent.last_child_value + 1
-    
-            urn = "{}#{}".format(parent.urn, child_value)
-    
-            # update parent
-            parent.last_child_value = child_value
-            parent.save()
-        return urn
 
     @property
     def score_columns(self):

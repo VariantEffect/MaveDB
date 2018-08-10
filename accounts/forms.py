@@ -6,102 +6,25 @@ account editing.
 import logging
 
 from django import forms
-from django.utils.translation import ugettext as _
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
-
-from core.utilities import is_null
-
-from guardian.conf.settings import ANONYMOUS_USER_NAME
-
-from search.forms import parse_char_list
 
 from .models import Profile
-from .mixins import UserFilterMixin
+from .mixins import filter_anon
 from .permissions import (
     GroupTypes,
-    user_is_anonymous,
     update_admin_list_for_instance,
     update_editor_list_for_instance,
     update_viewer_list_for_instance,
     valid_model_instance,
-    valid_group_type
 )
-
 
 User = get_user_model()
 logger = logging.getLogger("django")
-user_filter = UserFilterMixin()
 
 
-class UserSearchForm(forms.Form):
-    """Search by text fields and keywords."""
-    def __init__(self, *args, **kwargs):
-        super(UserSearchForm, self).__init__(*args, **kwargs)
-        self.fields['username'] = forms.CharField(
-            max_length=None, label="ORCID", required=False,
-            initial=None, empty_value="",
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.username, i.username)
-                    for i in User.objects.all()
-                    if not user_is_anonymous(i)
-                ]))
-            ),
-        )
-        self.fields['first_name'] = forms.CharField(
-            max_length=None, label="First name", required=False,
-            initial=None, empty_value="",
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.first_name, i.first_name)
-                    for i in User.objects.all()
-                    if not user_is_anonymous(i)
-                ]))
-            ),
-        )
-        self.fields['last_name'] = forms.CharField(
-            max_length=None, label="Last name", required=False,
-            initial=None, empty_value="",
-            widget=forms.SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.last_name, i.last_name)
-                    for i in User.objects.all()
-                    if not user_is_anonymous(i)
-                ]))
-            ),
-        )
-
-    def clean_first_name(self):
-        field_name = 'first_name'
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
-        return list(set([i for i in instances if not is_null(i)]))
-
-    def clean_last_name(self):
-        field_name = 'last_name'
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
-        return list(set([i for i in instances if not is_null(i)]))
-
-    def clean_username(self):
-        field_name = 'username'
-        instances = parse_char_list(self.cleaned_data.get(field_name, []))
-        return list(set([i for i in instances if not is_null(i)]))
-
-    def make_filters(self, join=True):
-        data = self.cleaned_data
-        search_dict = {
-            'first_name': data.get('first_name', ""),
-            'last_name': data.get('last_name', ""),
-            'username': data.get('username', ""),
-        }
-        join_func = None
-        if join:
-            join_func = user_filter.or_join_qs
-        return user_filter.search_all(search_dict, join_func=join_func)
+class ConfirmationForm(forms.Form):
+    pass
 
 
 class SelectUsersForm(forms.Form):
@@ -139,9 +62,10 @@ class SelectUsersForm(forms.Form):
         Defers the call to the appropriate update function for the input
         user list based on the initialised group type.
     """
-    users = forms.ModelMultipleChoiceField(
+    administrators = forms.ModelMultipleChoiceField(
         queryset=None,
-        required=False,
+        required=True,
+        label='Administrators',
         widget=forms.SelectMultiple(
             attrs={
                 "class": "select2 select2-token-select",
@@ -149,66 +73,106 @@ class SelectUsersForm(forms.Form):
             }
         ),
         error_messages={
-            'list': _('Enter a list of values.'),
-            'invalid_pk_value': _('User "%(pk)s" does not exist.')
+            'list': 'Enter a list of values.',
+            'invalid_pk_value': 'User "%(pk)s" does not exist.',
+        }
+    )
+    editors = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        label='Editors',
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "select2 select2-token-select",
+                "style": "width:100%;height:50px;"
+            }
+        ),
+        error_messages={
+            'list': 'Enter a list of values.',
+            'invalid_pk_value': 'User "%(pk)s" does not exist.',
+        }
+    )
+    viewers = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        label='Viewers',
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "select2 select2-token-select",
+                "style": "width:100%;height:50px;"
+            }
+        ),
+        error_messages={
+            'list': 'Enter a list of values.',
+            'invalid_pk_value': 'User "%(pk)s" does not exist.',
         }
     )
 
-    def __init__(self, user, group, instance, required=False, *args, **kwargs):
-        if not valid_group_type(group):
-            raise ValueError("Unrecognised group type {}".format(group))
+    def __init__(self, instance, *args, **kwargs):
         if not valid_model_instance(instance):
             raise ValueError("Unrecognised instance type {}".format(
                 instance.__class__.__name__
             ))
-
+        
+        self.instance = instance
         if instance is not None:
-            if group == GroupTypes.ADMIN:
-                initial = [u.pk for u in instance.administrators()]
-                kwargs["initial"] = {"users": initial}
-            elif group == GroupTypes.EDITOR:
-                initial = [u.pk for u in instance.editors()]
-                kwargs["initial"] = {"users": initial}
-            elif group == GroupTypes.VIEWER:
-                initial = [u.pk for u in instance.viewers()]
-                kwargs["initial"] = {"users": initial}
+            kwargs["initial"] = {
+                "administrators": [u.pk for u in instance.administrators()],
+                "editors": [u.pk for u in instance.editors()],
+                "viewers": [u.pk for u in instance.viewers()],
+            }
 
         super(SelectUsersForm, self).__init__(*args, **kwargs)
-        self.fields["users"].queryset = User.objects.exclude(
-            username=ANONYMOUS_USER_NAME
-        )
-        self.fields["users"].choices = [(u.pk, u.profile.unique_name)
-             for u in self.fields["users"].queryset]
 
-        self.user = user
-        self.fields["users"].required = required
-        self.group = group
-        self.instance = instance
-
+        self.fields['administrators'].queryset = filter_anon(
+            User.objects.exclude(is_superuser=True))
+        self.fields['editors'].queryset = filter_anon(
+            User.objects.exclude(is_superuser=True))
+        self.fields['viewers'].queryset = filter_anon(
+            User.objects.exclude(is_superuser=True))
+        
+        self.fields["administrators"].choices = [(u.pk, u.profile.unique_name)
+             for u in self.fields["administrators"].queryset]
+        self.fields["editors"].choices = [(u.pk, u.profile.unique_name)
+             for u in self.fields["editors"].queryset]
+        self.fields["viewers"].choices = [(u.pk, u.profile.unique_name)
+             for u in self.fields["viewers"].queryset]
+        
     def clean(self):
         cleaned_data = super(SelectUsersForm, self).clean()
-        users = cleaned_data.get("users", None)
-
-        if users is not None:
-            users = users.filter(is_superuser=False)
-            if self.group == GroupTypes.ADMIN and users.count() == 0:
-                if not self.user.is_superuser:
-                    raise ValidationError(
-                        _("There must be at least one administrator.")
+        administrators = cleaned_data.get("administrators", [])
+        editors = cleaned_data.get("editors", [])
+        viewers = cleaned_data.get("viewers", [])
+        
+        if not administrators:
+            self.add_error(
+                'administrators',
+                "There must be at least one administrator."
+            )
+        for user in administrators:
+            if user in editors or user in viewers:
+                self.add_error(
+                    'administrators',
+                    'User \'{user}\' can only be assigned to one group.'.format(
+                        user=user.profile.unique_name
                     )
-
-        if users is not None:
-            if self.group in [GroupTypes.EDITOR, GroupTypes.VIEWER]:
-                admins = self.instance.administrators().filter(
-                    is_superuser=False)
-                if admins.count() == 1 and admins[0] in users:
-                    if not self.user.is_superuser:
-                        raise ValidationError(
-                            _(
-                                "Cannot assign the only administrator "
-                                "to another group."
-                            )
-                        )
+                )
+        for user in editors:
+            if user in administrators or user in viewers:
+                self.add_error(
+                    'editors',
+                    'User \'{user}\' can only be assigned to one group.'.format(
+                        user=user.profile.unique_name
+                    )
+                )
+        for user in viewers:
+            if user in administrators or user in editors:
+                self.add_error(
+                    'viewers',
+                    'User \'{user}\' can only be assigned to one group.'.format(
+                        user=user.profile.unique_name
+                    )
+                )
         return cleaned_data
 
     def process_user_list(self):
@@ -216,56 +180,63 @@ class SelectUsersForm(forms.Form):
         Defer the call to the appropriate update function for the input
         user list based on the initialised group type.
         """
-        existing_admins = self.instance.administrators()
+        if not self.is_valid():
+            raise ValueError("Cannot process an invalid management form.")
+        
+        existing_administrators = self.instance.administrators()
         existing_editors = self.instance.editors()
         existing_viewers = self.instance.viewers()
-        user_reassigned = {}
+        existing_users = {}
+        
+        for user in existing_administrators:
+            existing_users[user] = GroupTypes.ADMIN
+        for user in existing_editors:
+            existing_users[user] = GroupTypes.EDITOR
+        for user in existing_viewers:
+            existing_users[user] = GroupTypes.VIEWER
+            
+        new_administrators = self.cleaned_data.get('administrators', None)
+        new_editors = self.cleaned_data.get('editors', [])
+        new_viewers = self.cleaned_data.get('viewers', [])
+        reassigned_users = {}
+        new_users = {}
 
-        if self.is_bound and self.is_valid():
-            users = self.clean().get("users", [])
-            if self.group == GroupTypes.ADMIN:
-                existing = existing_admins
-                for user in users:
-                    if user in existing_editors or existing_viewers:
-                        user_reassigned[user] = True
-                update_admin_list_for_instance(users, self.instance)
-
-            elif self.group == GroupTypes.EDITOR:
-                existing = existing_editors
-                for user in users:
-                    if user in existing_admins or existing_viewers:
-                        user_reassigned[user] = True
-                update_editor_list_for_instance(users, self.instance)
-
-            elif self.group == GroupTypes.VIEWER:
-                existing = existing_viewers
-                for user in users:
-                    if user in existing_admins or existing_editors:
-                        user_reassigned[user] = True
-                update_viewer_list_for_instance(users, self.instance)
-
-            else:
-                raise ValueError("Unrecognised group '{}'".format(self.group))
-
-            for user in existing:
-                if user not in users:
-                    user.profile.notify_user_group_change(
-                        instance=self.instance,
-                        action='removed', group=self.group
-                    )
-            for user in users:
-                reassigned = user_reassigned.get(user, False)
-                if reassigned:
-                    user.profile.notify_user_group_change(
-                        instance=self.instance,
-                        action='re-assigned', group=self.group
-                    )
-                else:
-                    if user not in existing:
-                        user.profile.notify_user_group_change(
-                            instance=self.instance,
-                            action='added', group=self.group
-                        )
+        for user in new_administrators:
+            if user in existing_editors or existing_viewers:
+                reassigned_users[user] = GroupTypes.ADMIN
+            new_users[user] = GroupTypes.ADMIN
+        for user in new_editors:
+            if user in existing_administrators or existing_viewers:
+                reassigned_users[user] = GroupTypes.EDITOR
+            new_users[user] = GroupTypes.EDITOR
+        for user in new_viewers:
+            if user in existing_administrators or existing_editors:
+                reassigned_users[user] = GroupTypes.VIEWER
+            new_users[user] = GroupTypes.VIEWER
+        
+        update_admin_list_for_instance(new_administrators, self.instance)
+        update_editor_list_for_instance(new_editors, self.instance)
+        update_viewer_list_for_instance(new_viewers, self.instance)
+        
+        for user, group in existing_users.items():
+            if user not in new_users:
+                user.profile.notify_user_group_change(
+                    instance=self.instance,
+                    action='removed', group=group
+                )
+            elif user in reassigned_users:
+                new_group = reassigned_users[user]
+                user.profile.notify_user_group_change(
+                    instance=self.instance,
+                    action='re-assigned', group=new_group
+                )
+        for user, group in new_users.items():
+            reassigned = reassigned_users.get(user, False)
+            if not reassigned and user not in existing_users:
+                user.profile.notify_user_group_change(
+                    instance=self.instance,
+                    action='added', group=group
+                )
 
 
 class RegistrationForm(UserCreationForm):
