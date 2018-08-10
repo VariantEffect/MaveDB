@@ -163,7 +163,7 @@
           ordering: false,
           columnDefs: [
             {% for column in score_columns %}
-              {className: "{{ column }}", targets: [{{ forloop.counter0 }}] },
+              {className: "{{ column }}", targets: [{{ forloop.counter0 }}]},
             {% endfor %}
           ]
         });
