@@ -10,7 +10,8 @@ class MultiCharFilter(filters.CharFilter):
 
     def filter(self, qs, value):
         if not self.sep:
-            raise ImproperlyConfigured("MultiCharFilter is abstract.")
+            raise ImproperlyConfigured(
+                "MultiCharFilter is abstract and cannot be instantiated.")
         if value:
             value = list(csv.reader([value], delimiter=self.sep))[0]
         if not isinstance(value, list):

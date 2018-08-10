@@ -40,16 +40,15 @@ class TestCSVCharField(TestCase):
         result = field.clean("['hello', 'world']")
         self.assertListEqual(result, ['hello', 'world'])
 
-    def test_clean_csv_returns_list(self):
+    def test_clean_csv_returns_string_if_input_is_not_a_list_repr(self):
         field = fields.CSVCharField()
-        result = field.clean("hello,world")
-        self.assertListEqual(result, ['hello', 'world'])
-
-    def test_clean_csv_does_not_split_double_quoted_comma(self):
-        field = fields.CSVCharField()
-        result = field.clean("hello,\"hello,world\"")
-        self.assertListEqual(result, ['hello', 'hello,world'])
         
+        result = field.clean("hello,world")
+        self.assertListEqual(result, ['hello,world'])
+        
+        result = field.clean("hello,\"hello,world\"")
+        self.assertListEqual(result, ['hello,\"hello,world\"'])
+
     def test_cleaning_none_returns_falsey_value(self):
         field = fields.CSVCharField(required=False)
         result = field.clean(None)
