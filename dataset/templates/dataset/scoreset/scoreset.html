@@ -154,12 +154,13 @@
   <script type="text/javascript">
     $(window).ready( function (){
       $.get(window.location.href + '?type=scores', function(response, status){
+        console.log(response.data)
         $("#scores-table").DataTable({
           data: response.data,
           deferRender: true,
           dom: "ftr",
-          searching: true,
-          ordering: true,
+          searching: false,
+          ordering: false,
           columnDefs: [
             {% for column in score_columns %}
               {className: "{{ column }}", targets: [{{ forloop.counter0 }}] },
@@ -179,8 +180,8 @@
           data: response.data,
           deferRender: true,
           dom: "ftr",
-          searching: true,
-          ordering: true,
+          searching: false,
+          ordering: false,
           columnDefs: [
             {% for column in count_columns %}
               {className: "{{ column }}", targets: [{{ forloop.counter0 }}] },
