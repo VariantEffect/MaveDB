@@ -154,7 +154,6 @@
   <script type="text/javascript">
     $(window).ready( function (){
       $.get(window.location.href + '?type=scores', function(response, status){
-        console.log(response.data)
         $("#scores-table").DataTable({
           data: response.data,
           deferRender: true,
