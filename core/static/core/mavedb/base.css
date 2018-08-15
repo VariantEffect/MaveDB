@@ -147,8 +147,8 @@ table {
     /*word-break: break-all;*/
 }
 
-.SE {
-  /*word-break: unset;*/
+.hgvs_nt, .hgvs_pro {
+  word-break: break-all;
 }
 
 #search-table, #counts-table, #scores-table {
