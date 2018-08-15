@@ -136,7 +136,7 @@ code {
 ---------------------------------------------------------------------------  */
 table th {
     white-space: nowrap !important;
-    /*width: 15% !important;*/
+    width: 1% !important;
 }
 table {
     width: 100%;
