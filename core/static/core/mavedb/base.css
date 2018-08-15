@@ -134,21 +134,12 @@ code {
 
 /* Tables
 ---------------------------------------------------------------------------  */
-table td {
-    width: 200px;
-    /*word-break: break-all;*/
-}
 table th {
     white-space: nowrap !important;
-    width: 1% !important;
+    /*width: 15% !important;*/
 }
 table {
     width: 100%;
-    /*word-break: break-all;*/
-}
-
-.hgvs_nt, .hgvs_pro {
-  word-break: break-all;
 }
 
 #search-table, #counts-table, #scores-table {
