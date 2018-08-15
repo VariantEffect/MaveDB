@@ -136,7 +136,7 @@ code {
 ---------------------------------------------------------------------------  */
 table td {
     width: 200px;
-    word-break: break-all;
+    /*word-break: break-all;*/
 }
 table th {
     white-space: nowrap !important;
@@ -144,7 +144,11 @@ table th {
 }
 table {
     width: 100%;
-    word-break: break-all;
+    /*word-break: break-all;*/
+}
+
+.SE {
+  /*word-break: unset;*/
 }
 
 #search-table, #counts-table, #scores-table {
