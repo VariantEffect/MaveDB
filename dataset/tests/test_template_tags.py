@@ -6,7 +6,7 @@ from accounts.factories import UserFactory
 
 from metadata.factories import PubmedIdentifierFactory
 
-from ..factories import ExperimentWithScoresetFactory
+from ..factories import ExperimentWithScoresetFactory, ExperimentFactory
 from ..templatetags import dataset_tags
 
 from ..utilities import publish_dataset
@@ -42,6 +42,12 @@ class TestDisplayTargetsTag(TestCase):
             result,
             json.dumps(sorted([exp.scoresets.first().get_target().get_name()]))
         )
+        
+    def test_formats_for_javascript_when_no_targets_found(self):
+        exp = ExperimentFactory()
+        user = UserFactory()
+        result = dataset_tags.display_targets(exp, user, javascript=True)
+        self.assertEqual(result, json.dumps(['-']))
 
 
 class TestDisplaySpeciesTag(TestCase):
@@ -86,6 +92,12 @@ class TestDisplaySpeciesTag(TestCase):
                     exp.scoresets.first().get_display_target_organisms())
                 ))
         )
+        
+    def test_formats_for_javascript_when_no_targets_found(self):
+        exp = ExperimentFactory()
+        user = UserFactory()
+        result = dataset_tags.display_species(exp, user, javascript=True)
+        self.assertEqual(result, json.dumps(['-']))
 
 
 class TestVisibleChildren(TestCase):
