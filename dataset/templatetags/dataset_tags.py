@@ -19,6 +19,8 @@ def display_targets(instance, user, javascript=False):
     elif isinstance(instance, models.scoreset.ScoreSet):
         targets.add(instance.get_target().get_name())
     if not targets:
+        if javascript:
+            return mark_safe(json.dumps(['-']))
         return '-'
     if javascript:
         return mark_safe(json.dumps(sorted(list(targets))))
@@ -37,6 +39,8 @@ def display_species(instance, user, javascript=False):
     elif isinstance(instance, models.scoreset.ScoreSet):
         species |= instance.get_display_target_organisms()
     if not species:
+        if javascript:
+            return mark_safe(json.dumps(['-']))
         return '-'
     if javascript:
         return mark_safe(json.dumps(sorted(list(species))))
