@@ -1,0 +1,2206 @@
+digraph model_graph {
+	graph [bb="0,0,2506.5,2128",
+		fontname=Helvetica,
+		fontsize=8,
+		splines=true
+	];
+	node [fontname=Helvetica,
+		fontsize=8,
+		label="\N",
+		shape=plaintext
+	];
+	edge [fontname=Helvetica,
+		fontsize=8
+	];
+	core_models_FailedTask	 [height=2.5,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    FailedTask
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">user</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">args</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">celery_task_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">DateTimeField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">exception_class</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">exception_msg</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">failures</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">PositiveSmallIntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">full_name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">kwargs</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">DateTimeField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">traceback</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="788,440",
+		width=2.9444];
+	django_contrib_auth_models_User	 [height=0.5,
+		label=<
+  <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+  <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+  <FONT FACE="Helvetica Bold" COLOR="white">User</FONT>
+  </TD></TR>
+  </TABLE>
+  >,
+		pos="882,194",
+		width=0.75];
+	core_models_FailedTask -> django_contrib_auth_models_User	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="user (failed_tasks)",
+		lp="820.68,314",
+		pos="s,779.98,349.83 780.7,341.76 782.04,329.49 784.52,317.29 788.64,306 802.78,267.24 836.76,232.43 859.59,212.26"];
+	dataset_models_base_DatasetModel	 [height=2.7778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    DatasetModel<BR/>&lt;<FONT FACE="Helvetica Italic">UrnModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">created_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">modified_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">abstract_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">approved</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">extra_metadata</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">JSONField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">last_child_value</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">IntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">method_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">private</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">processing_state</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">publish_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">short_description</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">title</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1002,440",
+		width=2.5];
+	dataset_models_base_DatasetModel -> django_contrib_auth_models_User	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="modified_by (last_edited_%(class)s)",
+		lp="1003.2,314",
+		pos="s,948.36,339.8 944.7,332.51 942.93,328.97 941.19,325.46 939.5,322 920.67,283.48 900.55,237.42 889.82,212.4"];
+	dataset_models_base_DatasetModel -> django_contrib_auth_models_User	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="created_by (last_created_%(class)s)",
+		lp="1137.9,314",
+		pos="s,1074,339.83 1074.6,331.75 1074.7,322.97 1072.7,314.3 1068,306 1033.7,245.29 951.83,213.84 909.07,201.06"];
+	urn_models_UrnModel	 [height=0.77778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    UrnModel<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="703,194",
+		width=2.1667];
+	dataset_models_base_DatasetModel -> urn_models_UrnModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="896.57,314",
+		pos="e,745.46,222.06 911.92,347.84 908.94,345.17 905.96,342.55 903,340 854.68,298.42 795.23,256.03 753.76,227.71"];
+	core_models_TimeStampedModel	 [height=0.66667,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TimeStampedModel
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="703,24",
+		width=2.1667];
+	urn_models_UrnModel -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="722.57,74",
+		pos="e,703,48.255 703,165.93 703,136.44 703,90.043 703,58.382"];
+	dataset_models_base_PublicDatasetCounter	 [height=1.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    PublicDatasetCounter<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">experimentsets</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">IntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="243,194",
+		width=2.2778];
+	dataset_models_base_PublicDatasetCounter -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="319.57,74",
+		pos="e,624.74,27.96 249.86,153.76 257.08,124.51 271.53,86.58 299.86,66 324.74,47.927 503.59,34.954 614.55,28.542"];
+	dataset_models_experimentset_ExperimentSet	 [height=3.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    ExperimentSet<BR/>&lt;<FONT FACE="Helvetica Italic">DatasetModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">created_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">modified_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">abstract_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">approved</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">extra_metadata</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">JSONField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">last_child_value</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">IntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">method_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">private</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">processing_state</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">publish_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">short_description</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">title</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">urn</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1233,704",
+		width=2.4444];
+	dataset_models_experimentset_ExperimentSet -> dataset_models_base_DatasetModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1036.6,566",
+		pos="e,999.86,540.13 1144.8,619.37 1130.9,609 1116.1,599.45 1101,592 1067.1,575.27 1043.3,601.98 1017.9,574 1011.4,566.86 1006.6,558.55 \
+1003.1,549.63"];
+	metadata_models_Keyword	 [height=1.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Keyword<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1365,440",
+		width=2.1944];
+	dataset_models_experimentset_ExperimentSet -> metadata_models_Keyword	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="keywords (associated_experimentsets)",
+		lp="1133.1,566",
+		pos="s,1144.8,624.13 e,1340.8,480.01 1138.4,619.09 1126.1,609.5 1113.5,600.23 1101,592 1086,582.1 1074.2,589.3 1064.7,574 1061,567.96 \
+1059.9,563.24 1064.7,558 1096.7,523.14 1234.7,561.31 1277,540 1300.7,528.03 1320.9,506.63 1335.9,486.7"];
+	metadata_models_SraIdentifier	 [height=1.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    SraIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1717,440",
+		width=2.1944];
+	dataset_models_experimentset_ExperimentSet -> metadata_models_SraIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="sra_ids (associated_experimentsets)",
+		lp="1511.1,566",
+		pos="s,1321.1,608.2 e,1678.7,498.06 1327.8,603.07 1333.1,599.12 1338.5,595.4 1344,592 1384.9,566.67 1399.7,567.98 1446.7,558 1526.4,541.11 \
+1556.6,577.14 1629,540 1645.7,531.41 1660.7,518.18 1673.4,504.13"];
+	metadata_models_DoiIdentifier	 [height=1.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    DoiIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1893,440",
+		width=2.1944];
+	dataset_models_experimentset_ExperimentSet -> metadata_models_DoiIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="doi_ids (associated_experimentsets)",
+		lp="1800.9,566",
+		pos="s,1321.3,605.02 e,1853.7,498.25 1328.2,600.52 1333.4,597.36 1338.6,594.49 1344,592 1391.7,569.93 1527.7,579.93 1580,574 1630.2,568.3 \
+1760.6,564.22 1805,540 1821.1,531.21 1835.7,518.26 1848.1,504.58"];
+	metadata_models_PubmedIdentifier	 [height=1.7778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    PubmedIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">reference_html</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1541,440",
+		width=2.1944];
+	dataset_models_experimentset_ExperimentSet -> metadata_models_PubmedIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="pubmed_ids (associated_experimentsets)",
+		lp="1299,566",
+		pos="s,1209.7,591.73 e,1497.8,504.03 1211.6,583.67 1214.4,574.25 1219,565.5 1225.9,558 1260.3,520.82 1407.7,562.66 1453,540 1467.6,532.7 \
+1480.8,521.85 1492.3,509.94"];
+	metadata_models_Keyword -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1315.6,194",
+		pos="e,781.02,38.389 1358.7,399.96 1352.4,371.01 1340.2,332.5 1317,306 1176.1,145.04 924.33,70.296 791.18,40.618"];
+	metadata_models_ExternalIdentifier	 [height=1.4444,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    ExternalIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1629,194",
+		width=2.1667];
+	metadata_models_SraIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1692.6,314",
+		pos="e,1647.6,246.02 1696.1,381.7 1682.6,343.72 1664.9,294.22 1651,255.6"];
+	metadata_models_DoiIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1795.6,314",
+		pos="e,1672.5,246.49 1847.5,381.96 1834.6,367.36 1820,352.35 1805,340 1769.6,310.88 1751.7,316.68 1716,288 1703.4,277.86 1690.9,265.87 \
+1679.5,253.91"];
+	metadata_models_PubmedIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1606.6,314",
+		pos="e,1610.3,246.35 1564,375.69 1577.2,338.71 1593.8,292.48 1606.9,255.91"];
+	metadata_models_ExternalIdentifier -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1412.6,74",
+		pos="e,781.22,25.633 1551,149.63 1495.4,120.36 1417.9,84.189 1345,66 1242.7,40.489 942.14,29.763 791.37,25.89"];
+	dataset_models_experiment_Experiment	 [height=3.2778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Experiment<BR/>&lt;<FONT FACE="Helvetica Italic">DatasetModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">created_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">experimentset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">modified_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">abstract_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">approved</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">extra_metadata</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">JSONField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">last_child_value</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">IntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">method_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">private</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">processing_state</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">publish_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">short_description</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">title</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">urn</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1282,1098",
+		width=2.5];
+	dataset_models_experiment_Experiment -> dataset_models_base_DatasetModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="933.57,704",
+		pos="e,911.77,535.29 1192,1066.2 1136.3,1043.3 1065.8,1008.4 1014,962 963.29,916.63 970.64,888.58 930,834 923.76,825.62 921.14,824.36 \
+914.86,816 837.14,712.55 790.59,697.82 753,574 750.93,567.2 748.28,563.32 753,558 773.63,534.75 858.77,551.76 902.19,538.98"];
+	dataset_models_experiment_Experiment -> dataset_models_experimentset_ExperimentSet	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="experimentset (experiments)",
+		lp="1300.7,898",
+		pos="s,1253.6,979.9 1252.2,972.01 1251.6,968.64 1251.1,965.3 1250.6,962 1243.6,914.48 1239.3,861.61 1236.8,816.17"];
+	dataset_models_experiment_Experiment -> metadata_models_Keyword	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="keywords (associated_experiments)",
+		lp="1071.8,704",
+		pos="s,1191.8,1034.8 e,1340.9,480.2 1185.4,1029.7 1122.2,978.8 1044.9,903.3 1008.4,816 964.12,710.2 924.6,641.72 1003,558 1023.9,535.73 \
+1249.6,553.47 1277,540 1300.9,528.26 1321,506.88 1336,486.9"];
+	dataset_models_experiment_Experiment -> metadata_models_SraIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="sra_ids (associated_experiments)",
+		lp="1650.8,704",
+		pos="s,1372.1,1079.4 e,1666.1,498.09 1380.1,1077.1 1443.2,1058.2 1521.1,1023.5 1563,962 1609.4,893.86 1560.5,668.47 1591.4,592 1595.6,\
+581.46 1629.3,540.94 1660.7,504.39"];
+	dataset_models_experiment_Experiment -> metadata_models_DoiIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="doi_ids (associated_experiments)",
+		lp="1843.6,704",
+		pos="s,1372.1,1069.9 e,1897,498.02 1379.7,1067.2 1442.7,1044.3 1524.2,1009 1587,962 1655.1,910.95 1669.3,890.25 1711,816 1762.3,724.58 \
+1706.7,661.93 1784.8,592 1813.7,566.19 1843.2,601.88 1870,574 1887.2,556.12 1894.2,530.33 1896.4,506.14"];
+	dataset_models_experiment_Experiment -> metadata_models_PubmedIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="pubmed_ids (associated_experiments)",
+		lp="1447.7,704",
+		pos="s,1346.3,979.7 e,1550.1,504.16 1349,971.95 1350.1,968.63 1351.1,965.31 1352,962 1396.8,803.29 1265.8,711.31 1379.6,592 1425.2,544.25 \
+1480.7,621.07 1527,574 1542.8,557.88 1548.7,534.84 1549.9,512.39"];
+	dataset_models_scoreset_ScoreSet	 [height=3.9444,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    ScoreSet<BR/>&lt;<FONT FACE="Helvetica Italic">DatasetModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">created_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">experiment</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">licence</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">modified_by</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">replaces</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">OneToOneField (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">abstract_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">approved</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">dataset_columns</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">JSONField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">extra_metadata</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">JSONField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">last_child_value</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">IntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">method_text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">normalised</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">private</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">processing_state</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">publish_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">short_description</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">title</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">urn</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1282,1474",
+		width=2.7083];
+	dataset_models_scoreset_ScoreSet -> dataset_models_base_DatasetModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="752.57,898",
+		pos="e,911.78,535.32 1184.4,1441.2 1082.7,1402.4 924.83,1328.5 829,1216 750.81,1124.2 755.35,1080.6 733.86,962 717.8,873.33 730.02,575.15 \
+746,558 768.26,534.12 857.53,552.35 902.41,538.93"];
+	dataset_models_scoreset_ScoreSet -> metadata_models_Keyword	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="keywords (associated_scoresets)",
+		lp="878.13,898",
+		pos="s,1184.3,1394 e,1340.9,480.23 1178.1,1388.7 987.81,1222.3 621.33,848.25 834,592 847.86,575.3 908.86,578.94 930,574 955.62,568.01 \
+961.06,562.4 987,558 1050.7,547.21 1219,568.41 1277,540 1300.9,528.3 1321.1,506.93 1336.1,486.94"];
+	dataset_models_scoreset_ScoreSet -> metadata_models_SraIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="sra_ids (associated_scoresets)",
+		lp="1834.1,898",
+		pos="s,1379.6,1338.6 e,1707,498.18 1384.3,1332 1514.2,1153.6 1727.5,866.59 1779.7,834 1813,813.27 1841.3,846.39 1866,816 1897.4,777.37 \
+1898.8,629.42 1866,592 1825.5,545.83 1771.5,618.31 1729,574 1712,556.28 1706.9,530.52 1706.9,506.31"];
+	dataset_models_scoreset_ScoreSet -> metadata_models_DoiIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="doi_ids (associated_scoresets)",
+		lp="1965.9,898",
+		pos="s,1379.6,1426.5 e,1898.8,498.45 1386.8,1422.7 1531,1345.5 1784.6,1184.5 1890,962 1927.3,883.34 1910.3,628.83 1899.5,506.65"];
+	dataset_models_scoreset_ScoreSet -> metadata_models_PubmedIdentifier	 [arrowhead=dot,
+		arrowtail=dot,
+		dir=both,
+		label="pubmed_ids (associated_scoresets)",
+		lp="1585,898",
+		pos="s,1359.4,1331.6 e,1545.9,504.1 1362.7,1324.1 1364.2,1320.7 1365.6,1317.4 1367,1314 1495.8,1001.1 1525.8,911.77 1546,574 1547.2,553.98 \
+1547,532.27 1546.3,512.26"];
+	dataset_models_scoreset_ScoreSet -> dataset_models_experiment_Experiment	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="experiment (scoresets)",
+		lp="1322.7,1274",
+		pos="s,1282,1331.9 1282,1323.8 1282,1288 1282,1250.3 1282,1216.1"];
+	dataset_models_scoreset_ScoreSet -> dataset_models_scoreset_ScoreSet	 [arrowhead=none,
+		arrowtail=none,
+		dir=both,
+		label="replaces (replaced_by)",
+		lp="1438.2,1474",
+		pos="1379.7,1499.9 1390.5,1495 1397.5,1486.3 1397.5,1474 1397.5,1461.7 1390.5,1453 1379.7,1448.1"];
+	main_models_Licence	 [height=1.7778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Licence<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">legal_code</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">link</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">URLField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">long_name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">short_name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">version</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="542,898",
+		width=2.1944];
+	dataset_models_scoreset_ScoreSet -> main_models_Licence	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="licence (attached_scoresets)",
+		lp="648.91,1274",
+		pos="s,1184.3,1464.6 1176.2,1463.8 1004.1,1444.8 674.8,1398.3 598.17,1314 510.44,1217.5 517.93,1052.5 530.38,962.06"];
+	main_models_Licence -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="430.57,440",
+		pos="e,624.75,35.208 500.01,833.87 461.69,769.06 411,664.68 411,566 411,566 411,566 411,194 411,98.64 528.75,55.839 614.7,37.298"];
+	genome_models_TargetGene	 [height=1.9444,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TargetGene<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ensembl_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">refseq_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">scoreset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">OneToOneField (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">uniprot_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">wt_sequence</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">OneToOneField (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2051,1730",
+		width=2.7083];
+	genome_models_TargetGene -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2409.6,704",
+		pos="e,781.27,25.172 2148.7,1709.6 2220.2,1692.9 2309.3,1667.9 2337,1642 2362.6,1618.1 2390,1658.1 2390,1474 2390,1474 2390,1474 2390,\
+194 2390,21.672 2195.5,82.479 2024,66 1783.9,42.937 1047.4,29.431 791.63,25.337"];
+	genome_models_TargetGene -> dataset_models_scoreset_ScoreSet	 [arrowhead=none,
+		arrowtail=none,
+		dir=both,
+		label="scoreset (target)",
+		lp="1798.1,1638",
+		pos="1953.5,1700.2 1899.3,1683.5 1830.6,1662 1769.8,1642 1634,1597.4 1478.1,1543.2 1379.8,1508.6"];
+	genome_models_WildTypeSequence	 [height=1.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    WildTypeSequence<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">sequence</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2165,1274",
+		width=2.1944];
+	genome_models_TargetGene -> genome_models_WildTypeSequence	 [arrowhead=none,
+		arrowtail=none,
+		dir=both,
+		label="wt_sequence (target)",
+		lp="2144.6,1638",
+		pos="2097.2,1659.9 2100.1,1654 2102.8,1648 2105,1642 2147.4,1528.1 2159.9,1383.3 2163.5,1314.2"];
+	metadata_models_RefseqIdentifier	 [height=1.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    RefseqIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2259,1474",
+		width=2.1944];
+	genome_models_TargetGene -> metadata_models_RefseqIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="refseq_id (associated_targetgenes)",
+		lp="2270.7,1638",
+		pos="s,2148.7,1687.5 2155.7,1683.1 2173.3,1671.6 2190,1658 2203,1642 2228.5,1610.7 2242.6,1567.2 2250.3,1532.3"];
+	metadata_models_EnsemblIdentifier	 [height=1.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    EnsemblIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1820,1474",
+		width=2.1944];
+	genome_models_TargetGene -> metadata_models_EnsemblIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="ensembl_id (associated_targetgenes)",
+		lp="1903.7,1638",
+		pos="s,1953.5,1713 1945.5,1710.5 1905.6,1697.8 1863.5,1676.7 1837.6,1642 1814.4,1611 1810.5,1567.3 1812.1,1532.2"];
+	metadata_models_UniprotIdentifier	 [height=1.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    UniprotIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2020,1474",
+		width=2.1944];
+	genome_models_TargetGene -> metadata_models_UniprotIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="uniprot_id (associated_targetgenes)",
+		lp="2040.8,1638",
+		pos="s,1985.7,1659.8 1981.9,1652.7 1980.2,1649.2 1978.7,1645.6 1977.4,1642 1964.4,1606.2 1974.6,1564.8 1988.3,1532"];
+	genome_models_WildTypeSequence -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2240.6,566",
+		pos="e,781.03,25.233 2174.9,1234 2191,1165.5 2221,1021.6 2221,898 2221,898 2221,898 2221,194 2221,37.101 2048,83.224 1892,66 1678.8,42.457 \
+1029.1,29.473 791.36,25.409"];
+	metadata_models_RefseqIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2241.6,704",
+		pos="e,1665.1,246.39 2258.6,1415.9 2256,1207.1 2236.4,498.73 2089,340 2046.9,294.66 2015.1,315.93 1954,306 1901.6,297.49 1763.8,311.06 \
+1716,288 1699.4,280.01 1684.5,267.37 1671.9,253.92"];
+	metadata_models_EnsemblIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2032.6,704",
+		pos="e,1666.5,246.3 1851.5,1415.9 1899.8,1323.2 1990,1134.6 2023,962 2033.7,906.12 2036.2,889.33 2023,834 2020.9,825.27 2016.3,824.65 \
+2013.9,816 1985.7,713.79 2050.6,419.96 1981,340 1941.6,294.74 1768.7,316.69 1716,288 1700.3,279.47 1685.9,267.05 1673.6,254.02"];
+	metadata_models_UniprotIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2094.6,704",
+		pos="e,1665.2,246.15 2029.3,1415.7 2044.9,1311.9 2075,1088.1 2075,898 2075,898 2075,898 2075,440 2075,387.23 2053,371.96 2011,340 1970.3,\
+309.01 1951.2,316.09 1901,306 1820,289.72 1790,324.71 1716,288 1699.5,279.83 1684.6,267.13 1672,253.68"];
+	genome_models_ReferenceMap	 [height=1.4444,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    ReferenceMap<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">genome</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">target</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">is_primary</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="185,1896",
+		width=2.5];
+	genome_models_ReferenceMap -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="152.57,898",
+		pos="e,624.84,29.4 159.76,1843.8 146.51,1811.8 133,1769.4 133,1730 133,1730 133,1730 133,194 133,151.38 122.78,131.03 152,100 183.17,\
+66.894 466.75,41.362 614.44,30.181"];
+	genome_models_ReferenceMap -> genome_models_TargetGene	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="target (reference_maps)",
+		lp="1048.9,1822",
+		pos="s,275,1888 283.43,1887.2 606.37,1858.5 1631.4,1767.3 1953.3,1738.7"];
+	genome_models_ReferenceGenome	 [height=1.4444,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    ReferenceGenome<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">genome_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">short_name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">species_name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="251,704",
+		width=2.5];
+	genome_models_ReferenceMap -> genome_models_ReferenceGenome	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="genome (associated_reference_maps)",
+		lp="263.48,1474",
+		pos="s,189.77,1843.7 190.4,1835.5 192.76,1804 195,1765 195,1730 195,1730 195,1730 195,1098 195,974.5 222.3,831.37 238.78,756.24"];
+	genome_models_ReferenceGenome -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="352.57,314",
+		pos="e,624.89,30.12 261.26,651.82 290.75,503.05 374.98,86.149 397,66 412.94,51.411 530.13,38.542 614.75,31.011"];
+	metadata_models_GenomeIdentifier	 [height=1.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    GenomeIdentifier<BR/>&lt;<FONT FACE="Helvetica Italic">ExternalIdentifier</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">dbname</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">dbversion</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">url</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">URLField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1189,440",
+		width=2.1944];
+	genome_models_ReferenceGenome -> metadata_models_GenomeIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="genome_id (associated_referencegenomes)",
+		lp="851.27,566",
+		pos="s,341.19,672.31 348.87,669.74 452.78,635 622.52,582.93 773.46,558 845.38,546.12 1035.4,571.84 1101,540 1120.6,530.5 1137.6,514.5 \
+1151.4,498.05"];
+	metadata_models_GenomeIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1351.6,314",
+		pos="e,1550.8,221.71 1232.3,381.85 1245.4,366.83 1260.7,351.64 1277,340 1320.9,308.56 1452,257.82 1541.2,225.2"];
+	genome_models_GenomicInterval	 [height=1.7778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    GenomicInterval<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">reference_map</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">chromosome</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">end</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">start</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">strand</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="96,2064",
+		width=2.6667];
+	genome_models_GenomicInterval -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="85.568,1098",
+		pos="e,624.59,26.999 79.071,1999.9 72.266,1968.7 66,1930.7 66,1896 66,1896 66,1896 66,194 66,114.48 114.19,86.558 191,66 268.41,45.282 \
+489.42,32.955 614.29,27.448"];
+	genome_models_GenomicInterval -> genome_models_ReferenceMap	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="reference_map (intervals)",
+		lp="191.57,1974",
+		pos="s,130.16,1999.5 133.99,1992.3 141.86,1977.4 150.01,1962.1 157.42,1948.1"];
+	main_models_News	 [height=1.2778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    News<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">level</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">text</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1804,194",
+		width=2.1944];
+	main_models_News -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1649.6,74",
+		pos="e,781.37,26.421 1771.8,147.52 1756.9,129.7 1737.7,111.03 1716,100 1634.6,58.714 1023,34.517 791.44,26.756"];
+	main_models_SiteInformation	 [height=2.6111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    SiteInformation<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">branch</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">email</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">EmailField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">md_about</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">md_citation</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">md_documentation</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">md_privacy</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">md_terms</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">md_usage_guide</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">version</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">version_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1983,194",
+		width=2.2778];
+	main_models_SiteInformation -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="1868.6,74",
+		pos="e,781.23,26.267 1900.9,105.1 1898,103.27 1895,101.57 1892,100 1804.5,54.706 1771,75.701 1673,66 1503.5,49.226 997.14,32.762 791.39,\
+26.572"];
+	metadata_models_AnnotationOffset	 [height=0.66667,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    AnnotationOffset
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">target</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">offset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2165,1896",
+		width=2.1111];
+	metadata_models_AnnotationOffset -> genome_models_TargetGene	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="target (%(class)s)",
+		lp="2145.3,1822",
+		pos="s,2148.4,1871.9 2143.6,1864.9 2131.1,1846.6 2114.7,1822.7 2099.2,1800.1"];
+	metadata_models_UniprotOffset	 [height=1.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    UniprotOffset<BR/>&lt;<FONT FACE="Helvetica Italic">AnnotationOffset</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">target</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">offset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2207,2064",
+		width=2.2639];
+	metadata_models_UniprotOffset -> metadata_models_UniprotIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="identifier (offset)",
+		lp="2388.6,1822",
+		pos="s,2241.1,2023.9 2246.1,2017.6 2313.9,1931.5 2437,1745.4 2337,1634 2312.2,1606.4 2204.7,1631.5 2171,1616 2130,1597.1 2092.9,1562.6 \
+2065.7,1532.4"];
+	metadata_models_UniprotOffset -> metadata_models_AnnotationOffset	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2205.6,1974",
+		pos="e,2171.1,1920.3 2196.9,2023.8 2189.8,1995.2 2180.3,1957.2 2173.5,1930.1"];
+	metadata_models_RefseqOffset	 [height=1.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    RefseqOffset<BR/>&lt;<FONT FACE="Helvetica Italic">AnnotationOffset</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">target</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">offset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="2425,2064",
+		width=2.2639];
+	metadata_models_RefseqOffset -> metadata_models_RefseqIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="identifier (offset)",
+		lp="2456.6,1822",
+		pos="s,2429.3,2024 2429.9,2015.8 2436.2,1933.2 2439.9,1761.2 2379,1634 2361.5,1597.5 2335.1,1561.1 2311.5,1532.3"];
+	metadata_models_RefseqOffset -> metadata_models_AnnotationOffset	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2314.6,1974",
+		pos="e,2202.4,1920.1 2363.1,2024 2316.3,1993.7 2253.1,1952.9 2210.8,1925.6"];
+	metadata_models_EnsemblOffset	 [height=1.1111,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    EnsemblOffset<BR/>&lt;<FONT FACE="Helvetica Italic">AnnotationOffset</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">identifier</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ItalicBold">target</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ItalicBold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">offset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica Italic">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="1839,2064",
+		width=2.2639];
+	metadata_models_EnsemblOffset -> metadata_models_EnsemblIdentifier	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="identifier (offset)",
+		lp="1784.6,1822",
+		pos="s,1820.1,2024 1816.8,2016.6 1782.6,1937.3 1723.7,1773 1752,1634 1759.2,1598.8 1774.4,1561.8 1788.6,1532.2"];
+	metadata_models_EnsemblOffset -> metadata_models_AnnotationOffset	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="2040.6,1974",
+		pos="e,2118.2,1920.1 1916.7,2024 1976,1993.4 2056.2,1952.1 2109.2,1924.7"];
+	variant_models_Variant	 [height=1.7778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Variant<BR/>&lt;<FONT FACE="Helvetica Italic">UrnModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">scoreset</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">data</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">JSONField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">hgvs_nt</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">hgvs_pro</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">TextField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">urn</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="621,1730",
+		width=2.5];
+	variant_models_Variant -> urn_models_UrnModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="388.57,898",
+		pos="e,685.35,222.18 530.73,1684.9 458.43,1641.7 369,1569.1 369,1474 369,1474 369,1474 369,898 369,835.96 349.38,387.75 389,340 456.2,\
+259.01 529.44,341.6 620,288 643.93,273.83 664.65,250.4 679.4,230.47"];
+	variant_models_Variant -> dataset_models_scoreset_ScoreSet	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="scoreset (variants)",
+		lp="885.9,1638",
+		pos="s,711.18,1695.1 718.92,1692.1 844.06,1643.6 1059.4,1560.2 1184.4,1511.8"];
+	accounts_models_Profile	 [height=1.2778,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Profile<BR/>&lt;<FONT FACE="Helvetica Italic">TimeStampedModel</FONT>&gt;
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">user</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">OneToOneField (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">email</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">EmailField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Italic">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Italic">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="566,440",
+		width=2.7083];
+	accounts_models_Profile -> django_contrib_auth_models_User	 [arrowhead=none,
+		arrowtail=none,
+		dir=both,
+		label="user (profile)",
+		lp="757.45,314",
+		pos="610.41,393.76 628.86,375.84 651.06,355.87 673,340 698.49,321.56 706.23,318.51 735.1,306 758.66,295.79 768.2,301.56 790,288 822.77,\
+267.62 852.37,233.18 868.7,212.13"];
+	accounts_models_Profile -> core_models_TimeStampedModel	 [arrowhead=empty,
+		arrowtail=none,
+		dir=both,
+		label="abstract\ninheritance",
+		lp="596.57,194",
+		pos="e,636.95,48.131 554.45,393.87 539.85,324.73 522.65,192.47 576.86,100 588.63,79.923 607.98,64.514 628.03,52.993"];
+}
