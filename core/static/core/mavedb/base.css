@@ -136,7 +136,7 @@ code {
 ---------------------------------------------------------------------------  */
 table th {
     white-space: nowrap !important;
-    width: 1% !important;
+    /*width: 1% !important;*/
 }
 table {
     width: 100%;
@@ -146,11 +146,12 @@ table {
   word-break: keep-all;
 }
 
+
 #search-table, #counts-table, #scores-table {
     border: 2px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
-    display: block;
-    min-width: 25% !important;
+    /*display: block;*/
+    /*min-width: 25% !important;*/
     overflow-x: auto;
 }
 
@@ -167,6 +168,16 @@ table {
     font-size: 14px;
     /*line-height: 0.10em;*/
     border: 1px solid white;
+}
+
+td.details-control {
+    text-align:center;
+    color: #987cb8;
+    cursor: pointer;
+}
+tr.shown td.details-control {
+    text-align: center;
+    color: #987cb8;
 }
 
 .styled-table .input-group .form-control,
