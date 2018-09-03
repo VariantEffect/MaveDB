@@ -19,6 +19,9 @@ from .permissions import (
     valid_model_instance,
 )
 
+from dataset import models
+
+
 User = get_user_model()
 logger = logging.getLogger("django")
 
@@ -217,7 +220,19 @@ class SelectUsersForm(forms.Form):
         update_admin_list_for_instance(new_administrators, self.instance)
         update_editor_list_for_instance(new_editors, self.instance)
         update_viewer_list_for_instance(new_viewers, self.instance)
-        
+
+        # By default, adds the user as a Viewer to all parents.
+        for user in list(new_administrators) + list(new_editors) + list(new_viewers):
+            instance = self.instance
+            while instance.parent:
+                if user not in instance.parent.contributors():
+                    instance.parent.add_viewers(user)
+                    user.profile.notify_user_group_change(
+                        instance=instance.parent,
+                        action='added', group=GroupTypes.VIEWER
+                    )
+                instance = instance.parent
+
         for user, group in existing_users.items():
             if user not in new_users:
                 user.profile.notify_user_group_change(

@@ -1,7 +1,8 @@
 from django.test import TestCase, mock
 from django.contrib.auth import get_user_model
 
-from dataset.factories import ExperimentFactory
+from dataset.factories import ExperimentFactory, \
+    ExperimentSetFactory, ScoreSetFactory
 
 from ..factories import UserFactory
 from ..forms import SelectUsersForm
@@ -179,3 +180,47 @@ class TestSelectUsersForm(TestCase):
             'action': 'removed',
             'group': GroupTypes.EDITOR,
         })
+
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_sends_mail_when_adding_user_as_viewer_to_parents(self, patch):
+        instance = ScoreSetFactory()
+        form = SelectUsersForm(
+            data={"administrators": [self.user1.pk]},
+            instance=instance,
+        )
+        self.assertFalse(form.errors)
+        form.process_user_list()
+        self.assertDictEqual(
+            patch.call_args_list[0][1], {
+            'instance': instance.parent,
+            'action': 'added',
+            'group': GroupTypes.VIEWER,
+        })
+        self.assertDictEqual(
+            patch.call_args_list[1][1], {
+            'instance': instance.parent.parent,
+            'action': 'added',
+            'group': GroupTypes.VIEWER,
+        })
+
+    def test_adds_user_as_viewer_to_parents_by_default(self):
+        instance = ScoreSetFactory()
+        form = SelectUsersForm(
+            data={"administrators": [self.user1.pk]},
+            instance=instance,
+        )
+        self.assertFalse(form.errors)
+        form.process_user_list()
+        self.assertIn(self.user1, instance.parent.viewers())
+        self.assertIn(self.user1, instance.parent.parent.viewers())
+
+    def test_does_not_change_parent_membership(self):
+        instance = ScoreSetFactory()
+        instance.parent.add_editors(self.user1)
+        form = SelectUsersForm(
+            data={"administrators": [self.user1.pk]},
+            instance=instance,
+        )
+        self.assertFalse(form.errors)
+        form.process_user_list()
+        self.assertIn(self.user1, instance.parent.editors())
