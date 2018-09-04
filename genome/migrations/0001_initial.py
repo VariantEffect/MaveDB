@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                 ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
                 ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
                 ('short_name', models.CharField(default=None, max_length=256, validators=[genome.validators.validate_genome_short_name], verbose_name='Name')),
-                ('species_name', models.CharField(default=None, max_length=256, validators=[genome.validators.validate_species_name], verbose_name='Species')),
+                ('species_name', models.CharField(default=None, max_length=256, validators=[genome.validators.validate_organism_name], verbose_name='Species')),
             ],
             options={
                 'verbose_name': 'Reference Genome',
