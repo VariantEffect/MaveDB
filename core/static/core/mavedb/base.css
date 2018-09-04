@@ -146,6 +146,10 @@ table {
   word-break: keep-all;
 }
 
+.no-hover {
+  background-color: unset !important;
+}
+
 
 #search-table, #counts-table, #scores-table {
     border: 2px solid #987cb8;
