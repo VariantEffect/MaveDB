@@ -14,13 +14,15 @@ class TestUtilities(TestCase):
         scs1 = factories.ScoreSetFactory(experiment=exp)
         scs2 = factories.ScoreSetFactory(experiment=exp)
         results = group_children([exp], [scs1, scs2])
-        expected = {exp: {scs1, scs2}}
+        expected = {exp: list(
+            reversed(sorted({scs1, scs2}, key=lambda i: i.urn)))
+        }
         self.assertDictEqual(results, expected)
 
     def test_group_adds_parents_to_keys_if_missing(self):
         scs = factories.ScoreSetFactory()
         results = group_children([], [scs])
-        expected = {scs.parent: {scs}}
+        expected = {scs.parent: [scs]}
         self.assertDictEqual(results, expected)
 
 

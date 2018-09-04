@@ -17,6 +17,8 @@ def group_children(parents, children):
             grouped[child.parent].add(child)
         else:
             grouped[child.parent] = {child}
+    grouped = {p: list(reversed(sorted(v, key=lambda i: i.urn)))
+               for (p, v) in grouped.items()}
     return grouped
 
 

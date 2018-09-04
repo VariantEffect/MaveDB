@@ -53,11 +53,11 @@
         <div class="container highlights hover-card">
           <div class="row">
             <div class="col">
-              <h5>Species</h5>
+              <h5>Organisms</h5>
               <ul>
-                {% for i in top_species %}
+                {% for i in top_organisms %}
                   <li>
-                    <a href="/search/?species={{ i|first }}">{{ i|last|safe }}</a>
+                    <a href="/search/?organism={{ i|first }}">{{ i|last|safe }}</a>
                   </li>
                 {% endfor %}
               </ul>
@@ -94,17 +94,17 @@
       <div class="container hover-card quick-search">
         <div class="row">
           <div class="col">
-            <h5>All species</h5>
+            <h5>All organisms</h5>
             <form action="/search/" method="GET">
-              <select onchange="this.form.submit()" class="form-control" name="species" title="species">
-                <option value="" selected="">-- Select a species --</option>
-                <optgroup label="Top species" class="form-control">
-                  {% for top in top_species %}
+              <select onchange="this.form.submit()" class="form-control" name="organism" title="organism">
+                <option value="" selected="">-- Select an organism --</option>
+                <optgroup label="Top organisms" class="form-control">
+                  {% for top in top_organisms %}
                     <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
                   {% endfor %}
                 </optgroup>
-                <optgroup label="All species" class="form-control">
-                  {% for s in all_species %}
+                <optgroup label="All organism" class="form-control">
+                  {% for s in all_organisms %}
                     <option class="form-control" value="{{ s }}">{{ s }}</option>
                   {% endfor %}
                 </optgroup>

@@ -59,7 +59,7 @@ class BasicSearchForm(forms.Form):
         # ScoreSet/Experiment filter fields
         # -------------------------------------------------------------- #
         data[ds_filters.ScoreSetFilter.TARGET] = value
-        data[ds_filters.ScoreSetFilter.SPECIES] = value
+        data[ds_filters.ScoreSetFilter.ORGANISM] = value
         data[ds_filters.ScoreSetFilter.GENOME] = value
         data[ds_filters.ScoreSetFilter.UNIPROT] = value
         data[ds_filters.ScoreSetFilter.ENSEMBL] = value
@@ -133,9 +133,9 @@ class AdvancedSearchForm(forms.Form):
         label='Target gene name', required=False,
         help_text='Search by a target\'s gene name.',
     )
-    species = fields.CSVCharField(
-        label='Reference species', required=False,
-        help_text='Search by a target\'s reference genome species.',
+    organism = fields.CSVCharField(
+        label='Reference organism', required=False,
+        help_text='Search by a target\'s reference genome organism.',
     )
     genome = fields.CSVCharField(
         label='Reference name/assembly identifier', required=False,
@@ -261,10 +261,10 @@ class AdvancedSearchForm(forms.Form):
                 for i in GenomeIdentifier.objects.all()
             ]))
         )
-        self.fields['species'].widget = forms.SelectMultiple(
+        self.fields['organism'].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
             choices=sorted(set([
-                (i.species_name, i.species_name)
+                (i.organism_name, i.organism_name)
                 for i in ReferenceGenome.objects.all()
             ]))
         )
@@ -342,7 +342,7 @@ class AdvancedSearchForm(forms.Form):
         # ScoreSet/Experiment filter fields
         # ------------------------------------------------------------------- #
         target = ','.join(self.cleaned_data.get('target', []))
-        species = ','.join(self.cleaned_data.get('species', []))
+        organism = ','.join(self.cleaned_data.get('organism', []))
         genome = ','.join(self.cleaned_data.get('genome', []))
         uniprot = ','.join(self.cleaned_data.get('uniprot', []))
         ensembl = ','.join(self.cleaned_data.get('ensembl', []))
@@ -351,8 +351,8 @@ class AdvancedSearchForm(forms.Form):
         
         if target:
             data[ds_filters.ScoreSetFilter.TARGET] = target
-        if species:
-            data[ds_filters.ScoreSetFilter.SPECIES] = species
+        if organism:
+            data[ds_filters.ScoreSetFilter.ORGANISM] = organism
         if genome:
             data[ds_filters.ScoreSetFilter.GENOME] = genome
         if uniprot:

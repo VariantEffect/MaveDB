@@ -302,7 +302,7 @@ class TestExperimentFilter(TestCase):
         target1.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000267816')
         genome1.short_name = 'HG17'
-        genome1.species_name = 'Homo sapiens'
+        genome1.organism_name = 'Homo sapiens'
         genome1.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000146045.2')
         target1.save()
@@ -320,7 +320,7 @@ class TestExperimentFilter(TestCase):
         target2.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000198001')
         genome2.short_name = 'HG18'
-        genome2.species_name = 'Synthetic sequence'
+        genome2.organism_name = 'Synthetic sequence'
         genome2.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000001405.26')
         target2.save()
@@ -394,13 +394,13 @@ class TestExperimentFilter(TestCase):
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
 
-    def test_search_by_targetgene_species(self):
+    def test_search_by_targetgene_organism(self):
         f = filters.ExperimentFilter(
             data={
-                filters.ExperimentFilter.SPECIES:
+                filters.ExperimentFilter.ORGANISM:
                     self.instance1.children.first().target.
                         reference_maps.first().
-                        genome.species_name,
+                        genome.organism_name,
             },
             queryset=self.queryset,
         )
@@ -515,7 +515,7 @@ class TestScoreSetFilter(TestCase):
         target1.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000267816')
         genome1.short_name = 'HG17'
-        genome1.species_name = 'Homo sapiens'
+        genome1.organism_name = 'Homo sapiens'
         genome1.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000146045.2')
         target1.save()
@@ -531,7 +531,7 @@ class TestScoreSetFilter(TestCase):
         target2.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000198001')
         genome2.short_name = 'HG18'
-        genome2.species_name = 'Synthetic sequence'
+        genome2.organism_name = 'Synthetic sequence'
         genome2.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000001405.26')
         target2.save()
@@ -633,12 +633,12 @@ class TestScoreSetFilter(TestCase):
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
     
-    def test_search_by_targetgene_species(self):
+    def test_search_by_targetgene_organism(self):
         f = filters.ScoreSetFilter(
             data={
-                filters.ScoreSetFilter.SPECIES:
+                filters.ScoreSetFilter.ORGANISM:
                     self.instance1.target.reference_maps.first().
-                        genome.species_name,
+                        genome.organism_name,
             },
             queryset=self.queryset,
         )

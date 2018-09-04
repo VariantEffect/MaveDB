@@ -10,9 +10,9 @@
     </p>
 
     <p>
-      <strong>Species: </strong>
-      <a href="/search/?species={{ instance.get_target.get_reference_genomes.first.get_species_name }}">
-        {{ instance.get_target.get_reference_genomes.first.format_species_name_html|safe }}
+      <strong>Organism: </strong>
+      <a href="/search/?organism={{ instance.get_target.get_reference_genomes.first.get_organism_name }}">
+        {{ instance.get_target.get_reference_genomes.first.format_organism_name_html|safe }}
       </a>
     </p>
 

@@ -17,11 +17,11 @@ def get_top_n(n, ls):
 
 def home_view(request):
     # Tuples are required to allow search GET requests to be contructed from the
-    # species raw text instead of the formatted text. The other fields are
+    # organism raw text instead of the formatted text. The other fields are
     # tuple-ized for template compatibility.
     news_items = News.recent_news()
-    species = [
-        (g.get_species_name(), g.format_species_name_html())
+    organism = [
+        (g.get_organism_name(), g.format_organism_name_html())
         for s in ScoreSet.objects.exclude(private=True)
         for g in s.get_target().get_reference_genomes()
     ]
@@ -43,10 +43,10 @@ def home_view(request):
     return render(request, 'main/home.html', {
         "news_items": news_items,
         "site_information": SiteInformation.get_instance(),
-        "top_species": sorted(get_top_n(3, species)),
+        "top_organisms": sorted(get_top_n(3, organism)),
         "top_targets": sorted(get_top_n(3, targets)),
         "top_keywords": sorted(get_top_n(3, keywords)),
-        "all_species": sorted(set([i[0] for i in species])),
+        "all_organisms": sorted(set([i[0] for i in organism])),
         "all_targets": sorted(set([i[0] for i in targets]))
     })
 

@@ -66,17 +66,17 @@ class TestReferenceGenomeModel(TestCase):
         self.assertIsNone(ref.get_identifier_url())
         self.assertIsNone(ref.get_identifier_instance())
 
-    def test_format_species_name_captializes(self):
+    def test_format_organism_name_captializes(self):
         ref = ReferenceGenomeFactory()
         self.assertIn(
-            ref.get_species_name().capitalize(),
-            ref.format_species_name_html()
+            ref.get_organism_name().capitalize(),
+            ref.format_organism_name_html()
         )
 
-    def test_format_species_name_html_capitalises(self):
+    def test_format_organism_name_html_capitalises(self):
         ref = ReferenceGenomeFactory()
-        expected = "<i>{}</i>".format(ref.get_species_name().capitalize())
-        self.assertEqual(ref.format_species_name_html(), expected)
+        expected = "<i>{}</i>".format(ref.get_organism_name().capitalize())
+        self.assertEqual(ref.format_organism_name_html(), expected)
 
     def test_delete_identifier_sets_field_as_none(self):
         genome = ReferenceGenomeFactory()

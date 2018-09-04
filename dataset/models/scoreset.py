@@ -212,7 +212,7 @@ class ScoreSet(DatasetModel):
         if not self.get_target():
             return set()
         return set([
-            g.get_species_name()
+            g.get_organism_name()
             for g in self.get_target().get_reference_genomes()
         ])
 
@@ -220,7 +220,7 @@ class ScoreSet(DatasetModel):
         if not self.get_target():
             return set()
         return set(sorted([
-            r.format_reference_genome_species_html()
+            r.format_reference_genome_organism_html()
             for r in self.get_target().get_reference_maps()
         ]))
 

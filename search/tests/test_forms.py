@@ -16,11 +16,11 @@ class TestAdvancedSearchForm(TestCase):
         
     def test_format_for_filter_does_not_split_on_double_quotes(self):
         request = RequestFactory().get("/?{key}=Homo&{key}=\"s,d\"".format(
-            key=ds_filters.ScoreSetFilter.SPECIES))
+            key=ds_filters.ScoreSetFilter.ORGANISM))
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.ScoreSetFilter.SPECIES], 'Homo,"s,d"')
+            result[ds_filters.ScoreSetFilter.ORGANISM], 'Homo,"s,d"')
     
     # DatasetModel Filter fields
     # ------------------------------------------------------------------- #
@@ -132,13 +132,13 @@ class TestAdvancedSearchForm(TestCase):
         self.assertEqual(
             result[ds_filters.ScoreSetFilter.TARGET], 'BRCA1,JAK')
         
-    def test_format_for_filter_formats_species_field(self):
+    def test_format_for_filter_formats_organism_field(self):
         request = RequestFactory().get("/?{key}=Homo&{key}=Sapiens".format(
-            key=ds_filters.ScoreSetFilter.SPECIES))
+            key=ds_filters.ScoreSetFilter.ORGANISM))
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.ScoreSetFilter.SPECIES], 'Homo,Sapiens')
+            result[ds_filters.ScoreSetFilter.ORGANISM], 'Homo,Sapiens')
         
     def test_format_for_filter_formats_genome_field(self):
         request = RequestFactory().get("/?{key}=111&{key}=222".format(

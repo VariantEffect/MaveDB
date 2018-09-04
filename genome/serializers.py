@@ -4,9 +4,6 @@ from metadata.serializers import (
     UniprotOffsetSerializer,
     EnsemblOffsetSerializer,
     RefseqOffsetSerializer,
-    UniprotIdentifierSerializer,
-    EnsemblIdentifierSerializer,
-    RefseqIdentifierSerializer,
     GenomeIdentifierSerializer
 )
 
@@ -29,7 +26,7 @@ class ReferenceGenomeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReferenceGenome
-        fields = ('short_name', 'species_name', 'assembly_identifier',)
+        fields = ('short_name', 'organism_name', 'assembly_identifier',)
         read_only_fields = fields
 
 

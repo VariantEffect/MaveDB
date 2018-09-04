@@ -3,8 +3,12 @@ from django.test import TestCase
 from metadata.factories import (
     UniprotOffsetFactory, EnsemblOffsetFactory, RefseqOffsetFactory
 )
-from ..factories import TargetGeneFactory, ReferenceMapWithIntervalsFactory
-from ..serializers import TargetGeneSerializer, ReferenceMapSerializer
+
+from metadata.serializers import GenomeIdentifierSerializer
+from ..factories import TargetGeneFactory, ReferenceMapWithIntervalsFactory, \
+    ReferenceGenomeFactory
+from ..serializers import TargetGeneSerializer, ReferenceMapSerializer, \
+    ReferenceGenomeSerializer
 
 
 class TestTargetGeneSerializer(TestCase):
@@ -60,3 +64,13 @@ class TestReferenceMapSerializer(TestCase):
         data = ReferenceMapSerializer(rm).data
         self.assertNotIn('intervals', data)
         self.assertNotIn('is_primary', data)
+        
+        
+class TestReferenceGenomeSerializer(TestCase):
+    def test_reference_genome_serializer(self):
+        rg = ReferenceGenomeFactory()
+        data = ReferenceGenomeSerializer(rg).data
+        self.assertEqual(data['organism_name'], rg.organism_name)
+        self.assertEqual(data['short_name'], rg.short_name)
+        genome_id_data = GenomeIdentifierSerializer(rg.genome_id).data
+        self.assertDictEqual(data['assembly_identifier'], genome_id_data)

@@ -10,12 +10,10 @@ from core.mixins import SingletonMixin
 from core.models import TimeStampedModel
 
 from accounts.mixins import GroupPermissionMixin
-from accounts import permissions
 
 from core.utilities import pandoc
 from metadata.models import (
-    Keyword, SraIdentifier, DoiIdentifier,
-    PubmedIdentifier, ExternalIdentifier
+    Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier,
 )
 from urn.models import UrnModel
 

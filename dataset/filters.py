@@ -160,7 +160,7 @@ class ExperimentFilter(DatasetModelFilter):
     additional fields on scoresets:
         - licence
         - target
-        - species
+        - organism
         - genome
         - uniprot
         - ensembl
@@ -168,7 +168,7 @@ class ExperimentFilter(DatasetModelFilter):
     """
     LICENCE = 'licence'
     TARGET = 'target'
-    SPECIES = 'species'
+    ORGANISM = 'organism'
     GENOME = 'genome'
     UNIPROT = 'uniprot'
     ENSEMBL = 'ensembl'
@@ -177,14 +177,14 @@ class ExperimentFilter(DatasetModelFilter):
     class Meta(DatasetModelFilter.Meta):
         model = models.experiment.Experiment
         fields = DatasetModelFilter.Meta.fields + (
-            'licence', 'genome', 'target', 'species',
+            'licence', 'genome', 'target', 'organism',
             'uniprot', 'ensembl', 'refseq'
         )
 
     licence = CSVCharFilter(method='filter_by_scoreset')
     genome = CSVCharFilter(method='filter_by_scoreset')
     target = CSVCharFilter(method='filter_by_scoreset')
-    species = CSVCharFilter(method='filter_by_scoreset')
+    organism = CSVCharFilter(method='filter_by_scoreset')
     uniprot = CSVCharFilter(method='filter_by_scoreset')
     ensembl = CSVCharFilter(method='filter_by_scoreset')
     refseq = CSVCharFilter(method='filter_by_scoreset')
@@ -212,7 +212,7 @@ class ScoreSetFilter(DatasetModelFilter):
     additional fields:
         - licence
         - target
-        - species
+        - organism
         - genome
         - uniprot
         - ensembl
@@ -220,7 +220,7 @@ class ScoreSetFilter(DatasetModelFilter):
     """
     LICENCE = 'licence'
     TARGET = 'target'
-    SPECIES = 'species'
+    ORGANISM = 'organism'
     GENOME = 'genome'
     UNIPROT = 'uniprot'
     ENSEMBL = 'ensembl'
@@ -229,7 +229,7 @@ class ScoreSetFilter(DatasetModelFilter):
     class Meta(DatasetModelFilter.Meta):
         model = models.scoreset.ScoreSet
         fields = DatasetModelFilter.Meta.fields + (
-            'licence', 'genome', 'target', 'species',
+            'licence', 'genome', 'target', 'organism',
             'uniprot', 'ensembl', 'refseq'
         )
 
@@ -238,8 +238,8 @@ class ScoreSetFilter(DatasetModelFilter):
     target = CSVCharFilter(
         field_name='target__name', lookup_expr='icontains'
     )
-    species = CSVCharFilter(
-        field_name='target__reference_maps__genome__species_name',
+    organism = CSVCharFilter(
+        field_name='target__reference_maps__genome__organism_name',
         lookup_expr='icontains'
     )
     uniprot = CSVCharFilter(

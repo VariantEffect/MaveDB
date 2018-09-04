@@ -28,23 +28,23 @@ def display_targets(instance, user, javascript=False):
 
 
 @register.simple_tag
-def display_species(instance, user, javascript=False):
-    species = set()
+def display_organism(instance, user, javascript=False):
+    organism_names = set()
     if isinstance(instance, models.experiment.Experiment):
         for child in instance.children:
             if child.private and user in child.contributors():
-                species |= child.get_display_target_organisms()
+                organism_names |= child.get_display_target_organisms()
             elif not child.private:
-                species |= child.get_display_target_organisms()
+                organism_names |= child.get_display_target_organisms()
     elif isinstance(instance, models.scoreset.ScoreSet):
-        species |= instance.get_display_target_organisms()
-    if not species:
+        organism_names |= instance.get_display_target_organisms()
+    if not organism_names:
         if javascript:
             return mark_safe(json.dumps(['-']))
         return '-'
     if javascript:
-        return mark_safe(json.dumps(sorted(list(species))))
-    return mark_safe(', '.join(sorted(list(species))))
+        return mark_safe(json.dumps(sorted(list(organism_names))))
+    return mark_safe(', '.join(sorted(list(organism_names))))
 
 
 @register.assignment_tag

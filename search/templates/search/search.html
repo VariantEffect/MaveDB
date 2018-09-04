@@ -41,9 +41,9 @@
   </div> <!-- end row -->
   <hr>
 
-  <div class="styled-table mt-4">
+  <div id="table-wrapper" class="styled-table mt-4">
     <div id="search-table-container" class="table-responsive">
-      <table id="search-table" class="styled-table table table-hover display" style="width: 100%">
+      <table id="search-table" class="styled-table table table-hover display" style="width: 100%;">
         <thead>
           <tr>
             <th style="max-width: 15px !important;"></th>
@@ -58,7 +58,6 @@
     </div>
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
@@ -70,7 +69,7 @@
           "urn": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
           "description": "{{ instance.short_description|default:"-"|escapejs }}",
           "target": [{% display_targets instance request.user True %}][0].join(', '),
-          "organism": [{% display_species instance request.user True %}][0].join(', '),
+          "organism": [{% display_organism instance request.user True %}][0].join(', '),
           "contributors": "" +
             {% for c in instance.contributors %}
               "<span>" +
@@ -80,13 +79,14 @@
             {% endfor %}
           "",
           "children": [
-            {% for child in instance.children %}
+            {% get_item instances instance as children %}
+            {% for child in children %}
               {% if child.private and request.user in child.contributors or not child.private %}
                 {
                   "urn": "<a href=\"{{ child.get_url }}\">{% format_urn_name_for_user child request.user %}</a>",
                   "description": "{{ child.short_description|default:"-"|escapejs }}",
                   "target": [{% display_targets child request.user True %}][0].join(', '),
-                  "organism": [{% display_species child request.user True %}][0].join(', '),
+                  "organism": [{% display_organism child request.user True %}][0].join(', '),
                   "contributors": "" +
                     {% for c in child.contributors %}
                       "<span>" +
@@ -94,7 +94,7 @@
                       "<i class=\"external-link-small fas fa-external-link-alt\"></i>" +
                       "</span><br>" +
                     {% endfor %}
-                  "",
+                  ""
                 },
               {% endif %}
             {% endfor %}
@@ -131,7 +131,9 @@
       ],
       order: [[1, 'asc']]
     });
+
     setTimeout(init_select2, 2000);
+    $(".no-hover").parent().parent().addClass("no-hover");
 
     // Add event listener for opening and closing details
     $('#search-table tbody').on('click', 'td.details-control', function () {
@@ -145,6 +147,8 @@
          var tdi = tr.find(".fa-minus-square");
          tdi.first().removeClass('fa-minus-square');
          tdi.first().addClass('fa-plus-square');
+
+         row.child().removeClass("no-hover");
        }
        else {
          // Open this row
@@ -153,6 +157,8 @@
          var tdi = tr.find(".fa-plus-square");
          tdi.first().removeClass('fa-plus-square');
          tdi.first().addClass('fa-minus-square');
+
+         row.child().addClass("no-hover");
        }
     });
   });
@@ -161,7 +167,7 @@
     var html = "";
     for (var i=0; i < rowData.children.length; i++) {
       html += (
-        "<tr class=\"no-hover\">" +
+        "<tr>" +
           {#"<td></td>" +#}
           "<td>" + rowData.children[i].urn + "</td>" +
           "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +

@@ -321,7 +321,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         genome = reference_map.get_reference_genome()
 
         self.assertEqual(genome.get_short_name(), self.ref.get_short_name())
-        self.assertEqual(genome.get_species_name(), self.ref.get_species_name())
+        self.assertEqual(genome.get_organism_name(), self.ref.get_organism_name())
 
     def test_experiment_options_are_restricted_to_admin_instances(self):
         exp1 = ExperimentFactory()
