@@ -151,11 +151,18 @@ table {
 }
 
 
-#search-table, #counts-table, #scores-table {
+#search-table {
     border: 2px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
-    /*display: block;*/
-    /*min-width: 25% !important;*/
+    display: block;
+    overflow-x: scroll;
+}
+
+#counts-table, #scores-table {
+    border: 2px solid #987cb8;
+    padding: 0 0.25px 0.25px 1px;
+    display: block;
+    min-width: 25% !important;
     overflow-x: auto;
 }
 
