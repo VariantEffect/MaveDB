@@ -3,6 +3,7 @@ from hgvsp.protein import substitution_re, delins_re, \
 
 from django.core.exceptions import ValidationError
 
+from ... import constants
 
 def validate_substitution(hgvs):
     match = substitution_re.fullmatch(hgvs)
@@ -10,15 +11,15 @@ def validate_substitution(hgvs):
         raise ValidationError(
             "'{}' is not a supported substitution syntax.".format(hgvs))
     
-    ref = match.groupdict().get('ref', None)
-    new = match.groupdict().get('new', None)
+    ref = match.groupdict().get(constants.hgvsp_pro_ref, None)
+    alt = match.groupdict().get(constants.hgvsp_pro_alt, None)
     
-    silent = match.groupdict().get('silent', False)
-    unknown = match.groupdict().get('unknown', False)
-    no_protein = match.groupdict().get('no_protein', False)
+    silent = match.groupdict().get(constants.hgvsp_silent, False)
+    unknown = match.groupdict().get(constants.hgvsp_unknown, False)
+    no_protein = match.groupdict().get(constants.hgvsp_pro_no_protein, False)
     
     if not (silent or unknown or no_protein):
-        if (ref is not None and new is not None) and ref == new:
+        if (ref is not None and alt is not None) and ref == alt:
             raise ValidationError(
                 "Reference amino acid cannot be the same as the "
                 "new amino acid for variant '{}'. This should be described"
@@ -52,9 +53,3 @@ def validate_frame_shift(hgvs):
     if match is None:
         raise ValidationError(
             "'{}' is not a supported frame shift syntax.".format(hgvs))
-    
-    aa_2 = match.groupdict().get('aa_2', None)
-    if aa_2 and aa_2 in ('Ter', '*'):
-        raise ValidationError(
-            "Amino acid '{}' preceeding 'fs' in a frame shift cannot "
-            "be 'Ter' or '*'.".format(aa_2))
