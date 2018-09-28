@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='profile',
-            name='auth_token_expriy',
+            name='auth_token_expiry',
             field=models.DateField(default=None, null=True),
         ),
     ]

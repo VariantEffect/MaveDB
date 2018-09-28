@@ -63,7 +63,7 @@ def profile_settings(request):
         profile.save()
         return JsonResponse({
             'token': profile.auth_token,
-            'expiry': profile.auth_token_expriy
+            'expiry': profile.auth_token_expiry
         })
     
     if request.method == "POST":
