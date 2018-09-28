@@ -27,7 +27,7 @@ from .permissions import (
     instances_for_user_with_group_permission
 )
 
-
+AUTH_TOKEN = r'[a-zA-Z0-9]{{64}}'
 logger = logging.getLogger('django')
 
 

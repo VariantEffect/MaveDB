@@ -1,6 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from django.conf.urls import url
 
+from accounts.models import AUTH_TOKEN
 from dataset.constants import scoreset_url_pattern
 
 from . import views
@@ -24,19 +25,23 @@ user_list = views.UserViewset.as_view({'get': 'list'})
 user_detail = views.UserViewset.as_view({'get': 'retrieve'})
 
 
+
 scoreset_urls = [
     url(
-        r"^scoresets/(?P<urn>{})/scores/$".format(scoreset_url_pattern),
+        r"^scoresets/(?P<urn>{})/scores/$".format(
+            scoreset_url_pattern),
         views.scoreset_score_data,
         name="api_download_score_data"
     ),
     url(
-        r"^scoresets/(?P<urn>{})/counts/$".format(scoreset_url_pattern),
+        r"^scoresets/(?P<urn>{})/counts/$".format(
+            scoreset_url_pattern),
         views.scoreset_count_data,
         name="api_download_count_data"
     ),
     url(
-        r"^scoresets/(?P<urn>{})/metadata/$".format(scoreset_url_pattern),
+        r"^scoresets/(?P<urn>{})/metadata/$".format(
+            scoreset_url_pattern),
         views.scoreset_metadata,
         name="api_download_metadata"
     )
