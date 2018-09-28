@@ -47,11 +47,11 @@ class TestUserProfile(TestCase):
         
     def test_generate_token_creates_new_token_expiry_date_days_from_today(self):
         user = User.objects.create(username="bob", password="secretkey")
-        self.assertIsNone(user.profile.auth_token_expriy)
+        self.assertIsNone(user.profile.auth_token_expiry)
         user.profile.generate_token()
         today = datetime.date.today()
         self.assertEqual(
-            user.profile.auth_token_expriy,
+            user.profile.auth_token_expiry,
             today + timedelta(days=Profile.TOKEN_EXPIRY)
         )
         
@@ -67,7 +67,7 @@ class TestUserProfile(TestCase):
         user.profile.generate_token()
         self.assertTrue(
             user.profile.auth_token_is_valid(user.profile.auth_token))
-        user.profile.auth_token_expriy -= timedelta(days=10)
+        user.profile.auth_token_expiry -= timedelta(days=10)
         user.profile.save()
         self.assertFalse(
             user.profile.auth_token_is_valid(user.profile.auth_token))
