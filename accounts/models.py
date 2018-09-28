@@ -1,4 +1,6 @@
 import logging
+import datetime
+from datetime import timedelta
 
 from social_django.models import UserSocialAuth
 
@@ -10,6 +12,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.html import format_html
 from django.shortcuts import reverse
+from django.utils.crypto import get_random_string
 
 from core.models import TimeStampedModel
 from core.tasks import send_mail
@@ -40,11 +43,27 @@ class Profile(TimeStampedModel):
     user : :class:`models.OnOneToOneField`
         The foreign key relationship associating a profile with a user.
     """
+    TOKEN_LEGNTH = 64
+    TOKEN_EXPIRY = 3
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)
+    auth_token = models.CharField(
+        max_length=TOKEN_LEGNTH, null=True, default=None)
+    auth_token_expriy = models.DateField(null=True, default=None)
     
     def __str__(self):
         return "{}_profile".format(self.user.username)
+    
+    def generate_token(self):
+        self.auth_token = get_random_string(length=self.TOKEN_LEGNTH)
+        self.auth_token_expriy = datetime.date.today() + timedelta(
+            days=self.TOKEN_EXPIRY)
+        return self.auth_token, self.auth_token_expriy
+        
+    def auth_token_is_valid(self, token):
+        return self.auth_token == token and \
+               datetime.date.today() < self.auth_token_expriy
     
     def email_user(self, subject, message, from_email=None, **kwargs):
         email = self.email or self.user.email
