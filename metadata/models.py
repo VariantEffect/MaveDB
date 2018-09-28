@@ -40,7 +40,7 @@ class Keyword(TimeStampedModel):
     This class represents a keyword that can be associated with an
     experiment or scoreset.
 
-    Parameters
+    Attributes
     ----------
     creation_date : `models.DateField`
         The date of instantiation.
@@ -96,7 +96,7 @@ class ExternalIdentifier(TimeStampedModel):
     This class represents a textual representation of an identifier from an
     external database that can be associated with a target in an experiment.
 
-    Parameters
+    Attributes
     ----------
     identifier : `models.TextField`
         The free-form textual representation of the identifier from another
