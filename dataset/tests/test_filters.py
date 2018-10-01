@@ -20,6 +20,31 @@ class TestDatasetModelFilter(TestCase):
         self.instance1.save()
         self.instance2.save()
 
+    def test_filter_for_user_excludes_private_if_not_contributor(self):
+        self.instance2.private = True
+        self.instance2.save()
+
+        f = filters.ExperimentSetFilterModel(
+            data={},
+            queryset=models.experimentset.ExperimentSet.objects.all()
+        )
+        qs = f.filter_for_user(user=self.user1)
+        self.assertIn(self.instance1, qs)
+        self.assertNotIn(self.instance2, qs)
+
+    def test_filter_for_user_includes_private_if_contributor(self):
+        self.instance2.private = True
+        self.instance2.save()
+        self.instance2.add_administrators(self.user1)
+
+        f = filters.ExperimentSetFilterModel(
+            data={},
+            queryset=models.experimentset.ExperimentSet.objects.all()
+        )
+        qs = f.filter_for_user(user=self.user1)
+        self.assertIn(self.instance1, qs)
+        self.assertIn(self.instance2, qs)
+
     def test_splits_on_comma(self):
         res = filters.ExperimentFilter.split("hello,world", sep=',')
         self.assertEqual(res, ['hello', 'world'])
@@ -51,16 +76,6 @@ class TestDatasetModelFilter(TestCase):
             queryset=models.experimentset.ExperimentSet.objects.all(),
         )
         self.assertEqual(f.qs_or.count(), 2)
-
-    def test_filters_out_private_by_default(self):
-        self.instance1.private = True
-        self.instance2.private = True
-        self.instance1.save()
-        self.instance2.save()
-        f = filters.ExperimentSetFilterModel(
-            queryset=models.experimentset.ExperimentSet.objects.all(),
-        )
-        self.assertEqual(f.qs.count(), 0)
 
     def test_search_by_urn(self):
         f = filters.ExperimentSetFilterModel(

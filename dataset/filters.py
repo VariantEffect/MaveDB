@@ -86,13 +86,18 @@ class DatasetModelFilter(FilterSet):
     @property
     def qs(self):
         qs = super().qs
-        user = getattr(self.request, 'user', None)
-        if not user:
-            return qs.filter(private=False)
-        if not user.is_authenticated:
-            return qs.filter(private=False)
         return qs
-    
+
+    def filter_for_user(self, user, qs=None):
+        if qs is None:
+            qs = self.qs
+        exclude = []
+        for instance in qs.all():
+            if user not in instance.contributors() and instance.private:
+                print(instance, user)
+                exclude.append(instance.pk)
+        return qs.exclude(pk__in=exclude)
+
     @property
     def qs_or(self):
         """Patch in the ability for an OR search over all fields"""
