@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+# TODO: Authenticated users should be able to see private children in parent instances
+
 
 class UserSerializer(serializers.ModelSerializer):
     """
