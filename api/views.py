@@ -1,12 +1,13 @@
 import csv
 
-from rest_framework import viewsets
+from rest_framework import viewsets, exceptions
 from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.cache import cache_page
 
+from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
 
 from dataset import models, filters, constants
@@ -25,47 +26,97 @@ ScoreSet = models.scoreset.ScoreSet
 
 # ViewSet CBVs for list/detail views
 # --------------------------------------------------------------------------- #
-class ListViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Base API viewset. Must also inherit a subclass of
-    :class:`DatasetModelFilterMixin`.
-    """
+class DatasetListViewSet(viewsets.ReadOnlyModelViewSet):
     filter_class = None
-    queryset = None
+
+    @staticmethod
+    def _authenticate(token):
+        if not token:
+            return None
+        profiles = Profile.objects.filter(auth_token=token)
+        if profiles.count():
+            profile = profiles.first()
+            if profile.auth_token_is_valid(token):
+                return profile.user
+        return None
+
+    def dispatch(self, request, *args, **kwargs):
+        token = request.META.get('HTTP_AUTHORIZATION', None)
+        self.auth_token = None
+        if token is not None:
+            if not AUTH_TOKEN_RE.fullmatch(token):
+                self.auth_token = None
+            else:
+                self.auth_token = token
+        self.user = self._authenticate(self.auth_token)
+        return super().dispatch(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        filter_ = self.filter_class(
+            data=request.GET, queryset=self.queryset, request=request)
+        queryset = filter_.qs
+        if self.user is None and self.auth_token:
+            raise exceptions.PermissionDenied(
+                detail='Invalid authentication token.'
+            )
+        elif self.user is not None:
+            queryset = filter_.filter_for_user(user=self.user, qs=queryset)
+        else:
+            queryset = queryset.filter(private=False)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.private and self.auth_token is None:
+            raise exceptions.PermissionDenied(
+                detail='Authentication token missing.')
+        elif instance.private and self.auth_token is not None:
+            valid_token = any([
+                user.profile.auth_token_is_valid(self.auth_token)
+                for user in instance.contributors()
+            ])
+            if not valid_token:
+                raise exceptions.PermissionDenied(
+                    detail='Invalid authentication token.'
+                )
+            return super().retrieve(request, *args, **kwargs)
+        else:
+            return super().retrieve(request, *args, **kwargs)
+
+
+class ExperimentSetViewset(DatasetListViewSet):
+    serializer_class = ExperimentSetSerializer
+    filter_class = filters.ExperimentSetFilterModel
+    queryset = models.experimentset.ExperimentSet.objects.filter()
+    lookup_field = 'urn'
+
+
+class ExperimentViewset(DatasetListViewSet):
+    serializer_class = ExperimentSerializer
+    filter_class = filters.ExperimentFilter
+    queryset = models.experiment.Experiment.objects.filter()
+    lookup_field = 'urn'
+
+
+class ScoreSetViewset(DatasetListViewSet):
+    serializer_class = ScoreSetSerializer
+    filter_class = filters.ScoreSetFilter
+    queryset = models.scoreset.ScoreSet.objects.filter()
+    lookup_field = 'urn'
+
+
+class UserViewset(viewsets.ReadOnlyModelViewSet):
+    queryset = User.objects.exclude(username='AnonymousUser')
+    serializer_class = UserSerializer
+    filter_class = UserFilter
+    lookup_field = 'username'
 
     def list(self, request, *args, **kwargs):
         filter_ = self.filter_class(
             data=request.GET, queryset=self.queryset, request=request)
         serializer = self.serializer_class(filter_.qs, many=True)
         return Response(serializer.data)
-
-
-class ExperimentSetViewset(ListViewSet):
-    serializer_class = ExperimentSetSerializer
-    filter_class = filters.ExperimentSetFilterModel
-    queryset = models.experimentset.ExperimentSet.objects.filter(private=False)
-    lookup_field = 'urn'
-
-
-class ExperimentViewset(ListViewSet):
-    serializer_class = ExperimentSerializer
-    filter_class = filters.ExperimentFilter
-    queryset = models.experiment.Experiment.objects.filter(private=False)
-    lookup_field = 'urn'
-
-
-class ScoreSetViewset(ListViewSet):
-    serializer_class = ScoreSetSerializer
-    filter_class = filters.ScoreSetFilter
-    queryset = models.scoreset.ScoreSet.objects.filter(private=False)
-    lookup_field = 'urn'
-
-
-class UserViewset(ListViewSet):
-    queryset = User.objects.exclude(username='AnonymousUser')
-    serializer_class = UserSerializer
-    filter_class = UserFilter
-    lookup_field = 'username'
 
 
 # File download FBVs
