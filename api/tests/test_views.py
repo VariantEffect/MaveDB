@@ -18,6 +18,38 @@ from variant.models import Variant
 User = get_user_model()
 
 
+class TestDatasetListViewSet(TestCase):
+    def test_authenticate_user_not_none_if_token_valid(self):
+        pass
+
+    def test_authenticate_user_none_if_no_profiles_found(self):
+        pass
+
+    def test_authenticate_user_none_if_no_token(self):
+        pass
+
+    def test_dispatch_sets_token_if_supplied(self):
+        pass
+
+    def test_list_includes_private_for_valid_user(self):
+        pass
+
+    def test_list_excludes_private_no_user(self):
+        pass
+
+    def test_list_error_no_user_but_token_supplied(self):
+        pass
+
+    def test_retreive_missing_token_no_token(self):
+        pass
+
+    def test_retreive_private_missing_token(self):
+        pass
+
+    def test_retreive_private_invalid_token_error(self):
+        pass
+
+
 class TestExperimentSetAPIViews(TestCase):
 
     def test_filters_out_private(self):
