@@ -1,3 +1,5 @@
+import re
+import base64
 import logging
 import datetime
 from datetime import timedelta
@@ -27,7 +29,9 @@ from .permissions import (
     instances_for_user_with_group_permission
 )
 
-AUTH_TOKEN = r'[a-zA-Z0-9]{{64}}'
+
+AUTH_TOKEN = r'[a-zA-Z0-9]{64}'
+AUTH_TOKEN_RE = re.compile(AUTH_TOKEN)
 logger = logging.getLogger('django')
 
 
@@ -61,7 +65,9 @@ class Profile(TimeStampedModel):
             days=self.TOKEN_EXPIRY)
         return self.auth_token, self.auth_token_expiry
         
-    def auth_token_is_valid(self, token):
+    def auth_token_is_valid(self, token=None):
+        if token is None:
+            token = self.auth_token
         return self.auth_token == token and \
                datetime.date.today() < self.auth_token_expiry
     
