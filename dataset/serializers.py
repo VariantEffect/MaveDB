@@ -21,6 +21,8 @@ from .models.scoreset import ScoreSet
 
 logger = logging.getLogger('django')
 
+# TODO: AUthenitated users should be able to see private children in parent instances
+
 
 class DatasetModelSerializer(TimeStampedModelSerializer):
 
