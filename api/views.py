@@ -1,7 +1,6 @@
 import csv
 
 from rest_framework import viewsets, exceptions
-from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
@@ -18,130 +17,130 @@ from dataset.serializers import (
     ScoreSetSerializer,
 )
 
-from accounts.permissions import PermissionTypes
-
 User = get_user_model()
 ScoreSet = models.scoreset.ScoreSet
 
 
-# ViewSet CBVs for list/detail views
-# --------------------------------------------------------------------------- #
-class DatasetListViewSet(viewsets.ReadOnlyModelViewSet):
-    filter_class = None
-
-    @staticmethod
-    def _authenticate(token):
-        if not token:
-            return None
+def authenticate(request):
+    user, token = None, request.META.get('HTTP_AUTHORIZATION', None)
+    if not token and request.user and request.user.is_authenticated:
+        # As a fallback, check if the current user is authenticated for
+        # users using the API via the web interface.
+        user, token = request.user, None
+    elif token and not AUTH_TOKEN_RE.fullmatch(token):
+        # Check the provided token has a valid format.
+        raise exceptions.AuthenticationFailed("Invalid token format.")
+    elif token and AUTH_TOKEN_RE.fullmatch(token):
+        # Otherwise if a valid token has been given, check that it has not
+        # expired and that it belongs to one of the site's users.
         profiles = Profile.objects.filter(auth_token=token)
         if profiles.count():
             profile = profiles.first()
             if profile.auth_token_is_valid(token):
-                return profile.user
-        return None
-
-    def dispatch(self, request, *args, **kwargs):
-        token = request.META.get('HTTP_AUTHORIZATION', None)
-        self.auth_token = None
-        if token is not None:
-            if not AUTH_TOKEN_RE.fullmatch(token):
-                self.auth_token = None
+                user, token = profile.user, token
             else:
-                self.auth_token = token
-        self.user = self._authenticate(self.auth_token)
+                raise exceptions.AuthenticationFailed("Token has expired.")
+        else:
+            raise exceptions.AuthenticationFailed()
+    return user, token
+
+
+def check_permission(instance, user=None):
+    if instance.private and user is None:
+        raise exceptions.NotAuthenticated()
+    elif instance.private and user is not None:
+        has_perm = user in instance.contributors()
+        if not has_perm:
+            raise exceptions.AuthenticationFailed()
+    return instance
+
+
+# ViewSet CBVs for list/detail views
+# --------------------------------------------------------------------------- #
+class AuthenticatedViewSet(viewsets.ReadOnlyModelViewSet):
+    user = None
+    auth_token = None
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.user, self.auth_token = authenticate(request)
         return super().dispatch(request, *args, **kwargs)
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['user'] = self.user
+        context['token'] = self.auth_token
+        return context
+    
 
-    def list(self, request, *args, **kwargs):
-        filter_ = self.filter_class(
-            data=request.GET, queryset=self.queryset, request=request)
-        queryset = filter_.qs
-        if self.user is None and self.auth_token:
-            raise exceptions.PermissionDenied(
-                detail='Invalid authentication token.'
-            )
-        elif self.user is not None:
-            queryset = filter_.filter_for_user(user=self.user, qs=queryset)
-        else:
-            queryset = queryset.filter(private=False)
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.private and self.auth_token is None:
-            raise exceptions.PermissionDenied(
-                detail='Authentication token missing.')
-        elif instance.private and self.auth_token is not None:
-            valid_token = any([
-                user.profile.auth_token_is_valid(self.auth_token)
-                for user in instance.contributors()
-            ])
-            if not valid_token:
-                raise exceptions.PermissionDenied(
-                    detail='Invalid authentication token.'
-                )
-            return super().retrieve(request, *args, **kwargs)
-        else:
-            return super().retrieve(request, *args, **kwargs)
+class DatasetListViewSet(AuthenticatedViewSet):
+    filter_class = None
+    model_class = None
+   
+    def get_queryset(self):
+        return self.model_class.viewable_instances_for_user(self.user)
+    
+    def get_object(self):
+        urn = self.kwargs.get('urn', None)
+        if urn is not None and self.model_class.objects.filter(urn=urn).count():
+            instance = self.model_class.objects.filter(urn=urn).first()
+            check_permission(instance, self.user)
+        return super().get_object()
 
 
 class ExperimentSetViewset(DatasetListViewSet):
     serializer_class = ExperimentSetSerializer
     filter_class = filters.ExperimentSetFilterModel
-    queryset = models.experimentset.ExperimentSet.objects.filter()
+    model_class = models.experimentset.ExperimentSet
+    queryset = models.experimentset.ExperimentSet.objects.all()
     lookup_field = 'urn'
 
 
 class ExperimentViewset(DatasetListViewSet):
     serializer_class = ExperimentSerializer
     filter_class = filters.ExperimentFilter
-    queryset = models.experiment.Experiment.objects.filter()
+    model_class = models.experiment.Experiment
+    queryset = models.experiment.Experiment.objects.all()
     lookup_field = 'urn'
 
 
 class ScoreSetViewset(DatasetListViewSet):
     serializer_class = ScoreSetSerializer
     filter_class = filters.ScoreSetFilter
-    queryset = models.scoreset.ScoreSet.objects.filter()
+    model_class = models.scoreset.ScoreSet
+    queryset = models.scoreset.ScoreSet.objects.all()
     lookup_field = 'urn'
 
 
-class UserViewset(viewsets.ReadOnlyModelViewSet):
+class UserViewset(AuthenticatedViewSet):
     queryset = User.objects.exclude(username='AnonymousUser')
     serializer_class = UserSerializer
     filter_class = UserFilter
     lookup_field = 'username'
-
-    def list(self, request, *args, **kwargs):
-        filter_ = self.filter_class(
-            data=request.GET, queryset=self.queryset, request=request)
-        serializer = self.serializer_class(filter_.qs, many=True)
-        return Response(serializer.data)
-
+   
 
 # File download FBVs
 # --------------------------------------------------------------------------- #
-def validate_request(urn, user):
-    if not ScoreSet.objects.filter(urn=urn).count():
-        response = JsonResponse({'detail': '{} does not exist.'.format(urn)})
-        response.status_code = 404
+def validate_request(urn, user=None):
+    try:
+        if not ScoreSet.objects.filter(urn=urn).count():
+            raise exceptions.NotFound()
+        instance = ScoreSet.objects.get(urn=urn)
+        check_permission(instance, user)
+        return instance
+    except (exceptions.NotAuthenticated, exceptions.AuthenticationFailed) as e:
+        response = JsonResponse({'detail': e.default_detail})
+        response.status_code = e.status_code
         return response
-    scoreset = ScoreSet.objects.get(urn=urn)
-    has_permission = user.has_perm(PermissionTypes.CAN_VIEW, scoreset)
-    if scoreset.private and not has_permission:
-        response = JsonResponse({'detail': '{} is private.'.format(urn)})
-        response.status_code = 404
-        return response
-    return scoreset
 
 
 @cache_page(60 * 15) # 15 minute cache
 def scoreset_score_data(request, urn):
+    user, token = authenticate(request)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
         'attachment; filename="{}_scores.csv"'.format(urn)
     
-    scoreset_or_response = validate_request(urn, request.user)
+    scoreset_or_response = validate_request(urn, user)
     if not isinstance(scoreset_or_response, ScoreSet):
         return scoreset_or_response
 
@@ -163,11 +162,12 @@ def scoreset_score_data(request, urn):
 
 @cache_page(60 * 15) # 15 minute cache
 def scoreset_count_data(request, urn):
+    user, token = authenticate(request)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
         'attachment; filename="{}_counts.csv"'.format(urn)
 
-    scoreset_or_response = validate_request(urn, request.user)
+    scoreset_or_response = validate_request(urn, user)
     if not isinstance(scoreset_or_response, ScoreSet):
         return scoreset_or_response
     
@@ -204,7 +204,8 @@ def _format_csv_rows(variants, columns, type_column):
 
 @cache_page(60 * 15) # 24 hour cache
 def scoreset_metadata(request, urn):
-    scoreset_or_response = validate_request(urn, request.user)
+    user, token = authenticate(request)
+    scoreset_or_response = validate_request(urn, user)
     if not isinstance(scoreset_or_response, ScoreSet):
         return scoreset_or_response
     scoreset = scoreset_or_response
