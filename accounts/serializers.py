@@ -4,20 +4,15 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# TODO: Authenticated users should be able to see private children in parent instances
-
 
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializers a :class:`User` instance
     """
     display_name = serializers.CharField(source='profile.get_display_name')
-    experimentsets = serializers.StringRelatedField(
-        source='profile.public_contributor_experimentsets', many=True)
-    experiments = serializers.StringRelatedField(
-        source='profile.public_contributor_experiments', many=True)
-    scoresets = serializers.StringRelatedField(
-        source='profile.public_contributor_scoresets', many=True)
+    experimentsets = serializers.SerializerMethodField()
+    experiments = serializers.SerializerMethodField()
+    scoresets = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -27,3 +22,27 @@ class UserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
         lookup_field = 'username'
+        
+    def get_datasets(self, obj, attr, public_attr):
+        user = self.context.get('user', None)
+        if user is None:
+            return [i.urn for i in getattr(obj.profile, public_attr)()]
+        return [
+            i.urn for i in getattr(obj.profile, attr)()
+            if (not i.private) or (i.private and user in i.contributors())
+        ]
+        
+    def get_experimentsets(self, obj):
+        return self.get_datasets(
+            obj, 'contributor_experimentsets',
+            'public_contributor_experimentsets')
+    
+    def get_experiments(self, obj):
+        return self.get_datasets(
+            obj, 'contributor_experiments',
+            'public_contributor_experiments')
+    
+    def get_scoresets(self, obj):
+        return self.get_datasets(
+            obj, 'contributor_scoresets',
+            'public_contributor_scoresets')
