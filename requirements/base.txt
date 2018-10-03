@@ -18,6 +18,6 @@ Faker>=0.7.18
 dj-database-url
 psycopg2-binary
 coverage
-idutils
+idutils>=1.1.0
 hg+http://bitbucket.org/afrubin/metapub@html_citation
 git+https://github.com/FowlerLab/hgvs-patterns.git
