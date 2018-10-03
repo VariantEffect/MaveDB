@@ -1,8 +1,12 @@
+from unittest import mock
+
 from django.contrib.auth.models import Group
 from django.db import IntegrityError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.shortcuts import reverse
+
+from accounts.factories import UserFactory
 
 from core.utilities import base_url
 
@@ -179,14 +183,70 @@ class TestScoreSet(TestCase):
         VariantFactory(scoreset=obj, hgvs_nt=None)
         self.assertEqual(obj.primary_hgvs_column, constants.hgvs_pro_column)
         
-    # def test_wt_is_first_when_sorted(self):
-    #     obj = ScoreSetFactory()
-    #     v1 = ScoreSetFactory(experiment=obj, hgvs_nt='c.[9A>T;99G>T]')
-    #     v2 = ScoreSetFactory(experiment=obj, hgvs_nt='_wt')
-    #     self.assertEqual(obj.children.order_by(
-    #         '{}'.format(obj.primary_hgvs_column)).first(), v2
-    #     )
-
+    def test_wt_is_first_when_sorted(self):
+        obj = ScoreSetFactory()
+        v1 = VariantFactory(scoreset=obj, hgvs_nt='c.[9A>T;99G>T]')
+        v2 = VariantFactory(scoreset=obj, hgvs_nt='_wt')
+        self.assertEqual(obj.children.order_by(
+            '{}'.format(obj.primary_hgvs_column)).first(), v2
+        )
+        
+    def test_get_version_is_public_user_is_none(self):
+        instance1 = ScoreSetFactory(private=False)
+        instance2 = ScoreSetFactory(replaces=instance1, private=False)
+        instance3 = ScoreSetFactory(replaces=instance2, private=True)
+        self.assertEqual(
+            instance1.get_version('next_version', 'next_public_version'),
+            instance1.next_public_version
+        )
+        
+    def test_get_version_is_returns_public_attr_result_if_attr_is_none(self):
+        instance1 = ScoreSetFactory(private=False)
+        self.assertEqual(
+            instance1.get_version('next_version', 'next_public_version'),
+            instance1.next_public_version
+        )
+        
+    def test_get_version_returns_public_when_user_not_contributor_on_private_version(self):
+        instance1 = ScoreSetFactory(private=False)
+        instance2 = ScoreSetFactory(replaces=instance1, private=True)
+        user = UserFactory()
+        self.assertEqual(
+            instance1.get_version('next_version', 'next_public_version', user),
+            instance1.next_public_version
+        )
+        
+    def test_get_version_returns_private_when_user_is_a_contributor(self):
+        instance1 = ScoreSetFactory(private=False)
+        instance2 = ScoreSetFactory(replaces=instance1, private=True)
+        user = UserFactory()
+        instance2.add_viewers(user)
+        self.assertIsNotNone(instance1.next_version)
+        self.assertEqual(
+            instance1.get_version('next_version', 'next_public_version', user),
+            instance1.next_version
+        )
+    
+    @mock.patch.object(ScoreSet, 'get_version')
+    def test_get_next_version_calls_get_version_with_correct_args(self, patch):
+        instance = ScoreSetFactory()
+        instance.get_next_version()
+        patch.assert_called_with(*('next_version', 'next_public_version', None))
+        
+    @mock.patch.object(ScoreSet, 'get_version')
+    def test_get_prev_version_calls_get_version_with_correct_args(self, patch):
+        instance = ScoreSetFactory()
+        instance.get_previous_version()
+        patch.assert_called_with(
+            *('previous_version', 'previous_public_version', None))
+        
+    @mock.patch.object(ScoreSet, 'get_version')
+    def test_get_curr_version_calls_get_version_with_correct_args(self, patch):
+        instance = ScoreSetFactory()
+        instance.get_current_version()
+        patch.assert_called_with(
+            *('current_version', 'current_public_version', None))
+        
 
 class TestAssignPublicUrn(TestCase):
     def setUp(self):

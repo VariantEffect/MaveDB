@@ -1,13 +1,18 @@
 import io
 import json
 import csv
+from datetime import timedelta
 
-from django.test import TestCase
+from django.test import TestCase, RequestFactory, mock
 from django.contrib.auth import get_user_model
+
+from rest_framework import exceptions
+
+from accounts.factories import UserFactory
 
 import dataset.constants as constants
 from dataset.utilities import publish_dataset
-from dataset.models import scoreset
+from dataset.models import scoreset, experimentset
 from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
@@ -15,140 +20,266 @@ from dataset.factories import (
 from variant.factories import dna_hgvs, protein_hgvs
 from variant.models import Variant
 
+from .. import views
+
+
 User = get_user_model()
 
 
+class TestAuthenticate(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = UserFactory()
+        self.client.login(
+            username=self.user.username, password=self.user.password)
+        
+    def test_returns_request_user_if_token_is_none(self):
+        request = self.factory.get('/', HTTP_AUTHORIZATION=None)
+        request.user = self.user
+        user, token = views.authenticate(request)
+        self.assertIs(self.user, user)
+        self.assertIsNone(token)
+        
+    def test_raises_auth_failed_invalid_token_format(self):
+        with self.assertRaises(exceptions.AuthenticationFailed):
+            request = self.factory.get('/', HTTP_AUTHORIZATION='a')
+            views.authenticate(request)
+            
+    def test_raises_auth_failed_invalid_token_for_user(self):
+        token, exp = self.user.profile.generate_token()
+        self.user.profile.generate_token()
+        with self.assertRaises(exceptions.AuthenticationFailed):
+            request = self.factory.get('/', HTTP_AUTHORIZATION=token)
+            views.authenticate(request)
+            
+    def test_raises_auth_failed_expired_token(self):
+        token, _ = self.user.profile.generate_token()
+        profile = self.user.profile
+        profile.auth_token_expiry -= timedelta(days=100)
+        profile.save()
+        with self.assertRaises(exceptions.AuthenticationFailed):
+            request = self.factory.get('/', HTTP_AUTHORIZATION=token)
+            views.authenticate(request)
+            
+    def test_returns_user_and_token_on_success(self):
+        token, _ = self.user.profile.generate_token()
+        request = self.factory.get('/', HTTP_AUTHORIZATION=token)
+        user, ret_token = views.authenticate(request)
+        self.assertEqual(token, ret_token)
+        self.assertEqual(self.user, user)
+        
+    def test_returns_none_none_by_default(self):
+        request = self.factory.get('/', HTTP_AUTHORIZATION=None)
+        request.user = None
+        user, ret_token = views.authenticate(request)
+        self.assertIsNone(ret_token)
+        self.assertIsNone(user)
+        
+
+class TestCheckPermission(TestCase):
+    def test_raises_not_auth_error_private_and_user_is_none(self):
+        with self.assertRaises(exceptions.NotAuthenticated):
+            instance = ScoreSetFactory(private=True)
+            views.check_permission(instance, user=None)
+            
+    def test_raises_auth_failed_private_instance_user_not_a_contributor(self):
+        with self.assertRaises(exceptions.AuthenticationFailed):
+            instance = ScoreSetFactory(private=True)
+            user = UserFactory()
+            views.check_permission(instance, user=user)
+            
+    def test_returns_instance_when_private_and_user_is_contributor(self):
+        instance = ScoreSetFactory(private=True)
+        user = UserFactory()
+        instance.add_viewers(user)
+        self.assertIs(instance, views.check_permission(instance, user=user))
+        
+    def test_returns_instance_when_it_is_public(self):
+        instance = ScoreSetFactory(private=False)
+        self.assertIs(instance, views.check_permission(instance, user=None))
+        
+
+class TestAuthenticatedViewSet(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @mock.patch('api.views.authenticate',
+                side_effect=lambda request: (None, None))
+    def test_dispatch_calls_authenticate(self, patch):
+        self.client.get('/api/experimentsets/')
+        patch.assert_called()
+
+    @mock.patch.object(views.AuthenticatedViewSet, 'auth_token', return_value=None)
+    @mock.patch.object(views.AuthenticatedViewSet, 'user', return_value=None)
+    @mock.patch.object(views.AuthenticatedViewSet, 'get_serializer_context', return_value=dict())
+    def test_get_context_adds_in_user_and_auth_token(self, p1, p2, p3):
+        self.client.get('/api/experimentsets/')
+        p1.assert_called()
+        self.assertIsNone(p2.return_value)
+        self.assertIsNone(p3.return_value)
+        
+
 class TestDatasetListViewSet(TestCase):
-    def test_authenticate_user_not_none_if_token_valid(self):
-        pass
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = UserFactory()
+        self.client.login(
+            username=self.user.username, password=self.user.password)
+    
+    @mock.patch('dataset.models.base.DatasetModel.viewable_instances_for_user',
+                side_effect=lambda user: experimentset.ExperimentSet.objects.none())
+    def test_get_qs_calls_viewable_instances_for_user_with_authed_user(self, patch):
+        request = self.factory.get(
+            '/api/experimentsets/',
+            HTTP_AUTHORIZATION=None
+        )
+        request.user = self.user
+        views.ExperimentSetViewset.as_view({'get': 'list'})(request)
+        patch.assert_called_with(*(self.user,))
+        
+    @mock.patch('api.views.check_permission', side_effect=lambda instance, user: instance)
+    def test_get_object_calls_check_perm_with_instance_and_user(self, patch):
+        i = ExperimentSetFactory(private=False)
+        request = self.factory.get(
+            '/api/experimentsets/{}/'.format(i.urn),
+            HTTP_AUTHORIZATION=None
+        )
+        request.user = self.user
+        views.ExperimentSetViewset.as_view({'get': 'retrieve'})(request, urn=i.urn)
+        patch.assert_called_with(*(i, self.user,))
+        
+    @mock.patch('api.views.check_permission')
+    def test_get_object_doesnt_call_check_perm_instance_not_found(self, patch):
+        request = self.factory.get(
+            '/api/experimentsets/{}/'.format('aaa'),
+            HTTP_AUTHORIZATION=None
+        )
+        request.user = self.user
+        views.ExperimentSetViewset.as_view({'get': 'retrieve'})(request, urn='aaa')
+        patch.assert_not_called()
 
-    def test_authenticate_user_none_if_no_profiles_found(self):
-        pass
-
-    def test_authenticate_user_none_if_no_token(self):
-        pass
-
-    def test_dispatch_sets_token_if_supplied(self):
-        pass
-
-    def test_list_includes_private_for_valid_user(self):
-        pass
-
-    def test_list_excludes_private_no_user(self):
-        pass
-
-    def test_list_error_no_user_but_token_supplied(self):
-        pass
-
-    def test_retreive_missing_token_no_token(self):
-        pass
-
-    def test_retreive_private_missing_token(self):
-        pass
-
-    def test_retreive_private_invalid_token_error(self):
-        pass
+    @mock.patch('api.views.check_permission')
+    def test_get_object_doesnt_call_check_perm_urn_is_none(self, patch):
+        request = self.factory.get(
+            '/api/experimentsets/{}/'.format('aaa'),
+            HTTP_AUTHORIZATION=None
+        )
+        request.user = self.user
+        views.ExperimentSetViewset.as_view({'get': 'retrieve'})(request, urn=None)
+        patch.assert_not_called()
 
 
 class TestExperimentSetAPIViews(TestCase):
-
-    def test_filters_out_private(self):
-        exps = ExperimentSetFactory(private=True)
-        response = self.client.get("/api/experimentsets/")
-        result = json.loads(response.content.decode('utf-8'))
-        expected = []
-        self.assertEqual(expected, result)
-        
-    def test_shows_public(self):
-        instance = ExperimentSetFactory()
-        instance.private = False
-        instance.save()
-        response = self.client.get("/api/experimentsets/")
-        result = json.loads(response.content.decode('utf-8'))
-        self.assertEqual(len(result), 1)
-
-    def test_404_private_experimentset(self):
-        exps = ExperimentSetFactory()
+    factory = ExperimentSetFactory
+    url = 'experimentsets'
+    
+    def test_403_private_experimentset(self):
+        inst = self.factory(private=True)
         response = self.client.get(
-            "/api/experimentsets/{}/".format(exps.urn)
+            "/api/{}/{}/".format(self.url, inst.urn)
         )
-        self.assertEqual(response.status_code, 404)
-        
+        self.assertEqual(response.status_code, 403)
+    
+    def test_OK_private_experimentset_when_authenticated(self):
+        inst = self.factory(private=True)
+        user = UserFactory()
+        user.profile.generate_token()
+        inst.add_viewers(user)
+        response = self.client.get(
+            "/api/{}/{}/".format(self.url, inst.urn),
+            HTTP_AUTHORIZATION=user.profile.auth_token,
+        )
+        self.assertEqual(response.status_code, 200)
+    
     def test_404_wrong_address(self):
-        instance = ExperimentSetFactory()
+        inst = self.factory()
         response = self.client.get(
-            "/api/experimentset/{}/".format(instance.urn)
+            "/api/{}/{}/".format(self.url + 'aaa', inst.urn)
         )
         self.assertEqual(response.status_code, 404)
-
+    
     def test_404_experimentset_not_found(self):
-        response = self.client.get("/api/experimentsets/dddd/")
+        response = self.client.get("/api/{}/dddd/".format(self.url))
         self.assertEqual(response.status_code, 404)
-        
-    def test_search_works(self):
-        instance1 = ExperimentSetFactory()
-        instance2 = ExperimentSetFactory()
-        instance1.private = False
-        instance2.private = False
-        instance1.save()
-        instance2.save()
+    
+    def test_list_excludes_private_when_not_authenticated(self):
+        instance1 = self.factory(private=True)
+        instance2 = self.factory(private=False)
+        response = self.client.get("/api/{}/".format(self.url))
+        self.assertNotContains(response, instance1.urn)
+        self.assertContains(response, instance2.urn)
+    
+    def test_list_includes_private_when_authenticated(self):
+        instance1 = self.factory(private=True)
+        instance2 = self.factory(private=False)
+        user = UserFactory()
+        user.profile.generate_token()
+        instance1.add_viewers(user)
         response = self.client.get(
-            "/api/experimentsets/?title={}".format(instance1.title)
+            "/api/{}/".format(self.url),
+            HTTP_AUTHORIZATION=user.profile.auth_token,
         )
         self.assertContains(response, instance1.urn)
-        self.assertNotContains(response, instance2.urn)
+        self.assertContains(response, instance2.urn)
         
 
 class TestExperimentAPIViews(TestCase):
-
-    def test_filters_out_private(self):
-        instance = ExperimentFactory()
-        response = self.client.get("/api/experiments/")
-        result = json.loads(response.content.decode('utf-8'))
-        expected = []
-        self.assertEqual(expected, result)
-        
-    def test_shows_public(self):
-        instance = ExperimentFactory()
-        instance.private = False
-        instance.save()
-        response = self.client.get("/api/experiments/")
-        result = json.loads(response.content.decode('utf-8'))
-        self.assertEqual(len(result), 1)
-
-    def test_404_private(self):
-        instance = ExperimentFactory()
+    factory = ExperimentFactory
+    url = 'experiments'
+    
+    def test_403_private_experimentset(self):
+        inst = self.factory(private=True)
         response = self.client.get(
-            "/api/experiments/{}/".format(instance.urn)
+            "/api/{}/{}/".format(self.url, inst.urn)
         )
-        self.assertEqual(response.status_code, 404)
-        
+        self.assertEqual(response.status_code, 403)
+    
+    def test_OK_private_experimentset_when_authenticated(self):
+        inst = self.factory(private=True)
+        user = UserFactory()
+        user.profile.generate_token()
+        inst.add_viewers(user)
+        response = self.client.get(
+            "/api/{}/{}/".format(self.url, inst.urn),
+            HTTP_AUTHORIZATION=user.profile.auth_token,
+        )
+        self.assertEqual(response.status_code, 200)
+    
     def test_404_wrong_address(self):
-        instance = ExperimentFactory()
+        inst = self.factory()
         response = self.client.get(
-            "/api/experiment/{}/".format(instance.urn)
+            "/api/{}/{}/".format(self.url + 'aaa', inst.urn)
         )
         self.assertEqual(response.status_code, 404)
-
-    def test_404_not_found(self):
-        response = self.client.get("/api/experiments/dddd/")
+    
+    def test_404_experimentset_not_found(self):
+        response = self.client.get("/api/{}/dddd/".format(self.url))
         self.assertEqual(response.status_code, 404)
-        
-    def test_search_works(self):
-        instance1 = ExperimentFactory()
-        instance2 = ExperimentFactory()
-        instance1.private = False
-        instance2.private = False
-        instance1.save()
-        instance2.save()
+    
+    def test_list_excludes_private_when_not_authenticated(self):
+        instance1 = self.factory(private=True)
+        instance2 = self.factory(private=False)
+        response = self.client.get("/api/{}/".format(self.url))
+        self.assertNotContains(response, instance1.urn)
+        self.assertContains(response, instance2.urn)
+    
+    def test_list_includes_private_when_authenticated(self):
+        instance1 = self.factory(private=True)
+        instance2 = self.factory(private=False)
+        user = UserFactory()
+        user.profile.generate_token()
+        instance1.add_viewers(user)
         response = self.client.get(
-            "/api/experiments/?title={}".format(instance1.title)
+            "/api/{}/".format(self.url),
+            HTTP_AUTHORIZATION=user.profile.auth_token,
         )
         self.assertContains(response, instance1.urn)
-        self.assertNotContains(response, instance2.urn)
+        self.assertContains(response, instance2.urn)
 
 
 class TestScoreSetAPIViews(TestCase):
+    factory = ScoreSetFactory
+    url = 'scoresets'
     
     def setUp(self):
         Variant.objects.all().delete()
@@ -157,76 +288,118 @@ class TestScoreSetAPIViews(TestCase):
     def tearDown(self):
         Variant.objects.all().delete()
         scoreset.ScoreSet.objects.all().delete()
-
-    def test_filters_out_private(self):
-        instance = ScoreSetFactory()
-        response = self.client.get("/api/scoresets/")
-        result = json.loads(response.content.decode('utf-8'))
-        expected = []
-        self.assertEqual(expected, result)
-        
-    def test_shows_public(self):
-        instance = ScoreSetFactory()
-        instance.private = False
-        instance.save()
-        response = self.client.get("/api/scoresets/")
-        result = json.loads(response.content.decode('utf-8'))
-        self.assertEqual(len(result), 1)
-
-    def test_404_private(self):
-        instance = ScoreSetFactory()
+    
+    # ---- DRF Views
+    def test_403_private_experimentset(self):
+        inst = self.factory(private=True)
         response = self.client.get(
-            "/api/scoreset/{}/".format(instance.urn)
+            "/api/{}/{}/".format(self.url, inst.urn)
         )
-        self.assertEqual(response.status_code, 404)
-        
+        self.assertEqual(response.status_code, 403)
+
+    def test_OK_private_experimentset_when_authenticated(self):
+        inst = self.factory(private=True)
+        user = UserFactory()
+        user.profile.generate_token()
+        inst.add_viewers(user)
+        response = self.client.get(
+            "/api/{}/{}/".format(self.url, inst.urn),
+            HTTP_AUTHORIZATION=user.profile.auth_token,
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_404_wrong_address(self):
-        instance = ScoreSetFactory()
+        inst = self.factory()
         response = self.client.get(
-            "/api/scoreset/{}/".format(instance.urn)
+            "/api/{}/{}/".format(self.url + 'aaa', inst.urn)
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_404_private_download_scores(self):
-        instance = ScoreSetFactory()
+    def test_404_experimentset_not_found(self):
+        response = self.client.get("/api/{}/dddd/".format(self.url))
+        self.assertEqual(response.status_code, 404)
+
+    def test_list_excludes_private_when_not_authenticated(self):
+        instance1 = self.factory(private=True)
+        instance2 = self.factory(private=False)
+        response = self.client.get("/api/{}/".format(self.url))
+        self.assertNotContains(response, instance1.urn)
+        self.assertContains(response, instance2.urn)
+
+    def test_list_includes_private_when_authenticated(self):
+        instance1 = self.factory(private=True)
+        instance2 = self.factory(private=False)
+        user = UserFactory()
+        user.profile.generate_token()
+        instance1.add_viewers(user)
+        response = self.client.get(
+            "/api/{}/".format(self.url),
+            HTTP_AUTHORIZATION=user.profile.auth_token,
+        )
+        self.assertContains(response, instance1.urn)
+        self.assertContains(response, instance2.urn)
+    
+    # ----- Function based file download views
+    def test_403_private_download_scores(self):
+        instance = self.factory(private=True)
         response = self.client.get(
             "/api/scoresets/{}/scores/".format(instance.urn)
         )
-        self.assertTrue(response.status_code, 404)
+        self.assertTrue(response.status_code, 403)
 
-    def test_404_private_download_counts(self):
-        instance = ScoreSetFactory()
+    def test_403_private_download_counts(self):
+        instance = self.factory(private=True)
         response = self.client.get(
             "/api/scoresets/{}/counts/".format(instance.urn)
         )
-        self.assertTrue(response.status_code, 404)
+        self.assertTrue(response.status_code, 403)
 
-    def test_404_private_download_meta(self):
-        instance = ScoreSetFactory()
+    def test_403_private_download_meta(self):
+        instance = self.factory(private=True)
         response = self.client.get(
             "/api/scoresets/{}/metadata/".format(instance.urn)
         )
-        self.assertTrue(response.status_code, 404)
+        self.assertTrue(response.status_code, 403)
+        
+    def test_OK_private_download_scores_when_authenticated(self):
+        instance = self.factory(private=True)
+        user = UserFactory()
+        user.profile.generate_token()
+        instance.add_viewers(user)
+        response = self.client.get(
+            "/api/scoresets/{}/scores/".format(instance.urn),
+            HTTP_AUTHORIZATION=user.profile.auth_token
+        )
+        self.assertTrue(response.status_code, 200)
+
+    def test_OK_private_download_counts_when_authenticated(self):
+        instance = self.factory(private=True)
+        user = UserFactory()
+        user.profile.generate_token()
+        instance.add_viewers(user)
+        response = self.client.get(
+            "/api/scoresets/{}/counts/".format(instance.urn),
+            HTTP_AUTHORIZATION=user.profile.auth_token
+        )
+        self.assertTrue(response.status_code, 200)
+
+    def test_OK_private_download_meta_when_authenticated(self):
+        instance = self.factory(private=True)
+        user = UserFactory()
+        user.profile.generate_token()
+        instance.add_viewers(user)
+        response = self.client.get(
+            "/api/scoresets/{}/metadata/".format(instance.urn),
+            HTTP_AUTHORIZATION=user.profile.auth_token
+        )
+        self.assertTrue(response.status_code, 200)
 
     def test_404_not_found(self):
         response = self.client.get("/api/scoresets/dddd/")
         self.assertEqual(response.status_code, 404)
         
-    def test_search_works(self):
-        instance1 = ScoreSetFactory()
-        instance2 = ScoreSetFactory()
-        instance1.private = False
-        instance2.private = False
-        instance1.save()
-        instance2.save()
-        response = self.client.get(
-            "/api/scoresets/?title={}".format(instance1.title)
-        )
-        self.assertContains(response, instance1.urn)
-        self.assertNotContains(response, instance2.urn)
-
     def test_can_download_scores(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -253,7 +426,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [header, data])
         
     def test_comma_in_value_enclosed_by_quotes(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -279,7 +452,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [header, data])
 
     def test_can_download_counts(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -305,7 +478,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [header, data])
         
     def test_none_hgvs_written_as_blank(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -332,7 +505,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [header, data])
         
     def test_no_variants_empty_file(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -357,7 +530,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [])
 
     def test_empty_scores_returns_empty_file(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -380,7 +553,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [])
         
     def test_empty_counts_returns_empty_file(self):
-        scs = ScoreSetFactory()
+        scs = self.factory()
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         scs.dataset_columns = {
@@ -403,7 +576,7 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(rows, [])
 
     def test_can_download_metadata(self):
-        scs = ScoreSetFactory(private=False)
+        scs = self.factory(private=False)
         scs = publish_dataset(scs)
         scs.refresh_from_db()
         response = json.loads(self.client.get(
