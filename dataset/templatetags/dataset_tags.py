@@ -49,13 +49,7 @@ def display_organism(instance, user, javascript=False):
 
 @register.assignment_tag
 def visible_children(instance, user):
-    children = []
-    for child in instance.children:
-        if not child.private:
-            children.append(child)
-        elif child.private and user in child.contributors():
-            children.append(child)
-    return list(sorted(children, key=lambda i: i.urn))
+    return list(instance.children_for_user(user).order_by('urn'))
 
 
 @register.assignment_tag
