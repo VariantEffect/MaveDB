@@ -313,6 +313,26 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
+        
+    def parent_for_user(self, user=None):
+        if self.parent is None:
+            return None
+        elif not self.parent.private:
+            return self.parent
+        elif user and self.parent.private and \
+                user in self.parent.contributors():
+            return self.parent
+        else:
+            return None
+
+    def children_for_user(self, user=None):
+        if not user:
+            return self.children.filter(private=False)
+        pks = [
+            c.pk for c in self.children
+            if (not c.private) or (c.private and user in c.contributors())
+        ]
+        return self.children.filter(pk__in=set(pks))
 
     @property
     def parent(self):
@@ -321,7 +341,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             return getattr(self, attr)
         else:
             return None
-
+        
     @property
     def children(self):
         attr, model_name, app_label = child_attr_map[self.__class__.__name__]
@@ -333,3 +353,13 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
             else:
                 model = apps.get_model(app_label, model_name=model_name)
                 return model.objects.none()
+    
+    @classmethod
+    def viewable_instances_for_user(cls, user=None):
+        if not user:
+            return cls.objects.filter(private=False)
+        pks = [
+            i.pk for i in cls.objects.all()
+            if (not i.private) or (i.private and user in i.contributors())
+        ]
+        return cls.objects.filter(pk__in=set(pks))
