@@ -63,6 +63,7 @@ class Profile(TimeStampedModel):
         self.auth_token = get_random_string(length=self.TOKEN_LEGNTH)
         self.auth_token_expiry = datetime.date.today() + timedelta(
             days=self.TOKEN_EXPIRY)
+        self.save()
         return self.auth_token, self.auth_token_expiry
         
     def auth_token_is_valid(self, token=None):
