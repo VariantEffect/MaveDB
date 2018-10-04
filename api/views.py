@@ -41,17 +41,17 @@ def authenticate(request):
             else:
                 raise exceptions.AuthenticationFailed("Token has expired.")
         else:
-            raise exceptions.AuthenticationFailed()
+            raise exceptions.AuthenticationFailed("Invalid token.")
     return user, token
 
 
 def check_permission(instance, user=None):
     if instance.private and user is None:
-        raise exceptions.NotAuthenticated()
+        raise exceptions.PermissionDenied()
     elif instance.private and user is not None:
         has_perm = user in instance.contributors()
         if not has_perm:
-            raise exceptions.AuthenticationFailed()
+            raise exceptions.PermissionDenied()
     return instance
 
 
@@ -62,9 +62,13 @@ class AuthenticatedViewSet(viewsets.ReadOnlyModelViewSet):
     auth_token = None
     
     def dispatch(self, request, *args, **kwargs):
-        self.user, self.auth_token = authenticate(request)
-        return super().dispatch(request, *args, **kwargs)
-    
+        try:
+            self.user, self.auth_token = authenticate(request)
+            return super().dispatch(request, *args, **kwargs)
+        except (exceptions.AuthenticationFailed,
+                exceptions.PermissionDenied, exceptions.NotFound) as e:
+            return JsonResponse({'detail': e.detail}, status=e.status_code)
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['user'] = self.user
@@ -120,35 +124,36 @@ class UserViewset(AuthenticatedViewSet):
 
 # File download FBVs
 # --------------------------------------------------------------------------- #
-def validate_request(urn, user=None):
+def validate_request(request, urn):
     try:
         if not ScoreSet.objects.filter(urn=urn).count():
             raise exceptions.NotFound()
+        # Above passed so object should exist.
+        user, token = authenticate(request)
         instance = ScoreSet.objects.get(urn=urn)
         check_permission(instance, user)
         return instance
-    except (exceptions.NotAuthenticated, exceptions.AuthenticationFailed) as e:
-        response = JsonResponse({'detail': e.default_detail})
-        response.status_code = e.status_code
-        return response
+    except (exceptions.PermissionDenied, exceptions.NotFound,
+            exceptions.AuthenticationFailed) as e:
+        return JsonResponse({'detail': e.detail}, status=e.status_code)
 
 
-@cache_page(60 * 15) # 15 minute cache
+@cache_page(60 * 15)  # 15 minute cache
 def scoreset_score_data(request, urn):
-    user, token = authenticate(request)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
         'attachment; filename="{}_scores.csv"'.format(urn)
-    
-    scoreset_or_response = validate_request(urn, user)
-    if not isinstance(scoreset_or_response, ScoreSet):
-        return scoreset_or_response
 
-    scoreset = scoreset_or_response
+    instance_or_response = validate_request(request, urn)
+    if not isinstance(instance_or_response, ScoreSet):
+        return instance_or_response
+
+    scoreset = instance_or_response
     variants = scoreset.children.order_by('{}'.format(
         scoreset.primary_hgvs_column))
     columns = scoreset.score_columns
     type_column = constants.variant_score_data
+
     # hgvs_nt and hgvs_pro present by default, hence <= 2
     if not variants or len(columns) <= 2:
         return response
@@ -162,20 +167,20 @@ def scoreset_score_data(request, urn):
 
 @cache_page(60 * 15) # 15 minute cache
 def scoreset_count_data(request, urn):
-    user, token = authenticate(request)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
         'attachment; filename="{}_counts.csv"'.format(urn)
 
-    scoreset_or_response = validate_request(urn, user)
-    if not isinstance(scoreset_or_response, ScoreSet):
-        return scoreset_or_response
+    instance_or_response = validate_request(request, urn)
+    if not isinstance(instance_or_response, ScoreSet):
+        return instance_or_response
     
-    scoreset = scoreset_or_response
+    scoreset = instance_or_response
     variants = scoreset.children.order_by('{}'.format(
         scoreset.primary_hgvs_column))
     columns = scoreset.count_columns
     type_column = constants.variant_count_data
+
     # hgvs_nt and hgvs_pro present by default, hence <= 2
     if not variants or len(columns) <= 2:
         return response
@@ -204,9 +209,9 @@ def _format_csv_rows(variants, columns, type_column):
 
 @cache_page(60 * 15) # 24 hour cache
 def scoreset_metadata(request, urn):
-    user, token = authenticate(request)
-    scoreset_or_response = validate_request(urn, user)
-    if not isinstance(scoreset_or_response, ScoreSet):
-        return scoreset_or_response
-    scoreset = scoreset_or_response
-    return JsonResponse(scoreset.extra_metadata)
+    instance_or_response = validate_request(request, urn)
+    if not isinstance(instance_or_response, ScoreSet):
+        return instance_or_response
+
+    scoreset = instance_or_response
+    return JsonResponse(scoreset.extra_metadata, status=200)

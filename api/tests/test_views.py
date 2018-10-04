@@ -77,13 +77,13 @@ class TestAuthenticate(TestCase):
         
 
 class TestCheckPermission(TestCase):
-    def test_raises_not_auth_error_private_and_user_is_none(self):
-        with self.assertRaises(exceptions.NotAuthenticated):
+    def test_raises_403_error_private_and_user_is_none(self):
+        with self.assertRaises(exceptions.PermissionDenied):
             instance = ScoreSetFactory(private=True)
             views.check_permission(instance, user=None)
             
-    def test_raises_auth_failed_private_instance_user_not_a_contributor(self):
-        with self.assertRaises(exceptions.AuthenticationFailed):
+    def test_raises_403_private_instance_user_not_a_contributor(self):
+        with self.assertRaises(exceptions.PermissionDenied):
             instance = ScoreSetFactory(private=True)
             user = UserFactory()
             views.check_permission(instance, user=user)
