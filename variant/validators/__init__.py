@@ -163,10 +163,10 @@ def validate_variant_rows(file):
             raise ValidationError(
                 (
                     "Row columns '%(row)s' do not match those found in the "
-                    "header '%(header)s. "
-                    "Check that multi-variants and columns/values "
-                    "containing commas are double quoted and that row columns"
-                    " match those in the header."
+                    "header '%(header)s. Check that row values "
+                    "containing commas are double quoted and the number of row "
+                    "columns matches the number of columns defined by the file "
+                    "header."
                 ),
                 params={'row': list(row.keys()), 'header': header}
             )
