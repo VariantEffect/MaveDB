@@ -49,8 +49,8 @@ def search_view(request):
                 scoresets = scoreset_filter.qs
 
     instances = group_children(
-        list(experiments.distinct()),
-        list(scoresets.distinct())
+        list(experiments.distinct().order_by('urn')),
+        list(scoresets.distinct().order_by('urn'))
     )
     context = {
         "b_search_form": b_search_form,
