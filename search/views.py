@@ -17,7 +17,7 @@ def group_children(parents, children):
             grouped[child.parent].add(child)
         else:
             grouped[child.parent] = {child}
-    grouped = {p: list(reversed(sorted(v, key=lambda i: i.urn)))
+    grouped = {p: list(sorted(v, key=lambda i: i.urn))
                for (p, v) in grouped.items()}
     return grouped
 
@@ -49,8 +49,8 @@ def search_view(request):
                 scoresets = scoreset_filter.qs
 
     instances = group_children(
-        list(experiments.distinct().order_by('-urn')),
-        list(scoresets.distinct().order_by('-urn'))
+        list(experiments.distinct()),
+        list(scoresets.distinct())
     )
     context = {
         "b_search_form": b_search_form,

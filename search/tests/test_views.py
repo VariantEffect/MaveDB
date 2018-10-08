@@ -15,7 +15,7 @@ class TestUtilities(TestCase):
         scs2 = factories.ScoreSetFactory(experiment=exp)
         results = group_children([exp], [scs1, scs2])
         expected = {exp: list(
-            reversed(sorted({scs1, scs2}, key=lambda i: i.urn)))
+            sorted({scs1, scs2}, key=lambda i: i.urn))
         }
         self.assertDictEqual(results, expected)
 
