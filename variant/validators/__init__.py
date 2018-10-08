@@ -135,7 +135,7 @@ def validate_variant_rows(file):
     validate_at_least_one_numeric_column(header)
     validate_header_contains_no_null_columns(header)
     file.readline()  # remove header line
-
+    
     # csv reader requires strings and the file is opened in bytes mode by
     # default by the django form.
     lines = (
@@ -241,7 +241,8 @@ def validate_variant_rows(file):
                     )
 
         # Make sure the variant has been defined more than one time.
-        if primary_hgvs in hgvs_map:
+        if primary_hgvs_column == constants.hgvs_nt_column and \
+                primary_hgvs in hgvs_map:
             raise ValidationError(
                 "Variant '%(hgvs)s' has been re-defined at index %(i)s. Input "
                 "cannot contain the same variant twice in different rows.",
