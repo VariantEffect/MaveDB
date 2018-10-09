@@ -1,6 +1,7 @@
 {% extends "main/base.html" %}
 {% load dataset_tags %}
 {% load list_tags %}
+{% load utility_tags %}
 
 {% block body %}
 
@@ -40,21 +41,23 @@
   </div> <!-- end row -->
   <hr>
 
-  <div class="styled-table mt-4">
-    <table id="search-table" class="table table-hover">
-      <thead>
-        <tr>
-          <th class="clickable-row">Urn</th>
-          <th class="clickable-row">Short description</th>
-          <th class="clickable-row">Target name</th>
-          <th class="clickable-row">Target organisms</th>
-          <th class="clickable-row">Contributors</th>
-        </tr>
-      </thead>
-    </table>
+  <div id="table-wrapper" class="styled-table mt-4">
+    <div id="search-table-container" class="table-responsive">
+      <table id="search-table" class="styled-table table table-hover display" style="width: 100%;">
+        <thead>
+          <tr>
+            <th style="max-width: 15px !important;"></th>
+            <th class="clickable-row">Urn</th>
+            <th class="clickable-row">Short description</th>
+            <th class="clickable-row">Target name</th>
+            <th class="clickable-row">Target organisms</th>
+            <th class="clickable-row">Contributors</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
@@ -63,18 +66,39 @@
     {% for instance in instances %}
       {% if instance.private and request.user in instance.contributors or not instance.private %}
         {
-          "0": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
-          "1": "{{ instance.short_description|default:"-"|escapejs }}",
-          "2": [{% display_targets instance request.user True %}][0].join(', '),
-          "3": [{% display_species instance request.user True %}][0].join(', '),
-          "4": "" +
+          "urn": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
+          "description": "{{ instance.short_description|default:"-"|escapejs }}",
+          "target": [{% display_targets instance request.user True %}][0].join(', '),
+          "organism": [{% display_organism instance request.user True %}][0].join(', '),
+          "contributors": "" +
             {% for c in instance.contributors %}
               "<span>" +
               "{{ c.profile.get_display_name_hyperlink|escapejs|safe }}" +
               "<i class=\"external-link-small fas fa-external-link-alt\"></i>" +
               "</span><br>" +
             {% endfor %}
-          ""
+          "",
+          "children": [
+            {% get_item instances instance as children %}
+            {% for child in children %}
+              {% if child.private and request.user in child.contributors or not child.private %}
+                {
+                  "urn": "<a href=\"{{ child.get_url }}\">{% format_urn_name_for_user child request.user %}</a>",
+                  "description": "{{ child.short_description|default:"-"|escapejs }}",
+                  "target": [{% display_targets child request.user True %}][0].join(', '),
+                  "organism": [{% display_organism child request.user True %}][0].join(', '),
+                  "contributors": "" +
+                    {% for c in child.contributors %}
+                      "<span>" +
+                      "{{ c.profile.get_display_name_hyperlink|escapejs|safe }}" +
+                      "<i class=\"external-link-small fas fa-external-link-alt\"></i>" +
+                      "</span><br>" +
+                    {% endfor %}
+                  ""
+                },
+              {% endif %}
+            {% endfor %}
+          ]
         },
       {% endif %}
     {% endfor %}
@@ -86,18 +110,74 @@
   };
 
   $("document").ready(function() {
-    let formInit = false;
-    $('#search-table').DataTable({
+    var table = $('#search-table').DataTable({
       data: instances,
-      columnDefs: [
-        {className: "Urn", targets: [0] },
-        {className: "Short description", targets: [1] },
-        {className: "Target name", targets: [2] },
-        {className: "Target organisms", targets: [3] },
-        {className: "Contributors", targets: [4] }
-      ]
+      columns: [
+        {
+          className: 'details-control',
+          orderable: false,
+          data: null,
+          defaultContent: "",
+          render: function () {
+             return "<i class=\"fa fa-plus-square\" aria-hidden=\"true\"></i>";
+         },
+         width: "15px"
+        },
+        {data: "urn"},
+        {data: "description", width: "40%"},
+        {data: "target" },
+        {data: "organism"},
+        {data: "contributors"}
+      ],
+      order: [[1, 'asc']]
     });
+
     setTimeout(init_select2, 2000);
+    $(".no-hover").parent().parent().addClass("no-hover");
+
+    // Add event listener for opening and closing details
+    $('#search-table tbody').on('click', 'td.details-control', function () {
+       var tr = $(this).closest('tr');
+       var row = table.row(tr);
+
+       if (row.child.isShown()) {
+         // This row is already open - close it
+         row.child.hide();
+         tr.removeClass('shown');
+         var tdi = tr.find(".fa-minus-square");
+         tdi.first().removeClass('fa-minus-square');
+         tdi.first().addClass('fa-plus-square');
+
+         row.child().removeClass("no-hover");
+       }
+       else {
+         // Open this row
+         row.child(format(row.data())).show();
+         tr.addClass('shown');
+         var tdi = tr.find(".fa-plus-square");
+         tdi.first().removeClass('fa-plus-square');
+         tdi.first().addClass('fa-minus-square');
+
+         row.child().addClass("no-hover");
+       }
+    });
   });
+
+  function format(rowData) {
+    var html = "";
+    for (var i=0; i < rowData.children.length; i++) {
+      html += (
+        "<tr>" +
+          {#"<td></td>" +#}
+          "<td>" + rowData.children[i].urn + "</td>" +
+          "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +
+          "<td>" + rowData.children[i].target + "</td>" +
+          "<td>" + rowData.children[i].organism + "</td>" +
+          "<td>" + rowData.children[i].contributors + "</td>" +
+        "</tr>"
+      );
+    }
+    return html;
+  }
 </script>
 {% endblock %}

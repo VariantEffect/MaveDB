@@ -10,6 +10,18 @@ from . import forms
 User = get_user_model()
 
 
+def group_children(parents, children):
+    grouped = {p: set() for p in parents}
+    for child in children:
+        if child.parent in grouped:
+            grouped[child.parent].add(child)
+        else:
+            grouped[child.parent] = {child}
+    grouped = {p: list(sorted(v, key=lambda i: i.urn))
+               for (p, v) in grouped.items()}
+    return grouped
+
+
 def search_view(request):
     b_search_form = forms.BasicSearchForm()
     adv_search_form = forms.AdvancedSearchForm()
@@ -36,7 +48,10 @@ def search_view(request):
                 experiments = experiment_filter.qs
                 scoresets = scoreset_filter.qs
 
-    instances = list(scoresets.distinct()) + list(experiments.distinct())
+    instances = group_children(
+        list(experiments.distinct()),
+        list(scoresets.distinct())
+    )
     context = {
         "b_search_form": b_search_form,
         "adv_search_form": adv_search_form,

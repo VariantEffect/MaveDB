@@ -61,12 +61,6 @@ def validate_multi_variant(hgvs, level=None):
             )
 
         hgvs_ = hgvs[3:-1]  # removes prefix and square brackets
-        if level == Level.PROTEIN:
-            # Strip the parentheses since the regex won't work with them.
-            hgvs_ = hgvs_.replace('p.(', 'p.')
-            if hgvs_[-1] == ')':
-                hgvs_ = hgvs_[:-1]
-
         if level == Level.RNA:
             if semi_colon_separated_re.match(hgvs_):
                 matches = hgvs_.split(';')

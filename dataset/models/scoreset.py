@@ -212,7 +212,7 @@ class ScoreSet(DatasetModel):
         if not self.get_target():
             return set()
         return set([
-            g.get_species_name()
+            g.get_organism_name()
             for g in self.get_target().get_reference_genomes()
         ])
 
@@ -220,7 +220,7 @@ class ScoreSet(DatasetModel):
         if not self.get_target():
             return set()
         return set(sorted([
-            r.format_reference_genome_species_html()
+            r.format_reference_genome_organism_html()
             for r in self.get_target().get_reference_maps()
         ]))
 
@@ -271,7 +271,8 @@ class ScoreSet(DatasetModel):
     @property
     def replaces_previous(self):
         return getattr(self, 'replaces', None) is not None
-
+    
+    # ----- Return public/private versions
     @property
     def current_version(self):
         instance = self
@@ -279,6 +280,19 @@ class ScoreSet(DatasetModel):
             instance = instance.next_version
         return instance
 
+    @property
+    def next_version(self):
+        if self.has_replacement:
+            return self.replaced_by
+        return None
+    
+    @property
+    def previous_version(self):
+        if self.replaces_previous:
+            return self.replaces
+        return None
+    
+    # ---- Return public version only
     @property
     def current_public_version(self):
         instance = self
@@ -290,21 +304,9 @@ class ScoreSet(DatasetModel):
         return instance
 
     @property
-    def next_version(self):
-        if self.has_replacement:
-            return self.replaced_by
-        return None
-
-    @property
     def next_public_version(self):
         if self.has_replacement and not self.next_version.private:
             return self.next_version
-        return None
-
-    @property
-    def previous_version(self):
-        if self.replaces_previous:
-            return self.replaces
         return None
 
     @property
@@ -319,7 +321,59 @@ class ScoreSet(DatasetModel):
             return None
         else:
             return public_versions[-1]
-
+    
+    # ----- Returns version suitable for user
+    def get_version(self, attr, public_attr, user=None):
+        """
+        Get the version of this scoreset described by `attr`. Checks if an
+        authenticated user is present in the context. If one is present and
+        the version is private, checks if user is a contributor. If so, returns
+        this private version, otherwise returns the public version defined
+        by `public_attr`, which may be `None`.
+        """
+        version = getattr(self, attr)
+        public_version = getattr(self, public_attr)
+        if user is None or version is None:
+            return public_version
+        elif version.private and user in version.contributors():
+            return version
+        else:
+            return public_version
+        
+    def get_next_version(self, user=None):
+        """
+        Get the next version of this scoreset. Checks if an authenticated
+        user is present in the context. If one is present and the next
+        version is private, checks if user is a contributor. If so, returns
+        the next private version, otherwise returns the next public
+        version, which may be `None`.
+        """
+        return self.get_version(
+            'next_version', 'next_public_version', user)
+    
+    def get_previous_version(self, user=None):
+        """
+        Get the previous version of this scoreset. Checks if an authenticated
+        user is present in the context. If one is present and the previous
+        version is private, checks if user is a contributor. If so, returns
+        the previous private version, otherwise returns the next previous public
+        version, which may be `None`.
+        """
+        return self.get_version(
+            'previous_version', 'previous_public_version', user)
+    
+    def get_current_version(self, user=None):
+        """
+        Get the current version of this scoreset. Checks if an authenticated
+        user is present in the context. If one is present and the current
+        version is private, checks if user is a contributor. If so, returns
+        the current private version, otherwise returns the most current public
+        version.
+        """
+        return self.get_version(
+            'current_version', 'current_public_version', user)
+        
+    
 
 # --------------------------------------------------------------------------- #
 #                               Post Save

@@ -66,21 +66,21 @@ class TestExperiment(TestCase):
         genome1 = scs1.target.get_reference_genomes().first()
         genome2 = scs2.target.get_reference_genomes().first()
 
-        genome1.species_name = 'A'
+        genome1.organsim_name = 'A'
         genome1.save()
-        genome2.species_name = 'B'
+        genome2.organsim_name = 'B'
         genome2.save()
 
         expected = sorted(set(
-            [genome1.format_species_name_html()] +
-            [genome2.format_species_name_html()]
+            [genome1.format_organism_name_html()] +
+            [genome2.format_organism_name_html()]
         ))
         self.assertEqual(exp.get_targets().count(), 2)
         self.assertEqual(exp.get_display_target_organisms(), expected)
 
         expected = sorted(set(
-            [genome1.get_species_name()] +
-            [genome2.get_species_name()]
+            [genome1.get_organism_name()] +
+            [genome2.get_organism_name()]
         ))
         self.assertEqual(exp.get_target_organisms(), expected)
 

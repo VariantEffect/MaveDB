@@ -17,7 +17,7 @@ class Command(BaseCommand):
             references = json.load(fp)
             for reference_attrs in references:
                 name = reference_attrs['short_name']
-                species = reference_attrs['species_name']
+                organism_name = reference_attrs['organism_name']
                 assembly = reference_attrs['assembly_identifier']
                 if assembly is not None:
                     identifier = assembly['identifier']
@@ -31,7 +31,7 @@ class Command(BaseCommand):
                             identifier=identifier)
                     params = {
                         'short_name': name,
-                        'species_name': species,
+                        'organism_name': organism_name,
                         'genome_id': genome_id
                     }
                     sys.stdout.write("Created reference '%s'\n" % name)

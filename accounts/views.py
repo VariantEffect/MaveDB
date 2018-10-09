@@ -6,13 +6,11 @@ import django.contrib.auth.views as auth_views
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.views.generic import DetailView
 from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse_lazy
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
@@ -25,9 +23,6 @@ from .forms import (
     SelectUsersForm,
     ProfileForm,
     ConfirmationForm,
-)
-from .permissions import (
-    GroupTypes, PermissionTypes, assign_superusers_as_admin
 )
 
 User = get_user_model()
@@ -62,6 +57,15 @@ def profile_settings(request):
     address to be set.
     """
     profile_form = ProfileForm(instance=request.user.profile)
+    if request.is_ajax():
+        profile = request.user.profile
+        profile.generate_token()
+        profile.save()
+        return JsonResponse({
+            'token': profile.auth_token,
+            'expiry': profile.auth_token_expiry
+        })
+    
     if request.method == "POST":
         profile_form = ProfileForm(
                 instance=request.user.profile, data=request.POST)

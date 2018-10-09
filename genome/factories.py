@@ -48,14 +48,14 @@ class WildTypeSequenceFactory(DjangoModelFactory):
 class ReferenceGenomeFactory(DjangoModelFactory):
     """
     Creates a primary :class:`ReferenceGenome` instance with random
-    choice selection for the attributes `short_name` and `species_name`.
+    choice selection for the attributes `short_name` and `organism_name`.
     """
     class Meta:
         model = ReferenceGenome
         # django_get_or_create = ("short_name",)
 
     short_name = factory.fuzzy.FuzzyChoice(['hg38', 'hg37', 'hg36'])
-    species_name = factory.fuzzy.FuzzyChoice(['Homo sapiens'])
+    organism_name = factory.fuzzy.FuzzyChoice(['Homo sapiens'])
     genome_id = factory.SubFactory(GenomeIdentifierFactory)
 
 

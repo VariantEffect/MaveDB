@@ -2,6 +2,7 @@ import logging
 
 from django.db import transaction
 from django.http import JsonResponse
+from django.conf import settings
 
 from accounts.permissions import PermissionTypes
 
@@ -85,10 +86,14 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
     def get_ajax(self):
         type_ = self.request.GET.get('type', False)
         instance = self.get_object()
-        variants = instance.children.order_by('{}'.format(
-            instance.primary_hgvs_column))[0:10]
+        if settings.DEBUG:
+            variants = instance.children.order_by('{}'.format(
+                instance.primary_hgvs_column))[0:10]
+        else:
+            variants = instance.children.order_by('-{}'.format(
+                instance.primary_hgvs_column))[0:10]
+            
         rows = []
-        
         for variant in variants:
             row = {}
             if type_ == 'counts':
@@ -97,10 +102,13 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
                 v_data = variant.score_data
             
             for i, data in enumerate(v_data):
-                if isinstance(data, float):
-                    data = '{:.3f}'.format(data)
-                if isinstance(data, int):
-                    data = '{:.6g}'.format(data)
+                if not data:
+                    data = str(None)
+                else:
+                    if isinstance(data, float):
+                        data = '{:.3f}'.format(data)
+                    if isinstance(data, int):
+                        data = '{:.6g}'.format(data)
                 row['{}'.format(i)] = data
             rows.append(row)
             

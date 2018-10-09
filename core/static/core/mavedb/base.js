@@ -333,12 +333,34 @@ $("#id_target").on("change", function() {
 });
 
 
-function init_select2() {
-  $(".select2").select2({
+$("#generate-auth-token").on("click", function() {
+  $.ajax({
+    url: window.location.pathname,
+    type: "GET",
+    dataType: "json",
+    success: function (data) {
+      $("#auth-token-area").val(data.token);
+      // console.log(data.expiry);
+    },
+    error: function (xhr, errmsg, err) {
+      console.log(xhr.status + ": " + xhr + errmsg + err);
+    }
+  })
+});
 
-  });
+$("#copy-to-clipboard").on("click", function() {
+  var el = $("#auth-token-area");
+   $(el).focus();
+   $(el).select();
+   document.execCommand('copy');
+});
+
+function init_select2() {
+  // $(document.body).css({'cursor': 'wait'});
+  $(".select2").select2({});
   $(".select2-token-select").select2({
     tags: true,
     tokenSeparators: [","]
   });
+  // $(document.body).css({'cursor': 'default'});
 }

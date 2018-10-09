@@ -7,7 +7,7 @@
             "url": "http://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.10"
         },
         "short_name": "hg16",
-        "species_name": "Homo sapiens"
+        "organism_name": "Homo sapiens"
     },
     {
         "assembly_identifier": {
@@ -17,7 +17,7 @@
             "url": "http://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.11"
         },
         "short_name": "hg17",
-        "species_name": "Homo sapiens"
+        "organism_name": "Homo sapiens"
     },
     {
         "assembly_identifier": {
@@ -27,7 +27,7 @@
             "url": "http://www.ncbi.nlm.nih.gov/assembly/GCF_000146795.2"
         },
         "short_name": "hg18",
-        "species_name": "Homo sapiens"
+        "organism_name": "Homo sapiens"
     },
     {
         "assembly_identifier": {
@@ -37,7 +37,7 @@
             "url": "http://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.13"
         },
         "short_name": "hg19",
-        "species_name": "Homo sapiens"
+        "organism_name": "Homo sapiens"
     },
     {
         "assembly_identifier": {
@@ -47,12 +47,12 @@
             "url": "http://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.26"
         },
         "short_name": "hg38",
-        "species_name": "Homo sapiens"
+        "organism_name": "Homo sapiens"
     },
     {
         "assembly_identifier": null,
         "short_name": "Other",
-        "species_name": "Other - genome not listed"
+        "organism_name": "Other - genome not listed"
     },
     {
         "assembly_identifier": {
@@ -62,11 +62,11 @@
             "url": "http://www.ncbi.nlm.nih.gov/assembly/GCF_000146045.2"
         },
         "short_name": "sacCer3/R64",
-        "species_name": "Saccharomyces cerevisiae"
+        "organism_name": "Saccharomyces cerevisiae"
     },
     {
         "assembly_identifier": null,
         "short_name": "Synthetic",
-        "species_name": "Synthetic sequence"
+        "organism_name": "Synthetic sequence"
     }
 ]

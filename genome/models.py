@@ -4,7 +4,7 @@ from core.models import TimeStampedModel
 
 from .validators import (
     validate_wildtype_sequence, min_start_validator,
-    validate_gene_name, validate_genome_short_name, validate_species_name,
+    validate_gene_name, validate_genome_short_name, validate_organism_name,
     validate_strand, validate_chromosome, min_end_validator
 )
 
@@ -13,7 +13,7 @@ class TargetGene(TimeStampedModel):
     """
     Models a target gene, defining the wild-type sequence, a free-text name
     and a collection of reference_maps relating the gene to reference genomes,
-    which can be from different species.
+    which can be from different organism.
 
     The fields `wt_sequence` and `scoreset` are allowed
     to be saved as `None` to allow complex form handling but this *should*
@@ -247,17 +247,17 @@ class ReferenceMap(TimeStampedModel):
         if self.get_reference_genome():
             return self.get_reference_genome().get_short_name()
 
-    def get_reference_genome_species(self):
+    def get_reference_genome_organism(self):
         if self.get_reference_genome():
-            return self.get_reference_genome().get_species_name()
+            return self.get_reference_genome().get_organism_name()
 
-    def format_reference_genome_species_html(self):
+    def format_reference_genome_organism_html(self):
         """
-        Return a HTML string formatting the associated genomes species name
+        Return a HTML string formatting the associated genomes organism name
         using italics and capitalisation.
         """
         if self.get_reference_genome():
-            return self.get_reference_genome().format_species_name_html()
+            return self.get_reference_genome().format_organism_name_html()
 
     def get_intervals(self):
         return self.intervals.all()
@@ -272,15 +272,15 @@ class ReferenceMap(TimeStampedModel):
 class ReferenceGenome(TimeStampedModel):
     """
     The :class:`ReferenceGenome` specifies fields describing a specific genome
-    in terms of a short name, species and various external identifiers.
+    in terms of a short name, organism and various external identifiers.
 
     Parameters
     ----------
     short_name : `CharField`
         The short name description of the genome. Example: 'hg38'.
 
-    species_name : `CharField`
-        The species of the genome. Example: 'Homo spaiens'
+    organism_name : `CharField`
+        The organism of the genome. Example: 'Homo spaiens'
 
     ensembl_id : `ForeignKey`
         An :class:`EnsemblIdentifier` instance to relating to this genome.
@@ -304,13 +304,13 @@ class ReferenceGenome(TimeStampedModel):
         max_length=256,
         validators=[validate_genome_short_name],
     )
-    species_name = models.CharField(
+    organism_name = models.CharField(
         blank=False,
         null=False,
         default=None,
-        verbose_name='Species',
+        verbose_name='Organism',
         max_length=256,
-        validators=[validate_species_name],
+        validators=[validate_organism_name],
     )
 
     # Potential ExternalIdentifiers that may be linked.
@@ -348,20 +348,20 @@ class ReferenceGenome(TimeStampedModel):
         return None
 
     def display_name(self):
-        return '{} | {}'.format(self.get_short_name(), self.get_species_name())
+        return '{} | {}'.format(self.get_short_name(), self.get_organism_name())
 
     def get_short_name(self):
         return self.short_name
 
-    def get_species_name(self):
-        return self.species_name
+    def get_organism_name(self):
+        return self.organism_name
 
-    def format_species_name_html(self):
+    def format_organism_name_html(self):
         """
-        Return a HTML string formatting the associated genomes species name
+        Return a HTML string formatting the associated genomes organism name
         using italics and capitalisation.
         """
-        return "<i>{}</i>".format(self.get_species_name().capitalize())
+        return "<i>{}</i>".format(self.get_organism_name().capitalize())
 
 
 class GenomicInterval(TimeStampedModel):

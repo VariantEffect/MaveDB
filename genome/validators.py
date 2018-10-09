@@ -81,7 +81,7 @@ def validate_wildtype_sequence(seq):
 
 # ReferenceGenome
 # ------------------------------------------------------------------------- #
-def validate_species_name(value):
+def validate_organism_name(value):
     if is_null(value):
         raise ValidationError("Species name must not be null.")
 

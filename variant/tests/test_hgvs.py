@@ -23,6 +23,7 @@ class TestValidateMulti(TestCase):
             
     def test_can_validate_protein_multi(self):
         validate_multi_variant('p.[His4_Gln5insAla;Cys28fs;Cys28delinsVal]')
+        validate_multi_variant('p.[(His4_Gln5insAla);(Cys28fs);Cys28delinsVal]')
         
     def test_can_validate_dna_multi(self):
         validate_multi_variant('c.[123A>G;19del]')

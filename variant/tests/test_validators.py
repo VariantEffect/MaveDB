@@ -199,12 +199,18 @@ class TestVariantRowValidator(TestCase):
         with self.assertRaises(ValidationError):
             validate_variant_rows(BytesIO(data.encode()))
 
-    def test_validationerror_same_hgvs_defined_in_two_rows(self):
+    def test_validationerror_same_hgvs_nt_defined_in_two_rows(self):
         hgvs = generate_hgvs()
         data = "{},{}\n{},1.0\n{},1.0".format(
             constants.hgvs_nt_column, required_score_column, hgvs, hgvs)
         with self.assertRaises(ValidationError):
             validate_variant_rows(BytesIO(data.encode()))
+            
+    def test_allows_same_hgvs_pro_defined_in_two_rows(self):
+        hgvs = generate_hgvs(prefix='p')
+        data = "{},{}\n{},1.0\n{},1.0".format(
+            constants.hgvs_pro_column, required_score_column, hgvs, hgvs)
+        validate_variant_rows(BytesIO(data.encode()))  # passes
 
     def test_null_values_converted_to_None(self):
         hgvs = generate_hgvs()

@@ -1,9 +1,8 @@
+import json
+
 from django.core.urlresolvers import reverse_lazy
 from django.test import TestCase, RequestFactory, mock
-from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
-from django.core import mail
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import reverse
 
 from dataset import constants
@@ -13,7 +12,6 @@ from dataset.tasks import publish_scoreset
 from dataset.models.scoreset import ScoreSet
 from dataset.factories import (
     ExperimentSetFactory, ScoreSetFactory, ScoreSetWithTargetFactory,
-    ExperimentFactory
 )
 from variant.factories import VariantFactory
 
@@ -88,6 +86,23 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         request.user = user
         response = profile_settings(request)
         self.assertContains(response, user.profile.email)
+        
+    def test_ajax_call_creates_new_token(self):
+        user = UserFactory()
+        self.assertIsNone(user.profile.auth_token)
+        self.assertIsNone(user.profile.auth_token_expiry)
+        request = self.create_request(
+            method='get',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            path='/profile/',
+        )
+        request.user = user
+        response = profile_settings(request)
+        data = json.loads(response.content.decode())
+        self.assertIsNotNone(user.profile.auth_token)
+        self.assertIsNotNone(user.profile.auth_token_expiry)
+        self.assertEqual(data['token'], user.profile.auth_token)
+        self.assertEqual(data['expiry'], str(user.profile.auth_token_expiry))
 
 
 class TestProfileDeleteInstance(TestCase, TestMessageMixin):

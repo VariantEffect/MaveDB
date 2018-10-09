@@ -16,7 +16,7 @@ from ..validators import (
     validate_wildtype_sequence,
     validate_gene_name,
     validate_genome_short_name,
-    validate_species_name,
+    validate_organism_name,
     validate_strand,
     validate_map_has_unique_reference_genome,
     validate_reference_genome_has_one_external_identifier,
@@ -109,13 +109,13 @@ class TestReferenceGenomeValidators(TestCase):
     Tests validators asscociated with :class:`ReferenceGenome`:
 
         - validate_reference_genome_has_one_external_identifier
-        - validate_species_name
+        - validate_organism_name
         - validate_genome_short_name
     """
-    def test_ve_null_species_name(self):
+    def test_ve_null_organism_name(self):
         for v in nan_col_values:
             with self.assertRaises(ValidationError):
-                validate_species_name(v)
+                validate_organism_name(v)
 
     def test_ve_null_genome_short_name(self):
         for v in nan_col_values:

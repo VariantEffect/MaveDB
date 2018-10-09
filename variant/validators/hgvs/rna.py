@@ -3,16 +3,19 @@ from hgvsp.rna import substitution_re, delins_re, deletion_re, insertion_re
 from django.core.exceptions import ValidationError
 
 
+from ... import constants
+
+
 def validate_substitution(hgvs):
     match = substitution_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
             "'{}' is not a supported substitution syntax.".format(hgvs))
-    ref_nt = match.groupdict().get('ref', None)
-    new_nt = match.groupdict().get('new', None)
-    silent = match.groupdict().get('silent', None)
-    if not silent and (ref_nt is not None and new_nt is not None):
-        if ref_nt == new_nt:
+    ref_nt = match.groupdict().get(constants.hgvsp_ref, None)
+    alt_nt = match.groupdict().get(constants.hgvsp_alt, None)
+    silent = match.groupdict().get(constants.hgvsp_silent, None)
+    if not silent and (ref_nt is not None and alt_nt is not None):
+        if ref_nt == alt_nt:
             raise ValidationError(
                 "Reference nucleotide cannot be the same as the "
                 "new nucleotide for variant '{}'.".format(hgvs)

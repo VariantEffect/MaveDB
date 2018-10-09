@@ -2,20 +2,37 @@ from django.test import TestCase, RequestFactory
 
 from accounts.factories import UserFactory
 
-from dataset.factories import ExperimentWithScoresetFactory
+from dataset import factories
 from dataset import utilities
 
-from ..views import search_view
+from ..views import search_view, group_children
+
+
+class TestUtilities(TestCase):
+    def test_group_groups_scoresets_under_parent(self):
+        exp = factories.ExperimentFactory()
+        scs1 = factories.ScoreSetFactory(experiment=exp)
+        scs2 = factories.ScoreSetFactory(experiment=exp)
+        results = group_children([exp], [scs1, scs2])
+        expected = {exp: list(
+            sorted({scs1, scs2}, key=lambda i: i.urn))
+        }
+        self.assertDictEqual(results, expected)
+
+    def test_group_adds_parents_to_keys_if_missing(self):
+        scs = factories.ScoreSetFactory()
+        results = group_children([], [scs])
+        expected = {scs.parent: [scs]}
+        self.assertDictEqual(results, expected)
 
 
 class TestSearchView(TestCase):
-
     def setUp(self):
         self.factory = RequestFactory()
         self.path = '/search/'
-        self.exp1 = ExperimentWithScoresetFactory()
-        self.exp2 = ExperimentWithScoresetFactory()
-        self.exp3 = ExperimentWithScoresetFactory()
+        self.exp1 = factories.ExperimentWithScoresetFactory()
+        self.exp2 = factories.ExperimentWithScoresetFactory()
+        self.exp3 = factories.ExperimentWithScoresetFactory()
         self.scs1 = self.exp1.scoresets.first()
         self.scs2 = self.exp2.scoresets.first()
         self.scs3 = self.exp3.scoresets.first()

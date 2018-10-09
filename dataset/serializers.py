@@ -1,4 +1,3 @@
-import json
 import logging
 
 from rest_framework import serializers
@@ -44,23 +43,43 @@ class DatasetModelSerializer(TimeStampedModelSerializer):
         )
         read_only_fields = fields
         lookup_field = 'urn'
-
+        
+    @staticmethod
+    def stringify_instance(instance):
+        if instance is None:
+            return None
+        return instance.urn
+    
 
 class ScoreSetSerializer(DatasetModelSerializer):
 
     target = TargetGeneSerializer(many=False)
-    experiment = serializers.StringRelatedField(many=False)
+    experiment = serializers.SerializerMethodField()
 
     score_columns = serializers.ListSerializer(child=serializers.CharField())
     count_columns = serializers.ListSerializer(child=serializers.CharField())
 
-    previous_version = serializers.StringRelatedField(
-        source="previous_public_version", many=False)
-    next_version = serializers.StringRelatedField(
-        source="next_public_version", many=False)
-    current_version = serializers.StringRelatedField(
-        source='current_public_version', many=False)
+    # Defaults to 'get_<field_name>'. Raises error if you try to be redundant.
+    previous_version = serializers.SerializerMethodField()
+    next_version = serializers.SerializerMethodField()
+    current_version = serializers.SerializerMethodField()
+    
+    def get_experiment(self, obj):
+        return self.stringify_instance(
+            obj.parent_for_user(self.context.get('user', None)))
+      
+    def get_previous_version(self, obj):
+        user = self.context.get('user', None)
+        return self.stringify_instance(obj.get_previous_version(user))
 
+    def get_current_version(self, obj):
+        user = self.context.get('user', None)
+        return self.stringify_instance(obj.get_current_version(user))
+    
+    def get_next_version(self, obj):
+        user = self.context.get('user', None)
+        return self.stringify_instance(obj.get_next_version(user))
+            
     class Meta(DatasetModelSerializer.Meta):
         model = ScoreSet
         fields = DatasetModelSerializer.Meta.fields + (
@@ -72,9 +91,16 @@ class ScoreSetSerializer(DatasetModelSerializer):
 
 
 class ExperimentSerializer(DatasetModelSerializer):
-    scoresets = serializers.StringRelatedField(
-        source='public_scoresets', many=True)
-    experimentset = serializers.StringRelatedField(many=False)
+    scoresets = serializers.SerializerMethodField('children')
+    experimentset = serializers.SerializerMethodField()
+    
+    def get_experimentset(self, obj):
+        return self.stringify_instance(
+            obj.parent_for_user(self.context.get('user', None)))
+    
+    def children(self, obj):
+        return [c.urn for c in
+                obj.children_for_user(self.context.get('user', None))]
 
     class Meta(DatasetModelSerializer.Meta):
         model = Experiment
@@ -84,8 +110,11 @@ class ExperimentSerializer(DatasetModelSerializer):
 
 
 class ExperimentSetSerializer(DatasetModelSerializer):
-    experiments = serializers.StringRelatedField(
-        source='public_experiments', many=True)
+    experiments = serializers.SerializerMethodField('children')
+
+    def children(self, obj):
+        return [c.urn for c in
+                obj.children_for_user(self.context.get('user', None))]
 
     class Meta(DatasetModelSerializer.Meta):
         model = ExperimentSet

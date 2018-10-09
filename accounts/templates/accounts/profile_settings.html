@@ -1,8 +1,7 @@
 {% extends "accounts/profile_base.html" %}
 
 {% block profile_body %}
-  <div class="container">
-
+  <div class="container mb-4">
     <div class="container">
       <h2> Profile settings
         <a><i class="icon fas fa-cog" style="font-size: 36px;"></i></a>
@@ -16,12 +15,12 @@
           {% include 'core/bs_form.html' with form=profile_form %}
           <hr>
           <div class="mb-2">
-            <button id='submit-form' class="btn btn-outline-dark white-button mr-2" type="submit" value="Submit"
+            <button id='submit-form' class="btn btn-outline-dark white-button" type="submit" value="Submit"
                    name="save" data-toggle="tooltip" data-placement="top|right|bottom|left"
                     title="Save and update your profile information.">
               <i class="fa fa-check accept"></i>
             </button>
-            <button class="btn btn-outline-dark white-button mr-2" type="button" value="Cancel" name="cancel"
+            <button class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
                    data-toggle="tooltip" data-placement="top|right|bottom|left" onclick="cancelSubmission()"
                    title="Cancel changes and return to your profile.">
               <i class="fa fa-ban cancel"></i>
@@ -30,7 +29,32 @@
         </form>
       </div>
     </div>
+  </div>
 
+  <div class="container mt-4">
+    <div class="container">
+      <h3>API Access
+        <a><i class="icon fas fa-key" style="font-size: 36px;"></i></a>
+      </h3>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-12 col-xs-12">
+        <label for="auth-token-area"></label>
+        <textarea class="form-control" id="auth-token-area" rows="2">{{ request.user.profile.auth_token|default:"Click to generate a new token." }}</textarea>
+        <hr>
+        <div class="mt-2">
+          <button id="generate-auth-token"
+                  class="btn btn-outline-dark white-button">
+            <i class="icon fas fas fa-sync-alt" style="font-size: 24px;"></i>
+          </button>
+          <button id="copy-to-clipboard"
+                  class="btn btn-outline-dark white-button">
+            <i class="icon fa fa-clipboard" style="font-size: 24px;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
 {% endblock profile_body %}

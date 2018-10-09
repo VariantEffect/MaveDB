@@ -20,6 +20,31 @@ class TestDatasetModelFilter(TestCase):
         self.instance1.save()
         self.instance2.save()
 
+    def test_filter_for_user_excludes_private_if_not_contributor(self):
+        self.instance2.private = True
+        self.instance2.save()
+
+        f = filters.ExperimentSetFilterModel(
+            data={},
+            queryset=models.experimentset.ExperimentSet.objects.all()
+        )
+        qs = f.filter_for_user(user=self.user1)
+        self.assertIn(self.instance1, qs)
+        self.assertNotIn(self.instance2, qs)
+
+    def test_filter_for_user_includes_private_if_contributor(self):
+        self.instance2.private = True
+        self.instance2.save()
+        self.instance2.add_administrators(self.user1)
+
+        f = filters.ExperimentSetFilterModel(
+            data={},
+            queryset=models.experimentset.ExperimentSet.objects.all()
+        )
+        qs = f.filter_for_user(user=self.user1)
+        self.assertIn(self.instance1, qs)
+        self.assertIn(self.instance2, qs)
+
     def test_splits_on_comma(self):
         res = filters.ExperimentFilter.split("hello,world", sep=',')
         self.assertEqual(res, ['hello', 'world'])
@@ -51,16 +76,6 @@ class TestDatasetModelFilter(TestCase):
             queryset=models.experimentset.ExperimentSet.objects.all(),
         )
         self.assertEqual(f.qs_or.count(), 2)
-
-    def test_filters_out_private_by_default(self):
-        self.instance1.private = True
-        self.instance2.private = True
-        self.instance1.save()
-        self.instance2.save()
-        f = filters.ExperimentSetFilterModel(
-            queryset=models.experimentset.ExperimentSet.objects.all(),
-        )
-        self.assertEqual(f.qs.count(), 0)
 
     def test_search_by_urn(self):
         f = filters.ExperimentSetFilterModel(
@@ -302,7 +317,7 @@ class TestExperimentFilter(TestCase):
         target1.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000267816')
         genome1.short_name = 'HG17'
-        genome1.species_name = 'Homo sapiens'
+        genome1.organism_name = 'Homo sapiens'
         genome1.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000146045.2')
         target1.save()
@@ -320,7 +335,7 @@ class TestExperimentFilter(TestCase):
         target2.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000198001')
         genome2.short_name = 'HG18'
-        genome2.species_name = 'Synthetic sequence'
+        genome2.organism_name = 'Synthetic sequence'
         genome2.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000001405.26')
         target2.save()
@@ -394,13 +409,13 @@ class TestExperimentFilter(TestCase):
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
 
-    def test_search_by_targetgene_species(self):
+    def test_search_by_targetgene_organism(self):
         f = filters.ExperimentFilter(
             data={
-                filters.ExperimentFilter.SPECIES:
+                filters.ExperimentFilter.ORGANISM:
                     self.instance1.children.first().target.
                         reference_maps.first().
-                        genome.species_name,
+                        genome.organism_name,
             },
             queryset=self.queryset,
         )
@@ -515,7 +530,7 @@ class TestScoreSetFilter(TestCase):
         target1.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000267816')
         genome1.short_name = 'HG17'
-        genome1.species_name = 'Homo sapiens'
+        genome1.organism_name = 'Homo sapiens'
         genome1.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000146045.2')
         target1.save()
@@ -531,7 +546,7 @@ class TestScoreSetFilter(TestCase):
         target2.refseq_id = meta_factories.RefseqIdentifierFactory(
             identifier='ENSG00000198001')
         genome2.short_name = 'HG18'
-        genome2.species_name = 'Synthetic sequence'
+        genome2.organism_name = 'Synthetic sequence'
         genome2.genome_id = meta_factories.GenomeIdentifierFactory(
             identifier='GCF_000001405.26')
         target2.save()
@@ -633,12 +648,12 @@ class TestScoreSetFilter(TestCase):
         self.assertIn(self.instance1, f.qs.all())
         self.assertNotIn(self.instance2, f.qs.all())
     
-    def test_search_by_targetgene_species(self):
+    def test_search_by_targetgene_organism(self):
         f = filters.ScoreSetFilter(
             data={
-                filters.ScoreSetFilter.SPECIES:
+                filters.ScoreSetFilter.ORGANISM:
                     self.instance1.target.reference_maps.first().
-                        genome.species_name,
+                        genome.organism_name,
             },
             queryset=self.queryset,
         )

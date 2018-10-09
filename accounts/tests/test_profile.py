@@ -1,8 +1,10 @@
+import datetime
+from datetime import timedelta
+
 from django.test import TestCase, mock
 from django.core import mail
 from django.contrib.auth import get_user_model
 
-from social_django.models import UserSocialAuth
 from guardian.conf.settings import ANONYMOUS_USER_NAME
 
 from accounts.factories import UserFactory
@@ -35,7 +37,41 @@ class TestUserProfile(TestCase):
         self.exp_2 = Experiment.objects.create()
         self.scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
         self.scs_2 = ScoreSet.objects.create(experiment=self.exp_2)
-
+        
+    def test_generate_token_creates_new_token(self):
+        user = User.objects.create(username="bob", password="secretkey")
+        self.assertIsNone(user.profile.auth_token)
+        user.profile.generate_token()
+        self.assertIsNotNone(user.profile.auth_token)
+        self.assertEqual(len(user.profile.auth_token), Profile.TOKEN_LEGNTH)
+        
+    def test_generate_token_creates_new_token_expiry_date_days_from_today(self):
+        user = User.objects.create(username="bob", password="secretkey")
+        self.assertIsNone(user.profile.auth_token_expiry)
+        user.profile.generate_token()
+        today = datetime.date.today()
+        self.assertEqual(
+            user.profile.auth_token_expiry,
+            today + timedelta(days=Profile.TOKEN_EXPIRY)
+        )
+        
+    def test_validate_token_false_incorrect_token(self):
+        user = User.objects.create(username="bob", password="secretkey")
+        user.profile.generate_token()
+        self.assertFalse(user.profile.auth_token_is_valid('aaa'))
+        self.assertTrue(
+            user.profile.auth_token_is_valid(user.profile.auth_token))
+        
+    def test_validate_token_false_expriy_date_has_passed(self):
+        user = User.objects.create(username="bob", password="secretkey")
+        user.profile.generate_token()
+        self.assertTrue(
+            user.profile.auth_token_is_valid(user.profile.auth_token))
+        user.profile.auth_token_expiry -= timedelta(days=10)
+        user.profile.save()
+        self.assertFalse(
+            user.profile.auth_token_is_valid(user.profile.auth_token))
+        
     def test_can_get_non_anonymous_profiles(self):
         bob = User.objects.create(username="bob", password="secretkey")
         anon = User.objects.get(username=ANONYMOUS_USER_NAME)

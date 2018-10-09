@@ -134,20 +134,31 @@ code {
 
 /* Tables
 ---------------------------------------------------------------------------  */
-table td {
-    width: 200px;
-    word-break: break-all;
-}
 table th {
     white-space: nowrap !important;
-    width: 1% !important;
+    /*width: 1% !important;*/
 }
 table {
     width: 100%;
-    word-break: break-all;
 }
 
-#search-table, #counts-table, #scores-table {
+.hgvs_pro, .hgvs_nt {
+  word-break: keep-all;
+}
+
+.no-hover {
+  background-color: unset !important;
+}
+
+
+#search-table {
+    border: 2px solid #987cb8;
+    padding: 0 0.25px 0.25px 1px;
+    display: block;
+    /*overflow-x: scroll;*/
+}
+
+#counts-table, #scores-table {
     border: 2px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
@@ -168,6 +179,16 @@ table {
     font-size: 14px;
     /*line-height: 0.10em;*/
     border: 1px solid white;
+}
+
+td.details-control {
+    text-align:center;
+    color: #987cb8;
+    cursor: pointer;
+}
+tr.shown td.details-control {
+    text-align: center;
+    color: #987cb8;
 }
 
 .styled-table .input-group .form-control,
