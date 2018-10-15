@@ -1,0 +1,11 @@
+{% autoescape off %}
+{% if user.first_name %}
+Hi {{ user.first_name }},
+{% else %}
+Hi,
+{% endif %}
+Your scoreset {{ urn }} has been successfully deleted.
+
+Regards,
+The Mave team.
+{% endautoescape %}
