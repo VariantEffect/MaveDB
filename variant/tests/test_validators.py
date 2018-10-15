@@ -75,10 +75,9 @@ class TestHGVSValidator(TestCase):
     def test_converts_bytes_to_string_before_validation(self):
         validate_hgvs_string(b'r.427a>g')
     
-    def test_error_null(self):
+    def test_return_none_for_null(self):
         for c in constants.nan_col_values:
-            with self.assertRaises(ValidationError):
-                validate_hgvs_string(c)
+            self.assertIsNone(validate_hgvs_string(c))
         
 
 class TestVariantJsonValidator(TestCase):
@@ -251,7 +250,7 @@ class TestVariantRowValidator(TestCase):
         self.assertEqual(hgvs_map[wt][constants.hgvs_nt_column], wt)
         self.assertEqual(hgvs_map[wt][constants.hgvs_pro_column], sy)
 
-    def test_hgvs_columns_filtered_from_row_data(self):
+    def test_row_data_contains_hgvs_columns(self):
         hgvs_nt = generate_hgvs(prefix='c')
         hgvs_pro = generate_hgvs(prefix='p')
         data = "{},{},{}\n{},{},1.0".format(
@@ -261,8 +260,11 @@ class TestVariantRowValidator(TestCase):
             hgvs_nt, hgvs_pro
         )
         header, primary, hgvs_map = validate_variant_rows(BytesIO(data.encode()))
-        self.assertEqual(list(hgvs_map[primary].keys()), [required_score_column])
-        self.assertEqual(header, [required_score_column])
+        self.assertListEqual(
+            list(list(hgvs_map.values())[0].keys()),
+            [constants.hgvs_nt_column, constants.hgvs_pro_column, required_score_column]
+        )
+        self.assertListEqual(header, [required_score_column])
 
     def test_parses_numeric_column_values_into_float(self):
         hgvs = generate_hgvs()

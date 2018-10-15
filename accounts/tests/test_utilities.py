@@ -78,6 +78,17 @@ class TestDelete(TestCase, TestMessageMixin):
         instance.add_administrators(self.user)
         self.assertFalse(delete(instance.urn, self.create_request()))
 
+    @mock.patch('dataset.tasks.delete_instance.submit_task', return_value=(True, None))
+    def test_submits_task_to_celery(self, patch):
+        instance = ScoreSetFactory()  # type: dataset.models.scoreset.ScoreSet
+        instance.add_administrators(self.user)
+        request = self.create_request()
+        delete(instance.urn, request)
+        patch.assert_called_with(**{
+            'kwargs': {'urn': instance.urn, 'user_pk': request.user.pk},
+            'request': request
+        })
+
 
 class TestPublish(TestCase, TestMessageMixin):
     def setUp(self):
@@ -174,4 +185,14 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.refresh_from_db()
         self.assertEqual(
             scoreset.processing_state, dataset.constants.processing)
-        
+
+    @mock.patch('dataset.tasks.publish_scoreset.submit_task', return_value=(True, None))
+    def test_submits_task_to_celery(self, patch):
+        instance = self.create_scoreset()
+        instance.add_administrators(self.user)
+        request = self.create_request()
+        publish(instance.urn, request)
+        patch.assert_called_with(**{
+            'kwargs': {'scoreset_urn': instance.urn, 'user_pk': request.user.pk},
+            'request': request
+        })

@@ -349,3 +349,23 @@ class TestUserProfile(TestCase):
         patch.assert_called()
         message = patch.call_args[1]['kwargs']['message']
         self.assertIn("has been successfully processed", message)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_delegates_correct_template_delete_success(self, patch):
+        user = UserFactory()
+        instance = factories.ExperimentSetFactory()
+        user.profile.notify_user_delete_status(success=True, urn=instance.urn)
+
+        patch.assert_called()
+        message = patch.call_args[1]['kwargs']['message']
+        self.assertIn("has been successfully deleted", message)
+
+    @mock.patch('core.tasks.send_mail.apply_async')
+    def test_delegates_correct_template_delete_fail(self, patch):
+        user = UserFactory()
+        instance = factories.ExperimentSetFactory()
+        user.profile.notify_user_delete_status(success=False, urn=instance.urn)
+
+        patch.assert_called()
+        message = patch.call_args[1]['kwargs']['message']
+        self.assertIn("could not be deleted", message)

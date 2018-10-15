@@ -1,6 +1,7 @@
 from django.test import TestCase, mock
 
 from accounts.factories import UserFactory
+from accounts.models import Profile
 
 from core.models import FailedTask
 
@@ -9,7 +10,8 @@ from variant.factories import generate_hgvs, make_data, VariantFactory
 from dataset import constants
 from dataset.models.scoreset import default_dataset, ScoreSet
 from dataset.factories import ScoreSetFactory
-from dataset.tasks import create_variants, publish_scoreset, BasePublish
+from dataset.tasks import create_variants, publish_scoreset, \
+    BasePublish, delete_instance, BaseDelete
 
 
 class TestCreateVariantsTask(TestCase):
@@ -225,3 +227,33 @@ class TestPublishScoresetTask(TestCase):
         base.on_failure(
             exc=Exception("Test"), task_id='1', args=[], einfo=None, kwargs={})
         self.assertEqual(FailedTask.objects.count(), 1)
+
+
+class TestDeleteInstance(TestCase):
+    def setUp(self):
+        self.scoreset = ScoreSetFactory()
+        self.user = UserFactory()
+
+    @mock.patch.object(Profile, 'notify_user_delete_status')
+    def test_sends_user_email_on_success(self, mock_patch):
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        mock_patch.assert_called_with(**{'success': True,
+                                         'urn': self.scoreset.urn})
+        self.assertEqual(ScoreSet.objects.count(), 0)
+
+    @mock.patch.object(Profile, 'notify_user_delete_status')
+    def test_notifies_user_on_fail(self, mock_patch):
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.parent.urn, user_pk=self.user.pk, ))
+        mock_patch.assert_called_with(**{'success': False,
+                                         'urn': self.scoreset.parent.urn})
+
+    def test_on_failure_sets_status_to_success(self):
+        exp = self.scoreset.parent
+        exp.processing_state = constants.processing
+        exp.save()
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.parent.urn, user_pk=self.user.pk, ))
+        exp.refresh_from_db()
+        self.assertEqual(exp.processing_state, constants.success)
