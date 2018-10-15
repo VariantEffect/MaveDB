@@ -106,6 +106,17 @@ class Profile(TimeStampedModel):
         })
         self.email_user(subject=subject, message=message)
 
+    def notify_user_delete_status(self, success, urn):
+        if success:
+            template_name = "accounts/celery_delete_email_success.html"
+        else:
+            template_name = "accounts/celery_delete_email_failed.html"
+        subject = "Your submission has been processed."
+        message = render_to_string(template_name, {
+            'user': self, 'urn': urn
+        })
+        self.email_user(subject=subject, message=message)
+
     def notify_user_group_change(self, instance, action, group):
         if action == 'removed':
             conjunction = 'from'
