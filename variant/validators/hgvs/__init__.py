@@ -41,6 +41,8 @@ validate_event_functions = {
 
 
 def validate_multi_variant(hgvs, level=None):
+    if not hgvs:
+        return None
     if level and not isinstance(level, Level):
         raise TypeError(
             "`level` must be a valid Level enum. Found '{}'".format(
@@ -88,6 +90,8 @@ def validate_multi_variant(hgvs, level=None):
 
 
 def validate_single_variant(hgvs, level=None):
+    if not hgvs:
+        return None
     if level and not isinstance(level, Level):
         raise TypeError(
             "`level` must be a valid Level enum. Found '{}'".format(

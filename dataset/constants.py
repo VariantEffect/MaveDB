@@ -1,7 +1,7 @@
 """
 Constant definitions for application `experiment`.
 """
-
+import re
 from urn.validators import (
     MAVEDB_EXPERIMENTSET_URN_PATTERN,
     MAVEDB_EXPERIMENT_URN_PATTERN,
@@ -13,8 +13,9 @@ nan_col_values = {
     '', ' ',
     'nan', 'na', 'none', 'null',
     'NaN', 'None', 'Na', 'NA', 'NULL',
-    'undefined',
+    'undefined', 'N/A', 'n/a'
 }
+null_values_re = re.compile(r'\s+|none|nan|na|undefined|n/a|null')
 readable_nan_values = [
     "'{}'".format(v)
     for v in set([v.lower() for v in nan_col_values])

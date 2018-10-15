@@ -1,4 +1,6 @@
-import csv
+import re
+import numpy as np
+import pandas as pd
 from hgvsp import is_multi
 
 from collections import defaultdict
@@ -8,7 +10,7 @@ from django.utils.translation import ugettext
 
 from core.utilities import is_null
 
-from dataset import constants as constants
+from dataset import constants
 from dataset.validators import (
     read_header_from_io,
     validate_at_least_one_numeric_column,
@@ -40,14 +42,11 @@ def validate_hgvs_string(value, level=None):
         value = value.decode('utf-8')
     if not isinstance(value, str):
         raise ValidationError(
-            "Variant HGVS values input must be strings. ",
+            "Variant HGVS values input must be strings. "
             "'{}' has the type '{}'.".format(value, type(value).__name__)
         )
-    if is_null(value):
-        raise ValidationError(
-            "HGVS values cannot be empty or one of '{}'.".format(
-                ', '.join([v for v in constants.nan_col_values if v.strip()])
-            ))
+    if not value or null_values_re.fullmatch(value.lower()):
+        return None
     if value in sy_or_wt:
         return
     if is_multi(value):
@@ -102,6 +101,95 @@ def validate_variant_json(dict_):
             )
 
 
+def validate_columns_are_numeric(df):
+    """Checks non-hgvs columns for float or int data."""
+    for column in df.columns:
+        if column in [constants.hgvs_pro_column, constants.hgvs_nt_column]:
+            continue
+        else:
+            if not (np.issubdtype(df.dtypes[column], np.floating) or
+                    np.issubdtype(df.dtypes[column], np.integer)):
+                raise ValidationError(
+                    "Expected only float or int data columns. Got {}.".format(
+                        str(df.dtypes[column])
+                    ))
+
+
+def validate_has_column(df, column):
+    """Validates that a `DataFrame` contains `column` in it's columns."""
+    if column not in df.columns:
+        raise ValidationError(
+            "Missing column '{}'. Parsed columns {}.".format(
+                column, ', '.join(df.columns)
+            )
+        )
+
+
+def validate_hgvs_nt_uniqueness(df):
+    """Validate that hgvs columns only define a variant once."""
+    dups = df.loc[:, constants.hgvs_nt_column].duplicated(keep=False)
+    if np.any(dups):
+        dup_list = ["{} ({})".format(x, y) for x, y in
+                    zip(df.loc[dups, constants.hgvs_nt_column],
+                        dups.index[dups])]
+        raise ValidationError(
+            "duplicate HGVS nucleotide strings found: {}".format(
+                ', '.join(sorted(dup_list))
+            ))
+
+
+def validate_hgvs_pro_uniqueness(df):
+    """Validate that hgvs columns only define a variant once."""
+    dups = df.loc[:, constants.hgvs_pro_column].duplicated(keep=False)
+    if np.any(dups):
+        dup_list = ["{} ({})".format(x, y) for x, y in
+                    zip(df.loc[dups, constants.hgvs_pro_column],
+                        dups.index[dups])]
+        raise ValidationError(
+            "Duplicate HGVS protein strings found: {}".format(
+                ', '.join(sorted(dup_list))
+            ))
+
+
+null_values = ('nan', 'na', 'none', '', 'undefined', 'n/a')
+null_values_re = re.compile(r'\s+|none|nan|na|undefined|n/a|null')
+
+
+def variant_is_null(variant):
+    """Returns `True` if `variant` is None, Na, NaN or empty."""
+    return (not variant) or \
+           str(variant).strip().lower() in null_values
+
+
+def format_column(values, astype=float):
+    """
+    Formats a list of numeric values by replacing null values with
+    `np.NaN` and casting to `astype`.
+
+    Parameters
+    ----------
+    values : list[Union[float, int]]
+        List of values to format.
+
+    astype : callable, optional
+        Type-casting callback accepting a single argument.
+
+    Returns
+    -------
+    list[Any]
+        List of values with type returned by `astype` and null values
+        replaced with `np.NaN`.
+    """
+    if astype == str:
+        nan_val = None
+    else:
+        nan_val = np.NaN
+    return [
+        nan_val if null_values_re.fullmatch(str(v).lower()) else astype(v)
+        for v in values
+    ]
+
+
 def validate_variant_rows(file):
     """
     Variant data validator that checks the following:
@@ -134,20 +222,28 @@ def validate_variant_rows(file):
     validate_has_hgvs_in_header(header)
     validate_at_least_one_numeric_column(header)
     validate_header_contains_no_null_columns(header)
-    file.readline()  # remove header line
-    
-    # csv reader requires strings and the file is opened in bytes mode by
-    # default by the django form.
-    lines = (
-        line.decode('utf-8') if isinstance(line, bytes) else line
-        for line in file.readlines()
-    )
-    hgvs_map = defaultdict(lambda: dict(**{c: None for c in header}))
 
-    # Determine which is the primary hgvs column. Defaults to _nt. _p is only
+    # Load file in a dataframe for quicker processing.
+    df = pd.read_csv(file, encoding='utf-8', quotechar='\"')
+    if not len(df):
+        raise ValidationError(
+            "No variants could be parsed from your input file. Please upload "
+            "a non-empty file.")
+
+    # Formats the data in each column replacing null values with np.NaN
+    for column in df.columns:
+        try:
+            if column in constants.hgvs_columns:
+                df[column] = format_column(df[column], astype=str)
+            else:
+                df[column] = format_column(df[column], astype=float)
+        except ValueError as e:
+            raise ValidationError(str(e).capitalize())
+
+    # Determine which is the primary hgvs column. Defaults to _nt. _pro is only
     # selected when _nt is not provided.
-    defines_nt_hgvs = constants.hgvs_nt_column in header
-    defines_p_hgvs = constants.hgvs_pro_column in header
+    defines_nt_hgvs = constants.hgvs_nt_column in df.columns
+    defines_p_hgvs = constants.hgvs_pro_column in df.columns
     if defines_nt_hgvs and defines_p_hgvs:
         primary_hgvs_column = constants.hgvs_nt_column
     elif defines_p_hgvs and not defines_nt_hgvs:
@@ -155,113 +251,47 @@ def validate_variant_rows(file):
     else:
         primary_hgvs_column = constants.hgvs_nt_column
 
-    for i, row in enumerate(csv.DictReader(lines, fieldnames=header)):
-        # Check to see if the columns have been parsed correctly. Parsing will
-        # break if a user does not double-quote string values containing
-        # commas.
-        if sorted([str(x) for x in row.keys()]) != sorted(header):
-            raise ValidationError(
-                (
-                    "Row columns '%(row)s' do not match those found in the "
-                    "header '%(header)s. Check that row values "
-                    "containing commas are double quoted and the number of row "
-                    "columns matches the number of columns defined by the file "
-                    "header."
-                ),
-                params={'row': list(row.keys()), 'header': header}
-            )
-
-        # White-space strip and convert null values to None
-        row = {
-            k.strip(): None if is_null(v) else v.strip()
-            for k, v in row.items()
-        }
-
-        # Check that each hgvs_nt and hgvs_p have the syntax for the
-        # appropriate hgvs level.
-        hgvs_nt = row.get(constants.hgvs_nt_column, None)
-        hgvs_p = row.get(constants.hgvs_pro_column, None)
-        if not is_null(hgvs_nt):
-            level = infer_level(hgvs_nt)
-            if hgvs_nt not in sy_or_wt and level not in [Level.DNA, Level.RNA]:
-                raise ValidationError(
-                    message=(
-                        "Column '%(col)s' only supports DNA/RNA HGVS syntax."),
-                    params={'col': constants.hgvs_nt_column}
-                )
-            validate_hgvs(hgvs_nt)
-        else:
-            hgvs_nt = None
-
-        if not is_null(hgvs_p):
-            level = infer_level(hgvs_p)
-            if hgvs_p not in sy_or_wt and level != Level.PROTEIN:
-                raise ValidationError(
-                    message=(
-                        "Column '%(col)s' only supports Protein HGVS syntax."),
-                    params={'col': constants.hgvs_pro_column}
-                )
-            validate_hgvs(hgvs_p)
-        else:
-            hgvs_p = None
-
-        # The primary hgvs column defaults to _nt. It is only _p when
-        # the only hgvs column defined is the protein hgvs column.
-        if defines_nt_hgvs and defines_p_hgvs:
-            primary_hgvs = hgvs_nt
-        elif defines_p_hgvs and not defines_nt_hgvs:
-            primary_hgvs = hgvs_p
-        else:
-            primary_hgvs = hgvs_nt
-
-        if primary_hgvs is None:
-            raise ValidationError(
-                "Row %(i)s is missing the HGVS string for column '%(col)s'.",
-                params={'col': primary_hgvs_column, 'i': i + 1}
-            )
-
-        # Ensure all values for columns other than 'hgvs' are either an int,
-        # float or None
-        for k, v in row.items():
-            if k in constants.hgvs_columns:
-                continue
-            if v is not None:
-                try:
-                    v = float(v)
-                    row[k] = v
-                except ValueError:
-                    raise ValidationError(
-                        (
-                            "The type for column '%(col)s' at line %(i)s is "
-                            "'%(dtype)s'. Non-HGVS columns must be either "
-                            "an integer or floating point number."
-                        ),
-                        params={'col': k, 'i': i + 1,
-                                'dtype': type(v).__name__}
-                    )
-
-        # Make sure the variant has been defined more than one time.
-        if primary_hgvs_column == constants.hgvs_nt_column and \
-                primary_hgvs in hgvs_map:
-            raise ValidationError(
-                "Variant '%(hgvs)s' has been re-defined at index %(i)s. Input "
-                "cannot contain the same variant twice in different rows.",
-                params={'hgvs': primary_hgvs, 'i': i + 1}
-            )
-        else:
-            # Users may upload a dataset without only one of the hgvs columns.
-            # Add both in even if the values are None so less checking will
-            # need to be done by the forms.
-            row[constants.hgvs_nt_column] = hgvs_nt
-            row[constants.hgvs_pro_column] = hgvs_p
-            hgvs_map[primary_hgvs] = row
-
-    if not len(header) or not len(hgvs_map):
+    # Check that the primary column is fully specified.
+    null_primary = df.loc[:, primary_hgvs_column].apply(variant_is_null)
+    if any(null_primary):
         raise ValidationError(
-            "No variants could be parsed from your input file. Please upload "
-            "a non-empty file.")
+            "Primary column (inferred as '{}') cannot "
+            "contain any null values from '{}' (case-insensitive).".format(
+                primary_hgvs_column, ', '.join(null_values)
+            ))
+
+    # Check that the hgvs_nt column does not have duplicate rows.
+    if primary_hgvs_column == constants.hgvs_nt_column:
+        validate_hgvs_nt_uniqueness(df)
+
+    # Validate variants where applicable
+    if defines_nt_hgvs:
+        df.loc[:, constants.hgvs_nt_column].apply(validate_hgvs)
+    if defines_p_hgvs:
+        df.loc[:, constants.hgvs_pro_column].apply(validate_hgvs)
+
+    # Finally validate all other columns are numeric.
+    validate_columns_are_numeric(df)
 
     # Sort header and remove hgvs cols since the hgvs strings are the map keys.
-    header = [v for v in header if v not in constants.hgvs_columns]
-    header = list(sorted(header, key=lambda x: column_order[x]))
+    header = [v for v in df.columns if v in constants.hgvs_columns]
+    header += list(sorted(
+        [v for v in df.columns if v not in constants.hgvs_columns],
+        key=lambda x: column_order[x]))
+    df = df[header]
+
+    hgvs_map = defaultdict(lambda: dict(**{c: None for c in header}))
+    for i, row in df.iterrows():
+        data = row.to_dict()
+        data[constants.hgvs_nt_column] = data.get(
+            constants.hgvs_nt_column, None
+        )
+        data[constants.hgvs_pro_column] = data.get(
+            constants.hgvs_pro_column, None
+        )
+        hgvs_map[row[primary_hgvs_column]] = data
+
+    # Remove hgvs columns from header. Form validator expects only
+    # additional non-hgvs in the returned header.
+    header = [v for v in df.columns if v not in constants.hgvs_columns]
     return header, primary_hgvs_column, hgvs_map
