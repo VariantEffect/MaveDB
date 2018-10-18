@@ -8,6 +8,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import urn.validators
 import variant.validators
+import variant.validators.hgvs
 
 
 class Migration(migrations.Migration):
@@ -26,7 +27,8 @@ class Migration(migrations.Migration):
                 ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
                 ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
                 ('urn', models.CharField(blank=True, default=None, max_length=64, null=True, unique=True, validators=[urn.validators.validate_mavedb_urn_variant], verbose_name='URN')),
-                ('hgvs', models.TextField(default=None, validators=[variant.validators.validate_hgvs_string])),
+                ('hgvs', models.TextField(default=None, validators=[
+                    variant.validators.hgvs.validate_hgvs_string])),
                 ('data', django.contrib.postgres.fields.jsonb.JSONField(default={'count_data': {}, 'score_data': {}}, validators=[variant.validators.validate_variant_json], verbose_name='Data columns')),
                 ('scoreset', models.ForeignKey(default=None, on_delete=django.db.models.deletion.PROTECT, related_name='variants', to='dataset.ScoreSet')),
             ],
