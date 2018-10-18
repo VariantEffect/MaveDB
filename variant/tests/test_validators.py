@@ -1,7 +1,11 @@
 from io import BytesIO
 
+import pandas as pd
+
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+
+from core.utilities import null_values_list
 
 from dataset import constants
 from dataset.constants import required_score_column
@@ -9,11 +13,30 @@ from dataset.constants import required_score_column
 from variant import constants as hgvs_constants
 from ..factories import generate_hgvs, VariantFactory
 from ..validators import (
-    validate_hgvs_string,
     validate_scoreset_columns_match_variant,
     validate_variant_json,
-    validate_variant_rows
+    validate_variant_rows,
+    validate_columns_are_numeric,
+    validate_hgvs_nt_uniqueness,
+    validate_hgvs_pro_uniqueness,
 )
+from variant.validators.hgvs import validate_hgvs_string
+
+
+class TestValidateColumnsAreNumeric(TestCase):
+    def test_passes_on_special_columns(self):
+        df = pd.DataFrame({
+            constants.hgvs_nt_column: ['a'],
+            constants.hgvs_pro_column: ['b'],
+        })
+        validate_columns_are_numeric(df)  # Passes
+        
+    def test_error_columns_not_float_or_int(self):
+        df = pd.DataFrame({
+            required_score_column: ['a']
+        })
+        with self.assertRaises(ValidationError):
+            validate_columns_are_numeric(df)
 
 
 class TestValidateMatchingColumns(TestCase):
@@ -76,7 +99,7 @@ class TestHGVSValidator(TestCase):
         validate_hgvs_string(b'r.427a>g')
     
     def test_return_none_for_null(self):
-        for c in constants.nan_col_values:
+        for c in null_values_list:
             self.assertIsNone(validate_hgvs_string(c))
         
 
@@ -146,21 +169,49 @@ class TestVariantRowValidator(TestCase):
         with self.assertRaises(ValidationError):
             validate_variant_rows(BytesIO(data.encode()))
 
-    def test_strip_whitespace_from_header_columns(self):
-        data = " {} , {} \n{},1.0".format(
-            constants.hgvs_nt_column, required_score_column, generate_hgvs())
-        header, _, _ = validate_variant_rows(BytesIO(data.encode()))
-        self.assertEqual(header, [required_score_column])
+    def test_strip_whitespace_from_columns(self):
+        hgvs = generate_hgvs()
+        data = " {} , {} \n {} , 1.0 ".format(
+            constants.hgvs_nt_column, required_score_column, hgvs)
+        header, _, hgvs_map = validate_variant_rows(BytesIO(data.encode()))
+        self.assertListEqual(header, [required_score_column])
+        self.assertEqual(
+            list(hgvs_map.values())[0][constants.hgvs_nt_column], hgvs
+        )
+        self.assertEqual(
+            list(hgvs_map.values())[0][required_score_column], 1.0
+        )
 
+    def test_replaces_null_with_none_in_secondary_hgvs_column(self):
+        hgvs_nt = generate_hgvs(prefix='c')
+        for c in null_values_list:
+            data = "{},{},{}\n{},{},1.0 ".format(
+                constants.hgvs_nt_column, constants.hgvs_pro_column,
+                required_score_column, hgvs_nt, c)
+            header, _, hgvs_map = validate_variant_rows(BytesIO(data.encode()))
+            self.assertEqual(
+                list(hgvs_map.values())[0][constants.hgvs_pro_column], None
+            )
+            
+    def test_replaces_null_with_none_in_numeric_columns(self):
+        hgvs_nt = generate_hgvs(prefix='c')
+        for c in null_values_list:
+            data = "{},{}\n{},{}".format(
+                constants.hgvs_nt_column, required_score_column, hgvs_nt, c)
+            header, _, hgvs_map = validate_variant_rows(BytesIO(data.encode()))
+            self.assertEqual(
+                list(hgvs_map.values())[0][required_score_column], None
+            )
+        
     def test_validationerror_null_values_in_hgvs_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             data = "{},{}\n{},1.0".format(
                 constants.hgvs_nt_column, value, generate_hgvs())
             with self.assertRaises(ValidationError):
                 validate_variant_rows(BytesIO(data.encode()))
     
     def test_secondary_hgvs_allows_null_values(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             data = "{},{},{}\n{},{},1.0".format(
                 constants.hgvs_nt_column,
                 constants.hgvs_pro_column,
@@ -172,7 +223,7 @@ class TestVariantRowValidator(TestCase):
             )
 
     def test_validationerror_no_numeric_columns(self):
-        data = "{},{}\n{}".format(
+        data = "{},{}\n{},{}".format(
             constants.hgvs_nt_column, constants.hgvs_pro_column,
             generate_hgvs(prefix='c'), generate_hgvs(prefix='p')
         )
@@ -184,14 +235,6 @@ class TestVariantRowValidator(TestCase):
         with self.assertRaises(ValidationError):
             validate_variant_rows(BytesIO(data.encode()))
 
-    def test_validationerror_invalid_hgvs(self):
-        with self.assertRaises(ValidationError):
-            validate_hgvs_string('c.1A>G (p.Lys4Gly)')
-            
-    def test_valid_wt_sy(self):
-        validate_hgvs_string('_wt')
-        validate_hgvs_string('_sy')
-
     def test_validationerror_non_numeric_values_non_hgvs_columns(self):
         data = "{},{}\n{},hello world".format(
             constants.hgvs_nt_column, required_score_column, generate_hgvs())
@@ -199,7 +242,7 @@ class TestVariantRowValidator(TestCase):
             validate_variant_rows(BytesIO(data.encode()))
 
     def test_validationerror_same_hgvs_nt_defined_in_two_rows(self):
-        hgvs = generate_hgvs()
+        hgvs = generate_hgvs(prefix='c')
         data = "{},{}\n{},1.0\n{},1.0".format(
             constants.hgvs_nt_column, required_score_column, hgvs, hgvs)
         with self.assertRaises(ValidationError):
@@ -213,7 +256,7 @@ class TestVariantRowValidator(TestCase):
 
     def test_null_values_converted_to_None(self):
         hgvs = generate_hgvs()
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             data = "{},{}\n{},{}".format(
                 constants.hgvs_nt_column, required_score_column, hgvs, value)
             header, _, hgvs_map = validate_variant_rows(BytesIO(data.encode()))
@@ -228,7 +271,7 @@ class TestVariantRowValidator(TestCase):
             self.assertEqual(header, expected_header)
             self.assertEqual(dict(hgvs_map), expected_map)
 
-    def test_returns_sorted_header(self):
+    def test_returns_sorted_header_with_score_col_first(self):
         hgvs_nt = generate_hgvs(prefix='c')
         hgvs_pro = generate_hgvs(prefix='p')
         data = "{},{},a,{}\n{},{},1.0,1.0".format(
@@ -276,7 +319,7 @@ class TestVariantRowValidator(TestCase):
 
     def test_does_not_split_double_quoted_variants(self):
         hgvs = 'r.[123a>g,19del,9002_9009delins(5)]'
-        data = '{},{}\n"{}",1.0'.format(
+        data = '{},{}\n\"{}\",1.0'.format(
             constants.hgvs_nt_column, required_score_column, hgvs)
         _, primary, hgvs_map = validate_variant_rows(BytesIO(data.encode()))
         self.assertIn(hgvs, hgvs_map)
@@ -288,7 +331,18 @@ class TestVariantRowValidator(TestCase):
         with self.assertRaises(ValidationError):
             _ = validate_variant_rows(BytesIO(data.encode()))
     
-    def test_primary_column_is_nt_when_pro_is_also_defined(self):
+    def test_primary_column_is_pro_when_nt_is_not_defined(self):
+        hgvs_pro = generate_hgvs(prefix='p')
+        data = "{},{}\n{},1.0".format(
+            constants.hgvs_pro_column,
+            required_score_column,
+            hgvs_pro
+        )
+        _, primary, _ = validate_variant_rows(
+            BytesIO(data.encode()))
+        self.assertEqual(primary, constants.hgvs_pro_column)
+        
+    def test_primary_column_is_nt_by_default(self):
         hgvs_nt = generate_hgvs(prefix='c')
         hgvs_pro = generate_hgvs(prefix='p')
         data = "{},{},{}\n{},{},1.0".format(
@@ -297,55 +351,32 @@ class TestVariantRowValidator(TestCase):
             required_score_column,
             hgvs_nt, hgvs_pro
         )
-        header, primary, hgvs_map = validate_variant_rows(
-            BytesIO(data.encode()))
-        self.assertEqual(primary, constants.hgvs_nt_column)
-
-    def test_primary_column_is_pro_when_nt_is_not_defined(self):
-        hgvs_pro = generate_hgvs(prefix='p')
-        data = "{},{}\n{},1.0".format(
-            constants.hgvs_pro_column,
-            required_score_column,
-            hgvs_pro
-        )
-        header, primary, hgvs_map = validate_variant_rows(
-            BytesIO(data.encode()))
-        self.assertEqual(primary, constants.hgvs_pro_column)
-        
-    def test_primary_column_is_nt_by_default(self):
-        hgvs_nt = generate_hgvs(prefix='c')
-        data = "{},{}\n{},1.0".format(
-            constants.hgvs_nt_column,
-            required_score_column,
-            hgvs_nt
-        )
-        header, primary, hgvs_map = validate_variant_rows(
+        _, primary, _ = validate_variant_rows(
             BytesIO(data.encode()))
         self.assertEqual(primary, constants.hgvs_nt_column)
 
     def test_error_missing_value_in_nt_column_when_nt_is_primary(self):
         hgvs_nt = generate_hgvs(prefix='c')
-        hgvs_pro = generate_hgvs(prefix='p')
-        
-        data = "{},{},{}\n,{},1.0".format(
-            constants.hgvs_nt_column,
-            constants.hgvs_pro_column,
-            required_score_column,
-            hgvs_nt, hgvs_pro
-        )
-        with self.assertRaises(ValidationError):
-            validate_variant_rows(BytesIO(data.encode()))
+        for v in null_values_list:
+            data = "{},{},{}\n{},{},1.0".format(
+                constants.hgvs_nt_column,
+                constants.hgvs_pro_column,
+                required_score_column,
+                v, hgvs_nt
+            )
+            with self.assertRaises(ValidationError):
+                validate_variant_rows(BytesIO(data.encode()))
 
     def test_error_missing_value_in_pro_column_when_pro_is_primary(self):
-        hgvs_pro = generate_hgvs(prefix='p')
-        data = "{},{}\n,1.0".format(
-            constants.hgvs_pro_column,
-            required_score_column, hgvs_pro
-        )
-        with self.assertRaises(ValidationError):
-            validate_variant_rows(BytesIO(data.encode()))
+        for v in null_values_list:
+            data = "{},{}\n{},1.0".format(
+                constants.hgvs_pro_column,
+                required_score_column, v
+            )
+            with self.assertRaises(ValidationError):
+                validate_variant_rows(BytesIO(data.encode()))
         
-    def test_hgvs_map_indexed_by_nt_column_when_nt_is_primary(self):
+    def test_hgvs_map_indexed_by_nt_column_when_nt_variants_exist(self):
         hgvs_nt = generate_hgvs(prefix='c')
         hgvs_pro = generate_hgvs(prefix='p')
     
@@ -359,7 +390,7 @@ class TestVariantRowValidator(TestCase):
         self.assertEqual(primary, constants.hgvs_nt_column)
         self.assertIsNotNone(hgvs_map.get(hgvs_nt))
 
-    def test_hgvs_map_indexed_by_pro_column_when_pro_is_primary(self):
+    def test_hgvs_map_indexed_by_pro_column_when_pro_variants_exist_but_nt_variants_dont(self):
         hgvs_pro = generate_hgvs(prefix='p')
         data = "{},{}\n{},1.0".format(
             constants.hgvs_pro_column,
@@ -387,3 +418,34 @@ class TestVariantRowValidator(TestCase):
         )
         with self.assertRaises(ValidationError):
             validate_variant_rows(BytesIO(data.encode()))
+
+
+class TestValidateNtUniqueness(TestCase):
+    def test_error_redefined(self):
+        df = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G', 'c.1A>G'],
+        })
+        with self.assertRaises(ValidationError):
+            validate_hgvs_nt_uniqueness(df)
+        
+    def test_passes_on_unique(self):
+        df = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G', 'c.2A>G'],
+        })
+        validate_hgvs_nt_uniqueness(df)
+
+
+class TestValidateProUniqueness(TestCase):
+    def test_error_redefined(self):
+        df = pd.DataFrame({
+            constants.hgvs_pro_column: ['p.G4L', 'p.G4L'],
+        })
+        with self.assertRaises(ValidationError):
+            validate_hgvs_pro_uniqueness(df)
+    
+    def test_passes_on_unique(self):
+        df = pd.DataFrame({
+            constants.hgvs_pro_column: ['p.G4L', 'p.G5L'],
+        })
+        validate_hgvs_pro_uniqueness(df)
+        
