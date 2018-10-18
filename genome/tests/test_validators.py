@@ -1,10 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from dataset.constants import nan_col_values
-from metadata.factories import (
-    EnsemblIdentifierFactory, RefseqIdentifierFactory
-)
+from core.utilities import null_values_list
 
 from ..factories import (
     ReferenceMapFactory,
@@ -77,7 +74,7 @@ class TestIntervalValidators(TestCase):
         validate_strand('-')
 
     def test_ve_null_chr(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             with self.assertRaises(ValidationError):
                 validate_chromosome(v)
 
@@ -93,7 +90,7 @@ class TestWildTypeSequenceValidators(TestCase):
             validate_wildtype_sequence('AAF')
 
     def test_ve_null(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             with self.assertRaises(ValidationError):
                 validate_wildtype_sequence(v)
 
@@ -113,12 +110,12 @@ class TestReferenceGenomeValidators(TestCase):
         - validate_genome_short_name
     """
     def test_ve_null_organism_name(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             with self.assertRaises(ValidationError):
                 validate_organism_name(v)
 
     def test_ve_null_genome_short_name(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             with self.assertRaises(ValidationError):
                 validate_genome_short_name(v)
 
@@ -200,6 +197,6 @@ class TestTargetGeneValidators(TestCase):
         - validate_target_has_one_primary_reference_map
     """
     def test_ve_null_gene_name(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             with self.assertRaises(ValidationError):
                 validate_gene_name(v)

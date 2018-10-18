@@ -4,7 +4,7 @@ from django.forms.formsets import (
     MIN_NUM_FORM_COUNT, MAX_NUM_FORM_COUNT,
 )
 
-from dataset.constants import nan_col_values
+from core.utilities import null_values_list
 
 from ..factories import (
     ReferenceMapFactory,
@@ -110,7 +110,7 @@ class TestGenomicIntervalFormset(TestCase):
         self.assertFalse(formset.is_valid())
 
     def test_invalid_partial_forms(self):
-        for value in nan_col_values:
+        for value in null_values_list:
             data = self.test_data()
             data["%s-1-start" % self.prefix()] = "1"
             data["%s-1-end" % self.prefix()] = "2"

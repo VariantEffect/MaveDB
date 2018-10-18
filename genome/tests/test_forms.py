@@ -7,7 +7,7 @@ from accounts.permissions import (
     assign_user_as_instance_viewer
 )
 
-from dataset.constants import nan_col_values
+from core.utilities import null_values_list
 from dataset.factories import ScoreSetFactory
 
 from ..models import WildTypeSequence
@@ -51,7 +51,7 @@ class TestGenomicIntervalForm(TestCase):
         self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
     def test_ve_chromosome_null_value(self):
-        for value in nan_col_values:
+        for value in null_values_list:
             data = {
                 'start': 1, 'end': 2,
                 'chromosome': value, 'strand': '+',
@@ -59,7 +59,7 @@ class TestGenomicIntervalForm(TestCase):
             self.assertFalse(GenomicIntervalForm(data=data).is_valid())
 
     def test_ve_strand_null_value(self):
-        for value in nan_col_values:
+        for value in null_values_list:
             data = {
                 'start': 1, 'end': 2,
                 'chromosome': 'chr21', 'strand': value,
@@ -116,7 +116,7 @@ class TestTargetGeneForm(TestCase):
         self.user = UserFactory()
 
     def test_ve_null_wt_sequence(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             data = {'wt_sequence': v, 'name': 'brca1'}
             form = TargetGeneForm(user=self.user, data=data)
             self.assertFalse(form.is_valid())
@@ -127,7 +127,7 @@ class TestTargetGeneForm(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_ve_null_name(self):
-        for v in nan_col_values:
+        for v in null_values_list:
             data = {'wt_sequence': 'atcg', 'name': v}
             form = TargetGeneForm(user=self.user, data=data)
             self.assertFalse(form.is_valid())
