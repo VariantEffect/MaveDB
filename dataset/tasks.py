@@ -1,5 +1,3 @@
-import datetime
-
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -12,6 +10,7 @@ from core.tasks import BaseTask
 from mavedb import celery_app
 
 from variant.models import Variant
+from variant.utilities import convert_df_to_variant_records
 
 from dataset import constants
 from dataset.utilities import delete_instance as delete_instance_util
@@ -127,13 +126,18 @@ def delete_instance(self, user_pk, urn):
     user = User.objects.get(pk=user_pk)
     self.user = user
     self.instance = get_model_by_urn(self.urn)
+    if self.instance.children.count() and \
+            not isinstance(self.instance, models.scoreset.ScoreSet):
+        raise ValueError("{} has children and cannot be deleted.".format(
+            self.urn))
     with transaction.atomic():
         return delete_instance_util(self.instance)
 
 
 @celery_app.task(bind=True, ignore_result=True,
                  base=BaseCreateVariants, soft_time_limit=SOFT_TIME_LIMIT)
-def create_variants(self, user_pk, variants, scoreset_urn, dataset_columns):
+def create_variants(self, user_pk, scoreset_urn, scores_df, counts_df,
+                    dataset_columns):
     """Bulk creates and emails the user the processing status."""
     # Bind task instance variables
     self.urn = scoreset_urn
@@ -146,12 +150,11 @@ def create_variants(self, user_pk, variants, scoreset_urn, dataset_columns):
     self.user = user
     scoreset = models.scoreset.ScoreSet.objects.get(urn=scoreset_urn)
     self.scoreset = scoreset
-    
+    variants = convert_df_to_variant_records(scores_df, counts_df)
     with transaction.atomic():
         scoreset.delete_variants()
-        Variant.bulk_create(scoreset, [v for _, v in variants.items()])
+        Variant.bulk_create(scoreset, variants)
         scoreset.dataset_columns = dataset_columns
         scoreset.save()
     return scoreset
-
 

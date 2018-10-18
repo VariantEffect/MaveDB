@@ -243,7 +243,7 @@ class TestDeleteInstance(TestCase):
         self.assertEqual(ScoreSet.objects.count(), 0)
 
     @mock.patch.object(Profile, 'notify_user_delete_status')
-    def test_notifies_user_on_fail(self, mock_patch):
+    def test_notifies_user_on_fail_when_deleting_parent_with_child(self, mock_patch):
         delete_instance.apply(kwargs=dict(
             urn=self.scoreset.parent.urn, user_pk=self.user.pk, ))
         mock_patch.assert_called_with(**{'success': False,
