@@ -198,14 +198,17 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         targetgene.save()
 
         # Call celery task after all the above has successfully completed
-        if scoreset_form.get_variants():
+        if scoreset_form.has_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
+            scores_rs, counts_rs, index = scoreset_form.serialize_variants()
             task_kwargs = {
                 "user_pk": self.request.user.pk,
-                "variants": scoreset_form.get_variants().copy(),
                 "scoreset_urn": scoreset.urn,
                 "dataset_columns": scoreset_form.dataset_columns.copy(),
+                "index": index,
+                "scores_records": scores_rs,
+                "counts_records": counts_rs,
             }
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
@@ -300,14 +303,17 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             targetgene.save()
 
         # Call celery task after all the above has successfully completed
-        if scoreset_form.get_variants():
+        if scoreset_form.has_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
+            scores_rs, counts_rs, index = scoreset_form.serialize_variants()
             task_kwargs = {
                 "user_pk": self.request.user.pk,
-                "variants": scoreset_form.get_variants().copy(),
                 "scoreset_urn": scoreset.urn,
                 "dataset_columns": scoreset_form.dataset_columns.copy(),
+                "index": index,
+                "scores_records": scores_rs,
+                "counts_records": counts_rs,
             }
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
