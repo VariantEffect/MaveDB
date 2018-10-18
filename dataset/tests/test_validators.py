@@ -3,13 +3,13 @@ from io import BytesIO, StringIO
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from variant.factories import generate_hgvs
+from core.utilities import null_values_list
 
 from .. import constants
 from ..validators import (
     validate_scoreset_count_data_input,
     validate_scoreset_score_data_input,
-    validate_at_least_one_numeric_column,
+    validate_at_least_one_additional_column,
     validate_has_hgvs_in_header,
     validate_header_contains_no_null_columns,
     read_header_from_io,
@@ -69,7 +69,7 @@ class TestNoNullInColumnsValidator(TestCase):
     such as '', None, null etc.
     """
     def test_raises_validationerror_when_null_values_in_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             file = BytesIO("{},score,{}\n".format(
                 constants.hgvs_nt_column, value).encode())
             with self.assertRaises(ValidationError):
@@ -90,16 +90,16 @@ class TestAtLeastOneNumericColumnValidator(TestCase):
         file = BytesIO("{}\n".format(constants.hgvs_nt_column).encode())
         with self.assertRaises(ValidationError):
             header = read_header_from_io(file)
-            validate_at_least_one_numeric_column(header)
+            validate_at_least_one_additional_column(header)
 
     def test_does_not_raise_validationerror_2_or_more_values_in_column(self):
         file = BytesIO("{},score,count\n".format(constants.hgvs_nt_column).encode())
         header = read_header_from_io(file)
-        validate_at_least_one_numeric_column(header)  # Should pass
+        validate_at_least_one_additional_column(header)  # Should pass
 
         file = BytesIO("{},score\n".format(constants.hgvs_nt_column).encode())
         header = read_header_from_io(file)
-        validate_at_least_one_numeric_column(header)  # Should pass
+        validate_at_least_one_additional_column(header)  # Should pass
 
 
 class TestHgvsInHeaderValidator(TestCase):
@@ -218,7 +218,7 @@ class TestValidateScoreSetCountDataInputValidator(TestCase):
             validate_scoreset_count_data_input(file)
 
     def test_raises_validationerror_when_null_values_in_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             file = BytesIO("{},score,{}\n".format(
                 constants.hgvs_nt_column, value).encode())
             with self.assertRaises(ValidationError):
@@ -241,7 +241,7 @@ class TestValidateScoreSetScoreDataInputValidator(TestCase):
             validate_scoreset_score_data_input(file)
 
     def test_raises_validationerror_when_null_values_in_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             file = BytesIO("{},score,{}\n".format(
                 constants.hgvs_nt_column, value).encode())
             with self.assertRaises(ValidationError):

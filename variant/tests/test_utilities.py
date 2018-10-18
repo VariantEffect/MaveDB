@@ -35,6 +35,37 @@ class TestCreateVariantAttrsUtility(TestCase):
         self.assertListEqual([], utilities.convert_df_to_variant_records(
             None, d2
         ))
+        self.assertListEqual([], utilities.convert_df_to_variant_records(
+            '[]', d2
+        ))
+        
+    def test_can_load_from_json_records(self):
+        d1, d2 = self.fixture_data(index=constants.hgvs_pro_column)
+        variants = utilities.convert_df_to_variant_records(
+            d1.to_json(orient='records'), d2.to_json(orient='records'),
+            index=constants.hgvs_pro_column
+        )
+        expected = [
+            {
+                constants.hgvs_nt_column: 'c.1A>G',
+                constants.hgvs_pro_column: 'p.G1L',
+                'data': {
+                    constants.variant_score_data: {
+                        constants.required_score_column: 3.1},
+                    constants.variant_count_data: {'count': 1}
+                }
+            },
+            {
+                constants.hgvs_nt_column: 'c.2A>G',
+                constants.hgvs_pro_column: 'p.G1L',
+                'data': {
+                    constants.variant_score_data: {
+                        constants.required_score_column: 3.2},
+                    constants.variant_count_data: {'count': 2}
+                }
+            }
+        ]
+        self.assertListEqual(variants, expected)
         
     def test_will_group_matching_records_when_index_contains_duplicates(self):
         d1, d2 = self.fixture_data(index=constants.hgvs_pro_column)
@@ -172,3 +203,13 @@ class TestCreateVariantAttrsUtility(TestCase):
         result = utilities.convert_df_to_variant_records(d1, d2)
         self.assertEqual(len(result), len(d1))
         self.assertEqual(len(result), len(d2))
+
+    def test_sets_index_when_column_name_is_passed(self):
+        d1, d2 = self.fixture_data(
+            index=constants.hgvs_pro_column,
+            pro_count=('p.G1L', 'p.G2L')
+        ) # Raises error since pro index should not match
+        with self.assertRaises(AssertionError):
+            utilities.convert_df_to_variant_records(
+                d1, d2, index=constants.hgvs_pro_column
+            )

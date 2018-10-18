@@ -423,11 +423,13 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         with mock.patch('dataset.tasks.create_variants.apply_async') as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
+            scores, counts, index = form.serialize_variants()
             self.assertEqual(
                 {
                     "user_pk": self.user.pk,
                     "scoreset_urn": ScoreSet.objects.first().urn,
-                    "variants": form.get_variants(),
+                    "index": index,
+                    "scores_records": scores, "counts_records": counts,
                     "dataset_columns": form.dataset_columns,
                 },
                 create_mock.call_args[1]['kwargs']
