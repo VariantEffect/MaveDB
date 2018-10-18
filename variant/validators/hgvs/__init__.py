@@ -6,109 +6,61 @@ a character from 'pcngmr' prefixing a mutation syntax like p.Leu4Gly. A
 may also be enclosed in parentheses or brackets e.g. p.(Leu5Gly)
 or p.[Leu4Gly;Gly7Leu]
 """
+from functools import partial
 
-from hgvsp import multi_variant_re, single_variant_re
-from hgvsp import Level, Event, infer_type, infer_level
-from hgvsp.rna import semi_colon_separated_re, comma_separated_re
+from hgvsp import multi_variant_re, single_variant_re, is_multi
+from hgvsp.constants import dna_prefix, rna_prefix, protein_prefix
 
 from django.core.exceptions import ValidationError
 
-from . import dna, rna, protein
+from core.utilities import is_null
 
-from variant import constants
-
-validate_event_functions = {
-    Level.DNA: {
-        Event.INSERTION: dna.validate_insertion,
-        Event.DELETION: dna.validate_deletion,
-        Event.DELINS: dna.validate_delins,
-        Event.SUBSTITUTION: dna.validate_substitution,
-    },
-    Level.RNA: {
-        Event.INSERTION: rna.validate_insertion,
-        Event.DELETION: rna.validate_deletion,
-        Event.DELINS: rna.validate_delins,
-        Event.SUBSTITUTION: rna.validate_substitution,
-    },
-    Level.PROTEIN: {
-        Event.INSERTION: protein.validate_insertion,
-        Event.DELETION: protein.validate_deletion,
-        Event.DELINS: protein.validate_delins,
-        Event.SUBSTITUTION: protein.validate_substitution,
-        Event.FRAME_SHIFT: protein.validate_frame_shift,
-    }
-}
+from ...constants import wt_or_sy
 
 
-def validate_multi_variant(hgvs, level=None):
-    if not hgvs:
-        return None
-    if level and not isinstance(level, Level):
-        raise TypeError(
-            "`level` must be a valid Level enum. Found '{}'".format(
-                type(level).__name__
-            ))
-
-    if hgvs in constants.wt_or_sy:
+def validate_multi_variant(hgvs):
+    """Validate a multi variant. Raises error if None."""
+    if hgvs in wt_or_sy:
         return
-
     match = multi_variant_re.fullmatch(hgvs)
-    if match:
-        if not level:
-            level = infer_level(hgvs)
-        if level is None:
-            raise ValidationError(
-                "Variant '{}' has an unsupported prefix '{}'. "
-                "Supported prefixes are 'cngmpr'.".format(hgvs, hgvs[0])
-            )
-
-        hgvs_ = hgvs[3:-1]  # removes prefix and square brackets
-        if level == Level.RNA:
-            if semi_colon_separated_re.match(hgvs_):
-                matches = hgvs_.split(';')
-            elif comma_separated_re.match(hgvs_):
-                matches = hgvs_.split(',')
-            else:
-                raise ValidationError(
-                    "RNA multi-variant '{}' contains an unknown delimiter. "
-                    "Supported delimiters are ';' and ','.".format(hgvs)
-                )
-        else:
-            matches = hgvs_.split(';')
-
-        # This probably isn't needed since the regex has already matched.
-        # Use for validating capture groups within each match but currently
-        # capture groups are not checked against HGVS guidelines.
-        for event in matches:
-            if event in constants.wt_or_sy:
-                continue
-            type_ = infer_type(event)
-            validate_event_functions[level][type_](event)
-    else:
+    if not match:
         raise ValidationError(
             "'{}' is not a supported HGVS syntax.".format(hgvs))
 
 
-def validate_single_variant(hgvs, level=None):
-    if not hgvs:
-        return None
-    if level and not isinstance(level, Level):
-        raise TypeError(
-            "`level` must be a valid Level enum. Found '{}'".format(
-                type(level).__name__
-            ))
-
-    if hgvs in constants.wt_or_sy:
+def validate_single_variant(hgvs):
+    """Validate a single variant. Raises error if None."""
+    if hgvs in wt_or_sy:
         return
     match = single_variant_re.fullmatch(hgvs)
-    if match:
-        type_ = infer_type(hgvs)
-        if not level:
-            level = infer_level(hgvs)
-        if type_ is None or level is None:
-            raise ValidationError(
-                "'{}' is not a supported HGVS syntax.".format(hgvs))
-        validate_event_functions[level][type_](hgvs)
-    else:
+    if not match:
         raise ValidationError(
             "'{}' is not a supported HGVS syntax.".format(hgvs))
+
+
+def validate_hgvs_string(value, level=None):
+    if is_null(value):
+        return
+    if isinstance(value, bytes):
+        value = value.decode()
+    if not isinstance(value, str):
+        raise ValidationError(
+            "Variant HGVS values input must be strings. "
+            "'{}' has the type '{}'.".format(value, type(value).__name__)
+        )
+
+    if is_multi(value):
+        validate_multi_variant(value)
+    else:
+        validate_single_variant(value)
+
+    if level == 'nt' and value not in wt_or_sy:
+        if value[0] not in dna_prefix + rna_prefix:
+            raise ValidationError("{} is not a valid nucleotide syntax.")
+    elif level == 'p' and value not in wt_or_sy:
+        if value[0] not in protein_prefix:
+            raise ValidationError("{} is not a valid protein syntax.")
+
+
+validate_nt_variant = partial(validate_hgvs_string, **{'level': 'nt'})
+validate_pro_variant = partial(validate_hgvs_string, **{'level': 'p'})
