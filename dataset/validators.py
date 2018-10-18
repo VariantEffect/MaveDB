@@ -1,15 +1,18 @@
 import io
 import csv
 
+import numpy as np
+
 from django.utils.translation import ugettext
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
-from core.utilities import is_null
+from core.utilities import is_null, readable_null_values
 
 from . import constants
 
 validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
+validate_gz_extension = FileExtensionValidator(allowed_extensions=['gz'])
 validate_json_extension = FileExtensionValidator(allowed_extensions=['json'])
 
 
@@ -50,50 +53,58 @@ def validate_has_hgvs_in_header(header, label=None, msg=None):
         raise ValidationError(msg, params=params)
 
 
-def validate_at_least_one_numeric_column(header, label=None, msg=None):
+def validate_at_least_one_additional_column(header, label=None, msg=None):
     if label is None:
         label = 'Uploaded'
     params = {}
     if not any(v not in constants.hgvs_columns for v in header):
         if msg is None:
-            msg = "Your %(label)s file header must define at " \
-                  "least one numeric column."
+            msg = "Your %(label)s file must define at " \
+                  "least one additional column different " \
+                  "from '{}' and '{}'.".format(constants.hgvs_nt_column,
+                                               constants.hgvs_pro_column)
             params = {'label': label}
         raise ValidationError(msg, params=params)
 
 
 def validate_header_contains_no_null_columns(header, label=None, msg=None):
     if label is None:
-        label = 'uploaded'
-
+        label = 'File'
     any_null = any([is_null(v) for v in header])
     if any_null:
         if msg is None:
-            readable_null_values = set([
-                x.lower().strip()
-                for x in constants.nan_col_values if x.strip()
-            ])
             msg = (
-                "Header cannot contain blank/empty/whitespace only columns "
-                "or the following case-insensitive null values: [{}].".format(
-                    ', '.join(readable_null_values))
+                "%(label)s file header cannot contain blank/empty/whitespace "
+                "only columns or the following case-insensitive null "
+                "values: [{}].".format(
+                    label, ', '.join(readable_null_values))
             )
         raise ValidationError(msg)
     
     
 def validate_datasets_define_same_variants(scores, counts):
-    vs_score = set([
-        (v.get(constants.hgvs_nt_column, None),
-         v.get(constants.hgvs_pro_column, None))
-        for k, v in scores.items()
-    ])
+    """
+    Checks if two `pd.DataFrame` objects parsed from uploaded files
+    define the same variants.
     
-    vs_count = set([
-        (v.get(constants.hgvs_nt_column, None),
-         v.get(constants.hgvs_pro_column, None))
-        for k, v in counts.items()
-    ])
-    if vs_score.difference(vs_count) or vs_count.difference(vs_score):
+    Parameters
+    ----------
+    scores : `pd.DataFrame`
+        Scores dataframe parsed from an uploaded scores file.
+    counts : `pd.DataFrame`
+        Scores dataframe parsed from an uploaded counts file.
+    """
+    try:
+        nt_equal = np.all(
+            scores[constants.hgvs_nt_column].sort_values().values == \
+            counts[constants.hgvs_nt_column].sort_values().values
+        )
+        pro_equal = np.all(
+            scores[constants.hgvs_pro_column].sort_values().values == \
+            counts[constants.hgvs_pro_column].sort_values().values
+        )
+        assert nt_equal and pro_equal
+    except AssertionError:
         raise ValidationError(
             "Your score and counts files do not define the same variants. "
             "Check that the hgvs columns in both files match."
@@ -115,7 +126,7 @@ def validate_scoreset_score_data_input(file):
     header = read_header_from_io(file, label='Score')
     validate_header_contains_no_null_columns(header, label='Score')
     validate_has_hgvs_in_header(header, label='Score')
-    validate_at_least_one_numeric_column(header, label='Score')
+    validate_at_least_one_additional_column(header, label='Score')
 
     if constants.required_score_column not in header:
         raise ValidationError(
@@ -142,7 +153,7 @@ def validate_scoreset_count_data_input(file):
     header = read_header_from_io(file, label='Count')
     validate_header_contains_no_null_columns(header, label='Count')
     validate_has_hgvs_in_header(header, label='Count')
-    validate_at_least_one_numeric_column(header, label='Count')
+    validate_at_least_one_additional_column(header, label='Count')
 
 
 def validate_scoreset_json(dict_):
