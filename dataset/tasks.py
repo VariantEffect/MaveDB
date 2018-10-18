@@ -136,8 +136,8 @@ def delete_instance(self, user_pk, urn):
 
 @celery_app.task(bind=True, ignore_result=True,
                  base=BaseCreateVariants, soft_time_limit=SOFT_TIME_LIMIT)
-def create_variants(self, user_pk, scoreset_urn, scores_df, counts_df,
-                    dataset_columns):
+def create_variants(self, user_pk, scoreset_urn, scores_records, counts_records,
+                    index, dataset_columns):
     """Bulk creates and emails the user the processing status."""
     # Bind task instance variables
     self.urn = scoreset_urn
@@ -150,7 +150,8 @@ def create_variants(self, user_pk, scoreset_urn, scores_df, counts_df,
     self.user = user
     scoreset = models.scoreset.ScoreSet.objects.get(urn=scoreset_urn)
     self.scoreset = scoreset
-    variants = convert_df_to_variant_records(scores_df, counts_df)
+    variants = convert_df_to_variant_records(
+        scores_records, counts_records, index)
     with transaction.atomic():
         scoreset.delete_variants()
         Variant.bulk_create(scoreset, variants)
