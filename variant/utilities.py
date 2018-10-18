@@ -2,7 +2,7 @@ import pandas as pd
 from pandas.testing import assert_index_equal
 
 
-def convert_df_to_variant_records(scores_df, counts_df=None):
+def convert_df_to_variant_records(scores, counts=None, index=None):
     """
     Given two `defaultdict`s `score_map` and `count_map`, create an
     `OrderedDict` indexed by `hgvs_nt` where the keys are the attribute
@@ -13,14 +13,17 @@ def convert_df_to_variant_records(scores_df, counts_df=None):
     
     Parameters
     ----------
-    scores_df : `pd.DataFrame`
+    scores : Union[`pd.DataFrame`, str]
         Map indexed by the primary hgvs column inferred during validation.
         Map values are `dict` records where the key-pairs are column-value
         pairs inferred from the `scores` file uploaded during submission.
-    counts_df : `pd.DataFrame`, optional
+    counts : Union[`pd.DataFrame`, str] optional
         Map indexed by the primary hgvs column inferred during validation.
         Map values are `dict` records where the key-pairs are column-value
         pairs inferred from the `counts` file uploaded during submission.
+    index : str
+        Column to use as index, which is used when grouping rows between
+        dataframes.
 
     Returns
     -------
@@ -31,25 +34,36 @@ def convert_df_to_variant_records(scores_df, counts_df=None):
     from dataset.validators import validate_datasets_define_same_variants
     from dataset.constants import hgvs_nt_column, hgvs_pro_column, \
         variant_count_data, variant_score_data
-    
-    has_count_data = counts_df is not None and len(counts_df) > 0
-    has_score_data = scores_df is not None and len(scores_df) > 0
+        
+    if isinstance(scores, str):
+        scores = pd.read_json(scores, orient='records')
+    if isinstance(counts, str):
+        counts = pd.read_json(counts, orient='records')
+   
+    has_count_data = counts is not None and len(counts) > 0
+    has_score_data = scores is not None and len(scores) > 0
+
+    if index:
+        scores.index = pd.Index(scores[index])
+        if has_count_data:
+            counts.index = pd.Index(counts[index])
     
     if not has_score_data:
         return []
+    
     if has_count_data:
         assert_index_equal(
-            scores_df.index.sort_values(),
-            counts_df.index.sort_values()
+            scores.index.sort_values(),
+            counts.index.sort_values()
         )
-        validate_datasets_define_same_variants(scores_df, counts_df)
+        validate_datasets_define_same_variants(scores, counts)
 
     variants = []
-    for (primary_hgvs, group) in scores_df.groupby(
-            by=scores_df.index, sort=False):
+    for (primary_hgvs, group) in scores.groupby(
+            by=scores.index, sort=False):
         score_records = group.to_dict('record')
         if has_count_data:
-            count_records = counts_df[counts_df.index == primary_hgvs].\
+            count_records = counts[counts.index == primary_hgvs].\
                 to_dict('record')
             assert len(score_records) == len(count_records)
         else:
