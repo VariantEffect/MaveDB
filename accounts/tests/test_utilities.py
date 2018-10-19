@@ -88,6 +88,8 @@ class TestDelete(TestCase, TestMessageMixin):
             'kwargs': {'urn': instance.urn, 'user_pk': request.user.pk},
             'request': request
         })
+        
+        
 
 
 class TestPublish(TestCase, TestMessageMixin):
