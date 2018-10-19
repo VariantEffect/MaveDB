@@ -89,31 +89,12 @@ class Profile(TimeStampedModel):
                 "email address.".format(self.user.username)
             )
 
-    def notify_user_upload_status(self, success, instance):
-        if success:
-            template_name = "accounts/celery_complete_email_success.html"
-        else:
-            template_name = "accounts/celery_complete_email_failed.html"
+    def notify_user_submission_status(self, success, task_id=None, description=None):
         subject = "Your submission has been processed."
-        
-        if not hasattr(instance, 'get_url'):
-            url = reverse('accounts:profile')
-        else:
-            url = instance.get_url()
-            
+        template_name = "accounts/celery_job_status_email.html"
         message = render_to_string(template_name, {
-            'user': self, 'url': url
-        })
-        self.email_user(subject=subject, message=message)
-
-    def notify_user_delete_status(self, success, urn):
-        if success:
-            template_name = "accounts/celery_delete_email_success.html"
-        else:
-            template_name = "accounts/celery_delete_email_failed.html"
-        subject = "Your submission has been processed."
-        message = render_to_string(template_name, {
-            'user': self, 'urn': urn
+            'profile': self, 'success': success,
+            'task_id': task_id, 'description': description,
         })
         self.email_user(subject=subject, message=message)
 
@@ -128,10 +109,10 @@ class Profile(TimeStampedModel):
         else:
             group = 'a {}'.format(group)
             
-        template_name = "accounts/added_removed_as_contributor.html"
+        template_name = "accounts/group_change_email.html"
         subject = 'Updates to entry {}.'.format(instance.urn)
         message = render_to_string(template_name, {
-            'user': self.user, 'group': group, 'conjunction': conjunction,
+            'profile': self, 'group': group, 'conjunction': conjunction,
             'url': instance.get_url(), 'action': action, 'urn': instance.urn
         })
         self.email_user(subject=subject, message=message)
