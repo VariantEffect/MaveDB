@@ -1,5 +1,7 @@
 from io import BytesIO, StringIO
 
+import pandas as pd
+
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
@@ -137,70 +139,40 @@ class TestValidateScoreCountsDefineSameVariants(TestCase):
     in both the _nt column and _pro column.
     """
     def test_ve_counts_defines_different_nt_variants(self):
-        scores = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
-        counts = {
-            '2A>G': {
-                constants.hgvs_nt_column: '2A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
+        scores = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
+        counts = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.2A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
         with self.assertRaises(ValidationError):
             validate_datasets_define_same_variants(scores, counts)
     
     def test_ve_counts_defines_different_pro_variants(self):
-        scores = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
-        counts = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu7Glu',
-            }
-        }
+        scores = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
+        counts = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu75Glu'],
+        })
         with self.assertRaises(ValidationError):
             validate_datasets_define_same_variants(scores, counts)
             
     def test_passes_when_same_variants_defined(self):
-        scores = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
-        counts = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
+        scores = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
+        counts = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
         validate_datasets_define_same_variants(scores, counts)
-        
-        # Check nt only
-        scores = {
-            '1A>G': {constants.hgvs_nt_column: '1A>G',}
-        }
-        counts = {
-            '1A>G': {constants.hgvs_nt_column: '1A>G',}
-        }
-        validate_datasets_define_same_variants(scores, counts)
-        
-        # Check protein only
-        scores = {
-            '1A>G': {constants.hgvs_pro_column: 'p.Leu5Glu',}
-        }
-        counts = {
-            '1A>G': {constants.hgvs_pro_column: 'p.Leu5Glu',}
-        }
-        validate_datasets_define_same_variants(scores, counts)
-    
+
 
 class TestValidateScoreSetCountDataInputValidator(TestCase):
     """
