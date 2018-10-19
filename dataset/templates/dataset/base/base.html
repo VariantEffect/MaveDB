@@ -35,9 +35,14 @@
         {% endif %}
 
         <div class="dropdown" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
-             title="Download the scores, counts or metadata files associated with this Score Set.">
+             {% if instance.processing_state != 'success'%}
+                title="Download the scores, counts or metadata files associated with this Score Set (disabled until successfully processed)."
+             {% else %}
+                title="Download the scores, counts or metadata files associated with this Score Set."
+             {% endif %}>
           <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
-                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+              {% if instance.processing_state != 'success'%} disabled {% endif %}>
             <i class="fas fa-download"></i>
           </button>
           <div class="dropdown-menu download-menu" aria-labelledby="scoresetDropDown">
