@@ -361,15 +361,6 @@ class ScoreSetForm(DatasetModelForm):
                 )
                 return cleaned_data
             
-            if primary_hgvs_counts != primary_hgvs_scores:
-                self.add_error(
-                    None if 'count_data' not in self.fields else 'count_data',
-                    ErrorMessages.CountData.primary_mismatch.value.format(
-                        primary_hgvs_scores, primary_hgvs_counts
-                    )
-                )
-                return cleaned_data
-
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
         # The reverse is not always true.

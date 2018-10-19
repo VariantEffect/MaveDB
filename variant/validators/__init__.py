@@ -218,6 +218,11 @@ def validate_variant_rows(file):
     validate_columns_are_numeric(df)
 
     # Sort header and remove hgvs cols since the hgvs strings are the map keys.
+    if hgvs_nt_column not in df.columns:
+        df[hgvs_nt_column] = None
+    if hgvs_pro_column not in df.columns:
+        df[hgvs_pro_column] = None
+
     sorted_columns = [v for v in df.columns if v in hgvs_columns]
     sorted_columns += list(sorted(
         [v for v in df.columns if v not in hgvs_columns],
@@ -228,12 +233,7 @@ def validate_variant_rows(file):
     # Convert np.NaN values to None for consistency across all columns and
     # for compatibility in PostgresSQL queries
     df = df.where((pd.notnull(df)), None)
-
-    if hgvs_nt_column not in df.columns:
-        df[hgvs_nt_column] = None
-    if hgvs_pro_column not in df.columns:
-        df[hgvs_pro_column] = None
-    
+   
     # Remove hgvs columns from header. Form validator expects only
     # additional non-hgvs in the returned header.
     non_hgvs_columns = [v for v in df.columns if v not in hgvs_columns]

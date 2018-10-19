@@ -130,7 +130,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
         # Manually invoke the task
         publish_patch.assert_called()
         tasks.publish_scoreset.apply(**publish_patch.call_args[1])
-        self.assertEqual(notify_patch.call_count, 2)
+        self.assertEqual(notify_patch.call_count, 1)
         
         # Check to see if the publish worked
         scoreset = data_models.scoreset.ScoreSet.objects.first()

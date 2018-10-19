@@ -96,7 +96,7 @@ def publish_dataset(dataset, user=None):
     
     scoreset = None
     experiment = None
-    # Full refresh on on the dataset including nested parents.
+    # Forces a full refresh on on the dataset including nested parents.
     dataset = get_model_by_urn(dataset.urn)
     
     if isinstance(dataset, models.scoreset.ScoreSet):

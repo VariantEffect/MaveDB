@@ -324,7 +324,7 @@ class TestScoreSetForm(TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(ErrorMessages.CountData.no_score_file,
                       form.errors['score_data'][0])
-
+        
     def test_invalid_empty_score_file(self):
         score_data = "{},{},se\n".format(
             constants.hgvs_nt_column, constants.required_score_column

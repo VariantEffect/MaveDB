@@ -1,0 +1,6 @@
+Hi {{ profile.get_display_name }},
+
+Your submission to {{ description }} {% if success %}has been successfully processed.{% else %}could not be processed. If the issue persists, please <a href="{% url 'main:contact' %}">contact</a> support with the reference id '{{ task_id }}'{% endif %}
+
+Regards,
+MaveDB
