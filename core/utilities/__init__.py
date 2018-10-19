@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
@@ -112,7 +113,7 @@ def format_column(values, astype=float):
 
     Parameters
     ----------
-    values : list[Union[float, int]]
+    values : `pd.Series`
         List of values to format.
 
     astype : callable, optional
