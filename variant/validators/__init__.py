@@ -170,7 +170,6 @@ def validate_variant_rows(file):
             "a non-empty file.")
 
     # Formats the data in each column replacing null values with np.NaN
-    print("Converting...")
     for column in df.columns:
         try:
             if column in hgvs_columns:
@@ -180,7 +179,6 @@ def validate_variant_rows(file):
                 df[column] = format_column(df[column], astype=float)
         except ValueError as e:
             raise ValidationError(str(e).capitalize())
-    print("Converting...done!")
 
     # Determine which is the primary hgvs column. Defaults to _nt. _pro is only
     # selected when _nt is not provided.
@@ -207,12 +205,10 @@ def validate_variant_rows(file):
         validate_hgvs_nt_uniqueness(df)
 
     # Validate variants where applicable
-    print("Validating...")
     if defines_nt_hgvs:
         df.loc[:, hgvs_nt_column].apply(validate_nt_variant)
     if defines_p_hgvs:
         df.loc[:, hgvs_pro_column].apply(validate_pro_variant)
-    print("Validating...done!")
 
     # Finally validate all other columns are numeric.
     validate_columns_are_numeric(df)
@@ -237,6 +233,4 @@ def validate_variant_rows(file):
     # Remove hgvs columns from header. Form validator expects only
     # additional non-hgvs in the returned header.
     non_hgvs_columns = [v for v in df.columns if v not in hgvs_columns]
-
-    print('done')
     return non_hgvs_columns, primary_hgvs_column, df
