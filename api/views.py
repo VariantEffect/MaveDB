@@ -151,9 +151,11 @@ def scoreset_score_data(request, urn):
 
     scoreset = instance_or_response
     if settings.DEBUG:
-        variants = scoreset.children.order_by('{}'.format('creation_date'))
+        variants = scoreset.children.order_by(
+            '{}'.format(scoreset.primary_hgvs_column))
     else:
-        variants = scoreset.children.order_by('-{}'.format('creation_date'))
+        variants = scoreset.children.order_by(
+            '-{}'.format(scoreset.primary_hgvs_column))
         
     columns = scoreset.score_columns
     type_column = constants.variant_score_data
@@ -181,9 +183,12 @@ def scoreset_count_data(request, urn):
     
     scoreset = instance_or_response
     if settings.DEBUG:
-        variants = scoreset.children.order_by('{}'.format('creation_date'))
+        variants = scoreset.children.order_by(
+            '{}'.format(scoreset.primary_hgvs_column))
     else:
-        variants = scoreset.children.order_by('-{}'.format('creation_date'))
+        variants = scoreset.children.order_by(
+            '-{}'.format(scoreset.primary_hgvs_column))
+    
     columns = scoreset.count_columns
     type_column = constants.variant_count_data
 

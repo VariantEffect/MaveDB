@@ -88,10 +88,10 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         instance = self.get_object()
         if settings.DEBUG:
             variants = instance.children.order_by(
-                '{}'.format('creation_date'))[0:10]
+                '{}'.format(instance.primary_hgvs_column))[0:10]
         else:
             variants = instance.children.order_by(
-                '{}'.format('creation_date'))[0:10]
+                '-{}'.format(instance.primary_hgvs_column))[0:10]
             
         rows = []
         for variant in variants:
