@@ -5,6 +5,7 @@ from rest_framework import viewsets, exceptions
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.cache import cache_page
+from django.conf import settings
 
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
@@ -149,8 +150,11 @@ def scoreset_score_data(request, urn):
         return instance_or_response
 
     scoreset = instance_or_response
-    variants = scoreset.children.order_by('{}'.format(
-        scoreset.primary_hgvs_column))
+    if settings.DEBUG:
+        variants = scoreset.children.order_by('{}'.format('creation_date'))
+    else:
+        variants = scoreset.children.order_by('-{}'.format('creation_date'))
+        
     columns = scoreset.score_columns
     type_column = constants.variant_score_data
 
@@ -176,8 +180,10 @@ def scoreset_count_data(request, urn):
         return instance_or_response
     
     scoreset = instance_or_response
-    variants = scoreset.children.order_by('{}'.format(
-        scoreset.primary_hgvs_column))
+    if settings.DEBUG:
+        variants = scoreset.children.order_by('{}'.format('creation_date'))
+    else:
+        variants = scoreset.children.order_by('-{}'.format('creation_date'))
     columns = scoreset.count_columns
     type_column = constants.variant_count_data
 
