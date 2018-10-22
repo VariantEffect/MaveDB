@@ -1,8 +1,7 @@
 import json
-import mock
 
 from django.core.urlresolvers import reverse_lazy
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 from django.http import Http404
 
 from dataset import factories as ds_factories
