@@ -106,8 +106,10 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
                     data = '{:.3f}'.format(data)
                 elif isinstance(data, int):
                     data = '{:.6g}'.format(data)
-                else:
+                elif not data or data is None:
                     data = str(None)
+                else:
+                    data = data
                 row['{}'.format(i)] = data
             rows.append(row)
             
