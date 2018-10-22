@@ -102,13 +102,12 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
                 v_data = variant.score_data
             
             for i, data in enumerate(v_data):
-                if not data:
-                    data = str(None)
+                if isinstance(data, float):
+                    data = '{:.3f}'.format(data)
+                elif isinstance(data, int):
+                    data = '{:.6g}'.format(data)
                 else:
-                    if isinstance(data, float):
-                        data = '{:.3f}'.format(data)
-                    if isinstance(data, int):
-                        data = '{:.6g}'.format(data)
+                    return str(None)
                 row['{}'.format(i)] = data
             rows.append(row)
             
