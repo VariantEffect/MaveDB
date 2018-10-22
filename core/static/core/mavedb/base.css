@@ -342,6 +342,10 @@ span.select2.select2-container.select2-container--default {
     width: 100% !important;
 }
 
+input[name*='offset'] {
+  width: 100%;
+}
+
 
 /* ORCID button
 ---------------------------------------- */
