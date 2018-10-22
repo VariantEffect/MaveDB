@@ -374,6 +374,24 @@ class TestVariantRowValidator(TestCase):
         )
         with self.assertRaises(ValidationError):
             validate_variant_rows(BytesIO(data.encode()))
+            
+    def test_validationerror_zero_is_not_parsed_as_none(self):
+        hgvs = generate_hgvs(prefix='c')
+        data = "{},{}\n{},0.0".format(
+            constants.hgvs_nt_column,
+            required_score_column, hgvs
+        )
+        _, _, df = validate_variant_rows(BytesIO(data.encode()))
+        self.assertEqual(df[required_score_column].values[0], 0)
+        
+    def test_validationerror_close_to_zero_is_not_parsed_as_none(self):
+        hgvs = generate_hgvs(prefix='c')
+        data = "{},{}\n{},5.6e-15".format(
+            constants.hgvs_nt_column,
+            required_score_column, hgvs
+        )
+        _, _, df = validate_variant_rows(BytesIO(data.encode()))
+        self.assertEqual(df[required_score_column].values[0], 5.6e-15)
 
 
 class TestValidateNtUniqueness(TestCase):
