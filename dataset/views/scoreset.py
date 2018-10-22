@@ -91,7 +91,7 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
                 '{}'.format('creation_date'))[0:10]
         else:
             variants = instance.children.order_by(
-                '-{}'.format('creation_date'))[0:10]
+                '{}'.format('creation_date'))[0:10]
             
         rows = []
         for variant in variants:
