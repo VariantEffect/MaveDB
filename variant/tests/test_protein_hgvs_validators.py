@@ -116,7 +116,7 @@ class TestEventValidators(TestCase):
 
     def test_error_invalid_delins(self):
         with self.assertRaises(ValidationError):
-            validate_delins('Cys28delinsZ')
+            validate_delins('Cys28delinsJ')
         with self.assertRaises(ValidationError):
             validate_delins('')
         with self.assertRaises(ValidationError):

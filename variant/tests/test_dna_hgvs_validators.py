@@ -69,7 +69,7 @@ class TestEventValidators(TestCase):
         
     def test_error_invalid_deletions(self):
         with self.assertRaises(ValidationError):
-            validate_deletion('19delR')
+            validate_deletion('19delE')
         with self.assertRaises(ValidationError):
             validate_deletion('')
         with self.assertRaises(ValidationError):
@@ -123,7 +123,7 @@ class TestEventValidators(TestCase):
         
     def test_error_invalid_delins(self):
         with self.assertRaises(ValidationError):
-            validate_delins('19delinsR')
+            validate_delins('19delinsE')
         with self.assertRaises(ValidationError):
             validate_delins('')
         with self.assertRaises(ValidationError):
