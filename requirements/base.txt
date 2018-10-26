@@ -21,4 +21,4 @@ psycopg2-binary
 coverage
 idutils>=1.1.0
 hg+https://bitbucket.org/metapub/metapub@default
-git+https://github.com/FowlerLab/hgvs-patterns.git@0.2
+git+https://github.com/FowlerLab/hgvs-patterns.git
