@@ -175,7 +175,7 @@ $("#id_experiment").on("change", function() {
           if (tuple[0] !== "" && tuple[1] !== "") {
             $(replaces_selector).append($("<option/>", {
               value: tuple[0],
-              text: tuple[1]
+              text: tuple[1] + ' | ' + tuple[2]
             }));
           }
         });
