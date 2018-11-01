@@ -131,9 +131,9 @@ class TestScoreSetAjaxMixin(TestCase):
         user = UserFactory()
         experiment = ExperimentWithScoresetFactory()
         sc1 = experiment.scoresets.first()  # type: ScoreSet
-        sc2 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
-        sc3 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
-        sc4 = ScoreSetWithTargetFactory(experiment=experiment)  # type: ScoreSet
+        sc2 = ScoreSetWithTargetFactory(experiment=experiment) # type: ScoreSet
+        sc3 = ScoreSetWithTargetFactory(experiment=experiment) # type: ScoreSet
+        sc4 = ScoreSetWithTargetFactory(experiment=experiment) # type: ScoreSet
         
         # Viewable since user has edit permission and is not private
         sc1.private = False
@@ -154,10 +154,10 @@ class TestScoreSetAjaxMixin(TestCase):
         )
         request.user = user
         response = json.loads(driver.get_ajax(request).content.decode())
-        self.assertIn([sc1.pk, sc1.urn], response['scoresets'])
-        self.assertNotIn([sc2.pk, sc2.urn], response['scoresets'])
-        self.assertNotIn([sc3.pk, sc3.urn], response['scoresets'])
-        self.assertNotIn([sc4.pk, sc4.urn], response['scoresets'])
+        self.assertIn([sc1.pk, sc1.urn, sc1.title], response['scoresets'])
+        self.assertNotIn([sc2.pk, sc2.urn, sc2.title], response['scoresets'])
+        self.assertNotIn([sc3.pk, sc3.urn, sc3.title], response['scoresets'])
+        self.assertNotIn([sc4.pk, sc4.urn, sc4.title], response['scoresets'])
 
 
 class TestDatasetPermissionMixin(TestCase):

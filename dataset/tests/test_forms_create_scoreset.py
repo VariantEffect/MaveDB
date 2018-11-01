@@ -1,5 +1,4 @@
 from django.test import TestCase, RequestFactory
-from django.core.exceptions import ValidationError
 from accounts.factories import UserFactory
 
 from main.models import Licence
