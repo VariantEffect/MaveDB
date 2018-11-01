@@ -274,6 +274,7 @@ class ScoreSetAjaxMixin(DataSetAjaxMixin):
         # or method description. This code is coupled with base.js. Changes
         # here might break the javascript code.
         data = super().get_ajax(request, return_dict=True, *args, **kwargs)
+
         if 'targetId' in request.GET:
             pk = request.GET.get("targetId", "")
             if pk and TargetGene.objects.filter(pk=pk).count():
@@ -282,12 +283,14 @@ class ScoreSetAjaxMixin(DataSetAjaxMixin):
                 map = targetgene.reference_maps.first()
                 if map is not None:
                     data['genome'] = map.genome.pk
+
         if 'experiment' in request.GET:
             pk = request.GET.get("experiment", "")
             if pk and Experiment.objects.filter(pk=pk).count():
                 experiment = Experiment.objects.get(pk=pk)
                 scoresets = [
-                    (s.pk, s.urn) for s in experiment.scoresets.order_by('urn')
+                    (s.pk, s.urn, s.title)
+                    for s in experiment.scoresets.order_by('urn')
                     if request.user.has_perm(PermissionTypes.CAN_EDIT, s)
                     and not s.private
                 ]
@@ -295,6 +298,7 @@ class ScoreSetAjaxMixin(DataSetAjaxMixin):
                 data.update(
                     {'keywords': [k.text for k in experiment.keywords.all()]}
                 )
+
         return HttpResponse(json.dumps(data), content_type="application/json")
 
 
