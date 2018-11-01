@@ -138,8 +138,8 @@ class TestTargetGeneForm(TestCase):
         self.assertTrue(form.is_valid())
         self.assertEqual(form.wt_sequence, 'atcg')
 
-    def test_strips_line_breaks_from_wt_seq(self):
-        data = {'wt_sequence': ' atcg\ngtac\r\ngggg aaaa', 'name': 'brca1'}
+    def test_strips_line_breaks_tabs_ws_from_wt_seq(self):
+        data = {'wt_sequence': ' atcg\ngtac\r\ngg\tgg aaaa', 'name': 'brca1'}
         form = TargetGeneForm(user=self.user, data=data)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.wt_sequence, 'atcggtacggggaaaa')
