@@ -1,6 +1,8 @@
 import pandas as pd
 from pandas.testing import assert_index_equal
 
+from core.utilities import is_null
+
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
     """
@@ -75,6 +77,17 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
             hgvs_pro = sr.pop(hgvs_pro_column)
             cr.pop(hgvs_nt_column)
             cr.pop(hgvs_pro_column)
+
+            # Postgres JSON field cannot store np.NaN values so convert
+            # any np.NaN to None.
+            for key, value in sr.items():
+                if is_null(value):
+                    sr[key] = None
+            if cr:
+                for key, value in cr.items():
+                    if is_null(value):
+                        cr[key] = None
+
             data = {
                 variant_score_data: sr,
                 variant_count_data: {} if cr == sr else cr,
