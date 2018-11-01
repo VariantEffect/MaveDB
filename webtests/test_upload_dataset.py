@@ -17,6 +17,7 @@ from metadata import models as meta_models
 from metadata import factories as meta_factories
 
 from genome import factories as genome_factories
+from genome import models as genome_models
 
 from .utilities import authenticate_webdriver, \
     LOG_PATH, STAGING_OR_PROD, ActionMixin
@@ -77,9 +78,9 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         # Check that only exps2 is visible as this is the only editable one.
         exps_select = Select(self.browser.find_element_by_id('id_experimentset'))
         options = [o.text for o in exps_select.options]
-        self.assertIn(exps2.urn, options)
-        self.assertNotIn(exps1.urn, options)
-        self.assertNotIn(exps3.urn, options)
+        self.assertEqual(len(options), 2)
+        self.assertIn('---', options[0])
+        self.assertIn(exps2.urn, options[1])
 
         # ----- REQUIRED FIELDS ------- #
         title = self.browser.find_element_by_id('id_title')
@@ -153,7 +154,8 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         )
         exp_select = Select(self.browser.find_element_by_id('id_experiment'))
         self.assertEqual(
-            [o.text for o in exp_select.all_selected_options], [experiment.urn]
+            [o.text for o in exp_select.all_selected_options],
+            ['{} | {}'.format(experiment.urn, experiment.title)]
         )
 
         kw_select = Select(self.browser.find_element_by_id('id_keywords'))
@@ -195,9 +197,17 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         description = self.browser.find_element_by_id('id_short_description')
         self.perform_action(description, 'send_keys', "hello, new world!")
         
-        genome_select = Select(self.browser.find_element_by_id('id_genome'))
-        self.perform_action(genome_select, 'select_by_index', 1)
-        
+        genome_input = self.browser.find_element_by_id(
+            'select2-id_genome-container')
+        self.perform_action(genome_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', genome_models.
+                            ReferenceGenome.objects.first().display_name())
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
+
         target_name = self.browser.find_element_by_id('id_name')
         self.perform_action(target_name, 'send_keys', "BRCA1")
         target_seq = self.browser.find_element_by_id('id_wt_sequence')
@@ -440,12 +450,27 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
         target_seq = self.browser.find_element_by_id('id_wt_sequence')
         self.perform_action(target_seq, 'send_keys', "atcg")
         
-        genome_select = Select(self.browser.find_element_by_id('id_genome'))
-        self.perform_action(genome_select, 'select_by_index', 1)
-        
-        exp_select = Select(self.browser.find_element_by_id('id_experiment'))
-        exp_select.select_by_index(1)
-        
+        genome_input = self.browser.find_element_by_id(
+            'select2-id_genome-container')
+        self.perform_action(genome_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', genome_models.
+                            ReferenceGenome.objects.first().display_name())
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
+
+        exp_input = self.browser.find_element_by_id(
+            'select2-id_experiment-container')
+        self.perform_action(exp_input, 'click')
+        field = self.browser.find_elements_by_class_name(
+            'select2-search__field')[-1]
+        self.perform_action(field, 'send_keys', experiment.urn)
+        item = self.browser.find_elements_by_class_name(
+            'select2-results__option')[0]
+        self.perform_action(item, 'click')
+
         upload = self.browser.find_element_by_id("id_score_data")
         self.perform_action(
             upload, 'send_keys', os.getcwd() + "/webtests/scores.csv")
