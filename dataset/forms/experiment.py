@@ -1,12 +1,11 @@
 from enum import Enum
 
 from django import forms as forms
-from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils.translation import ugettext
 
 from core.mixins import NestedEnumMixin
-
 from ..forms.base import DatasetModelForm
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
@@ -65,6 +64,10 @@ class ExperimentForm(DatasetModelForm):
             "see once you publish your submission."
         )
 
+        for field in ('experimentset', ):
+            if field in self.fields:
+                self.fields[field].widget.attrs.update(**{'class': 'select2'})
+
     def clean_experimentset(self):
         experimentset = self.cleaned_data.get('experimentset', None)
         existing_experimentset = self.instance.parent
@@ -92,11 +95,20 @@ class ExperimentForm(DatasetModelForm):
             choices_qs = ExperimentSet.objects.filter(
                 pk__in=choices).order_by("urn")
             self.fields["experimentset"].queryset = choices_qs
+            self.fields["experimentset"].widget.choices = \
+                [("", self.fields["experimentset"].empty_label)] + [
+                (e.pk, '{} | {}'.format(e.urn, e.title))
+                for e in choices_qs.all()
+            ]
             
             if self.experimentset is not None:
                 choices_qs = ExperimentSet.objects.filter(
                     pk__in=[self.experimentset.pk]).order_by("urn")
                 self.fields["experimentset"].queryset = choices_qs
+                self.fields["experimentset"].widget.choices = (
+                    (e.pk, '{} | {}'.format(e.urn, e.title))
+                    for e in choices_qs
+                )
                 self.fields["experimentset"].initial = self.experimentset
 
     @classmethod
