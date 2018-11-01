@@ -138,6 +138,12 @@ class TestTargetGeneForm(TestCase):
         self.assertTrue(form.is_valid())
         self.assertEqual(form.wt_sequence, 'atcg')
 
+    def test_strips_line_breaks_from_wt_seq(self):
+        data = {'wt_sequence': ' atcg\ngtac\r\ngggg aaaa', 'name': 'brca1'}
+        form = TargetGeneForm(user=self.user, data=data)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.wt_sequence, 'atcggtacggggaaaa')
+
     def test_private_targets_hidden_if_user_has_no_permissions(self):
         instance = TargetGeneFactory()
         instance.scoreset.private = True

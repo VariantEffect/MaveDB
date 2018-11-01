@@ -100,9 +100,6 @@ class TestWildTypeSequenceValidators(TestCase):
     def test_passes_uppercase_nucleotides(self):
         validate_wildtype_sequence('ATCG')
 
-    def test_strips_whitespace(self):
-        validate_wildtype_sequence('  ATCG  ')
-
 
 class TestReferenceGenomeValidators(TestCase):
     """
