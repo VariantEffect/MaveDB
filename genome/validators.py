@@ -73,7 +73,6 @@ def validate_unique_intervals(intervals):
 # WildTypeSequence
 # ------------------------------------------------------------------------- #
 def validate_wildtype_sequence(seq):
-    seq = seq.strip()
     if not re.fullmatch(DNA_SEQ_PATTERN, seq):
         raise ValidationError(
             "'%(seq)s' is not a valid wild type sequence.",

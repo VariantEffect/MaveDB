@@ -1,3 +1,5 @@
+import re
+
 from django import forms as forms
 from django.db import transaction
 from django.forms.models import BaseModelFormSet
@@ -42,7 +44,6 @@ class TargetGeneForm(forms.ModelForm):
         label='Target wild-type sequence',
         required=True,
         widget=forms.Textarea(),
-        validators=[validate_wildtype_sequence],
         error_messages={
             'required':
                 'You must supply a wild-type sequence for your target.'
@@ -51,7 +52,7 @@ class TargetGeneForm(forms.ModelForm):
     target = forms.ModelChoiceField(
         label='Existing target', required=False,
         queryset=None,
-        widget=forms.Select()
+        widget=forms.Select(attrs={'class': 'select2'})
     )
 
     def __init__(self, *args, **kwargs):
@@ -77,8 +78,9 @@ class TargetGeneForm(forms.ModelForm):
         sequence = self.cleaned_data.get('wt_sequence', None)
         if sequence is None:
             raise ValidationError("Sequence cannot be empty.")
-        self.wt_sequence = sequence.strip()
-        return sequence
+        self.wt_sequence = re.sub(r'\\r|\\n|\\t|\s+', '', sequence)
+        validate_wildtype_sequence(self.wt_sequence)
+        return self.wt_sequence
 
     def set_target_gene_options(self):
         if 'target' in self.fields:
@@ -98,7 +100,8 @@ class TargetGeneForm(forms.ModelForm):
             self.fields["target"].queryset = targets_qs
             self.fields["target"].choices = \
                 [("", self.fields["target"].empty_label)] + [
-                (t.pk, t.get_unique_name()) for t in targets_qs.all()
+                (t.pk, "{} | {}".format(t.get_unique_name(), t.scoreset.title))
+                for t in targets_qs.all()
             ]
 
     @transaction.atomic
@@ -307,6 +310,9 @@ class ReferenceMapForm(forms.ModelForm):
                 (r.pk, r.display_name()) for r in ReferenceGenome.objects.all()
             ]
         genome_field.initial = ""
+        for field in ('genome', ):
+            if field in self.fields:
+                self.fields[field].widget.attrs.update(**{'class': 'select2'})
 
     def dummy_instance(self):
         if not self.is_bound or self.errors:
