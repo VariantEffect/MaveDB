@@ -106,8 +106,8 @@ class ExperimentForm(DatasetModelForm):
                     pk__in=[self.experimentset.pk]).order_by("urn")
                 self.fields["experimentset"].queryset = choices_qs
                 self.fields["experimentset"].widget.choices = (
-                    (e.pk, '{} | {}'.format(e.urn, e.title))
-                    for e in choices_qs
+                    (self.experimentset.pk, '{} | {}'.format(
+                        self.experimentset.urn, self.experimentset.title)),
                 )
                 self.fields["experimentset"].initial = self.experimentset
 

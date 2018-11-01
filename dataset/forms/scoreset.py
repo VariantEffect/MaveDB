@@ -462,8 +462,8 @@ class ScoreSetForm(DatasetModelForm):
                     pk__in=[self.experiment.pk]).order_by("urn")
                 self.fields["experiment"].queryset = choices_qs
                 self.fields['experiment'].widget.choices = (
-                    (e.pk, '{} | {}'.format(e.urn, e.title))
-                    for e in choices_qs
+                    (self.experiment.pk, '{} | {}'.format(
+                        self.experiment.urn, self.experiment.title)),
                 )
                 self.fields["experiment"].initial = self.experiment
 
