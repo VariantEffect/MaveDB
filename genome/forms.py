@@ -77,7 +77,7 @@ class TargetGeneForm(forms.ModelForm):
         sequence = self.cleaned_data.get('wt_sequence', None)
         if sequence is None:
             raise ValidationError("Sequence cannot be empty.")
-        self.wt_sequence = sequence
+        self.wt_sequence = sequence.strip()
         return sequence
 
     def set_target_gene_options(self):
