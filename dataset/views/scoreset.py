@@ -122,7 +122,6 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         return JsonResponse(response, safe=False)
         
     
-
 class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     # Overridden from `CreateDatasetModelView`
     # -------
@@ -383,10 +382,9 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     def format_success_message(self):
         if self.instance.processing_state == constants.processing:
             return (
-                "Successfully updated {urn}. "
-                "Uploaded files are being processed and further editing has been "
-                "temporarily disabled. You will receive an email message when "
-                "processing completes."
+                "Successfully updated {urn}. Uploaded files are being "
+                "processed and further editing has been temporarily disabled. "
+                "You will receive an email message when processing completes."
             ).format(urn=self.instance.urn)
         else:
             return super().format_success_message()
