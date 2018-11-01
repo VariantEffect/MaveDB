@@ -220,6 +220,10 @@ class ScoreSetForm(DatasetModelForm):
                 name += ' [Default]'
             choices.append((licence.pk, name))
         self.fields['licence'].widget.choices = choices
+
+        for field in ('licence', 'replaces', 'experiment'):
+            if field in self.fields:
+                self.fields[field].widget.attrs.update(**{'class': 'select2'})
    
     def clean_experiment(self):
         experiment = self.cleaned_data['experiment']
@@ -241,7 +245,6 @@ class ScoreSetForm(DatasetModelForm):
                     # replaces is a member of the same experiment.
                     self.cleaned_data['replaces'] = self.clean_replaces()
         return experiment
-
 
     def clean_licence(self):
         licence = self.cleaned_data.get("licence", None)
@@ -432,6 +435,11 @@ class ScoreSetForm(DatasetModelForm):
                 .exclude(urn=self.instance.urn)\
                 .order_by("urn")
             self.fields["replaces"].queryset = scoresets_qs
+            self.fields["replaces"].widget.choices = \
+                [("", self.fields["replaces"].empty_label)] + [
+                (s.pk, '{} | {}'.format(s.urn, s.title))
+                for s in scoresets_qs.all()
+            ]
 
     def set_experiment_options(self):
         if 'experiment' in self.fields:
@@ -443,11 +451,20 @@ class ScoreSetForm(DatasetModelForm):
             experiment_qs = Experiment.objects.filter(
                 pk__in=choices).order_by("urn")
             self.fields["experiment"].queryset = experiment_qs
+            self.fields["experiment"].widget.choices = \
+                [("", self.fields["experiment"].empty_label)] + [
+                (e.pk, '{} | {}'.format(e.urn, e.title))
+                for e in experiment_qs.all()
+            ]
             
             if self.experiment is not None:
                 choices_qs = Experiment.objects.filter(
                     pk__in=[self.experiment.pk]).order_by("urn")
                 self.fields["experiment"].queryset = choices_qs
+                self.fields['experiment'].widget.choices = (
+                    (e.pk, '{} | {}'.format(e.urn, e.title))
+                    for e in choices_qs
+                )
                 self.fields["experiment"].initial = self.experiment
 
     @classmethod
@@ -476,5 +493,3 @@ class ScoreSetEditForm(ScoreSetForm):
         self.fields.pop('meta_data')
         self.fields.pop('licence')
         self.fields.pop('replaces')
-
-
