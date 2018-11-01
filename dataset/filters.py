@@ -94,7 +94,6 @@ class DatasetModelFilter(FilterSet):
         exclude = []
         for instance in qs.all():
             if user not in instance.contributors() and instance.private:
-                print(instance, user)
                 exclude.append(instance.pk)
         return qs.exclude(pk__in=exclude)
 
