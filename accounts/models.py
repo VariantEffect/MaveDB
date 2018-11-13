@@ -48,7 +48,7 @@ class Profile(TimeStampedModel):
         The foreign key relationship associating a profile with a user.
     """
     TOKEN_LEGNTH = 64
-    TOKEN_EXPIRY = 3
+    TOKEN_EXPIRY = 14
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)

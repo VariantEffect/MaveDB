@@ -67,7 +67,7 @@ class TestUserProfile(TestCase):
         user.profile.generate_token()
         self.assertTrue(
             user.profile.auth_token_is_valid(user.profile.auth_token))
-        user.profile.auth_token_expiry -= timedelta(days=10)
+        user.profile.auth_token_expiry -= timedelta(days=Profile.TOKEN_EXPIRY*2)
         user.profile.save()
         self.assertFalse(
             user.profile.auth_token_is_valid(user.profile.auth_token))
