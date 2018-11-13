@@ -40,6 +40,7 @@ def validate_interval_start_lteq_end(start, end):
             )
         )
 
+
 def validate_strand(value):
     if value not in ('+', '-'):
         raise ValidationError(

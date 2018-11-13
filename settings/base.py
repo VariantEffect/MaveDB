@@ -24,6 +24,7 @@ except FileNotFoundError:
           "before running tests/server.")
     print("|----------------</WARNING>---------------|")
 
+
 def get_secret(setting, secrets=secrets):
     """
     Retrieve a named setting from the secrets dictionary read from the JSON.

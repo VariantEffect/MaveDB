@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
@@ -213,3 +214,21 @@ class TestCreateVariantAttrsUtility(TestCase):
             utilities.convert_df_to_variant_records(
                 d1, d2, index=constants.hgvs_pro_column
             )
+
+    def test_converts_np_nan_to_none(self):
+        d1, d2 = self.fixture_data()
+        d1[constants.required_score_column] = np.NaN
+        d2['count'] = np.NaN
+
+        variants = utilities.convert_df_to_variant_records(d1, d2)
+        self.assertIsNone(
+            variants[0]['data'][constants.variant_score_data][
+                constants.required_score_column])
+        self.assertIsNone(
+            variants[0]['data'][constants.variant_count_data]['count'])
+
+        self.assertIsNone(
+            variants[1]['data'][constants.variant_score_data][
+                constants.required_score_column])
+        self.assertIsNone(
+            variants[1]['data'][constants.variant_count_data]['count'])
