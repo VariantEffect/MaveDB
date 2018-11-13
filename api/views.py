@@ -59,9 +59,6 @@ def check_permission(instance, user=None):
 # ViewSet CBVs for list/detail views
 # --------------------------------------------------------------------------- #
 class AuthenticatedViewSet(viewsets.ReadOnlyModelViewSet):
-    user = None
-    auth_token = None
-    
     def dispatch(self, request, *args, **kwargs):
         try:
             self.user, self.auth_token = authenticate(request)
