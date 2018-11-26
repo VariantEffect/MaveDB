@@ -76,9 +76,9 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
         for (sr, cr) in zip(score_records, count_records):
             hgvs_nt = sr.pop(hgvs_nt_column)
             hgvs_pro = sr.pop(hgvs_pro_column)
-            if is_null(hgvs_nt) or hgvs_nt is np.NaN:
+            if is_null(hgvs_nt) or hgvs_nt is np.NaN or hgvs_nt == 'nan':
                 hgvs_nt = None
-            if is_null(hgvs_pro) or hgvs_pro is np.NaN:
+            if is_null(hgvs_pro) or hgvs_pro is np.NaN or hgvs_pro == 'nan':
                 hgvs_pro = None
             cr.pop(hgvs_nt_column)
             cr.pop(hgvs_pro_column)
