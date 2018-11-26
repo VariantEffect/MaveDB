@@ -25,10 +25,14 @@
 
     <p>
       <strong>Reference assembly: </strong>
-      <a target="_blank" href={{ instance.get_target.get_reference_genomes.first.genome_id.url }}>
-        {{ instance.get_target.get_reference_genomes.first.genome_id.identifier }}
-        <i class="external-link fas fa-external-link-alt"></i>
-      </a>
+      {% if instance.get_target.get_reference_genomes.first.genome_id.identifier %}
+        <a target="_blank" href={{ instance.get_target.get_reference_genomes.first.genome_id.url }}>
+          {{ instance.get_target.get_reference_genomes.first.genome_id.identifier }}
+          <i class="external-link fas fa-external-link-alt"></i>
+        </a>
+      {% else %}
+        Other/Synthetic
+      {% endif %}
     </p>
 
     <p class="wild-type-sequence">
@@ -195,7 +199,5 @@
         console.log(errorThrown);
       });
     });
-
-
   </script>
 {% endblock %}

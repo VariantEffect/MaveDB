@@ -67,7 +67,7 @@ class TestUserProfile(TestCase):
         user.profile.generate_token()
         self.assertTrue(
             user.profile.auth_token_is_valid(user.profile.auth_token))
-        user.profile.auth_token_expiry -= timedelta(days=10)
+        user.profile.auth_token_expiry -= timedelta(days=Profile.TOKEN_EXPIRY*2)
         user.profile.save()
         self.assertFalse(
             user.profile.auth_token_is_valid(user.profile.auth_token))
@@ -305,7 +305,6 @@ class TestUserProfile(TestCase):
         remove_user_as_instance_viewer(bob, self.exps_1)
         self.assertEqual(len(bob.profile.viewer_experimentsets()), 0)
     
-    # ------ Group change
     @mock.patch('core.tasks.send_mail.apply_async')
     def test_notify_group_change_full_url_rendererd_in_template(self, patch):
         user = UserFactory()
@@ -318,24 +317,11 @@ class TestUserProfile(TestCase):
             patch.call_args[1]['kwargs']['message']
         )
         
-    # --- Upload status
-    @mock.patch('core.tasks.send_mail.apply_async')
-    def test_renders_url_correctly(self, patch):
-        user = UserFactory()
-        instance = factories.ExperimentFactory()
-        user.profile.notify_user_upload_status(True, instance)
-        patch.assert_called()
-        self.assertIn(
-            instance.get_url(),
-            patch.call_args[1]['kwargs']['message']
-        )
-
     @mock.patch('core.tasks.send_mail.apply_async')
     def test_delegates_correct_template_fail(self, patch):
         user = UserFactory()
-        instance = factories.ExperimentSetFactory()
-        user.profile.notify_user_upload_status(success=False, instance=instance)
-        
+        user.profile.notify_user_submission_status(
+            success=False, task_id=1, description='do the thing')
         patch.assert_called()
         message = patch.call_args[1]['kwargs']['message']
         self.assertIn("could not be processed", message)
@@ -343,9 +329,8 @@ class TestUserProfile(TestCase):
     @mock.patch('core.tasks.send_mail.apply_async')
     def test_delegates_correct_template_success(self, patch):
         user = UserFactory()
-        instance = factories.ExperimentSetFactory()
-        user.profile.notify_user_upload_status(success=True, instance=instance)
-    
+        user.profile.notify_user_submission_status(
+            success=True, task_id=1, description='do the thing')
         patch.assert_called()
         message = patch.call_args[1]['kwargs']['message']
         self.assertIn("has been successfully processed", message)

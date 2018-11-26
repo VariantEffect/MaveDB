@@ -1,7 +1,6 @@
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-import dataset.constants as constants
+from core.utilities import null_values_list
 
 from ..factories import KeywordFactory
 from ..fields import FlexibleModelChoiceField, FlexibleModelMultipleChoiceField
@@ -22,7 +21,7 @@ class TestFlexibleModelMultipleChoiceField(TestCase):
             klass=Keyword, to_field_name='text', required=False,
             queryset=Keyword.objects.none()
         )
-        existing = field.clean(constants.nan_col_values)
+        existing = field.clean(null_values_list)
         self.assertEqual(len(existing), 0)
 
     def test_new_values_detected(self):
@@ -61,7 +60,7 @@ class TestFlexibleModelChoiceField(TestCase):
             klass=Keyword, to_field_name='text', required=False,
             queryset=Keyword.objects.none()
         )
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             v = field.clean(value)
             self.assertIsNone(v)
 

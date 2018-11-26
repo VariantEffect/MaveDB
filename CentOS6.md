@@ -356,6 +356,7 @@ bottom of the file:
     WSGISocketPrefix run/wsgi
     WSGIDaemonProcess mavedb python-path=/usr/local/webapps/mavedb:/usr/local/venvs/mavedb/lib/python3.4/site-packages
     WSGIProcessGroup mavedb
+    WSGIPassAuthorization On
     
     Alias /static/ /usr/local/webapps/mavedb/static/
     

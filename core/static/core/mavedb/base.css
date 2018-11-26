@@ -342,6 +342,10 @@ span.select2.select2-container.select2-container--default {
     width: 100% !important;
 }
 
+input[name*='offset'] {
+  width: 100%;
+}
+
 
 /* ORCID button
 ---------------------------------------- */
@@ -645,4 +649,30 @@ span.select2.select2-container.select2-container--default {
     color: #343a40;
     padding-left: 2px;
     padding-bottom: 1px;
+}
+
+
+
+/* Select overrides */
+.select2-selection, .select2-selection--single {
+  height: 40px !important;
+}
+.select2-selection__rendered {
+  line-height: 36px !important;
+}
+span.select2-selection.select2-selection--multiple ul.select2-selection__rendered {
+  line-height: unset !important;
+}
+.select2-selection__choice {
+	height: 28px;
+	line-height: 1.5rem;
+  text-align: center
+}
+.select2-container--open, .select2-container--focus {
+  border-color: black !important;
+}
+
+/* Bootstrap overrides */
+.form-control {
+  border-color: #aaaaaa;
 }

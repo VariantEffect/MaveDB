@@ -4,6 +4,8 @@ from numpy import NaN
 from django.conf import settings
 from django.test import TestCase, mock
 
+from core.utilities import null_values_list
+
 from accounts.factories import UserFactory
 from dataset.factories import ScoreSetFactory
 from dataset import constants
@@ -53,23 +55,20 @@ class TestNotifyAdmins(TestCase):
         
 class TestIsNull(TestCase):
     def test_detects_null(self):
-        for c in constants.nan_col_values:
+        for c in null_values_list:
             self.assertTrue(is_null(c))
 
     def test_detects_none(self):
         self.assertTrue(is_null(None))
         
-    def test_detects_na(self):
-        self.assertTrue(is_null('na'))
-        
-    def test_case_insensitive(self):
-        self.assertTrue(is_null('NA'))
-    
-    def test_whitespace_insensitive(self):
-        self.assertTrue(is_null('   na  '))
-        
     def test_detects_nan(self):
         self.assertTrue(is_null(NaN))
+        
+    def test_detects_empty(self):
+        self.assertTrue(is_null('  '))
+        
+    def test_false_non_null_value(self):
+        self.assertFalse(is_null('hello world'))
         
 
 class TestFormatDelta(TestCase):

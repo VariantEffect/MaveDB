@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import variant.validators
+import variant.validators.hgvs
 
 
 class Migration(migrations.Migration):
@@ -20,11 +21,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='variant',
             name='hgvs_nt',
-            field=models.TextField(default=None, null=True, validators=[variant.validators.validate_hgvs_string]),
+            field=models.TextField(default=None, null=True, validators=[
+                variant.validators.hgvs.validate_hgvs_string]),
         ),
         migrations.AddField(
             model_name='variant',
             name='hgvs_p',
-            field=models.TextField(default=None, null=True, validators=[variant.validators.validate_hgvs_string]),
+            field=models.TextField(default=None, null=True, validators=[
+                variant.validators.hgvs.validate_hgvs_string]),
         ),
     ]

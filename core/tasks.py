@@ -42,6 +42,9 @@ class BaseTask(Task):
     """
     Base task that will save the task to the database and log the error.
     """
+    def run(self, *args, **kwargs):
+        raise NotImplementedError()
+        
     @staticmethod
     def get_user(user):
         if isinstance(user, User):

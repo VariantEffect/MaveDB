@@ -450,8 +450,10 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         request.user = self.user
         response = ExperimentEditView.as_view()(request, urn=exp1.urn)
 
-        self.assertContains(response, '>'+exp1.parent.urn+'<')
-        self.assertNotContains(response, '>'+exp2.parent.urn+'<')
+        self.assertContains(
+            response, '{} | {}'.format(exp1.parent.urn, exp1.parent.title))
+        self.assertNotContains(
+            response, '{} | {}'.format(exp2.parent.urn, exp2.parent.title))
 
     def test_experimentset_options_are_restricted_to_admin_instances(self):
         exp1 = ExperimentFactory()
@@ -464,5 +466,7 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         request.user = self.user
         response = ExperimentEditView.as_view()(request, urn=exp1.urn)
 
-        self.assertContains(response, '>'+exp1.parent.urn+'<')
-        self.assertNotContains(response, '>'+exp2.parent.urn+'<')
+        self.assertContains(
+            response, '{} | {}'.format(exp1.parent.urn, exp1.parent.title))
+        self.assertNotContains(
+            response, '{} | {}'.format(exp2.parent.urn, exp2.parent.title))

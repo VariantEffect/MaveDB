@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <div class="container mt-4">
+  <div class="container">
     <div class="container">
       <h3>API Access
         <a><i class="icon fas fa-key" style="font-size: 36px;"></i></a>
@@ -40,7 +40,8 @@
     <hr>
     <div class="row">
       <div class="col-12 col-xs-12">
-        <label for="auth-token-area"></label>
+        <label for="auth-token-area" style="display: none;"></label>
+        <small class="form-text text-muted">Provide this token in your request's 'Authorization' header field to access private data.</small>
         <textarea class="form-control" id="auth-token-area" rows="2">{{ request.user.profile.auth_token|default:"Click to generate a new token." }}</textarea>
         <hr>
         <div class="mt-2">

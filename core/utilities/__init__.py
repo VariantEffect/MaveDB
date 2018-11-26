@@ -1,5 +1,9 @@
+import re
 import logging
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
@@ -7,7 +11,6 @@ from django.shortcuts import reverse
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 
-from dataset import constants
 from dataset import models
 
 
@@ -15,9 +18,18 @@ User = get_user_model()
 logger = logging.getLogger("django")
 
 
+null_values_list = ('nan', 'na', 'none', ' ', 'undefined', 'n/a', 'null')
+null_values_re = re.compile(r'\s+|none|nan|na|undefined|n/a|null')
+readable_null_values = [
+    "'{}'".format(v)
+    for v in set([v.lower() for v in null_values_list]) if v.strip()
+] + ['whitespace']
+
+
 def is_null(value):
     """Returns True if a stripped/lowercase value in in `nan_col_values`."""
-    return str(value).strip().lower() in constants.nan_col_values
+    value = str(value).strip().lower()
+    return null_values_re.fullmatch(value) or not value
 
 
 def format_delta(ta, tb=None):
@@ -92,3 +104,29 @@ def base_url(request=None):
         else:
             scheme = 'http://'
     return scheme + settings.BASE_URL
+
+
+def format_column(values, astype=float):
+    """
+    Formats a list of numeric values by replacing null values with
+    `np.NaN` and casting to `astype`.
+
+    Parameters
+    ----------
+    values : `pd.Series`
+        List of values to format.
+
+    astype : callable, optional
+        Type-casting callback accepting a single argument.
+
+    Returns
+    -------
+    list[Any]
+        List of values with type returned by `astype` and null values
+        replaced with `np.NaN`.
+    """
+    if astype == str:
+        nan_val = None
+    else:
+        nan_val = np.NaN
+    return [nan_val if is_null(v) else astype(v) for v in values]

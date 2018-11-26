@@ -8,8 +8,7 @@ from variant.validators import validate_variant_json
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_variant
 
-from .validators import validate_hgvs_string
-
+from variant.validators.hgvs import validate_hgvs_string
 
 # 'score' should be the first column in a score dataset
 column_order = defaultdict(lambda: 1)

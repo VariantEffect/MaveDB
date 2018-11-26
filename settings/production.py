@@ -117,26 +117,14 @@ LOGGING = {
     },
 }
 
+
 # Email setup
-# DEBUG email server, set to something proper when DEBUG = FALSE
-# DEFAULT_FROM_EMAIL = "mavedb@mavedb.org"
-# SERVER_EMAIL = "admin@mavedb.org"
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-#
-# # Host for sending e-mail
-# EMAIL_HOST = 'localhost'
-# EMAIL_PORT = 1025
-#
-# # Optional SMTP authentication information for EMAIL_HOST
-# EMAIL_HOST_USER = ''
-# EMAIL_HOST_PASSWORD = ''
-# EMAIL_USE_TLS = False
-# EMAIL_USE_SSL = False
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
-DATASET_TASK_SOFT_TIME_LIMIT =  10 * 60  # In seconds
+DATASET_TASK_SOFT_TIME_LIMIT =  12 * 60 * 60  # 12 hours in seconds
 broker_url = 'amqp://localhost:5672//'
 accept_content = ('json',)
 result_serializer = 'json'

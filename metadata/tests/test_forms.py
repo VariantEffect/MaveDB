@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from dataset.constants import nan_col_values
+from core.utilities import null_values_list
 from genome.factories import TargetGeneFactory
 
 from ..factories import (
@@ -101,7 +101,7 @@ class TestBaseOffsetForm(TestCase):
             form.save(commit=True)
 
     def test_valid_empty_identifier(self):
-        for value in nan_col_values:
+        for value in null_values_list:
             data = self.form_data()
             data['identifier'] = value
             form = UniprotOffsetForm(data=data)

@@ -1,15 +1,17 @@
 from io import BytesIO, StringIO
 
+import pandas as pd
+
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from variant.factories import generate_hgvs
+from core.utilities import null_values_list
 
 from .. import constants
 from ..validators import (
     validate_scoreset_count_data_input,
     validate_scoreset_score_data_input,
-    validate_at_least_one_numeric_column,
+    validate_at_least_one_additional_column,
     validate_has_hgvs_in_header,
     validate_header_contains_no_null_columns,
     read_header_from_io,
@@ -69,7 +71,7 @@ class TestNoNullInColumnsValidator(TestCase):
     such as '', None, null etc.
     """
     def test_raises_validationerror_when_null_values_in_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             file = BytesIO("{},score,{}\n".format(
                 constants.hgvs_nt_column, value).encode())
             with self.assertRaises(ValidationError):
@@ -90,16 +92,16 @@ class TestAtLeastOneNumericColumnValidator(TestCase):
         file = BytesIO("{}\n".format(constants.hgvs_nt_column).encode())
         with self.assertRaises(ValidationError):
             header = read_header_from_io(file)
-            validate_at_least_one_numeric_column(header)
+            validate_at_least_one_additional_column(header)
 
     def test_does_not_raise_validationerror_2_or_more_values_in_column(self):
         file = BytesIO("{},score,count\n".format(constants.hgvs_nt_column).encode())
         header = read_header_from_io(file)
-        validate_at_least_one_numeric_column(header)  # Should pass
+        validate_at_least_one_additional_column(header)  # Should pass
 
         file = BytesIO("{},score\n".format(constants.hgvs_nt_column).encode())
         header = read_header_from_io(file)
-        validate_at_least_one_numeric_column(header)  # Should pass
+        validate_at_least_one_additional_column(header)  # Should pass
 
 
 class TestHgvsInHeaderValidator(TestCase):
@@ -137,70 +139,40 @@ class TestValidateScoreCountsDefineSameVariants(TestCase):
     in both the _nt column and _pro column.
     """
     def test_ve_counts_defines_different_nt_variants(self):
-        scores = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
-        counts = {
-            '2A>G': {
-                constants.hgvs_nt_column: '2A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
+        scores = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
+        counts = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.2A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
         with self.assertRaises(ValidationError):
             validate_datasets_define_same_variants(scores, counts)
     
     def test_ve_counts_defines_different_pro_variants(self):
-        scores = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
-        counts = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu7Glu',
-            }
-        }
+        scores = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
+        counts = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu75Glu'],
+        })
         with self.assertRaises(ValidationError):
             validate_datasets_define_same_variants(scores, counts)
             
     def test_passes_when_same_variants_defined(self):
-        scores = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
-        counts = {
-            '1A>G': {
-                constants.hgvs_nt_column: '1A>G',
-                constants.hgvs_pro_column: 'p.Leu5Glu',
-            }
-        }
+        scores = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
+        counts = pd.DataFrame({
+            constants.hgvs_nt_column: ['c.1A>G'],
+            constants.hgvs_pro_column: ['p.Leu5Glu'],
+        })
         validate_datasets_define_same_variants(scores, counts)
-        
-        # Check nt only
-        scores = {
-            '1A>G': {constants.hgvs_nt_column: '1A>G',}
-        }
-        counts = {
-            '1A>G': {constants.hgvs_nt_column: '1A>G',}
-        }
-        validate_datasets_define_same_variants(scores, counts)
-        
-        # Check protein only
-        scores = {
-            '1A>G': {constants.hgvs_pro_column: 'p.Leu5Glu',}
-        }
-        counts = {
-            '1A>G': {constants.hgvs_pro_column: 'p.Leu5Glu',}
-        }
-        validate_datasets_define_same_variants(scores, counts)
-    
+
 
 class TestValidateScoreSetCountDataInputValidator(TestCase):
     """
@@ -218,7 +190,7 @@ class TestValidateScoreSetCountDataInputValidator(TestCase):
             validate_scoreset_count_data_input(file)
 
     def test_raises_validationerror_when_null_values_in_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             file = BytesIO("{},score,{}\n".format(
                 constants.hgvs_nt_column, value).encode())
             with self.assertRaises(ValidationError):
@@ -241,7 +213,7 @@ class TestValidateScoreSetScoreDataInputValidator(TestCase):
             validate_scoreset_score_data_input(file)
 
     def test_raises_validationerror_when_null_values_in_column(self):
-        for value in constants.nan_col_values:
+        for value in null_values_list:
             file = BytesIO("{},score,{}\n".format(
                 constants.hgvs_nt_column, value).encode())
             with self.assertRaises(ValidationError):

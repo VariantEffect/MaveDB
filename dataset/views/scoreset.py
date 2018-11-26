@@ -86,13 +86,8 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
     def get_ajax(self):
         type_ = self.request.GET.get('type', False)
         instance = self.get_object()
-        if settings.DEBUG:
-            variants = instance.children.order_by('{}'.format(
-                instance.primary_hgvs_column))[0:10]
-        else:
-            variants = instance.children.order_by('-{}'.format(
-                instance.primary_hgvs_column))[0:10]
-            
+        variants = instance.children.order_by(
+            '{}'.format(instance.primary_hgvs_column))[0:10]
         rows = []
         for variant in variants:
             row = {}
@@ -102,13 +97,14 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
                 v_data = variant.score_data
             
             for i, data in enumerate(v_data):
-                if not data:
+                if isinstance(data, float):
+                    data = '{:.3f}'.format(data)
+                elif isinstance(data, int):
+                    data = '{:.6g}'.format(data)
+                elif not data or data is None:
                     data = str(None)
                 else:
-                    if isinstance(data, float):
-                        data = '{:.3f}'.format(data)
-                    if isinstance(data, int):
-                        data = '{:.6g}'.format(data)
+                    data = data
                 row['{}'.format(i)] = data
             rows.append(row)
             
@@ -121,7 +117,6 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         return JsonResponse(response, safe=False)
         
     
-
 class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     # Overridden from `CreateDatasetModelView`
     # -------
@@ -198,14 +193,17 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         targetgene.save()
 
         # Call celery task after all the above has successfully completed
-        if scoreset_form.get_variants():
+        if scoreset_form.has_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
+            scores_rs, counts_rs, index = scoreset_form.serialize_variants()
             task_kwargs = {
                 "user_pk": self.request.user.pk,
-                "variants": scoreset_form.get_variants().copy(),
                 "scoreset_urn": scoreset.urn,
                 "dataset_columns": scoreset_form.dataset_columns.copy(),
+                "index": index,
+                "scores_records": scores_rs,
+                "counts_records": counts_rs,
             }
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
@@ -300,14 +298,17 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             targetgene.save()
 
         # Call celery task after all the above has successfully completed
-        if scoreset_form.get_variants():
+        if scoreset_form.has_variants():
             scoreset.processing_state = constants.processing
             scoreset.save()
+            scores_rs, counts_rs, index = scoreset_form.serialize_variants()
             task_kwargs = {
                 "user_pk": self.request.user.pk,
-                "variants": scoreset_form.get_variants().copy(),
                 "scoreset_urn": scoreset.urn,
                 "dataset_columns": scoreset_form.dataset_columns.copy(),
+                "index": index,
+                "scores_records": scores_rs,
+                "counts_records": counts_rs,
             }
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
@@ -376,10 +377,9 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     def format_success_message(self):
         if self.instance.processing_state == constants.processing:
             return (
-                "Successfully updated {urn}. "
-                "Uploaded files are being processed and further editing has been "
-                "temporarily disabled. You will receive an email message when "
-                "processing completes."
+                "Successfully updated {urn}. Uploaded files are being "
+                "processed and further editing has been temporarily disabled. "
+                "You will receive an email message when processing completes."
             ).format(urn=self.instance.urn)
         else:
             return super().format_success_message()

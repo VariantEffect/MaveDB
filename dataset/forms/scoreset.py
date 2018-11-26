@@ -1,6 +1,7 @@
 import json
-from collections import OrderedDict
 from enum import Enum
+
+import pandas as pd
 
 from django import forms as forms
 from django.core.exceptions import ValidationError
@@ -8,6 +9,7 @@ from django.db import transaction
 from django.utils.translation import ugettext
 
 from core.mixins import NestedEnumMixin
+from core.utilities import readable_null_values
 
 from main.models import Licence
 
@@ -71,6 +73,16 @@ class ErrorMessages(NestedEnumMixin, Enum):
             'No variants could be parsed from your input file. '
             'Please upload a non-empty file.'
         )
+        primary_mismatch = ugettext(
+            "The primary hgvs column inferred from the scores file ('{}') does"
+            "not match that inferred from the counts file ('{}'). This can "
+            "if the two files do not define the same variants across rows."
+        )
+        different_variants = ugettext(
+            "Scores and counts files must define the same variants. "
+            "Check that the hgvs columns in both files match "
+            "(order insensitive)."
+        )
     
 
 class ScoreSetForm(DatasetModelForm):
@@ -101,7 +113,7 @@ class ScoreSetForm(DatasetModelForm):
             "(case-insensitive) will be converted to a null score. The columns "
             "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
             "the count file below."
-        ).format(', '.join(constants.readable_nan_values)),
+        ).format(', '.join(readable_null_values)),
         validators=[
             validate_scoreset_score_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
@@ -117,7 +129,7 @@ class ScoreSetForm(DatasetModelForm):
             "(case-insensitive) will be converted to a null score. The columns "
             "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
             "the score file above."
-        ).format(', '.join(constants.readable_nan_values)),
+        ).format(', '.join(readable_null_values)),
         validators=[
             validate_scoreset_count_data_input, validate_csv_extension],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"})
@@ -209,9 +221,12 @@ class ScoreSetForm(DatasetModelForm):
             choices.append((licence.pk, name))
         self.fields['licence'].widget.choices = choices
 
+        for field in ('licence', 'replaces', 'experiment'):
+            if field in self.fields:
+                self.fields[field].widget.attrs.update(**{'class': 'select2'})
+   
     def clean_experiment(self):
-        cleaned_data = super().clean()
-        experiment = cleaned_data.get('experiment', None)
+        experiment = self.cleaned_data['experiment']
         existing_experiment = self.instance.parent
         if self.instance.pk is not None and existing_experiment is not None:
             if experiment is not None:
@@ -230,18 +245,6 @@ class ScoreSetForm(DatasetModelForm):
                     # replaces is a member of the same experiment.
                     self.cleaned_data['replaces'] = self.clean_replaces()
         return experiment
-
-    def set_initial_keywords(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields['keywords'].initial = self.experiment.keywords.all()
-            
-    def set_initial_dois(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields['doi_ids'].initial = self.experiment.doi_ids.all()
-            
-    def set_initial_pmids(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields['pubmed_ids'].initial = self.experiment.pubmed_ids.all()
 
     def clean_licence(self):
         licence = self.cleaned_data.get("licence", None)
@@ -271,19 +274,21 @@ class ScoreSetForm(DatasetModelForm):
     def clean_score_data(self):
         score_file = self.cleaned_data.get("score_data", None)
         if not score_file:
-            return {}
-        header, _, hgvs_score_map = validate_variant_rows(score_file)
-        self.dataset_columns[constants.score_columns] = header
-        return hgvs_score_map
+            return pd.DataFrame(), None
+        non_hgvs_columns, primary_hgvs_column, score_df = \
+            validate_variant_rows(score_file)
+        self.dataset_columns[constants.score_columns] = non_hgvs_columns
+        return score_df, primary_hgvs_column
 
     def clean_count_data(self):
         count_file = self.cleaned_data.get("count_data", None)
         if not count_file:
             self.dataset_columns[constants.count_columns] = []
-            return {}
-        header, _, hgvs_count_map = validate_variant_rows(count_file)
-        self.dataset_columns[constants.count_columns] = header
-        return hgvs_count_map
+            return pd.DataFrame(), None
+        non_hgvs_columns, primary_column, counts_df = \
+            validate_variant_rows(count_file)
+        self.dataset_columns[constants.count_columns] = non_hgvs_columns
+        return counts_df, primary_column
 
     def clean_meta_data(self):
         meta_file = self.cleaned_data.get("meta_data", None)
@@ -298,12 +303,11 @@ class ScoreSetForm(DatasetModelForm):
             )
 
     def clean(self):
-        if self.errors:
+        cleaned_data = super().clean()
+        if self._errors:
             # There are errors, maybe from the `clean_<field_name>` methods.
             # End here and run the parent method to quickly return the form.
-            return super().clean()
-
-        cleaned_data = super().clean()
+            return cleaned_data
 
         # Indicates that a new scoreset is being created or a failed scoreset
         # is being edited. Failed scoresets have not variants.
@@ -314,12 +318,14 @@ class ScoreSetForm(DatasetModelForm):
                               not self.instance.has_variants or \
                               self.instance.processing_state == constants.failed
 
-        hgvs_score_map = cleaned_data.get("score_data", {})
-        hgvs_count_map = cleaned_data.get("count_data", {})
+        score_data, primary_hgvs_scores = cleaned_data.get(
+            "score_data", (pd.DataFrame(), None))
+        count_data, primary_hgvs_counts = cleaned_data.get(
+            "count_data", (pd.DataFrame(), None))
         meta_data = cleaned_data.get("meta_data", {})
 
-        has_score_data = len(hgvs_score_map) > 0
-        has_count_data = len(hgvs_count_map) > 0
+        has_score_data = len(score_data) > 0
+        has_count_data = len(count_data) > 0
         has_meta_data = len(meta_data) > 0
 
         if has_meta_data:
@@ -346,47 +352,30 @@ class ScoreSetForm(DatasetModelForm):
             return cleaned_data
         
         if has_count_data:
-            validate_datasets_define_same_variants(
-                hgvs_score_map, hgvs_count_map)
-
+            try:
+                validate_datasets_define_same_variants(
+                    scores=score_data,
+                    counts=count_data,
+                )
+            except ValidationError:
+                self.add_error(
+                    None if 'count_data' not in self.fields else 'count_data',
+                    ErrorMessages.CountData.different_variants
+                )
+                return cleaned_data
+            
         # Re-build the variants if any new files have been processed.
         # If has_count_data is true then has_score_data should also be true.
         # The reverse is not always true.
         if has_score_data:
             validate_scoreset_json(self.dataset_columns)
-            variants = OrderedDict()
-
-            for hgvs in hgvs_score_map.keys():
-                score_variants = hgvs_score_map[hgvs].copy()
-                if has_count_data:
-                    count_variants = hgvs_count_map[hgvs].copy()
-                else:
-                    count_variants = {
-                        constants.hgvs_nt_column: None,
-                        constants.hgvs_pro_column: None,
-                    }
-                    
-                # Remove the hgvs columns from the parsed row data.
-                # Pop from scores incase counts was not uploaded.
-                hgvs_nt = score_variants.pop(constants.hgvs_nt_column)
-                hgvs_pro = score_variants.pop(constants.hgvs_pro_column)
-                count_variants.pop(constants.hgvs_nt_column)
-                count_variants.pop(constants.hgvs_pro_column)
-                
-                data = {
-                    constants.variant_score_data: score_variants,
-                    constants.variant_count_data: count_variants,
-                }
-                validate_scoreset_columns_match_variant(
-                    self.dataset_columns, data)
-
-                variant = {
-                    constants.hgvs_nt_column: hgvs_nt,
-                    constants.hgvs_pro_column: hgvs_pro,
-                    'data': data
-                }
-                variants[hgvs] = variant
-
+            if not has_count_data:
+                count_data = pd.DataFrame()
+            variants = {
+                'scores_df': score_data,
+                'counts_df': count_data,
+                'index': primary_hgvs_scores,
+            }
             cleaned_data["variants"] = variants
             
         return cleaned_data
@@ -399,9 +388,32 @@ class ScoreSetForm(DatasetModelForm):
     def save(self, commit=True):
         return super().save(commit=commit)
 
-    def get_variants(self):
-        return self.cleaned_data.get('variants', {})
+    def serialize_variants(self):
+        """Serializes variants in JSON format."""
+        variants = self.cleaned_data.get('variants', {})
+        scores_df = variants.get('scores_df', pd.DataFrame())
+        counts_df = variants.get('counts_df', pd.DataFrame())
+        index = variants.get('index', None)
+        # Can't send a dataframe via Celery. Send a JSON string instead.
+        scores_records = scores_df.to_json(orient='records')
+        counts_records = counts_df.to_json(orient='records')
+        return scores_records, counts_records, index
+        
+    def has_variants(self):
+        return self.cleaned_data.get('variants')['scores_df'] is not None
 
+    def set_initial_keywords(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields['keywords'].initial = self.experiment.keywords.all()
+
+    def set_initial_dois(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields['doi_ids'].initial = self.experiment.doi_ids.all()
+
+    def set_initial_pmids(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields['pubmed_ids'].initial = self.experiment.pubmed_ids.all()
+        
     def set_replaces_options(self):
         if 'replaces' in self.fields:
             admin_instances = self.user.profile.administrator_scoresets()
@@ -424,6 +436,11 @@ class ScoreSetForm(DatasetModelForm):
                 .exclude(urn=self.instance.urn)\
                 .order_by("urn")
             self.fields["replaces"].queryset = scoresets_qs
+            self.fields["replaces"].widget.choices = \
+                [("", self.fields["replaces"].empty_label)] + [
+                (s.pk, '{} | {}'.format(s.urn, s.title))
+                for s in scoresets_qs.all()
+            ]
 
     def set_experiment_options(self):
         if 'experiment' in self.fields:
@@ -435,11 +452,20 @@ class ScoreSetForm(DatasetModelForm):
             experiment_qs = Experiment.objects.filter(
                 pk__in=choices).order_by("urn")
             self.fields["experiment"].queryset = experiment_qs
+            self.fields["experiment"].widget.choices = \
+                [("", self.fields["experiment"].empty_label)] + [
+                (e.pk, '{} | {}'.format(e.urn, e.title))
+                for e in experiment_qs.all()
+            ]
             
             if self.experiment is not None:
                 choices_qs = Experiment.objects.filter(
                     pk__in=[self.experiment.pk]).order_by("urn")
                 self.fields["experiment"].queryset = choices_qs
+                self.fields['experiment'].widget.choices = (
+                    (self.experiment.pk, '{} | {}'.format(
+                        self.experiment.urn, self.experiment.title)),
+                )
                 self.fields["experiment"].initial = self.experiment
 
     @classmethod

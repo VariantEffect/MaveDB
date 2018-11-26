@@ -1,5 +1,4 @@
 from django.test import TestCase, RequestFactory
-from django.core.exceptions import ValidationError
 from accounts.factories import UserFactory
 
 from main.models import Licence
@@ -324,38 +323,7 @@ class TestScoreSetForm(TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(ErrorMessages.CountData.no_score_file,
                       form.errors['score_data'][0])
-
-    def test_variants_correctly_parsed_integration_test(self):
-        # Generate distinct hgvs strings
-        hgvs_nt = generate_hgvs(prefix='r')
-        hgvs_pro = generate_hgvs(prefix='p')
-
-        score_data = "{},{},{},se\n{},{},1,".format(
-            constants.hgvs_nt_column, constants.hgvs_pro_column,
-            constants.required_score_column, hgvs_nt, hgvs_pro
-        )
-        count_data = "{},{},count,sig\n{},{},-1,None".format(
-            constants.hgvs_nt_column, constants.hgvs_pro_column,
-            hgvs_nt, hgvs_pro
-        )
-        data, files = self.make_post_data(score_data, count_data)
-        form = ScoreSetForm(data=data, files=files, user=self.user)
         
-        print(form.errors)
-        self.assertTrue(form.is_valid())
-
-        expected_data = {
-            'score_data': {'se': None, 'score': 1.0},
-            'count_data': {'sig': None, 'count': -1.0},
-        }
-        
-        self.assertEqual(len(form.get_variants()), 1)
-        self.assertEqual(form.get_variants()[hgvs_nt]['data'], expected_data)
-        self.assertEqual(
-            form.get_variants()[hgvs_nt][constants.hgvs_nt_column], hgvs_nt)
-        self.assertEqual(
-            form.get_variants()[hgvs_nt][constants.hgvs_pro_column], hgvs_pro)
-
     def test_invalid_empty_score_file(self):
         score_data = "{},{},se\n".format(
             constants.hgvs_nt_column, constants.required_score_column
@@ -382,23 +350,12 @@ class TestScoreSetForm(TestCase):
 
         form.save(commit=True)
 
-        self.assertTrue(len(form.get_variants()), 1)
+        self.assertTrue(len(form.serialize_variants()), 1)
         self.assertEqual(
             sorted(form.dataset_columns[constants.score_columns]),
             sorted(['score', 'se'])
         )
-
-    def test_invalid_dataset_columns_do_not_match_variant_columns(self):
-        data, files = self.make_post_data()
-        form = ScoreSetForm(data=data, files=files, user=self.user)
-        form.clean()
-        form.dataset_columns = {
-            constants.score_columns: [constants.required_score_column, 'aaa'],
-            constants.count_columns: [],
-        }
-        with self.assertRaises(ValidationError):
-            form.clean()
-    
+   
     def test_form_invalid_when_invalid_metadata_file_supplied(self):
         data, files = self.make_post_data(meta_data="{not valid}")
         form = ScoreSetForm(data=data, files=files, user=self.user)

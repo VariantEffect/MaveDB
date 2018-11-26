@@ -7,8 +7,7 @@ from dataset import constants
 from dataset.models.experimentset import ExperimentSet
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
-from dataset.tasks import publish_scoreset
-from dataset.utilities import delete_instance
+from dataset.tasks import publish_scoreset, delete_instance
 
 from urn.models import get_model_by_urn
 
@@ -63,10 +62,32 @@ def delete(urn, request):
 
     # Check the private status
     if instance.private:
-        delete_instance(instance)
-        messages.success(
-            request, "Successfully deleted {}.".format(urn))
-        return True
+        current_state = instance.processing_state
+        instance.processing_state = constants.processing
+        instance.save()
+        task_kwargs = dict(
+            urn=instance.urn,
+            user_pk=request.user.pk,
+        )
+        success, _ = delete_instance.submit_task(
+            kwargs=task_kwargs,
+            request=request,
+        )
+        if success:
+            messages.success(
+                request,
+                "{} has been queued for deletion. Editing has been "
+                "disabled until your submission has been processed.".format(urn))
+            return True
+        else:
+            instance.processing_state = current_state
+            instance.save()
+            messages.error(
+                request,
+                "We are experiencing server issues at the moment. Please try"
+                "again later."
+            )
+            return False
     else:
         messages.error(
             request, "{} is public and cannot be deleted.".format(instance.urn))
@@ -153,7 +174,7 @@ def publish(urn, request):
                 "will be assigned upon successful completion.".format(urn))
             return True
         else:
-            instance.processing_state = constants.current_state
+            instance.processing_state = current_state
             instance.save()
             messages.error(
                 request,

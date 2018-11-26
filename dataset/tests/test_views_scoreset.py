@@ -103,7 +103,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         var = VariantFactory(
             scoreset=scs,
             data={
-                constants.variant_score_data: {"score": "1"},
+                constants.variant_score_data: {"score": 0},
             }
         )
         request = self.factory.get(
@@ -116,7 +116,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         data = json.loads(response.content.decode())['data']
         
         for i, value in enumerate(var.score_data):
-            self.assertIn(str(value), data[0][str(i)])
+            self.assertEqual(str(value), data[0][str(i)])
 
     def test_counts_get_ajax(self):
         scs = ScoreSetFactory(private=False)
@@ -128,8 +128,8 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         var = VariantFactory(
             scoreset=scs,
             data={
-                constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {"count": "45"},
+                constants.variant_score_data: {"score": 1},
+                constants.variant_count_data: {"count": 0},
             }
         )
         request = self.factory.get(
@@ -332,8 +332,10 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
 
         response = ScoreSetCreateView.as_view()(request)
-        self.assertContains(response, '>'+exp1.urn+'<')
-        self.assertNotContains(response, '>'+exp2.urn+'<')
+        self.assertContains(
+            response, '{} | {}'.format(exp1.urn, exp1.title))
+        self.assertNotContains(
+            response, '{} | {}'.format(exp2.urn, exp2.title))
 
     def test_experiment_options_are_restricted_to_editor_instances(self):
         exp1 = ExperimentFactory()
@@ -344,8 +346,10 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
 
         response = ScoreSetCreateView.as_view()(request)
-        self.assertContains(response, '>'+exp1.urn+'<')
-        self.assertNotContains(response, '>'+exp2.urn+'<')
+        self.assertContains(
+            response, '{} | {}'.format(exp1.urn, exp1.title))
+        self.assertNotContains(
+            response, '{} | {}'.format(exp2.urn, exp2.title))
 
     def test_replaces_options_are_restricted_to_admin_instances(self):
         exp1 = ExperimentFactory()
@@ -358,8 +362,10 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
 
         response = ScoreSetCreateView.as_view()(request)
-        self.assertContains(response, '>'+scs_1.urn+'<')
-        self.assertNotContains(response, '>'+scs_2.urn+'<')
+        self.assertContains(
+            response, '{} | {}'.format(scs_1.urn, scs_1.title))
+        self.assertNotContains(
+            response, '{} | {}'.format(scs_2.urn, scs_2.title))
 
     def test_replaces_options_are_restricted_to_editor_instances(self):
         exp1 = ExperimentFactory()
@@ -372,8 +378,10 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
 
         response = ScoreSetCreateView.as_view()(request)
-        self.assertContains(response, '>'+scs_1.urn+'<')
-        self.assertNotContains(response, '>'+scs_2.urn+'<')
+        self.assertContains(
+            response, '{} | {}'.format(scs_1.urn, scs_1.title))
+        self.assertNotContains(
+            response, '{} | {}'.format(scs_2.urn, scs_2.title))
 
     def test_can_submit_and_create_scoreset_when_forms_are_valid(self):
         data = self.post_data.copy()
@@ -423,11 +431,13 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         with mock.patch('dataset.tasks.create_variants.apply_async') as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
+            scores, counts, index = form.serialize_variants()
             self.assertEqual(
                 {
                     "user_pk": self.user.pk,
                     "scoreset_urn": ScoreSet.objects.first().urn,
-                    "variants": form.get_variants(),
+                    "index": index,
+                    "scores_records": scores, "counts_records": counts,
                     "dataset_columns": form.dataset_columns,
                 },
                 create_mock.call_args[1]['kwargs']
@@ -913,4 +923,3 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
             username=self.user.username, password=self.user._password)
         response = self.client.get(path)
         self.assertEqual(response.status_code, 302)
-        
