@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from pandas.testing import assert_index_equal
 
 from core.utilities import is_null
@@ -81,11 +82,11 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
             # Postgres JSON field cannot store np.NaN values so convert
             # any np.NaN to None.
             for key, value in sr.items():
-                if is_null(value):
+                if is_null(value) or value is np.NaN:
                     sr[key] = None
             if cr:
                 for key, value in cr.items():
-                    if is_null(value):
+                    if is_null(value) or value is np.NaN:
                         cr[key] = None
 
             data = {
