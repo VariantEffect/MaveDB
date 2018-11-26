@@ -86,13 +86,8 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
     def get_ajax(self):
         type_ = self.request.GET.get('type', False)
         instance = self.get_object()
-        if settings.DEBUG:
-            variants = instance.children.order_by(
-                '{}'.format(instance.primary_hgvs_column))[0:10]
-        else:
-            variants = instance.children.order_by(
-                '{}'.format(instance.primary_hgvs_column))[0:10]
-            
+        variants = instance.children.order_by(
+            '{}'.format(instance.primary_hgvs_column))[0:10]
         rows = []
         for variant in variants:
             row = {}
