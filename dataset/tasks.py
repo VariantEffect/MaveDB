@@ -85,6 +85,14 @@ class BasePublishTask(BaseDatasetTask):
     def run(self, *args, **kwargs):
         return publish_scoreset(*args, **kwargs)
     
+    def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
+        retval = super().on_failure(
+            exc, task_id, args, kwargs, einfo, user=None)
+        if self.instance is not None:
+            self.instance.private = True
+            self.instance.save()
+        return retval
+    
 
 class BaseDeleteTask(BaseDatasetTask):
     description = "delete the entry {urn}."

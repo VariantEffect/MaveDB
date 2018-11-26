@@ -13,7 +13,7 @@ from dataset import constants
 from dataset.models.scoreset import default_dataset, ScoreSet
 from dataset.factories import ScoreSetFactory
 from dataset.tasks import create_variants, publish_scoreset, \
-    BaseDatasetTask, delete_instance
+    BaseDatasetTask, delete_instance, BasePublishTask
 
 
 class TestBaseDatasetTask(TestCase):
@@ -137,7 +137,24 @@ class TestPublishScoresetTask(TestCase):
             scoreset_urn=self.scoreset.urn,
             user_pk=self.user.pk,
         )
-
+    
+    def test_resets_public_to_false_if_failed(self):
+        self.scoreset.private = False
+        self.scoreset.save()
+        
+        base = BasePublishTask()
+        base.instance = self.scoreset
+        base.user = self.user
+        base.urn = self.scoreset.urn
+        base.description = 'do the thing {urn}'
+    
+        base.on_failure(
+            exc=Exception("Test"), task_id='1', args=[],
+            einfo=None, kwargs={}
+        )
+        scoreset = ScoreSet.objects.first()
+        self.assertTrue(scoreset.private)
+        
     def test_propagates_modified(self):
         publish_scoreset.apply(kwargs=self.mock_kwargs())
         scoreset = ScoreSet.objects.first()
