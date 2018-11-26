@@ -241,7 +241,8 @@ def create_variants(self, user_pk, scoreset_urn,
 
     variants = convert_df_to_variant_records(
         scores_records, counts_records, index)
-        
+    
+    logger.info(variants[0])
     for record in variants:
         if is_null(record[constants.hgvs_nt_column]):
             record[constants.hgvs_nt_column] = None
