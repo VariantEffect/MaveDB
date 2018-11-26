@@ -241,8 +241,8 @@ def create_variants(self, user_pk, scoreset_urn,
 
     variants = convert_df_to_variant_records(
         scores_records, counts_records, index)
-    
-    logger.info(self.urn, variants[0:10])   
+    if variants:
+        logger.info('{}:{}'.format(self.urn, variants[-1]))
     with transaction.atomic():
         self.instance.delete_variants()
         Variant.bulk_create(self.instance, variants)
