@@ -4,6 +4,7 @@ from django.conf import settings
 
 from celery.utils.log import get_task_logger
 
+from core.utilities import is_null
 from core.tasks import BaseTask
 
 from mavedb import celery_app
@@ -240,6 +241,12 @@ def create_variants(self, user_pk, scoreset_urn,
 
     variants = convert_df_to_variant_records(
         scores_records, counts_records, index)
+        
+    for record in variants:
+        if is_null(record[constants.hgvs_nt_column]):
+            record[constants.hgvs_nt_column] = None
+        if is_null(record[constants.hgvs_pro_column]):
+            record[constants.hgvs_pro_column] = None
     
     with transaction.atomic():
         self.instance.delete_variants()
