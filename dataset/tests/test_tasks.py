@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from django.test import TestCase, mock
 
@@ -118,6 +119,16 @@ class TestCreateVariantsTask(TestCase):
         )
         mock_kwargs.update(**kwargs)
         return mock_kwargs
+
+    def test_converts_nan_hgvs_to_none(self):
+        self.index = constants.hgvs_pro_column
+        self.df_scores[constants.hgvs_nt_column] = np.NaN
+        self.df_counts[constants.hgvs_nt_column] = np.NaN
+
+        self.scoreset.dataset_columns = default_dataset()
+        create_variants.run(**self.mock_kwargs())
+        self.scoreset.refresh_from_db()
+        self.assertIsNone(self.scoreset.variants.first().hgvs_nt)
 
     def test_create_variants_resets_dataset_columns(self):
         self.scoreset.dataset_columns = default_dataset()
