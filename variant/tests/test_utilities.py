@@ -217,6 +217,9 @@ class TestCreateVariantAttrsUtility(TestCase):
 
     def test_converts_np_nan_to_none(self):
         d1, d2 = self.fixture_data()
+        
+        d1[constants.hgvs_pro_column] = np.NaN
+        d2[constants.hgvs_pro_column] = np.NaN
         d1[constants.required_score_column] = np.NaN
         d2['count'] = np.NaN
 
@@ -226,9 +229,12 @@ class TestCreateVariantAttrsUtility(TestCase):
                 constants.required_score_column])
         self.assertIsNone(
             variants[0]['data'][constants.variant_count_data]['count'])
-
         self.assertIsNone(
-            variants[1]['data'][constants.variant_score_data][
-                constants.required_score_column])
+            variants[0][constants.hgvs_pro_column])
+        
+        self.assertIsNone(
+            variants[1][constants.hgvs_pro_column])
+        self.assertIsNone(
+            variants[1]['data'][constants.variant_count_data]['count'])
         self.assertIsNone(
             variants[1]['data'][constants.variant_count_data]['count'])
