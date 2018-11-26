@@ -91,7 +91,7 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
                 '{}'.format(instance.primary_hgvs_column))[0:10]
         else:
             variants = instance.children.order_by(
-                '-{}'.format(instance.primary_hgvs_column))[0:10]
+                '{}'.format(instance.primary_hgvs_column))[0:10]
             
         rows = []
         for variant in variants:
