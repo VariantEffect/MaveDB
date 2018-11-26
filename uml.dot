@@ -110,14 +110,38 @@ digraph model_graph {
   </TD></TR>
   </TABLE>
   >,
-		pos="882,194",
+		pos="863,194",
 		width=0.75];
 	core_models_FailedTask -> django_contrib_auth_models_User	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="user (failed_tasks)",
 		lp="820.68,314",
-		pos="s,779.98,349.83 780.7,341.76 782.04,329.49 784.52,317.29 788.64,306 802.78,267.24 836.76,232.43 859.59,212.26"];
+		pos="s,781.29,349.9 781.91,341.86 783.06,329.63 785.17,317.41 788.64,306 799.92,268.93 827.84,232.85 846.07,212.05"];
+	core_models_TimeStampedModel	 [height=0.66667,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TimeStampedModel
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">creation_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">modification_date</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="627,24",
+		width=2.1667];
 	dataset_models_base_DatasetModel	 [height=2.7778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -218,14 +242,14 @@ digraph model_graph {
 		arrowtail=dot,
 		dir=both,
 		label="modified_by (last_edited_%(class)s)",
-		lp="1003.2,314",
-		pos="s,948.36,339.8 944.7,332.51 942.93,328.97 941.19,325.46 939.5,322 920.67,283.48 900.55,237.42 889.82,212.4"];
+		lp="996.25,314",
+		pos="s,945.46,339.94 941.48,332.9 915.53,286.97 887.88,238.04 873.33,212.29"];
 	dataset_models_base_DatasetModel -> django_contrib_auth_models_User	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="created_by (last_created_%(class)s)",
-		lp="1137.9,314",
-		pos="s,1074,339.83 1074.6,331.75 1074.7,322.97 1072.7,314.3 1068,306 1033.7,245.29 951.83,213.84 909.07,201.06"];
+		lp="1134.9,314",
+		pos="s,1071.5,339.78 1072,331.68 1072,322.88 1069.8,314.23 1065,306 1026.7,241.04 935.74,211.09 890.09,199.76"];
 	urn_models_UrnModel	 [height=0.77778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -248,44 +272,21 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="703,194",
+		pos="627,194",
 		width=2.1667];
 	dataset_models_base_DatasetModel -> urn_models_UrnModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="896.57,314",
-		pos="e,745.46,222.06 911.92,347.84 908.94,345.17 905.96,342.55 903,340 854.68,298.42 795.23,256.03 753.76,227.71"];
-	core_models_TimeStampedModel	 [height=0.66667,
-		label=<
-    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
-    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
-    <FONT FACE="Helvetica Bold" COLOR="white">
-    TimeStampedModel
-    </FONT></TD></TR>
-  
-    <TR><TD ALIGN="LEFT" BORDER="0">
-    <FONT FACE="Helvetica ">creation_date</FONT>
-    </TD><TD ALIGN="LEFT">
-    <FONT FACE="Helvetica ">DateField</FONT>
-    </TD></TR>
-  
-    <TR><TD ALIGN="LEFT" BORDER="0">
-    <FONT FACE="Helvetica ">modification_date</FONT>
-    </TD><TD ALIGN="LEFT">
-    <FONT FACE="Helvetica ">DateField</FONT>
-    </TD></TR>
-  
-    </TABLE>
-    >,
-		pos="703,24",
-		width=2.1667];
+		lp="898.57,314",
+		pos="e,689.97,222 911.72,347.5 908.81,344.94 905.9,342.44 903,340 882.7,322.95 876.84,319.46 854,306 803.7,276.36 744.48,247.32 699.14,\
+226.24"];
 	urn_models_UrnModel -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="722.57,74",
-		pos="e,703,48.255 703,165.93 703,136.44 703,90.043 703,58.382"];
+		lp="646.57,74",
+		pos="e,627,48.255 627,165.93 627,136.44 627,90.043 627,58.382"];
 	dataset_models_base_PublicDatasetCounter	 [height=1.1111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -320,14 +321,14 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="243,194",
+		pos="241,194",
 		width=2.2778];
 	dataset_models_base_PublicDatasetCounter -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="319.57,74",
-		pos="e,624.74,27.96 249.86,153.76 257.08,124.51 271.53,86.58 299.86,66 324.74,47.927 503.59,34.954 614.55,28.542"];
+		lp="317.57,74",
+		pos="e,548.77,29.953 248,153.94 255.29,124.79 269.77,86.906 297.86,66 316.9,51.828 447.86,38.495 538.73,30.795"];
 	dataset_models_experimentset_ExperimentSet	 [height=3.1111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -434,14 +435,14 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1233,704",
+		pos="1231,704",
 		width=2.4444];
 	dataset_models_experimentset_ExperimentSet -> dataset_models_base_DatasetModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="1036.6,566",
-		pos="e,999.86,540.13 1144.8,619.37 1130.9,609 1116.1,599.45 1101,592 1067.1,575.27 1043.3,601.98 1017.9,574 1011.4,566.86 1006.6,558.55 \
+		pos="e,999.86,540.13 1142.8,618.25 1129.5,608.3 1115.4,599.17 1101,592 1067.2,575.14 1043.3,601.98 1017.9,574 1011.4,566.86 1006.6,558.55 \
 1003.1,549.63"];
 	metadata_models_Keyword	 [height=1.1111,
 		label=<
@@ -484,7 +485,7 @@ digraph model_graph {
 		dir=both,
 		label="keywords (associated_experimentsets)",
 		lp="1133.1,566",
-		pos="s,1144.8,624.13 e,1340.8,480.01 1138.4,619.09 1126.1,609.5 1113.5,600.23 1101,592 1086,582.1 1074.2,589.3 1064.7,574 1061,567.96 \
+		pos="s,1142.8,622.91 e,1340.8,480.01 1136.4,617.81 1124.8,608.66 1112.8,599.85 1101,592 1086,582.05 1074.2,589.3 1064.7,574 1061,567.96 \
 1059.9,563.24 1064.7,558 1096.7,523.14 1234.7,561.31 1277,540 1300.7,528.03 1320.9,506.63 1335.9,486.7"];
 	metadata_models_SraIdentifier	 [height=1.6111,
 		label=<
@@ -545,7 +546,7 @@ digraph model_graph {
 		dir=both,
 		label="sra_ids (associated_experimentsets)",
 		lp="1511.1,566",
-		pos="s,1321.1,608.2 e,1678.7,498.06 1327.8,603.07 1333.1,599.12 1338.5,595.4 1344,592 1384.9,566.67 1399.7,567.98 1446.7,558 1526.4,541.11 \
+		pos="s,1319.1,609.54 e,1678.7,498.06 1325.6,604.55 1331.6,600.04 1337.8,595.82 1344,592 1385,566.85 1399.7,567.98 1446.7,558 1526.4,541.11 \
 1556.6,577.14 1629,540 1645.7,531.41 1660.7,518.18 1673.4,504.13"];
 	metadata_models_DoiIdentifier	 [height=1.6111,
 		label=<
@@ -606,7 +607,7 @@ digraph model_graph {
 		dir=both,
 		label="doi_ids (associated_experimentsets)",
 		lp="1800.9,566",
-		pos="s,1321.3,605.02 e,1853.7,498.25 1328.2,600.52 1333.4,597.36 1338.6,594.49 1344,592 1391.7,569.93 1527.7,579.93 1580,574 1630.2,568.3 \
+		pos="s,1319.3,606.21 e,1853.7,498.25 1326,601.75 1331.9,598.09 1337.9,594.8 1344,592 1391.8,570.14 1527.7,579.93 1580,574 1630.2,568.3 \
 1760.6,564.22 1805,540 1821.1,531.21 1835.7,518.26 1848.1,504.58"];
 	metadata_models_PubmedIdentifier	 [height=1.7778,
 		label=<
@@ -673,14 +674,14 @@ digraph model_graph {
 		dir=both,
 		label="pubmed_ids (associated_experimentsets)",
 		lp="1299,566",
-		pos="s,1209.7,591.73 e,1497.8,504.03 1211.6,583.67 1214.4,574.25 1219,565.5 1225.9,558 1260.3,520.82 1407.7,562.66 1453,540 1467.6,532.7 \
-1480.8,521.85 1492.3,509.94"];
+		pos="s,1209.5,591.72 e,1497.8,504.03 1211.4,583.94 1214.3,574.42 1218.9,565.57 1225.9,558 1260.3,520.82 1407.7,562.66 1453,540 1467.6,\
+532.7 1480.8,521.85 1492.3,509.94"];
 	metadata_models_Keyword -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="1315.6,194",
-		pos="e,781.02,38.389 1358.7,399.96 1352.4,371.01 1340.2,332.5 1317,306 1176.1,145.04 924.33,70.296 791.18,40.618"];
+		lp="1313.6,194",
+		pos="e,705.19,33.508 1358.9,399.83 1352.7,370.82 1340.4,332.28 1317,306 1156,125.52 862.33,58.264 715.51,35.101"];
 	metadata_models_ExternalIdentifier	 [height=1.4444,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -727,33 +728,33 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1629,194",
+		pos="1628,194",
 		width=2.1667];
 	metadata_models_SraIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="1692.6,314",
-		pos="e,1647.6,246.02 1696.1,381.7 1682.6,343.72 1664.9,294.22 1651,255.6"];
+		lp="1691.6,314",
+		pos="e,1646.8,246.02 1695.9,381.7 1682.2,343.72 1664.3,294.22 1650.3,255.6"];
 	metadata_models_DoiIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="1795.6,314",
-		pos="e,1672.5,246.49 1847.5,381.96 1834.6,367.36 1820,352.35 1805,340 1769.6,310.88 1751.7,316.68 1716,288 1703.4,277.86 1690.9,265.87 \
-1679.5,253.91"];
+		pos="e,1671,246.05 1847.6,381.91 1834.7,367.31 1820,352.31 1805,340 1769.3,310.72 1751.1,316.83 1715,288 1702.2,277.77 1689.6,265.64 \
+1678,253.55"];
 	metadata_models_PubmedIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="1606.6,314",
-		pos="e,1610.3,246.35 1564,375.69 1577.2,338.71 1593.8,292.48 1606.9,255.91"];
+		pos="e,1609.5,246.35 1563.7,375.69 1576.8,338.71 1593.2,292.48 1606.1,255.91"];
 	metadata_models_ExternalIdentifier -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="1412.6,74",
-		pos="e,781.22,25.633 1551,149.63 1495.4,120.36 1417.9,84.189 1345,66 1242.7,40.489 942.14,29.763 791.37,25.89"];
+		pos="e,705.11,24.98 1549.7,149.15 1494.4,119.87 1417.5,83.868 1345,66 1228.1,37.195 879.91,27.955 715.21,25.148"];
 	dataset_models_experiment_Experiment	 [height=3.2778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -866,49 +867,49 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1282,1098",
+		pos="1288,1098",
 		width=2.5];
 	dataset_models_experiment_Experiment -> dataset_models_base_DatasetModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="933.57,704",
-		pos="e,911.77,535.29 1192,1066.2 1136.3,1043.3 1065.8,1008.4 1014,962 963.29,916.63 970.64,888.58 930,834 923.76,825.62 921.14,824.36 \
-914.86,816 837.14,712.55 790.59,697.82 753,574 750.93,567.2 748.28,563.32 753,558 773.63,534.75 858.77,551.76 902.19,538.98"];
+		lp="932.57,704",
+		pos="e,911.77,535.29 1198,1068 1140.1,1045.5 1066,1010.2 1012,962 961.63,916.97 970.9,887.77 930,834 923.5,825.45 920.44,824.5 913.86,\
+816 834.81,713.87 790.34,697.63 753,574 750.94,567.19 748.28,563.32 753,558 773.63,534.75 858.77,551.76 902.19,538.98"];
 	dataset_models_experiment_Experiment -> dataset_models_experimentset_ExperimentSet	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="experimentset (experiments)",
 		lp="1300.7,898",
-		pos="s,1253.6,979.9 1252.2,972.01 1251.6,968.64 1251.1,965.3 1250.6,962 1243.6,914.48 1239.3,861.61 1236.8,816.17"];
+		pos="s,1254.1,980 1252.5,972.07 1251.8,968.69 1251.2,965.32 1250.6,962 1242.4,914.53 1237.6,861.56 1234.8,816.02"];
 	dataset_models_experiment_Experiment -> metadata_models_Keyword	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="keywords (associated_experiments)",
-		lp="1071.8,704",
-		pos="s,1191.8,1034.8 e,1340.9,480.2 1185.4,1029.7 1122.2,978.8 1044.9,903.3 1008.4,816 964.12,710.2 924.6,641.72 1003,558 1023.9,535.73 \
+		lp="1069.8,704",
+		pos="s,1197.8,1037.6 e,1340.9,480.2 1191.1,1032.5 1125.5,981.94 1044.2,905.67 1006.4,816 961.8,710.35 924.61,641.7 1003,558 1023.9,535.73 \
 1249.6,553.47 1277,540 1300.9,528.26 1321,506.88 1336,486.9"];
 	dataset_models_experiment_Experiment -> metadata_models_SraIdentifier	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="sra_ids (associated_experiments)",
 		lp="1650.8,704",
-		pos="s,1372.1,1079.4 e,1666.1,498.09 1380.1,1077.1 1443.2,1058.2 1521.1,1023.5 1563,962 1609.4,893.86 1560.5,668.47 1591.4,592 1595.6,\
-581.46 1629.3,540.94 1660.7,504.39"];
+		pos="s,1378.2,1078.3 e,1666.1,498.09 1386,1075.9 1447.4,1056.6 1522.5,1022 1563,962 1609.2,893.66 1560.5,668.47 1591.4,592 1595.6,581.46 \
+1629.3,540.94 1660.7,504.39"];
 	dataset_models_experiment_Experiment -> metadata_models_DoiIdentifier	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="doi_ids (associated_experiments)",
 		lp="1843.6,704",
-		pos="s,1372.1,1069.9 e,1897,498.02 1379.7,1067.2 1442.7,1044.3 1524.2,1009 1587,962 1655.1,910.95 1669.3,890.25 1711,816 1762.3,724.58 \
+		pos="s,1378.3,1068.8 e,1897,498.02 1386.1,1065.9 1447.5,1042.9 1526.2,1007.9 1587,962 1654.9,910.7 1669.3,890.25 1711,816 1762.3,724.58 \
 1706.7,661.93 1784.8,592 1813.7,566.19 1843.2,601.88 1870,574 1887.2,556.12 1894.2,530.33 1896.4,506.14"];
 	dataset_models_experiment_Experiment -> metadata_models_PubmedIdentifier	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="pubmed_ids (associated_experiments)",
 		lp="1447.7,704",
-		pos="s,1346.3,979.7 e,1550.1,504.16 1349,971.95 1350.1,968.63 1351.1,965.31 1352,962 1396.8,803.29 1265.8,711.31 1379.6,592 1425.2,544.25 \
-1480.7,621.07 1527,574 1542.8,557.88 1548.7,534.84 1549.9,512.39"];
+		pos="s,1346.6,979.9 e,1550.1,504.16 1349.1,972.05 1350.2,968.69 1351.1,965.34 1352,962 1393.9,802.52 1265.8,711.31 1379.6,592 1425.2,\
+544.25 1480.7,621.07 1527,574 1542.8,557.88 1548.7,534.84 1549.9,512.39"];
 	dataset_models_scoreset_ScoreSet	 [height=3.9444,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1045,54 +1046,54 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1282,1474",
+		pos="1288,1474",
 		width=2.7083];
 	dataset_models_scoreset_ScoreSet -> dataset_models_base_DatasetModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="752.57,898",
-		pos="e,911.78,535.32 1184.4,1441.2 1082.7,1402.4 924.83,1328.5 829,1216 750.81,1124.2 755.35,1080.6 733.86,962 717.8,873.33 730.02,575.15 \
+		pos="e,911.78,535.32 1190.4,1441.8 1087.6,1403.3 927.39,1329.3 830,1216 751.34,1124.4 755.58,1080.7 733.86,962 717.67,873.47 729.73,575.45 \
 746,558 768.26,534.12 857.53,552.35 902.41,538.93"];
 	dataset_models_scoreset_ScoreSet -> metadata_models_Keyword	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="keywords (associated_scoresets)",
-		lp="878.13,898",
-		pos="s,1184.3,1394 e,1340.9,480.23 1178.1,1388.7 987.81,1222.3 621.33,848.25 834,592 847.86,575.3 908.86,578.94 930,574 955.62,568.01 \
-961.06,562.4 987,558 1050.7,547.21 1219,568.41 1277,540 1300.9,528.3 1321.1,506.93 1336.1,486.94"];
+		lp="879.13,898",
+		pos="s,1190.4,1395.1 e,1340.9,480.23 1184.3,1389.8 992.39,1224.1 620.34,849.45 834,592 861.72,558.6 887.75,583.97 930,574 955.19,568.05 \
+960.49,562.38 986,558 1049.9,547.04 1218.8,568.5 1277,540 1300.9,528.3 1321.1,506.93 1336.1,486.94"];
 	dataset_models_scoreset_ScoreSet -> metadata_models_SraIdentifier	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="sra_ids (associated_scoresets)",
 		lp="1834.1,898",
-		pos="s,1379.6,1338.6 e,1707,498.18 1384.3,1332 1514.2,1153.6 1727.5,866.59 1779.7,834 1813,813.27 1841.3,846.39 1866,816 1897.4,777.37 \
+		pos="s,1385.5,1342.3 e,1707,498.18 1390.3,1335.9 1526.5,1152.7 1753.4,850.56 1779.7,834 1812.9,813.17 1841.3,846.39 1866,816 1897.4,777.37 \
 1898.8,629.42 1866,592 1825.5,545.83 1771.5,618.31 1729,574 1712,556.28 1706.9,530.52 1706.9,506.31"];
 	dataset_models_scoreset_ScoreSet -> metadata_models_DoiIdentifier	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="doi_ids (associated_scoresets)",
 		lp="1965.9,898",
-		pos="s,1379.6,1426.5 e,1898.8,498.45 1386.8,1422.7 1531,1345.5 1784.6,1184.5 1890,962 1927.3,883.34 1910.3,628.83 1899.5,506.65"];
+		pos="s,1385.5,1425.8 e,1898.7,498.43 1392.7,1421.9 1535.6,1344.2 1786,1183 1890,962 1927.1,883.24 1910.2,628.79 1899.5,506.64"];
 	dataset_models_scoreset_ScoreSet -> metadata_models_PubmedIdentifier	 [arrowhead=dot,
 		arrowtail=dot,
 		dir=both,
 		label="pubmed_ids (associated_scoresets)",
 		lp="1585,898",
-		pos="s,1359.4,1331.6 e,1545.9,504.1 1362.7,1324.1 1364.2,1320.7 1365.6,1317.4 1367,1314 1495.8,1001.1 1525.8,911.77 1546,574 1547.2,553.98 \
+		pos="s,1365.5,1331.6 e,1545.9,504.1 1368.8,1324.2 1370.2,1320.8 1371.6,1317.4 1373,1314 1499.8,1001 1525.9,911.16 1546,574 1547.2,553.98 \
 1547,532.27 1546.3,512.26"];
 	dataset_models_scoreset_ScoreSet -> dataset_models_experiment_Experiment	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="experiment (scoresets)",
-		lp="1322.7,1274",
-		pos="s,1282,1331.9 1282,1323.8 1282,1288 1282,1250.3 1282,1216.1"];
+		lp="1328.7,1274",
+		pos="s,1288,1331.9 1288,1323.8 1288,1288 1288,1250.3 1288,1216.1"];
 	dataset_models_scoreset_ScoreSet -> dataset_models_scoreset_ScoreSet	 [arrowhead=none,
 		arrowtail=none,
 		dir=both,
 		label="replaces (replaced_by)",
-		lp="1438.2,1474",
-		pos="1379.7,1499.9 1390.5,1495 1397.5,1486.3 1397.5,1474 1397.5,1461.7 1390.5,1453 1379.7,1448.1"];
+		lp="1444.2,1474",
+		pos="1385.7,1499.9 1396.5,1495 1403.5,1486.3 1403.5,1474 1403.5,1461.7 1396.5,1453 1385.7,1448.1"];
 	main_models_Licence	 [height=1.7778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1151,20 +1152,20 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="542,898",
+		pos="541,898",
 		width=2.1944];
 	dataset_models_scoreset_ScoreSet -> main_models_Licence	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="licence (attached_scoresets)",
 		lp="648.91,1274",
-		pos="s,1184.3,1464.6 1176.2,1463.8 1004.1,1444.8 674.8,1398.3 598.17,1314 510.44,1217.5 517.93,1052.5 530.38,962.06"];
+		pos="s,1190.5,1464.9 1182.3,1464 1009,1445.3 675.77,1399 598.17,1314 510.21,1217.6 517.3,1052.6 529.53,962.11"];
 	main_models_Licence -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="430.57,440",
-		pos="e,624.75,35.208 500.01,833.87 461.69,769.06 411,664.68 411,566 411,566 411,566 411,194 411,98.64 528.75,55.839 614.7,37.298"];
+		lp="428.57,440",
+		pos="e,551.37,48.011 498.69,833.91 460.08,769.14 409,664.78 409,566 409,566 409,566 409,194 409,123.47 480.84,77.894 542.04,51.865"];
 	genome_models_TargetGene	 [height=1.9444,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1229,21 +1230,21 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="2051,1730",
+		pos="1999,1730",
 		width=2.7083];
 	genome_models_TargetGene -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="2409.6,704",
-		pos="e,781.27,25.172 2148.7,1709.6 2220.2,1692.9 2309.3,1667.9 2337,1642 2362.6,1618.1 2390,1658.1 2390,1474 2390,1474 2390,1474 2390,\
-194 2390,21.672 2195.5,82.479 2024,66 1783.9,42.937 1047.4,29.431 791.63,25.337"];
+		pos="e,705.37,24.997 2096.6,1715.2 2183.8,1700.1 2303,1674.3 2338,1642 2360.3,1621.4 2390,1684.9 2390,1474 2390,1474 2390,1474 2390,194 \
+2390,22.511 2196.7,82.376 2026,66 1770.2,41.456 981.81,28.796 715.75,25.139"];
 	genome_models_TargetGene -> dataset_models_scoreset_ScoreSet	 [arrowhead=none,
 		arrowtail=none,
 		dir=both,
 		label="scoreset (target)",
-		lp="1798.1,1638",
-		pos="1953.5,1700.2 1899.3,1683.5 1830.6,1662 1769.8,1642 1634,1597.4 1478.1,1543.2 1379.8,1508.6"];
+		lp="1777.1,1638",
+		pos="1901.3,1694.8 1765.5,1645.9 1521.2,1558 1385.5,1509.1"];
 	genome_models_WildTypeSequence	 [height=1.1111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1284,8 +1285,8 @@ digraph model_graph {
 		arrowtail=none,
 		dir=both,
 		label="wt_sequence (target)",
-		lp="2144.6,1638",
-		pos="2097.2,1659.9 2100.1,1654 2102.8,1648 2105,1642 2147.4,1528.1 2159.9,1383.3 2163.5,1314.2"];
+		lp="2145.6,1638",
+		pos="2092.6,1659.9 2097.3,1654.2 2101.4,1648.2 2105,1642 2165.9,1535.5 2169.5,1385 2167.3,1314"];
 	metadata_models_RefseqIdentifier	 [height=1.6111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1344,8 +1345,8 @@ digraph model_graph {
 		arrowtail=dot,
 		dir=both,
 		label="refseq_id (associated_targetgenes)",
-		lp="2270.7,1638",
-		pos="s,2148.7,1687.5 2155.7,1683.1 2173.3,1671.6 2190,1658 2203,1642 2228.5,1610.7 2242.6,1567.2 2250.3,1532.3"];
+		lp="2271.7,1638",
+		pos="s,2096.7,1706.4 2104.2,1703.7 2139.6,1690.3 2176.8,1670.6 2203,1642 2230.7,1611.9 2244.7,1567.7 2251.8,1532.2"];
 	metadata_models_EnsemblIdentifier	 [height=1.6111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1404,8 +1405,8 @@ digraph model_graph {
 		arrowtail=dot,
 		dir=both,
 		label="ensembl_id (associated_targetgenes)",
-		lp="1903.7,1638",
-		pos="s,1953.5,1713 1945.5,1710.5 1905.6,1697.8 1863.5,1676.7 1837.6,1642 1814.4,1611 1810.5,1567.3 1812.1,1532.2"];
+		lp="1904.7,1638",
+		pos="s,1901.2,1695.4 1894.2,1691.4 1872.7,1678.8 1852.4,1662.6 1838.6,1642 1817.2,1610 1812.8,1566.8 1813.7,1532.2"];
 	metadata_models_UniprotIdentifier	 [height=1.6111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1465,35 +1466,35 @@ digraph model_graph {
 		dir=both,
 		label="uniprot_id (associated_targetgenes)",
 		lp="2040.8,1638",
-		pos="s,1985.7,1659.8 1981.9,1652.7 1980.2,1649.2 1978.7,1645.6 1977.4,1642 1964.4,1606.2 1974.6,1564.8 1988.3,1532"];
+		pos="s,1980.1,1659.7 1978.7,1651.6 1978.2,1648.4 1977.7,1645.2 1977.4,1642 1972.9,1604.8 1982.8,1564.1 1994.2,1532"];
 	genome_models_WildTypeSequence -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="2240.6,566",
-		pos="e,781.03,25.233 2174.9,1234 2191,1165.5 2221,1021.6 2221,898 2221,898 2221,898 2221,194 2221,37.101 2048,83.224 1892,66 1678.8,42.457 \
-1029.1,29.473 791.36,25.409"];
+		pos="e,705.13,25.07 2174.9,1234 2191,1165.5 2221,1021.6 2221,898 2221,898 2221,898 2221,194 2221,35.858 2046.2,83.045 1889,66 1661,41.282 \
+962.73,28.913 715.16,25.218"];
 	metadata_models_RefseqIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="2241.6,704",
-		pos="e,1665.1,246.39 2258.6,1415.9 2256,1207.1 2236.4,498.73 2089,340 2046.9,294.66 2015.1,315.93 1954,306 1901.6,297.49 1763.8,311.06 \
-1716,288 1699.4,280.01 1684.5,267.37 1671.9,253.92"];
+		pos="e,1664.1,246.4 2258.6,1415.9 2256,1207.1 2236.4,498.73 2089,340 2046.9,294.66 2015.1,315.92 1954,306 1901.4,297.46 1763,311.15 1715,\
+288 1698.4,280.01 1683.5,267.37 1670.9,253.93"];
 	metadata_models_EnsemblIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="2032.6,704",
-		pos="e,1666.5,246.3 1851.5,1415.9 1899.8,1323.2 1990,1134.6 2023,962 2033.7,906.12 2036.2,889.33 2023,834 2020.9,825.27 2016.3,824.65 \
-2013.9,816 1985.7,713.79 2050.6,419.96 1981,340 1941.6,294.74 1768.7,316.69 1716,288 1700.3,279.47 1685.9,267.05 1673.6,254.02"];
+		pos="e,1665.5,246.31 1851.5,1415.9 1899.8,1323.2 1990,1134.6 2023,962 2033.7,906.12 2036.2,889.33 2023,834 2020.9,825.27 2016.3,824.65 \
+2013.9,816 1985.7,713.79 2050.6,419.96 1981,340 1941.4,294.58 1767.9,316.76 1715,288 1699.3,279.48 1684.9,267.07 1672.5,254.03"];
 	metadata_models_UniprotIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
 		lp="2094.6,704",
-		pos="e,1665.2,246.15 2029.3,1415.7 2044.9,1311.9 2075,1088.1 2075,898 2075,898 2075,898 2075,440 2075,387.23 2053,371.96 2011,340 1970.3,\
-309.01 1951.2,316.09 1901,306 1820,289.72 1790,324.71 1716,288 1699.5,279.83 1684.6,267.13 1672,253.68"];
+		pos="e,1664.2,246.16 2029.3,1415.7 2044.9,1311.9 2075,1088.1 2075,898 2075,898 2075,898 2075,440 2075,387.23 2053,371.96 2011,340 1970.3,\
+309.01 1951.2,316.07 1901,306 1819.6,289.65 1789.4,324.89 1715,288 1698.5,279.83 1683.6,267.13 1671,253.69"];
 	genome_models_ReferenceMap	 [height=1.4444,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1540,21 +1541,21 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="185,1896",
+		pos="192,1896",
 		width=2.5];
 	genome_models_ReferenceMap -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="152.57,898",
-		pos="e,624.84,29.4 159.76,1843.8 146.51,1811.8 133,1769.4 133,1730 133,1730 133,1730 133,194 133,151.38 122.78,131.03 152,100 183.17,\
-66.894 466.75,41.362 614.44,30.181"];
+		lp="150.57,898",
+		pos="e,548.86,31.24 162.21,1844 146.73,1812.1 131,1769.9 131,1730 131,1730 131,1730 131,194 131,151.38 120.78,131.03 150,100 176.28,72.089 \
+408.39,45.275 538.88,32.231"];
 	genome_models_ReferenceMap -> genome_models_TargetGene	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="target (reference_maps)",
-		lp="1048.9,1822",
-		pos="s,275,1888 283.43,1887.2 606.37,1858.5 1631.4,1767.3 1953.3,1738.7"];
+		lp="1029.9,1822",
+		pos="s,282.23,1887.7 290.45,1887 605.6,1858 1587.3,1767.8 1901.3,1739"];
 	genome_models_ReferenceGenome	 [height=1.4444,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1588,33 +1589,33 @@ digraph model_graph {
     </TD></TR>
   
     <TR><TD ALIGN="LEFT" BORDER="0">
-    <FONT FACE="Helvetica ">short_name</FONT>
+    <FONT FACE="Helvetica ">organism_name</FONT>
     </TD><TD ALIGN="LEFT">
     <FONT FACE="Helvetica ">CharField</FONT>
     </TD></TR>
   
     <TR><TD ALIGN="LEFT" BORDER="0">
-    <FONT FACE="Helvetica ">species_name</FONT>
+    <FONT FACE="Helvetica ">short_name</FONT>
     </TD><TD ALIGN="LEFT">
     <FONT FACE="Helvetica ">CharField</FONT>
     </TD></TR>
   
     </TABLE>
     >,
-		pos="251,704",
+		pos="249,704",
 		width=2.5];
 	genome_models_ReferenceMap -> genome_models_ReferenceGenome	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="genome (associated_reference_maps)",
-		lp="263.48,1474",
-		pos="s,189.77,1843.7 190.4,1835.5 192.76,1804 195,1765 195,1730 195,1730 195,1730 195,1098 195,974.5 222.3,831.37 238.78,756.24"];
+		lp="265.48,1474",
+		pos="s,194.38,1843.7 194.7,1835.4 195.88,1804 197,1764.9 197,1730 197,1730 197,1730 197,1098 197,974.67 222.35,831.48 237.65,756.29"];
 	genome_models_ReferenceGenome -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="352.57,314",
-		pos="e,624.89,30.12 261.26,651.82 290.75,503.05 374.98,86.149 397,66 412.94,51.411 530.13,38.542 614.75,31.011"];
+		lp="350.57,314",
+		pos="e,548.77,29.029 259.31,651.87 288.9,503.22 373.42,86.614 395,66 415.56,46.364 482.11,35.671 538.7,29.998"];
 	metadata_models_GenomeIdentifier	 [height=1.6111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1674,14 +1675,14 @@ digraph model_graph {
 		dir=both,
 		label="genome_id (associated_referencegenomes)",
 		lp="851.27,566",
-		pos="s,341.19,672.31 348.87,669.74 452.78,635 622.52,582.93 773.46,558 845.38,546.12 1035.4,571.84 1101,540 1120.6,530.5 1137.6,514.5 \
+		pos="s,339.09,672.47 346.79,669.9 451.07,635.17 621.75,582.98 773.46,558 845.39,546.16 1035.4,571.84 1101,540 1120.6,530.5 1137.6,514.5 \
 1151.4,498.05"];
 	metadata_models_GenomeIdentifier -> metadata_models_ExternalIdentifier	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="1351.6,314",
-		pos="e,1550.8,221.71 1232.3,381.85 1245.4,366.83 1260.7,351.64 1277,340 1320.9,308.56 1452,257.82 1541.2,225.2"];
+		lp="1350.6,314",
+		pos="e,1549.6,221.87 1232.3,381.86 1245.4,366.84 1260.7,351.65 1277,340 1320.7,308.66 1451.2,258.01 1540.1,225.37"];
 	genome_models_GenomicInterval	 [height=1.7778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1746,15 +1747,15 @@ digraph model_graph {
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="85.568,1098",
-		pos="e,624.59,26.999 79.071,1999.9 72.266,1968.7 66,1930.7 66,1896 66,1896 66,1896 66,194 66,114.48 114.19,86.558 191,66 268.41,45.282 \
-489.42,32.955 614.29,27.448"];
+		lp="83.568,1098",
+		pos="e,548.63,28.469 77.943,1999.9 70.684,1968.8 64,1930.7 64,1896 64,1896 64,1896 64,194 64,113.55 114.27,86.756 192,66 255.2,49.124 \
+430.63,35.926 538.42,29.109"];
 	genome_models_GenomicInterval -> genome_models_ReferenceMap	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="reference_map (intervals)",
-		lp="191.57,1974",
-		pos="s,130.16,1999.5 133.99,1992.3 141.86,1977.4 150.01,1962.1 157.42,1948.1"];
+		lp="195.57,1974",
+		pos="s,132.84,1999.5 136.98,1992.3 145.47,1977.4 154.26,1962.1 162.25,1948.1"];
 	main_models_News	 [height=1.2778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1795,14 +1796,14 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1804,194",
+		pos="1803,194",
 		width=2.1944];
 	main_models_News -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="1649.6,74",
-		pos="e,781.37,26.421 1771.8,147.52 1756.9,129.7 1737.7,111.03 1716,100 1634.6,58.714 1023,34.517 791.44,26.756"];
+		lp="1660.6,74",
+		pos="e,705.27,25.96 1770.8,147.52 1755.9,129.71 1736.7,111.03 1715,100 1626.9,55.264 959.03,32.951 715.5,26.239"];
 	main_models_SiteInformation	 [height=2.6111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1891,15 +1892,15 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1983,194",
+		pos="1982,194",
 		width=2.2778];
 	main_models_SiteInformation -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="1868.6,74",
-		pos="e,781.23,26.267 1900.9,105.1 1898,103.27 1895,101.57 1892,100 1804.5,54.706 1771,75.701 1673,66 1503.5,49.226 997.14,32.762 791.39,\
-26.572"];
+		lp="1865.6,74",
+		pos="e,705.26,25.859 1899.9,105.13 1897,103.3 1894,101.58 1891,100 1808.4,56.765 1776.8,75.424 1684,66 1497.2,47.018 934.31,31.561 715.43,\
+26.11"];
 	metadata_models_AnnotationOffset	 [height=0.66667,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1922,14 +1923,14 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="2165,1896",
+		pos="2104,1896",
 		width=2.1111];
 	metadata_models_AnnotationOffset -> genome_models_TargetGene	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="target (%(class)s)",
-		lp="2145.3,1822",
-		pos="s,2148.4,1871.9 2143.6,1864.9 2131.1,1846.6 2114.7,1822.7 2099.2,1800.1"];
+		lp="2088.3,1822",
+		pos="s,2088.7,1871.9 2084.3,1864.9 2072.8,1846.6 2057.6,1822.7 2043.4,1800.1"];
 	metadata_models_UniprotOffset	 [height=1.1111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -1964,21 +1965,21 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="2207,2064",
+		pos="2162,2064",
 		width=2.2639];
 	metadata_models_UniprotOffset -> metadata_models_UniprotIdentifier	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="identifier (offset)",
-		lp="2388.6,1822",
-		pos="s,2241.1,2023.9 2246.1,2017.6 2313.9,1931.5 2437,1745.4 2337,1634 2312.2,1606.4 2204.7,1631.5 2171,1616 2130,1597.1 2092.9,1562.6 \
-2065.7,1532.4"];
+		lp="2378.6,1822",
+		pos="s,2203.6,2023.9 2209.4,2018 2291.3,1932.8 2441.3,1749 2338,1634 2313.1,1606.2 2204.9,1631.6 2171,1616 2129.8,1597.1 2092.6,1562.4 \
+2065.4,1532"];
 	metadata_models_UniprotOffset -> metadata_models_AnnotationOffset	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="2205.6,1974",
-		pos="e,2171.1,1920.3 2196.9,2023.8 2189.8,1995.2 2180.3,1957.2 2173.5,1930.1"];
+		lp="2152.6,1974",
+		pos="e,2112.4,1920.3 2148.1,2023.8 2138.2,1995.1 2125,1956.9 2115.7,1929.8"];
 	metadata_models_RefseqOffset	 [height=1.1111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -2019,14 +2020,14 @@ digraph model_graph {
 		arrowtail=dot,
 		dir=both,
 		label="identifier (offset)",
-		lp="2456.6,1822",
-		pos="s,2429.3,2024 2429.9,2015.8 2436.2,1933.2 2439.9,1761.2 2379,1634 2361.5,1597.5 2335.1,1561.1 2311.5,1532.3"];
+		lp="2447.6,1822",
+		pos="s,2427.4,2023.8 2427.7,2015.6 2430.3,1937.7 2428.2,1780.8 2379,1660 2360.3,1614.1 2330,1567.2 2304.5,1532"];
 	metadata_models_RefseqOffset -> metadata_models_AnnotationOffset	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="2314.6,1974",
-		pos="e,2202.4,1920.1 2363.1,2024 2316.3,1993.7 2253.1,1952.9 2210.8,1925.6"];
+		lp="2283.6,1974",
+		pos="e,2150.1,1920.1 2348.5,2024 2290.3,1993.5 2211.4,1952.2 2159.2,1924.9"];
 	metadata_models_EnsemblOffset	 [height=1.1111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -2061,20 +2062,20 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="1839,2064",
+		pos="1816,2064",
 		width=2.2639];
 	metadata_models_EnsemblOffset -> metadata_models_EnsemblIdentifier	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="identifier (offset)",
-		lp="1784.6,1822",
-		pos="s,1820.1,2024 1816.8,2016.6 1782.6,1937.3 1723.7,1773 1752,1634 1759.2,1598.8 1774.4,1561.8 1788.6,1532.2"];
+		lp="1770.6,1822",
+		pos="s,1799,2024 1795.9,2016.1 1765.1,1936.3 1713,1771.4 1744,1634 1752,1598.5 1768.9,1561.5 1784.7,1532.1"];
 	metadata_models_EnsemblOffset -> metadata_models_AnnotationOffset	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="2040.6,1974",
-		pos="e,2118.2,1920.1 1916.7,2024 1976,1993.4 2056.2,1952.1 2109.2,1924.7"];
+		lp="1996.6,1974",
+		pos="e,2062.6,1920.1 1884.6,2024 1936.7,1993.6 2007,1952.6 2053.9,1925.2"];
 	variant_models_Variant	 [height=1.7778,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
@@ -2133,22 +2134,22 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="621,1730",
+		pos="589,1730",
 		width=2.5];
 	variant_models_Variant -> urn_models_UrnModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="388.57,898",
-		pos="e,685.35,222.18 530.73,1684.9 458.43,1641.7 369,1569.1 369,1474 369,1474 369,1474 369,898 369,835.96 349.38,387.75 389,340 456.2,\
-259.01 529.44,341.6 620,288 643.93,273.83 664.65,250.4 679.4,230.47"];
+		lp="386.57,898",
+		pos="e,608.26,222.31 498.7,1674.5 437.24,1629.1 367,1558.7 367,1474 367,1474 367,1474 367,898 367,773.92 312.56,439.27 387,340 431.1,\
+281.19 482.66,328.51 544,288 566.89,272.88 587.35,249.88 602.24,230.41"];
 	variant_models_Variant -> dataset_models_scoreset_ScoreSet	 [arrowhead=none,
 		arrowtail=dot,
 		dir=both,
 		label="scoreset (variants)",
-		lp="885.9,1638",
-		pos="s,711.18,1695.1 718.92,1692.1 844.06,1643.6 1059.4,1560.2 1184.4,1511.8"];
-	accounts_models_Profile	 [height=1.2778,
+		lp="867.9,1638",
+		pos="s,679.31,1696.9 687.15,1694.1 820.45,1645.2 1057.3,1558.5 1190.4,1509.8"];
+	accounts_models_Profile	 [height=1.6111,
 		label=<
     <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
     <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
@@ -2166,6 +2167,18 @@ digraph model_graph {
     <FONT FACE="Helvetica Bold">user</FONT>
     </TD><TD ALIGN="LEFT">
     <FONT FACE="Helvetica Bold">OneToOneField (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">auth_token</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">auth_token_expiry</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DateField</FONT>
     </TD></TR>
   
     <TR><TD ALIGN="LEFT" BORDER="0">
@@ -2188,19 +2201,18 @@ digraph model_graph {
   
     </TABLE>
     >,
-		pos="566,440",
-		width=2.7083];
+		pos="565,440",
+		width=2.75];
 	accounts_models_Profile -> django_contrib_auth_models_User	 [arrowhead=none,
 		arrowtail=none,
 		dir=both,
 		label="user (profile)",
-		lp="757.45,314",
-		pos="610.41,393.76 628.86,375.84 651.06,355.87 673,340 698.49,321.56 706.23,318.51 735.1,306 758.66,295.79 768.2,301.56 790,288 822.77,\
-267.62 852.37,233.18 868.7,212.13"];
+		lp="735.45,314",
+		pos="625.8,381.89 640.97,367.9 657.38,353.19 673,340 730.22,291.7 800.91,239.14 837.84,212.19"];
 	accounts_models_Profile -> core_models_TimeStampedModel	 [arrowhead=empty,
 		arrowtail=none,
 		dir=both,
 		label="abstract\ninheritance",
-		lp="596.57,194",
-		pos="e,636.95,48.131 554.45,393.87 539.85,324.73 522.65,192.47 576.86,100 588.63,79.923 607.98,64.514 628.03,52.993"];
+		lp="520.57,194",
+		pos="e,560.23,48.078 531.62,381.71 495.79,310.73 450.41,189.3 500.86,100 512.26,79.834 531.38,64.423 551.34,52.927"];
 }
