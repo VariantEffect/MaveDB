@@ -151,6 +151,13 @@ class TestPublishScoresetTask(TestCase):
     
     def test_resets_public_to_false_if_failed(self):
         self.scoreset.private = False
+        experiment = self.scoreset.parent
+        experiment.private = False
+        experimentset = self.scoreset.parent.parent
+        experimentset.private = False
+       
+        experimentset.save()
+        experiment.save()
         self.scoreset.save()
         
         base = BasePublishTask()
@@ -165,6 +172,8 @@ class TestPublishScoresetTask(TestCase):
         )
         scoreset = ScoreSet.objects.first()
         self.assertTrue(scoreset.private)
+        self.assertTrue(scoreset.parent.private)
+        self.assertTrue(scoreset.parent.parent.private)
         
     def test_propagates_modified(self):
         publish_scoreset.apply(kwargs=self.mock_kwargs())

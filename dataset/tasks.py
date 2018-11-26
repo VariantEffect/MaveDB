@@ -4,7 +4,6 @@ from django.conf import settings
 
 from celery.utils.log import get_task_logger
 
-from core.utilities import is_null
 from core.tasks import BaseTask
 
 from mavedb import celery_app
@@ -89,9 +88,20 @@ class BasePublishTask(BaseDatasetTask):
     def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
         retval = super().on_failure(
             exc, task_id, args, kwargs, einfo, user=None)
-        if self.instance is not None:
+        if self.instance is not None and not self.instance.has_public_urn:
             self.instance.private = True
             self.instance.save()
+            
+            if not self.instance.parent.has_public_urn:
+                experiment = self.instance.parent
+                experiment.private = True
+                experiment.save()
+                
+            if not self.instance.parent.parent.has_public_urn:
+                experimentset = self.instance.parent.parent
+                experimentset.private = True
+                experimentset.save()
+                
         return retval
     
 
