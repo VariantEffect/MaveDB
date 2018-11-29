@@ -1,6 +1,5 @@
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.conf import settings
 
 from celery.utils.log import get_task_logger
 
@@ -23,7 +22,7 @@ logger = get_task_logger('dataset.tasks')
 
 # Overrides global soft time limit of 60 seconds. If this limit is exceeded
 # a SoftTimeLimitExceeded exception will be raised.
-SOFT_TIME_LIMIT = settings.DATASET_TASK_SOFT_TIME_LIMIT
+# SOFT_TIME_LIMIT = settings.task_soft_time_limit
 
 
 class BaseDatasetTask(BaseTask):
@@ -129,7 +128,6 @@ class BaseDeleteTask(BaseDatasetTask):
     bind=True,
     ignore_result=True,
     base=BasePublishTask,
-    soft_time_limit=SOFT_TIME_LIMIT,
 )
 def publish_scoreset(self, user_pk, scoreset_urn):
     """
@@ -168,7 +166,6 @@ def publish_scoreset(self, user_pk, scoreset_urn):
     bind=True,
     ignore_result=True,
     base=BaseDeleteTask,
-    soft_time_limit=SOFT_TIME_LIMIT,
 )
 def delete_instance(self, user_pk, urn):
     """
@@ -209,7 +206,7 @@ def delete_instance(self, user_pk, urn):
     bind=True,
     ignore_result=True,
     base=BaseCreateVariantsTask,
-    soft_time_limit=SOFT_TIME_LIMIT,
+    serializer='pickle',
 )
 def create_variants(self, user_pk, scoreset_urn,
                     scores_records, counts_records, index, dataset_columns):
@@ -249,14 +246,26 @@ def create_variants(self, user_pk, scoreset_urn,
     self.user = User.objects.get(pk=user_pk)
     self.instance = models.scoreset.ScoreSet.objects.get(urn=scoreset_urn)
 
+    logger.info('Sending scores dataframe with {} rows.'.format(
+        len(scores_records)))
+    logger.info('Sending counts dataframe with {} rows.'.format(
+        len(counts_records)))
+    logger.info('Formatting variants for {}'.format(self.urn))
     variants = convert_df_to_variant_records(
         scores_records, counts_records, index)
+    
     if variants:
         logger.info('{}:{}'.format(self.urn, variants[-1]))
+    
     with transaction.atomic():
+        logger.info('Deleting existing variants for {}'.format(self.urn))
         self.instance.delete_variants()
+    
+        logger.info('Creating variants for {}'.format(self.urn))
         Variant.bulk_create(self.instance, variants)
+        
+        logger.info('Saving {}'.format(self.urn))
         self.instance.dataset_columns = dataset_columns
         self.instance.save()
+    
     return self.instance
-
