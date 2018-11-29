@@ -1,4 +1,5 @@
 import json
+from pandas.testing import assert_frame_equal
 
 from django.core import mail
 from django.test import TestCase, RequestFactory, mock
@@ -432,16 +433,18 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
             scores, counts, index = form.serialize_variants()
-            self.assertEqual(
-                {
+            expected = create_mock.call_args[1]['kwargs']
+            expected_socres = expected.pop('scores_records')
+            expected_counts = expected.pop('counts_records')
+            self.assertEqual({
                     "user_pk": self.user.pk,
                     "scoreset_urn": ScoreSet.objects.first().urn,
                     "index": index,
-                    "scores_records": scores, "counts_records": counts,
                     "dataset_columns": form.dataset_columns,
-                },
-                create_mock.call_args[1]['kwargs']
+                }, expected
             )
+            assert_frame_equal(scores, expected_socres)
+            assert_frame_equal(counts, expected_counts)
 
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()

@@ -1,3 +1,5 @@
+import pandas as pd
+
 from django.test import TestCase, RequestFactory
 from accounts.factories import UserFactory
 
@@ -334,6 +336,33 @@ class TestScoreSetForm(TestCase):
         self.assertEqual(ErrorMessages.ScoreData.no_variants,
                       form.errors['score_data'][0])
         
+    def test_serialize_variants_returns_empty_frames_and_index(self):
+        form = ScoreSetForm(data={}, user=self.user)
+        form.is_valid()
+        sdf, cdf, index = form.serialize_variants()
+        self.assertTrue(sdf.empty)
+        self.assertTrue(cdf.empty)
+        self.assertIsNone(index)
+        
+    def test_serialize_variants_returns_dfs_and_scores_primary_hgvs(self):
+        scs = ScoreSetFactory()
+        data, files = self.make_post_data(count_data=True)
+        data['experiment'] = scs.experiment.pk
+        scs.experiment.add_administrators(self.user)
+        scs.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, files=files, user=self.user, instance=scs)
+        self.assertTrue(form.is_valid())
+        
+        sdf, cdf, index = form.serialize_variants()
+        self.assertIsInstance(sdf, pd.DataFrame)
+        self.assertEqual(len(sdf), 1)
+        
+        self.assertIsInstance(cdf, pd.DataFrame)
+        self.assertEqual(len(cdf), 1)
+        
+        self.assertEqual(index, constants.hgvs_nt_column)
+        
     def test_new_scores_resets_dataset_columns(self):
         scs = ScoreSetFactory()
         for i in range(5):
@@ -349,8 +378,6 @@ class TestScoreSetForm(TestCase):
         self.assertTrue(form.is_valid())
 
         form.save(commit=True)
-
-        self.assertTrue(len(form.serialize_variants()), 1)
         self.assertEqual(
             sorted(form.dataset_columns[constants.score_columns]),
             sorted(['score', 'se'])
