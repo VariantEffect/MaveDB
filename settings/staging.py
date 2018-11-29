@@ -112,7 +112,8 @@ LOGGING = {
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
-DATASET_TASK_SOFT_TIME_LIMIT =  12 * 60 * 60  # 12 hours in seconds
+task_soft_time_limit = 7 * 24 * 60 * 60  # 7 days
+task_time_limit = task_soft_time_limit
 broker_url = 'amqp://localhost:5672//'
 accept_content = ('json',)
 result_serializer = 'json'
@@ -120,7 +121,6 @@ result_serializer = 'json'
 task_ignore_result = True
 task_serializer = 'json'
 worker_hijack_root_logger = False
-task_soft_time_limit = 60  # seconds
 task_always_eager = False
 task_create_missing_queues = True
 
