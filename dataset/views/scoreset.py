@@ -207,8 +207,14 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
                 "scores_records": scores_rs,
                 "counts_records": counts_rs,
             }
+            logger.info("Submitting task from {} for {} to Celery.".format(
+                self.request.user, scoreset.urn
+            ))
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
+            logger.info("Submission to celery from {} for {}: {}".format(
+                self.request.user, scoreset.urn, success
+            ))
 
         scoreset.save()
         scoreset.add_administrators(self.request.user)
@@ -312,8 +318,15 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 "scores_records": scores_rs,
                 "counts_records": counts_rs,
             }
+            
+            logger.info("Submitting task from {} for {} to Celery".format(
+                self.request.user, scoreset.urn
+            ))
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
+            logger.info("Submission to celery from {} for {}: {}".format(
+                self.request.user, scoreset.urn, success
+            ))
 
         scoreset.save()
         track_changes(instance=scoreset, user=self.request.user)
