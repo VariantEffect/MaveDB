@@ -70,6 +70,8 @@ class DatasetModelFormView(DatasetFormViewContextMixin,
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        if request.is_ajax():
+            return self.post_ajax(request, *args, **kwargs)
         all_valid, forms = self.forms_valid()
         if not all_valid:
             return self.form_invalid(forms)
@@ -77,6 +79,9 @@ class DatasetModelFormView(DatasetFormViewContextMixin,
             return self.form_valid(forms)
 
     def get_ajax(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
+    def post_ajax(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
