@@ -5,12 +5,15 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
 
+from billiard.exceptions import SoftTimeLimitExceeded
+
 from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
     delete_all_groups_for_instance,
 )
 
+from core.models import FailedTask
 from core.utilities import base_url
 
 from main.models import Licence
@@ -372,7 +375,27 @@ class ScoreSet(DatasetModel):
         """
         return self.get_version(
             'current_version', 'current_public_version', user)
+    
+    def get_error_message(self):
+        """
+        Return the error message associated with the most recent task submitted
+        for this scoreset.
+        """
+        failedtask = FailedTask.objects.\
+            filter(kwargs__icontains=self.urn).\
+            order_by('-modification_date').first()
+        if failedtask:
+            if failedtask.exception_class == SoftTimeLimitExceeded.__name__:
+                return "Soft time limit was exceeded."
+            msg = failedtask.exception_msg.\
+                replace(str(failedtask.exception_class), '').\
+                replace('(', '').\
+                replace(')', '')
+            if not msg:
+                return str(failedtask.exception_class)
+            return msg
         
+        return 'An error occured during processing. Please contact support.'
     
 
 # --------------------------------------------------------------------------- #
