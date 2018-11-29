@@ -207,6 +207,7 @@ def delete_instance(self, user_pk, urn):
     ignore_result=True,
     base=BaseCreateVariantsTask,
     serializer='pickle',
+    compression='gzip',
 )
 def create_variants(self, user_pk, scoreset_urn,
                     scores_records, counts_records, index, dataset_columns):
