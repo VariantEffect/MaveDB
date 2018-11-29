@@ -115,9 +115,9 @@ LOGGING = {
 task_soft_time_limit = 7 * 24 * 60 * 60  # 7 days
 task_time_limit = task_soft_time_limit
 broker_url = 'amqp://localhost:5672//'
-accept_content = ('pickle', 'application/x-python-serialize', 'json')
-task_serializer = 'json'
-result_serializer = 'json'
+accept_content = ('pickle', 'application/x-python-serialize',)
+task_serializer = 'pickle'
+result_serializer = 'pickle'
 
 task_ignore_result = True
 worker_hijack_root_logger = False
