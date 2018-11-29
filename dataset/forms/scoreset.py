@@ -394,10 +394,7 @@ class ScoreSetForm(DatasetModelForm):
         scores_df = variants.get('scores_df', pd.DataFrame())
         counts_df = variants.get('counts_df', pd.DataFrame())
         index = variants.get('index', None)
-        # Can't send a dataframe via Celery. Send a JSON string instead.
-        scores_records = scores_df.to_json(orient='records')
-        counts_records = counts_df.to_json(orient='records')
-        return scores_records, counts_records, index
+        return scores_df, counts_df, index
         
     def has_variants(self):
         return self.cleaned_data.get('variants')['scores_df'] is not None
