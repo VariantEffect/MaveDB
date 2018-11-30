@@ -9,7 +9,7 @@ USE_SOCIAL_AUTH = True
 
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org', 'mavedb.org',]
 
 
 # Email these users whenever an exception is raised causing a 500 error.
