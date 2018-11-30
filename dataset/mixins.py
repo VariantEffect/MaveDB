@@ -253,6 +253,9 @@ class DataSetAjaxMixin:
         else:
             return HttpResponse(
                 json.dumps(data), content_type="application/json")
+        
+    def post_ajax(self, request, return_dict=False, *args, **kwargs):
+        return HttpResponse(json.dumps({}), content_type="application/json")
 
 
 class ExperimentAjaxMixin(DataSetAjaxMixin):

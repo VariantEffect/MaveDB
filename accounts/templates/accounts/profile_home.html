@@ -84,7 +84,7 @@
                             {% endif %}
                             {% if instance.processing_state == 'failed'%}
                               <a class="error-icon" data-toggle="tooltip" data-placement="top"
-                                 title="There was an error with your submission. Try again or contact support.">
+                                 title="Error: {{ instance.get_error_message }}">
                                 <i class="state-icon help-icon icon fas fa-exclamation-triangle"></i>
                               </a>
                             {% endif %}

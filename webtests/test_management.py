@@ -1,21 +1,20 @@
 from selenium import webdriver
-from selenium.common.exceptions import NoAlertPresentException
 from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase
 from django.shortcuts import reverse
-from django.contrib.auth.models import Permission
+
+from mavedb import celery_app
 
 from accounts.factories import UserFactory
-from accounts.permissions import (
-    assign_user_as_instance_admin,
-    PermissionTypes
-)
 
 from dataset import factories as data_factories
 
 from .utilities import authenticate_webdriver, \
     LOG_PATH, STAGING_OR_PROD, ActionMixin
+
+
+celery_app.conf['task_always_eager'] = False
 
   
 class TestPublishScoreSet(LiveServerTestCase, ActionMixin):

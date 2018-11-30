@@ -47,8 +47,8 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
     def get_context_data(self, **kwargs):
         context = super(ScoreSetDetailView, self).get_context_data(**kwargs)
         instance = self.get_object()
-        variants = instance.children.order_by('{}'.format(
-            instance.primary_hgvs_column))[:10]
+        order_by = 'id' # instance.primary_hgvs_column
+        variants = instance.children.order_by('{}'.format(order_by))[:10]
         context["variants"] = variants
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
@@ -86,8 +86,9 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
     def get_ajax(self):
         type_ = self.request.GET.get('type', False)
         instance = self.get_object()
-        variants = instance.children.order_by(
-            '{}'.format(instance.primary_hgvs_column))[0:10]
+        
+        order_by = 'id' # instance.primary_hgvs_column
+        variants = instance.children.order_by('{}'.format(order_by))[:10]
         rows = []
         for variant in variants:
             row = {}
@@ -145,6 +146,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         "temporarily disabled. You will receive an email message when "
         "processing completes."
     )
+    
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.GET.get("experiment", ""):
@@ -205,8 +207,14 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
                 "scores_records": scores_rs,
                 "counts_records": counts_rs,
             }
+            logger.info("Submitting task from {} for {} to Celery.".format(
+                self.request.user, scoreset.urn
+            ))
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
+            logger.info("Submission to celery from {} for {}: {}".format(
+                self.request.user, scoreset.urn, success
+            ))
 
         scoreset.save()
         scoreset.add_administrators(self.request.user)
@@ -310,8 +318,15 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 "scores_records": scores_rs,
                 "counts_records": counts_rs,
             }
+            
+            logger.info("Submitting task from {} for {} to Celery".format(
+                self.request.user, scoreset.urn
+            ))
             success, _ = create_variants.submit_task(
                 kwargs=task_kwargs, request=self.request)
+            logger.info("Submission to celery from {} for {}: {}".format(
+                self.request.user, scoreset.urn, success
+            ))
 
         scoreset.save()
         track_changes(instance=scoreset, user=self.request.user)

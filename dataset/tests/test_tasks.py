@@ -14,7 +14,7 @@ from dataset import constants
 from dataset.models.scoreset import default_dataset, ScoreSet
 from dataset.factories import ScoreSetFactory
 from dataset.tasks import create_variants, publish_scoreset, \
-    BaseDatasetTask, delete_instance, BasePublishTask
+    BaseDatasetTask, delete_instance, BasePublishTask, BaseDeleteTask
 
 
 class TestBaseDatasetTask(TestCase):
@@ -204,14 +204,32 @@ class TestDeleteInstance(TestCase):
         self.scoreset = ScoreSetFactory()
         self.user = UserFactory()
 
-    def test_on_failure_sets_status_to_success(self):
+    def test_on_failure_sets_status_to_previous_state(self):
         exp = self.scoreset.parent
         exp.processing_state = constants.processing
         exp.save()
         delete_instance.apply(kwargs=dict(
             urn=self.scoreset.parent.urn, user_pk=self.user.pk, ))
         exp.refresh_from_db()
-        self.assertEqual(exp.processing_state, constants.success)
+        self.assertEqual(exp.processing_state, constants.processing)
+        
+    def test_on_sucess_sets_self_instance_to_none(self):
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        self.assertIsNone(delete_instance.instance)
+    
+    def test_fails_if_deleting_public(self):
+        self.scoreset.private = False
+        self.scoreset.save()
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        self.assertEqual(FailedTask.objects.count(), 1)
+        
+    def test_fails_if_deleting_with_public_urn(self):
+        publish_scoreset(user_pk=self.user.pk, scoreset_urn=self.scoreset.urn)
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        self.assertEqual(FailedTask.objects.count(), 1)
         
     def test_fails_if_deleting_non_scs_parent_with_children(self):
         exp = self.scoreset.parent

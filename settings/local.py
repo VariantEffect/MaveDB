@@ -108,5 +108,17 @@ LOGGING = {
     },
 }
 
-# Celery conifg
-task_always_eager = True
+# ------ CELERY CONFIG ------------------- #
+# Celery needs these in each settings file
+CELERY_TASK_SOFT_TIME_LIMIT = 7 * 24 * 60 * 60  # 7 days
+CELERY_TASK_TIME_LIMIT = CELERY_TASK_SOFT_TIME_LIMIT
+CELERY_BROKER_URL = 'amqp://localhost:5672//'
+CELERY_ACCEPT_CONTENT = ('pickle', 'application/x-python-serialize', 'json')
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_TASK_COMPRESSION = 'gzip'
