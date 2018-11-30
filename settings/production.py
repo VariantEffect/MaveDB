@@ -58,31 +58,31 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'WARNING',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/info.log',
             'formatter': 'verbose'
         },
         'celery': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery.log',
             'formatter': 'verbose'
         },
         'core.tasks': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery_core_tasks.log',
             'formatter': 'verbose'
         },
         'accounts.tasks': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery_accounts_tasks.log',
             'formatter': 'verbose'
         },
         'dataset.tasks': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery_dataset_tasks.log',
             'formatter': 'verbose'
