@@ -110,6 +110,10 @@ class BaseDeleteTask(BaseDatasetTask):
     def run(self, *args, **kwargs):
         return delete_instance(*args, **kwargs)
     
+    def on_success(self, retval, task_id, args, kwargs):
+        self.instance = None
+        return super().on_success(retval, task_id, args, kwargs)
+    
     def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
         retval = super().on_failure(
             exc, task_id, args, kwargs, einfo, user=None)
@@ -117,7 +121,7 @@ class BaseDeleteTask(BaseDatasetTask):
             # Reset to success and not fail. Setting to fail will
             # prevent other actions.
             self.instance.refresh_from_db()
-            self.instance.processing_state = constants.success
+            self.instance.processing_state = self.previous_processing_state
             self.instance.save()
         return retval
     
@@ -188,16 +192,22 @@ def delete_instance(self, user_pk, urn):
     self.urn = urn
     self.instance = None
     self.user = None
+    self.previous_processing_state = None
     
     # Look for instances. This might throw an ObjectDoesNotExist exception.
     # Bind ORM objects if they were found
     self.user = User.objects.get(pk=user_pk)
     self.instance = get_model_by_urn(self.urn)
+    self.previous_processing_state = self.instance.processing_state
     
     if self.instance.children.count() and \
             not isinstance(self.instance, models.scoreset.ScoreSet):
         raise ValueError("{} has children and cannot be deleted.".format(
             self.urn))
+    if (not self.instance.private) or self.instance.has_public_urn:
+        raise ValueError("{} is not private and cannot be deleted.".format(
+            self.urn
+        ))
     with transaction.atomic():
         return delete_instance_util(self.instance)
 
