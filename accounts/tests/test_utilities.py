@@ -179,12 +179,14 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.add_administrators(self.user)
         publish_dataset(scoreset)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
-        
-    def test_sets_status_as_processing(self):
+    
+    @mock.patch('dataset.tasks.publish_scoreset.submit_task', return_value=(True, None))
+    def test_sets_status_as_processing(self, patch):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
         scoreset.refresh_from_db()
+        patch.assert_called()
         self.assertEqual(
             scoreset.processing_state, dataset.constants.processing)
 

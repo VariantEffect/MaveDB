@@ -228,7 +228,7 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
         profile_view(self.make_request())
         patch.assert_called()
 
-    def test_redirects_on_success(self):
+    def test_redirects_on_job_submission(self):
         response = profile_view(self.make_request())
         self.assertEqual(response.status_code, 302)
 
