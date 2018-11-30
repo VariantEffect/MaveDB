@@ -4,6 +4,8 @@ from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase, mock
 
+from mavedb import celery_app
+
 from accounts.factories import UserFactory
 
 from dataset import models as data_models
@@ -17,6 +19,7 @@ from variant.factories import VariantFactory
 from .utilities import authenticate_webdriver, \
     LOG_PATH, STAGING_OR_PROD, ActionMixin
 
+celery_app.conf['task_always_eager'] = False
 
 class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
     
