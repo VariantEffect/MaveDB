@@ -72,14 +72,14 @@ class BaseDatasetTask(BaseTask):
         
 
 class BaseCreateVariantsTask(BaseDatasetTask):
-    description = "create a new entry with urn {urn}."
+    description = "for entry {urn}"
     
     def run(self, *args, **kwargs):
         return create_variants(*args, **kwargs)
   
 
 class BasePublishTask(BaseDatasetTask):
-    description = "publish the entry {urn}."
+    description = "publish the entry {urn}"
     
     def run(self, *args, **kwargs):
         return publish_scoreset(*args, **kwargs)
@@ -105,7 +105,7 @@ class BasePublishTask(BaseDatasetTask):
     
 
 class BaseDeleteTask(BaseDatasetTask):
-    description = "delete the entry {urn}."
+    description = "delete the entry {urn}"
     
     def run(self, *args, **kwargs):
         return delete_instance(*args, **kwargs)
