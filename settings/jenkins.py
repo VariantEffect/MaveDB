@@ -20,17 +20,18 @@ CACHES = {
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
-task_soft_time_limit = 7 * 24 * 60 * 60  # 7 days
-task_time_limit = task_soft_time_limit
-broker_url = 'amqp://localhost:5672//'
-accept_content = ('pickle', 'application/x-python-serialize', 'json')
-task_serializer = 'json'
-result_serializer = 'json'
+CELERY_TASK_SOFT_TIME_LIMIT = 7 * 24 * 60 * 60  # 7 days
+CELERY_TASK_TIME_LIMIT = CELERY_TASK_SOFT_TIME_LIMIT
+CELERY_BROKER_URL = 'amqp://localhost:5672//'
+CELERY_ACCEPT_CONTENT = ('pickle', 'application/x-python-serialize', 'json')
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
-task_ignore_result = True
-worker_hijack_root_logger = False
-task_always_eager = True
-task_create_missing_queues = True
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_TASK_COMPRESSION = 'gzip'
 
 # Celery needs this for autodiscover to work
 INSTALLED_APPS = [
