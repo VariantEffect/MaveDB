@@ -161,11 +161,7 @@ class ManageDatasetUsersView(DatasetPermissionMixin, SessionWizardView):
         list(form_list)[0].process_user_list()
         messages.success(self.request, "Management updated for '{}'.".format(
             self.instance.urn))
-        if self.request.user in self.instance.administrators():
-            return redirect('accounts:manage_instance',
-                            *(self.instance.urn,))
-        else:
-            return redirect('accounts:profile')
+        return redirect('accounts:profile')
  
 
 # Registration views [DEBUG MODE ONLY]
