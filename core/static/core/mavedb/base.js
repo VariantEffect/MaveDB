@@ -199,19 +199,19 @@ $("#id_target").on("change", function() {
   var emptySelect = '---------';
 
   var uniprotSelect = document.getElementById(
-    'select2-id_uniprot-offset-identifier-container');
+    'select2-id_uniprot-identifier-container');
   var uniprotOffsetElem = document.getElementById(
-    "id_uniprot-offset-offset");
+    "id_uniprot-offset");
 
   var refseqSelect = document.getElementById(
-    'select2-id_refseq-offset-identifier-container');
+    'select2-id_refseq-identifier-container');
   var refseqOffsetElem = document.getElementById(
-    "id_refseq-offset-offset");
+    "id_refseq-offset");
 
   var ensemblSelect = document.getElementById(
-    'select2-id_ensembl-offset-identifier-container');
+    'select2-id_ensembl-identifier-container');
   var ensemblOffsetElem = document.getElementById(
-    "id_ensembl-offset-offset");
+    "id_ensembl-offset");
 
   var nameElem = document.getElementById('id_name');
   var seqElem = document.getElementById('id_wt_sequence');
