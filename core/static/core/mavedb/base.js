@@ -228,9 +228,7 @@ $("#id_target").on("change", function() {
       data: {"targetId": id},
       dataType: "json",
       success: function (data) {
-        console.log(data);
-        var i = 0;
-        var options = document.getElementsByTagName('OPTION');
+        // console.log(data);
         var targetName = data.name;
         var wildTypeSequence = data.wt_sequence.sequence;
         var referenceGenome = data.genome;
