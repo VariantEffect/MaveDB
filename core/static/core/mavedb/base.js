@@ -155,14 +155,13 @@ $("#id_experiment").on("change", function() {
   var replaces_selector = "#id_replaces";
   var options = $(replaces_selector).children();
 
-  document.getElementById('select2-id_replaces-container').
-    innerHTML = "---------";
   $(replaces_selector)
       .find('option')
       .remove()
       .end()
       .append('<option value="">---------</option>')
-      .val("");
+      .val("")
+      .trigger('change');
 
   if (parseInt(id)) {
     $.ajax({
