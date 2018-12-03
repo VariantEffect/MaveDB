@@ -299,10 +299,19 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
 
             if uniprot_offset:
                 targetgene.uniprot_id = uniprot_offset.identifier
+            else:
+                targetgene.uniprot_id = None
+                
             if refseq_offset:
                 targetgene.refseq_id = refseq_offset.identifier
+            else:
+                targetgene.refseq_id = None
+                
             if ensembl_offset:
                 targetgene.ensembl_id = ensembl_offset.identifier
+            else:
+                targetgene.ensembl_id = None
+                
             targetgene.save()
 
         # Call celery task after all the above has successfully completed
