@@ -154,6 +154,15 @@ $("#id_experiment").on("change", function() {
   var id = this.value;
   var replaces_selector = "#id_replaces";
   var options = $(replaces_selector).children();
+
+  $(replaces_selector)
+      .find('option')
+      .remove()
+      .end()
+      .append('<option value="">---------</option>')
+      .val("")
+      .trigger('change');
+
   if (parseInt(id)) {
     $.ajax({
       url: window.location.pathname,
@@ -196,26 +205,21 @@ $("#id_target").on("change", function() {
   }
   
   var id = this.value;
-  var emptySelect = '---------';
-
-  var uniprotSelect = document.getElementById(
-    'select2-id_uniprot-offset-identifier-container');
+  var uniprotSelect = $("#id_uniprot-identifier");
   var uniprotOffsetElem = document.getElementById(
-    "id_uniprot-offset-offset");
+    "id_uniprot-offset");
 
-  var refseqSelect = document.getElementById(
-    'select2-id_refseq-offset-identifier-container');
+  var refseqSelect = $("#id_refseq-identifier");
   var refseqOffsetElem = document.getElementById(
-    "id_refseq-offset-offset");
+    "id_refseq-offset");
 
-  var ensemblSelect = document.getElementById(
-    'select2-id_ensembl-offset-identifier-container');
+  var ensemblSelect = $("#id_ensembl-identifier");
   var ensemblOffsetElem = document.getElementById(
-    "id_ensembl-offset-offset");
+    "id_ensembl-offset");
 
   var nameElem = document.getElementById('id_name');
   var seqElem = document.getElementById('id_wt_sequence');
-  var genomeElem = document.getElementById('id_genome');
+  var genomeSelect = $("#id_genome");
 
   if (parseInt(id)) {
     $.ajax({
@@ -225,8 +229,6 @@ $("#id_target").on("change", function() {
       dataType: "json",
       success: function (data) {
         // console.log(data);
-        var i = 0;
-        var options = document.getElementsByTagName('OPTION');
         var targetName = data.name;
         var wildTypeSequence = data.wt_sequence.sequence;
         var referenceGenome = data.genome;
@@ -245,50 +247,32 @@ $("#id_target").on("change", function() {
           ensembl_id = data.ensembl.identifier;
           ensembl_offset = data.ensembl.offset;
         }
-        
+
+        // Change UniProt
         if (uniprot_id) {
-          for(i=0; i<options.length; i++) {
-            if (options[i].value === uniprot_id) {
-              options[i].selected = true;
-              uniprotSelect.innerHTML = uniprot_id;
-              uniprotSelect.title = uniprot_id;
-              uniprotOffsetElem.value = uniprot_offset;
-            }
-          }
+          $(uniprotSelect).val(uniprot_id).trigger('change');
+          $(uniprotOffsetElem).val(uniprot_offset);
         } else {
-          uniprotSelect.innerHTML = emptySelect;
-          uniprotSelect.title = emptySelect;
-          uniprotOffsetElem.value = 0;
+          $(uniprotSelect).val("").trigger('change');
+          $(uniprotOffsetElem).val(0);
         }
 
+        // Change RefSeq
         if (refseq_id) {
-          for(i=0; i<options.length; i++) {
-            if (options[i].value === refseq_id) {
-              options[i].selected = true;
-              refseqSelect.innerHTML = refseq_id;
-              refseqSelect.title = refseq_id;
-              refseqOffsetElem.value = refseq_offset;
-            }
-          }
+          $(refseqSelect).val(refseq_id).trigger('change');
+          $(refseqOffsetElem).val(refseq_offset);
         } else {
-          refseqSelect.innerHTML = emptySelect;
-          refseqSelect.title = emptySelect;
-          refseqOffsetElem.value = 0;
+          $(refseqSelect).val("").trigger('change');
+          $(refseqOffsetElem).val(0);
         }
 
+        // Change ensembl
         if (ensembl_id) {
-          for(i=0; i<options.length; i++) {
-            if (options[i].value === ensembl_id) {
-              options[i].selected = true;
-              ensemblSelect.innerHTML = ensembl_id;
-              ensemblSelect.title = ensembl_id;
-              ensemblOffsetElem.value = ensembl_offset;
-            }
-          }
+          $(ensemblSelect).val(ensembl_id).trigger('change');
+          $(ensemblOffsetElem).val(ensembl_offset);
         } else {
-          ensemblSelect.innerHTML = emptySelect;
-          ensemblSelect.title = emptySelect;
-          ensemblOffsetElem.value = 0;
+          $(ensemblSelect).val("").trigger('change');
+          $(ensemblOffsetElem).val(0);
         }
 
         if (targetName) {
@@ -302,9 +286,9 @@ $("#id_target").on("change", function() {
           seqElem.value = ""
         }
         if (referenceGenome) {
-          genomeElem.value = referenceGenome;
+          $(genomeSelect).val(referenceGenome).trigger('change');
         } else {
-          genomeElem.value = "";
+          $(genomeSelect).val("").trigger('change');
         }
        },
       error: function (xhr, errmsg, err) {
@@ -315,19 +299,16 @@ $("#id_target").on("change", function() {
   } else {
     nameElem.value = "";
     seqElem.value = "";
-    genomeElem.value = "";
+    $(genomeSelect).val("").trigger('change');
 
-    ensemblSelect.innerHTML = emptySelect;
-    ensemblSelect.title = emptySelect;
-    ensemblOffsetElem.value = 0;
+    $(uniprotSelect).val("").trigger('change');
+    $(uniprotOffsetElem).val(0);
 
-    refseqSelect.innerHTML = emptySelect;
-    refseqSelect.title = emptySelect;
-    refseqOffsetElem.value = 0;
+    $(ensemblSelect).val("").trigger('change');
+    $(ensemblOffsetElem).val(0);
 
-    uniprotSelect.innerHTML = emptySelect;
-    uniprotSelect.title = emptySelect;
-    uniprotOffsetElem.value = 0;
+    $(refseqSelect).val("").trigger('change');
+    $(refseqOffsetElem).val(0);
   }
   return false;
 });
@@ -340,7 +321,7 @@ $("#generate-auth-token").on("click", function() {
     dataType: "json",
     success: function (data) {
       $("#auth-token-area").val(data.token);
-      // console.log(data.expiry);
+      console.log(data.expiry);
     },
     error: function (xhr, errmsg, err) {
       console.log(xhr.status + ": " + xhr + errmsg + err);
