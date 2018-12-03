@@ -50,9 +50,24 @@
         "organism_name": "Homo sapiens"
     },
     {
-        "assembly_identifier": null,
-        "short_name": "Other",
-        "organism_name": "Other - genome not listed"
+        "assembly_identifier": {
+            "dbname": "GenomeAssembly",
+            "dbversion": null,
+            "identifier": "GCF_000001635.18",
+            "url": "https://www.ncbi.nlm.nih.gov/assembly/GCF_000001635.18"
+        },
+        "short_name": "mm9",
+        "organism_name": "Mus musculus"
+    },
+    {
+        "assembly_identifier": {
+            "dbname": "GenomeAssembly",
+            "dbversion": null,
+            "identifier": "GCF_000001635.20",
+            "url": "https://www.ncbi.nlm.nih.gov/assembly/GCF_000001635.20"
+        },
+        "short_name": "mm10",
+        "organism_name": "Mus musculus"
     },
     {
         "assembly_identifier": {
@@ -63,6 +78,11 @@
         },
         "short_name": "sacCer3/R64",
         "organism_name": "Saccharomyces cerevisiae"
+    },
+    {
+        "assembly_identifier": null,
+        "short_name": "Other",
+        "organism_name": "Other - genome not listed"
     },
     {
         "assembly_identifier": null,

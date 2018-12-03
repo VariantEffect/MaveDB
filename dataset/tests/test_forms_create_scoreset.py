@@ -528,3 +528,47 @@ class TestScoreSetForm(TestCase):
         self.assertEqual(instance.parent.pk, data['experiment'])
         self.assertEqual(instance.get_title(), data['title'])
         self.assertEqual(instance.get_description(), data['short_description'])
+    
+    def test_has_variants_returns_true_when_files_uploaded(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
+        self.assertTrue(form.has_variants())
+
+    def test_form_has_variants_is_false_when_no_files_uploaded_and_scoreset_has_variants(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        for _ in range(5):
+            VariantFactory(scoreset=instance)
+
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, user=self.user, instance=instance)
+        
+        self.assertTrue(form.is_valid())
+        self.assertFalse(form.has_variants())
+
+    def test_invalid_form_no_variants_on_existing_scoreset_and_no_files_uploaded(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, user=self.user, instance=instance)
+        
+        self.assertFalse(form.is_valid())
+        self.assertFalse(form.has_variants())
+        
+    def test_valid_form_variants_on_existing_scoreset_and_no_files_uploaded(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        for _ in range(5):
+            VariantFactory(scoreset=instance)
+            
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, user=self.user, instance=instance)
+        
+        self.assertTrue(form.is_valid())
+        self.assertFalse(form.has_variants())

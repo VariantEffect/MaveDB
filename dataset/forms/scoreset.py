@@ -397,7 +397,7 @@ class ScoreSetForm(DatasetModelForm):
         return scores_df, counts_df, index
         
     def has_variants(self):
-        return self.cleaned_data.get('variants')['scores_df'] is not None
+        return bool(self.cleaned_data.get('variants', {}))
 
     def set_initial_keywords(self):
         if self.experiment is not None and self.instance.pk is None:

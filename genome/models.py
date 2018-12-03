@@ -34,7 +34,7 @@ class TargetGene(TimeStampedModel):
         The name of the target gene.
     """
     class Meta:
-        ordering = ['name']
+        ordering = ('name',)
         verbose_name = "Target Gene"
         verbose_name_plural = "Target Genes"
 
@@ -289,7 +289,7 @@ class ReferenceGenome(TimeStampedModel):
         A :class:`RefseqIdentifier` instance to relating to this genome.
     """
     class Meta:
-        ordering = ['short_name']
+        ordering = ('id',)
         verbose_name = 'Reference Genome'
         verbose_name_plural = 'Reference Genomes'
 
@@ -323,7 +323,7 @@ class ReferenceGenome(TimeStampedModel):
         verbose_name='Genome assembly identifier',
         related_name='associated_%(class)ss',
     )
-
+    
     def get_identifier_url(self):
         id_ = self.get_identifier_instance()
         if id_ is not None:

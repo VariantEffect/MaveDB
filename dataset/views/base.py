@@ -115,8 +115,8 @@ class DatasetModelFormView(DatasetFormViewContextMixin,
             )
             messages.error(
                 self.request,
-                "There was a server side error while saving your submission "
-                "Try again or contact us if this issue persists."
+                "There was a server side error while saving your submission. "
+                "Please contact support if this issue persists."
             )
             return self.form_invalid(forms)
 
