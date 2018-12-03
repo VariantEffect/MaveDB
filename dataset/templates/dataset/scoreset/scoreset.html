@@ -45,8 +45,10 @@
       <a target="_blank" href="{{ instance.get_target.uniprot_id.url }}">
         {{ instance.get_target.uniprot_id.identifier }}
       </a>
-      <i class="external-link fas fa-external-link-alt"></i>
-      with offset {{ instance.get_target.get_uniprot_offset_annotation.offset }}
+      {% if instance.get_target.get_uniprot_offset_annotation.offset %}
+        <i class="external-link fas fa-external-link-alt"></i>
+        with offset {{ instance.get_target.get_uniprot_offset_annotation.offset }}
+      {% endif %}
     {% else %}
         Not associated
     {% endif %}
@@ -57,8 +59,10 @@
       <a target="_blank" href="{{ instance.get_target.refseq_id.url }}">
         {{ instance.get_target.refseq_id.identifier }}
       </a>
-      <i class="external-link fas fa-external-link-alt"></i>
-      with offset {{ instance.get_target.get_refseq_offset_annotation.offset }}
+      {% if instance.get_target.get_refseq_offset_annotation.offset %}
+        <i class="external-link fas fa-external-link-alt"></i>
+        with offset {{ instance.get_target.get_refseq_offset_annotation.offset }}
+      {% endif %}
     {% else %}
         Not associated
     {% endif %}
@@ -69,8 +73,10 @@
       <a target="_blank" href="{{ instance.get_target.ensembl_id.url }}">
         {{ instance.get_target.ensembl_id.identifier }}
       </a>
-      <i class="external-link fas fa-external-link-alt"></i>
-      with offset {{ instance.get_target.get_ensembl_offset_annotation.offset }}
+      {% if instance.get_target.get_ensembl_offset_annotation.offset %}
+        <i class="external-link fas fa-external-link-alt"></i>
+        with offset {{ instance.get_target.get_ensembl_offset_annotation.offset }}
+      {% endif %}
     {% else %}
         Not associated
     {% endif %}
