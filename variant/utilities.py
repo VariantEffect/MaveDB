@@ -6,6 +6,8 @@ from hgvsp import protein, dna, rna
 
 from core.utilities import is_null
 
+from .constants import wildtype, synonymous
+
 
 def split_variant(variant):
     """
@@ -24,9 +26,44 @@ def split_variant(variant):
     """
     prefix = variant[0]
     if len(variant.split(';')) > 1:
-        return ['{}.{}'.format(prefix, e.strip())
+        return prefix, ['{}.{}'.format(prefix, e.strip())
                 for e in variant[3:-1].split(';')]
-    return [variant]
+    return prefix, [variant]
+
+
+def join_variants(variants, prefix):
+    """
+    Joins a list of single variant events into a multi-variant HGVS string.
+
+    Parameters
+    ----------
+    variants : union[str, list[str]]
+        A list of valid single or multi-variant `HGVS` string.
+    prefix : str
+        HGVS prefix.
+
+    Returns
+    -------
+    str
+    """
+    if isinstance(variants, str):
+        return variants
+    
+    if len(variants) == 1 and variants[0] in (wildtype, synonymous):
+        return variants[0]
+    
+    if len(variants) == 1:
+        return '{}.{}'.format(
+            prefix,
+            variants[0].replace('{}.'.format(prefix), '')
+        )
+    elif len(variants) > 1:
+        return '{}.[{}]'.format(
+            prefix,
+            ';'.join([v.replace('{}.'.format(prefix), '') for v in variants])
+        )
+    else:
+        return None
 
 
 def format_variant(variant):
@@ -43,22 +80,32 @@ def format_variant(variant):
     -------
     str
     """
-    if variant is None:
-        return variant
-    if protein.substitution_re.fullmatch(variant):
-        variant = variant.replace('???', '?')
-    elif dna.substitution_re.fullmatch(variant) or \
-            dna.deletion_re.fullmatch(variant) or \
-            dna.insertion_re.fullmatch(variant) or \
-            dna.delins_re.fullmatch(variant):
-        variant = variant.replace('X', 'N')
-    elif rna.substitution_re.fullmatch(variant) or \
-            dna.deletion_re.fullmatch(variant) or \
-            dna.insertion_re.fullmatch(variant) or \
-            dna.delins_re.fullmatch(variant):
-        variant = variant.replace('x', 'n')
-    return variant.strip()
+    if is_null(variant):
+        return None
+    events = []
+    variant = variant.strip()
+    prefix, variants = split_variant(variant)
+    for v in variants:
+        v = v.strip()
+        if protein.substitution_re.fullmatch(v):
+            v = v.replace('???', '?')
 
+        elif dna.substitution_re.fullmatch(v) or \
+                dna.deletion_re.fullmatch(v) or \
+                dna.insertion_re.fullmatch(v) or \
+                dna.delins_re.fullmatch(v):
+            v = v.replace('X', 'N')
+
+        elif rna.substitution_re.fullmatch(v) or \
+                rna.deletion_re.fullmatch(v) or \
+                rna.insertion_re.fullmatch(v) or \
+                rna.delins_re.fullmatch(v):
+            v = v.replace('x', 'n')
+
+        events.append(v.strip())
+
+    return join_variants(events, prefix)
+    
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
     """
