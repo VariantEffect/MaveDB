@@ -9,6 +9,43 @@ from dataset import constants
 from .. import utilities
 
 
+class TestSplitVariant(TestCase):
+    def test_split_hgvs_singular_list_non_multi_variant(self):
+        self.assertListEqual(
+            ['c.100A>G'], utilities.split_variant('c.100A>G'))
+
+    def test_split_hgvs_returns_list_of_single_variants(self):
+        self.assertListEqual(
+            ['c.100A>G', 'c.101A>G'],
+            utilities.split_variant('c.[100A>G;101A>G]')
+        )
+
+
+class TestFormatVariant(TestCase):
+    def test_strips_white_space(self):
+        self.assertEqual(utilities.format_variant(' c.1A>G '), 'c.1A>G')
+        
+    def test_passes_on_special(self):
+        self.assertEqual(utilities.format_variant('_wt'), '_wt')
+        self.assertEqual(utilities.format_variant('_sy'), '_sy')
+    
+    def test_passes_on_none(self):
+        self.assertIsNone(utilities.format_variant(None))
+    
+    def test_replaces_triple_q_with_single_q_in_protein_variant(self):
+        self.assertEqual(utilities.format_variant('p.G4???'), 'p.G4?')
+    
+    def test_replaces_X_with_N_in_dna_variant(self):
+        for p in 'cgnm':
+            self.assertEqual(
+                utilities.format_variant(
+                    '{}.100A>X'.format(p)), '{}.100A>N'.format(p)
+            )
+    
+    def test_replaces_X_with_N_in_rna_variant(self):
+        self.assertEqual(utilities.format_variant('r.100a>x'), 'r.100a>n')
+
+
 class TestCreateVariantAttrsUtility(TestCase):
     @staticmethod
     def fixture_data(nt_score=('c.1A>G', 'c.2A>G'),

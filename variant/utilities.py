@@ -2,7 +2,62 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_index_equal
 
+from hgvsp import protein, dna, rna
+
 from core.utilities import is_null
+
+
+def split_variant(variant):
+    """
+    Splits a multi-variant `HGVS` string into a list of single variants. If
+    a single variant string is provided, it is returned as a singular `list`.
+
+    Parameters
+    ----------
+    variant : str
+        A valid single or multi-variant `HGVS` string.
+
+    Returns
+    -------
+    list[str]
+        A list of single `HGVS` strings.
+    """
+    prefix = variant[0]
+    if len(variant.split(';')) > 1:
+        return ['{}.{}'.format(prefix, e.strip())
+                for e in variant[3:-1].split(';')]
+    return [variant]
+
+
+def format_variant(variant):
+    """
+    Replaces `???` for `?` in protein variants and `X` for `N` in
+    nucleotide variants to be compliant with the `hgvs` biocommons package.
+
+    Parameters
+    ----------
+    variant : str, optional.
+        HGVS_ formatted string.
+
+    Returns
+    -------
+    str
+    """
+    if variant is None:
+        return variant
+    if protein.substitution_re.fullmatch(variant):
+        variant = variant.replace('???', '?')
+    elif dna.substitution_re.fullmatch(variant) or \
+            dna.deletion_re.fullmatch(variant) or \
+            dna.insertion_re.fullmatch(variant) or \
+            dna.delins_re.fullmatch(variant):
+        variant = variant.replace('X', 'N')
+    elif rna.substitution_re.fullmatch(variant) or \
+            dna.deletion_re.fullmatch(variant) or \
+            dna.insertion_re.fullmatch(variant) or \
+            dna.delins_re.fullmatch(variant):
+        variant = variant.replace('x', 'n')
+    return variant.strip()
 
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
