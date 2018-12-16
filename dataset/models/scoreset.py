@@ -185,7 +185,11 @@ class ScoreSet(DatasetModel):
         if self.licence is None:
             self.licence = Licence.get_default()
         return super().save(*args, **kwargs)
-    
+
+    @classmethod
+    def tracked_fields(cls):
+        return super().tracked_fields() + ('licence', )
+
     # Variant related methods
     # ---------------------------------------------------------------------- #
     @property
@@ -374,7 +378,6 @@ class ScoreSet(DatasetModel):
             'current_version', 'current_public_version', user)
         
     
-
 # --------------------------------------------------------------------------- #
 #                               Post Save
 # --------------------------------------------------------------------------- #
