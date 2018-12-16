@@ -1,8 +1,111 @@
 import pandas as pd
+import numpy as np
 from pandas.testing import assert_index_equal
+
+from hgvsp import protein, dna, rna
 
 from core.utilities import is_null
 
+from .constants import wildtype, synonymous
+
+
+def split_variant(variant):
+    """
+    Splits a multi-variant `HGVS` string into a list of single variants. If
+    a single variant string is provided, it is returned as a singular `list`.
+
+    Parameters
+    ----------
+    variant : str
+        A valid single or multi-variant `HGVS` string.
+
+    Returns
+    -------
+    list[str]
+        A list of single `HGVS` strings.
+    """
+    prefix = variant[0]
+    if len(variant.split(';')) > 1:
+        return prefix, ['{}.{}'.format(prefix, e.strip())
+                for e in variant[3:-1].split(';')]
+    return prefix, [variant]
+
+
+def join_variants(variants, prefix):
+    """
+    Joins a list of single variant events into a multi-variant HGVS string.
+
+    Parameters
+    ----------
+    variants : union[str, list[str]]
+        A list of valid single or multi-variant `HGVS` string.
+    prefix : str
+        HGVS prefix.
+
+    Returns
+    -------
+    str
+    """
+    if isinstance(variants, str):
+        return variants
+    
+    if len(variants) == 1 and variants[0] in (wildtype, synonymous):
+        return variants[0]
+    
+    if len(variants) == 1:
+        return '{}.{}'.format(
+            prefix,
+            variants[0].replace('{}.'.format(prefix), '')
+        )
+    elif len(variants) > 1:
+        return '{}.[{}]'.format(
+            prefix,
+            ';'.join([v.replace('{}.'.format(prefix), '') for v in variants])
+        )
+    else:
+        return None
+
+
+def format_variant(variant):
+    """
+    Replaces `???` for `?` in protein variants and `X` for `N` in
+    nucleotide variants to be compliant with the `hgvs` biocommons package.
+
+    Parameters
+    ----------
+    variant : str, optional.
+        HGVS_ formatted string.
+
+    Returns
+    -------
+    str
+    """
+    if is_null(variant):
+        return None
+    events = []
+    variant = variant.strip()
+    prefix, variants = split_variant(variant)
+    for v in variants:
+        v = v.strip()
+        if protein.substitution_re.fullmatch(v):
+            v = v.replace('???', '?')
+
+        elif dna.substitution_re.fullmatch(v) or \
+                dna.deletion_re.fullmatch(v) or \
+                dna.insertion_re.fullmatch(v) or \
+                dna.delins_re.fullmatch(v):
+            v = v.replace('X', 'N')
+
+        elif rna.substitution_re.fullmatch(v) or \
+                rna.deletion_re.fullmatch(v) or \
+                rna.insertion_re.fullmatch(v) or \
+                rna.delins_re.fullmatch(v):
+            v = v.replace('x', 'n')
+
+        events.append(v.strip())
+
+    return join_variants(events, prefix)
+    
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
     """
@@ -75,17 +178,21 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
         for (sr, cr) in zip(score_records, count_records):
             hgvs_nt = sr.pop(hgvs_nt_column)
             hgvs_pro = sr.pop(hgvs_pro_column)
+            if is_null(hgvs_nt) or hgvs_nt is np.NaN or hgvs_nt == 'nan':
+                hgvs_nt = None
+            if is_null(hgvs_pro) or hgvs_pro is np.NaN or hgvs_pro == 'nan':
+                hgvs_pro = None
             cr.pop(hgvs_nt_column)
             cr.pop(hgvs_pro_column)
 
             # Postgres JSON field cannot store np.NaN values so convert
             # any np.NaN to None.
             for key, value in sr.items():
-                if is_null(value):
+                if is_null(value) or value is np.NaN:
                     sr[key] = None
             if cr:
                 for key, value in cr.items():
-                    if is_null(value):
+                    if is_null(value) or value is np.NaN:
                         cr[key] = None
 
             data = {

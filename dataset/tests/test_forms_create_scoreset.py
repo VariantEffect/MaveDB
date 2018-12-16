@@ -1,3 +1,5 @@
+import pandas as pd
+
 from django.test import TestCase, RequestFactory
 from accounts.factories import UserFactory
 
@@ -334,6 +336,33 @@ class TestScoreSetForm(TestCase):
         self.assertEqual(ErrorMessages.ScoreData.no_variants,
                       form.errors['score_data'][0])
         
+    def test_serialize_variants_returns_empty_frames_and_index(self):
+        form = ScoreSetForm(data={}, user=self.user)
+        form.is_valid()
+        sdf, cdf, index = form.serialize_variants()
+        self.assertTrue(sdf.empty)
+        self.assertTrue(cdf.empty)
+        self.assertIsNone(index)
+        
+    def test_serialize_variants_returns_dfs_and_scores_primary_hgvs(self):
+        scs = ScoreSetFactory()
+        data, files = self.make_post_data(count_data=True)
+        data['experiment'] = scs.experiment.pk
+        scs.experiment.add_administrators(self.user)
+        scs.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, files=files, user=self.user, instance=scs)
+        self.assertTrue(form.is_valid())
+        
+        sdf, cdf, index = form.serialize_variants()
+        self.assertIsInstance(sdf, pd.DataFrame)
+        self.assertEqual(len(sdf), 1)
+        
+        self.assertIsInstance(cdf, pd.DataFrame)
+        self.assertEqual(len(cdf), 1)
+        
+        self.assertEqual(index, constants.hgvs_nt_column)
+        
     def test_new_scores_resets_dataset_columns(self):
         scs = ScoreSetFactory()
         for i in range(5):
@@ -349,8 +378,6 @@ class TestScoreSetForm(TestCase):
         self.assertTrue(form.is_valid())
 
         form.save(commit=True)
-
-        self.assertTrue(len(form.serialize_variants()), 1)
         self.assertEqual(
             sorted(form.dataset_columns[constants.score_columns]),
             sorted(['score', 'se'])
@@ -501,3 +528,47 @@ class TestScoreSetForm(TestCase):
         self.assertEqual(instance.parent.pk, data['experiment'])
         self.assertEqual(instance.get_title(), data['title'])
         self.assertEqual(instance.get_description(), data['short_description'])
+    
+    def test_has_variants_returns_true_when_files_uploaded(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
+        self.assertTrue(form.has_variants())
+
+    def test_form_has_variants_is_false_when_no_files_uploaded_and_scoreset_has_variants(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        for _ in range(5):
+            VariantFactory(scoreset=instance)
+
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, user=self.user, instance=instance)
+        
+        self.assertTrue(form.is_valid())
+        self.assertFalse(form.has_variants())
+
+    def test_invalid_form_no_variants_on_existing_scoreset_and_no_files_uploaded(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, user=self.user, instance=instance)
+        
+        self.assertFalse(form.is_valid())
+        self.assertFalse(form.has_variants())
+        
+    def test_valid_form_variants_on_existing_scoreset_and_no_files_uploaded(self):
+        data, files = self.make_post_data()
+        instance = ScoreSetFactory()
+        for _ in range(5):
+            VariantFactory(scoreset=instance)
+            
+        instance.parent.add_administrators(self.user)
+        form = ScoreSetForm(
+            data=data, user=self.user, instance=instance)
+        
+        self.assertTrue(form.is_valid())
+        self.assertFalse(form.has_variants())

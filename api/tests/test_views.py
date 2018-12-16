@@ -108,15 +108,6 @@ class TestAuthenticatedViewSet(TestCase):
     def test_dispatch_calls_authenticate(self, patch):
         self.client.get('/api/experimentsets/')
         patch.assert_called()
-
-    @mock.patch.object(views.AuthenticatedViewSet, 'auth_token', return_value=None)
-    @mock.patch.object(views.AuthenticatedViewSet, 'user', return_value=None)
-    @mock.patch.object(views.AuthenticatedViewSet, 'get_serializer_context', return_value=dict())
-    def test_get_context_adds_in_user_and_auth_token(self, p1, p2, p3):
-        self.client.get('/api/experimentsets/')
-        p1.assert_called()
-        self.assertIsNone(p2.return_value)
-        self.assertIsNone(p3.return_value)
         
 
 class TestDatasetListViewSet(TestCase):

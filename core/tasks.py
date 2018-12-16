@@ -4,7 +4,8 @@ import time
 
 from kombu.exceptions import (
     OperationalError, ConnectionLimitExceeded, ConnectionError,
-    LimitExceeded,
+    LimitExceeded, KombuError, ContentDisallowed, SerializationError,
+    DecodeError, EncodeError
 )
 
 from celery.utils.log import get_task_logger
@@ -34,7 +35,8 @@ network_message = (
 )
 kombu_errors = (
     OperationalError, ConnectionLimitExceeded, ConnectionError,
-    LimitExceeded,
+    LimitExceeded, KombuError, ContentDisallowed, SerializationError,
+    DecodeError, EncodeError
 )
 
 

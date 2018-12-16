@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from django.test import TestCase, mock
 
@@ -13,7 +14,7 @@ from dataset import constants
 from dataset.models.scoreset import default_dataset, ScoreSet
 from dataset.factories import ScoreSetFactory
 from dataset.tasks import create_variants, publish_scoreset, \
-    BaseDatasetTask, delete_instance
+    BaseDatasetTask, delete_instance, BasePublishTask, BaseDeleteTask
 
 
 class TestBaseDatasetTask(TestCase):
@@ -119,6 +120,16 @@ class TestCreateVariantsTask(TestCase):
         mock_kwargs.update(**kwargs)
         return mock_kwargs
 
+    def test_converts_nan_hgvs_to_none(self):
+        self.index = constants.hgvs_pro_column
+        self.df_scores[constants.hgvs_nt_column] = np.NaN
+        self.df_counts[constants.hgvs_nt_column] = np.NaN
+
+        self.scoreset.dataset_columns = default_dataset()
+        create_variants.run(**self.mock_kwargs())
+        self.scoreset.refresh_from_db()
+        self.assertIsNone(self.scoreset.variants.first().hgvs_nt)
+
     def test_create_variants_resets_dataset_columns(self):
         self.scoreset.dataset_columns = default_dataset()
         create_variants.apply(kwargs=self.mock_kwargs())
@@ -137,7 +148,33 @@ class TestPublishScoresetTask(TestCase):
             scoreset_urn=self.scoreset.urn,
             user_pk=self.user.pk,
         )
-
+    
+    def test_resets_public_to_false_if_failed(self):
+        self.scoreset.private = False
+        experiment = self.scoreset.parent
+        experiment.private = False
+        experimentset = self.scoreset.parent.parent
+        experimentset.private = False
+       
+        experimentset.save()
+        experiment.save()
+        self.scoreset.save()
+        
+        base = BasePublishTask()
+        base.instance = self.scoreset
+        base.user = self.user
+        base.urn = self.scoreset.urn
+        base.description = 'do the thing {urn}'
+    
+        base.on_failure(
+            exc=Exception("Test"), task_id='1', args=[],
+            einfo=None, kwargs={}
+        )
+        scoreset = ScoreSet.objects.first()
+        self.assertTrue(scoreset.private)
+        self.assertTrue(scoreset.parent.private)
+        self.assertTrue(scoreset.parent.parent.private)
+        
     def test_propagates_modified(self):
         publish_scoreset.apply(kwargs=self.mock_kwargs())
         scoreset = ScoreSet.objects.first()
@@ -167,14 +204,32 @@ class TestDeleteInstance(TestCase):
         self.scoreset = ScoreSetFactory()
         self.user = UserFactory()
 
-    def test_on_failure_sets_status_to_success(self):
+    def test_on_failure_sets_status_to_previous_state(self):
         exp = self.scoreset.parent
         exp.processing_state = constants.processing
         exp.save()
         delete_instance.apply(kwargs=dict(
             urn=self.scoreset.parent.urn, user_pk=self.user.pk, ))
         exp.refresh_from_db()
-        self.assertEqual(exp.processing_state, constants.success)
+        self.assertEqual(exp.processing_state, constants.processing)
+        
+    def test_on_sucess_sets_self_instance_to_none(self):
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        self.assertIsNone(delete_instance.instance)
+    
+    def test_fails_if_deleting_public(self):
+        self.scoreset.private = False
+        self.scoreset.save()
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        self.assertEqual(FailedTask.objects.count(), 1)
+        
+    def test_fails_if_deleting_with_public_urn(self):
+        publish_scoreset(user_pk=self.user.pk, scoreset_urn=self.scoreset.urn)
+        delete_instance.apply(kwargs=dict(
+            urn=self.scoreset.urn, user_pk=self.user.pk, ))
+        self.assertEqual(FailedTask.objects.count(), 1)
         
     def test_fails_if_deleting_non_scs_parent_with_children(self):
         exp = self.scoreset.parent

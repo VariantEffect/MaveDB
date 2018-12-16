@@ -302,12 +302,13 @@ class ReferenceMapForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.field_order = ('is_primary', 'genome',)
         super().__init__(*args, **kwargs)
+        genomes = ReferenceGenome.objects.all()
         genome_field = self.fields['genome']
         genome_field.requried = True
-        genome_field.queryset = ReferenceGenome.objects.all()
+        genome_field.queryset = genomes
         genome_field.choices = \
             [("", genome_field.empty_label)] + [
-                (r.pk, r.display_name()) for r in ReferenceGenome.objects.all()
+                (r.pk, r.display_name()) for r in genomes
             ]
         genome_field.initial = ""
         for field in ('genome', ):

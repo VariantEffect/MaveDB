@@ -36,7 +36,7 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
         identifier_field = self.fields.pop("identifier")
         self.fields["identifier"] = identifier_field
         self.fields["offset"] = offset_field
-        self.fields["offset"].label = "Wild-type offset (bases)"
+        self.fields["offset"].label = "Wild-type offset"
 
         instance = kwargs.get('instance', None)
         if hasattr(instance, 'pk') and instance.pk is not None:

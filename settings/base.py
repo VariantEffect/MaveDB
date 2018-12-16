@@ -185,12 +185,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
 
-# Optional SMTP authentication information for EMAIL_HOST
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
-
 # Reply-to email for user emails
 # REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')
 REPLY_TO_EMAIL = "alan.rubin@wehi.edu.au"
@@ -208,17 +202,3 @@ REST_FRAMEWORK = {
         'user': '10000/day'
     },
 }
-
-# ------ CELERY CONFIG ------------------- #
-# Celery needs these in each settings file
-DATASET_TASK_SOFT_TIME_LIMIT = 12 * 60 * 60  # 12 hours
-broker_url = 'amqp://localhost:5672//'
-accept_content = ('json',)
-result_serializer = 'json'
-
-task_ignore_result = True
-task_serializer = 'json'
-worker_hijack_root_logger = False
-task_soft_time_limit = 60  # seconds
-task_always_eager = False
-task_create_missing_queues = True

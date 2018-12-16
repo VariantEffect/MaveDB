@@ -277,6 +277,44 @@ class TestVariantRowValidator(TestCase):
         non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
         self.assertEqual(df[constants.hgvs_nt_column].values[0], wt)
         self.assertEqual(df[constants.hgvs_pro_column].values[0], sy)
+        
+    def test_converts_triple_q_to_single_q_in_protein_sub(self):
+        data = "{},{}\n{},1.0".format(
+            constants.hgvs_pro_column,
+            required_score_column, 'p.Gly4???'
+        )
+        non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
+        self.assertEqual(df[constants.hgvs_nt_column].values[0], None)
+        self.assertEqual(df[constants.hgvs_pro_column].values[0], 'p.Gly4?')
+        
+    def test_converts_triple_x_to_single_n_rna_dna(self):
+        data = "{},{}\n{},1.0\n{},2.0".format(
+            constants.hgvs_nt_column,
+            required_score_column, 'c.1A>X', 'r.1a>x'
+        )
+        non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
+        self.assertEqual(df[constants.hgvs_nt_column].values[0], 'c.1A>N')
+        self.assertEqual(df[constants.hgvs_nt_column].values[1], 'r.1a>n')
+        
+    def test_converts_triple_q_to_single_q_in_protein_multi_sub(self):
+        data = "{},{}\n{},1.0".format(
+            constants.hgvs_pro_column,
+            required_score_column, 'p.[Gly4???;Asp2???]'
+        )
+        non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
+        self.assertEqual(df[constants.hgvs_nt_column].values[0], None)
+        self.assertEqual(df[constants.hgvs_pro_column].values[0], 'p.[Gly4?;Asp2?]')
+        
+    def test_converts_triple_x_to_single_n_in_multi_rna_dna(self):
+        data = "{},{}\n{},1.0\n{},2.0".format(
+            constants.hgvs_nt_column,
+            required_score_column,
+            'n.[1A>X;1_2delinsXXX]',
+            'r.[1a>x;1_2insxxx]'
+        )
+        non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
+        self.assertEqual(df[constants.hgvs_nt_column].values[0], 'n.[1A>N;1_2delinsNNN]')
+        self.assertEqual(df[constants.hgvs_nt_column].values[1], 'r.[1a>n;1_2insnnn]')
 
     def test_parses_numeric_column_values_into_float(self):
         hgvs = generate_hgvs()

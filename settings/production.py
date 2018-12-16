@@ -9,7 +9,7 @@ USE_SOCIAL_AUTH = True
 
 os.environ.setdefault('PYPANDOC_PANDOC', '/usr/local/bin/pandoc')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'www.mavedb.org', 'mavedb.org',]
 
 
 # Email these users whenever an exception is raised causing a 500 error.
@@ -58,31 +58,31 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'WARNING',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/info.log',
             'formatter': 'verbose'
         },
         'celery': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery.log',
             'formatter': 'verbose'
         },
         'core.tasks': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery_core_tasks.log',
             'formatter': 'verbose'
         },
         'accounts.tasks': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery_accounts_tasks.log',
             'formatter': 'verbose'
         },
         'dataset.tasks': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/data/mavedb_project/mavedb/celery_dataset_tasks.log',
             'formatter': 'verbose'
@@ -91,27 +91,27 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': True
         },
         'celery': {
             'handlers': ['celery'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': True
         },
         'core.tasks': {
             'handlers': ['core.tasks'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': True
         },
         'accounts.tasks': {
             'handlers': ['accounts.tasks'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': True
         },
         'dataset.tasks': {
             'handlers': ['dataset.tasks'],
-            'level': 'ERROR',
+            'level': 'INFO',
             'propagate': True
         },
     },
@@ -124,17 +124,18 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # ------ CELERY CONFIG ------------------- #
 # Celery needs these in each settings file
-DATASET_TASK_SOFT_TIME_LIMIT =  12 * 60 * 60  # 12 hours in seconds
-broker_url = 'amqp://localhost:5672//'
-accept_content = ('json',)
-result_serializer = 'json'
+CELERY_TASK_SOFT_TIME_LIMIT = 7 * 24 * 60 * 60  # 7 days
+CELERY_TASK_TIME_LIMIT = CELERY_TASK_SOFT_TIME_LIMIT
+CELERY_BROKER_URL = 'amqp://localhost:5672//'
+CELERY_ACCEPT_CONTENT = ('pickle', 'application/x-python-serialize', 'json')
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
-task_ignore_result = True
-task_serializer = 'json'
-worker_hijack_root_logger = False
-task_soft_time_limit = 60  # seconds
-task_always_eager = False
-task_create_missing_queues = True
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_TASK_COMPRESSION = 'gzip'
 
 # Celery needs this for autodiscover to work
 INSTALLED_APPS = [

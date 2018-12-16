@@ -2,6 +2,7 @@ import io
 import csv
 
 import numpy as np
+from numpy.testing import assert_array_equal
 
 from django.utils.translation import ugettext
 from django.core.exceptions import ValidationError
@@ -95,15 +96,14 @@ def validate_datasets_define_same_variants(scores, counts):
         Scores dataframe parsed from an uploaded counts file.
     """
     try:
-        nt_equal = np.all(
-            scores[constants.hgvs_nt_column].sort_values().values == \
+        assert_array_equal(
+            scores[constants.hgvs_nt_column].sort_values().values,
             counts[constants.hgvs_nt_column].sort_values().values
         )
-        pro_equal = np.all(
-            scores[constants.hgvs_pro_column].sort_values().values == \
+        assert_array_equal(
+            scores[constants.hgvs_pro_column].sort_values().values,
             counts[constants.hgvs_pro_column].sort_values().values
         )
-        assert nt_equal and pro_equal
     except AssertionError:
         raise ValidationError(
             "Your score and counts files do not define the same variants. "

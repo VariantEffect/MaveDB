@@ -1,6 +1,5 @@
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.conf import settings
 
 from celery.utils.log import get_task_logger
 
@@ -23,7 +22,7 @@ logger = get_task_logger('dataset.tasks')
 
 # Overrides global soft time limit of 60 seconds. If this limit is exceeded
 # a SoftTimeLimitExceeded exception will be raised.
-SOFT_TIME_LIMIT = settings.DATASET_TASK_SOFT_TIME_LIMIT
+# SOFT_TIME_LIMIT = settings.task_soft_time_limit
 
 
 class BaseDatasetTask(BaseTask):
@@ -73,24 +72,47 @@ class BaseDatasetTask(BaseTask):
         
 
 class BaseCreateVariantsTask(BaseDatasetTask):
-    description = "create a new entry with urn {urn}."
+    description = "for entry {urn}"
     
     def run(self, *args, **kwargs):
         return create_variants(*args, **kwargs)
   
 
 class BasePublishTask(BaseDatasetTask):
-    description = "publish the entry {urn}."
+    description = "publish the entry {urn}"
     
     def run(self, *args, **kwargs):
         return publish_scoreset(*args, **kwargs)
     
+    def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
+        retval = super().on_failure(
+            exc, task_id, args, kwargs, einfo, user=None)
+        if self.instance is not None and not self.instance.has_public_urn:
+            self.instance.private = True
+            self.instance.save()
+            
+            if not self.instance.parent.has_public_urn:
+                experiment = self.instance.parent
+                experiment.private = True
+                experiment.save()
+                
+            if not self.instance.parent.parent.has_public_urn:
+                experimentset = self.instance.parent.parent
+                experimentset.private = True
+                experimentset.save()
+                
+        return retval
+    
 
 class BaseDeleteTask(BaseDatasetTask):
-    description = "delete the entry {urn}."
+    description = "delete the entry {urn}"
     
     def run(self, *args, **kwargs):
         return delete_instance(*args, **kwargs)
+    
+    def on_success(self, retval, task_id, args, kwargs):
+        self.instance = None
+        return super().on_success(retval, task_id, args, kwargs)
     
     def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
         retval = super().on_failure(
@@ -99,7 +121,7 @@ class BaseDeleteTask(BaseDatasetTask):
             # Reset to success and not fail. Setting to fail will
             # prevent other actions.
             self.instance.refresh_from_db()
-            self.instance.processing_state = constants.success
+            self.instance.processing_state = self.previous_processing_state
             self.instance.save()
         return retval
     
@@ -110,7 +132,6 @@ class BaseDeleteTask(BaseDatasetTask):
     bind=True,
     ignore_result=True,
     base=BasePublishTask,
-    soft_time_limit=SOFT_TIME_LIMIT,
 )
 def publish_scoreset(self, user_pk, scoreset_urn):
     """
@@ -149,7 +170,6 @@ def publish_scoreset(self, user_pk, scoreset_urn):
     bind=True,
     ignore_result=True,
     base=BaseDeleteTask,
-    soft_time_limit=SOFT_TIME_LIMIT,
 )
 def delete_instance(self, user_pk, urn):
     """
@@ -172,16 +192,22 @@ def delete_instance(self, user_pk, urn):
     self.urn = urn
     self.instance = None
     self.user = None
+    self.previous_processing_state = None
     
     # Look for instances. This might throw an ObjectDoesNotExist exception.
     # Bind ORM objects if they were found
     self.user = User.objects.get(pk=user_pk)
     self.instance = get_model_by_urn(self.urn)
+    self.previous_processing_state = self.instance.processing_state
     
     if self.instance.children.count() and \
             not isinstance(self.instance, models.scoreset.ScoreSet):
         raise ValueError("{} has children and cannot be deleted.".format(
             self.urn))
+    if (not self.instance.private) or self.instance.has_public_urn:
+        raise ValueError("{} is not private and cannot be deleted.".format(
+            self.urn
+        ))
     with transaction.atomic():
         return delete_instance_util(self.instance)
 
@@ -190,7 +216,7 @@ def delete_instance(self, user_pk, urn):
     bind=True,
     ignore_result=True,
     base=BaseCreateVariantsTask,
-    soft_time_limit=SOFT_TIME_LIMIT,
+    serializer='pickle',
 )
 def create_variants(self, user_pk, scoreset_urn,
                     scores_records, counts_records, index, dataset_columns):
@@ -230,13 +256,26 @@ def create_variants(self, user_pk, scoreset_urn,
     self.user = User.objects.get(pk=user_pk)
     self.instance = models.scoreset.ScoreSet.objects.get(urn=scoreset_urn)
 
+    logger.info('Sending scores dataframe with {} rows.'.format(
+        len(scores_records)))
+    logger.info('Sending counts dataframe with {} rows.'.format(
+        len(counts_records)))
+    logger.info('Formatting variants for {}'.format(self.urn))
     variants = convert_df_to_variant_records(
         scores_records, counts_records, index)
     
+    if variants:
+        logger.info('{}:{}'.format(self.urn, variants[-1]))
+    
     with transaction.atomic():
+        logger.info('Deleting existing variants for {}'.format(self.urn))
         self.instance.delete_variants()
+    
+        logger.info('Creating variants for {}'.format(self.urn))
         Variant.bulk_create(self.instance, variants)
+        
+        logger.info('Saving {}'.format(self.urn))
         self.instance.dataset_columns = dataset_columns
         self.instance.save()
+    
     return self.instance
-

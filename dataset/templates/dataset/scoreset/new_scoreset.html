@@ -58,10 +58,15 @@
 
   <div class="identifier-offset-form-group">
     <h4>Target identifiers</h4>
-    <p class="text-muted">
-      Associate an external identifier with your target. Type in a new
-      identifier if you cannot find it in the dropdown list and press enter.
-    </p>
+      <p class="text-muted">
+        Associate an external identifier with your target. Select an existing
+        identifier from the dropdown list or type in a new one and press enter.
+      </p>
+      <p class="text-muted">
+        The wild-type offset is added to each position in the wild-type
+        sequence to place it within the given target. Wild-type offset should be
+        in amino acids for protein identifiers.
+      </p>
   </div>
   <div class="uniprot-offset-form-group">
     {% include 'core/bs_inline_form.html' with form=uniprot_offset_form %}
