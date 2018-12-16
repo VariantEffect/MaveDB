@@ -88,6 +88,7 @@ def format_variant(variant):
     variant = variant.strip()
     if 'p.' in variant:
         variant, _ = re.subn(r'\?+', 'X', variant)
+        variant, _ = re.subn(r'Xaa', 'X', variant)
     elif 'g.' in variant or 'n.' in variant or \
             'c.' in variant or 'm.' in variant:
         variant, _ = re.subn(r'X', 'N', variant)

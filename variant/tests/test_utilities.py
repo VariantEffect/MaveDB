@@ -71,6 +71,11 @@ class TestFormatVariant(TestCase):
         self.assertEqual(utilities.format_variant('p.G4???'), 'p.G4X')
         self.assertEqual(
             utilities.format_variant('p.[G4???;G3???]'), 'p.[G4X;G3X]')
+
+    def test_replaces_Xaa_with_X_in_protein_variant(self):
+        self.assertEqual(utilities.format_variant('p.G4Xaa'), 'p.G4X')
+        self.assertEqual(
+            utilities.format_variant('p.[G4XaaXaa;G3Xaa]'), 'p.[G4XX;G3X]')
     
     def test_replaces_X_with_N_in_dna_variant(self):
         for p in 'cgnm':
