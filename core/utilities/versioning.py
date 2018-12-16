@@ -1,6 +1,8 @@
 import reversion
 from reversion.models import Version
 
+from core.models import TimeStampedModel
+
 from django.db import transaction
 from django.db.models import Manager
 from django.utils import timezone
@@ -14,16 +16,28 @@ def track_changes(instance, user=None):
     if len(versions) < 1:
         comments.append("{} created first revision.".format(user))
     else:
-        prev_version = versions[0] # Recent version is always first
+        prev_version = versions[0]  # Recent version is always first
         for field in instance.tracked_fields():
-            p_field = prev_version.field_dict.get(field)
+            if field == 'licence':
+                p_field = prev_version.field_dict.get(
+                    '{}_{}'.format(field, 'id'))
+            else:
+                p_field = prev_version.field_dict.get(field)
+
+            # Only compare the ID fields of database model instances
             n_field = getattr(instance, field)
             if isinstance(n_field, Manager):
                 n_field = [i.id for i in n_field.all()]
+            elif isinstance(n_field, TimeStampedModel):
+                n_field = n_field.id
+
+            # Sort the id lists to compare them if applicable
+            # (for ManyToMany fields)
             if isinstance(p_field, (list, set, tuple)):
                 p_field = sorted(p_field)
             if isinstance(n_field, (list, set, tuple)):
                 n_field = sorted(n_field)
+
             if p_field != n_field:
                 comments.append(
                     "{} edited {} field {}".format(user, klass, field))
