@@ -284,7 +284,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         )
         response = self.client.get(self.path)
         self.assertTemplateUsed(response, self.template)
-        
+
     def test_redirects_to_profile_after_success(self):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()

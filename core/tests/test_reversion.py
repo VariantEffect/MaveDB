@@ -1,8 +1,10 @@
+import json
 import reversion
 from reversion.models import Version
 
 from django.test import TestCase
 
+from main.models import Licence
 from accounts.factories import UserFactory
 
 from metadata.factories import (
@@ -18,6 +20,27 @@ from ..utilities.versioning import track_changes, revert
 
 
 class TestVersionControl(TestCase):
+    def test_saves_licence(self):
+        l1 = Licence.get_cc0()
+        l2 = Licence.get_cc_by()
+
+        instance = factories.ScoreSetFactory()
+        instance.licence = l1
+        instance.save()
+        track_changes(instance, None)
+        version_1 = json.loads(
+            Version.objects.order_by('id').first()
+                .serialized_data)[0]['fields']
+
+        instance.licence = l2
+        instance.save()
+        track_changes(instance, None)
+        version_2 = json.loads(
+            Version.objects.order_by('id').last()
+                .serialized_data)[0]['fields']
+
+        self.assertEqual(version_1['licence'], l1.id)
+        self.assertEqual(version_2['licence'], l2.id)
 
     def test_new_version_NOT_created_when_there_are_no_changes(self):
         instance = factories.ScoreSetWithTargetFactory()
