@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 import numpy as np
 from pandas.testing import assert_index_equal
@@ -68,7 +70,7 @@ def join_variants(variants, prefix):
 
 def format_variant(variant):
     """
-    Replaces `???` for `?` in protein variants and `X` for `N` in
+    Replaces `???` for `X` in protein variants and `Xx` for `Nn` in
     nucleotide variants to be compliant with the `hgvs` biocommons package.
 
     Parameters
@@ -82,29 +84,16 @@ def format_variant(variant):
     """
     if is_null(variant):
         return None
-    events = []
+
     variant = variant.strip()
-    prefix, variants = split_variant(variant)
-    for v in variants:
-        v = v.strip()
-        if protein.substitution_re.fullmatch(v):
-            v = v.replace('???', '?')
-
-        elif dna.substitution_re.fullmatch(v) or \
-                dna.deletion_re.fullmatch(v) or \
-                dna.insertion_re.fullmatch(v) or \
-                dna.delins_re.fullmatch(v):
-            v = v.replace('X', 'N')
-
-        elif rna.substitution_re.fullmatch(v) or \
-                rna.deletion_re.fullmatch(v) or \
-                rna.insertion_re.fullmatch(v) or \
-                rna.delins_re.fullmatch(v):
-            v = v.replace('x', 'n')
-
-        events.append(v.strip())
-
-    return join_variants(events, prefix)
+    if 'p.' in variant:
+        variant, _ = re.subn(r'\?+', 'X', variant)
+    elif 'g.' in variant or 'n.' in variant or \
+            'c.' in variant or 'm.' in variant:
+        variant, _ = re.subn(r'X', 'N', variant)
+    elif 'r.' in variant:
+        variant, _ = re.subn(r'x', 'n', variant)
+    return variant
     
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
