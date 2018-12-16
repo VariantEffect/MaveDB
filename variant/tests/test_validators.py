@@ -285,7 +285,7 @@ class TestVariantRowValidator(TestCase):
         )
         non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
         self.assertEqual(df[constants.hgvs_nt_column].values[0], None)
-        self.assertEqual(df[constants.hgvs_pro_column].values[0], 'p.Gly4?')
+        self.assertEqual(df[constants.hgvs_pro_column].values[0], 'p.Gly4X')
         
     def test_converts_triple_x_to_single_n_rna_dna(self):
         data = "{},{}\n{},1.0\n{},2.0".format(
@@ -304,7 +304,7 @@ class TestVariantRowValidator(TestCase):
         non_hgvs_cols, _, df = validate_variant_rows(BytesIO(data.encode()))
         self.assertEqual(df[constants.hgvs_nt_column].values[0], None)
         self.assertEqual(
-            df[constants.hgvs_pro_column].values[0], 'p.[Gly4?;Asp2?]')
+            df[constants.hgvs_pro_column].values[0], 'p.[Gly4X;Asp2X]')
         
     def test_converts_triple_x_to_single_n_in_multi_rna_dna(self):
         data = "{},{}\n{},1.0\n{},2.0".format(
