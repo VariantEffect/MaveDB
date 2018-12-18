@@ -215,13 +215,16 @@ def format_response(response, scoreset, dtype):
         "# Licence: {}\n".format(scoreset.licence.long_name),
         "# Licence URL: {}\n".format(scoreset.licence.link),
     ])
-    if settings.DEBUG:
-        variants = scoreset.children.order_by(
-            '{}'.format(scoreset.primary_hgvs_column))
+    
+    if scoreset.private:
+        if settings.DEBUG:
+            variants = scoreset.children.order_by('urn')
+        else:
+            variants = scoreset.children.order_by('-urn')
     else:
-        variants = scoreset.children.order_by(
-            '-{}'.format(scoreset.primary_hgvs_column))
-
+        variants = sorted(
+            scoreset.children.all(), key=lambda v: int(v.urn.split('#')[-1]))
+        
     if dtype == 'scores':
         columns = ['urn', ] + scoreset.score_columns
         type_column = constants.variant_score_data
