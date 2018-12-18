@@ -31,6 +31,8 @@ class Command(BaseCommand):
                 for _ in [False, True]:
                     # Configure the scoreset first.
                     scoreset = factories.ScoreSetFactory(experiment=instance)
+                    for _ in range(100):
+                        VariantFactory(scoreset=scoreset)
                     target = genome_factories.TargetGeneFactory(scoreset=scoreset)
                     genomes = genome_models.ReferenceGenome.objects.all()
                     genome_factories.ReferenceMapFactory(
@@ -65,9 +67,6 @@ class Command(BaseCommand):
 
                     scoreset.set_modified_by(user, propagate=True)
                     scoreset.set_created_by(user, propagate=True)
-                    
-                    for _ in range(100):
-                        VariantFactory(scoreset=scoreset)
                     scoreset.save()
                     
                     experiment = scoreset.parent
