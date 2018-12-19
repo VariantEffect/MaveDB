@@ -242,7 +242,6 @@ def format_response(response, scoreset, dtype):
     return response
 
 
-@cache_page(60 * 15)  # 15 minute cache
 def scoreset_score_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
@@ -253,7 +252,6 @@ def scoreset_score_data(request, urn):
     return format_response(response, scoreset, dtype='scores')
 
 
-@cache_page(60 * 15)  # 15 minute cache
 def scoreset_count_data(request, urn):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
@@ -264,7 +262,6 @@ def scoreset_count_data(request, urn):
     return format_response(response, scoreset, dtype='counts')
 
 
-@cache_page(60 * 15)  # 15 minute cache
 def scoreset_metadata(request, urn):
     instance_or_response = validate_request(request, urn)
     if not isinstance(instance_or_response, ScoreSet):
