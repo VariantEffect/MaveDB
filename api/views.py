@@ -184,7 +184,7 @@ def format_csv_rows(variants, columns, dtype):
                 data[column_key] = str(variant.hgvs_nt)
             elif column_key == constants.hgvs_pro_column:
                 data[column_key] = str(variant.hgvs_pro)
-            elif column_key == 'urn':
+            elif column_key == 'accession':
                 data[column_key] = str(variant.urn)
             else:
                 data[column_key] = str(variant.data[dtype][column_key])
@@ -228,10 +228,10 @@ def format_response(response, scoreset, dtype):
         scoreset.children.all(), key=lambda v: urn_number(v))
         
     if dtype == 'scores':
-        columns = ['urn', ] + scoreset.score_columns
+        columns = ['accession', ] + scoreset.score_columns
         type_column = constants.variant_score_data
     elif dtype == 'counts':
-        columns = ['urn', ] + scoreset.count_columns
+        columns = ['accession', ] + scoreset.count_columns
         type_column = constants.variant_count_data
     else:
         raise ValueError(

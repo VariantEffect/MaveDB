@@ -272,11 +272,11 @@ class TestFormatCSVRows(TestCase):
     def test_dicts_include_urn(self):
         vs = [VariantFactory() for _ in range(5)]
         rows = views.format_csv_rows(
-            vs, columns=['score', 'urn', ],
+            vs, columns=['score', 'accession', ],
             dtype=constants.variant_score_data
         )
         for v, row in zip(vs, rows):
-            self.assertEqual(v.urn, row['urn'])
+            self.assertEqual(v.urn, row['accession'])
 
     def test_dicts_include_nt_hgvs(self):
         vs = [VariantFactory() for _ in range(5)]
@@ -343,7 +343,7 @@ class TestFormatResponse(TestCase):
         response = views.format_response(
             self.response, self.instance, dtype='scores')
         content = response.content.decode()
-        self.assertIn("# URN: {}".format(self.instance.urn), content)
+        self.assertIn("# Accession: {}".format(self.instance.urn), content)
         self.assertIn("# Downloaded (UTC):", content)
         self.assertIn("# Licence: {}".format(
             self.instance.licence.long_name), content)
@@ -368,7 +368,7 @@ class TestFormatResponse(TestCase):
 
         called_dtype = patch.call_args[1]['dtype']
         called_columns = patch.call_args[1]['columns']
-        expected_columns = ['urn'] + self.instance.score_columns
+        expected_columns = ['accession'] + self.instance.score_columns
         self.assertEqual(called_dtype, constants.variant_score_data)
         self.assertListEqual(called_columns, expected_columns)
 
@@ -386,7 +386,7 @@ class TestFormatResponse(TestCase):
 
         called_dtype = patch.call_args[1]['dtype']
         called_columns = patch.call_args[1]['columns']
-        expected_columns = ['urn'] + self.instance.count_columns
+        expected_columns = ['accession'] + self.instance.count_columns
         self.assertEqual(called_dtype, constants.variant_count_data)
         self.assertListEqual(called_columns, expected_columns)
 
