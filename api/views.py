@@ -216,14 +216,8 @@ def format_response(response, scoreset, dtype):
         "# Licence URL: {}\n".format(scoreset.licence.link),
     ])
     
-    if scoreset.private:
-        if settings.DEBUG:
-            variants = scoreset.children.order_by('urn')
-        else:
-            variants = scoreset.children.order_by('-urn')
-    else:
-        variants = sorted(
-            scoreset.children.all(), key=lambda v: int(v.urn.split('#')[-1]))
+    variants = sorted(
+        scoreset.children.all(), key=lambda v: int(v.urn.split('#')[-1]))
         
     if dtype == 'scores':
         columns = ['urn', ] + scoreset.score_columns
