@@ -26,12 +26,13 @@ class Command(BaseCommand):
         scoreset.last_child_value = 0
         variants = sorted(scoreset.children.all(), key=lambda v: get_number(v))
         urns = Variant.bulk_create_urns(scoreset.children.count(), scoreset)
-        sys.stdout.write("Saved urns {}, ..., {}.\n".format(
+        sys.stdout.write("Created urns {}, ..., {}.\n".format(
             ', '.join(urns[0:3]), urns[-1]))
         
         for urn, variant in zip(urns, variants):
             variant.urn = urn
             variant.save()
+        sys.stdout.write("Saved new urns to database.\n")
         
         scoreset.last_child_value = len(variants)
         scoreset.save()
