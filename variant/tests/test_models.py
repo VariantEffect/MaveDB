@@ -2,6 +2,7 @@ from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.test import TestCase, mock
 
+from dataset.models.scoreset import ScoreSet
 import dataset.constants as constants
 from dataset.factories import ScoreSetFactory
 from dataset.utilities import publish_dataset
@@ -78,7 +79,6 @@ class TestVariant(TestCase):
     def test_bulk_create_urns_updates_parent_last_child_value(self):
         parent = ScoreSetFactory()
         Variant.bulk_create_urns(10, parent)
-        parent.refresh_from_db()
         self.assertEqual(parent.last_child_value, 10)
     
     @mock.patch.object(Variant, 'bulk_create_urns', return_value=['',])
