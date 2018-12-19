@@ -1,3 +1,4 @@
+import string
 import csv
 from datetime import datetime
 
@@ -191,6 +192,13 @@ def format_csv_rows(variants, columns, dtype):
     return rowdicts
 
 
+def urn_number(variant):
+    number = variant.urn.split('#')[-1]
+    if not str.isdigit(number):
+        return 0
+    return int(number)
+    
+
 def format_response(response, scoreset, dtype):
     """
     Writes the CSV response by formatting each variant into a row including
@@ -217,7 +225,7 @@ def format_response(response, scoreset, dtype):
     ])
     
     variants = sorted(
-        scoreset.children.all(), key=lambda v: int(v.urn.split('#')[-1]))
+        scoreset.children.all(), key=lambda v: urn_number(v))
         
     if dtype == 'scores':
         columns = ['urn', ] + scoreset.score_columns
