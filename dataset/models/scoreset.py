@@ -204,11 +204,11 @@ class ScoreSet(DatasetModel):
         return self.variants.count()
 
     def delete_variants(self):
-        if self.has_variants:
-            self.variants.all().delete()
-            self.dataset_columns = default_dataset()
-            self.last_child_value = 0
-            self.save()
+        self.variants.all().delete()
+        self.dataset_columns = default_dataset()
+        self.last_child_value = 0
+        self.save()
+        return self
 
     def get_target(self):
         if not hasattr(self, 'target'):

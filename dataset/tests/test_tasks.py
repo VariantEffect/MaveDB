@@ -132,9 +132,16 @@ class TestCreateVariantsTask(TestCase):
 
     def test_create_variants_resets_dataset_columns(self):
         self.scoreset.dataset_columns = default_dataset()
-        create_variants.apply(kwargs=self.mock_kwargs())
+        create_variants.run(**self.mock_kwargs())
         self.scoreset.refresh_from_db()
         self.assertEqual(self.scoreset.dataset_columns, self.dataset_columns)
+        
+    def test_create_variants_sets_last_child_value_to_zero(self):
+        self.scoreset.last_child_value = 100
+        self.scoreset.save()
+        create_variants.run(**self.mock_kwargs())
+        self.scoreset.refresh_from_db()
+        self.assertEqual(self.scoreset.last_child_value, 1)
         
 
 class TestPublishScoresetTask(TestCase):
@@ -176,14 +183,14 @@ class TestPublishScoresetTask(TestCase):
         self.assertTrue(scoreset.parent.parent.private)
         
     def test_propagates_modified(self):
-        publish_scoreset.apply(kwargs=self.mock_kwargs())
+        publish_scoreset.run(**self.mock_kwargs())
         scoreset = ScoreSet.objects.first()
         self.assertEqual(scoreset.modified_by, self.user)
         self.assertEqual(scoreset.parent.modified_by, self.user)
         self.assertEqual(scoreset.parent.parent.modified_by, self.user)
 
     def test_propagates_public(self):
-        publish_scoreset.apply(kwargs=self.mock_kwargs())
+        publish_scoreset.run(**self.mock_kwargs())
         scoreset = ScoreSet.objects.first()
         self.assertEqual(scoreset.private, False)
         self.assertEqual(scoreset.parent.private, False)
@@ -192,7 +199,7 @@ class TestPublishScoresetTask(TestCase):
     def test_publish_assigns_new_public_urns(self):
         var = VariantFactory(scoreset=self.scoreset)
         self.assertFalse(var.has_public_urn)
-        publish_scoreset.apply(kwargs=self.mock_kwargs())
+        publish_scoreset.run(**self.mock_kwargs())
         var.refresh_from_db()
         self.scoreset.refresh_from_db()
         self.assertTrue(var.has_public_urn)
