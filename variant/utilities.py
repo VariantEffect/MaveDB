@@ -1,9 +1,101 @@
+import re
+
 import pandas as pd
 import numpy as np
 from pandas.testing import assert_index_equal
 
+from hgvsp import protein, dna, rna
+
 from core.utilities import is_null
 
+from .constants import wildtype, synonymous
+
+
+def split_variant(variant):
+    """
+    Splits a multi-variant `HGVS` string into a list of single variants. If
+    a single variant string is provided, it is returned as a singular `list`.
+
+    Parameters
+    ----------
+    variant : str
+        A valid single or multi-variant `HGVS` string.
+
+    Returns
+    -------
+    list[str]
+        A list of single `HGVS` strings.
+    """
+    prefix = variant[0]
+    if len(variant.split(';')) > 1:
+        return prefix, ['{}.{}'.format(prefix, e.strip())
+                for e in variant[3:-1].split(';')]
+    return prefix, [variant]
+
+
+def join_variants(variants, prefix):
+    """
+    Joins a list of single variant events into a multi-variant HGVS string.
+
+    Parameters
+    ----------
+    variants : union[str, list[str]]
+        A list of valid single or multi-variant `HGVS` string.
+    prefix : str
+        HGVS prefix.
+
+    Returns
+    -------
+    str
+    """
+    if isinstance(variants, str):
+        return variants
+    
+    if len(variants) == 1 and variants[0] in (wildtype, synonymous):
+        return variants[0]
+    
+    if len(variants) == 1:
+        return '{}.{}'.format(
+            prefix,
+            variants[0].replace('{}.'.format(prefix), '')
+        )
+    elif len(variants) > 1:
+        return '{}.[{}]'.format(
+            prefix,
+            ';'.join([v.replace('{}.'.format(prefix), '') for v in variants])
+        )
+    else:
+        return None
+
+
+def format_variant(variant):
+    """
+    Replaces `???` for `X` in protein variants and `Xx` for `Nn` in
+    nucleotide variants to be compliant with the `hgvs` biocommons package.
+
+    Parameters
+    ----------
+    variant : str, optional.
+        HGVS_ formatted string.
+
+    Returns
+    -------
+    str
+    """
+    if is_null(variant):
+        return None
+
+    variant = variant.strip()
+    if 'p.' in variant:
+        variant, _ = re.subn(r'\?+', 'X', variant)
+        variant, _ = re.subn(r'Xaa', 'X', variant)
+    elif 'g.' in variant or 'n.' in variant or \
+            'c.' in variant or 'm.' in variant:
+        variant, _ = re.subn(r'X', 'N', variant)
+    elif 'r.' in variant:
+        variant, _ = re.subn(r'x', 'n', variant)
+    return variant
+    
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
     """

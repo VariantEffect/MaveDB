@@ -1,13 +1,14 @@
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, mock
 
+from dataset.models.scoreset import ScoreSet
 import dataset.constants as constants
 from dataset.factories import ScoreSetFactory
 from dataset.utilities import publish_dataset
 
 from ..factories import VariantFactory
-from ..models import assign_public_urn
+from ..models import assign_public_urn, Variant
 
 from urn.validators import MAVEDB_VARIANT_URN_RE
 
@@ -67,6 +68,67 @@ class TestVariant(TestCase):
     def test_hgvs_property_returns_pro_if_nt_column_not_defined(self):
         obj = VariantFactory(hgvs_nt=None)
         self.assertEqual(obj.hgvs, obj.hgvs_pro)
+        
+    def test_bulk_create_urns_creates_sequential_urns(self):
+        parent = ScoreSetFactory()
+        urns = Variant.bulk_create_urns(10, parent)
+        for i, urn in enumerate(urns):
+            number = int(urn.split('#')[-1])
+            self.assertEqual(number, i + 1)
+            
+    def test_bulk_create_urns_updates_parent_last_child_value(self):
+        parent = ScoreSetFactory()
+        Variant.bulk_create_urns(10, parent)
+        self.assertEqual(parent.last_child_value, 10)
+    
+    @mock.patch.object(Variant, 'bulk_create_urns', return_value=['',])
+    def test_bulk_create_calls_bulk_create_urns_with_correct_args(self, patch):
+        parent = ScoreSetFactory()
+        column = constants.required_score_column
+        variant_kwargs_list = [{
+            'hgvs_nt': 'c.1A>G', 'hgvs_pro': 'p.G4Y',
+            'data': dict({
+                constants.variant_score_data: {column: 1},
+                constants.variant_count_data: {},}),
+            }, {
+            'hgvs_nt': 'c.2A>G', 'hgvs_pro': 'p.G5Y',
+            'data': dict({
+                constants.variant_score_data: {column: 2},
+                constants.variant_count_data: {}, }),
+            },
+        ]
+        _ = Variant.bulk_create(parent, variant_kwargs_list)
+        patch.assert_called_with(*(2, parent))
+        
+    def test_bulk_create_creates_variants_with_kwargs(self):
+        parent = ScoreSetFactory()
+        column = constants.required_score_column
+        variant_kwargs_list = [{
+            'hgvs_nt': 'c.1A>G', 'hgvs_pro': 'p.G4Y',
+            'data': dict({
+                constants.variant_score_data: {column: 1},
+                constants.variant_count_data: {},}),
+            }, {
+            'hgvs_nt': 'c.2A>G', 'hgvs_pro': 'p.G5Y',
+            'data': dict({
+                constants.variant_score_data: {column: 2},
+                constants.variant_count_data: {}, }),
+            },
+        ]
+        count = Variant.bulk_create(parent, variant_kwargs_list)
+        self.assertEqual(count, 2)
+
+        parent.refresh_from_db()
+        variants = parent.variants.order_by('urn')
+        self.assertEqual(variants[0].urn, '{}#{}'.format(parent.urn, 1))
+        self.assertEqual(variants[0].hgvs_nt, 'c.1A>G')
+        self.assertEqual(variants[0].hgvs_pro, 'p.G4Y')
+        self.assertDictEqual(variants[0].data, variant_kwargs_list[0]['data'])
+        
+        self.assertEqual(variants[1].urn, '{}#{}'.format(parent.urn, 2))
+        self.assertEqual(variants[1].hgvs_nt, 'c.2A>G')
+        self.assertEqual(variants[1].hgvs_pro, 'p.G5Y')
+        self.assertDictEqual(variants[1].data, variant_kwargs_list[1]['data'])
         
         
 class TestAssignPublicUrn(TestCase):

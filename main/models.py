@@ -287,7 +287,7 @@ class Licence(TimeStampedModel):
     def get_cc0(cls):
         try:
             licence = cls.objects.get(short_name="CC0")
-        except ObjectDoesNotExist:
+        except cls.DoesNotExist:
             licence = cls.objects.create(
                 short_name="CC0",
                 long_name="CC0 (Public domain)",
@@ -306,7 +306,7 @@ class Licence(TimeStampedModel):
     def get_cc_by_nc_sa(cls):
         try:
             licence = cls.objects.get(short_name="CC BY-NC-SA 4.0")
-        except ObjectDoesNotExist:
+        except cls.DoesNotExist:
             licence = cls.objects.create(
                 short_name="CC BY-NC-SA 4.0",
                 long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
@@ -325,7 +325,7 @@ class Licence(TimeStampedModel):
     def get_cc_by(cls):
         try:
             licence = cls.objects.get(short_name="CC BY 4.0")
-        except ObjectDoesNotExist:
+        except cls.DoesNotExist:
             licence = cls.objects.create(
                 short_name="CC BY 4.0",
                 long_name="CC BY 4.0 (Attribution)",

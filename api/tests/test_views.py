@@ -1,10 +1,10 @@
-import io
 import json
-import csv
 from datetime import timedelta
 
 from django.test import TestCase, RequestFactory, mock
 from django.contrib.auth import get_user_model
+from django.core import exceptions
+from django.http import HttpResponse
 
 from rest_framework import exceptions
 
@@ -17,7 +17,7 @@ from dataset.factories import (
     ScoreSetFactory, ExperimentFactory, ExperimentSetFactory
 )
 
-from variant.factories import dna_hgvs, protein_hgvs
+from variant.factories import VariantFactory
 from variant.models import Variant
 
 from .. import views
@@ -268,6 +268,148 @@ class TestExperimentAPIViews(TestCase):
         self.assertContains(response, instance2.urn)
 
 
+class TestFormatCSVRows(TestCase):
+    def test_dicts_include_urn(self):
+        vs = [VariantFactory() for _ in range(5)]
+        rows = views.format_csv_rows(
+            vs, columns=['score', 'urn', ],
+            dtype=constants.variant_score_data
+        )
+        for v, row in zip(vs, rows):
+            self.assertEqual(v.urn, row['urn'])
+
+    def test_dicts_include_nt_hgvs(self):
+        vs = [VariantFactory() for _ in range(5)]
+        rows = views.format_csv_rows(
+            vs, columns=['score', constants.hgvs_nt_column, ],
+            dtype=constants.variant_score_data
+        )
+        for v, row in zip(vs, rows):
+            self.assertEqual(v.hgvs_nt, row[constants.hgvs_nt_column])
+
+    def test_dicts_include_pro_hgvs(self):
+        vs = [VariantFactory() for _ in range(5)]
+        rows = views.format_csv_rows(
+            vs, columns=['score', constants.hgvs_pro_column, ],
+            dtype=constants.variant_score_data
+        )
+        for v, row in zip(vs, rows):
+            self.assertEqual(v.hgvs_pro, row[constants.hgvs_pro_column])
+
+    def test_dicts_include_data_columns_as_strings(self):
+        vs = [VariantFactory(data={
+            constants.variant_score_data: {'score': 1, 'se': 2.12}})
+            for _ in range(5)
+        ]
+        rows = views.format_csv_rows(
+            vs, columns=['score', 'se', ],
+            dtype=constants.variant_score_data
+        )
+        for v, row in zip(vs, rows):
+            self.assertEqual('1', row['score'])
+            self.assertEqual('2.12', row['se'])
+
+
+class TestValidateRequest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = UserFactory()
+        self.request = self.factory.get('/')
+        self.request.user = self.user
+        self.instance = ScoreSetFactory(private=True)
+
+    def test_returns_404_response_when_urn_model_not_found(self):
+        response = views.validate_request(self.request, 'urn')
+        self.assertEqual(response.status_code, 404)
+
+    @mock.patch('api.views.validate_request')
+    def test_calls_authenticate(self, patch):
+        views.validate_request(self.request, self.instance.urn)
+        patch.assert_called()
+
+    @mock.patch('api.views.validate_request')
+    def test_calls_check_permission(self, patch):
+        views.validate_request(self.request, self.instance.urn)
+        patch.assert_called()
+
+
+class TestFormatResponse(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.instance = ScoreSetFactory(private=True)
+        self.response = HttpResponse(content_type='text/csv')
+
+    def test_adds_comments_to_response(self):
+        response = views.format_response(
+            self.response, self.instance, dtype='scores')
+        content = response.content.decode()
+        self.assertIn("# URN: {}".format(self.instance.urn), content)
+        self.assertIn("# Downloaded (UTC):", content)
+        self.assertIn("# Licence: {}".format(
+            self.instance.licence.long_name), content)
+        self.assertIn("# Licence URL: {}".format(
+            self.instance.licence.link), content)
+
+    def test_raises_valueerror_unknown_dtype(self):
+        with self.assertRaises(ValueError):
+            views.format_response(self.response, self.instance, dtype='---')
+
+    @mock.patch("api.views.format_csv_rows")
+    def test_calls_format_csv_correct_call_dtype_is_scores(self, patch):
+        self.instance.dataset_columns = {
+            constants.score_columns: ['score', 'se']}
+        self.instance.save()
+        for i in range(5):
+            data = {constants.variant_score_data: {'score': i, 'se': 2*i}}
+            VariantFactory(scoreset=self.instance, data=data)
+
+        _ = views.format_response(
+            self.response, self.instance, dtype='scores')
+
+        called_dtype = patch.call_args[1]['dtype']
+        called_columns = patch.call_args[1]['columns']
+        expected_columns = ['urn'] + self.instance.score_columns
+        self.assertEqual(called_dtype, constants.variant_score_data)
+        self.assertListEqual(called_columns, expected_columns)
+
+    @mock.patch("api.views.format_csv_rows")
+    def test_calls_format_csv_correct_call_dtype_is_counts(self, patch):
+        self.instance.dataset_columns = {
+            constants.count_columns: ['count', 'se']}
+        self.instance.save()
+        for i in range(5):
+            data = {constants.variant_count_data: {'count': i, 'se': 2*i}}
+            VariantFactory(scoreset=self.instance, data=data)
+
+        _ = views.format_response(
+            self.response, self.instance, dtype='counts')
+
+        called_dtype = patch.call_args[1]['dtype']
+        called_columns = patch.call_args[1]['columns']
+        expected_columns = ['urn'] + self.instance.count_columns
+        self.assertEqual(called_dtype, constants.variant_count_data)
+        self.assertListEqual(called_columns, expected_columns)
+
+    @mock.patch("api.views.format_csv_rows")
+    def test_returns_empty_csv_when_no_additional_columns_present(self, patch):
+        _ = views.format_response(
+            self.response, self.instance, dtype='scores')
+        patch.assert_not_called()
+
+    def test_double_quotes_column_values_containing_commas(self):
+        self.instance.dataset_columns = {
+            constants.score_columns: ['hello,world',]}
+
+        for i in range(5):
+            data = {constants.variant_score_data: {'hello,world': i}}
+            VariantFactory(scoreset=self.instance, data=data)
+
+        response = views.format_response(
+            self.response, self.instance, dtype='scores')
+        content = response.content.decode()
+        self.assertIn('"hello,world"', content)
+
+
 class TestScoreSetAPIViews(TestCase):
     factory = ScoreSetFactory
     url = 'scoresets'
@@ -388,183 +530,24 @@ class TestScoreSetAPIViews(TestCase):
     def test_404_not_found(self):
         response = self.client.get("/api/scoresets/dddd/")
         self.assertEqual(response.status_code, 404)
-        
-    def test_can_download_scores(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: ["score"],
-            constants.count_columns: ["count"]
-        }
-        scs.save()
-        variant = Variant.objects.create(
-            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
-            scoreset=scs, data={
-                constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {"count": "1"}
-            }
-        )
-        
-        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-        
-        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'score']
-        data = [variant.hgvs_nt, variant.hgvs_pro, '1']
-        self.assertEqual(rows, [header, data])
-        
-    def test_comma_in_value_enclosed_by_quotes(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: ["score"],
-            constants.count_columns: ["count,count"]
-        }
-        scs.save(save_parents=True)
-        variant = Variant.objects.create(
-            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
-            scoreset=scs, data={
-                constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {"count,count": "4"}
-            }
-        )
-        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
 
-        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'count,count']
-        data = [variant.hgvs_nt, variant.hgvs_pro, '4']
-        self.assertEqual(rows, [header, data])
+    @mock.patch("api.views.format_response")
+    def test_calls_format_response_with_dtype_scores(self, patch):
+        request = RequestFactory().get('/')
+        request.user = UserFactory()
+        instance = self.factory(private=False)
+        instance.add_viewers(request.user)
+        views.scoreset_score_data(request, instance.urn)
+        self.assertEqual(patch.call_args[1]['dtype'], 'scores')
 
-    def test_can_download_counts(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: ["score"],
-            constants.count_columns: ["count"]
-        }
-        scs.save(save_parents=True)
-        variant = Variant.objects.create(
-            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
-            scoreset=scs, data={
-                constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {"count": "4"}
-            }
-        )
-        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-        
-        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'count']
-        data = [variant.hgvs_nt, variant.hgvs_pro, '4']
-        self.assertEqual(rows, [header, data])
-        
-    def test_none_hgvs_written_as_blank(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: ["score"],
-            constants.count_columns: ["count"]
-        }
-        scs.save(save_parents=True)
-        variant = Variant.objects.create(
-            hgvs_nt=dna_hgvs[0], hgvs_pro=None,
-            scoreset=scs,
-            data={
-                constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {"count": "4"}
-            }
-        )
-        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-    
-        header = [constants.hgvs_nt_column, constants.hgvs_pro_column, 'score']
-        data = [variant.hgvs_nt, '', '1']
-        self.assertEqual(rows, [header, data])
-        
-    def test_no_variants_empty_file(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: ["score"],
-            constants.count_columns: ["count"]
-        }
-        scs.save(save_parents=True)
-        scs.children.delete()
-        
-        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-        self.assertEqual(rows, [])
-        
-        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-        self.assertEqual(rows, [])
-
-    def test_empty_scores_returns_empty_file(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: [],
-            constants.count_columns: ['count']
-        }
-        scs.save(save_parents=True)
-        _ = Variant.objects.create(
-            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
-            scoreset=scs, data={
-                constants.variant_score_data: {},
-                constants.variant_count_data: {"count": "4"}
-            }
-        )
-        response = self.client.get("/api/scoresets/{}/scores/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-        self.assertEqual(rows, [])
-        
-    def test_empty_counts_returns_empty_file(self):
-        scs = self.factory()
-        scs = publish_dataset(scs)
-        scs.refresh_from_db()
-        scs.dataset_columns = {
-            constants.score_columns: ["score"],
-            constants.count_columns: []
-        }
-        scs.save(save_parents=True)
-        _ = Variant.objects.create(
-            hgvs_nt=dna_hgvs[0], hgvs_pro=protein_hgvs[0],
-            scoreset=scs, data={
-                constants.variant_score_data: {"score": "1"},
-                constants.variant_count_data: {}
-            }
-        )
-        response = self.client.get("/api/scoresets/{}/counts/".format(scs.urn))
-        rows = list(
-            csv.reader(
-                io.TextIOWrapper(
-                    io.BytesIO(response.content), encoding='utf-8')))
-        self.assertEqual(rows, [])
+    @mock.patch("api.views.format_response")
+    def test_calls_format_response_with_dtype_counts(self, patch):
+        request = RequestFactory().get('/')
+        request.user = UserFactory()
+        instance = self.factory(private=False)
+        instance.add_viewers(request.user)
+        views.scoreset_count_data(request, instance.urn)
+        self.assertEqual(patch.call_args[1]['dtype'], 'counts')
 
     def test_can_download_metadata(self):
         scs = self.factory(private=False)

@@ -1,4 +1,6 @@
+import string
 import csv
+from datetime import datetime
 
 from rest_framework import viewsets, exceptions
 
@@ -59,6 +61,9 @@ def check_permission(instance, user=None):
 # ViewSet CBVs for list/detail views
 # --------------------------------------------------------------------------- #
 class AuthenticatedViewSet(viewsets.ReadOnlyModelViewSet):
+    user = None
+    auth_token = None
+    
     def dispatch(self, request, *args, **kwargs):
         try:
             self.user, self.auth_token = authenticate(request)
@@ -123,6 +128,23 @@ class UserViewset(AuthenticatedViewSet):
 # File download FBVs
 # --------------------------------------------------------------------------- #
 def validate_request(request, urn):
+    """
+    Validates an incoming request using the token in the auth header or checks
+    session authentication. Also checks if urn exists.
+
+    Returns JSON response on any error.
+
+    Parameters
+    ----------
+    request : object
+        Incoming request object.
+    urn : str
+        URN of the scoreset.
+
+    Returns
+    -------
+    `JsonResponse`
+    """
     try:
         if not ScoreSet.objects.filter(urn=urn).count():
             raise exceptions.NotFound()
@@ -136,80 +158,121 @@ def validate_request(request, urn):
         return JsonResponse({'detail': e.detail}, status=e.status_code)
 
 
-@cache_page(60 * 15)  # 15 minute cache
-def scoreset_score_data(request, urn):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = \
-        'attachment; filename="{}_scores.csv"'.format(urn)
+def format_csv_rows(variants, columns, dtype):
+    """
+    Formats each variant into a dictionary row containing the keys specified
+    in `columns`.
 
-    instance_or_response = validate_request(request, urn)
-    if not isinstance(instance_or_response, ScoreSet):
-        return instance_or_response
+    Parameters
+    ----------
+    variants : list[variant.models.Variant`]
+        List of variants.
+    columns : list[str]
+        Columns to serialize.
+    dtype : str, {'scores', 'counts'}
+        The type of data requested. Either the 'score_data' or 'count_data'.
 
-    scoreset = instance_or_response
-    order_by = 'id'  # scoreset.primary_hgvs_column
-    variants = scoreset.children.order_by('{}'.format(order_by))
-    columns = scoreset.score_columns
-    type_column = constants.variant_score_data
-
-    # hgvs_nt and hgvs_pro present by default, hence <= 2
-    if not variants or len(columns) <= 2:
-        return response
-       
-    writer = csv.DictWriter(
-        response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
-    writer.writeheader()
-    writer.writerows(_format_csv_rows(variants, columns, type_column))
-    return response
-
-
-@cache_page(60 * 15) # 15 minute cache
-def scoreset_count_data(request, urn):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = \
-        'attachment; filename="{}_counts.csv"'.format(urn)
-
-    instance_or_response = validate_request(request, urn)
-    if not isinstance(instance_or_response, ScoreSet):
-        return instance_or_response
-    
-    scoreset = instance_or_response
-    order_by = 'id'  # scoreset.primary_hgvs_column
-    variants = scoreset.children.order_by('{}'.format(order_by))
-    columns = scoreset.count_columns
-    type_column = constants.variant_count_data
-
-    # hgvs_nt and hgvs_pro present by default, hence <= 2
-    if not variants or len(columns) <= 2:
-        return response
-    
-    writer = csv.DictWriter(
-        response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
-    writer.writeheader()
-    writer.writerows(_format_csv_rows(variants, columns, type_column))
-    return response
-
-
-def _format_csv_rows(variants, columns, type_column):
+    Returns
+    -------
+    list[dict]
+    """
     rowdicts = []
     for variant in variants:
         data = {}
         for column_key in columns:
             if column_key == constants.hgvs_nt_column:
-                data[column_key] = variant.hgvs_nt
+                data[column_key] = str(variant.hgvs_nt)
             elif column_key == constants.hgvs_pro_column:
-                data[column_key] = variant.hgvs_pro
+                data[column_key] = str(variant.hgvs_pro)
+            elif column_key == 'urn':
+                data[column_key] = str(variant.urn)
             else:
-                data[column_key] = str(variant.data[type_column][column_key])
+                data[column_key] = str(variant.data[dtype][column_key])
         rowdicts.append(data)
     return rowdicts
 
 
-@cache_page(60 * 15) # 24 hour cache
+def urn_number(variant):
+    number = variant.urn.split('#')[-1]
+    if not str.isdigit(number):
+        return 0
+    return int(number)
+    
+
+def format_response(response, scoreset, dtype):
+    """
+    Writes the CSV response by formatting each variant into a row including
+    the columns `hgvs_nt`, `hgvs_pro`, `urn` and other uploaded columns.
+
+    Parameters
+    ----------
+    response : `HttpResponse`
+        Reponse object to write to.
+    scoreset : `dataset.models.scoreset.ScoreSet`
+        The scoreset requested.
+    dtype : str
+        The type of data requested. Either 'scores' or 'counts'.
+
+    Returns
+    -------
+    `HttpResponse`
+    """
+    response.writelines([
+        "# URN: {}\n".format(scoreset.urn),
+        "# Downloaded (UTC): {}\n".format(datetime.utcnow()),
+        "# Licence: {}\n".format(scoreset.licence.long_name),
+        "# Licence URL: {}\n".format(scoreset.licence.link),
+    ])
+    
+    variants = sorted(
+        scoreset.children.all(), key=lambda v: urn_number(v))
+        
+    if dtype == 'scores':
+        columns = ['urn', ] + scoreset.score_columns
+        type_column = constants.variant_score_data
+    elif dtype == 'counts':
+        columns = ['urn', ] + scoreset.count_columns
+        type_column = constants.variant_count_data
+    else:
+        raise ValueError(
+            "Unknown variant dtype {}. Expected "
+            "either 'scores' or 'counts'.".format(dtype))
+
+    # 'hgvs_nt', 'hgvs_pro', 'urn' are present by default, hence <= 2
+    if not variants or len(columns) <= 3:
+        return response
+
+    rows = format_csv_rows(variants, columns=columns, dtype=type_column)
+    writer = csv.DictWriter(
+        response, fieldnames=columns, quoting=csv.QUOTE_MINIMAL)
+    writer.writeheader()
+    writer.writerows(rows)
+    return response
+
+
+def scoreset_score_data(request, urn):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = \
+        'attachment; filename="{}_scores.csv"'.format(urn)
+    scoreset = validate_request(request, urn)
+    if not isinstance(scoreset, ScoreSet):
+        return scoreset  # Invalid request, return response.
+    return format_response(response, scoreset, dtype='scores')
+
+
+def scoreset_count_data(request, urn):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = \
+        'attachment; filename="{}_counts.csv"'.format(urn)
+    scoreset = validate_request(request, urn)
+    if not isinstance(scoreset, ScoreSet):
+        return scoreset  # Invalid request, return response.
+    return format_response(response, scoreset, dtype='counts')
+
+
 def scoreset_metadata(request, urn):
     instance_or_response = validate_request(request, urn)
     if not isinstance(instance_or_response, ScoreSet):
         return instance_or_response
-
     scoreset = instance_or_response
     return JsonResponse(scoreset.extra_metadata, status=200)

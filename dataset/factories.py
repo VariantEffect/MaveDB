@@ -11,11 +11,13 @@ with future maintainability.
 import factory.faker
 from factory.django import DjangoModelFactory
 
+from main.models import Licence
 from metadata.factories import (
     KeywordFactory, SraIdentifierFactory, DoiIdentifierFactory,
     PubmedIdentifierFactory
 )
 
+from .constants import success
 from .models.base import DatasetModel
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
@@ -35,6 +37,7 @@ class DatasetModelFactory(DjangoModelFactory):
     short_description = factory.faker.Faker('text', max_nb_chars=1000)
     extra_metadata = {"foo": "bar"}
     private = True
+    processing_state = success
 
     @factory.post_generation
     def keywords(self, create, extracted, **kwargs):
@@ -100,6 +103,15 @@ class ScoreSetFactory(DatasetModelFactory):
     experiment = factory.SubFactory(ExperimentFactory)
     dataset_columns = default_dataset()
     replaces = None
+    licence = None
+
+    @factory.post_generation
+    def licence(self, created, extracted, **kwargs):
+        if not created:
+            return self
+        self.licence = Licence.get_default()
+        self.licence.save()
+        return self
 
 
 class ScoreSetWithTargetFactory(ScoreSetFactory):

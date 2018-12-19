@@ -21,6 +21,8 @@ from dataset.validators import (
 from .hgvs import validate_multi_variant, \
     validate_single_variant, validate_nt_variant, validate_pro_variant
 
+from .. import utilities
+
 
 def validate_hgvs_nt_uniqueness(df):
     """Validate that hgvs columns only define a variant once."""
@@ -192,6 +194,13 @@ def validate_variant_rows(file):
         primary_hgvs_column = hgvs_nt_column
 
     # Check that the primary column is fully specified.
+    if defines_nt_hgvs:
+        df[hgvs_nt_column] = df.loc[:, hgvs_nt_column].\
+            apply(utilities.format_variant)
+    if defines_p_hgvs:
+        df[hgvs_pro_column] = df.loc[:, hgvs_pro_column].\
+            apply(utilities.format_variant)
+    
     null_primary = df.loc[:, primary_hgvs_column].apply(is_null)
     if any(null_primary):
         raise ValidationError(

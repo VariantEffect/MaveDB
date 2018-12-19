@@ -9,6 +9,94 @@ from dataset import constants
 from .. import utilities
 
 
+class TestSplitVariant(TestCase):
+    def test_split_hgvs_singular_list_non_multi_variant(self):
+        self.assertListEqual(
+            ['c.100A>G'], utilities.split_variant('c.100A>G')[1])
+
+    def test_split_hgvs_returns_list_of_single_variants(self):
+        self.assertListEqual(
+            ['c.100A>G', 'c.101A>G'],
+            utilities.split_variant('c.[100A>G;101A>G]')[1]
+        )
+        
+    def test_returns_prefix(self):
+        for p in 'cgmpn':
+            self.assertEqual(
+                p, utilities.split_variant(
+                    '{}.[100A>G;101A>G]'.format(p))[0]
+            )
+
+            
+class TestJoinVariants(TestCase):
+    def test_passes_on_special(self):
+        self.assertEqual(
+            utilities.join_variants('_wt', None), '_wt')
+        self.assertEqual(
+            utilities.join_variants('_sy', None), '_sy')
+        self.assertEqual(
+            utilities.join_variants(['_wt'], None), '_wt')
+        self.assertEqual(
+            utilities.join_variants(['_sy'], None), '_sy')
+        
+    def test_returns_single_variant(self):
+        self.assertEqual(
+            utilities.join_variants(['1A>G'], 'c'), 'c.1A>G')
+        
+    def test_clips_prefix(self):
+        self.assertEqual(
+            utilities.join_variants(['c.1A>G'], 'c'), 'c.1A>G')
+
+    def test_returns_multi(self):
+        self.assertEqual(
+            utilities.join_variants(['c.1A>G', 'c.2A>G'], 'c'), 'c.[1A>G;2A>G]')
+        
+    def test_returns_none_empty_list(self):
+        self.assertEqual(
+            utilities.join_variants([], None), None)
+        
+        
+class TestFormatVariant(TestCase):
+    def test_strips_white_space(self):
+        self.assertEqual(utilities.format_variant(' c.1A>G '), 'c.1A>G')
+        
+    def test_passes_on_special(self):
+        self.assertEqual(utilities.format_variant('_wt'), '_wt')
+        self.assertEqual(utilities.format_variant('_sy'), '_sy')
+    
+    def test_passes_on_none(self):
+        self.assertIsNone(utilities.format_variant(None))
+    
+    def test_replaces_triple_q_with_X_in_protein_variant(self):
+        self.assertEqual(utilities.format_variant('p.G4???'), 'p.G4X')
+        self.assertEqual(
+            utilities.format_variant('p.[G4???;G3???]'), 'p.[G4X;G3X]')
+
+    def test_replaces_Xaa_with_X_in_protein_variant(self):
+        self.assertEqual(utilities.format_variant('p.G4Xaa'), 'p.G4X')
+        self.assertEqual(
+            utilities.format_variant('p.[G4XaaXaa;G3Xaa]'), 'p.[G4XX;G3X]')
+    
+    def test_replaces_X_with_N_in_dna_variant(self):
+        for p in 'cgnm':
+            self.assertEqual(
+                utilities.format_variant(
+                    '{}.100A>X'.format(p)), '{}.100A>N'.format(p)
+            )
+        for p in 'cgnm':
+            self.assertEqual(
+                utilities.format_variant('{}.[1A>X;1_2delinsXXX]'.format(p)),
+                '{}.[1A>N;1_2delinsNNN]'.format(p)
+            )
+    
+    def test_replaces_X_with_N_in_rna_variant(self):
+        self.assertEqual(utilities.format_variant('r.100a>x'), 'r.100a>n')
+        self.assertEqual(
+            utilities.format_variant('r.[1a>x;1_2delinsxxx]'),
+            'r.[1a>n;1_2delinsnnn]'
+        )
+        
+
 class TestCreateVariantAttrsUtility(TestCase):
     @staticmethod
     def fixture_data(nt_score=('c.1A>G', 'c.2A>G'),

@@ -66,14 +66,14 @@ class TestScoreSetEditForm(TestCase):
         obj = ScoreSetFactory(replaces=replaced)
         for i in range(5):
             VariantFactory(scoreset=obj)
+        Licence.populate()
 
         old_experiment = obj.experiment
-        old_licence = obj.licence
         old_replaces = obj.previous_version
         old_variants = obj.children
 
         data, files = self.make_post_data()
-        data['licence'] = Licence.get_cc0()
+        data['licence'] = Licence.get_cc0().pk
         data['replaces'] = ScoreSetFactory(experiment=exp).pk
         form = ScoreSetEditForm(
             data=data, files=files, user=self.user, instance=obj
@@ -83,4 +83,5 @@ class TestScoreSetEditForm(TestCase):
         self.assertEqual(instance.children.count(), old_variants.count())
         self.assertEqual(instance.experiment, old_experiment)
         self.assertEqual(instance.previous_version, old_replaces)
-        self.assertEqual(instance.licence, old_licence)
+
+        self.assertEqual(instance.licence, Licence.get_cc0())  # new Licence

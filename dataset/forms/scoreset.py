@@ -489,5 +489,4 @@ class ScoreSetEditForm(ScoreSetForm):
         self.fields.pop('score_data')
         self.fields.pop('count_data')
         self.fields.pop('meta_data')
-        self.fields.pop('licence')
         self.fields.pop('replaces')
