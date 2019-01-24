@@ -1,4 +1,5 @@
 import json
+import io
 from enum import Enum
 
 import pandas as pd
@@ -6,6 +7,7 @@ import pandas as pd
 from django import forms as forms
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils.translation import ugettext
 
 from core.mixins import NestedEnumMixin
@@ -13,9 +15,7 @@ from core.utilities import readable_null_values
 
 from main.models import Licence
 
-from variant.validators import (
-    validate_variant_rows, validate_scoreset_columns_match_variant
-)
+from variant.validators import validate_variant_rows
 
 from dataset import constants as constants
 from ..forms.base import DatasetModelForm
@@ -295,6 +295,13 @@ class ScoreSetForm(DatasetModelForm):
         if meta_file is None:
             return {}
         try:
+            
+            if isinstance(meta_file, InMemoryUploadedFile):
+                content = meta_file.read()
+                if isinstance(content, bytes):
+                    content = content.decode()
+                meta_file = io.StringIO(content)
+            
             dict_ = json.load(meta_file)
             return dict_
         except ValueError as error:
