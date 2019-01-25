@@ -130,7 +130,7 @@ class BaseTask(Task):
         return task
 
     def submit_task(self, args=None, kwargs=None, async_options=None,
-                    request=None):
+                    request=None, countdown=10):
         """
         Calls `task.apply_async` and handles any connection errors by
         logging the error to the `django` default log and saving the
@@ -148,6 +148,8 @@ class BaseTask(Task):
             Additional kwargs that `apply_async` accepts.
         request : Request, optional. Default: None
             Request object from the view calling this function.
+        countdown : int
+            Delay before executing celery task.
 
         Returns
         -------
@@ -158,7 +160,7 @@ class BaseTask(Task):
             async_options = {}
         try:
             return True, self.apply_async(
-                args=args, kwargs=kwargs, **async_options)
+                args=args, kwargs=kwargs, countdown=countdown, **async_options)
         except kombu_errors as e:
             logger.exception(error_message.format(
                 name=self.name, exc_name=e.__class__.__name__))

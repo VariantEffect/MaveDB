@@ -78,7 +78,14 @@ class TestVariant(TestCase):
             
     def test_bulk_create_urns_updates_parent_last_child_value(self):
         parent = ScoreSetFactory()
+        parent.last_child_value = 100
         Variant.bulk_create_urns(10, parent)
+        self.assertEqual(parent.last_child_value, 110)
+        
+    def test_bulk_create_urns_resets_parent_value_if_true(self):
+        parent = ScoreSetFactory()
+        parent.last_child_value = 100
+        Variant.bulk_create_urns(10, parent, reset_counter=True)
         self.assertEqual(parent.last_child_value, 10)
     
     @mock.patch.object(Variant, 'bulk_create_urns', return_value=['',])

@@ -158,14 +158,15 @@ class Variant(UrnModel):
         return parent.variants.count()
 
     @staticmethod
-    def bulk_create_urns(n, parent):
-        start_value = parent.last_child_value
+    def bulk_create_urns(n, parent, reset_counter=False):
+        start_value = 0 if reset_counter else parent.last_child_value
         parent_urn = parent.urn
         child_urns = [
             "{}#{}".format(parent_urn, start_value + (i + 1))
             for i in range(n)
         ]
-        parent.last_child_value += n
+        current_value = start_value + n
+        parent.last_child_value = current_value
         return child_urns
 
     @property

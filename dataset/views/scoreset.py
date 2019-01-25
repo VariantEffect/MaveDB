@@ -1,8 +1,8 @@
 import logging
+from functools import partial
 
 from django.db import transaction
 from django.http import JsonResponse
-from django.conf import settings
 
 from accounts.permissions import PermissionTypes
 
@@ -31,6 +31,21 @@ from .base import (
 )
 
 logger = logging.getLogger("django")
+
+
+def fire_task(request, scoreset, task_kwargs):
+    logger.info("Submitting task from {} for {} to Celery.".format(
+        request.user, scoreset.urn
+    ))
+    success, _ = create_variants.submit_task(
+        kwargs=task_kwargs, request=request)
+    logger.info("Submission to celery from {} for {}: {}".format(
+        request.user, scoreset.urn, success
+    ))
+    if not success:
+        scoreset.processing_state = constants.failed
+        scoreset.save()
+
 
 
 class ScoreSetDetailView(AjaxView, DatasetModelView):
@@ -159,6 +174,8 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
                     self.kwargs['experiment'] = experiment
         return super().dispatch(request, *args, **kwargs)
 
+
+    
     @transaction.atomic
     def save_forms(self, forms):
         scoreset_form = forms['scoreset']
@@ -193,11 +210,10 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         if ensembl_offset:
             targetgene.ensembl_id = ensembl_offset.identifier
         targetgene.save()
-
+            
         # Call celery task after all the above has successfully completed
         if scoreset_form.has_variants():
             scoreset.processing_state = constants.processing
-            scoreset.save()
             scores_rs, counts_rs, index = scoreset_form.serialize_variants()
             task_kwargs = {
                 "user_pk": self.request.user.pk,
@@ -207,14 +223,14 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
                 "scores_records": scores_rs,
                 "counts_records": counts_rs,
             }
-            logger.info("Submitting task from {} for {} to Celery.".format(
-                self.request.user, scoreset.urn
-            ))
-            success, _ = create_variants.submit_task(
-                kwargs=task_kwargs, request=self.request)
-            logger.info("Submission to celery from {} for {}: {}".format(
-                self.request.user, scoreset.urn, success
-            ))
+            
+            call_create = partial(
+                fire_task,
+                request=self.request,
+                scoreset=scoreset,
+                task_kwargs=task_kwargs
+            )
+            transaction.on_commit(call_create)
 
         scoreset.save()
         scoreset.add_administrators(self.request.user)
@@ -317,7 +333,6 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
         # Call celery task after all the above has successfully completed
         if scoreset_form.has_variants():
             scoreset.processing_state = constants.processing
-            scoreset.save()
             scores_rs, counts_rs, index = scoreset_form.serialize_variants()
             task_kwargs = {
                 "user_pk": self.request.user.pk,
@@ -327,16 +342,14 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 "scores_records": scores_rs,
                 "counts_records": counts_rs,
             }
+            call_create = partial(
+                fire_task,
+                request=self.request,
+                scoreset=scoreset,
+                task_kwargs=task_kwargs
+            )
+            transaction.on_commit(call_create)
             
-            logger.info("Submitting task from {} for {} to Celery".format(
-                self.request.user, scoreset.urn
-            ))
-            success, _ = create_variants.submit_task(
-                kwargs=task_kwargs, request=self.request)
-            logger.info("Submission to celery from {} for {}: {}".format(
-                self.request.user, scoreset.urn, success
-            ))
-
         scoreset.save()
         track_changes(instance=scoreset, user=self.request.user)
         return forms

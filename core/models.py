@@ -1,4 +1,6 @@
 import json
+import io
+import pandas as pd
 import datetime
 import importlib
 
@@ -10,6 +12,13 @@ from .utilities import format_delta
 
 
 User = get_user_model()
+
+
+def dump_df(df, orient='records'):
+    handle = io.StringIO()
+    df.to_json(handle, orient=orient)
+    handle.seek(0)
+    return handle.read()
 
 
 class TimeStampedModel(models.Model):
@@ -141,11 +150,16 @@ class FailedTask(models.Model):
             traceback=str(traceback).strip(),
             user=user,
         )
+        
         if args:
+            args = [dump_df(i) if isinstance(i, pd.DataFrame) else i for i in args]
             task.args = json.dumps(list(args))
         if kwargs:
+            import io
+            for key, item in kwargs.items():
+                if isinstance(item, pd.DataFrame):
+                    kwargs[key] = dump_df(item)
             task.kwargs = json.dumps(kwargs, sort_keys=True)
-
         return task
 
     def find_existing(self):

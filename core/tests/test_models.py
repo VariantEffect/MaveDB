@@ -1,4 +1,7 @@
 import json
+import io
+
+import pandas as pd
 
 from django.test import TestCase, mock
 
@@ -46,6 +49,28 @@ class TestFailedTaskModel(TestCase):
         )
         self.assertIsNone(task.args)
         self.assertIsNone(task.kwargs)
+        
+    def test_instantiate_supports_dataframes_in_kwargs_and_args(self):
+        df = pd.DataFrame({'x': [1,2,3], 'y': [3,4,5]})
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[df, ],
+            kwargs={'count_records': df},
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        
+        handle = io.StringIO()
+        df.to_json(handle, orient='records')
+        handle.seek(0)
+        expected = handle.read()
+        
+        self.assertEqual(task.args, json.dumps([expected,]))
+        self.assertEqual(task.kwargs, json.dumps(
+            {'count_records': expected}, sort_keys=True))
         
     def test_update_or_create_creates_new_task(self):
         task, created = models.FailedTask.update_or_create(
@@ -105,7 +130,7 @@ class TestFailedTaskModel(TestCase):
         task.retry_and_delete()
         patch.assert_called()
         self.assertEqual(patch.call_args[1],
-                         {'args': (), 'kwargs': kwargs})
+                         {'args': (), 'kwargs': kwargs, 'countdown': 10})
         self.assertEqual(models.FailedTask.objects.count(), 0)
 
     def test_inline_retry_does_not_delete_if_failure(self):
@@ -144,6 +169,33 @@ class TestFailedTaskModel(TestCase):
             name='add',
             full_name='core.tasks.add',
             args=[],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        self.assertEqual(task.find_existing(), existing)
+
+    def test_can_find_existing_task_when_kwargs_has_df(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [3, 4, 5]})
+        kwargs = {'a': 1, 'b': 2, 'df': df}
+        existing = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[df,],
+            kwargs=kwargs,
+            exc=Exception("This is a test"),
+            traceback=None,
+            task_id="1",
+            user=None,
+        )
+        existing.save()
+
+        task = models.FailedTask.instantiate_task(
+            name='add',
+            full_name='core.tasks.add',
+            args=[df, ],
             kwargs=kwargs,
             exc=Exception("This is a test"),
             traceback=None,
