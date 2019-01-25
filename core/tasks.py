@@ -130,7 +130,7 @@ class BaseTask(Task):
         return task
 
     def submit_task(self, args=None, kwargs=None, async_options=None,
-                    request=None, countdown=30):
+                    request=None, countdown=10):
         """
         Calls `task.apply_async` and handles any connection errors by
         logging the error to the `django` default log and saving the
