@@ -4,6 +4,7 @@ from core.utilities.tests import TestMessageMixin
 
 from accounts.factories import UserFactory
 from variant.factories import VariantFactory
+from variant.models import Variant
 
 import dataset
 from dataset.factories import ScoreSetFactory
@@ -179,6 +180,13 @@ class TestPublish(TestCase, TestMessageMixin):
         scoreset.add_administrators(self.user)
         publish_dataset(scoreset)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
+        
+    @mock.patch.object(Variant, 'bulk_create_urns', return_value=['a', 'b', 'c'])
+    def test_calls_create_bulk_urns_with_reset_counter_as_true(self, patch):
+        scoreset = self.create_scoreset()
+        scoreset.add_administrators(self.user)
+        publish_dataset(scoreset)
+        patch.assert_called_with(*(3, scoreset), reset_counter=True)
     
     @mock.patch('dataset.tasks.publish_scoreset.submit_task', return_value=(True, None))
     def test_sets_status_as_processing(self, patch):

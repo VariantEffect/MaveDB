@@ -106,7 +106,8 @@ def publish_dataset(dataset, user=None):
             dataset.experiment)
         scoreset = models.scoreset.assign_public_urn(
             dataset)
-        urns = Variant.bulk_create_urns(scoreset.children.count(), scoreset)
+        urns = Variant.bulk_create_urns(
+            scoreset.children.count(), scoreset, reset_counter=True)
         for urn, child in zip(urns, scoreset.children.all()):
             child.urn = urn
             child.save()
