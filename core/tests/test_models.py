@@ -130,7 +130,7 @@ class TestFailedTaskModel(TestCase):
         task.retry_and_delete()
         patch.assert_called()
         self.assertEqual(patch.call_args[1],
-                         {'args': (), 'kwargs': kwargs, 'countdown': 30})
+                         {'args': (), 'kwargs': kwargs, 'countdown': 10})
         self.assertEqual(models.FailedTask.objects.count(), 0)
 
     def test_inline_retry_does_not_delete_if_failure(self):
