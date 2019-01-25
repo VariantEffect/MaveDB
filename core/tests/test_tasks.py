@@ -1,17 +1,27 @@
-from django.test import TestCase
+from kombu.exceptions import KombuError
+
+from django.test import TestCase, RequestFactory, mock
+from django.contrib import messages
 from django.core import mail
 from django.contrib.auth import get_user_model
 
 from accounts.factories import UserFactory
 
 from core import models
+from core.utilities.tests import TestMessageMixin
 from core.tasks import send_mail, BaseTask
 
 
 User = get_user_model()
 
 
-class TestBaseTask(TestCase):
+def raise_error(*args, **kwargs):
+    raise KombuError("Could not queue task.")
+    
+
+class TestBaseTask(TestCase, TestMessageMixin):
+    def setUp(self):
+        self.factory = RequestFactory()
     
     def test_save_failed_task_updates_existing(self):
         kwargs = {
@@ -44,6 +54,14 @@ class TestBaseTask(TestCase):
         task.refresh_from_db()
         self.assertEqual(models.FailedTask.objects.count(), 1)
         self.assertEqual(task.failures, 2)
+    
+    @mock.patch.object(BaseTask, 'apply_async', side_effect=raise_error)
+    def test_sends_message_on_queue_fail(self, patch):
+        request = self.create_request(method='get', path='/')
+        request.user = UserFactory()
+        task = BaseTask()
+        task.submit_task(request=request)
+        self.assertEqual(len(list(messages.get_messages(request))), 1)
     
     def test_on_failure_saves_task(self):
         kwargs = {
