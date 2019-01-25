@@ -2,7 +2,7 @@ import json
 from pandas.testing import assert_frame_equal
 
 from django.core import mail
-from django.test import TestCase, RequestFactory, mock
+from django.test import TestCase, TransactionTestCase, RequestFactory, mock
 from django.urls import reverse_lazy
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
@@ -46,7 +46,7 @@ from ..views.scoreset import (
 from .utility import make_files
 
 
-class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
+class TestScoreSetSetDetailView(TestCase , TestMessageMixin):
     """
     Test that experimentsets are displayed correctly to the public.
     """
@@ -231,7 +231,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         self.assertContains(response, '>' + scs2.urn + '<', count=1)
 
 
-class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
+class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
     """
     Test that the submission process does not allow invalid data through,
     and properly handles model creation.
@@ -429,7 +429,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
         form = ScoreSetForm(files=self.files, data=form_data, user=self.user)
         self.assertTrue(form.is_valid())
 
-        with mock.patch('dataset.tasks.create_variants.apply_async') as create_mock:
+        with mock.patch('dataset.views.scoreset.create_variants.apply_async') as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
             scores, counts, index = form.serialize_variants()
@@ -710,7 +710,7 @@ class TestCreateNewScoreSetView(TestCase, TestMessageMixin):
                          get_refseq_offset_annotation().offset, 5)
         
 
-class TestEditScoreSetView(TestCase, TestMessageMixin):
+class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
     """
     Test that the submission process does not allow invalid data through,
     and properly handles model creation.
@@ -790,7 +790,7 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         response = ScoreSetEditView.as_view()(request, urn=scs.urn)
         self.assertEqual(response.status_code, 302)
 
-    def test_create_variants_notifies_user(self):
+    def test_calls_create_variants_and_notifies_user(self):
         # Catch admin patch and prevent it being called
         data = self.post_data.copy()
         user = UserFactory(is_superuser=True)
@@ -808,7 +808,7 @@ class TestEditScoreSetView(TestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
 
-        with mock.patch('dataset.tasks.create_variants.apply_async') as create_mock:
+        with mock.patch('dataset.views.scoreset.create_variants.apply_async') as create_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()
             scs.refresh_from_db()
