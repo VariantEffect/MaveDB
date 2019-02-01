@@ -158,8 +158,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     success_message = (
         "Successfully created a new Score Set with temporary accession number "
         "{urn}. Uploaded files are being processed and further editing has been "
-        "temporarily disabled. You will receive an email message when "
-        "processing completes."
+        "temporarily disabled. Please check back later."
     )
     
 
@@ -416,7 +415,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             return (
                 "Successfully updated {urn}. Uploaded files are being "
                 "processed and further editing has been temporarily disabled. "
-                "You will receive an email message when processing completes."
+                "Please check back later."
             ).format(urn=self.instance.urn)
         else:
             return super().format_success_message()
