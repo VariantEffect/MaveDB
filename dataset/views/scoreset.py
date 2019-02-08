@@ -4,9 +4,10 @@ from functools import partial
 from django.db import transaction
 from django.http import JsonResponse
 
+from reversion import create_revision
+
 from accounts.permissions import PermissionTypes
 
-from core.utilities.versioning import track_changes
 from core.mixins import AjaxView
 
 from metadata.forms import (
@@ -45,7 +46,6 @@ def fire_task(request, scoreset, task_kwargs):
     if not success:
         scoreset.processing_state = constants.failed
         scoreset.save()
-
 
 
 class ScoreSetDetailView(AjaxView, DatasetModelView):
@@ -173,8 +173,6 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
                     self.kwargs['experiment'] = experiment
         return super().dispatch(request, *args, **kwargs)
 
-
-    
     @transaction.atomic
     def save_forms(self, forms):
         scoreset_form = forms['scoreset']
@@ -231,9 +229,10 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
             )
             transaction.on_commit(call_create)
 
-        scoreset.save()
+        with create_revision():
+            scoreset.save()
+       
         scoreset.add_administrators(self.request.user)
-        track_changes(instance=scoreset, user=self.request.user)
         self.kwargs['urn'] = scoreset.urn
         return forms
 
@@ -348,9 +347,9 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
                 task_kwargs=task_kwargs
             )
             transaction.on_commit(call_create)
-            
-        scoreset.save()
-        track_changes(instance=scoreset, user=self.request.user)
+
+        with create_revision():
+            scoreset.save()
         return forms
 
     def get_instance_for_form(self, form_key):

@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from django.urls import reverse_lazy
 from django.db import transaction
 
-from core.utilities.versioning import track_changes
+from reversion import create_revision
 
 from accounts.permissions import PermissionTypes
 
@@ -103,9 +103,8 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
 
         experiment.set_created_by(self.request.user, propagate=propagate)
         experiment.set_modified_by(self.request.user, propagate=propagate)
-        experiment.save(save_parents=save_parents)
-        track_changes(instance=experiment, user=self.request.user)
-        track_changes(instance=experiment.parent, user=self.request.user)
+        with create_revision():
+            experiment.save(save_parents=save_parents)
         self.kwargs['urn'] = experiment.urn
         return forms
 
@@ -152,7 +151,8 @@ class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetModelView):
         experiment_form = forms['experiment']
         experiment = experiment_form.save(commit=True)
         experiment.set_modified_by(self.request.user, propagate=False)
-        track_changes(instance=experiment, user=self.request.user)
+        with create_revision():
+            experiment.save()
         self.kwargs['urn'] = experiment.urn
         return forms
 
