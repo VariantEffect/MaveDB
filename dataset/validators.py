@@ -1,10 +1,11 @@
 import io
 import csv
+import re
 
-import numpy as np
 from numpy.testing import assert_array_equal
 
 from django.utils.translation import ugettext
+from django.utils.deconstruct import deconstructible
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 
@@ -12,9 +13,32 @@ from core.utilities import is_null, readable_null_values
 
 from . import constants
 
+
 validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
 validate_gz_extension = FileExtensionValidator(allowed_extensions=['gz'])
 validate_json_extension = FileExtensionValidator(allowed_extensions=['json'])
+
+
+@deconstructible
+class WordLimitValidator:
+    message = "This field is limited to {} words."
+    code = 'invalid'
+    counter = re.compile(r'\w+\b', flags=re.IGNORECASE)
+    
+    def __init__(self, word_limit, message=None, code=None):
+        if message is not None:
+            self.message = message
+        if code is not None:
+            self.code = code
+        self.word_limit = int(word_limit)
+    
+    def __call__(self, value):
+        if not value:
+            return
+        if len(self.counter.findall(value)) > self.word_limit:
+            raise ValidationError(self.message.format(
+                self.word_limit
+            ))
 
 
 def read_header_from_io(file, label=None, msg=None):
