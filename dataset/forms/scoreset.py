@@ -99,6 +99,7 @@ class ScoreSetForm(DatasetModelForm):
         fields = DatasetModelForm.Meta.fields + (
             'experiment',
             'licence',
+            'data_usage_policy',
             'replaces',
         )
 
@@ -145,7 +146,8 @@ class ScoreSetForm(DatasetModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.field_order = ('experiment', 'replaces', 'licence',) + \
+        self.field_order = ('experiment', 'replaces', 'licence',
+                            'data_usage_policy') + \
                            self.FIELD_ORDER + \
                            ('score_data', 'count_data', 'meta_data',)
         # If an experiment is passed in we can used to it to seed initial
