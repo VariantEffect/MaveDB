@@ -24,7 +24,7 @@ from urn.validators import validate_mavedb_urn_scoreset
 from dataset import constants as constants
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
-from ..validators import validate_scoreset_json
+from ..validators import validate_scoreset_json, WordLimitValidator
 
 
 User = get_user_model()
@@ -179,6 +179,12 @@ class ScoreSet(DatasetModel):
         null=False,
         verbose_name="Scores are normalised",
     )
+    
+    data_usage_policy = models.TextField(
+        null=True, default="", blank=True,
+        verbose_name='Data usage policy',
+        validators=[WordLimitValidator(250), ]
+    )
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -191,7 +197,7 @@ class ScoreSet(DatasetModel):
 
     @classmethod
     def tracked_fields(cls):
-        return super().tracked_fields() + ('licence', )
+        return super().tracked_fields() + ('licence', 'data_usage_policy', )
 
     # Variant related methods
     # ---------------------------------------------------------------------- #
