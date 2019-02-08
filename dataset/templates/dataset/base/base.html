@@ -125,6 +125,10 @@
   <div class="col-xl-2 sidenav-detail sidenav border-right">
     <a href="#contributors">Contributors</a>
 
+    {% if instance.class_name == "scoreset" %}
+      <a href="#data-usage">Data usage policy</a>
+    {% endif %}
+
     {% if instance.class_name != "experimentset" %}
       <a href="#title">Title</a>
       <a href="#description">Description</a>
@@ -141,7 +145,7 @@
     {% endif %}
 
     {% if instance.class_name != "experimentset" %}
-      <a href="#metadata">External Identifiers</a>
+      <a href="#metadata">External identifiers</a>
       <a href="#references">References</a>
     {% endif %}
 
@@ -150,7 +154,7 @@
     {% endif %}
 
     {% if instance.class_name == "experiment" %}
-      <a href="#scoresets">Score Sets</a>
+      <a href="#scoresets">Scoresets</a>
     {% endif %}
 
     {% if instance.class_name == "scoreset" %}
@@ -170,6 +174,11 @@
       </li>
       {% endfor %}
     </ul>
+
+    {% if instance.class_name == "scoreset" %}
+      <h2 id="data-usage" class="underline left-align section-heading">Data usage policy</h2>
+      <p>{{ instance.data_usage_policy }}</p>
+    {% endif %}
 
     <!-- Renders markdown abstract text -->
     {% if instance.class_name != "experimentset" %}
