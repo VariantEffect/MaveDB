@@ -48,56 +48,24 @@ class TestDisplayTargetsTag(TestCase):
         user = UserFactory()
         result = dataset_tags.display_targets(exp, user, javascript=True)
         self.assertEqual(result, json.dumps(['-']))
-
-
-class TestDisplaySpeciesTag(TestCase):
-    def test_shows_organsim_from_public_scoresets(self):
+        
+    def test_returns_categories_for_each_target_if_categories_is_true(self):
         exp = ExperimentWithScoresetFactory()
         publish_dataset(exp.scoresets.first())
         user = UserFactory()
-        result = dataset_tags.display_organism(exp, user)
-        self.assertIn(
-            list(exp.scoresets.first().get_display_target_organisms())[0],
-            result
-        )
-
-    def test_hides_organsim_from_private_scoresets(self):
-        exp = ExperimentWithScoresetFactory()
-        user = UserFactory()
-        result = dataset_tags.display_organism(exp, user)
-        self.assertNotIn(
-            list(exp.scoresets.first().get_display_target_organisms())[0],
-            result
-        )
-
-    def test_shows_organsim_from_private_if_user_is_contributor(self):
-        exp = ExperimentWithScoresetFactory()
-        user = UserFactory()
-        exp.scoresets.first().add_viewers(user)
-        result = dataset_tags.display_organism(exp, user)
-        self.assertIn(
-            list(exp.scoresets.first().get_display_target_organisms())[0],
-            result
-        )
+        result = dataset_tags.display_targets(exp, user, categories=True)
+        self.assertIn(exp.scoresets.first().get_target().category, result)
         
-    def test_formats_for_javascript(self):
+    def test_returns_organisms_for_each_target_if_organisms_is_true(self):
         exp = ExperimentWithScoresetFactory()
+        publish_dataset(exp.scoresets.first())
         user = UserFactory()
-        exp.scoresets.first().add_viewers(user)
-        result = dataset_tags.display_organism(exp, user, javascript=True)
-        self.assertEqual(
-            result,
-            json.dumps(
-                sorted(list(
-                    exp.scoresets.first().get_display_target_organisms())
-                ))
+        result = dataset_tags.display_targets(exp, user, organisms=True)
+        self.assertIn(
+            exp.scoresets.first().get_target()
+                .get_primary_reference_map()
+                .format_reference_genome_organism_html(), result
         )
-        
-    def test_formats_for_javascript_when_no_targets_found(self):
-        exp = ExperimentFactory()
-        user = UserFactory()
-        result = dataset_tags.display_organism(exp, user, javascript=True)
-        self.assertEqual(result, json.dumps(['-']))
 
 
 class TestVisibleChildren(TestCase):
