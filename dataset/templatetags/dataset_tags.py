@@ -8,43 +8,58 @@ register = template.Library()
 
 
 @register.simple_tag
-def display_targets(instance, user, javascript=False):
-    targets = set()
+def display_targets(instance, user, javascript=False,
+                    categories=False, organisms=False):
+    targets = []
     if isinstance(instance, models.experiment.Experiment):
-        for child in instance.children:
+        for child in instance.children.order_by('urn'):
             if child.private and user in child.contributors():
-                targets.add(child.get_target().get_name())
+                targets.append([
+                    child.get_target().get_name(),
+                    child.get_target().category,
+                    child.get_target().get_primary_reference_map().
+                        format_reference_genome_organism_html(),
+                ])
             elif not child.private:
-                targets.add(child.get_target().get_name())
+                targets.append([
+                    child.get_target().get_name(),
+                    child.get_target().category,
+                    child.get_target().get_primary_reference_map().
+                        format_reference_genome_organism_html(),
+                ])
     elif isinstance(instance, models.scoreset.ScoreSet):
-        targets.add(instance.get_target().get_name())
+        targets.append([
+            instance.get_target().get_name(),
+            instance.get_target().category,
+            instance.get_target().get_primary_reference_map().
+                format_reference_genome_organism_html(),
+        ])
     if not targets:
         if javascript:
             return mark_safe(json.dumps(['-']))
         return '-'
     if javascript:
-        return mark_safe(json.dumps(sorted(list(targets))))
-    return mark_safe(', '.join(sorted(list(targets))))
+        if categories:
+            return mark_safe(json.dumps([x[1] for x in targets]))
+        elif organisms:
+            return mark_safe(json.dumps([x[2] for x in targets]))
+        else:
+            return mark_safe(json.dumps([x[0] for x in targets]))
+    if categories:
+       return mark_safe(', '.join([x[1] for x in targets]))
+    elif organisms:
+        return mark_safe(', '.join([x[2] for x in targets]))
+    else:
+        return mark_safe(', '.join([x[0] for x in targets]))
 
 
-@register.simple_tag
-def display_organism(instance, user, javascript=False):
-    organism_names = set()
-    if isinstance(instance, models.experiment.Experiment):
-        for child in instance.children:
-            if child.private and user in child.contributors():
-                organism_names |= child.get_display_target_organisms()
-            elif not child.private:
-                organism_names |= child.get_display_target_organisms()
-    elif isinstance(instance, models.scoreset.ScoreSet):
-        organism_names |= instance.get_display_target_organisms()
-    if not organism_names:
-        if javascript:
-            return mark_safe(json.dumps(['-']))
-        return '-'
-    if javascript:
-        return mark_safe(json.dumps(sorted(list(organism_names))))
-    return mark_safe(', '.join(sorted(list(organism_names))))
+@register.assignment_tag
+def organise_by_target(scoresets):
+    by_target = {s.get_target().name: [] for s in scoresets}
+    for scoreset in scoresets:
+        name = scoreset.get_target().name
+        by_target[name].append(scoreset)
+    return by_target
 
 
 @register.assignment_tag
