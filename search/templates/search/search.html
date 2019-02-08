@@ -50,6 +50,7 @@
             <th class="clickable-row">Urn</th>
             <th class="clickable-row">Short description</th>
             <th class="clickable-row">Target name</th>
+            <th class="clickable-row">Target type</th>
             <th class="clickable-row">Target organisms</th>
             <th class="clickable-row">Contributors</th>
           </tr>
@@ -68,8 +69,9 @@
         {
           "urn": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
           "description": "{{ instance.short_description|default:"-"|escapejs }}",
-          "target": [{% display_targets instance request.user True %}][0].join(', '),
-          "organism": [{% display_organism instance request.user True %}][0].join(', '),
+          "target": [{% display_targets instance request.user True False False %}][0].join(', '),
+          "type": [{% display_targets instance request.user True True False %}][0].join(', '),
+          "organism": [{% display_targets instance request.user True False True %}][0].join(', '),
           "contributors": "" +
             {% for c in instance.contributors %}
               "<span>" +
@@ -85,8 +87,9 @@
                 {
                   "urn": "<a href=\"{{ child.get_url }}\">{% format_urn_name_for_user child request.user %}</a>",
                   "description": "{{ child.short_description|default:"-"|escapejs }}",
-                  "target": [{% display_targets child request.user True %}][0].join(', '),
-                  "organism": [{% display_organism child request.user True %}][0].join(', '),
+                  "target": [{% display_targets child request.user True False False %}][0].join(', '),
+                  "type": [{% display_targets child request.user True True False %}][0].join(', '),
+                  "organism": [{% display_targets child request.user True False True %}][0].join(', '),
                   "contributors": "" +
                     {% for c in child.contributors %}
                       "<span>" +
@@ -126,6 +129,7 @@
         {data: "urn"},
         {data: "description", width: "40%"},
         {data: "target" },
+        {data: "type" },
         {data: "organism"},
         {data: "contributors"}
       ],
@@ -172,6 +176,7 @@
           "<td>" + rowData.children[i].urn + "</td>" +
           "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +
           "<td>" + rowData.children[i].target + "</td>" +
+          "<td>" + rowData.children[i].type + "</td>" +
           "<td>" + rowData.children[i].organism + "</td>" +
           "<td>" + rowData.children[i].contributors + "</td>" +
         "</tr>"
