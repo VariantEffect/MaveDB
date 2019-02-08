@@ -218,6 +218,7 @@ $("#id_target").on("change", function() {
     "id_ensembl-offset");
 
   var nameElem = document.getElementById('id_name');
+  var categoryElem = document.getElementById('id_category');
   var seqElem = document.getElementById('id_wt_sequence');
   var genomeSelect = $("#id_genome");
 
@@ -230,7 +231,8 @@ $("#id_target").on("change", function() {
       success: function (data) {
         // console.log(data);
         var targetName = data.name;
-        var wildTypeSequence = data.wt_sequence.sequence;
+        var wildTypeSequence = data.reference_sequence.sequence;
+        var category = data.type;
         var referenceGenome = data.genome;
         
         var uniprot_id, refseq_id, ensembl_id = null;
@@ -280,6 +282,11 @@ $("#id_target").on("change", function() {
         } else {
           nameElem.value = "";
         }
+        if (category) {
+          categoryElem.value = category;
+        } else {
+          categoryElem.value = "";
+        }
         if (wildTypeSequence) {
           seqElem.value = wildTypeSequence
         } else {
@@ -298,6 +305,7 @@ $("#id_target").on("change", function() {
     return true;
   } else {
     nameElem.value = "";
+    categoryElem.value = "";
     seqElem.value = "";
     $(genomeSelect).val("").trigger('change');
 
