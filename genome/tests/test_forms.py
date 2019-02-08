@@ -133,14 +133,21 @@ class TestTargetGeneForm(TestCase):
             self.assertFalse(form.is_valid())
 
     def test_strips_whitespace_from_wt_seq(self):
-        data = {'wt_sequence': ' atcg ', 'name': 'brca1'}
+        data = {
+            'wt_sequence': ' atcg ', 'name': 'brca1',
+            'category': 'Protein coding'
+        }
         form = TargetGeneForm(user=self.user, data=data)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.wt_sequence, 'atcg')
 
     def test_strips_line_breaks_tabs_ws_from_wt_seq(self):
-        data = {'wt_sequence': ' atcg\ngtac\r\ngg\tgg aaaa', 'name': 'brca1'}
+        data = {
+            'wt_sequence': ' atcg\ngtac\r\ngg\tgg aaaa', 'name': 'brca1',
+            'category': 'Protein coding'
+        }
         form = TargetGeneForm(user=self.user, data=data)
+        print(form.errors)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.wt_sequence, 'atcggtacggggaaaa')
 
@@ -178,7 +185,10 @@ class TestTargetGeneForm(TestCase):
         self.assertEqual(form.fields['target'].queryset.count(), 1)
 
     def test_save_sets_wt_sequence(self):
-        data = {'wt_sequence': 'atcg', 'name': 'brca1'}
+        data = {
+            'wt_sequence': 'atcg', 'name': 'brca1',
+            'category': 'Protein coding'
+        }
         form = TargetGeneForm(user=self.user, data=data)
         scs = ScoreSetFactory()
         form.instance.scoreset = scs
@@ -189,7 +199,10 @@ class TestTargetGeneForm(TestCase):
     def test_updates_existing_wt_sequence(self):
         instance = TargetGeneFactory()
         wt = instance.get_wt_sequence()
-        data = {'name': 'JAK', 'wt_sequence': 'CCCC'}
+        data = {
+            'name': 'JAK', 'wt_sequence': 'CCCC',
+            'category': 'Protein coding'
+        }
         form = TargetGeneForm(user=self.user, data=data, instance=instance)
         instance = form.save(commit=True)
         self.assertEqual(instance.get_name(), data['name'])

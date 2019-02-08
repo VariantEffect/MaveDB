@@ -16,7 +16,7 @@ class TestTargetGeneSerializer(TestCase):
     def test_serializes_name_and_sequence(self):
         targetgene = TargetGeneFactory()
         data = TargetGeneSerializer(targetgene).data
-        self.assertEqual(data['wt_sequence']['sequence'],
+        self.assertEqual(data['reference_sequence']['sequence'],
                          targetgene.wt_sequence.sequence)
         self.assertEqual(data['name'], targetgene.name)
 
