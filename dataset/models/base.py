@@ -231,15 +231,15 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         related_name='associated_%(class)ss',)
     sra_ids = models.ManyToManyField(
         SraIdentifier, blank=True,
-        verbose_name='SRA Identifiers',
+        verbose_name='SRA identifiers',
         related_name='associated_%(class)ss',)
     doi_ids = models.ManyToManyField(
         DoiIdentifier, blank=True,
-        verbose_name='DOI Identifiers',
+        verbose_name='DOI identifiers',
         related_name='associated_%(class)ss',)
     pubmed_ids = models.ManyToManyField(
         PubmedIdentifier, blank=True,
-        verbose_name='PubMed Identifiers',
+        verbose_name='PubMed identifiers',
         related_name='associated_%(class)ss',)
 
     # ---------------------------------------------------------------------- #
