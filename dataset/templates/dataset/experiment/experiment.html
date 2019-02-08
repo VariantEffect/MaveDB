@@ -12,60 +12,67 @@
     {% else %}
       <p class="text-muted">A single target has been scored for this experiment: </p>
     {% endif %}
-    
-    {% for child in visible_scoresets %}
-      <div class="target-card" data-toggle="popover" title="<b>{{ child.urn }}</b><hr>{{ child.get_title }}"
-           data-content="{{ child.get_description }}" data-placement=auto
-           onmouseover="$(this).popover({trigger:'hover', html:true});" style="cursor: help" >
 
-        <a href={% url 'dataset:scoreset_detail' child.urn %}>
-          <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
-        </a>
+    {% organise_by_target visible_scoresets as children_by_target %}
+    {% for gene, children in children_by_target.items %}
+      <h5>{{ gene|upper }}</h5>
+      {% for child in children %}
+        <div class="target-card" data-toggle="popover" title="<b>{{ child.urn }}</b><hr>{{ child.get_title }}"
+             data-content="{{ child.get_description }}" data-placement=auto
+             onmouseover="$(this).popover({trigger:'hover', html:true});"
+             style="cursor: help; margin-bottom: 1rem; margin-top: 1rem" >
 
-        <div style="padding-left: 1em">
-          <p>
-            <strong>Target: </strong>
-            <a href="/search/?target={{ child.get_target.get_name }}">
-              {{ child.get_target.get_name }}
-            </a>
-          </p>
+          <a href={% url 'dataset:scoreset_detail' child.urn %}>
+            <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
+          </a>
 
-          <p>
-            <strong>Organism: </strong>
-            <a href="/search/?organism={{ child.get_target.get_reference_genomes.first.get_organism_name }}">
-              {{ child.get_target.get_reference_genomes.first.format_organism_name_html|safe }}
-            </a>
-          </p>
-
-          <p>
-            <strong>Reference genome: </strong>
-            <a href="/search/?genome={{ child.get_target.get_reference_genomes.first.get_short_name }}">
-              {{ child.get_target.get_reference_genomes.first.get_short_name }}
-            </a>
-          </p>
-
-          <p>
-            <strong>Reference assembly: </strong>
-            {% if child.get_target.get_reference_genomes.first.genome_id.identifier %}
-              <a target="_blank" href={{ child.get_target.get_reference_genomes.first.genome_id.url }}>
-                {{ child.get_target.get_reference_genomes.first.genome_id.identifier }}
-                <i class="external-link fas fa-external-link-alt"></i>
+          <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
+            <p>
+              <strong>Target type: </strong>
+              <a href="/search/?target_type={{ child.get_target.category }}">
+                {{ child.get_target.category }}
               </a>
-            {% else %}
-              Other/Synthetic
-            {% endif %}
-          </p>
+            </p>
 
-          <p class="wild-type-sequence">
-            <strong>Wildtype Sequence: </strong>
-            {{ child.get_target.get_wt_sequence }}
-          </p>
+            <p>
+              <strong>Organism: </strong>
+              <a href="/search/?organism={{ child.get_target.get_reference_genomes.first.get_organism_name }}">
+                {{ child.get_target.get_reference_genomes.first.format_organism_name_html|safe }}
+              </a>
+            </p>
 
-          {% if forloop.counter < visible_scoresets|length %}
-            <hr>
-          {% endif %}
+            <p>
+              <strong>Reference genome: </strong>
+              <a href="/search/?genome={{ child.get_target.get_reference_genomes.first.get_short_name }}">
+                {{ child.get_target.get_reference_genomes.first.get_short_name }}
+              </a>
+            </p>
+
+            <p>
+              <strong>Reference assembly: </strong>
+              {% if child.get_target.get_reference_genomes.first.genome_id.identifier %}
+                <a target="_blank" href={{ child.get_target.get_reference_genomes.first.genome_id.url }}>
+                  {{ child.get_target.get_reference_genomes.first.genome_id.identifier }}
+                  <i class="external-link fas fa-external-link-alt"></i>
+                </a>
+              {% else %}
+                Other/Synthetic
+              {% endif %}
+            </p>
+
+            <p class="wild-type-sequence">
+              <strong>Reference sequence: </strong>
+              {{ child.get_target.get_wt_sequence }}
+            </p>
+          </div>
         </div>
-      </div>
+        {% if forloop.counter < children|length %}
+          <hr style="width: 99%">
+        {% endif %}
+      {% endfor %}
+      {% if forloop.counter < children_by_target.items|length %}
+        <hr style="width: 99%">
+      {% endif %}
     {% endfor %}
   {% else %}
     <p class="text-muted">No targets have been scored for this experiment.</p>
