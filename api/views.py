@@ -1,16 +1,16 @@
-import string
 import csv
+import re
 from datetime import datetime
 
 from rest_framework import viewsets, exceptions
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.cache import cache_page
-from django.conf import settings
 
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
+
+from core.utilities import chunks
 
 from dataset import models, filters, constants
 from dataset.serializers import (
@@ -22,6 +22,9 @@ from dataset.serializers import (
 
 User = get_user_model()
 ScoreSet = models.scoreset.ScoreSet
+
+
+words_re = re.compile(r"\w+|[^\w\s]", flags=re.IGNORECASE)
 
 
 def authenticate(request):
@@ -199,6 +202,29 @@ def urn_number(variant):
     return int(number)
     
 
+def format_policy(policy, line_wrap_len=77):
+    if policy:
+        policy = "Not specified"
+    words = words_re.findall(policy)
+    lines = []
+    index = 0
+    line = ""
+    while index < len(words):
+        if len(words[index]) == 1:
+            new_line = '{}{}'.format(line, words[index])
+        else:
+            new_line = '{} {}'.format(line, words[index])
+        if len(new_line) >= line_wrap_len:
+            lines.append("# {}\n".format(line.strip()))
+            line = ""
+        else:
+            line = new_line
+            index += 1
+    if line:
+        lines.append("# {}\n".format(line.strip()))
+    return lines
+    
+
 def format_response(response, scoreset, dtype):
     """
     Writes the CSV response by formatting each variant into a row including
@@ -224,6 +250,10 @@ def format_response(response, scoreset, dtype):
         "# Licence URL: {}\n".format(scoreset.licence.link),
     ])
     
+    # Append data usage policy
+    lines = format_policy(scoreset.data_usage_policy)
+    response.writelines(["# Data usage policy:\n"] + lines)
+
     variants = sorted(
         scoreset.children.all(), key=lambda v: urn_number(v))
         
