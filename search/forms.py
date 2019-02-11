@@ -65,6 +65,7 @@ class BasicSearchForm(forms.Form):
         data[ds_filters.ScoreSetFilter.ENSEMBL] = value
         data[ds_filters.ScoreSetFilter.REFSEQ] = value
         data[ds_filters.ScoreSetFilter.LICENCE] = value
+        data[ds_filters.ScoreSetFilter.TARGET_TYPE] = value
 
         return data
 
@@ -76,21 +77,22 @@ class AdvancedSearchForm(forms.Form):
         label="Title", required=False,
         help_text='Search entries by title.',
     )
-    description = forms.CharField(
-        label="Description", required=False,
-        help_text='Search entries by short description.',
-        widget=forms.widgets.Textarea()
-    )
-    method = forms.CharField(
-        label="Method", required=False,
-        help_text='Search entries by their method description.',
-        widget=forms.widgets.Textarea()
-    )
-    abstract = forms.CharField(
-        label="Abstract", required=False,
-        help_text='Search entries by their abstract description.',
-        widget=forms.widgets.Textarea()
-    )
+    # description = forms.CharField(
+    #     label="Description", required=False,
+    #     help_text='Search entries by short description.',
+    #     widget=forms.widgets.Textarea()
+    # )
+    # method = forms.CharField(
+    #     label="Method", required=False,
+    #     help_text='Search entries by their method description.',
+    #     widget=forms.widgets.Textarea()
+    # )
+    # abstract = forms.CharField(
+    #     label="Abstract", required=False,
+    #     help_text='Search entries by their abstract description.',
+    #     widget=forms.widgets.Textarea()
+    # )
+    
     pubmed = fields.CSVCharField(
         label='PubMed identifiers', required=False,
         help_text='Search by PubMed identifiers associated with an entry.',
@@ -130,8 +132,12 @@ class AdvancedSearchForm(forms.Form):
     # ScoreSet/Experiment filter fields
     # ---------------------------------------------------------------------- #
     target = fields.CSVCharField(
-        label='Target gene name', required=False,
-        help_text='Search by a target\'s gene name.',
+        label='Target name', required=False,
+        help_text='Search by a target\'s name.',
+    )
+    target_type = fields.CSVCharField(
+        label='Target type', required=False,
+        help_text='Search by a target\'s name.',
     )
     organism = fields.CSVCharField(
         label='Reference organism', required=False,
@@ -251,6 +257,10 @@ class AdvancedSearchForm(forms.Form):
                 for i in TargetGene.objects.all()
             ]))
         )
+        self.fields['target_type'].widget = forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=TargetGene.CATEGORY_CHOICES
+        )
         self.fields['genome'].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
             choices=sorted(set([
@@ -298,9 +308,9 @@ class AdvancedSearchForm(forms.Form):
         # DatasetModel Filter fields
         # ------------------------------------------------------------------- #
         title = self.cleaned_data.get('title', "").strip()
-        description = self.cleaned_data.get('description', "").strip()
-        method = self.cleaned_data.get('method', "").strip()
-        abstract = self.cleaned_data.get('abstract', "").strip()
+        # description = self.cleaned_data.get('description', "").strip()
+        # method = self.cleaned_data.get('method', "").strip()
+        # abstract = self.cleaned_data.get('abstract', "").strip()
         pubmed = ','.join(self.cleaned_data.get('pubmed', []))
         sra = ','.join(self.cleaned_data.get('sra', []))
         doi = ','.join(self.cleaned_data.get('doi', []))
@@ -308,12 +318,12 @@ class AdvancedSearchForm(forms.Form):
         
         if title:
             data[ds_filters.DatasetModelFilter.TITLE] = title
-        if description:
-            data[ds_filters.DatasetModelFilter.DESCRIPTION] = description
-        if method:
-            data[ds_filters.DatasetModelFilter.METHOD] = method
-        if abstract:
-            data[ds_filters.DatasetModelFilter.ABSTRACT] = abstract
+        # if description:
+        #     data[ds_filters.DatasetModelFilter.DESCRIPTION] = description
+        # if method:
+        #     data[ds_filters.DatasetModelFilter.METHOD] = method
+        # if abstract:
+        #     data[ds_filters.DatasetModelFilter.ABSTRACT] = abstract
         if pubmed:
             data[ds_filters.DatasetModelFilter.PUBMED] = pubmed
         if sra:
@@ -342,6 +352,7 @@ class AdvancedSearchForm(forms.Form):
         # ScoreSet/Experiment filter fields
         # ------------------------------------------------------------------- #
         target = ','.join(self.cleaned_data.get('target', []))
+        target_type = ','.join(self.cleaned_data.get('target_type', []))
         organism = ','.join(self.cleaned_data.get('organism', []))
         genome = ','.join(self.cleaned_data.get('genome', []))
         uniprot = ','.join(self.cleaned_data.get('uniprot', []))
@@ -351,6 +362,8 @@ class AdvancedSearchForm(forms.Form):
         
         if target:
             data[ds_filters.ScoreSetFilter.TARGET] = target
+        if target_type:
+            data[ds_filters.ScoreSetFilter.TARGET_TYPE] = target_type
         if organism:
             data[ds_filters.ScoreSetFilter.ORGANISM] = organism
         if genome:

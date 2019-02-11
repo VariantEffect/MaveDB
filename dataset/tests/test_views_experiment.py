@@ -96,7 +96,7 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
             method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
-        self.assertContains(response, 'Add a Score Set')
+        self.assertContains(response, 'Add a score set')
         self.assertContains(response, 'Edit this Experiment')
         
     def test_user_without_edit_permission_cannot_see_edit_button(self):
@@ -107,7 +107,7 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
             method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
-        self.assertNotContains(response, 'Add a Score Set')
+        self.assertNotContains(response, 'Add a score set')
         self.assertNotContains(response, 'Edit this Experiment')
         
 

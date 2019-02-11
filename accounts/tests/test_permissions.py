@@ -138,11 +138,11 @@ class UtilitiesTest(TestCase):
                 self.user1, ExperimentSet, 'not a group'
             )
             
-    def test_anon_user_returns_empty_list(self):
+    def test_anon_user_returns_empty_qs(self):
         result = permissions.instances_for_user_with_group_permission(
             AnonymousUser(), ExperimentSet, permissions.GroupTypes.ADMIN
         )
-        self.assertEqual(result, [])
+        self.assertEqual(result.count(), 0)
         
     def test_contributors_for_instance_returns_users_in_any_group(self):
         self.exps.add_administrators(self.user1)
