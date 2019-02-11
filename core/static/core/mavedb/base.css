@@ -384,8 +384,10 @@ input[name*='offset'] {
 /* Dataset Detail Views */
 /* ------------------------------------------------------------------------ */
 .section-heading {
-    padding-top: 15px;
-    padding-bottom: 15px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     color: lightslategray;
     font-weight: lighter;
 }
@@ -671,4 +673,7 @@ span.select2-selection.select2-selection--multiple ul.select2-selection__rendere
 /* Bootstrap overrides */
 .form-control {
   border-color: #aaaaaa;
+}
+.inline-link {
+  display: inline-block;
 }
