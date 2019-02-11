@@ -156,7 +156,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     }
     
     success_message = (
-        "Successfully created a new Score Set with temporary accession number "
+        "Successfully created a new Scoreset with temporary accession number "
         "{urn}. Uploaded files are being processed and further editing has been "
         "temporarily disabled. Please check back later."
     )
@@ -261,7 +261,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     # -------
     form_class = ScoreSetForm
     template_name = 'dataset/scoreset/update_scoreset.html'
-    model_class_name = 'Score Set'
+    model_class_name = 'Scoreset'
     model_class = ScoreSet
     # -------
 

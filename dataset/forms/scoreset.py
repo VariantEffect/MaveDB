@@ -40,7 +40,7 @@ class ErrorMessages(NestedEnumMixin, Enum):
     class Experiment(Enum):
         public_scoreset = ugettext(
             "Changing the parent Experiment of "
-            "a public Score Set is not supported."
+            "a public score set is not supported."
         )
     
     class Replaces(Enum):
@@ -50,7 +50,7 @@ class ErrorMessages(NestedEnumMixin, Enum):
         )
         already_replaced = ugettext("{} has already been replaced.")
         is_not_public = ugettext("Only public entries can be replaced.")
-        replacing_self = ugettext("A Score Set cannot replace itself.")
+        replacing_self = ugettext("A score set cannot replace itself.")
     
     class MetaData(Enum):
         incorrect_format = ugettext("Incorrectly formatted json file: {}")
