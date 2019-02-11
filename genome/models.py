@@ -184,11 +184,20 @@ class TargetGene(TimeStampedModel):
         return self.hash() == other.hash()
     
     def hash(self):
+        genome = getattr(self.get_reference_maps().first(), 'genome', None)
+        if genome is None:
+            genome = ("", "", "")
+        else:
+            genome = (
+                genome.short_name,
+                genome.organism_name,
+                genome.genome_id.id,
+            )
         return (
             self.name,
             self.wt_sequence.sequence,
             self.category,
-            self.get_reference_maps().first().genome
+            genome,
         )
 
 class ReferenceMap(TimeStampedModel):
