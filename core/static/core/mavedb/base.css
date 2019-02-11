@@ -121,6 +121,10 @@ code {
   transform: translate3d(-35px, 46px, 0px) !important;
 }
 
+.mavedb-container {
+  width: 75%;
+}
+
 
 /* Mixins
 ---------------------------------------------------------------------------  */
@@ -495,16 +499,6 @@ input[name*='offset'] {
 .white-button:hover .mavevis-ext {
     color: white;
 
-}
-
-
-/* Management CSS Elements */
-/* ------------------------------------------------------------------------- */
-@media (max-width: 575.98px) {
-    .profile-card {
-        max-width: 100%;
-        min-width: 100%;
-    }
 }
 
 
