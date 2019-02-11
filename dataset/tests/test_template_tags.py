@@ -1,6 +1,6 @@
 import json
 
-from django.test import TestCase
+from django.test import TestCase, mock
 
 from accounts.factories import UserFactory
 
@@ -66,10 +66,26 @@ class TestGroupByTarget(TestCase):
         self.assertEqual(len(result), 1)
         self.assertListEqual(
             [s.urn for s in result[0][1]],
-            [s.urn for s in sorted(self.mock_scoresets(), key=lambda s: s.urn)]
+            [s.urn for s in sorted([s2, s1], key=lambda s: s.urn)]
         )
 
 class TestDisplayTargetsTag(TestCase):
+    @mock.patch('dataset.templatetags.dataset_tags.visible_children', retun_value=[])
+    def test_calls_visible_children_on_experiment(self, patch):
+        exp = ExperimentWithScoresetFactory()
+        user = UserFactory()
+        exp.add_administrators(user)
+        dataset_tags.display_targets(exp, user)
+        patch.assert_called()
+        
+    @mock.patch('dataset.templatetags.dataset_tags.visible_children', retun_value=[])
+    def test_calls_group_targets_on_experiment(self, patch):
+        exp = ExperimentWithScoresetFactory()
+        user = UserFactory()
+        exp.add_administrators(user)
+        dataset_tags.display_targets(exp, user)
+        patch.assert_called()
+        
     def test_shows_targets_from_public_scoresets(self):
         exp = ExperimentWithScoresetFactory()
         publish_dataset(exp.scoresets.first())
