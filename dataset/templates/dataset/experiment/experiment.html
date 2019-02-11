@@ -14,7 +14,7 @@
             <a href={% url 'dataset:scoreset_detail' scoreset.urn %}>
               <p class="inline-link urn-item-link">{{ scoreset.urn }} {% if scoreset.private %}[Private]{% endif %}</p>
             </a>
-            {% if forloop.counter < target.1|length %}    {% endif %}
+            <p>{% if forloop.counter < target.1|length %} &middot; {% endif %}</div>
           {% endfor %}
         </div>
         <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
