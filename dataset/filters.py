@@ -233,12 +233,13 @@ class ScoreSetFilter(DatasetModelFilter):
     UNIPROT = 'uniprot'
     ENSEMBL = 'ensembl'
     REFSEQ = 'refseq'
+    TARGET_TYPE = 'target_type'
     
     class Meta(DatasetModelFilter.Meta):
         model = models.scoreset.ScoreSet
         fields = DatasetModelFilter.Meta.fields + (
             'licence', 'genome', 'target', 'organism',
-            'uniprot', 'ensembl', 'refseq'
+            'uniprot', 'ensembl', 'refseq', 'target_type',
         )
 
     licence = CSVCharFilter(method='filter_licence')
