@@ -9,34 +9,59 @@ register = template.Library()
 logger = logging.getLogger("django")
 
 
+def get_ref_map(gene):
+    reference_map = gene.get_primary_reference_map()
+    if not reference_map:
+        reference_map = gene.get_reference_maps().first()
+    if not reference_map:
+        logger.warning("Could not find a reference map for {}/{}".format(
+            gene.get_name(), gene.get_target().id
+        ))
+        return None
+    return reference_map
+
+
 @register.simple_tag
 def display_targets(instance, user, javascript=False,
                     categories=False, organisms=False):
     targets = []
     if isinstance(instance, models.experiment.Experiment):
         for child in instance.children.order_by('urn'):
-            logger.warning((child.urn, child.get_target()))
+            # This shouldn't happen but just in case a scoreset ends up
+            # without a target, then check.
+            if child.get_target() is None:
+                logger.warning("NoneType gene passed by {}.".format(child.urn))
+                continue
+            ref_map = get_ref_map(child.get_target())
+            if ref_map is None:
+                continue
+            # Only proceed if a ref map is present.
             if child.private and user in child.contributors():
                 targets.append([
                     child.get_target().get_name(),
                     child.get_target().category,
-                    child.get_target().get_primary_reference_map().
-                        format_reference_genome_organism_html(),
+                    ref_map.format_reference_genome_organism_html(),
                 ])
             elif not child.private:
                 targets.append([
                     child.get_target().get_name(),
                     child.get_target().category,
-                    child.get_target().get_primary_reference_map().
-                        format_reference_genome_organism_html(),
+                    ref_map.format_reference_genome_organism_html(),
                 ])
     elif isinstance(instance, models.scoreset.ScoreSet):
-        targets.append([
-            instance.get_target().get_name(),
-            instance.get_target().category,
-            instance.get_target().get_primary_reference_map().
-                format_reference_genome_organism_html(),
-        ])
+        # This shouldn't happen but just in case a scoreset ends up
+        # without a target, then check.
+        if instance.get_target():
+            logger.warning("NoneType gene passed by {}.".format(instance.urn))
+            ref_map = get_ref_map(instance.get_target())
+            if ref_map is not None:
+                # Only proceed if a ref map is present.
+                targets.append([
+                    instance.get_target().get_name(),
+                    instance.get_target().category,
+                    ref_map.format_reference_genome_organism_html(),
+                ])
+
     if not targets:
         if javascript:
             return mark_safe(json.dumps(['-']))
