@@ -1,3 +1,5 @@
+import hashlib
+
 from django.db import models
 
 from core.models import TimeStampedModel
@@ -191,13 +193,13 @@ class TargetGene(TimeStampedModel):
             genome = (
                 genome.short_name,
                 genome.organism_name,
-                getattr(genome.genome_id, 'id', None)
+                getattr(genome.genome_id, 'id', '')
             )
-        return hash((
+        return hashlib.md5(str((
             self.name,
             self.wt_sequence.sequence,
             self.category,
-        ) + genome)
+        ) + genome).encode()).hexdigest()
 
 class ReferenceMap(TimeStampedModel):
     """

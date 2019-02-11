@@ -1,3 +1,5 @@
+import hashlib
+
 from django.test import TestCase
 from django.db.models.deletion import ProtectedError
 
@@ -131,12 +133,12 @@ class TestTargetGene(TestCase):
         )
         self.assertEqual(
             target1.hash(),
-            hash((
+            hashlib.md5(str((
                 target1.name,
                 target1.wt_sequence.sequence,
                 target1.category,
                 "", "", ""
-            ))
+            )).encode()).hexdigest()
         )
         
     def test_can_hash_with_ref_map(self):
@@ -151,14 +153,14 @@ class TestTargetGene(TestCase):
         ))
         self.assertEqual(
             target1.hash(),
-            hash((
+            hashlib.md5(str((
                 target1.name,
                 target1.wt_sequence.sequence,
                 target1.category,
                 target1.get_reference_maps().first().genome.short_name,
                 target1.get_reference_maps().first().genome.organism_name,
                 target1.get_reference_maps().first().genome.id,
-            ))
+            )).encode()).hexdigest()
         )
         
     def test_can_hash_without_ref_map_genome(self):
@@ -173,14 +175,14 @@ class TestTargetGene(TestCase):
         ))
         self.assertEqual(
             target1.hash(),
-            hash((
+            hashlib.md5(str((
                 target1.name,
                 target1.wt_sequence.sequence,
                 target1.category,
                 target1.get_reference_maps().first().genome.short_name,
                 target1.get_reference_maps().first().genome.organism_name,
-                None,
-            ))
+                '',
+            )).encode()).hexdigest()
         )
         
     def test_equals_returns_true_name_wt_category_the_same(self):
