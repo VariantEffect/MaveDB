@@ -1,10 +1,12 @@
 import json
+import logging
 from django import template
 from django.utils.safestring import mark_safe
 
 from dataset import models
 
 register = template.Library()
+logger = logging.getLogger("django")
 
 
 @register.simple_tag
@@ -13,6 +15,7 @@ def display_targets(instance, user, javascript=False,
     targets = []
     if isinstance(instance, models.experiment.Experiment):
         for child in instance.children.order_by('urn'):
+            logger.warning((child.urn, child.get_target()))
             if child.private and user in child.contributors():
                 targets.append([
                     child.get_target().get_name(),
