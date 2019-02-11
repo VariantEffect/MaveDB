@@ -124,6 +124,65 @@ class TestTargetGene(TestCase):
     """
     Tests instance and class methods for :class:`TargetGene`
     """
+    def test_can_hash_without_ref_map(self):
+        target1 = TargetGeneFactory(
+            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
+            category='Protein coding'
+        )
+        self.assertEqual(
+            target1.hash(),
+            hash((
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                "", "", ""
+            ))
+        )
+        
+    def test_can_hash_with_ref_map(self):
+        target1 = TargetGeneFactory(
+            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
+            category='Protein coding'
+        )
+        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
+            short_name='hg38',
+            organism_name='A',
+            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        ))
+        self.assertEqual(
+            target1.hash(),
+            hash((
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                target1.get_reference_maps().first().genome.short_name,
+                target1.get_reference_maps().first().genome.organism_name,
+                target1.get_reference_maps().first().genome.id,
+            ))
+        )
+        
+    def test_can_hash_without_ref_map_genome(self):
+        target1 = TargetGeneFactory(
+            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
+            category='Protein coding'
+        )
+        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
+            short_name='hg38',
+            organism_name='A',
+            genome_id=None
+        ))
+        self.assertEqual(
+            target1.hash(),
+            hash((
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                target1.get_reference_maps().first().genome.short_name,
+                target1.get_reference_maps().first().genome.organism_name,
+                None,
+            ))
+        )
+        
     def test_equals_returns_true_name_wt_category_the_same(self):
         target1 = TargetGeneFactory(
             name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),

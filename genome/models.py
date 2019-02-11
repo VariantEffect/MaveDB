@@ -191,14 +191,13 @@ class TargetGene(TimeStampedModel):
             genome = (
                 genome.short_name,
                 genome.organism_name,
-                genome.genome_id.id,
+                getattr(genome.genome_id, 'id', None)
             )
-        return (
+        return hash((
             self.name,
             self.wt_sequence.sequence,
             self.category,
-            genome,
-        )
+        ) + genome)
 
 class ReferenceMap(TimeStampedModel):
     """
