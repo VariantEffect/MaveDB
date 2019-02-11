@@ -1,7 +1,7 @@
 {% extends "accounts/profile_base.html" %}
 
 {% block profile_body %}
-  <div class="container-fluid">
+  <div id="profile-home-content">
     <div class="row">
       <div class="col-auto">
         <h2> {{ request.user.profile.get_display_name_hyperlink }} </h2>

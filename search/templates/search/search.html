@@ -5,8 +5,8 @@
 
 {% block body %}
 
-<div class="container-fluid">
-  <div class="container">
+<div id="search-content">
+  <div id="search-control">
     <form class="mb-2" action="{% url 'search:search' %}" method="get">
       <div class="input-group">
         <input class="form-control" name="search">
@@ -24,7 +24,7 @@
     </form>
   </div>
 
-  <div id="search-options" class="row collapse fade mt-2" aria-hidden="true">
+  <div id="search-options" class="collapse fade mt-2" aria-hidden="true">
     <div class="container card" >
       <div class="card-body">
         <div class="card-header bg-white mb-2">

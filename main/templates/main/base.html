@@ -62,7 +62,7 @@
 
     <!-- Body content  sticky-top py-1-->
     <nav class="header pr-4 pl-4 bg-white border-bottom bottom-shadow">
-      <nav class="navbar navbar-expand-md navbar-light">
+      <nav class="container navbar navbar-expand-md navbar-light">
         <!-- MaveDB logo -->
         <a class="navbar-brand" href="{% url 'main:home' %}" style="color: #222 !important;">
           <img src="{% static 'core/mavedb/dna.png' %}" width="26" height="40">
@@ -195,7 +195,7 @@
       {% endif %}
     </div>
 
-    <div class="container-fluid body-block" style="min-height: 59vh;">
+    <div class="container body-block" style="min-height: 59vh;">
       {% block body %}
         <!-- Main template body block -->
       {% endblock %}
