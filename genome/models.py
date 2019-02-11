@@ -179,7 +179,17 @@ class TargetGene(TimeStampedModel):
     def get_reference_genomes(self):
         genome_pks = set(a.genome.pk for a in self.get_reference_maps())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
-
+    
+    def equals(self, other):
+        return self.hash() == other.hash()
+    
+    def hash(self):
+        return (
+            self.name,
+            self.wt_sequence.sequence,
+            self.category,
+            self.get_reference_maps().first().genome
+        )
 
 class ReferenceMap(TimeStampedModel):
     """
