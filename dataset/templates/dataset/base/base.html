@@ -236,7 +236,9 @@
 
     {% if instance.class_name != "experimentset" %}
       <!-- Renders External Identifier urls -->
-      <h2 id="metadata" class="underline left-align section-heading">External Identifiers</h2>
+      <h2 id="metadata" class="underline left-align section-heading">
+        External identifiers
+      </h2>
       {% if instance.doi_ids.count %}
         <strong>DOI:</strong>
           <ul>

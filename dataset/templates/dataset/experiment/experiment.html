@@ -6,15 +6,22 @@
   <h2 id="targets" class="underline left-align section-heading">Targets</h2>
   {% visible_children instance user as visible_scoresets %}
   {% if visible_scoresets|length %}
-    {% group_targets instance user as targets %}
+    {% group_targets visible_scoresets as targets %}
     {% for target in targets %}
       <div class="target-card">
         <div id="target-scoresets">
           {% for scoreset in target.1 %}
-            <a href={% url 'dataset:scoreset_detail' scoreset.urn %}>
-              <p class="inline-link urn-item-link">{{ scoreset.urn }} {% if scoreset.private %}[Private]{% endif %}</p>
-            </a>
-            <p>{% if forloop.counter < target.1|length %} &middot; {% endif %}</div>
+            <span data-toggle="popover"
+               title="<b>{{ scoreset.urn }}</b><hr>{{ scoreset.get_title }}"
+               data-content="{{ scoreset.get_description }}"
+               data-placement=auto
+               onmouseenter="$(this).popover({trigger:'hover', html: true});"
+               style="cursor: help;">
+              <a class="inline-link urn-item-link" href={% url 'dataset:scoreset_detail' scoreset.urn %}>
+                <p>{{ scoreset.urn }} {% if scoreset.private %}[Private]{% endif %}</p>
+              </a>
+            </span>
+            {% if forloop.counter < target.1|length %}<span>&middot;</span>{% endif %}
           {% endfor %}
         </div>
         <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
