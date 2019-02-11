@@ -9,60 +9,60 @@
     {% group_targets instance user as targets %}
     {% for target in targets %}
       <div class="target-card">
-        {% for scoreset in target.1 %}
+        <div id="target-scoresets">
           {% for url in target.1 %}
             <a href={% url 'dataset:scoreset_detail' scoreset.urn %}>
               <p class="inline-link urn-item-link">{{ scoreset.urn }} {% if scoreset.private %}[Private]{% endif %}</p>
             </a>
-            {% if forloop.counter < target.1|length %} | {% endif %}
+            {% if forloop.counter < target.1|length %}    {% endif %}
           {% endfor %}
-          <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
-            <p>
-              <strong>Target name: </strong>
-              <a href="/search/?target={{ target.0.get_name }}">
-                {{ target.0.get_name }}
+        </div>
+        <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
+          <p>
+            <strong>Target name: </strong>
+            <a href="/search/?target={{ target.0.get_name }}">
+              {{ target.0.get_name }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Target type: </strong>
+            <a href="/search/?target_type={{ target.0.category }}">
+              {{ target.0.category }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Organism: </strong>
+            <a href="/search/?organism={{ target.0.get_reference_genomes.first.get_organism_name }}">
+              {{ target.0.get_reference_genomes.first.format_organism_name_html|safe }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Reference genome: </strong>
+            <a href="/search/?genome={{ target.0.get_reference_genomes.first.get_short_name }}">
+              {{ target.0.get_reference_genomes.first.get_short_name }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Reference assembly: </strong>
+            {% if child.get_target.get_reference_genomes.first.genome_id.identifier %}
+              <a target="_blank" href={{ target.0.get_reference_genomes.first.genome_id.url }}>
+                {{ target.0.get_reference_genomes.first.genome_id.identifier }}
+                <i class="external-link fas fa-external-link-alt"></i>
               </a>
-            </p>
+            {% else %}
+              Other/Synthetic
+            {% endif %}
+          </p>
 
-            <p>
-              <strong>Target type: </strong>
-              <a href="/search/?target_type={{ target.0.category }}">
-                {{ target.0.category }}
-              </a>
-            </p>
-
-            <p>
-              <strong>Organism: </strong>
-              <a href="/search/?organism={{ target.0.get_reference_genomes.first.get_organism_name }}">
-                {{ target.0.get_reference_genomes.first.format_organism_name_html|safe }}
-              </a>
-            </p>
-
-            <p>
-              <strong>Reference genome: </strong>
-              <a href="/search/?genome={{ target.0.get_reference_genomes.first.get_short_name }}">
-                {{ target.0.get_reference_genomes.first.get_short_name }}
-              </a>
-            </p>
-
-            <p>
-              <strong>Reference assembly: </strong>
-              {% if child.get_target.get_reference_genomes.first.genome_id.identifier %}
-                <a target="_blank" href={{ target.0.get_reference_genomes.first.genome_id.url }}>
-                  {{ target.0.get_reference_genomes.first.genome_id.identifier }}
-                  <i class="external-link fas fa-external-link-alt"></i>
-                </a>
-              {% else %}
-                Other/Synthetic
-              {% endif %}
-            </p>
-
-            <p class="wild-type-sequence">
-              <strong>Reference sequence: </strong>
-              {{ target.0.get_wt_sequence }}
-            </p>
-          </div>
-        {% endfor %}
+          <p class="wild-type-sequence">
+            <strong>Reference sequence: </strong>
+            {{ target.0.get_wt_sequence }}
+          </p>
+        </div>
       </div>
       {% if forloop.counter < targets|length %}
         <hr style="width: 99%">
