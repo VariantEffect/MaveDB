@@ -163,7 +163,7 @@ def instances_for_user_with_group_permission(user, model, group_type):
     from dataset.models.scoreset import ScoreSet
 
     if user_is_anonymous(user):
-        return []
+        return model.objects.none()
 
     if model == ExperimentSet:
         instances = ExperimentSet.objects.all()
