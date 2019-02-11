@@ -21,6 +21,23 @@ def get_ref_map(gene):
     return reference_map
 
 
+@register.assignment_tag
+def group_targets(experiment, user=None):
+    unique_targets = {}
+    hash_to_target = {}
+    scoresets = visible_children(experiment, user)
+    for scoreset in scoresets:
+        hash_to_target[scoreset.get_target().hash()] = scoreset.get_target()
+        if scoreset.get_target().hash() in unique_targets:
+            unique_targets[scoreset.get_target().hash()].append(scoreset)
+        else:
+            unique_targets[scoreset.get_target().hash()] = [scoreset, ]
+    return [
+        (hash_to_target[hash_], sorted(unique_targets[hash_], key=lambda s: s.urn))
+        for hash_ in unique_targets.keys()
+    ]
+    
+
 @register.simple_tag
 def display_targets(instance, user, javascript=False,
                     categories=False, organisms=False):

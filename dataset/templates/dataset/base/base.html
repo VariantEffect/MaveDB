@@ -281,7 +281,9 @@
         {% if instance.class_name == 'scoreset' %}
           {% parent_references instance as parent_refs %}
           {% if parent_refs|length %}
-            <p class="pl-4">References from <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:</p>
+            <p class="pl-4">References from
+              <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:
+            </p>
             <ol start="{{instance.pubmed_ids.count|add:1}}">
             {% for pm in parent_refs %}
               <li>{{ pm.reference_html|safe }} PMID:
