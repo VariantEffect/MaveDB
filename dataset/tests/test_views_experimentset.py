@@ -70,7 +70,7 @@ class TestExperimentSetDetailView(TestCase):
         request = self.factory.get('/experimentset/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
-        self.assertContains(response, 'Add an Experiment')
+        self.assertContains(response, 'Add an experiment')
 
     def test_user_without_edit_permission_cannot_see_edit_button(self):
         user = UserFactory()
@@ -79,4 +79,4 @@ class TestExperimentSetDetailView(TestCase):
         request = self.factory.get('/experimentset/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentSetDetailView.as_view()(request, urn=obj.urn)
-        self.assertNotContains(response, 'Add an Experiment')
+        self.assertNotContains(response, 'Add an experiment')

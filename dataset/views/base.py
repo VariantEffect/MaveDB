@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 import logging
 
 from django.views.generic import DetailView, FormView
