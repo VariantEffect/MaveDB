@@ -8,7 +8,6 @@
   {% if visible_scoresets|length %}
     {% group_targets instance user as targets %}
     {% for target in targets %}
-      <h5>{{ target.0.name|upper }}</h5>
       <div class="target-card">
         {% for scoreset in target.1 %}
           {% for url in target.1 %}
@@ -18,6 +17,13 @@
             {% if forloop.counter < target.1|length %} | {% endif %}
           {% endfor %}
           <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
+            <p>
+              <strong>Target name: </strong>
+              <a href="/search/?target={{ target.0.get_name }}">
+                {{ target.0.get_name }}
+              </a>
+            </p>
+
             <p>
               <strong>Target type: </strong>
               <a href="/search/?target_type={{ target.0.category }}">
