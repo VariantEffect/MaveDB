@@ -7,14 +7,14 @@
 
 
 {% block side-bar-title %}
-  Edit Score Set
+  Edit score set
 {% endblock %}
 
 
 {% block side-bar-instructions %}
   {% if instance.private %}
     <p>
-      This entry will remain fully editable until you publish a child Score Set.
+      This entry will remain fully editable until you publish a child score set.
       Should you choose to publish, your entry will go live and some fields
       will become permanently frozen. See our
       <a href="{% url 'main:documentation' %}"> documentation </a>
@@ -37,7 +37,7 @@
   </p>
   {% if instance.private %}
     <p class="text-muted">
-      <b>Note: </b>You can only attach a Score Set to an Experiment for which
+      <b>Note: </b>You can only attach a score set to an experiment for which
       you have <b>edit</b> permissions on. Similarly, you can only replace
       score sets for which you have <b>edit</b> permission on.
     </p>

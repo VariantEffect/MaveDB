@@ -82,10 +82,10 @@
 {% block child_list %}
   {% visible_children instance user as visible_scoresets %}
   <span>
-    <h2 id='scoresets' class="underline left-align section-heading">Score Sets
+    <h2 id='scoresets' class="underline left-align section-heading">Score sets
       {% if request.user in instance.editors or request.user in instance.administrators %}
         <a href="{% url 'dataset:scoreset_new' %}?experiment={{ instance.urn }}">
-          <i class="icon fa fa-plus pl-1" data-toggle="tooltip" data-placement="top" title="Add a Score Set."
+          <i class="icon fa fa-plus pl-1" data-toggle="tooltip" data-placement="top" title="Add a score set."
              style="font-size: 28px; padding-bottom: 8px"></i>
         </a>
       {% endif %}

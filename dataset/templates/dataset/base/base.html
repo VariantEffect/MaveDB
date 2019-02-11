@@ -12,13 +12,13 @@
         {% if request.user in instance.editors or request.user in instance.administrators %}
           {% if instance.class_name == "scoreset" %}
              <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
-               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this Score Set."
+               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this score set."
                   style="font-size: 42px; padding-bottom: 6px"></i>
              </a>
           {% endif %}
           {% if instance.class_name == "experiment" %}
              <a href="{% url 'accounts:edit_experiment' instance.urn %}">
-               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this Experiment."
+               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this experiment."
                   style="font-size: 42px; padding-bottom: 6px"></i>
              </a>
           {% endif %}
@@ -36,9 +36,9 @@
 
         <div class="dropdown" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
              {% if instance.processing_state != 'success'%}
-                title="Download the scores, counts or metadata files associated with this Score Set (disabled until successfully processed)."
+                title="Download the scores, counts or metadata files associated with this score set (disabled until successfully processed)."
              {% else %}
-                title="Download the scores, counts or metadata files associated with this Score Set."
+                title="Download the scores, counts or metadata files associated with this score set."
              {% endif %}>
           <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
@@ -154,7 +154,7 @@
     {% endif %}
 
     {% if instance.class_name == "experiment" %}
-      <a href="#scoresets">Scoresets</a>
+      <a href="#scoresets">Score sets</a>
     {% endif %}
 
     {% if instance.class_name == "scoreset" %}

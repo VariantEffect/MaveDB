@@ -7,7 +7,7 @@
     <h2 id='experiments' class="underline left-align section-heading">Experiments
       {% if request.user in instance.editors or request.user in instance.administrators %}
         <a href="{% url 'dataset:experiment_new' %}?experimentset={{ instance.urn }}">
-          <i class="icon far fa-plus-square pl-1" data-toggle="tooltip" data-placement="top" title="Add an Experiment."
+          <i class="icon far fa-plus-square pl-1" data-toggle="tooltip" data-placement="top" title="Add an experiment."
              style="font-size: 32px; padding-bottom: 4px"></i>
         </a>
       {% endif %}

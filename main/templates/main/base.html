@@ -63,7 +63,6 @@
     <!-- Body content  sticky-top py-1-->
     <nav class="header pr-4 pl-4 bg-white border-bottom bottom-shadow">
       <nav class="navbar navbar-expand-md navbar-light">
-
         <!-- MaveDB logo -->
         <a class="navbar-brand" href="{% url 'main:home' %}" style="color: #222 !important;">
           <img src="{% static 'core/mavedb/dna.png' %}" width="26" height="40">
@@ -100,8 +99,8 @@
                   Upload
                 </a>
                 <div class="dropdown-menu" aria-labelledby="#upload-dd">
-                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:experiment_new' %}">New Experiment</a>
-                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:scoreset_new' %}">New Score Set</a>
+                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:experiment_new' %}">New experiment</a>
+                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:scoreset_new' %}">New score set</a>
                 </div>
               </li>
 

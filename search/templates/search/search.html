@@ -13,8 +13,11 @@
         <button class="btn btn-outline-dark white-button ml-1">
           <i class="fa fa-search"></i>
         </button>
-        <button id='adv-search' class="btn btn-outline-dark white-button ml-1" data-toggle="collapse"
-                data-target="#search-options" type="button">
+        <button id='adv-search'
+                class="btn btn-outline-dark white-button ml-1"
+                data-toggle="collapse"
+                data-target="#search-options"
+                type="button">
           <i class="fas fa-cog"></i>
         </button>
       </div>
@@ -113,6 +116,8 @@
   };
 
   $("document").ready(function() {
+    init_select2();
+
     var table = $('#search-table').DataTable({
       data: instances,
       columns: [
@@ -136,9 +141,7 @@
       order: [[1, 'asc']]
     });
 
-    setTimeout(init_select2, 2000);
     $(".no-hover").parent().parent().addClass("no-hover");
-
     // Add event listener for opening and closing details
     $('#search-table tbody').on('click', 'td.details-control', function () {
        var tr = $(this).closest('tr');
