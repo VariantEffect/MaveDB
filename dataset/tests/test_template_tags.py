@@ -4,13 +4,70 @@ from django.test import TestCase
 
 from accounts.factories import UserFactory
 
-from metadata.factories import PubmedIdentifierFactory
+from genome.factories import TargetGeneFactory, WildTypeSequenceFactory, \
+    ReferenceGenomeFactory, ReferenceMapFactory
 
-from ..factories import ExperimentWithScoresetFactory, ExperimentFactory
+from metadata.factories import PubmedIdentifierFactory, GenomeIdentifierFactory
+
+from ..factories import ExperimentWithScoresetFactory, ExperimentFactory, ScoreSetFactory
 from ..templatetags import dataset_tags
 
 from ..utilities import publish_dataset
 
+
+class TestGroupByTarget(TestCase):
+    @staticmethod
+    def mock_scoresets():
+        scoreset1 = ScoreSetFactory()
+        target1 = TargetGeneFactory(
+            name='BRCA1',
+            wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
+            category='Protein coding',
+            scoreset=scoreset1,
+        )
+        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
+            short_name='hg38',
+            organism_name='A',
+            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        ))
+    
+        scoreset2 = ScoreSetFactory()
+        target2 = TargetGeneFactory(
+            name='BRCA1',
+            wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
+            category='Protein coding',
+            scoreset=scoreset2,
+        )
+        ReferenceMapFactory(target=target2, genome=ReferenceGenomeFactory(
+            short_name='hg38',
+            organism_name='A',
+            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        ))
+        
+        return scoreset1, scoreset2
+    
+    def test_returns_unique_targets_based_on_hash(self):
+        s1, s2 = self.mock_scoresets()
+        result = dataset_tags.group_targets([s1, s2])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result[0][1]), 2)
+        
+        t2 = s2.get_target()
+        t2.name='BRCA2'
+        t2.save()
+        result = dataset_tags.group_targets([s1, s2])
+        self.assertEqual(len(result), 2)
+        self.assertEqual(len(result[0][1]), 1)
+        self.assertEqual(len(result[1][1]), 1)
+
+    def test_sorts_scoresets_within_target_by_urn(self):
+        s1, s2 = self.mock_scoresets()
+        result = dataset_tags.group_targets([s2, s1])
+        self.assertEqual(len(result), 1)
+        self.assertListEqual(
+            [s.urn for s in result[0][1]],
+            [s.urn for s in sorted(self.mock_scoresets(), key=lambda s: s.urn)]
+        )
 
 class TestDisplayTargetsTag(TestCase):
     def test_shows_targets_from_public_scoresets(self):

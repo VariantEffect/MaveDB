@@ -22,10 +22,9 @@ def get_ref_map(gene):
 
 
 @register.assignment_tag
-def group_targets(experiment, user=None):
+def group_targets(scoresets):
     unique_targets = {}
     hash_to_target = {}
-    scoresets = visible_children(experiment, user)
     for scoreset in scoresets:
         hash_to_target[scoreset.get_target().hash()] = scoreset.get_target()
         if scoreset.get_target().hash() in unique_targets:
