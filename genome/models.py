@@ -33,6 +33,12 @@ class TargetGene(TimeStampedModel):
     name : `models.CharField`
         The name of the target gene.
     """
+    CATEGORY_CHOICES = (
+        ('Protein coding', 'Protein coding'),
+        ('Regulatory', 'Regulatory'),
+        ('Other noncoding', 'Other noncoding'),
+    )
+    
     class Meta:
         ordering = ('name',)
         verbose_name = "Target Gene"
@@ -61,11 +67,7 @@ class TargetGene(TimeStampedModel):
         default='Protein coding',
         verbose_name='Target type',
         max_length=250,
-        choices=(
-            ('Protein coding', 'Protein coding'),
-            ('Regulatory', 'Regulatory'),
-            ('Other noncoding', 'Other noncoding'),
-        )
+        choices=CATEGORY_CHOICES,
     )
 
     scoreset = models.OneToOneField(
