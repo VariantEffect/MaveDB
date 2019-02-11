@@ -345,11 +345,9 @@ $("#copy-to-clipboard").on("click", function() {
 });
 
 function init_select2() {
-  // $(document.body).css({'cursor': 'wait'});
   $(".select2").select2({});
   $(".select2-token-select").select2({
     tags: true,
     tokenSeparators: [","]
   });
-  // $(document.body).css({'cursor': 'default'});
 }
