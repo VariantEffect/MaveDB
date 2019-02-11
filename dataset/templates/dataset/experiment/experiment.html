@@ -10,7 +10,7 @@
     {% for target in targets %}
       <div class="target-card">
         <div id="target-scoresets">
-          {% for url in target.1 %}
+          {% for scoreset in target.1 %}
             <a href={% url 'dataset:scoreset_detail' scoreset.urn %}>
               <p class="inline-link urn-item-link">{{ scoreset.urn }} {% if scoreset.private %}[Private]{% endif %}</p>
             </a>
