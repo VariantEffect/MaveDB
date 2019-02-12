@@ -142,29 +142,69 @@ class TestTargetGene(TestCase):
             hashlib.md5(repr_.encode('utf-8')).hexdigest()
         )
         
-    def test_can_hash_with_ref_map(self):
+    def test_hash_uses_first_primary_ref_map_as_default(self):
         target1 = TargetGeneFactory(
             name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
             category='Protein coding'
         )
-        ReferenceMapFactory(
+        genome_id = GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        ref_map = ReferenceMapFactory(
             target=target1,
             genome=ReferenceGenomeFactory(
                 short_name='hg38',
                 organism_name='A',
-                genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
-            )
+                genome_id=genome_id,
+            ),
+            is_primary=False
         )
         repr_ = str((
             target1.name,
             target1.wt_sequence.sequence,
             target1.category,
-            target1.get_reference_maps().first().genome.short_name,
-            target1.get_reference_maps().first().genome.organism_name,
-            target1.get_reference_maps().first().genome.identifier,
+            ref_map.genome.short_name,
+            ref_map.genome.organism_name,
+            ref_map.genome.genome_id.identifier,
         ))
-        print('test')
-        print(repr_)
+        self.assertEqual(
+            target1.hash(),
+            hashlib.md5(repr_.encode('utf-8')).hexdigest()
+        )
+        
+    def test_hash_uses_primary_ref_map_as_default(self):
+        target1 = TargetGeneFactory(
+            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
+            category='Protein coding'
+        )
+        genome_id_1 = GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        genome_id_2 = GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        
+        primary = ReferenceMapFactory(
+            target=target1,
+            genome=ReferenceGenomeFactory(
+                short_name='hg38',
+                organism_name='A',
+                genome_id=genome_id_1,
+            ),
+            is_primary=True
+        )
+        _ = ReferenceMapFactory(
+            target=target1,
+            genome=ReferenceGenomeFactory(
+                short_name='hg19',
+                organism_name='B',
+                genome_id=genome_id_2,
+            ),
+            is_primary=False
+        )
+        
+        repr_ = str((
+            target1.name,
+            target1.wt_sequence.sequence,
+            target1.category,
+            primary.genome.short_name,
+            primary.genome.organism_name,
+            primary.genome.genome_id.identifier,
+        ))
         self.assertEqual(
             target1.hash(),
             hashlib.md5(repr_.encode('utf-8')).hexdigest()

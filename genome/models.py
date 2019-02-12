@@ -200,14 +200,11 @@ class TargetGene(TimeStampedModel):
                 genome.organism_name,
                 getattr(genome.genome_id, 'identifier', '')
             )
-            
         repr_ = str((
             self.name,
             self.wt_sequence.sequence,
             self.category,
         ) + genome)
-        print('inner')
-        print(repr_)
         return hashlib.md5(repr_.encode('utf-8')).hexdigest()
 
 class ReferenceMap(TimeStampedModel):
