@@ -186,14 +186,21 @@ class TargetGene(TimeStampedModel):
         return self.hash() == other.hash()
     
     def hash(self):
-        genome = getattr(self.get_reference_maps().first(), 'genome', None)
+        genome = getattr(
+            self.get_primary_reference_map().first(), 'genome', None
+        )
+        # Fallback to other reference maps
+        if genome is None:
+            genome = getattr(self.get_reference_maps().first(), 'genome', None)
+        # Every reference map should have a genome by database constraint.
+        # Set as null values in case.
         if genome is None:
             genome = ("", "", "")
         else:
             genome = (
                 genome.short_name,
                 genome.organism_name,
-                getattr(genome.genome_id, 'id', '')
+                getattr(genome.genome_id, 'identifier', '')
             )
             
         repr_ = str((

@@ -147,18 +147,21 @@ class TestTargetGene(TestCase):
             name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
             category='Protein coding'
         )
-        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
-            short_name='hg38',
-            organism_name='A',
-            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        ))
+        ReferenceMapFactory(
+            target=target1,
+            genome=ReferenceGenomeFactory(
+                short_name='hg38',
+                organism_name='A',
+                genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
+            )
+        )
         repr_ = str((
             target1.name,
             target1.wt_sequence.sequence,
             target1.category,
             target1.get_reference_maps().first().genome.short_name,
             target1.get_reference_maps().first().genome.organism_name,
-            target1.get_reference_maps().first().genome.id,
+            target1.get_reference_maps().first().genome.identifier,
         ))
         print('test')
         print(repr_)
