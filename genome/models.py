@@ -203,7 +203,7 @@ class TargetGene(TimeStampedModel):
         ) + genome)
         print('inner')
         print(repr_)
-        return hashlib.md5(repr_.encode('utf-8')).hexdiget()
+        return hashlib.md5(repr_.encode('utf-8')).hexdigest()
 
 class ReferenceMap(TimeStampedModel):
     """
