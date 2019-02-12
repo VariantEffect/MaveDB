@@ -186,9 +186,7 @@ class TargetGene(TimeStampedModel):
         return self.hash() == other.hash()
     
     def hash(self):
-        genome = getattr(
-            self.get_primary_reference_map().first(), 'genome', None
-        )
+        genome = getattr(self.get_primary_reference_map(), 'genome', None)
         # Fallback to other reference maps
         if genome is None:
             genome = getattr(self.get_reference_maps().first(), 'genome', None)
