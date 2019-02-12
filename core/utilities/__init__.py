@@ -18,7 +18,7 @@ User = get_user_model()
 logger = logging.getLogger("django")
 
 
-null_values_list = ('nan', 'na', 'none', ' ', 'undefined', 'n/a', 'null')
+null_values_list = ('nan', 'na', 'none', '', 'undefined', 'n/a', 'null')
 null_values_re = re.compile(r'\s+|none|nan|na|undefined|n/a|null')
 readable_null_values = [
     "'{}'".format(v)
