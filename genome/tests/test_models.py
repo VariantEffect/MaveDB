@@ -131,14 +131,15 @@ class TestTargetGene(TestCase):
             name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
             category='Protein coding'
         )
+        repr_ = str((
+            target1.name,
+            target1.wt_sequence.sequence,
+            target1.category,
+            "", "", ""
+        ))
         self.assertEqual(
             target1.hash(),
-            hashlib.md5(str((
-                target1.name,
-                target1.wt_sequence.sequence,
-                target1.category,
-                "", "", ""
-            )).encode()).hexdigest()
+            hashlib.md5(repr_.encode('utf-8')).hexdigest()
         )
         
     def test_can_hash_with_ref_map(self):
@@ -151,16 +152,19 @@ class TestTargetGene(TestCase):
             organism_name='A',
             genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
         ))
+        repr_ = str((
+            target1.name,
+            target1.wt_sequence.sequence,
+            target1.category,
+            target1.get_reference_maps().first().genome.short_name,
+            target1.get_reference_maps().first().genome.organism_name,
+            target1.get_reference_maps().first().genome.id,
+        ))
+        print('test')
+        print(repr_)
         self.assertEqual(
             target1.hash(),
-            hashlib.md5(str((
-                target1.name,
-                target1.wt_sequence.sequence,
-                target1.category,
-                target1.get_reference_maps().first().genome.short_name,
-                target1.get_reference_maps().first().genome.organism_name,
-                target1.get_reference_maps().first().genome.id,
-            )).encode()).hexdigest()
+            hashlib.md5(repr_.encode('utf-8')).hexdigest()
         )
         
     def test_can_hash_without_ref_map_genome(self):
@@ -173,16 +177,17 @@ class TestTargetGene(TestCase):
             organism_name='A',
             genome_id=None
         ))
+        repr_ = str((
+            target1.name,
+            target1.wt_sequence.sequence,
+            target1.category,
+            target1.get_reference_maps().first().genome.short_name,
+            target1.get_reference_maps().first().genome.organism_name,
+            '',
+        ))
         self.assertEqual(
             target1.hash(),
-            hashlib.md5(str((
-                target1.name,
-                target1.wt_sequence.sequence,
-                target1.category,
-                target1.get_reference_maps().first().genome.short_name,
-                target1.get_reference_maps().first().genome.organism_name,
-                '',
-            )).encode()).hexdigest()
+            hashlib.md5(repr_.encode('utf-8')).hexdigest()
         )
         
     def test_equals_returns_true_name_wt_category_the_same(self):
