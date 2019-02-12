@@ -207,6 +207,7 @@ class TargetGene(TimeStampedModel):
         ) + genome)
         return hashlib.md5(repr_.encode('utf-8')).hexdigest()
 
+
 class ReferenceMap(TimeStampedModel):
     """
     Annotations define a collection of intervals within reference genome, which
