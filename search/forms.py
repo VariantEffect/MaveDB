@@ -137,7 +137,7 @@ class AdvancedSearchForm(forms.Form):
     )
     target_type = fields.CSVCharField(
         label='Target type', required=False,
-        help_text='Search by a target\'s name.',
+        help_text='Search by a target\'s type.',
     )
     organism = fields.CSVCharField(
         label='Reference organism', required=False,
