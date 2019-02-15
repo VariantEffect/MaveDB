@@ -195,7 +195,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         # ----- REQUIRED FIELDS ------- #
         title = self.browser.find_element_by_id('id_title')
-        self.perform_action(title, 'send_keys', "Score Set 1")
+        self.perform_action(title, 'send_keys', "score set 1")
 
         description = self.browser.find_element_by_id('id_short_description')
         self.perform_action(description, 'send_keys', "hello, new world!")

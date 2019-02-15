@@ -17,7 +17,23 @@ from ..validators import (
     read_header_from_io,
     validate_scoreset_json,
     validate_datasets_define_same_variants,
+    WordLimitValidator,
 )
+
+
+class TestWordLimitValidator(TestCase):
+    def test_validation_error_more_than_word_limit(self):
+        with self.assertRaises(ValidationError):
+            n = 5
+            WordLimitValidator(n)("Word "*(n + 1))
+            
+    def test_passes_equal_to_word_limit(self):
+        n = 5
+        WordLimitValidator(n)("Word "*n)
+
+    def test_passes_less_than_word_limit(self):
+        n = 5
+        WordLimitValidator(n)("Word "*(n - 1))
 
 
 class TestHeaderFromIO(TestCase):

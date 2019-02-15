@@ -121,6 +121,10 @@ code {
   transform: translate3d(-35px, 46px, 0px) !important;
 }
 
+.mavedb-container {
+  width: 75%;
+}
+
 
 /* Mixins
 ---------------------------------------------------------------------------  */
@@ -251,7 +255,8 @@ tr.shown td.details-control {
 /* Base template */
 /* ------------------------------------------------------------------------- */
 .body-block {
-    padding: 2%;
+  padding-top: 2%;
+  padding-bottom: 2%;
 }
 
 .sidenav a {
@@ -379,7 +384,10 @@ input[name*='offset'] {
 /* Dataset Detail Views */
 /* ------------------------------------------------------------------------ */
 .section-heading {
-    padding: 15px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     color: lightslategray;
     font-weight: lighter;
 }
@@ -410,7 +418,7 @@ input[name*='offset'] {
 }
 
 .underline {
-    border-bottom: 2px solid rgba(0,0,0,.1);
+    border-bottom: 1px solid rgba(0,0,0,.1);
 }
 
 .child-list-description {
@@ -493,16 +501,6 @@ input[name*='offset'] {
 .white-button:hover .mavevis-ext {
     color: white;
 
-}
-
-
-/* Management CSS Elements */
-/* ------------------------------------------------------------------------- */
-@media (max-width: 575.98px) {
-    .profile-card {
-        max-width: 100%;
-        min-width: 100%;
-    }
 }
 
 
@@ -675,4 +673,7 @@ span.select2-selection.select2-selection--multiple ul.select2-selection__rendere
 /* Bootstrap overrides */
 .form-control {
   border-color: #aaaaaa;
+}
+.inline-link {
+  display: inline-block;
 }

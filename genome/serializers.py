@@ -71,17 +71,18 @@ class TargetGeneSerializer(serializers.ModelSerializer):
     """
     scoreset = serializers.StringRelatedField(many=False)
     reference_maps = ReferenceMapSerializer(many=True)
-    wt_sequence = WildTypeSequenceSerializer(many=False)
+    reference_sequence = WildTypeSequenceSerializer(source='wt_sequence', many=False)
     uniprot = UniprotOffsetSerializer(source='get_uniprot_offset_annotation', many=False)
     ensembl = EnsemblOffsetSerializer(source='get_ensembl_offset_annotation', many=False)
     refseq = RefseqOffsetSerializer(source='get_refseq_offset_annotation', many=False)
-
+    type = serializers.CharField(source='category')
+    
     class Meta:
         model = TargetGene
         depth = 2
         fields = (
-            'name', 'wt_sequence', 'uniprot',
+            'name', 'reference_sequence', 'uniprot',
             'ensembl', 'refseq', 'reference_maps',
-            'scoreset',
+            'scoreset', 'type',
         )
         read_only_fields = fields

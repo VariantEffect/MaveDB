@@ -335,7 +335,7 @@ class AnnotationOffset(models.Model):
         blank=True,
         null=False,
         default=0,
-        verbose_name='Wild-type offset',
+        verbose_name='Reference offset',
     )
     target = models.ForeignKey(
         to=genome_models.TargetGene,

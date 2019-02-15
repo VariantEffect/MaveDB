@@ -9,6 +9,13 @@
       </a>
     </p>
 
+      <p>
+        <strong>Target type: </strong>
+        <a href="/search/?target_type={{ instance.get_target.category }}">
+          {{ instance.get_target.category }}
+        </a>
+      </p>
+
     <p>
       <strong>Organism: </strong>
       <a href="/search/?organism={{ instance.get_target.get_reference_genomes.first.get_organism_name }}">
@@ -36,7 +43,7 @@
     </p>
 
     <p class="wild-type-sequence">
-      <strong>Wildtype Sequence: </strong>
+      <strong>Reference sequence: </strong>
       {{ instance.get_target.get_wt_sequence }}
     </p>
 

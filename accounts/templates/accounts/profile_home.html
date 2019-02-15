@@ -1,7 +1,7 @@
 {% extends "accounts/profile_base.html" %}
 
 {% block profile_body %}
-  <div class="container-fluid">
+  <div id="profile-home-content">
     <div class="row">
       <div class="col-auto">
         <h2> {{ request.user.profile.get_display_name_hyperlink }} </h2>
@@ -15,8 +15,8 @@
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <a class="dropdown-item" href="{% url 'accounts:profile_settings' %}">Settings</a>
-            <a class="dropdown-item" href="{% url 'dataset:experiment_new' %}">New Experiment</a>
-            <a class="dropdown-item" href="{% url 'dataset:scoreset_new' %}">New Score Set</a>
+            <a class="dropdown-item" href="{% url 'dataset:experiment_new' %}">New experiment</a>
+            <a class="dropdown-item" href="{% url 'dataset:scoreset_new' %}">New score set</a>
           </div>
         </div>
       </div>
@@ -31,9 +31,9 @@
               Below are the instances you contribute to sorted by modification date.
             </p>
 
-            <!-- Score Sets -->
+            <!-- Score sets -->
             {% if request.user.profile.contributor_scoresets %}
-              <h2 class="underline left-align section-heading">Score Sets</h2>
+              <h2 class="underline left-align section-heading">Score sets</h2>
               <div>
                 <div class="card-deck">
                   {% for instance in request.user.profile.contributor_scoresets %}
@@ -48,11 +48,11 @@
                           <small class="col text-muted d-flex">
                             {% if instance.private %}
                               <i class="help-icon eye-icon icon fas fa-eye-slash" data-toggle="tooltip" data-placement="top"
-                                 title="This Score Set is private and may only be viewed by you and other contributors." >
+                                 title="This score set is private and may only be viewed by you and other contributors." >
                               </i>
                              {% else %}
                               <i class="help-icon eye-icon icon fas fa-eye" data-toggle="tooltip" data-placement="top"
-                                 title="This Score Set is public and may be viewed by anyone visiting the site." >
+                                 title="This score set is public and may be viewed by anyone visiting the site." >
                               </i>
                             {% endif %}
 
@@ -66,13 +66,13 @@
                             {% if instance in request.user.profile.administrator_scoresets %}
                               <a href="{% url 'accounts:manage_instance' instance.urn %}">
                                 <i class="icon fas fa-users-cog pl-1" data-toggle="tooltip" data-placement="top"
-                                 title="Edit user management for this Score Set."></i>
+                                 title="Edit user management for this score set."></i>
                               </a>
                             {% endif %}
                             {% if instance in request.user.profile.administrator_scoresets or instance in request.user.profile.editor_scoresets %}
                              <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
                               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
-                                 title="Edit this Score Set."></i>
+                                 title="Edit this score set."></i>
                              </a>
                             {% endif %}
 
@@ -101,7 +101,7 @@
                                 <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
                                 <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
                                   <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
-                                     title="Delete this Score Set. This action is final."></i>
+                                     title="Delete this score set. This action is final."></i>
                                 </a>
                               </form>
                               <form id="{{ instance.urn }}-publish" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
@@ -109,7 +109,7 @@
                                 <input value="{{ instance.urn }}" title="publish" name="publish" hidden />
                                 <a class="publish-urn" onclick="confirmPublish('{{ instance.urn }}');" id="publish-btn">
                                   <i class="publish-icon fa fa-lock pl-1" data-toggle="tooltip" data-placement="top"
-                                     title="Publish this Score Set. This action is final."></i>
+                                     title="Publish this score set. This action is final."></i>
                                 </a>
                               </form>
                             {% endif %}
@@ -137,7 +137,7 @@
                           <p class="card-text">No associated score sets.</p>
                         {% else %}
                           <p class="card-text">
-                            <h6>Score Sets:</h6>
+                            <h6>Score sets:</h6>
                             <ul>
                               {% for child in instance.children %}
                                 <li><a href="{% url 'dataset:scoreset_detail' child.urn %}"> {{ child.urn }}</a></li>
@@ -151,11 +151,11 @@
                           <small class="col text-muted d-flex">
                             {% if instance.private %}
                               <i class="help-icon eye-icon icon fas fa-eye-slash" data-toggle="tooltip" data-placement="top"
-                                 title="This Experiment is private and may only be viewed by you and other contributors." >
+                                 title="This experiment is private and may only be viewed by you and other contributors." >
                               </i>
                              {% else %}
                               <i class="help-icon eye-icon icon fas fa-eye" data-toggle="tooltip" data-placement="top"
-                                 title="This Experiment is public and may be viewed by anyone visiting the site." >
+                                 title="This experiment is public and may be viewed by anyone visiting the site." >
                               </i>
                             {% endif %}
 
@@ -169,13 +169,13 @@
                             {% if instance in request.user.profile.administrator_experiments %}
                               <a href="{% url 'accounts:manage_instance' instance.urn %}">
                                 <i class="icon fas fa-users-cog pl-1" data-toggle="tooltip" data-placement="top"
-                                 title="Edit user management for this Experiment."></i>
+                                 title="Edit user management for this experiment."></i>
                               </a>
                             {% endif %}
                             {% if instance in request.user.profile.administrator_experiments or instance in request.user.profile.editor_experiments %}
                              <a href="{% url 'accounts:edit_experiment' instance.urn %}">
                               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
-                                 title="Edit this Experiment."></i>
+                                 title="Edit this experiment."></i>
                              </a>
                             {% endif %}
 
@@ -185,7 +185,7 @@
                                 <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
                                 <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
                                   <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
-                                     title="Delete this Experiment. This action is final."></i>
+                                     title="Delete this experiment. This action is final."></i>
                                 </a>
                               </form>
                             {% endif %}
@@ -198,9 +198,9 @@
               </div> <!-- end experiment card deck container -->
             {% endif %}
 
-            <!-- Experiment Sets -->
+            <!-- Experiment sets -->
             {% if request.user.profile.contributor_experimentsets %}
-              <h2 class="underline left-align section-heading">Experiment Sets</h2>
+              <h2 class="underline left-align section-heading">Experiment sets</h2>
               <div>
                 <div class="card-deck">
                 {% for instance in request.user.profile.contributor_experimentsets %}
@@ -225,11 +225,11 @@
                         <small class="col text-muted d-flex">
                           {% if instance.private %}
                             <i class="help-icon eye-icon icon fas fa-eye-slash" data-toggle="tooltip" data-placement="top"
-                               title="This Experiment Set is private and may only be viewed by you and other contributors." >
+                               title="This experiment set is private and may only be viewed by you and other contributors." >
                             </i>
                            {% else %}
                             <i class="help-icon eye-icon icon fas fa-eye" data-toggle="tooltip" data-placement="top"
-                               title="This Experiment Set is public and may be viewed by anyone visiting the site." >
+                               title="This experiment set is public and may be viewed by anyone visiting the site." >
                             </i>
                           {% endif %}
 
@@ -243,7 +243,7 @@
                           {% if instance in request.user.profile.administrator_experimentsets %}
                             <a href="{% url 'accounts:manage_instance' instance.urn %}">
                               <i class="icon fas fa-users-cog" data-toggle="tooltip" data-placement="top"
-                               title="Edit user management for this Experiment Set."></i>
+                               title="Edit user management for this experiment set."></i>
                             </a>
                           {% endif %}
 
@@ -253,7 +253,7 @@
                               <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
                               <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
                                 <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
-                                   title="Delete this Experiment Set. This action is final."></i>
+                                   title="Delete this experiment set. This action is final."></i>
                               </a>
                             </form>
                           {% endif %}

@@ -26,6 +26,13 @@ from .. import views
 User = get_user_model()
 
 
+class TestFormatPolicy(TestCase):
+    def test_splits_into_lines_of_77_chars_length(self):
+        lines = views.format_policy('This, '* 1000, line_wrap_len=77)
+        for line in lines:
+            self.assertTrue(len(line) <= 77)
+        
+
 class TestAuthenticate(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -539,7 +546,7 @@ class TestScoreSetAPIViews(TestCase):
         instance.add_viewers(request.user)
         views.scoreset_score_data(request, instance.urn)
         self.assertEqual(patch.call_args[1]['dtype'], 'scores')
-
+        
     @mock.patch("api.views.format_response")
     def test_calls_format_response_with_dtype_counts(self, patch):
         request = RequestFactory().get('/')
@@ -549,6 +556,24 @@ class TestScoreSetAPIViews(TestCase):
         views.scoreset_count_data(request, instance.urn)
         self.assertEqual(patch.call_args[1]['dtype'], 'counts')
 
+    @mock.patch("api.views.format_policy")
+    def test_calls_format_policy_when_requesting_scores(self, patch):
+        request = RequestFactory().get('/')
+        request.user = UserFactory()
+        instance = self.factory(private=False)
+        instance.add_viewers(request.user)
+        views.scoreset_score_data(request, instance.urn)
+        patch.assert_called()
+        
+    @mock.patch("api.views.format_policy")
+    def test_calls_format_policy_when_requesting_counts(self, patch):
+        request = RequestFactory().get('/')
+        request.user = UserFactory()
+        instance = self.factory(private=False)
+        instance.add_viewers(request.user)
+        views.scoreset_count_data(request, instance.urn)
+        patch.assert_called()
+        
     def test_can_download_metadata(self):
         scs = self.factory(private=False)
         scs = publish_dataset(scs)

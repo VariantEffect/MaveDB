@@ -5,23 +5,26 @@
 
 {% block body %}
 
-<div class="container-fluid">
-  <div class="container">
+<div id="search-content">
+  <div id="search-control">
     <form class="mb-2" action="{% url 'search:search' %}" method="get">
       <div class="input-group">
         <input class="form-control" name="search">
         <button class="btn btn-outline-dark white-button ml-1">
           <i class="fa fa-search"></i>
         </button>
-        <button id='adv-search' class="btn btn-outline-dark white-button ml-1" data-toggle="collapse"
-                data-target="#search-options" type="button">
+        <button id='adv-search'
+                class="btn btn-outline-dark white-button ml-1"
+                data-toggle="collapse"
+                data-target="#search-options"
+                type="button">
           <i class="fas fa-cog"></i>
         </button>
       </div>
     </form>
   </div>
 
-  <div id="search-options" class="row collapse fade mt-2" aria-hidden="true">
+  <div id="search-options" class="collapse fade mt-2" aria-hidden="true">
     <div class="container card" >
       <div class="card-body">
         <div class="card-header bg-white mb-2">
@@ -50,6 +53,7 @@
             <th class="clickable-row">Urn</th>
             <th class="clickable-row">Short description</th>
             <th class="clickable-row">Target name</th>
+            <th class="clickable-row">Target type</th>
             <th class="clickable-row">Target organisms</th>
             <th class="clickable-row">Contributors</th>
           </tr>
@@ -68,8 +72,9 @@
         {
           "urn": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
           "description": "{{ instance.short_description|default:"-"|escapejs }}",
-          "target": [{% display_targets instance request.user True %}][0].join(', '),
-          "organism": [{% display_organism instance request.user True %}][0].join(', '),
+          "target": [{% display_targets instance request.user True False False %}][0].join(', '),
+          "type": [{% display_targets instance request.user True True False %}][0].join(', '),
+          "organism": [{% display_targets instance request.user True False True %}][0].join(', '),
           "contributors": "" +
             {% for c in instance.contributors %}
               "<span>" +
@@ -85,8 +90,9 @@
                 {
                   "urn": "<a href=\"{{ child.get_url }}\">{% format_urn_name_for_user child request.user %}</a>",
                   "description": "{{ child.short_description|default:"-"|escapejs }}",
-                  "target": [{% display_targets child request.user True %}][0].join(', '),
-                  "organism": [{% display_organism child request.user True %}][0].join(', '),
+                  "target": [{% display_targets child request.user True False False %}][0].join(', '),
+                  "type": [{% display_targets child request.user True True False %}][0].join(', '),
+                  "organism": [{% display_targets child request.user True False True %}][0].join(', '),
                   "contributors": "" +
                     {% for c in child.contributors %}
                       "<span>" +
@@ -110,6 +116,8 @@
   };
 
   $("document").ready(function() {
+    init_select2();
+
     var table = $('#search-table').DataTable({
       data: instances,
       columns: [
@@ -126,15 +134,14 @@
         {data: "urn"},
         {data: "description", width: "40%"},
         {data: "target" },
+        {data: "type" },
         {data: "organism"},
         {data: "contributors"}
       ],
       order: [[1, 'asc']]
     });
 
-    setTimeout(init_select2, 2000);
     $(".no-hover").parent().parent().addClass("no-hover");
-
     // Add event listener for opening and closing details
     $('#search-table tbody').on('click', 'td.details-control', function () {
        var tr = $(this).closest('tr');
@@ -172,6 +179,7 @@
           "<td>" + rowData.children[i].urn + "</td>" +
           "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +
           "<td>" + rowData.children[i].target + "</td>" +
+          "<td>" + rowData.children[i].type + "</td>" +
           "<td>" + rowData.children[i].organism + "</td>" +
           "<td>" + rowData.children[i].contributors + "</td>" +
         "</tr>"

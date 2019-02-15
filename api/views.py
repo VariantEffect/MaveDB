@@ -1,16 +1,22 @@
-import string
 import csv
+import re
 from datetime import datetime
 
 from rest_framework import viewsets, exceptions
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.cache import cache_page
-from django.conf import settings
 
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
+
+from metadata import models as meta_models
+from metadata import serializers as meta_serializers
+
+from genome import models as genome_models
+from genome import serializers as genome_serializers
+
+from core.utilities import chunks
 
 from dataset import models, filters, constants
 from dataset.serializers import (
@@ -22,6 +28,9 @@ from dataset.serializers import (
 
 User = get_user_model()
 ScoreSet = models.scoreset.ScoreSet
+
+
+words_re = re.compile(r"\w+|[^\w\s]", flags=re.IGNORECASE)
 
 
 def authenticate(request):
@@ -95,6 +104,7 @@ class DatasetListViewSet(AuthenticatedViewSet):
 
 
 class ExperimentSetViewset(DatasetListViewSet):
+    http_method_names = ('get',)
     serializer_class = ExperimentSetSerializer
     filter_class = filters.ExperimentSetFilterModel
     model_class = models.experimentset.ExperimentSet
@@ -103,6 +113,7 @@ class ExperimentSetViewset(DatasetListViewSet):
 
 
 class ExperimentViewset(DatasetListViewSet):
+    http_method_names = ('get',)
     serializer_class = ExperimentSerializer
     filter_class = filters.ExperimentFilter
     model_class = models.experiment.Experiment
@@ -111,6 +122,7 @@ class ExperimentViewset(DatasetListViewSet):
 
 
 class ScoreSetViewset(DatasetListViewSet):
+    http_method_names = ('get',)
     serializer_class = ScoreSetSerializer
     filter_class = filters.ScoreSetFilter
     model_class = models.scoreset.ScoreSet
@@ -119,7 +131,8 @@ class ScoreSetViewset(DatasetListViewSet):
 
 
 class UserViewset(AuthenticatedViewSet):
-    queryset = User.objects.exclude(username='AnonymousUser')
+    http_method_names = ('get', )
+    queryset = User.objects.all()
     serializer_class = UserSerializer
     filter_class = UserFilter
     lookup_field = 'username'
@@ -199,6 +212,29 @@ def urn_number(variant):
     return int(number)
     
 
+def format_policy(policy, line_wrap_len=77):
+    if policy:
+        policy = "Not specified"
+    words = words_re.findall(policy)
+    lines = []
+    index = 0
+    line = ""
+    while index < len(words):
+        if len(words[index]) == 1:
+            new_line = '{}{}'.format(line, words[index])
+        else:
+            new_line = '{} {}'.format(line, words[index])
+        if len(new_line) >= line_wrap_len:
+            lines.append("# {}\n".format(line.strip()))
+            line = ""
+        else:
+            line = new_line
+            index += 1
+    if line:
+        lines.append("# {}\n".format(line.strip()))
+    return lines
+    
+
 def format_response(response, scoreset, dtype):
     """
     Writes the CSV response by formatting each variant into a row including
@@ -224,6 +260,10 @@ def format_response(response, scoreset, dtype):
         "# Licence URL: {}\n".format(scoreset.licence.link),
     ])
     
+    # Append data usage policy
+    lines = format_policy(scoreset.data_usage_policy)
+    response.writelines(["# Data usage policy:\n"] + lines)
+
     variants = sorted(
         scoreset.children.all(), key=lambda v: urn_number(v))
         
@@ -276,3 +316,66 @@ def scoreset_metadata(request, urn):
         return instance_or_response
     scoreset = instance_or_response
     return JsonResponse(scoreset.extra_metadata, status=200)
+
+
+# ----- Other API endpoints
+class KeywordViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get', )
+    queryset = meta_models.Keyword.objects.all()
+    serializer_class = meta_serializers.KeywordSerializer
+
+
+class PubmedIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get', )
+    queryset = meta_models.PubmedIdentifier.objects.all()
+    serializer_class = meta_serializers.PubmedIdentifierSerializer
+    
+    
+class SraIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get', )
+    queryset = meta_models.SraIdentifier.objects.all()
+    serializer_class = meta_serializers.SraIdentifierSerializer
+    
+    
+class DoiIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get', )
+    queryset = meta_models.DoiIdentifier.objects.all()
+    serializer_class = meta_serializers.DoiIdentifierSerializer
+    
+    
+class EnsemblIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get', )
+    queryset = meta_models.EnsemblIdentifier.objects.all()
+    serializer_class = meta_serializers.EnsemblIdentifierSerializer
+
+
+class RefseqIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get',)
+    queryset = meta_models.RefseqIdentifier.objects.all()
+    serializer_class = meta_serializers.RefseqIdentifierSerializer
+    
+    
+class UniprotIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get',)
+    queryset = meta_models.UniprotIdentifier.objects.all()
+    serializer_class = meta_serializers.UniprotIdentifierSerializer
+    
+    
+class GenomeIdentifierViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get',)
+    queryset = meta_models.GenomeIdentifier.objects.all()
+    serializer_class = meta_serializers.GenomeIdentifierSerializer
+    
+    
+class TargetGeneViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get',)
+    queryset = genome_models.TargetGene.objects.exclude(
+        scoreset__private=True
+    )
+    serializer_class = genome_serializers.TargetGeneSerializer
+    
+    
+class ReferenceGenomeViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get',)
+    queryset = genome_models.ReferenceGenome.objects.all()
+    serializer_class = genome_serializers.ReferenceGenomeSerializer

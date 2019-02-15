@@ -49,6 +49,7 @@ class ExperimentForm(DatasetModelForm):
             queryset=None, required=False, widget=forms.Select(
                 attrs={"class": "form-control"})
         )
+        self.fields['experimentset'].label = 'Experiment set'
         self.set_experimentset_options()
 
         self.fields['abstract_text'].help_text = (

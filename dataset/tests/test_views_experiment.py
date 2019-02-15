@@ -3,6 +3,8 @@ from django.urls import reverse_lazy
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
 
+from reversion.models import Version
+
 from core.utilities.tests import TestMessageMixin
 
 from accounts.factories import UserFactory
@@ -94,8 +96,8 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
             method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
-        self.assertContains(response, 'Add a Score Set')
-        self.assertContains(response, 'Edit this Experiment')
+        self.assertContains(response, 'Add a score set')
+        self.assertContains(response, 'Edit this experiment')
         
     def test_user_without_edit_permission_cannot_see_edit_button(self):
         user = UserFactory()
@@ -105,8 +107,8 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
             method='get', path='/experiment/{}/'.format(obj.urn))
         request.user = user
         response = ExperimentDetailView.as_view()(request, urn=obj.urn)
-        self.assertNotContains(response, 'Add a Score Set')
-        self.assertNotContains(response, 'Edit this Experiment')
+        self.assertNotContains(response, 'Add a score set')
+        self.assertNotContains(response, 'Edit this experiment')
         
 
 
@@ -141,6 +143,9 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         self.user.set_password(self.unencrypted_password)
         self.user.save()
         self.client.logout()
+        
+    def tearDown(self):
+        Version.objects.all().delete()
 
     def test_redirect_to_login_not_logged_in(self):
         response = self.client.get(self.path)
@@ -177,6 +182,14 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         self.assertEqual(experiment.keywords.count(), 2)
         self.assertEqual(experiment.abstract_text, 'hello world')
         self.assertEqual(experiment.method_text, 'foo bar')
+
+    def test_creates_new_reversion_instances_for_exp_and_exps(self):
+        data = self.post_data.copy()
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        self.assertEqual(Version.objects.count(), 0)
+        ExperimentCreateView.as_view()(request)
+        self.assertEqual(Version.objects.count(), 2)
 
     def test_valid_submission_sets_created_by(self):
         data = self.post_data
@@ -376,6 +389,9 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         self.user.set_password(self.unencrypted_password)
         self.user.save()
         self.client.logout()
+        
+    def tearDown(self):
+        Version.objects.all().delete()
 
     def test_correct_tamplate_when_logged_in(self):
         scs = ExperimentFactory()
@@ -470,3 +486,16 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
             response, '{} | {}'.format(exp1.parent.urn, exp1.parent.title))
         self.assertNotContains(
             response, '{} | {}'.format(exp2.parent.urn, exp2.parent.title))
+
+    def test_creates_new_reversion_instances_for_exp_and_exps(self):
+        data = self.post_data
+        exp = ExperimentFactory(private=False)
+        assign_user_as_instance_admin(self.user, exp)
+        assign_user_as_instance_admin(self.user, exp.parent)
+
+        request = self.create_request(method='post', path=self.path, data=data)
+        request.user = self.user
+        
+        self.assertEqual(Version.objects.count(), 0)
+        ExperimentEditView.as_view()(request, urn=exp.urn)
+        self.assertEqual(Version.objects.count(), 1)

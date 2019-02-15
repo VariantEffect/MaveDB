@@ -3,52 +3,61 @@
 {% load licence_tags %}
 
 {% block target %}
-  <h2 id="targets" class="underline left-align section-heading"> Targets </h2>
+  <h2 id="targets" class="underline left-align section-heading">Targets</h2>
   {% visible_children instance user as visible_scoresets %}
-  
   {% if visible_scoresets|length %}
-    {% if visible_scoresets|length > 1%}
-      <p class="text-muted">Multiple targets have been scored for this experiment: </p>
-    {% else %}
-      <p class="text-muted">A single target has been scored for this experiment: </p>
-    {% endif %}
-    
-    {% for child in visible_scoresets %}
-      <div class="target-card" data-toggle="popover" title="<b>{{ child.urn }}</b><hr>{{ child.get_title }}"
-           data-content="{{ child.get_description }}" data-placement=auto
-           onmouseover="$(this).popover({trigger:'hover', html:true});" style="cursor: help" >
-
-        <a href={% url 'dataset:scoreset_detail' child.urn %}>
-          <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
-        </a>
-
-        <div style="padding-left: 1em">
+    {% group_targets visible_scoresets as targets %}
+    {% for target in targets %}
+      <div class="target-card">
+        <div id="target-scoresets">
+          {% for scoreset in target.1 %}
+            <span data-toggle="popover"
+               title="<b>{{ scoreset.urn }}</b><hr>{{ scoreset.get_title }}"
+               data-content="{{ scoreset.get_description }}"
+               data-placement=auto
+               onmouseenter="$(this).popover({trigger:'hover', html: true});"
+               style="cursor: help;">
+              <a class="inline-link urn-item-link" href={% url 'dataset:scoreset_detail' scoreset.urn %}>
+                <p>{{ scoreset.urn }} {% if scoreset.private %}[Private]{% endif %}</p>
+              </a>
+            </span>
+            {% if forloop.counter < target.1|length %}<span>&middot;</span>{% endif %}
+          {% endfor %}
+        </div>
+        <div style="padding-left: 1em; border-left: 1px solid #987cb8;">
           <p>
-            <strong>Target: </strong>
-            <a href="/search/?target={{ child.get_target.get_name }}">
-              {{ child.get_target.get_name }}
+            <strong>Target name: </strong>
+            <a href="/search/?target={{ target.0.get_name }}">
+              {{ target.0.get_name }}
+            </a>
+          </p>
+
+          <p>
+            <strong>Target type: </strong>
+            <a href="/search/?target_type={{ target.0.category }}">
+              {{ target.0.category }}
             </a>
           </p>
 
           <p>
             <strong>Organism: </strong>
-            <a href="/search/?organism={{ child.get_target.get_reference_genomes.first.get_organism_name }}">
-              {{ child.get_target.get_reference_genomes.first.format_organism_name_html|safe }}
+            <a href="/search/?organism={{ target.0.get_reference_genomes.first.get_organism_name }}">
+              {{ target.0.get_reference_genomes.first.format_organism_name_html|safe }}
             </a>
           </p>
 
           <p>
             <strong>Reference genome: </strong>
-            <a href="/search/?genome={{ child.get_target.get_reference_genomes.first.get_short_name }}">
-              {{ child.get_target.get_reference_genomes.first.get_short_name }}
+            <a href="/search/?genome={{ target.0.get_reference_genomes.first.get_short_name }}">
+              {{ target.0.get_reference_genomes.first.get_short_name }}
             </a>
           </p>
 
           <p>
             <strong>Reference assembly: </strong>
             {% if child.get_target.get_reference_genomes.first.genome_id.identifier %}
-              <a target="_blank" href={{ child.get_target.get_reference_genomes.first.genome_id.url }}>
-                {{ child.get_target.get_reference_genomes.first.genome_id.identifier }}
+              <a target="_blank" href={{ target.0.get_reference_genomes.first.genome_id.url }}>
+                {{ target.0.get_reference_genomes.first.genome_id.identifier }}
                 <i class="external-link fas fa-external-link-alt"></i>
               </a>
             {% else %}
@@ -57,15 +66,14 @@
           </p>
 
           <p class="wild-type-sequence">
-            <strong>Wildtype Sequence: </strong>
-            {{ child.get_target.get_wt_sequence }}
+            <strong>Reference sequence: </strong>
+            {{ target.0.get_wt_sequence }}
           </p>
-
-          {% if forloop.counter < visible_scoresets|length %}
-            <hr>
-          {% endif %}
         </div>
       </div>
+      {% if forloop.counter < targets|length %}
+        <hr style="width: 99%">
+      {% endif %}
     {% endfor %}
   {% else %}
     <p class="text-muted">No targets have been scored for this experiment.</p>
@@ -75,10 +83,10 @@
 {% block child_list %}
   {% visible_children instance user as visible_scoresets %}
   <span>
-    <h2 id='scoresets' class="underline left-align section-heading">Score Sets
+    <h2 id='scoresets' class="underline left-align section-heading">Score sets
       {% if request.user in instance.editors or request.user in instance.administrators %}
         <a href="{% url 'dataset:scoreset_new' %}?experiment={{ instance.urn }}">
-          <i class="icon fa fa-plus pl-1" data-toggle="tooltip" data-placement="top" title="Add a Score Set."
+          <i class="icon fa fa-plus pl-1" data-toggle="tooltip" data-placement="top" title="Add a score set."
              style="font-size: 28px; padding-bottom: 8px"></i>
         </a>
       {% endif %}

@@ -1,7 +1,5 @@
 from django.test import TestCase, RequestFactory
 
-from main.models import Licence
-
 from dataset import filters as ds_filters
 
 from .. import forms
@@ -32,29 +30,29 @@ class TestAdvancedSearchForm(TestCase):
         self.assertEqual(
             result[ds_filters.DatasetModelFilter.TITLE], 'hello')
     
-    def test_format_for_filter_formats_desc_field(self):
-        request = RequestFactory().get("/?{}=hello".format(
-            ds_filters.DatasetModelFilter.DESCRIPTION))
-        form = forms.AdvancedSearchForm(request.GET)
-        result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.DESCRIPTION], 'hello')
-    
-    def test_format_for_filter_formats_method_field(self):
-        request = RequestFactory().get("/?{}=hello\nworld".format(
-            ds_filters.DatasetModelFilter.METHOD))
-        form = forms.AdvancedSearchForm(request.GET)
-        result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.METHOD], 'hello\nworld')
-    
-    def test_format_for_filter_formats_abstract_field(self):
-        request = RequestFactory().get("/?{}=hello\nworld".format(
-            ds_filters.DatasetModelFilter.ABSTRACT))
-        form = forms.AdvancedSearchForm(request.GET)
-        result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.ABSTRACT], 'hello\nworld')
+    # def test_format_for_filter_formats_desc_field(self):
+    #     request = RequestFactory().get("/?{}=hello".format(
+    #         ds_filters.DatasetModelFilter.DESCRIPTION))
+    #     form = forms.AdvancedSearchForm(request.GET)
+    #     result = form.format_data_for_filter()
+    #     self.assertEqual(
+    #         result[ds_filters.DatasetModelFilter.DESCRIPTION], 'hello')
+    #
+    # def test_format_for_filter_formats_method_field(self):
+    #     request = RequestFactory().get("/?{}=hello\nworld".format(
+    #         ds_filters.DatasetModelFilter.METHOD))
+    #     form = forms.AdvancedSearchForm(request.GET)
+    #     result = form.format_data_for_filter()
+    #     self.assertEqual(
+    #         result[ds_filters.DatasetModelFilter.METHOD], 'hello\nworld')
+    #
+    # def test_format_for_filter_formats_abstract_field(self):
+    #     request = RequestFactory().get("/?{}=hello\nworld".format(
+    #         ds_filters.DatasetModelFilter.ABSTRACT))
+    #     form = forms.AdvancedSearchForm(request.GET)
+    #     result = form.format_data_for_filter()
+    #     self.assertEqual(
+    #         result[ds_filters.DatasetModelFilter.ABSTRACT], 'hello\nworld')
     
     def test_format_for_filter_formats_sra_field(self):
         request = RequestFactory().get("/?{key}=1&{key}=2".format(
@@ -201,4 +199,5 @@ class TestBasicSearchForm(TestCase):
         result = form.format_data_for_filter()
         self.assertTrue(result)
         self.assertEqual(result['title'], 'Hello')
-        self.assertEqual(len(result), 20)
+        n_fields = 21
+        self.assertEqual(len(result), n_fields)

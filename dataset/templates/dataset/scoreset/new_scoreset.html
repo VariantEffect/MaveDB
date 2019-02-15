@@ -7,7 +7,7 @@
 
 
 {% block side-bar-title %}
-  Create new Score Set
+  Create new score set
 {% endblock %}
 
 
@@ -26,7 +26,7 @@
     once this form has been successfully submitted and processed.
   </p>
   <p class="text-muted">
-    <b>Note: </b>You can only attach a Score Set to an Experiment for which
+    <b>Note: </b>You can only attach a score set to an experiment for which
     you have <b>edit</b> permissions on. Similarly, you can only replace
     score sets for which you have <b>edit</b> permission on.
   </p>
@@ -42,9 +42,9 @@
   <hr>
 
   <div class="target-gene-form-group">
-    <h4>Target gene</h4>
+    <h4>Target</h4>
     <p class="text-muted">
-      Enter the name and wild-type sequence of your target gene. Alternatively,
+      Enter the name, type3 and reference sequence of your target. Alternatively,
       you can select an existing target from the drop-down menu below and
       auto fill the remaining form fields. The reference map section
       will be populated with the information associated with the primary reference
@@ -63,8 +63,8 @@
         identifier from the dropdown list or type in a new one and press enter.
       </p>
       <p class="text-muted">
-        The wild-type offset is added to each position in the wild-type
-        sequence to place it within the given target. Wild-type offset should be
+        The reference offset is added to each position in the reference
+        sequence to place it within the given target. Reference offset should be
         in amino acids for protein identifiers.
       </p>
   </div>
@@ -81,7 +81,7 @@
 
   <div class="reference-map-form-group">
     <h4>
-      Reference Genome
+      Reference genome
     </h4>
     <p class="text-muted">
       Select an existing reference genome from the drop-down list. If you cannot find

@@ -18,7 +18,7 @@ User = get_user_model()
 logger = logging.getLogger("django")
 
 
-null_values_list = ('nan', 'na', 'none', ' ', 'undefined', 'n/a', 'null')
+null_values_list = ('nan', 'na', 'none', '', 'undefined', 'n/a', 'null')
 null_values_re = re.compile(r'\s+|none|nan|na|undefined|n/a|null')
 readable_null_values = [
     "'{}'".format(v)
@@ -130,3 +130,9 @@ def format_column(values, astype=float):
     else:
         nan_val = np.NaN
     return [nan_val if is_null(v) else astype(v) for v in values]
+
+
+def chunks(ls, n):
+    """Return elements in a list, n at a time."""
+    for i in range(0, len(ls), n):
+        yield ls[i:i+n]

@@ -74,7 +74,7 @@ class DatasetModelForm(forms.ModelForm):
         )
         self.fields['sra_ids'] = FlexibleModelMultipleChoiceField(
             klass=SraIdentifier, to_field_name='identifier',
-            label='SRA Identifiers', required=False,
+            label='SRA identifiers', required=False,
             queryset=SraIdentifier.objects.all(),
             widget=forms.SelectMultiple(
                 attrs={"class": "select2 select2-token-select"}
@@ -82,7 +82,7 @@ class DatasetModelForm(forms.ModelForm):
         )
         self.fields['doi_ids'] = FlexibleModelMultipleChoiceField(
             klass=DoiIdentifier, to_field_name='identifier',
-            label='DOI Identifiers', required=False,
+            label='DOI identifiers', required=False,
             queryset=DoiIdentifier.objects.all(),
             widget=forms.SelectMultiple(
                 attrs={"class": "select2 select2-token-select"}
@@ -90,7 +90,7 @@ class DatasetModelForm(forms.ModelForm):
         )
         self.fields['pubmed_ids'] = FlexibleModelMultipleChoiceField(
             klass=PubmedIdentifier, to_field_name='identifier',
-            label='PubMed Identifiers', required=False,
+            label='PubMed identifiers', required=False,
             queryset=PubmedIdentifier.objects.all(),
             widget=forms.SelectMultiple(
                 attrs={"class": "select2 select2-token-select"}

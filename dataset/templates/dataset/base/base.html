@@ -12,13 +12,13 @@
         {% if request.user in instance.editors or request.user in instance.administrators %}
           {% if instance.class_name == "scoreset" %}
              <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
-               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this Score Set."
+               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this score set."
                   style="font-size: 42px; padding-bottom: 6px"></i>
              </a>
           {% endif %}
           {% if instance.class_name == "experiment" %}
              <a href="{% url 'accounts:edit_experiment' instance.urn %}">
-               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this Experiment."
+               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this experiment."
                   style="font-size: 42px; padding-bottom: 6px"></i>
              </a>
           {% endif %}
@@ -36,9 +36,9 @@
 
         <div class="dropdown" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
              {% if instance.processing_state != 'success'%}
-                title="Download the scores, counts or metadata files associated with this Score Set (disabled until successfully processed)."
+                title="Download the scores, counts or metadata files associated with this score set (disabled until successfully processed)."
              {% else %}
-                title="Download the scores, counts or metadata files associated with this Score Set."
+                title="Download the scores, counts or metadata files associated with this score set."
              {% endif %}>
           <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
@@ -120,46 +120,50 @@
   </p>
 </div>
 
-<div class="row">
+<div id="dataset-detail-content">
 
-  <div class="col-xl-2 sidenav-detail sidenav border-right">
-    <a href="#contributors">Contributors</a>
+{#  <div class="col-xl-2 sidenav-detail sidenav border-right">#}
+{#    <a href="#contributors">Contributors</a>#}
+{##}
+{#    {% if instance.class_name == "scoreset" %}#}
+{#      <a href="#data-usage">Data usage policy</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name != "experimentset" %}#}
+{#      <a href="#title">Title</a>#}
+{#      <a href="#description">Description</a>#}
+{#      <a href="#abstract">Abstract</a>#}
+{#      <a href="#method">Method</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name == "experiment" %}#}
+{#      <a href="#targets">Targets</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name == "scoreset" %}#}
+{#      <a href="#target">Target</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name != "experimentset" %}#}
+{#      <a href="#metadata">External identifiers</a>#}
+{#      <a href="#references">References</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name == "experimentset" %}#}
+{#      <a href="#experiments">Experiments</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name == "experiment" %}#}
+{#      <a href="#scoresets">Score sets</a>#}
+{#    {% endif %}#}
+{##}
+{#    {% if instance.class_name == "scoreset" %}#}
+{#      <a href="#variants">Variants</a>#}
+{#    {% endif %}#}
+{##}
+{#  </div>#}
 
-    {% if instance.class_name != "experimentset" %}
-      <a href="#title">Title</a>
-      <a href="#description">Description</a>
-      <a href="#abstract">Abstract</a>
-      <a href="#method">Method</a>
-    {% endif %}
-
-    {% if instance.class_name == "experiment" %}
-      <a href="#targets">Targets</a>
-    {% endif %}
-
-    {% if instance.class_name == "scoreset" %}
-      <a href="#target">Target</a>
-    {% endif %}
-
-    {% if instance.class_name != "experimentset" %}
-      <a href="#metadata">External Identifiers</a>
-      <a href="#references">References</a>
-    {% endif %}
-
-    {% if instance.class_name == "experimentset" %}
-      <a href="#experiments">Experiments</a>
-    {% endif %}
-
-    {% if instance.class_name == "experiment" %}
-      <a href="#scoresets">Score Sets</a>
-    {% endif %}
-
-    {% if instance.class_name == "scoreset" %}
-      <a href="#variants">Variants</a>
-    {% endif %}
-
-  </div>
-
-  <div class="model-detail col-xl-9 col-lg-12 col-md-12 col-12 pl-4">
+  <div class="model-detail">
      <!-- Renders contributors as ORCID url-->
     <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
     <ul>
@@ -170,6 +174,17 @@
       </li>
       {% endfor %}
     </ul>
+
+    {% if instance.class_name == "scoreset" %}
+      <h2 id="data-usage" class="underline left-align section-heading">
+        Data usage policy
+      </h2>
+      {% if instance.data_usage_policy|length %}
+        <p>{{ instance.data_usage_policy }}</p>
+      {% else %}
+        <p>Not specified.</p>
+      {% endif %}
+    {% endif %}
 
     <!-- Renders markdown abstract text -->
     {% if instance.class_name != "experimentset" %}
@@ -221,7 +236,9 @@
 
     {% if instance.class_name != "experimentset" %}
       <!-- Renders External Identifier urls -->
-      <h2 id="metadata" class="underline left-align section-heading">External Identifiers</h2>
+      <h2 id="metadata" class="underline left-align section-heading">
+        External identifiers
+      </h2>
       {% if instance.doi_ids.count %}
         <strong>DOI:</strong>
           <ul>
@@ -266,7 +283,9 @@
         {% if instance.class_name == 'scoreset' %}
           {% parent_references instance as parent_refs %}
           {% if parent_refs|length %}
-            <p class="pl-4">References from <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:</p>
+            <p class="pl-4">References from
+              <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:
+            </p>
             <ol start="{{instance.pubmed_ids.count|add:1}}">
             {% for pm in parent_refs %}
               <li>{{ pm.reference_html|safe }} PMID:

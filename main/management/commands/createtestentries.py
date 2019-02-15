@@ -25,6 +25,9 @@ class Command(BaseCommand):
         with transaction.atomic():
             for i, username in enumerate(['usera', 'userb', 'userc', 'userd']):
                 user = UserFactory(username=username)
+                if username == 'usera':
+                    user.is_superuser = True
+                    user.is_staff = True
                 user.set_password(password)
                 user.save()
                 instance = factories.ExperimentFactory()

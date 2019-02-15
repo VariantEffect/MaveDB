@@ -38,15 +38,15 @@ class TargetGeneForm(forms.ModelForm):
     """
     class Meta:
         model = TargetGene
-        fields = ('name', )
+        fields = ('name', 'category', )
 
     wt_sequence = forms.CharField(
-        label='Target wild-type sequence',
+        label='Target reference sequence',
         required=True,
         widget=forms.Textarea(),
         error_messages={
             'required':
-                'You must supply a wild-type sequence for your target.'
+                'You must supply a reference sequence for your target.'
         },
     )
     target = forms.ModelChoiceField(
@@ -56,7 +56,7 @@ class TargetGeneForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.field_order = ('target', 'name', 'wt_sequence')
+        self.field_order = ('target', 'name', 'category', 'wt_sequence')
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
@@ -67,6 +67,10 @@ class TargetGeneForm(forms.ModelForm):
                 instance.get_wt_sequence().get_sequence()
 
         self.set_target_gene_options()
+        
+        self.fields['category'].choices = \
+            [("", self.fields["target"].empty_label), ] + \
+            list(self.fields['category'].choices)
 
         self.fields['name'].label = 'Target name'
         self.fields['name'].validators = [validate_gene_name]
@@ -130,7 +134,7 @@ class TargetGeneForm(forms.ModelForm):
             if not wt_sequence:
                 self.add_error(
                     'wt_sequence',
-                    "You must supply a wild-type sequence."
+                    "You must supply a reference sequence."
                 )
                 return cleaned_data
             self.wt_sequence = wt_sequence

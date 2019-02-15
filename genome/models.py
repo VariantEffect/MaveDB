@@ -1,3 +1,5 @@
+import hashlib
+
 from django.db import models
 
 from core.models import TimeStampedModel
@@ -33,6 +35,12 @@ class TargetGene(TimeStampedModel):
     name : `models.CharField`
         The name of the target gene.
     """
+    CATEGORY_CHOICES = (
+        ('Protein coding', 'Protein coding'),
+        ('Regulatory', 'Regulatory'),
+        ('Other noncoding', 'Other noncoding'),
+    )
+    
     class Meta:
         ordering = ('name',)
         verbose_name = "Target Gene"
@@ -41,7 +49,7 @@ class TargetGene(TimeStampedModel):
     @classmethod
     def tracked_fields(cls):
         return (
-            'name', 'wt_sequence', 'scoreset_id', 'wt'
+            'name', 'wt_sequence', 'scoreset_id', 'wt', 'category'
         )
 
     def __str__(self):
@@ -54,6 +62,14 @@ class TargetGene(TimeStampedModel):
         verbose_name='Target name',
         max_length=256,
         validators=[validate_gene_name],
+    )
+    category = models.CharField(
+        blank=False,
+        null=False,
+        default='Protein coding',
+        verbose_name='Target type',
+        max_length=250,
+        choices=CATEGORY_CHOICES,
     )
 
     scoreset = models.OneToOneField(
@@ -70,7 +86,7 @@ class TargetGene(TimeStampedModel):
         blank=False,
         null=False,
         default=None,
-        verbose_name='Wild-type Sequence',
+        verbose_name='Reference sequence',
         related_name='target',
         on_delete=models.PROTECT,
     )
@@ -158,10 +174,38 @@ class TargetGene(TimeStampedModel):
 
     def get_reference_maps(self):
         return self.reference_maps.all()
+    
+    def get_primary_reference_map(self):
+        return self.reference_maps.filter(is_primary=True).first()
 
     def get_reference_genomes(self):
         genome_pks = set(a.genome.pk for a in self.get_reference_maps())
         return ReferenceGenome.objects.filter(pk__in=genome_pks)
+    
+    def equals(self, other):
+        return self.hash() == other.hash()
+    
+    def hash(self):
+        genome = getattr(self.get_primary_reference_map(), 'genome', None)
+        # Fallback to other reference maps
+        if genome is None:
+            genome = getattr(self.get_reference_maps().first(), 'genome', None)
+        # Every reference map should have a genome by database constraint.
+        # Set as null values in case.
+        if genome is None:
+            genome = ("", "", "")
+        else:
+            genome = (
+                genome.short_name,
+                genome.organism_name,
+                getattr(genome.genome_id, 'identifier', '')
+            )
+        repr_ = str((
+            self.name,
+            self.wt_sequence.sequence,
+            self.category,
+        ) + genome)
+        return hashlib.md5(repr_.encode('utf-8')).hexdigest()
 
 
 class ReferenceMap(TimeStampedModel):
@@ -290,8 +334,8 @@ class ReferenceGenome(TimeStampedModel):
     """
     class Meta:
         ordering = ('id',)
-        verbose_name = 'Reference Genome'
-        verbose_name_plural = 'Reference Genomes'
+        verbose_name = 'Reference genome'
+        verbose_name_plural = 'Reference genomes'
 
     def __str__(self):
         return self.get_short_name()
@@ -492,8 +536,8 @@ class WildTypeSequence(TimeStampedModel):
         be converted to upper-case upon instantiation.
     """
     class Meta:
-        verbose_name = "Wild-type sequence"
-        verbose_name_plural = "Wild-type sequences"
+        verbose_name = "Reference sequence"
+        verbose_name_plural = "Reference sequences"
 
     def __str__(self):
         return self.get_sequence()
@@ -502,7 +546,7 @@ class WildTypeSequence(TimeStampedModel):
         default=None,
         blank=False,
         null=False,
-        verbose_name="Wild-type sequence",
+        verbose_name="Reference sequence",
         validators=[validate_wildtype_sequence],
     )
 

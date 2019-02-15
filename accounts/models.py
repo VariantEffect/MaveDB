@@ -302,7 +302,7 @@ class Profile(TimeStampedModel):
         instances = self.administrator_experimentsets() | \
             self.editor_experimentsets() | \
             self.viewer_experimentsets()
-        return instances.all()
+        return instances.order_by('urn')
 
     def contributor_experiments(self):
         """
@@ -316,7 +316,7 @@ class Profile(TimeStampedModel):
         instances = self.administrator_experiments() | \
             self.editor_experiments() | \
             self.viewer_experiments()
-        return instances.all()
+        return instances.order_by('urn')
 
     def contributor_scoresets(self):
         """
@@ -330,22 +330,22 @@ class Profile(TimeStampedModel):
         instances = self.administrator_scoresets() | \
             self.editor_scoresets() | \
             self.viewer_scoresets()
-        return instances.all()
+        return instances.order_by('urn')
 
     def public_contributor_experimentsets(self):
         """Filters out private experimentsets"""
         instances = self.contributor_experimentsets().exclude(private=True)
-        return instances.all()
+        return instances.order_by('urn')
 
     def public_contributor_experiments(self):
         """Filters out private experiments"""
         instances = self.contributor_experiments().exclude(private=True)
-        return instances.all()
+        return instances.order_by('urn')
 
     def public_contributor_scoresets(self):
         """Filters out private scoresets"""
         instances = self.contributor_scoresets().exclude(private=True)
-        return instances.all()
+        return instances.order_by('urn')
 
     # Administrator
     # ----------------------------------------------------------------------- #

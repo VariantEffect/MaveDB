@@ -2,10 +2,10 @@
 
 {% block body %}
 
-  <div class="row">
+  <div class="row" id="index-content">
 
     <div class="col-md-6">
-      <div class="container">
+      <div id="about-citation-wrapper">
         <h1> About </h1>
         <div id="about">
           {{ site_information.about|safe|escape|default:"None" }}
@@ -20,7 +20,7 @@
     </div> <!-- end left side content -->
 
     <div class="col-md-6">
-      <div class="container">
+      <div id="news-items">
         <h1> News <i class="far fa-newspaper" style="font-size: 32px"></i> </h1>
         <div class="news hover-card">
           {% if news_items %}
@@ -42,13 +42,13 @@
               </div>
             {% endfor %}
           {% else %}
-            <p> No news at this time. </p>
+            <p> No recent announcements. </p>
           {% endif %}
         </div>
         <hr>
       </div>
 
-      <div class="container pt-1">
+      <div id="top-search" class="pt-1">
         <h1> Highlights <i class="fas fa-search" style="font-size: 32px"></i> </h1>
         <div class="container highlights hover-card">
           <div class="row">
@@ -89,7 +89,7 @@
         <hr>
       </div>
 
-    <div class="container pt-1">
+    <div class="pt-1" id="quick-search">
       <span><h1> Quick search <i class="fas fa-search" style="font-size: 32px"></i> </h1></span>
       <div class="container hover-card quick-search">
         <div class="row">

@@ -86,6 +86,7 @@ class ScoreSetSerializer(DatasetModelSerializer):
             'licence', 'target', 'score_columns', 'count_columns',
             'previous_version', 'next_version',
             'current_version', 'variant_count', 'experiment',
+            'data_usage_policy',
         )
         fields = tuple([f for f in fields if f != 'sra_ids'])
 

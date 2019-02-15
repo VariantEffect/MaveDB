@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 """
 This module contains helper functions relating to pandoc ReSt/Md output
@@ -6,13 +7,13 @@ This module contains helper functions relating to pandoc ReSt/Md output
 
 import pypandoc
 
-PANDOC_DEFAULT_ARGS = [
+PANDOC_DEFAULT_ARGS = (
     '--mathml',
     '--smart',
     '--standalone',
     '--biblatex',
     '--html-q-tags'
-]
+)
 
 
 def convert_md_to_html(source, extra_args=PANDOC_DEFAULT_ARGS, **kwargs):

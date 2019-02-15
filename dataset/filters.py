@@ -192,6 +192,10 @@ class ExperimentFilter(DatasetModelFilter):
     uniprot = CSVCharFilter(method='filter_by_scoreset')
     ensembl = CSVCharFilter(method='filter_by_scoreset')
     refseq = CSVCharFilter(method='filter_by_scoreset')
+    target_type = CSVCharFilter(
+        field_name="scoresets__target__category",
+        lookup_expr='icontains',
+    )
 
     def filter_by_scoreset(self, queryset, name, value):
         experiments = set()
@@ -229,12 +233,13 @@ class ScoreSetFilter(DatasetModelFilter):
     UNIPROT = 'uniprot'
     ENSEMBL = 'ensembl'
     REFSEQ = 'refseq'
+    TARGET_TYPE = 'target_type'
     
     class Meta(DatasetModelFilter.Meta):
         model = models.scoreset.ScoreSet
         fields = DatasetModelFilter.Meta.fields + (
             'licence', 'genome', 'target', 'organism',
-            'uniprot', 'ensembl', 'refseq'
+            'uniprot', 'ensembl', 'refseq', 'target_type',
         )
 
     licence = CSVCharFilter(method='filter_licence')
@@ -257,6 +262,10 @@ class ScoreSetFilter(DatasetModelFilter):
     refseq = CSVCharFilter(
         field_name='target__refseq_id__identifier',
         lookup_expr='iexact'
+    )
+    target_type = CSVCharFilter(
+        field_name="target__category",
+        lookup_expr='icontains',
     )
     
     def filter_licence(self, queryset, name, value):

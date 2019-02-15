@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             password = "1234qwer"
-            usera = UserFactory(username="usera")
+            usera = UserFactory(username="usera", is_superuser=True, is_staff=True)
             userb = UserFactory(username="userb")
             userc = UserFactory(username="userc")
 

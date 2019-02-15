@@ -7,6 +7,8 @@ from django.urls import reverse_lazy
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
 
+from reversion.models import Version
+
 from mavedb import celery_app
 
 from accounts.factories import UserFactory
@@ -248,6 +250,7 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
             'replaces': [''],
             'private': ['on'],
             'short_description': ['an entry'],
+            'data_usage_policy': [""],
             'title': ['title'],
             'abstract_text': [''],
             'method_text': [''],
@@ -264,7 +267,8 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
             'submit': ['submit'],
             'genome': [self.ref.pk],
             'wt_sequence': ['atcg'],
-            'name': ['BRCA1']
+            'name': ['BRCA1'],
+            'category': ['Protein coding'],
         }
         self.files = {constants.variant_score_data: score_file}
         self.user = UserFactory()
@@ -299,6 +303,21 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
 
         # Redirects to scoreset_detail
         self.assertEqual(response.status_code, 302)
+        
+    def test_creates_new_reversion_instance(self):
+        data = self.post_data.copy()
+        exp1 = ExperimentFactory()
+        assign_user_as_instance_admin(self.user, exp1)
+        data['experiment'] = [exp1.pk]
+    
+        request = self.create_request(
+            method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        
+        self.assertEqual(Version.objects.count(), 0)
+        response = ScoreSetCreateView.as_view()(request)
+        self.assertEqual(Version.objects.count(), 1)
 
     def test_reference_map_created(self):
         data = self.post_data.copy()
@@ -727,6 +746,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             'replaces': [''],
             'private': ['on'],
             'short_description': 'an entry',
+            'data_usage_policy': "",
             'title': 'title',
             'abstract_text': [''],
             'method_text': [''],
@@ -744,6 +764,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             'genome': [self.ref.pk],
             'wt_sequence': 'atcg',
             'name': 'BRCA1',
+            'category': ['Protein coding'],
             'publish': [''],
         }
         self.files = {constants.variant_score_data: score_file}
@@ -926,3 +947,20 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             username=self.user.username, password=self.user._password)
         response = self.client.get(path)
         self.assertEqual(response.status_code, 302)
+
+    def test_creates_new_reversion_instance(self):
+        instance = ScoreSetWithTargetFactory()
+        data = self.post_data.copy()
+        data['experiment'] = [instance.parent.pk]
+        
+        assign_user_as_instance_admin(self.user, instance)
+        assign_user_as_instance_admin(self.user, instance.parent)
+    
+        request = self.create_request(
+            method='post', path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+
+        self.assertEqual(Version.objects.count(), 0)
+        ScoreSetEditView.as_view()(request, urn=instance.urn)
+        self.assertEqual(Version.objects.count(), 1)

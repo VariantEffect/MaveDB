@@ -275,7 +275,6 @@ class ProfileForm(forms.ModelForm):
         help_texts = {
             'email': (
                 'You can provide an alternative email address below. We will '
-                'use this email over your ORCID email to '
-                'contact you.'
+                'use this email over your ORCID email to contact you.'
             )
         }

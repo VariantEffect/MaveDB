@@ -6,8 +6,8 @@
 
 {% block body %}
 
-<div class="row">
-	<div class="form-sidebar col-xl-2 border-right">
+<div id="form-content-wrapper">
+	<div id="form-header">
 		<h3 class="sidebar-title">
 			{% block side-bar-title %}{% endblock %}
 		</h3>
@@ -20,7 +20,7 @@
 		<p>* indicates a required field</p>
 	</div>
 
-	<div class="form-body col-xl-8 col-lg-12 col-md-12 pl-4">
+	<div class="form-body">
 		<form action="{% block form-action %}{% endblock %}" method="POST"
           enctype="multipart/form-data">
 			{% csrf_token %}
@@ -36,6 +36,8 @@
       {% block top-instructions %}
 
       {% endblock %}
+
+      <hr>
 
       {% block form-block %}
         {#  Forms are rendered here  #}

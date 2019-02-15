@@ -65,8 +65,8 @@ def help_contact_view(request):
             contact_form.send_mail()
             messages.success(
                 request,
-                "Thank you for contacting us. We've sent a confirmation email "
-                "to your nominated contact address."
+                "Thank you for contacting us. We'll get back to you as soon"
+                " as possible."
             )
             return redirect('main:contact')
 

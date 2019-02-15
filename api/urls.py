@@ -11,18 +11,16 @@ router.register('experimentsets', views.ExperimentSetViewset)
 router.register('experiments', views.ExperimentViewset)
 router.register('scoresets', views.ScoreSetViewset)
 
-experimentset_list = views.ExperimentSetViewset.as_view({'get': 'list'})
-experimentset_detail = views.ExperimentSetViewset.as_view({'get': 'retrieve'})
-
-experiment_list = views.ExperimentViewset.as_view({'get': 'list'})
-experiment_detail = views.ExperimentViewset.as_view({'get': 'retrieve'})
-
-scoreset_list = views.ScoreSetViewset.as_view({'get': 'list'})
-scoreset_detail = views.ScoreSetViewset.as_view({'get': 'retrieve'})
-
-user_list = views.UserViewset.as_view({'get': 'list'})
-user_detail = views.UserViewset.as_view({'get': 'retrieve'})
-
+router.register('keyword', views.KeywordViewSet)
+router.register('pubmed', views.PubmedIdentifierViewSet)
+router.register('doi', views.DoiIdentifierViewSet)
+router.register('sra', views.SraIdentifierViewSet)
+router.register('refseq', views.RefseqIdentifierViewSet)
+router.register('uniprot', views.UniprotIdentifierViewSet)
+router.register('ensembl', views.EnsemblIdentifierViewSet)
+router.register('genome', views.GenomeIdentifierViewSet)
+router.register('target', views.TargetGeneViewSet)
+router.register('reference', views.ReferenceGenomeViewSet)
 
 scoreset_urls = [
     url(
@@ -39,7 +37,7 @@ scoreset_urls = [
         r"^scoresets/(?P<urn>{})/metadata/$".format(scoreset_url_pattern),
         views.scoreset_metadata,
         name="api_download_metadata"
-    )
+    ),
 ]
 
 
