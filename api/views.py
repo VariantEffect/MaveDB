@@ -263,8 +263,10 @@ def format_response(response, scoreset, dtype):
     # Append data usage policy
     if scoreset.data_usage_policy is not None and \
             scoreset.data_usage_policy.strip():
-        lines = format_policy(scoreset.data_usage_policy)
-        response.writelines(["# Data usage policy:\n"] + lines)
+        policy = "Data usage policy: {}".format(
+            scoreset.data_usage_policy.strip())
+        lines = format_policy(policy)
+        response.writelines(lines)
 
     variants = sorted(
         scoreset.children.all(), key=lambda v: urn_number(v))

@@ -582,7 +582,7 @@ class TestScoreSetAPIViews(TestCase):
         instance.save()
         instance.add_viewers(request.user)
         views.scoreset_score_data(request, instance.urn)
-        patch.assert_called()
+        patch.assert_called_with(*("Data usage policy: Use freely.",))
         
     def test_can_download_metadata(self):
         scs = self.factory(private=False)
