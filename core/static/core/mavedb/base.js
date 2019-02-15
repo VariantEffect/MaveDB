@@ -205,17 +205,17 @@ $("#id_target").on("change", function() {
   }
   
   var id = this.value;
-  var uniprotSelect = $("#id_uniprot-identifier");
+  var uniprotSelect = $("#id_uniprot-offset-identifier");
   var uniprotOffsetElem = document.getElementById(
-    "id_uniprot-offset");
+    "id_uniprot-offset-offset");
 
-  var refseqSelect = $("#id_refseq-identifier");
+  var refseqSelect = $("#id_refseq-offset-identifier");
   var refseqOffsetElem = document.getElementById(
-    "id_refseq-offset");
+    "id_refseq-offset-offset");
 
-  var ensemblSelect = $("#id_ensembl-identifier");
+  var ensemblSelect = $("#id_ensembl-offset-identifier");
   var ensemblOffsetElem = document.getElementById(
-    "id_ensembl-offset");
+    "id_ensembl-offset-offset");
 
   var nameElem = document.getElementById('id_name');
   var categoryElem = document.getElementById('id_category');
@@ -229,7 +229,7 @@ $("#id_target").on("change", function() {
       data: {"targetId": id},
       dataType: "json",
       success: function (data) {
-        // console.log(data);
+        console.log(data);
         var targetName = data.name;
         var wildTypeSequence = data.reference_sequence.sequence;
         var category = data.type;
