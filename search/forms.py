@@ -95,19 +95,19 @@ class AdvancedSearchForm(forms.Form):
     
     pubmed = fields.CSVCharField(
         label='PubMed identifiers', required=False,
-        help_text='Search by PubMed identifiers associated with an entry.',
+        help_text='Search datasets by associated PubMed accessions.',
     )
     sra = fields.CSVCharField(
         label='SRA accessions', required=False,
-        help_text='Search by SRA accessions associated with an entry.',
+        help_text='Search datasets by associated SRA accessions.',
     )
     doi = fields.CSVCharField(
         label='DOI accessions', required=False,
-        help_text='Search by DOI accessions associated with an entry.',
+        help_text='Search datasets by associated DOI accessions.',
     )
     keyword = fields.CSVCharField(
         label='Keywords', required=False,
-        help_text='Search for entries associated with a keyword.',
+        help_text='Search datasets by associated keywords.',
     )
 
     # User filter fields
@@ -145,8 +145,8 @@ class AdvancedSearchForm(forms.Form):
     )
     genome = fields.CSVCharField(
         label='Reference name/assembly identifier', required=False,
-        help_text='Search by a target\'s reference genome by name or assembly '
-                  'identifier',
+        help_text='Search by a target\'s reference genome name or assembly '
+                  'accession',
     )
     uniprot = fields.CSVCharField(
         label='UniProt accession',
@@ -163,7 +163,7 @@ class AdvancedSearchForm(forms.Form):
     )
     licence = fields.CSVCharField(
         label='Licence', required=False,
-        help_text="Search for Score Sets with the selected licence type.",
+        help_text="Search datasets matching the selected licence type.",
     )
 
     def __init__(self, *args, **kwargs):
