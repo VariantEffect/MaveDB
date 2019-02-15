@@ -31,7 +31,13 @@ class TestFormatPolicy(TestCase):
         lines = views.format_policy('This, '* 1000, line_wrap_len=77)
         for line in lines:
             self.assertTrue(len(line) <= 77)
-        
+            
+    def test_not_specified_if_policy_not_provided(self):
+        lines = views.format_policy('', line_wrap_len=77)
+        self.assertListEqual(
+            ['# Not specified\n'],
+            lines
+        )
 
 class TestAuthenticate(TestCase):
     def setUp(self):
@@ -557,21 +563,25 @@ class TestScoreSetAPIViews(TestCase):
         self.assertEqual(patch.call_args[1]['dtype'], 'counts')
 
     @mock.patch("api.views.format_policy")
-    def test_calls_format_policy_when_requesting_scores(self, patch):
+    def test_doesnt_call_format_policy_not_policy_present(self, patch):
         request = RequestFactory().get('/')
         request.user = UserFactory()
         instance = self.factory(private=False)
+        instance.data_usage_policy = " "
+        instance.save()
         instance.add_viewers(request.user)
         views.scoreset_score_data(request, instance.urn)
-        patch.assert_called()
-        
+        patch.assert_not_called()
+
     @mock.patch("api.views.format_policy")
-    def test_calls_format_policy_when_requesting_counts(self, patch):
+    def test_calls_format_policy_if_policy_exists(self, patch):
         request = RequestFactory().get('/')
         request.user = UserFactory()
         instance = self.factory(private=False)
+        instance.data_usage_policy = "Use freely."
+        instance.save()
         instance.add_viewers(request.user)
-        views.scoreset_count_data(request, instance.urn)
+        views.scoreset_score_data(request, instance.urn)
         patch.assert_called()
         
     def test_can_download_metadata(self):

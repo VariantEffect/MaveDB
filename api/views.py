@@ -213,7 +213,7 @@ def urn_number(variant):
     
 
 def format_policy(policy, line_wrap_len=77):
-    if policy:
+    if not policy:
         policy = "Not specified"
     words = words_re.findall(policy)
     lines = []
@@ -261,8 +261,10 @@ def format_response(response, scoreset, dtype):
     ])
     
     # Append data usage policy
-    lines = format_policy(scoreset.data_usage_policy)
-    response.writelines(["# Data usage policy:\n"] + lines)
+    if scoreset.data_usage_policy is not None and \
+            scoreset.data_usage_policy.strip():
+        lines = format_policy(scoreset.data_usage_policy)
+        response.writelines(["# Data usage policy:\n"] + lines)
 
     variants = sorted(
         scoreset.children.all(), key=lambda v: urn_number(v))
