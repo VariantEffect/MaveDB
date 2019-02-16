@@ -71,6 +71,7 @@ class TargetGeneForm(forms.ModelForm):
         self.fields['category'].choices = \
             [("", self.fields["target"].empty_label), ] + \
             list(self.fields['category'].choices)
+        self.fields['category'].initial = ""
 
         self.fields['name'].label = 'Target name'
         self.fields['name'].validators = [validate_gene_name]
