@@ -11,7 +11,7 @@ LOGGING = {
 logging.disable(logging.CRITICAL)
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 CACHES = {
     'default': {
