@@ -66,57 +66,17 @@
 
 {% block extra_scripts %}
 <script type="text/javascript">
-  let instances = [
-    {% for instance in instances %}
-      {% if instance.private and request.user in instance.contributors or not instance.private %}
-        {
-          "urn": "<a href=\"{{ instance.get_url }}\">{% format_urn_name_for_user instance request.user %}</a>",
-          "description": "{{ instance.short_description|default:"-"|escapejs }}",
-          "target": [{% display_targets instance request.user True False False %}][0].join(', '),
-          "type": [{% display_targets instance request.user True True False %}][0].join(', '),
-          "organism": [{% display_targets instance request.user True False True %}][0].join(', '),
-          "contributors": "" +
-            {% for c in instance.contributors %}
-              "<span>" +
-              "{{ c.profile.get_display_name_hyperlink|escapejs|safe }}" +
-              "<i class=\"external-link-small fas fa-external-link-alt\"></i>" +
-              "</span><br>" +
-            {% endfor %}
-          "",
-          "children": [
-            {% get_item instances instance as children %}
-            {% for child in children %}
-              {% if child.private and request.user in child.contributors or not child.private %}
-                {
-                  "urn": "<a href=\"{{ child.get_url }}\">{% format_urn_name_for_user child request.user %}</a>",
-                  "description": "{{ child.short_description|default:"-"|escapejs }}",
-                  "target": [{% display_targets child request.user True False False %}][0].join(', '),
-                  "type": [{% display_targets child request.user True True False %}][0].join(', '),
-                  "organism": [{% display_targets child request.user True False True %}][0].join(', '),
-                  "contributors": "" +
-                    {% for c in child.contributors %}
-                      "<span>" +
-                      "{{ c.profile.get_display_name_hyperlink|escapejs|safe }}" +
-                      "<i class=\"external-link-small fas fa-external-link-alt\"></i>" +
-                      "</span><br>" +
-                    {% endfor %}
-                  ""
-                },
-              {% endif %}
-            {% endfor %}
-          ]
-        },
-      {% endif %}
-    {% endfor %}
-  ];
-
+  let instances = JSON.parse("{{ instances|escapejs|safe }}");
   let data = {
     draw: 1,
     data: instances
   };
 
   $("document").ready(function() {
-    init_select2();
+
+    $("#adv-search").click(function(event) {
+      init_select2();
+    });
 
     var table = $('#search-table').DataTable({
       data: instances,
