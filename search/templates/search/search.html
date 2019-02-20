@@ -74,8 +74,12 @@
 
   $("document").ready(function() {
 
+    let select2_init = false;
     $("#adv-search").click(function(event) {
-      init_select2();
+      if (!select2_init) {
+        init_select2();
+        select2_init = true;
+      }
     });
 
     var table = $('#search-table').DataTable({
