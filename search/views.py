@@ -34,9 +34,9 @@ def to_json(groups, user):
     for parent, children in groups.items():
         child_data = []
         for child in children:
-            contributors = []
+            contributors = set()
             for c in child.contributors():
-                contributors.append(
+                contributors.add(
                     "<span>{}{}</span><br>".format(
                         c.profile.get_display_name_hyperlink(),
                         '<i class="external-link-small '
@@ -54,9 +54,9 @@ def to_json(groups, user):
                 "contributors": ''.join(contributors),
             })
 
-        contributors = []
+        contributors = set()
         for c in parent.contributors():
-            contributors.append(
+            contributors.add(
                 "<span>{}{}</span><br>".format(
                     c.profile.get_display_name_hyperlink(),
                     '<i class="external-link-small '
