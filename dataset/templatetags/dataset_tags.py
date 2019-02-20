@@ -102,8 +102,7 @@ def filter_visible(instances, user):
     if instances.first() is None:
         return instances
     klass = instances.first().__class__.__name__.lower()
-    groups = user.groups.\
-        filter(name__startswith=klass)
+    groups = user.groups.filter(name__iregex=r'{}:\d+-\w+'.format(klass))
     pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
     instances = instances.exclude(private=True) | \
                 instances.exclude(private=False).filter(pk__in=set(pks))

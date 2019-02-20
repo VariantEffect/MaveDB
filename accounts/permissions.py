@@ -177,10 +177,9 @@ def instances_for_user_with_group_permission(user, model, group_type):
     is_in_group = GROUP_TYPE_CALLBACK.get(group_type, None)
     if is_in_group is None:
         raise ValueError("Unrecognised group type {}.".format(group_type))
-        
+    
     groups = user.groups.\
-        filter(name__startswith=model.__name__.lower()). \
-        filter(name__endswith=group_type)
+        filter(name__iregex=r'{}:\d+-{}'.format(model.__name__, group_type))
     ids = set(g.name.split(':')[-1].split('-')[0] for g in groups)
     return instances.filter(id__in=ids)
 
