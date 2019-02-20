@@ -99,13 +99,15 @@ def visible_children(instance, user):
 
 @register.assignment_tag
 def filter_visible(instances, user):
-    return list(sorted(
-        [
-            i for i in instances
-            if not i.private or (i.private and user in i.contributors())
-        ],
-        key=lambda d: d.urn
-    ))
+    if instances.first() is None:
+        return instances
+    klass = instances.first().__class__.__name__.lower()
+    groups = user.groups.\
+        filter(name__startswith=klass)
+    pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
+    instances = instances.exclude(private=True) | \
+                instances.exclude(private=False).filter(pk__in=set(pks))
+    return instances.order_by('urn')
 
 
 @register.assignment_tag
