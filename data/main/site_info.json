@@ -1,10 +1,10 @@
 {
     "branch": "",
-    "md_about": "",
+    "md_about": "about.md",
     "md_citation": "",
     "md_documentation": "userdocs.md",
     "md_privacy": "",
     "md_terms": "",
     "md_usage_guide": "",
-    "version": "1.4.1-alpha"
+    "version": "1.5.0-alpha"
 }

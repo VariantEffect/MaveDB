@@ -179,11 +179,11 @@ LOGOUT_REDIRECT_URL = '/'
 # DEBUG email server, set to something proper when DEBUG = FALSE
 DEFAULT_FROM_EMAIL = "mavedb@mavedb.org"
 SERVER_EMAIL = "admin@mavedb.org"
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Host for sending e-mail
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
+# EMAIL_HOST = 'localhost'
+# EMAIL_PORT = 1025
 
 # Reply-to email for user emails
 # REPLY_TO_EMAIL = os.environ.get("MAVEDB_REPLY_TO_EMAIL", '')

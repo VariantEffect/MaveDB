@@ -4,8 +4,6 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_index_equal
 
-from hgvsp import protein, dna, rna
-
 from core.utilities import is_null
 
 from .constants import wildtype, synonymous

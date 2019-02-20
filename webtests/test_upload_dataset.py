@@ -139,7 +139,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         pm = meta_models.PubmedIdentifier.objects.all().first()
         
         experiment = data_models.experiment.Experiment.objects.first()
-        messages = self.browser.find_elements_by_class_name('alert-success')
+        messages = self.browser.find_elements_by_class_name('alert')
         self.assertEqual(len(messages), 1)
         self.assertIsNotNone(experiment)
         self.assertFalse(experiment.has_public_urn)
@@ -177,7 +177,6 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         )
         
         # Check to see if the target drop down will auto-populate fields
-        # TODO: Find a way to make the ajax call trigger from Selenium.
         # Edit: Couldn't find a way, might be better to test this with a
         # javascript front end testing framework?
         scs = data_factories.ScoreSetWithTargetFactory()
@@ -285,7 +284,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         
         # ------ CHECK SCORESET IS CONFIGURED CORRECTLY ------ #
         # Check dashboard to see if success message and processing-icon shown
-        messages = self.browser.find_elements_by_class_name('alert-success')
+        messages = self.browser.find_elements_by_class_name('alert')
         self.assertEqual(len(messages), 1)
         processing = self.browser.find_element_by_class_name('processing-icon')
         self.assertIsNotNone(processing)

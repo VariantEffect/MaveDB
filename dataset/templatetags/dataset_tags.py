@@ -48,11 +48,12 @@ def display_targets(instance, user, javascript=False,
         # This shouldn't happen but just in case a scoreset ends up
         # without a target, then check.
         if instance.get_target():
-            logger.warning("NoneType gene passed by {}.".format(instance.urn))
             ref_map = get_ref_map(instance.get_target())
             if ref_map is not None:
                 # Only proceed if a ref map is present.
                 targets = [instance.get_target(), ]
+        else:
+            logger.warning("NoneType gene passed by {}.".format(instance.urn))
 
     if not targets:
         if javascript:
@@ -94,6 +95,19 @@ def organise_by_target(scoresets):
 @register.assignment_tag
 def visible_children(instance, user):
     return list(instance.children_for_user(user).order_by('urn'))
+
+
+@register.assignment_tag
+def filter_visible(instances, user):
+    if instances.first() is None:
+        return instances
+    klass = instances.first().__class__.__name__.lower()
+    groups = user.groups.\
+        filter(name__startswith=klass)
+    pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
+    instances = instances.exclude(private=True) | \
+                instances.exclude(private=False).filter(pk__in=set(pks))
+    return instances.order_by('urn')
 
 
 @register.assignment_tag

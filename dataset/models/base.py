@@ -328,11 +328,14 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     def children_for_user(self, user=None):
         if not user:
             return self.children.filter(private=False)
-        pks = [
-            c.pk for c in self.children
-            if (not c.private) or (c.private and user in c.contributors())
-        ]
-        return self.children.filter(pk__in=set(pks))
+        else:
+            _, model_name, _= child_attr_map[self.__class__.__name__]
+            if model_name is None:
+                return []
+            groups = user.groups.filter(name__startswith=model_name.lower())
+            pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
+            return self.children.exclude(private=True) | \
+                   self.children.exclude(private=False).filter(pk__in=set(pks))
 
     @property
     def parent(self):

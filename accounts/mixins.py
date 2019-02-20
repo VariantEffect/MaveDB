@@ -4,10 +4,6 @@ from django.db.models import QuerySet
 from .permissions import (
     GroupTypes,
     user_is_anonymous,
-    user_is_admin_for_instance,
-    user_is_contributor_for_instance,
-    user_is_editor_for_instance,
-    user_is_viewer_for_instance,
     assign_user_as_instance_viewer,
     assign_user_as_instance_admin,
     assign_user_as_instance_editor,
@@ -84,10 +80,11 @@ class GroupPermissionMixin(object):
             A query set instance of users that have 'edit', 'view' and
             'manage' permissions.
         """
-        users = User.objects.all()
-        admins = [u.pk for u in users if user_is_admin_for_instance(u, self)]
-        return filter_anon(User.objects.filter(pk__in=admins))
-
+        return User.objects.filter(
+            groups__name__startswith='{}:{}-{}'.format(
+                self.__class__.__name__.lower(), self.pk, GroupTypes.ADMIN
+        )).distinct()
+        
     def contributors(self):
         """
         Returns a :class:`QuerySet` of contributors for an instance.
@@ -98,11 +95,10 @@ class GroupPermissionMixin(object):
             A query set instance of users that have both 'edit' and
             'view' permissions.
         """
-        contributors = [
-            u.pk for u in User.objects.all()
-            if user_is_contributor_for_instance(u, self)
-        ]
-        return filter_anon(User.objects.filter(pk__in=contributors))
+        return User.objects.filter(
+            groups__name__startswith='{}:{}'.format(
+                self.__class__.__name__.lower(), self.pk
+        )).distinct()
 
     def editors(self):
         """
@@ -113,11 +109,10 @@ class GroupPermissionMixin(object):
         :class:`QuerySet`
             A query set instance of users that have 'edit' permissions.
         """
-        editors = [
-            u.pk for u in User.objects.all()
-            if user_is_editor_for_instance(u, self)
-        ]
-        return filter_anon(User.objects.filter(pk__in=editors))
+        return User.objects.filter(
+            groups__name__startswith='{}:{}-{}'.format(
+                self.__class__.__name__.lower(), self.pk, GroupTypes.EDITOR
+        )).distinct()
 
     def viewers(self):
         """
@@ -128,9 +123,10 @@ class GroupPermissionMixin(object):
         :class:`QuerySet`
             A query set instance of users that only have the 'view' permission.
         """
-        users = User.objects.all()
-        viewers = [u.pk for u in users if user_is_viewer_for_instance(u, self)]
-        return filter_anon(User.objects.filter(pk__in=viewers))
+        return User.objects.filter(
+            groups__name__startswith='{}:{}-{}'.format(
+                self.__class__.__name__.lower(), self.pk, GroupTypes.VIEWER
+        )).distinct()
 
     def users_with_manage_permission(self):
         """

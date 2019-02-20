@@ -9,7 +9,9 @@ from genome.factories import TargetGeneFactory, WildTypeSequenceFactory, \
 
 from metadata.factories import PubmedIdentifierFactory, GenomeIdentifierFactory
 
-from ..factories import ExperimentWithScoresetFactory, ExperimentFactory, ScoreSetFactory
+from ..factories import ExperimentWithScoresetFactory, \
+    ExperimentFactory, ScoreSetFactory
+from ..models.experiment import Experiment
 from ..templatetags import dataset_tags
 
 from ..utilities import publish_dataset
@@ -209,3 +211,29 @@ class TestUrnNameFormatTag(TestCase):
             dataset_tags.format_urn_name_for_user(instance, user)
         )
         
+        
+class TestFilterVisible(TestCase):
+    def test_filters_out_private_if_not_in_contrubtor_list(self):
+        user = UserFactory()
+        instance = ExperimentFactory(private=True)
+        self.assertEqual(
+            dataset_tags.filter_visible(Experiment.objects.all(), user).count(),
+            0
+        )
+        
+    def test_doesnt_filter_public(self):
+        user = UserFactory()
+        instance = ExperimentFactory(private=False)
+        self.assertListEqual(
+            [instance, ],
+            list(dataset_tags.filter_visible(Experiment.objects.all(), user)),
+        )
+        
+    def test_doesnt_filter_private_if_in_contributor_list(self):
+        user = UserFactory()
+        instance = ExperimentFactory(private=True)
+        instance.add_administrators(user)
+        self.assertListEqual(
+            [instance, ],
+            list(dataset_tags.filter_visible(Experiment.objects.all(), user)),
+        )

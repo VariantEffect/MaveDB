@@ -71,3 +71,7 @@ secrets.json
 /.ipynb_checkpoints/regex-test-checkpoint.ipynb
 *-checkpoint.ipynb
 .ipynb_checkpoints/
+/uml.pdf
+/uml.dot
+/cprofile/
+cprofile/*

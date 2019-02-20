@@ -28,7 +28,7 @@ class DatasetModelSerializer(TimeStampedModelSerializer):
     sra_ids = SraIdentifierSerializer(many=True)
     doi_ids = DoiIdentifierSerializer(many=True)
     pubmed_ids = PubmedIdentifierSerializer(many=True)
-    contributors = UserSerializer(many=True)
+    contributors = serializers.SerializerMethodField()
     licence = LicenceSerializer(many=False)
     created_by = serializers.StringRelatedField(many=False)
     modified_by = serializers.StringRelatedField(many=False)
@@ -43,6 +43,9 @@ class DatasetModelSerializer(TimeStampedModelSerializer):
         )
         read_only_fields = fields
         lookup_field = 'urn'
+        
+    def get_contributors(self, obj):
+        return [u.username for u in obj.contributors()]
         
     @staticmethod
     def stringify_instance(instance):
