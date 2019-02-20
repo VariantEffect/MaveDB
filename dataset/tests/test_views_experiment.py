@@ -467,9 +467,9 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         response = ExperimentEditView.as_view()(request, urn=exp1.urn)
 
         self.assertContains(
-            response, '{} | {}'.format(exp1.parent.urn, exp1.parent.title))
+            response, '{}'.format(exp1.parent.urn, exp1.parent.title))
         self.assertNotContains(
-            response, '{} | {}'.format(exp2.parent.urn, exp2.parent.title))
+            response, '{}'.format(exp2.parent.urn, exp2.parent.title))
 
     def test_experimentset_options_are_restricted_to_admin_instances(self):
         exp1 = ExperimentFactory()
@@ -483,9 +483,9 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         response = ExperimentEditView.as_view()(request, urn=exp1.urn)
 
         self.assertContains(
-            response, '{} | {}'.format(exp1.parent.urn, exp1.parent.title))
+            response, '{}'.format(exp1.parent.urn, exp1.parent.title))
         self.assertNotContains(
-            response, '{} | {}'.format(exp2.parent.urn, exp2.parent.title))
+            response, '{}'.format(exp2.parent.urn, exp2.parent.title))
 
     def test_creates_new_reversion_instances_for_exp_and_exps(self):
         data = self.post_data
