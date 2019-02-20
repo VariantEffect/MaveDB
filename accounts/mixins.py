@@ -83,7 +83,7 @@ class GroupPermissionMixin(object):
         return User.objects.filter(
             groups__name__startswith='{}:{}-{}'.format(
                 self.__class__.__name__.lower(), self.pk, GroupTypes.ADMIN
-        ))
+        )).distinct()
         
     def contributors(self):
         """
@@ -98,7 +98,7 @@ class GroupPermissionMixin(object):
         return User.objects.filter(
             groups__name__startswith='{}:{}'.format(
                 self.__class__.__name__.lower(), self.pk
-        ))
+        )).distinct()
 
     def editors(self):
         """
@@ -112,7 +112,7 @@ class GroupPermissionMixin(object):
         return User.objects.filter(
             groups__name__startswith='{}:{}-{}'.format(
                 self.__class__.__name__.lower(), self.pk, GroupTypes.EDITOR
-        ))
+        )).distinct()
 
     def viewers(self):
         """
@@ -126,7 +126,7 @@ class GroupPermissionMixin(object):
         return User.objects.filter(
             groups__name__startswith='{}:{}-{}'.format(
                 self.__class__.__name__.lower(), self.pk, GroupTypes.VIEWER
-        ))
+        )).distinct()
 
     def users_with_manage_permission(self):
         """
