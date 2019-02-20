@@ -119,7 +119,7 @@ LOGGING = {
 
 
 # Email setup
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 
 # ------ CELERY CONFIG ------------------- #
