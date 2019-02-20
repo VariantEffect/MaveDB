@@ -18,12 +18,7 @@ User = get_user_model()
 def group_children(parents, children, user):
     grouped = {p: set() for p in parents}
     for child in children:
-        if not child.get_current_version(user).private:
-            child = child.get_current_version()
-        elif child.get_current_version().private \
-            and user in child.get_current_version(user).contributors():
-            child = child.get_current_version(user)
-        
+        child = child.get_current_version(user)
         if child.parent in grouped:
             grouped[child.parent].add(child)
         else:
