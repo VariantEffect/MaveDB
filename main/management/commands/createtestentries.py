@@ -14,7 +14,8 @@ from metadata.models import (
 from dataset import factories, utilities
 from genome import factories as genome_factories
 from genome import models  as genome_models
-from variant.factories import VariantFactory
+from variant.models import Variant
+from dataset import constants
 
 User = get_user_model()
 
@@ -23,7 +24,12 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         password = "1234qwer"
         with transaction.atomic():
-            for i, username in enumerate(['usera', 'userb', 'userc', 'userd']):
+            for i, username in enumerate([
+                'usera', 'userb', 'userc', 'userd',
+                'usere', 'userf', 'userg', 'userh',
+                'user1', 'user2', 'user3', 'user4',
+                'user5', 'user6', 'user7', 'user8',
+            ]):
                 user = UserFactory(username=username)
                 if username == 'usera':
                     user.is_superuser = True
@@ -31,11 +37,46 @@ class Command(BaseCommand):
                 user.set_password(password)
                 user.save()
                 instance = factories.ExperimentFactory()
-                for _ in [False, True]:
+                for _ in [True, False]:
                     # Configure the scoreset first.
-                    scoreset = factories.ScoreSetFactory(experiment=instance)
-                    for _ in range(100):
-                        VariantFactory(scoreset=scoreset)
+                    scoreset = factories.ScoreSetFactory(
+                        experiment=instance,
+                        dataset_columns={
+                            constants.score_columns: ["score", "score2", "score3", "score4", "score5"],
+                            constants.count_columns: ["count1", "count2", "count3", "count4"],
+                        }
+                    )
+                    variants = []
+                    for n in range(10000):
+                        variants.append({
+                            'hgvs_nt': 'c.{}{}>{}'.format(
+                                n+1, random.choice("ATCG"),
+                                random.choice("ATCG")
+                            ),
+                            'hgvs_pro': 'c.{}{}>{}'.format(
+                                n+1, random.choice("ATCG"),
+                                random.choice("ATCG")
+                            ),
+                            'data': {
+                                constants.variant_score_data: {
+                                    'score': random.random(),
+                                    'score1': random.random(),
+                                    'score2': random.random(),
+                                    'score3': random.random(),
+                                    'score4': random.random(),
+                                    'score5': random.random(),
+                                    
+                                },
+                                constants.variant_count_data: {
+                                    'count1': random.randint(a=1, b=1000),
+                                    'count2': random.randint(a=1, b=1000),
+                                    'count3': random.randint(a=1, b=1000),
+                                    'count4': random.randint(a=1, b=1000)
+                                },
+                            }
+                        })
+                    Variant.bulk_create(
+                        parent=scoreset, variant_kwargs_list=variants)
                     target = genome_factories.TargetGeneFactory(scoreset=scoreset)
                     genomes = genome_models.ReferenceGenome.objects.all()
                     genome_factories.ReferenceMapFactory(
