@@ -177,9 +177,12 @@ def instances_for_user_with_group_permission(user, model, group_type):
     is_in_group = GROUP_TYPE_CALLBACK.get(group_type, None)
     if is_in_group is None:
         raise ValueError("Unrecognised group type {}.".format(group_type))
-
-    pks = set([i.pk for i in instances if is_in_group(user, i)])
-    return model.objects.filter(pk__in=pks).all()
+        
+    groups = user.groups.\
+        filter(name__startswith=model.__name__.lower()). \
+        filter(name__endswith=group_type)
+    ids = set(g.name.split(':')[-1].split('-')[0] for g in groups)
+    return instances.filter(id__in=ids)
 
 
 def contributors_for_instance(instance):
