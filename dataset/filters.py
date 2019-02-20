@@ -225,6 +225,7 @@ class ScoreSetFilter(DatasetModelFilter):
         - uniprot
         - ensembl
         - refseq
+        - data_usage_policy
     """
     LICENCE = 'licence'
     TARGET = 'target'
@@ -233,6 +234,7 @@ class ScoreSetFilter(DatasetModelFilter):
     UNIPROT = 'uniprot'
     ENSEMBL = 'ensembl'
     REFSEQ = 'refseq'
+    DATA_USAGE_POLICY = 'data_usage_policy'
     TARGET_TYPE = 'target_type'
     
     class Meta(DatasetModelFilter.Meta):
@@ -240,9 +242,14 @@ class ScoreSetFilter(DatasetModelFilter):
         fields = DatasetModelFilter.Meta.fields + (
             'licence', 'genome', 'target', 'organism',
             'uniprot', 'ensembl', 'refseq', 'target_type',
+            'data_usage_policy',
         )
 
     licence = CSVCharFilter(method='filter_licence')
+    data_usage_policy = CSVCharFilter(
+        field_name='data_usage_policy',
+        lookup_expr='icontains'
+    )
     genome = CSVCharFilter(method='filter_genome')
     target = CSVCharFilter(
         field_name='target__name', lookup_expr='icontains'
