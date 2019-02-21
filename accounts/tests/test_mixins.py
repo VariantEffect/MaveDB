@@ -27,36 +27,36 @@ class TestFunctions(TestCase):
         
     def test_add_users_adds_viewers(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.VIEWER)
-        self.assertIn(self.user_a, self.instance.viewers())
-        self.assertNotIn(self.user_a, self.instance.editors())
-        self.assertNotIn(self.user_a, self.instance.administrators())
+        self.assertIn(self.user_a, self.instance.viewers)
+        self.assertNotIn(self.user_a, self.instance.editors)
+        self.assertNotIn(self.user_a, self.instance.administrators)
         
     def test_add_users_adds_editors(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.EDITOR)
-        self.assertNotIn(self.user_a, self.instance.viewers())
-        self.assertIn(self.user_a, self.instance.editors())
-        self.assertNotIn(self.user_a, self.instance.administrators())
+        self.assertNotIn(self.user_a, self.instance.viewers)
+        self.assertIn(self.user_a, self.instance.editors)
+        self.assertNotIn(self.user_a, self.instance.administrators)
         
     def test_add_users_adds_administrators(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.ADMIN)
-        self.assertNotIn(self.user_a, self.instance.viewers())
-        self.assertNotIn(self.user_a, self.instance.editors())
-        self.assertIn(self.user_a, self.instance.administrators())
+        self.assertNotIn(self.user_a, self.instance.viewers)
+        self.assertNotIn(self.user_a, self.instance.editors)
+        self.assertIn(self.user_a, self.instance.administrators)
 
     def test_remove_users_removes_viewers(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.VIEWER)
         mixins._remove_users(self.instance, self.user_a, GroupTypes.VIEWER)
-        self.assertNotIn(self.user_a, self.instance.viewers())
+        self.assertNotIn(self.user_a, self.instance.viewers)
 
     def test_remove_users_removes_editors(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.EDITOR)
         mixins._remove_users(self.instance, self.user_a, GroupTypes.EDITOR)
-        self.assertNotIn(self.user_a, self.instance.editors())
+        self.assertNotIn(self.user_a, self.instance.editors)
 
     def test_remove_users_removes_administrators(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.ADMIN)
         mixins._remove_users(self.instance, self.user_a, GroupTypes.ADMIN)
-        self.assertNotIn(self.user_a, self.instance.administrators())
+        self.assertNotIn(self.user_a, self.instance.administrators)
         
     def test_add_list_adds_all_users(self):
         all_assigned = mixins._add_users(
@@ -65,9 +65,9 @@ class TestFunctions(TestCase):
             group=GroupTypes.ADMIN,
         )
         self.assertTrue(all_assigned)
-        self.assertIn(self.user_a, self.instance.administrators())
-        self.assertIn(self.user_b, self.instance.administrators())
-        self.assertIn(self.user_c, self.instance.administrators())
+        self.assertIn(self.user_a, self.instance.administrators)
+        self.assertIn(self.user_b, self.instance.administrators)
+        self.assertIn(self.user_c, self.instance.administrators)
         
     def test_remove_list_adds_all_users(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.ADMIN)
@@ -79,9 +79,9 @@ class TestFunctions(TestCase):
             group=GroupTypes.ADMIN,
         )
         self.assertTrue(all_assigned)
-        self.assertIn(self.user_a, self.instance.administrators())
-        self.assertIn(self.user_b, self.instance.administrators())
-        self.assertIn(self.user_c, self.instance.administrators())
+        self.assertIn(self.user_a, self.instance.administrators)
+        self.assertIn(self.user_b, self.instance.administrators)
+        self.assertIn(self.user_c, self.instance.administrators)
 
     def test_valueerror_add_or_remove_unknown_group(self):
         with self.assertRaises(ValueError):
@@ -113,22 +113,22 @@ class TestGroupPermisionMixin(TestCase):
         self.instance_a.add_administrators(self.user_a)
         self.instance_a.add_editors(self.user_b)
         self.instance_a.add_viewers(self.user_c)
-        self.assertIn(self.user_a, self.instance_a.administrators())
-        self.assertEqual(self.instance_a.administrators().count(), 1)
+        self.assertIn(self.user_a, self.instance_a.administrators)
+        self.assertEqual(self.instance_a.administrators.count(), 1)
 
     def test_editors_returns_editors_only(self):
         self.instance_a.add_administrators(self.user_c)
         self.instance_a.add_editors(self.user_a)
         self.instance_a.add_viewers(self.user_b)
-        self.assertIn(self.user_a, self.instance_a.editors())
-        self.assertEqual(self.instance_a.editors().count(), 1)
+        self.assertIn(self.user_a, self.instance_a.editors)
+        self.assertEqual(self.instance_a.editors.count(), 1)
 
     def test_viewers_returns_viewers_only(self):
         self.instance_a.add_administrators(self.user_b)
         self.instance_a.add_editors(self.user_c)
         self.instance_a.add_viewers(self.user_a)
-        self.assertIn(self.user_a, self.instance_a.viewers())
-        self.assertEqual(self.instance_a.viewers().count(), 1)
+        self.assertIn(self.user_a, self.instance_a.viewers)
+        self.assertEqual(self.instance_a.viewers.count(), 1)
 
     def test_contributors_returns_admins_editors_and_viewers(self):
         self.instance_a.add_administrators(self.user_a)
@@ -140,21 +140,21 @@ class TestGroupPermisionMixin(TestCase):
 
     def test_can_remove_admin(self):
         self.instance_a.add_administrators(self.user_b)
-        self.assertIn(self.user_b, self.instance_a.administrators())
+        self.assertIn(self.user_b, self.instance_a.administrators)
         self.instance_a.remove_administrators(self.user_b)
-        self.assertNotIn(self.user_b, self.instance_a.administrators())
+        self.assertNotIn(self.user_b, self.instance_a.administrators)
 
     def test_can_remove_editor(self):
         self.instance_a.add_editors(self.user_b)
-        self.assertIn(self.user_b, self.instance_a.editors())
+        self.assertIn(self.user_b, self.instance_a.editors)
         self.instance_a.remove_editors(self.user_b)
-        self.assertNotIn(self.user_b, self.instance_a.editors())
+        self.assertNotIn(self.user_b, self.instance_a.editors)
 
     def test_can_remove_viewer(self):
         self.instance_a.add_viewers(self.user_b)
-        self.assertIn(self.user_b, self.instance_a.viewers())
+        self.assertIn(self.user_b, self.instance_a.viewers)
         self.instance_a.remove_viewers(self.user_b)
-        self.assertNotIn(self.user_b, self.instance_a.viewers())
+        self.assertNotIn(self.user_b, self.instance_a.viewers)
         
     def test_users_with_view_permission_returns_users_from_all_groups(self):
         self.instance_a.add_administrators(self.user_a)

@@ -35,7 +35,7 @@ def to_json(groups, user):
         child_data = []
         for child in children:
             contributors = []
-            for c in child.contributors():
+            for c in child.contributors:
                 contributors.append(
                     "<span>{}{}</span><br>".format(
                         c.profile.get_display_name_hyperlink(),
@@ -55,7 +55,7 @@ def to_json(groups, user):
             })
 
         contributors = []
-        for c in parent.contributors():
+        for c in parent.contributors:
             contributors.append(
                 "<span>{}{}</span><br>".format(
                     c.profile.get_display_name_hyperlink(),
@@ -103,7 +103,6 @@ def search_view(request):
             else:
                 experiments = experiment_filter.qs
                 scoresets = scoreset_filter.qs
-
 
     instances = group_children(
         parents=filter_visible(experiments.distinct(), request.user),

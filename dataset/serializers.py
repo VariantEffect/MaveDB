@@ -5,7 +5,6 @@ from rest_framework import serializers
 from core.serializers import TimeStampedModelSerializer
 
 from main.serializers import LicenceSerializer
-from accounts.serializers import UserSerializer
 
 from genome.serializers import TargetGeneSerializer
 from metadata.serializers import (
@@ -17,6 +16,8 @@ from .models.base import DatasetModel
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
 from .models.scoreset import ScoreSet
+
+from .templatetags.dataset_tags import visible_children
 
 
 logger = logging.getLogger('django')
@@ -45,7 +46,7 @@ class DatasetModelSerializer(TimeStampedModelSerializer):
         lookup_field = 'urn'
         
     def get_contributors(self, obj):
-        return [u.username for u in obj.contributors()]
+        return [u.username for u in obj.contributors]
         
     @staticmethod
     def stringify_instance(instance):
@@ -95,16 +96,17 @@ class ScoreSetSerializer(DatasetModelSerializer):
 
 
 class ExperimentSerializer(DatasetModelSerializer):
-    scoresets = serializers.SerializerMethodField('children')
+    scoresets = serializers.SerializerMethodField('get_children')
     experimentset = serializers.SerializerMethodField()
     
     def get_experimentset(self, obj):
         return self.stringify_instance(
             obj.parent_for_user(self.context.get('user', None)))
     
-    def children(self, obj):
-        return [c.urn for c in
-                obj.children_for_user(self.context.get('user', None))]
+    def get_children(self, obj):
+        children_ = visible_children(
+            obj.children, user=self.context.get('user', None))
+        return [c.urn for c in children_]
 
     class Meta(DatasetModelSerializer.Meta):
         model = Experiment
@@ -114,11 +116,12 @@ class ExperimentSerializer(DatasetModelSerializer):
 
 
 class ExperimentSetSerializer(DatasetModelSerializer):
-    experiments = serializers.SerializerMethodField('children')
+    experiments = serializers.SerializerMethodField('get_children')
 
-    def children(self, obj):
-        return [c.urn for c in
-                obj.children_for_user(self.context.get('user', None))]
+    def get_children(self, obj):
+        children_ = visible_children(
+            obj.children, user=self.context.get('user', None))
+        return [c.urn for c in children_]
 
     class Meta(DatasetModelSerializer.Meta):
         model = ExperimentSet

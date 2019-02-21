@@ -388,29 +388,29 @@ def remove_user_as_instance_viewer(user, instance):
 # Updates
 # -------------------------------------------------------------------------- #
 def update_admin_list_for_instance(users, instance):
-    for user in instance.administrators():
+    for user in instance.administrators:
         if user not in users:
             remove_user_as_instance_admin(user, instance)
     for user in users:
-        if user not in instance.administrators():
+        if user not in instance.administrators:
             assign_user_as_instance_admin(user, instance)
 
 
 def update_editor_list_for_instance(users, instance):
-    for user in instance.editors():
+    for user in instance.editors:
         if user not in users:
             remove_user_as_instance_editor(user, instance)
     for user in users:
-        if user not in instance.editors():
+        if user not in instance.editors:
             assign_user_as_instance_editor(user, instance)
 
 
 def update_viewer_list_for_instance(users, instance):
-    for user in instance.viewers():
+    for user in instance.viewers:
         if user not in users:
             remove_user_as_instance_viewer(user, instance)
     for user in users:
-        if user not in instance.viewers():
+        if user not in instance.viewers:
             assign_user_as_instance_viewer(user, instance)
 
 
