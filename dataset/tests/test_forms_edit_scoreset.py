@@ -60,6 +60,42 @@ class TestScoreSetEditForm(TestCase):
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
         self.assertFalse(form.is_valid())
 
+    def test_pops_data_policy_if_user_not_administrator(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('data_usage_policy', form.fields)
+
+    def test_keeps_data_policy_if_user_not_administrator(self):
+        obj = ScoreSetFactory()
+        obj.add_administrators(self.user)
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertIn('data_usage_policy', form.fields)
+
+    def test_experiment_not_in_form(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('experiment', form.fields)
+
+    def test_score_data_not_in_form(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('score_data', form.fields)
+
+    def test_count_data_not_in_form(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('count_data', form.fields)
+
+    def test_meta_data_not_in_form(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('meta_data', form.fields)
+
+    def test_replaces_not_in_form(self):
+        obj = ScoreSetFactory()
+        form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
+        self.assertNotIn('replaces', form.fields)
+
     def test_cannot_save_popped_field(self):
         exp = ExperimentFactory()
         replaced = ScoreSetFactory(experiment=exp)
@@ -83,5 +119,4 @@ class TestScoreSetEditForm(TestCase):
         self.assertEqual(instance.children.count(), old_variants.count())
         self.assertEqual(instance.experiment, old_experiment)
         self.assertEqual(instance.previous_version, old_replaces)
-
         self.assertEqual(instance.licence, Licence.get_cc0())  # new Licence

@@ -499,3 +499,7 @@ class ScoreSetEditForm(ScoreSetForm):
         self.fields.pop('count_data')
         self.fields.pop('meta_data')
         self.fields.pop('replaces')
+
+        if self.instance is not None:
+            if self.user not in self.instance.administrators:
+                self.fields.pop('data_usage_policy')
