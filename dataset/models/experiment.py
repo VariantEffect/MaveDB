@@ -135,7 +135,7 @@ class Experiment(DatasetModel):
 
     @property
     def parent(self):
-        return self.experimentset
+        return getattr(self, 'experimentset', None)
 
     @property
     def children(self):

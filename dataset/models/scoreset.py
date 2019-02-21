@@ -203,7 +203,7 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @property
     def parent(self):
-        return self.experiment
+        return getattr(self, 'experiment', None)
 
     @property
     def children(self):
