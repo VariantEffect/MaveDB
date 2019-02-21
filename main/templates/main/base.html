@@ -64,10 +64,10 @@
     <nav class="header bg-white border-bottom bottom-shadow">
       <nav class="container-fluid mavedb-container navbar navbar-expand-md navbar-light">
         <!-- MaveDB logo -->
-        <a class="navbar-brand" href="{% url 'main:home' %}" style="color: #222 !important;">
-          <img src="{% static 'core/mavedb/dna.png' %}" width="26" height="40">
-          MaveDB
-        </a>
+        <div class="navbar-brand" style="top: 2px; position:relative;">
+          <img alt="mavedb-logo" src="{% static 'core/mavedb/dna.png' %}" width="22" height="42">
+          <span>MaveDB</span>
+        </div>
 
         <!-- Bootstrap collapse button -->
         <button class="navbar-toggler" type="button" data-toggle="collapse"
@@ -89,23 +89,20 @@
               <a class="nav-link text-muted" href="{% url 'main:documentation'%}">Documentation</a>
             </li>
             {% if user.is_authenticated %}
-              <li class="nav-item">
-                <a class="nav-link text-muted" href="{% url 'accounts:profile'%}">Profile</a>
-              </li>
-
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle text-muted" href="#" id="upload-dd" role="button"
+                <a class="nav-link dropdown-toggle text-muted" href="#" id="profile-dd" role="button"
                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Upload
+                  <i class="far fa-user"></i>
                 </a>
-                <div class="dropdown-menu" aria-labelledby="#upload-dd">
-                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:experiment_new' %}">New experiment</a>
-                  <a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:scoreset_new' %}">New score set</a>
-                </div>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link text-muted" href="{% url 'accounts:logout'%}">Logout</a>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="#profile-dd">
+                  <li><a class="nav-link text-muted dropdown-item pl-3" href="{% url 'accounts:profile'%}">Dashboard</a></li>
+                  <li class="divider"></li>
+                  <li><a class="nav-link text-muted dropdown-item pl-3" href="{% url 'accounts:profile_settings' %}">Settings</a></li>
+                  <li><a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:experiment_new' %}">New experiment</a></li>
+                  <li><a class="nav-link text-muted dropdown-item pl-3" href="{% url 'dataset:scoreset_new' %}">New score set</a></li>
+                  <li class="divider"></li>
+                  <li><a class="nav-link text-muted dropdown-item pl-3" href="{% url 'accounts:logout' %}">Logout</a></li>
+                </ul>
               </li>
             {% else %}
               <li class="nav-item">
@@ -205,9 +202,9 @@
       <div class="row">
         <div class="col-12 col-md-4 pb-4">
           <div class="row justify-content-center">
-            <img class="mb-2" src="{% static 'core/mavedb/dna.png' %}" alt="" width="18" height="24">
-             MaveDB
-            <small class="d-block mb-3 text-muted">&copy; 2017-2018</small>
+            <img class="mb-2" src="{% static 'core/mavedb/dna.png' %}" alt="" width="15" height="24">
+            <span>MaveDB</span>
+            <small class="d-block mb-3 text-muted"> &copy; 2018-2019</small>
           </div>
 
           {% if site_information.release_version %}
