@@ -30,10 +30,6 @@ def UserFactory(username=None, password=None, first_name=None,
     Test fixture factory for the user class which sets username,
     first_name, last_name and password.
     """
-    names = list(zip(
-        ['Spike', 'Jet', 'Faye', 'Ed', 'Ein'],
-        ['Spiegel', 'Black', 'Valentine', 'Ed', 'Ein']
-    ))
     if email is None:
         email = factory.faker.Faker('email').generate({})
     if username is None:
@@ -44,11 +40,11 @@ def UserFactory(username=None, password=None, first_name=None,
     if User.objects.filter(username=username).count():
         return User.objects.filter(username=username).first()
 
-    first, last = random.choice(names)
+    name = factory.faker.Faker('name').generate({}).split(' ')[0]
     if first_name is None:
-        first_name = first
+        first_name = name[0]
     if last_name is None:
-        last_name = last
+        last_name = name[-1]
 
     user = User.objects.create(
         username=username,
