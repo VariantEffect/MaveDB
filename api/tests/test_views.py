@@ -3,7 +3,6 @@ from datetime import timedelta
 
 from django.test import TestCase, RequestFactory, mock
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet
 from django.core import exceptions
 from django.http import HttpResponse
 
