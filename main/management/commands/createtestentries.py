@@ -13,7 +13,7 @@ from metadata.models import (
 
 from dataset import factories, utilities
 from genome import factories as genome_factories
-from genome import models  as genome_models
+from genome import models as genome_models
 from variant.models import Variant
 from dataset import constants
 
@@ -24,30 +24,34 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         password = "1234qwer"
         with transaction.atomic():
-            for i, username in enumerate([
-                'usera', 'userb', 'userc', 'userd',
-                'usere', 'userf', 'userg', 'userh',
-                'user1', 'user2', 'user3', 'user4',
-                'user5', 'user6', 'user7', 'user8',
-            ]):
+            for i in range(40):
+                username = 'user-{}'.format(i+1)
                 user = UserFactory(username=username)
-                if username == 'usera':
+                if username == 'user-1':
                     user.is_superuser = True
                     user.is_staff = True
                 user.set_password(password)
                 user.save()
                 instance = factories.ExperimentFactory()
-                for _ in [True, False]:
+                statuses = [True] * 4 + [False] * 2
+                for _ in statuses:
                     # Configure the scoreset first.
                     scoreset = factories.ScoreSetFactory(
                         experiment=instance,
                         dataset_columns={
-                            constants.score_columns: ["score", "score2", "score3", "score4", "score5"],
-                            constants.count_columns: ["count1", "count2", "count3", "count4"],
+                            constants.score_columns: [
+                                "score1", "score2",
+                                "score3", "score4",
+                                "score5", "score6"
+                            ],
+                            constants.count_columns: [
+                                "count1", "count2",
+                                "count3", "count4"
+                            ],
                         }
                     )
                     variants = []
-                    for n in range(10000):
+                    for n in range(3000):
                         variants.append({
                             'hgvs_nt': 'c.{}{}>{}'.format(
                                 n+1, random.choice("ATCG"),
@@ -59,12 +63,12 @@ class Command(BaseCommand):
                             ),
                             'data': {
                                 constants.variant_score_data: {
-                                    'score': random.random(),
                                     'score1': random.random(),
                                     'score2': random.random(),
                                     'score3': random.random(),
                                     'score4': random.random(),
                                     'score5': random.random(),
+                                    'score6': random.random(),
                                     
                                 },
                                 constants.variant_count_data: {
@@ -77,7 +81,8 @@ class Command(BaseCommand):
                         })
                     Variant.bulk_create(
                         parent=scoreset, variant_kwargs_list=variants)
-                    target = genome_factories.TargetGeneFactory(scoreset=scoreset)
+                    target = genome_factories.TargetGeneFactory(
+                        scoreset=scoreset)
                     genomes = genome_models.ReferenceGenome.objects.all()
                     genome_factories.ReferenceMapFactory(
                         target=target,
@@ -88,8 +93,8 @@ class Command(BaseCommand):
                     target.save()
                     scoreset.save()
                 
-                for scoreset, publish in zip(
-                        instance.children.all(), [True, False]):
+                for scoreset, publish in \
+                        zip(instance.children.all(), statuses):
                     UniprotOffset.objects.create(
                         offset=i*3 + 1,
                         target=scoreset.target,
