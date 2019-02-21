@@ -632,15 +632,12 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
         self.assertNotContains(response, exp1.urn)
         self.assertContains(response, exp2.urn)
 
-    def test_create_sets_superusers_as_admins(self):
-        su = UserFactory()
-        su.is_superuser = True
-        su.save()
+    def test_create_not_set_superusers_as_admins(self):
+        su = UserFactory(is_superuser=True)
+        ScoreSet.objects.all().delete()
 
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
-        scs1 = ScoreSetFactory(experiment=exp1)
-        assign_user_as_instance_admin(self.user, scs1)
         assign_user_as_instance_admin(self.user, exp1)
         data['experiment'] = [exp1.pk]
 
@@ -654,9 +651,9 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
 
         scoreset = ScoreSet.objects.first()
 
-        self.assertIn(su, scoreset.administrators)
-        self.assertIn(su, scoreset.parent.administrators)
-        self.assertIn(su, scoreset.parent.parent.administrators)
+        self.assertNotIn(su, scoreset.administrators)
+        self.assertNotIn(su, scoreset.parent.administrators)
+        self.assertNotIn(su, scoreset.parent.parent.administrators)
 
     def test_associates_new_uniprot_identifiers(self):
         data = self.post_data.copy()

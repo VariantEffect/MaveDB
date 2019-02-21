@@ -1,4 +1,4 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, mock
 from django.urls import reverse_lazy
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
@@ -109,7 +109,6 @@ class TestExperimentDetailView(TestCase, TestMessageMixin):
         self.assertNotContains(response, 'Add a score set')
         self.assertNotContains(response, 'Edit this experiment')
         
-
 
 class TestCreateNewExperimentView(TestCase, TestMessageMixin):
     """
