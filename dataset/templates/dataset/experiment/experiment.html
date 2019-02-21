@@ -82,6 +82,7 @@
 
 {% block child_list %}
   {% visible_children instance user as visible_scoresets %}
+  {% current_versions visible_scoresets user as current_visible %}
   <span>
     <h2 id='scoresets' class="underline left-align section-heading">Score sets
       {% if request.user in instance.editors or request.user in instance.administrators %}
@@ -92,9 +93,9 @@
       {% endif %}
     </h2>
   </span>
-  {% if visible_scoresets|length %}
+  {% if current_visible|length %}
     <ul>
-      {% for child in visible_scoresets %}
+      {% for child in current_visible %}
         <li class="child-list-item">
           <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
             <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
@@ -105,7 +106,7 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="text-muted">No Score sets have been associated with this experiment.</p>
+    <p class="text-muted">No score sets have been associated with this experiment.</p>
   {% endif %}
 {% endblock %}
 
