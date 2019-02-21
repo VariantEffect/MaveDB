@@ -6,20 +6,6 @@
       <div class="col-auto">
         <h2> {{ request.user.profile.get_display_name_hyperlink }} </h2>
       </div>
-      <div class="col-auto">
-        <div class="dropdown pull-left">
-          <button class="white-button btn btn-outline-dark dropdown-toggle" type="button"
-                  id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                  aria-expanded="false">
-            <i class="fas fa-bars"></i>
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <a class="dropdown-item" href="{% url 'accounts:profile_settings' %}">Settings</a>
-            <a class="dropdown-item" href="{% url 'dataset:experiment_new' %}">New experiment</a>
-            <a class="dropdown-item" href="{% url 'dataset:scoreset_new' %}">New score set</a>
-          </div>
-        </div>
-      </div>
     </div> <!-- End dashboard header -->
     <hr>
 
@@ -232,11 +218,6 @@
                                title="This experiment set is public and may be viewed by anyone visiting the site." >
                             </i>
                           {% endif %}
-
-                          <p class="pl-2 pt-1">
-                            Last updated {{ instance.format_last_edit_date }} by
-                            <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a>
-                          </p>
                         </small>
 
                         <small class="col-auto text-muted float-right">
