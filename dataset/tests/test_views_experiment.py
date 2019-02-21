@@ -12,7 +12,6 @@ from accounts.permissions import (
     assign_user_as_instance_viewer,
     assign_user_as_instance_admin,
     assign_user_as_instance_editor,
-    user_is_admin_for_instance
 )
 
 from metadata.factories import (
@@ -259,9 +258,9 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         data = self.post_data.copy()
         request = self.create_request(path=self.path, data=data, method='post')
         request.user = self.user
-        response = ExperimentCreateView.as_view()(request)
+        _ = ExperimentCreateView.as_view()(request)
         exp = Experiment.objects.all()[0]
-        self.assertTrue(user_is_admin_for_instance(self.user, exp))
+        self.assertFalse(self.user in exp.administrators)
 
     def test_new_experimentset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
@@ -270,7 +269,7 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         _ = ExperimentCreateView.as_view()(request)
         exps = ExperimentSet.objects.first()
 
-        self.assertTrue(user_is_admin_for_instance(self.user, exps))
+        self.assertFalse(self.user in exps.administrators)
 
     def test_selected_experimentset_does_not_add_user_as_admin(self):
         data = self.post_data.copy()
@@ -281,7 +280,7 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         request.user = self.user
         _ = ExperimentCreateView.as_view()(request)
 
-        self.assertFalse(user_is_admin_for_instance(self.user, es))
+        self.assertFalse(self.user in es.administrators)
 
     def test_failed_submission_adds_keywords_to_context(self):
         data = self.post_data.copy()
