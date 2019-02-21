@@ -1,7 +1,6 @@
-import json
-
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
+from django.http.response import JsonResponse
 
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
@@ -83,7 +82,7 @@ def search_view(request):
     experiments = Experiment.objects.all()
     scoresets = ScoreSet.objects.all()
     
-    if request.method == 'GET':
+    if request.is_ajax():
         if 'search' in request.GET:
             form = forms.BasicSearchForm(data=request.GET)
         else:
@@ -104,14 +103,16 @@ def search_view(request):
                 experiments = experiment_filter.qs
                 scoresets = scoreset_filter.qs
 
-    instances = group_children(
-        parents=filter_visible(experiments.distinct(), request.user),
-        children=filter_visible(scoresets.distinct(), request.user),
-        user=request.user,
-    )
+        instances = group_children(
+            parents=filter_visible(experiments.distinct(), request.user),
+            children=filter_visible(scoresets.distinct(), request.user),
+            user=request.user,
+        )
+        data = to_json(instances, request.user)
+        return JsonResponse(data=data, status=200, safe=False)
+
     context = {
         "b_search_form": b_search_form,
         "adv_search_form": adv_search_form,
-        "instances": json.dumps(to_json(instances, user=request.user)),
     }
     return render(request, "search/search.html", context)
