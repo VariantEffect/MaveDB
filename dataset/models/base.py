@@ -21,18 +21,6 @@ from dataset import constants
 
 
 User = get_user_model()
-child_attr_map = {
-    'ExperimentSet': ('experiments', 'Experiment', 'dataset'),
-    'Experiment': ('scoresets', 'ScoreSet', 'dataset'),
-    'ScoreSet': ('variants', 'Variant', 'variant'),
-    'Variant': (None, None, None)
-}
-parent_attr_map = {
-    'ExperimentSet': None,
-    'Experiment': 'experimentset',
-    'ScoreSet': 'experiment',
-    'Variant': 'scoreset'
-}
 
 
 class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
@@ -327,20 +315,8 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     @property
     def parent(self):
-        attr = parent_attr_map[self.__class__.__name__]
-        if attr is not None and hasattr(self, attr):
-            return getattr(self, attr)
-        else:
-            return None
+        return None
         
     @property
     def children(self):
-        attr, model_name, app_label = child_attr_map[self.__class__.__name__]
-        if hasattr(self, attr):
-            return getattr(self, attr).order_by('urn')
-        else:
-            if model_name is None:
-                return None
-            else:
-                model = apps.get_model(app_label, model_name=model_name)
-                return model.objects.none()
+        return None

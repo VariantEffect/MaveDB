@@ -202,6 +202,14 @@ class ScoreSet(DatasetModel):
     # Variant related methods
     # ---------------------------------------------------------------------- #
     @property
+    def parent(self):
+        return self.experiment
+
+    @property
+    def children(self):
+        return self.variants.all()
+
+    @property
     def has_variants(self):
         return hasattr(self, 'variants') and self.variants.count() > 0
 
@@ -406,7 +414,8 @@ class ScoreSet(DatasetModel):
             return msg
         
         return 'An error occured during processing. Please contact support.'
-    
+
+
 # --------------------------------------------------------------------------- #
 #                               Post Save
 # --------------------------------------------------------------------------- #

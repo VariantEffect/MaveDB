@@ -89,6 +89,10 @@ class ExperimentSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    @property
+    def children(self):
+        return self.experiments.all()
+
     def public_experiments(self):
         return self.children.exclude(private=True)
     

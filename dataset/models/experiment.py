@@ -132,6 +132,14 @@ class Experiment(DatasetModel):
         if self.experimentset is None:
             self.experimentset = ExperimentSet.objects.create()
         return super().save(*args, **kwargs)
+
+    @property
+    def parent(self):
+        return self.experimentset
+
+    @property
+    def children(self):
+        return self.scoresets.all()
     
     def get_targets(self):
         target_pks = set([
