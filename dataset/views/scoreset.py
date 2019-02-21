@@ -70,27 +70,10 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
 
-        previous_version = instance.previous_version
-        if previous_version is not None and previous_version.private and \
-                self.request.user not in previous_version.contributors:
-            previous_version = instance.previous_public_version
-        if previous_version and previous_version.urn == instance.urn:
-            previous_version = None
+        current_version = instance.get_current_version(self.request.user)
+        previous_version = instance.get_previous_version(self.request.user)
+        next_version = instance.get_next_version(self.request.user)
 
-        next_version = instance.next_version
-        if next_version is not None and next_version.private and \
-                self.request.user not in next_version.contributors:
-            next_version = instance.next_public_version
-        if next_version and next_version.urn == instance.urn:
-            next_version = None
-
-        current_version = instance.current_version
-        if current_version is not None and current_version.private and \
-                self.request.user not in current_version.contributors:
-            current_version = instance.current_public_version
-        if current_version and current_version.urn == instance.urn:
-            current_version = None
-        
         keywords = set([kw for kw in instance.keywords.all()])
         keywords = sorted(
             keywords, key=lambda kw: -1 * kw.get_association_count())
@@ -106,6 +89,14 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         
         order_by = 'id' # instance.primary_hgvs_column
         variants = instance.children.order_by('{}'.format(order_by))[:10]
+
+        # Format table columns for dataTables
+        columns = instance.count_columns if type_ == 'counts' \
+            else instance.score_columns
+        table_columns = []
+        for i, name in enumerate(columns):
+            table_columns.append({'className': name, 'targets': [i, ]},)
+
         rows = []
         for variant in variants:
             row = {}
@@ -131,6 +122,7 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
             'data': rows,
             'recordsTotal': len(rows),
             'recordsFiltered': len(rows),
+            'columns': table_columns,
         }
         return JsonResponse(response, safe=False)
         
