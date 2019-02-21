@@ -9,7 +9,6 @@ can be changed once here instead of throughout all the tests. This will help
 with future maintainability.
 """
 
-import random
 import factory.fuzzy
 import factory.faker
 
@@ -40,7 +39,7 @@ def UserFactory(username=None, password=None, first_name=None,
     if User.objects.filter(username=username).count():
         return User.objects.filter(username=username).first()
 
-    name = factory.faker.Faker('name').generate({}).split(' ')[0]
+    name = factory.faker.Faker('name').generate({}).split(' ')
     if first_name is None:
         first_name = name[0]
     if last_name is None:
