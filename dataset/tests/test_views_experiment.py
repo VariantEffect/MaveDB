@@ -260,7 +260,7 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         request.user = self.user
         _ = ExperimentCreateView.as_view()(request)
         exp = Experiment.objects.all()[0]
-        self.assertFalse(self.user in exp.administrators)
+        self.assertTrue(self.user in exp.administrators)
 
     def test_new_experimentset_created_with_current_user_as_admin(self):
         data = self.post_data.copy()
@@ -269,7 +269,7 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
         _ = ExperimentCreateView.as_view()(request)
         exps = ExperimentSet.objects.first()
 
-        self.assertFalse(self.user in exps.administrators)
+        self.assertTrue(self.user in exps.administrators)
 
     def test_selected_experimentset_does_not_add_user_as_admin(self):
         data = self.post_data.copy()
