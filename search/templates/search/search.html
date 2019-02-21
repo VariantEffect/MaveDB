@@ -99,6 +99,8 @@
     $.get(window.location.href, function (response) {
       let table = $("#search-table").DataTable({
         data: response,
+        bAutoWidth: true,
+        deferRender: true,
         columns: [
           {
             className: 'details-control',
@@ -152,7 +154,17 @@
       console.log(jqXHR.status);
       console.log(textStatus);
       console.log(errorThrown);
-      $("#search-loading p").text("Server error. Table could not be loaded.");
+
+      if (jqXHR.status === 500) {
+        $("#search-loading p").text(
+          "An internal server error has occurred during your search request."
+        );
+      } else {
+        $("#search-loading p").text(
+          "Your search request has failed with status " + jqXHR.status
+        );
+      }
+
       $("#search-loading .fa-spinner").remove();
       $("#search-loading .fa-frown").show()
     });
