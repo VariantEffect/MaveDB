@@ -551,4 +551,5 @@ def save_user_profile(sender, instance, **kwargs):
     """
     Saves profile whenever associated user is saved.
     """
-    instance.profile.save()
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
