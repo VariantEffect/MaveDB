@@ -348,7 +348,7 @@ class ScoreSet(DatasetModel):
         public_version = getattr(self, public_attr)
         if user is None or version is None:
             return public_version
-        elif version.private and user in version.contributors():
+        elif version.private and user in version.contributors:
             return version
         else:
             return public_version

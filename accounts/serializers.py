@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             return [i.urn for i in getattr(obj.profile, public_attr)()]
         return [
             i.urn for i in getattr(obj.profile, attr)()
-            if (not i.private) or (i.private and user in i.contributors())
+            if (not i.private) or (i.private and user in i.contributors)
         ]
         
     def get_experimentsets(self, obj):

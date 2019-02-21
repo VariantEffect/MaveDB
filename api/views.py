@@ -9,6 +9,7 @@ from django.http import HttpResponse, JsonResponse
 
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
+from accounts.serializers import UserSerializer
 
 from metadata import models as meta_models
 from metadata import serializers as meta_serializers
@@ -16,11 +17,10 @@ from metadata import serializers as meta_serializers
 from genome import models as genome_models
 from genome import serializers as genome_serializers
 
-from core.utilities import chunks
+from dataset.templatetags.dataset_tags import filter_visible
 
 from dataset import models, filters, constants
 from dataset.serializers import (
-    UserSerializer,
     ExperimentSetSerializer,
     ExperimentSerializer,
     ScoreSetSerializer,
@@ -61,7 +61,7 @@ def check_permission(instance, user=None):
     if instance.private and user is None:
         raise exceptions.PermissionDenied()
     elif instance.private and user is not None:
-        has_perm = user in instance.contributors()
+        has_perm = user in instance.contributors
         if not has_perm:
             raise exceptions.PermissionDenied()
     return instance
@@ -93,11 +93,12 @@ class DatasetListViewSet(AuthenticatedViewSet):
     model_class = None
    
     def get_queryset(self):
-        return self.model_class.viewable_instances_for_user(self.user)
+        return filter_visible(self.queryset, user=self.user)
     
     def get_object(self):
         urn = self.kwargs.get('urn', None)
-        if urn is not None and self.model_class.objects.filter(urn=urn).count():
+        if urn is not None and \
+                self.model_class.objects.filter(urn=urn).count():
             instance = self.model_class.objects.filter(urn=urn).first()
             check_permission(instance, self.user)
         return super().get_object()

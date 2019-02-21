@@ -93,7 +93,7 @@ class DatasetModelFilter(FilterSet):
             qs = self.qs
         exclude = []
         for instance in qs.all():
-            if user not in instance.contributors() and instance.private:
+            if user not in instance.contributors and instance.private:
                 exclude.append(instance.pk)
         return qs.exclude(pk__in=exclude)
 
@@ -130,7 +130,7 @@ class DatasetModelFilter(FilterSet):
         model = queryset.first().__class__
         for instance in queryset.all():
             for v in self.split(value):
-                contributors = instance.contributors().filter(**{name: v})
+                contributors = instance.contributors.filter(**{name: v})
                 if contributors.count():
                     instances_pks.append(instance.pk)
         return model.objects.filter(pk__in=set(instances_pks))
@@ -144,7 +144,7 @@ class DatasetModelFilter(FilterSet):
             for v in self.split(value):
                 matches = any(
                     [v.lower() in c.profile.get_display_name().lower()
-                     for c in instance.contributors()])
+                     for c in instance.contributors])
                 if matches:
                     instances_pks.append(instance.pk)
         return model.objects.filter(pk__in=set(instances_pks))
@@ -206,7 +206,7 @@ class ExperimentFilter(DatasetModelFilter):
         )
         for scoreset in scoresets:
             if scoreset.private:
-                if user is not None and user in scoreset.contributors():
+                if user is not None and user in scoreset.contributors:
                     experiments.add(scoreset.parent.pk)
             else:
                 experiments.add(scoreset.parent.pk)

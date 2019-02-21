@@ -116,7 +116,7 @@ class SelectUsersForm(forms.Form):
             raise ValueError("Unrecognised instance type {}".format(
                 instance.__class__.__name__
             ))
-        
+
         self.instance = instance
         if instance is not None:
             kwargs["initial"] = {
@@ -225,7 +225,7 @@ class SelectUsersForm(forms.Form):
         for user in list(new_administrators) + list(new_editors) + list(new_viewers):
             instance = self.instance
             while instance.parent:
-                if user not in instance.parent.contributors():
+                if user not in instance.parent.contributors:
                     instance.parent.add_viewers(user)
                     user.profile.notify_user_group_change(
                         instance=instance.parent,

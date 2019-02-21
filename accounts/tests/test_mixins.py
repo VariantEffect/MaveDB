@@ -134,9 +134,9 @@ class TestGroupPermisionMixin(TestCase):
         self.instance_a.add_administrators(self.user_a)
         self.instance_a.add_editors(self.user_b)
         self.instance_a.add_viewers(self.user_c)
-        self.assertIn(self.user_a, self.instance_a.contributors())
-        self.assertIn(self.user_b, self.instance_a.contributors())
-        self.assertIn(self.user_c, self.instance_a.contributors())
+        self.assertIn(self.user_a, self.instance_a.contributors)
+        self.assertIn(self.user_b, self.instance_a.contributors)
+        self.assertIn(self.user_c, self.instance_a.contributors)
 
     def test_can_remove_admin(self):
         self.instance_a.add_administrators(self.user_b)

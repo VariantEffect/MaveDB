@@ -465,7 +465,7 @@ class TestExperimentFilter(TestCase):
         scoreset = self.instance1.children.first()
         scoreset.private = True
         scoreset.save()
-        self.assertNotIn(self.user1, scoreset.contributors())
+        self.assertNotIn(self.user1, scoreset.contributors)
 
         f = filters.ExperimentFilter(
             data={
