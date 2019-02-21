@@ -155,27 +155,3 @@ class TestGroupPermisionMixin(TestCase):
         self.assertIn(self.user_b, self.instance_a.viewers)
         self.instance_a.remove_viewers(self.user_b)
         self.assertNotIn(self.user_b, self.instance_a.viewers)
-        
-    def test_users_with_view_permission_returns_users_from_all_groups(self):
-        self.instance_a.add_administrators(self.user_a)
-        self.instance_a.add_editors(self.user_b)
-        self.instance_a.add_viewers(self.user_c)
-        self.assertIn(self.user_a, self.instance_a.users_with_view_permission())
-        self.assertIn(self.user_b, self.instance_a.users_with_view_permission())
-        self.assertIn(self.user_c, self.instance_a.users_with_view_permission())
-        
-    def test_users_with_edit_permission_returns_admins_and_editors(self):
-        self.instance_a.add_administrators(self.user_a)
-        self.instance_a.add_editors(self.user_b)
-        self.instance_a.add_viewers(self.user_c)
-        self.assertIn(self.user_a, self.instance_a.users_with_edit_permission())
-        self.assertIn(self.user_b, self.instance_a.users_with_edit_permission())
-        self.assertNotIn(self.user_c, self.instance_a.users_with_edit_permission())
-        
-    def test_users_with_manage_permission_returns_admins(self):
-        self.instance_a.add_administrators(self.user_a)
-        self.instance_a.add_editors(self.user_b)
-        self.instance_a.add_viewers(self.user_c)
-        self.assertIn(self.user_a, self.instance_a.users_with_manage_permission())
-        self.assertNotIn(self.user_b, self.instance_a.users_with_manage_permission())
-        self.assertNotIn(self.user_c, self.instance_a.users_with_manage_permission())
