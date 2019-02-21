@@ -93,7 +93,7 @@ class DatasetListViewSet(AuthenticatedViewSet):
     model_class = None
    
     def get_queryset(self):
-        return filter_visible(self.queryset, user=self.user)
+        return filter_visible(self.queryset.all(), user=self.user)
     
     def get_object(self):
         urn = self.kwargs.get('urn', None)

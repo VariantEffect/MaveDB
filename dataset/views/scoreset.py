@@ -4,6 +4,7 @@ import logging
 from functools import partial
 
 from django.db import transaction
+from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 
 from reversion import create_revision
@@ -34,6 +35,7 @@ from .base import (
 )
 
 logger = logging.getLogger("django")
+User = get_user_model()
 
 
 def fire_task(request, scoreset, task_kwargs):
@@ -151,10 +153,10 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     
     success_message = (
         "Successfully created a new Scoreset with temporary accession number "
-        "{urn}. Uploaded files are being processed and further editing has been "
+        "{urn}. Uploaded files are being processed and further "
+        "editing has been "
         "temporarily disabled. Please check back later."
     )
-    
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.GET.get("experiment", ""):
@@ -227,6 +229,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
             scoreset.save()
        
         scoreset.add_administrators(self.request.user)
+        # assign_superusers_as_admin(scoreset)
         self.kwargs['urn'] = scoreset.urn
         return forms
 

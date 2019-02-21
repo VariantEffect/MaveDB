@@ -163,14 +163,14 @@ table {
 
 
 #search-table {
-    border: 2px solid #987cb8;
+    border: 1px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
-    /*overflow-x: scroll;*/
+    overflow-x: scroll;
 }
 
 #counts-table, #scores-table {
-    border: 2px solid #987cb8;
+    border: 1px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
     min-width: 25% !important;
@@ -179,7 +179,7 @@ table {
 
 .styled-table {
     margin-bottom: 0; 
-    background: whitesmoke;
+    background: #f7f7f7;
 }
 .styled-table th {
     background: #dadff1;

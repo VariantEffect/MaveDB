@@ -104,8 +104,7 @@ class ExperimentSerializer(DatasetModelSerializer):
             obj.parent_for_user(self.context.get('user', None)))
     
     def get_children(self, obj):
-        children_ = visible_children(
-            obj.children, user=self.context.get('user', None))
+        children_ = visible_children(obj, user=self.context.get('user', None))
         return [c.urn for c in children_]
 
     class Meta(DatasetModelSerializer.Meta):
@@ -119,8 +118,7 @@ class ExperimentSetSerializer(DatasetModelSerializer):
     experiments = serializers.SerializerMethodField('get_children')
 
     def get_children(self, obj):
-        children_ = visible_children(
-            obj.children, user=self.context.get('user', None))
+        children_ = visible_children(obj, user=self.context.get('user', None))
         return [c.urn for c in children_]
 
     class Meta(DatasetModelSerializer.Meta):

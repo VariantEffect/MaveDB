@@ -16,7 +16,6 @@ from accounts.permissions import (
     assign_user_as_instance_viewer,
     assign_user_as_instance_editor,
     assign_user_as_instance_admin,
-    user_is_admin_for_instance
 )
 
 from core.utilities.tests import TestMessageMixin
@@ -489,7 +488,7 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
         _ = ScoreSetCreateView.as_view()(request)
 
         scs = ScoreSet.objects.all()[0]
-        self.assertTrue(user_is_admin_for_instance(self.user, scs))
+        self.assertTrue(self.user in scs.administrators)
 
     def test_failed_submission_adds_extern_identifier_to_context(self):
         fs = [
@@ -590,9 +589,8 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
         _ = ScoreSetCreateView.as_view()(request)
 
         scs = ScoreSet.objects.all()[0]
-        self.assertFalse(user_is_admin_for_instance(self.user, scs.parent))
-        self.assertFalse(user_is_admin_for_instance(
-            self.user, scs.parent.parent))
+        self.assertNotIn(self.user, scs.parent.administrators)
+        self.assertNotIn(self.user, scs.parent.parent.administrators)
 
     def test_ajax_submission_returns_json_response(self):
         data = self.post_data.copy()
@@ -634,15 +632,12 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
         self.assertNotContains(response, exp1.urn)
         self.assertContains(response, exp2.urn)
 
-    def test_create_sets_superusers_as_admins(self):
-        su = UserFactory()
-        su.is_superuser = True
-        su.save()
+    def test_create_not_set_superusers_as_admins(self):
+        su = UserFactory(is_superuser=True)
+        ScoreSet.objects.all().delete()
 
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
-        scs1 = ScoreSetFactory(experiment=exp1)
-        assign_user_as_instance_admin(self.user, scs1)
         assign_user_as_instance_admin(self.user, exp1)
         data['experiment'] = [exp1.pk]
 
@@ -655,9 +650,10 @@ class TestCreateNewScoreSetView(TransactionTestCase , TestMessageMixin):
         self.assertEqual(response.status_code, 302)
 
         scoreset = ScoreSet.objects.first()
-        user_is_admin_for_instance(scoreset, su)
-        user_is_admin_for_instance(scoreset.experiment, su)
-        user_is_admin_for_instance(scoreset.experiment.experimentset, su)
+
+        self.assertNotIn(su, scoreset.administrators)
+        self.assertNotIn(su, scoreset.parent.administrators)
+        self.assertNotIn(su, scoreset.parent.parent.administrators)
 
     def test_associates_new_uniprot_identifiers(self):
         data = self.post_data.copy()
