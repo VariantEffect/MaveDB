@@ -1,6 +1,5 @@
 import datetime
 
-from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
