@@ -1,8 +1,10 @@
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Group
 
 from dataset.factories import ExperimentFactory
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
 
 from ..factories import UserFactory
 from ..permissions import GroupTypes
@@ -138,6 +140,13 @@ class TestGroupPermisionMixin(TestCase):
         self.assertIn(self.user_b, self.instance_a.contributors)
         self.assertIn(self.user_c, self.instance_a.contributors)
 
+    def test_contributors_returns_none_if_group_name_not_found(self):
+        self.instance_a.add_administrators(self.user_a)
+        self.assertIn(self.user_a, self.instance_a.contributors)
+
+        Group.objects.get(name=self.instance_a.admin_group_name).delete()
+        self.assertNotIn(self.user_a, self.instance_a.contributors)
+
     def test_can_remove_admin(self):
         self.instance_a.add_administrators(self.user_b)
         self.assertIn(self.user_b, self.instance_a.administrators)
@@ -155,3 +164,58 @@ class TestGroupPermisionMixin(TestCase):
         self.assertIn(self.user_b, self.instance_a.viewers)
         self.instance_a.remove_viewers(self.user_b)
         self.assertNotIn(self.user_b, self.instance_a.viewers)
+
+
+class TestgPermissionGroupsAreDisjoint(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        Experiment.objects.all().delete()
+        ExperimentSet.objects.all().delete()
+        User.objects.all().delete()
+
+    def tearDown(self):
+        Experiment.objects.all().delete()
+        ExperimentSet.objects.all().delete()
+        User.objects.all().delete()
+
+    def test_result_is_disjoint_between_different_groups(self):
+        experiment = ExperimentFactory()
+        user1 = UserFactory()
+        user2 = UserFactory()
+        experiment.add_administrators(user1)
+        experiment.add_editors(user2)
+        self.assertIn(user1, experiment.administrators)
+        self.assertNotIn(user2, experiment.administrators)
+
+        self.assertNotIn(user1, experiment.editors)
+        self.assertIn(user2, experiment.editors)
+
+    def test_instances_for_user_does_not_partial_match_model_names(self):
+        experiment = ExperimentFactory()
+        experimentset = experiment.experimentset
+        self.assertEqual(experiment.pk, experimentset.pk)
+
+        user = UserFactory()
+        experiment.add_administrators(user)
+        self.assertIn(user, experiment.administrators)
+        self.assertNotIn(user, experimentset.administrators)
+
+    def test_contributors_returns_all_admins_editors_and_viewers(self):
+        experiment = ExperimentFactory()
+        experimentset = experiment.experimentset
+        self.assertEqual(experiment.pk, experimentset.pk)
+
+        user1 = UserFactory()
+        user2 = UserFactory()
+        user3 = UserFactory()
+        user4 = UserFactory()
+
+        experiment.add_administrators(user1)
+        experiment.add_editors(user2)
+        experiment.add_viewers(user3)
+
+        self.assertIn(user1, experiment.contributors)
+        self.assertIn(user2, experiment.contributors)
+        self.assertIn(user3, experiment.contributors)
+        self.assertNotIn(user4, experiment.contributors)
