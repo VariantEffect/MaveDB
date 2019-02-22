@@ -59,7 +59,7 @@ class TestToJson(TestCase):
         self.exp = factories.ExperimentWithScoresetFactory()
         self.user = UserFactory()
 
-    @mock.patch("search.views.display_targets", return_value=[])
+    @mock.patch("search.views.display_targets", return_value=('', '', ''))
     def test_calls_display_targets(self, patch):
         grouped = {self.exp: self.exp.children}
         views.to_json(grouped, user=self.user)
@@ -71,26 +71,11 @@ class TestToJson(TestCase):
         views.to_json(grouped, user=self.user)
         patch.assert_called_with(*(self.exp, self.user,))
 
-    def test_contributor_names_contains_contributors_only(self):
-        grouped = {self.exp: self.exp.children}
-
-        user1 = UserFactory()
-        user2 = UserFactory()
-        self.exp.add_administrators(user1)
-        self.exp.children.first().add_administrators(user1)
-
-        result = views.to_json(grouped, user=self.user)
-        self.assertIn(user1.username, result[0]['contributors'])
-        self.assertNotIn(user2.username, result[0]['contributors'])
-
-        self.assertIn(user1.username, result[0]['children'][0]['contributors'])
-        self.assertNotIn(user2.username, result[0]['children'][0]['contributors'])
-
 
 class TestSearchView(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.path = '/search/'
+        self.path = '/search/?json=true'
         self.exp1 = factories.ExperimentWithScoresetFactory()
         self.exp2 = factories.ExperimentWithScoresetFactory()
         self.exp3 = factories.ExperimentWithScoresetFactory()
@@ -179,7 +164,7 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.scs1.urn)
 
     def test_basic_search_delegates_to_basic_form(self):
-        request = self.factory.get(self.path + '/?search={}'.format(
+        request = self.factory.get(self.path + '&search={}'.format(
             self.exp1.urn), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
         request.user = UserFactory()
@@ -192,7 +177,7 @@ class TestSearchView(TestCase):
         self.assertNotContains(response, self.scs3.urn)
 
     def test_adv_search_delegates_to_adv_form(self):
-        request = self.factory.get(self.path + '/?title={}'.format(
+        request = self.factory.get(self.path + '&title={}'.format(
             self.exp1.title), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         request.user = UserFactory()
         response = views.search_view(request)
