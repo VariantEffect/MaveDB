@@ -102,9 +102,9 @@
       
       {% if next_version %}
         {% if next_version.private %}
-          Previous version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}} [Private]</a><br>
+          Next version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}} [Private]</a><br>
         {% else %}
-          Previous version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}}</a><br>
+          Next version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}}</a><br>
         {% endif %}
       {% endif %}
 
@@ -115,6 +115,7 @@
           Current version: <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{current_version}}</a><br>
         {% endif %}
       {% endif %}
+
     {% endif %}
 
   </p>

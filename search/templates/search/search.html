@@ -9,7 +9,7 @@
   <div id="search-control">
     <form class="mb-2" action="{% url 'search:search' %}" method="get">
       <div class="input-group">
-        <input class="form-control" name="search">
+        <input class="form-control" name="search" placeholder="BRCA1, Protein coding, Homo sapiens, ...">
         <button class="btn btn-outline-dark white-button ml-1">
           <i class="fa fa-search"></i>
         </button>
@@ -31,7 +31,12 @@
           <h4 class="form-title"> Advanced search </h4>
         </div>
 
-        <form action="{% url 'search:search' %}" method="GET">
+        <div id="form-loading" class="text-center pt-3">
+          <p class="text-muted text-center">Populating form fields...</p>
+          <i class="fas fa-spinner"></i>
+        </div>
+
+        <form action="{% url 'search:search' %}" method="GET" id="adv-search-form">
           {% include 'core/bs_neutral_form.html' with form=adv_search_form %}
           <div class="card-footer bg-white">
             <button class="btn btn-outline-dark float-right white-button"
@@ -46,7 +51,13 @@
 
   <div id="table-wrapper" class="styled-table mt-4">
     <div id="search-table-container" class="table-responsive">
-      <table id="search-table" class="styled-table table table-hover display" style="width: 100%;">
+      <div id="search-loading" class="text-center">
+        <p class="text-muted text-center">Loading search results...</p>
+        <i class="fas fa-spinner" style="font-size: 20px"></i>
+        <i class="far fa-frown" style="display: none; font-size: 32px"></i>
+      </div>
+      <table id="search-table" class="styled-table table table-hover display"
+             style="width: 100%; display: none">
         <thead>
           <tr>
             <th style="max-width: 15px !important;"></th>
@@ -66,77 +77,104 @@
 
 {% block extra_scripts %}
 <script type="text/javascript">
-  let instances = JSON.parse("{{ instances|escapejs|safe }}");
-  let data = {
-    draw: 1,
-    data: instances
-  };
-
-  $("document").ready(function() {
-
+  $(window).ready(function() {
     let select2_init = false;
+    $("#adv-search-form").hide();
+    $("#form-loading").show();
+
     $("#adv-search").click(function(event) {
       if (!select2_init) {
-        init_select2();
+        setTimeout(function() {
+          $("#form-loading").hide();
+          $("#adv-search-form").show();
+        }, 2000);
+        setTimeout(function() {
+          init_select2();
+        }, 1000);
         select2_init = true;
       }
     });
 
-    var table = $('#search-table').DataTable({
-      data: instances,
-      columns: [
-        {
-          className: 'details-control',
-          orderable: false,
-          data: null,
-          defaultContent: "",
-          render: function () {
-             return "<i class=\"fa fa-plus-square\" aria-hidden=\"true\"></i>";
-         },
-         width: "15px"
-        },
-        {data: "urn"},
-        {data: "description", width: "40%"},
-        {data: "target" },
-        {data: "type" },
-        {data: "organism"},
-        {data: "contributors"}
-      ],
-      order: [[1, 'asc']]
+
+    $.get(window.location.href, function (response) {
+      let table = $("#search-table").DataTable({
+        data: response,
+        bAutoWidth: true,
+        deferRender: true,
+        columns: [
+          {
+            className: 'details-control',
+            orderable: false,
+            data: null,
+            defaultContent: "",
+            render: function () {
+               return "<i class=\"fa fa-plus-square\" aria-hidden=\"true\"></i>";
+           },
+           width: "15px"
+          },
+          {data: "urn"},
+          {data: "description", width: "40%"},
+          {data: "target" },
+          {data: "type" },
+          {data: "organism"},
+          {data: "contributors"}
+        ],
+        order: [[1, 'asc']]
+      });
+
+      // Add event listener for opening and closing details
+      $('#search-table tbody').on('click', 'td.details-control', function () {
+        let tr = $(this).closest('tr');
+        let row = table.row(tr);
+        if (row.child.isShown()) {
+          // This row is already open - close it
+          row.child.hide();
+          tr.removeClass('shown');
+          var tdi = tr.find(".fa-minus-square");
+          tdi.first().removeClass('fa-minus-square');
+          tdi.first().addClass('fa-plus-square');
+          row.child().removeClass("no-hover");
+        }
+        else {
+          // Open this row
+          row.child(format(row.data())).show();
+          tr.addClass('shown');
+          let tdi = tr.find(".fa-plus-square");
+          tdi.first().removeClass('fa-plus-square');
+          tdi.first().addClass('fa-minus-square');
+          row.child().addClass("no-hover");
+        }
+      });
+    }).done(function () {
+      console.log('Success');
+      $("#search-loading").hide();
+      $("#search-table").show().resize();
+    })
+    .fail(function (jqXHR, textStatus, errorThrown) {
+      console.log(jqXHR.status);
+      console.log(textStatus);
+      console.log(errorThrown);
+
+      if (jqXHR.status === 500) {
+        $("#search-loading p").text(
+          "An internal server error has occurred during your search request."
+        );
+      } else {
+        $("#search-loading p").text(
+          "Your search request has failed with status " + jqXHR.status
+        );
+      }
+
+      $("#search-loading .fa-spinner").remove();
+      $("#search-loading .fa-frown").show()
     });
 
     $(".no-hover").parent().parent().addClass("no-hover");
-    // Add event listener for opening and closing details
-    $('#search-table tbody').on('click', 'td.details-control', function () {
-       var tr = $(this).closest('tr');
-       var row = table.row(tr);
-
-       if (row.child.isShown()) {
-         // This row is already open - close it
-         row.child.hide();
-         tr.removeClass('shown');
-         var tdi = tr.find(".fa-minus-square");
-         tdi.first().removeClass('fa-minus-square');
-         tdi.first().addClass('fa-plus-square');
-
-         row.child().removeClass("no-hover");
-       }
-       else {
-         // Open this row
-         row.child(format(row.data())).show();
-         tr.addClass('shown');
-         var tdi = tr.find(".fa-plus-square");
-         tdi.first().removeClass('fa-plus-square');
-         tdi.first().addClass('fa-minus-square');
-
-         row.child().addClass("no-hover");
-       }
-    });
   });
 
   function format(rowData) {
-    var html = "";
-    for (var i=0; i < rowData.children.length; i++) {
+    let html = "";
+    for (let i=0; i < rowData.children.length; i++) {
       html += (
         "<tr>" +
           {#"<td></td>" +#}

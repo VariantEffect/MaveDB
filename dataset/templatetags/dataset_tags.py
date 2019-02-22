@@ -4,6 +4,7 @@ from django import template
 from django.utils.safestring import mark_safe
 
 from dataset import models
+from accounts.permissions import user_is_anonymous
 
 register = template.Library()
 logger = logging.getLogger("django")
@@ -32,7 +33,10 @@ def group_targets(scoresets):
         else:
             unique_targets[scoreset.get_target().hash()] = [scoreset, ]
     return [
-        (hash_to_target[hash_], sorted(unique_targets[hash_], key=lambda s: s.urn))
+        (
+            hash_to_target[hash_],
+            sorted(unique_targets[hash_], key=lambda s: s.urn)
+        )
         for hash_ in unique_targets.keys()
     ]
     
@@ -63,8 +67,7 @@ def display_targets(instance, user, javascript=False,
     t_categories = [t.category for t in targets]
     t_names = [t.get_name() for t in targets]
     t_organisms = [
-        get_ref_map(t)
-            .format_reference_genome_organism_html()
+        get_ref_map(t).format_reference_genome_organism_html()
         if get_ref_map(t) else 'No associated organism'
         for t in targets
     ]
@@ -76,7 +79,7 @@ def display_targets(instance, user, javascript=False,
         else:
             return mark_safe(json.dumps(t_names))
     if categories:
-       return mark_safe(', '.join(t_categories))
+        return mark_safe(', '.join(t_categories))
     elif organisms:
         return mark_safe(', '.join(t_organisms))
     else:
@@ -93,20 +96,38 @@ def organise_by_target(scoresets):
 
 
 @register.assignment_tag
-def visible_children(instance, user):
-    return list(instance.children_for_user(user).order_by('urn'))
+def visible_children(instance, user=None):
+    return filter_visible(instance.children, user=user)
 
 
 @register.assignment_tag
-def filter_visible(instances, user):
-    if instances.first() is None:
+def current_versions(instances, user=None):
+    if instances is None:
+        return []
+    current = {}
+    for i in instances:
+        new = i.get_current_version(user)
+        current[new.urn] = new
+    return sorted(current.values(), key=lambda ss: ss.urn)
+
+
+@register.assignment_tag
+def filter_visible(instances, user=None):
+    if instances is None:
+        return []
+
+    if (not instances) or (not instances.count()):
         return instances
-    klass = instances.first().__class__.__name__.lower()
+
+    if user is None or user_is_anonymous(user):
+        return instances.exclude(private=True)
+
+    klass = instances.first().__class__.__name__
     groups = user.groups.filter(name__iregex=r'{}:\d+-\w+'.format(klass))
-    pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
-    instances = instances.exclude(private=True) | \
-                instances.exclude(private=False).filter(pk__in=set(pks))
-    return instances.order_by('urn')
+    pks = set(int(g.name.split(':')[-1].split('-')[0]) for g in groups)
+    public = instances.exclude(private=True)
+    private_visiable = instances.exclude(private=False).filter(pk__in=set(pks))
+    return (public | private_visiable).distinct().order_by('urn')
 
 
 @register.assignment_tag
@@ -120,6 +141,6 @@ def parent_references(instance):
 
 @register.simple_tag
 def format_urn_name_for_user(instance, user):
-    if instance.private and user in instance.contributors():
+    if instance.private and user in instance.contributors:
         return '{} [Private]'.format(instance.urn)
     return instance.urn

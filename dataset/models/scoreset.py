@@ -202,6 +202,14 @@ class ScoreSet(DatasetModel):
     # Variant related methods
     # ---------------------------------------------------------------------- #
     @property
+    def parent(self):
+        return getattr(self, 'experiment', None)
+
+    @property
+    def children(self):
+        return self.variants.all()
+
+    @property
     def has_variants(self):
         return hasattr(self, 'variants') and self.variants.count() > 0
 
@@ -348,7 +356,7 @@ class ScoreSet(DatasetModel):
         public_version = getattr(self, public_attr)
         if user is None or version is None:
             return public_version
-        elif version.private and user in version.contributors():
+        elif version.private and user in version.contributors:
             return version
         else:
             return public_version
@@ -406,7 +414,8 @@ class ScoreSet(DatasetModel):
             return msg
         
         return 'An error occured during processing. Please contact support.'
-    
+
+
 # --------------------------------------------------------------------------- #
 #                               Post Save
 # --------------------------------------------------------------------------- #

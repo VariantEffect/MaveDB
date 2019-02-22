@@ -130,8 +130,8 @@ class TestDatasetListViewSet(TestCase):
         self.client.login(
             username=self.user.username, password=self.user.password)
     
-    @mock.patch('dataset.models.base.DatasetModel.viewable_instances_for_user',
-                side_effect=lambda user: experimentset.ExperimentSet.objects.none())
+    @mock.patch('api.views.filter_visible',
+                side_effect=lambda instances, user: experimentset.ExperimentSet.objects.none())
     def test_get_qs_calls_viewable_instances_for_user_with_authed_user(self, patch):
         request = self.factory.get(
             '/api/experimentsets/',
@@ -139,7 +139,7 @@ class TestDatasetListViewSet(TestCase):
         )
         request.user = self.user
         views.ExperimentSetViewset.as_view({'get': 'list'})(request)
-        patch.assert_called_with(*(self.user,))
+        self.assertEqual(self.user, patch.call_args[1]['user'])
         
     @mock.patch('api.views.check_permission', side_effect=lambda instance, user: instance)
     def test_get_object_calls_check_perm_with_instance_and_user(self, patch):
@@ -149,7 +149,8 @@ class TestDatasetListViewSet(TestCase):
             HTTP_AUTHORIZATION=None
         )
         request.user = self.user
-        views.ExperimentSetViewset.as_view({'get': 'retrieve'})(request, urn=i.urn)
+        views.ExperimentSetViewset.as_view(
+            {'get': 'retrieve'})(request, urn=i.urn)
         patch.assert_called_with(*(i, self.user,))
         
     @mock.patch('api.views.check_permission')

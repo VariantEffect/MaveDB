@@ -91,6 +91,8 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
         # by default a new experimentset is created with the current user
         # as it's administrator.
         experiment.add_administrators(self.request.user)
+        # assign_superusers_as_admin(experiment)
+
         experiment.set_created_by(self.request.user, propagate=False)
         experiment.set_modified_by(self.request.user, propagate=False)
         experiment.save(save_parents=False)

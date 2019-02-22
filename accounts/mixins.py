@@ -1,25 +1,23 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db.models import QuerySet
 
 from .permissions import (
     GroupTypes,
-    user_is_anonymous,
     assign_user_as_instance_viewer,
     assign_user_as_instance_admin,
     assign_user_as_instance_editor,
     remove_user_as_instance_admin,
     remove_user_as_instance_editor,
     remove_user_as_instance_viewer,
+    get_admin_group_name_for_instance,
+    get_editor_group_name_for_instance,
+    get_viewer_group_name_for_instance,
 )
 
 
 def filter_anon(qs):
     """filter anon users from a query."""
-    if isinstance(qs, (list, set)):
-        return [u for u in qs if not user_is_anonymous(u)]
-    else:
-        users = [u.pk for u in qs if not user_is_anonymous(u)]
-        return User.objects.filter(pk__in=users)
+    return qs.exclude(username__iexact="AnonymousUser")
 
 
 def _add_users(instance, users, group):
@@ -70,6 +68,19 @@ class GroupPermissionMixin(object):
     allows access to the users assigned to each group for a particular
     instance.
     """
+    @property
+    def admin_group_name(self):
+        return get_admin_group_name_for_instance(self)
+
+    @property
+    def editor_group_name(self):
+        return get_editor_group_name_for_instance(self)
+
+    @property
+    def viewer_group_name(self):
+        return get_viewer_group_name_for_instance(self)
+
+    @property
     def administrators(self):
         """
         Returns a :class:`QuerySet` of administrators for an instance.
@@ -80,11 +91,42 @@ class GroupPermissionMixin(object):
             A query set instance of users that have 'edit', 'view' and
             'manage' permissions.
         """
-        return User.objects.filter(
-            groups__name__startswith='{}:{}-{}'.format(
-                self.__class__.__name__.lower(), self.pk, GroupTypes.ADMIN
-        )).distinct()
-        
+        groups = Group.objects.filter(name=self.admin_group_name)
+        if not groups.count():
+            return User.objects.none()
+        return groups.first().user_set.all()
+
+    @property
+    def editors(self):
+        """
+        Returns a :class:`QuerySet` of users than can edit this instance.
+
+        Returns
+        -------
+        :class:`QuerySet`
+            A query set instance of users that have 'edit' permissions.
+        """
+        groups = Group.objects.filter(name=self.editor_group_name)
+        if not groups.count():
+            return User.objects.none()
+        return groups.first().user_set.all()
+
+    @property
+    def viewers(self):
+        """
+        Returns a :class:`QuerySet` of viewers for an instance.
+
+        Returns
+        -------
+        :class:`QuerySet`
+            A query set instance of users that only have the 'view' permission.
+        """
+        groups = Group.objects.filter(name=self.viewer_group_name)
+        if not groups.count():
+            return User.objects.none()
+        return groups.first().user_set.all()
+
+    @property
     def contributors(self):
         """
         Returns a :class:`QuerySet` of contributors for an instance.
@@ -95,58 +137,7 @@ class GroupPermissionMixin(object):
             A query set instance of users that have both 'edit' and
             'view' permissions.
         """
-        return User.objects.filter(
-            groups__name__startswith='{}:{}'.format(
-                self.__class__.__name__.lower(), self.pk
-        )).distinct()
-
-    def editors(self):
-        """
-        Returns a :class:`QuerySet` of users than can edit this instance.
-
-        Returns
-        -------
-        :class:`QuerySet`
-            A query set instance of users that have 'edit' permissions.
-        """
-        return User.objects.filter(
-            groups__name__startswith='{}:{}-{}'.format(
-                self.__class__.__name__.lower(), self.pk, GroupTypes.EDITOR
-        )).distinct()
-
-    def viewers(self):
-        """
-        Returns a :class:`QuerySet` of viewers for an instance.
-
-        Returns
-        -------
-        :class:`QuerySet`
-            A query set instance of users that only have the 'view' permission.
-        """
-        return User.objects.filter(
-            groups__name__startswith='{}:{}-{}'.format(
-                self.__class__.__name__.lower(), self.pk, GroupTypes.VIEWER
-        )).distinct()
-
-    def users_with_manage_permission(self):
-        """
-        Returns all users with `dataset.can_manage` permission for
-        this instance.
-        """
-        return self.administrators()
-
-    def users_with_edit_permission(self):
-        """
-        Returns all users with `dataset.can_edit` permission for this instance.
-        """
-        return self.editors().union(self.administrators())
-
-    def users_with_view_permission(self):
-        """
-        Returns all users with `dataset.can_view` permission for this instance.
-        """
-        return self.administrators().union(
-            self.editors()).union(self.viewers())
+        return (self.administrators | self.editors | self.viewers).distinct()
 
     def add_administrators(self, users):
         """

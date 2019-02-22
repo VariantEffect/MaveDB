@@ -1,6 +1,5 @@
 import datetime
 
-from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
@@ -21,18 +20,6 @@ from dataset import constants
 
 
 User = get_user_model()
-child_attr_map = {
-    'ExperimentSet': ('experiments', 'Experiment', 'dataset'),
-    'Experiment': ('scoresets', 'ScoreSet', 'dataset'),
-    'ScoreSet': ('variants', 'Variant', 'variant'),
-    'Variant': (None, None, None)
-}
-parent_attr_map = {
-    'ExperimentSet': None,
-    'Experiment': 'experimentset',
-    'ScoreSet': 'experiment',
-    'Variant': 'scoreset'
-}
 
 
 class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
@@ -320,49 +307,15 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         elif not self.parent.private:
             return self.parent
         elif user and self.parent.private and \
-                user in self.parent.contributors():
+                user in self.parent.contributors:
             return self.parent
         else:
             return None
 
-    def children_for_user(self, user=None):
-        if not user:
-            return self.children.filter(private=False)
-        else:
-            _, model_name, _= child_attr_map[self.__class__.__name__]
-            if model_name is None:
-                return []
-            groups = user.groups.filter(name__startswith=model_name.lower())
-            pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
-            return self.children.exclude(private=True) | \
-                   self.children.exclude(private=False).filter(pk__in=set(pks))
-
     @property
     def parent(self):
-        attr = parent_attr_map[self.__class__.__name__]
-        if attr is not None and hasattr(self, attr):
-            return getattr(self, attr)
-        else:
-            return None
+        return None
         
     @property
     def children(self):
-        attr, model_name, app_label = child_attr_map[self.__class__.__name__]
-        if hasattr(self, attr):
-            return getattr(self, attr).order_by('urn')
-        else:
-            if model_name is None:
-                return None
-            else:
-                model = apps.get_model(app_label, model_name=model_name)
-                return model.objects.none()
-    
-    @classmethod
-    def viewable_instances_for_user(cls, user=None):
-        if not user:
-            return cls.objects.filter(private=False)
-        pks = [
-            i.pk for i in cls.objects.all()
-            if (not i.private) or (i.private and user in i.contributors())
-        ]
-        return cls.objects.filter(pk__in=set(pks))
+        return None

@@ -7,6 +7,7 @@ from django.db import transaction
 from accounts.factories import UserFactory
 
 from dataset import models
+from dataset.templatetags.dataset_tags import visible_children
 from dataset.factories import ExperimentSetFactory, ScoreSetFactory, \
     ExperimentFactory
 
@@ -110,7 +111,7 @@ class TestDatasetModel(TestCase):
         public_instance.private = False
         public_instance.save()
         
-        result = private_instance.experimentset.children_for_user(user)
+        result = visible_children(private_instance.experimentset, user)
         self.assertNotIn(private_instance, result)
         self.assertIn(public_instance, result)
         
@@ -124,61 +125,22 @@ class TestDatasetModel(TestCase):
         public_instance.private = False
         public_instance.save()
         
-        result = private_instance.experimentset.children_for_user(user)
+        result = visible_children(private_instance.experimentset, user)
         self.assertIn(private_instance, result)
         self.assertIn(public_instance, result)
         
     def test_children_for_exclude_private_user_is_none(self):
         private_instance = ExperimentFactory()
-        
+
         public_instance = ExperimentFactory(
             experimentset=private_instance.experimentset)
         public_instance.private = False
         public_instance.save()
-        
-        result = private_instance.experimentset.children_for_user(None)
-        self.assertNotIn(private_instance, result)
-        self.assertIn(public_instance, result)
-        
-    def test_viewable_for_user_includes_private_when_contributor(self):
-        user = UserFactory()
-        
-        private_instance = ExperimentSetFactory()
-        private_instance.add_viewers(user)
-        
-        public_instance = ExperimentSetFactory()
-        public_instance.private = False
-        public_instance.save()
-    
-        result = models.experimentset\
-            .ExperimentSet.viewable_instances_for_user(user)
-        self.assertIn(private_instance, result)
-        self.assertIn(public_instance, result)
 
-    def test_viewable_for_user_excludes_private_when_not_contributor(self):
-        user = UserFactory()
-        
-        private_instance = ExperimentSetFactory()
-        public_instance = ExperimentSetFactory()
-        public_instance.private = False
-        public_instance.save()
-    
-        result = models.experimentset\
-            .ExperimentSet.viewable_instances_for_user(user)
+        result = visible_children(private_instance.experimentset, None)
         self.assertNotIn(private_instance, result)
         self.assertIn(public_instance, result)
 
-    def test_viewable_for_user_excludes_private_user_is_none(self):
-        private_instance = ExperimentSetFactory()
-        public_instance = ExperimentSetFactory()
-        public_instance.private = False
-        public_instance.save()
-    
-        result = models.experimentset \
-            .ExperimentSet.viewable_instances_for_user(None)
-        self.assertNotIn(private_instance, result)
-        self.assertIn(public_instance, result)
-    
     def test_parent_for_user_none_if_parent_is_none(self):
         instance = ExperimentSetFactory()
         self.assertIsNone(instance.parent_for_user())

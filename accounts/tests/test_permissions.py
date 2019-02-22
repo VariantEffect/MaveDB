@@ -3,9 +3,10 @@ import factory
 from django.db.models import signals
 from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from dataset.models.experimentset import ExperimentSet
+from dataset.models.experiment import Experiment
 
 from dataset import factories as ds_factories
 from variant import factories as v_factories
@@ -55,8 +56,10 @@ class UtilitiesTest(TestCase):
                 self.exps.class_name(), self.exps.pk))
         
     def test_user_is_anon(self):
-        self.assertTrue(permissions.user_is_anonymous(AnonymousUser()))
-        self.assertFalse(permissions.user_is_anonymous(factories.UserFactory()))
+        self.assertTrue(
+            permissions.user_is_anonymous(AnonymousUser()))
+        self.assertFalse(
+            permissions.user_is_anonymous(factories.UserFactory()))
         
     def test_valid_group(self):
         self.assertTrue(
@@ -70,37 +73,27 @@ class UtilitiesTest(TestCase):
     
     def test_user_is_admin_for_instance(self):
         self.exps.add_administrators(self.user1)
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(self.user1, self.exps))
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(self.user2, self.exps))
-        
+        self.assertIn(self.user1, self.exps.administrators)
+        self.assertNotIn(self.user2, self.exps.administrators)
+
     def test_user_is_editor_for_instance(self):
         self.exps.add_editors(self.user1)
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(self.user1, self.exps))
-        self.assertFalse(
-            permissions.user_is_editor_for_instance(self.user2, self.exps))
+        self.assertIn(self.user1, self.exps.editors)
+        self.assertNotIn(self.user2, self.exps.editors)
         
     def test_user_is_viewer_for_instance(self):
         self.exps.add_viewers(self.user1)
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(self.user1, self.exps))
-        self.assertFalse(
-            permissions.user_is_viewer_for_instance(self.user2, self.exps))
+        self.assertIn(self.user1, self.exps.viewers)
+        self.assertNotIn(self.user2, self.exps.viewers)
     
     def test_user_is_contributor_for_instance(self):
         self.exps.add_administrators(self.user1)
         self.exps.add_editors(self.user2)
         self.exps.add_viewers(self.user3)
-        self.assertTrue(
-            permissions.user_is_contributor_for_instance(self.user1, self.exps))
-        self.assertTrue(
-            permissions.user_is_contributor_for_instance(self.user2, self.exps))
-        self.assertTrue(
-            permissions.user_is_contributor_for_instance(self.user3, self.exps))
-        self.assertFalse(
-            permissions.user_is_contributor_for_instance(self.user4, self.exps))
+        self.assertIn(self.user1, self.exps.contributors)
+        self.assertIn(self.user2, self.exps.contributors)
+        self.assertIn(self.user3, self.exps.contributors)
+        self.assertNotIn(self.user4, self.exps.contributors)
     
     def test_instances_for_user_returns_instance_user_if_admin_for(self):
         self.exps.add_administrators(self.user1)
@@ -125,40 +118,13 @@ class UtilitiesTest(TestCase):
             self.user1, ExperimentSet, permissions.GroupTypes.VIEWER)
         self.assertEqual(result.count(), 1)
         self.assertIn(self.exps, result)
-        
-    def test_typeerror_unrecognised_model_instance_for_user(self):
-        with self.assertRaises(TypeError):
-            permissions.instances_for_user_with_group_permission(
-                self.user1, object, permissions.GroupTypes.ADMIN
-            )
-            
-    def test_valueerror_unrecognised_group_instance_for_user(self):
-        with self.assertRaises(ValueError):
-            permissions.instances_for_user_with_group_permission(
-                self.user1, ExperimentSet, 'not a group'
-            )
-            
+
     def test_anon_user_returns_empty_qs(self):
         result = permissions.instances_for_user_with_group_permission(
             AnonymousUser(), ExperimentSet, permissions.GroupTypes.ADMIN
         )
         self.assertEqual(result.count(), 0)
         
-    def test_contributors_for_instance_returns_users_in_any_group(self):
-        self.exps.add_administrators(self.user1)
-        self.exps.add_editors(self.user2)
-        self.exps.add_viewers(self.user3)
-        result = permissions.contributors_for_instance(self.exps)
-        self.assertEqual(result.count(), 3)
-        self.assertIn(self.user1, result)
-        self.assertIn(self.user2, result)
-        self.assertIn(self.user3, result)
-        
-    def test_typeerror_invalid_instance_contributors_for_instance(self):
-        with self.assertRaises(TypeError):
-            permissions.contributors_for_instance(object)
-
-
 
 class GroupConstructionTest(TestCase):
     # Mute pre/post save the signals so we don't create the groups
@@ -209,7 +175,8 @@ class GroupDeletionTest(TestCase):
 
     def test_can_delete_admin_group_for_instance(self):
         self.assertEqual(Group.objects.count(), 3)
-        group_name = permissions.delete_admin_group_for_instance(self.instance)
+        group_name = permissions.delete_admin_group_for_instance(
+            self.instance)
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
@@ -220,7 +187,8 @@ class GroupDeletionTest(TestCase):
 
     def test_can_delete_contributor_group_for_instance(self):
         self.assertEqual(Group.objects.count(), 3)
-        group_name = permissions.delete_editor_group_for_instance(self.instance)
+        group_name = permissions.delete_editor_group_for_instance(
+            self.instance)
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
@@ -231,7 +199,8 @@ class GroupDeletionTest(TestCase):
 
     def test_can_delete_viewer_group_for_instance(self):
         self.assertEqual(Group.objects.count(), 3)
-        group_name = permissions.delete_viewer_group_for_instance(self.instance)
+        group_name = permissions.delete_viewer_group_for_instance(
+            self.instance)
         self.assertEqual(Group.objects.count(), 2)
         self.assertEqual(
             group_name,
@@ -247,13 +216,12 @@ class GroupDeletionTest(TestCase):
 
 
 class UserAssignmentToInstanceGroupTest(TestCase):
+
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def setUp(self):
         self.instance_1 = ExperimentSet.objects.create()
         self.instance_2 = ExperimentSet.objects.create()
-
-    def user(self):
-        return User.objects.create(username="bob", password="pass")
+        self.user = factories.UserFactory()
 
     def type_error_add_non_user(self):
         with self.assertRaises(TypeError):
@@ -278,7 +246,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
                 User.objects, self.instance_1)
     
     def test_permissions_removed_when_deleting_group(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_admin(user, self.instance_1)
         can_manage = user.has_perm(
             permissions.PermissionTypes.CAN_MANAGE, self.instance_1)
@@ -302,7 +270,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertFalse(can_view)
 
     def test_correct_permissions_assigned_to_admin_group(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_admin(user, self.instance_1)
         can_manage = user.has_perm(
             permissions.PermissionTypes.CAN_MANAGE, self.instance_1)
@@ -315,7 +283,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertTrue(can_view)
 
     def test_admin_permissions_removed_when_removing_user(self):
-        user = self.user()
+        user = self.user
         permissions.remove_user_as_instance_admin(user, self.instance_1)
         can_manage = user.has_perm(
             permissions.PermissionTypes.CAN_MANAGE, self.instance_1)
@@ -328,7 +296,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertFalse(can_view)
 
     def test_correct_permissions_assigned_to_contributor_group(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_editor(user, self.instance_1)
         can_manage = user.has_perm(
             permissions.PermissionTypes.CAN_MANAGE, self.instance_1)
@@ -341,7 +309,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertTrue(can_view)
 
     def test_contributor_permissions_removed_when_removing_user(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_editor(user, self.instance_1)
         permissions.remove_user_as_instance_editor(user, self.instance_1)
         can_manage = user.has_perm(
@@ -355,7 +323,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertFalse(can_view)
 
     def test_correct_permissions_assigned_to_viewer_group(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_viewer(user, self.instance_1)
         can_manage = user.has_perm(
             permissions.PermissionTypes.CAN_MANAGE, self.instance_1)
@@ -368,7 +336,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertTrue(can_view)
 
     def test_viewer_permissions_removed_when_removing_user(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_viewer(user, self.instance_1)
         permissions.remove_user_as_instance_viewer(user, self.instance_1)
         can_manage = user.has_perm(
@@ -385,40 +353,26 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         user = AnonymousUser()
         permissions.assign_user_as_instance_admin(user, self.instance_1)
         self.assertEqual(Group.objects.count(), 0)
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
-
-    def test_assignment_is_disjoint_between_different_instances(self):
-        user = self.user()
-        permissions.assign_user_as_instance_admin(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(user, self.instance_2))
+        self.assertNotIn(user, self.instance_1.administrators)
 
     def test_default_user_not_does_not_belong_to_any_groups(self):
-        user = self.user()
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
-        self.assertFalse(
-            permissions.user_is_contributor_for_instance(user, self.instance_1))
-        self.assertFalse(
-            permissions.user_is_viewer_for_instance(user, self.instance_1))
+        user = self.user
+        self.assertNotIn(user, self.instance_1.administrators)
+        self.assertNotIn(user, self.instance_1.contributors)
+        self.assertNotIn(user, self.instance_1.editors)
+        self.assertNotIn(user, self.instance_1.viewers)
 
     def test_user_can_only_belong_to_one_group(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_admin(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
+        self.assertIn(user, self.instance_1.administrators)
 
         permissions.assign_user_as_instance_viewer(user, self.instance_1)
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(user, self.instance_1))
+        self.assertNotIn(user, self.instance_1.administrators)
+        self.assertIn(user, self.instance_1.viewers)
 
     def test_changing_user_groups_updates_permissions(self):
-        user = self.user()
+        user = self.user
         permissions.assign_user_as_instance_admin(user, self.instance_1)
         can_manage = user.has_perm(
             permissions.PermissionTypes.CAN_MANAGE, self.instance_1)
@@ -441,11 +395,10 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         self.assertFalse(can_edit)
         self.assertTrue(can_view)
 
-    def test_can_assign_user_as_admin(self):
-        user = self.user()
+    def test_administrators_get_all_permissions(self):
+        user = self.user
         permissions.assign_user_as_instance_admin(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
+        self.assertIn(user, self.instance_1.administrators)
         self.assertTrue(
             user.has_perm(
                 permissions.PermissionTypes.CAN_MANAGE, self.instance_1))
@@ -456,54 +409,87 @@ class UserAssignmentToInstanceGroupTest(TestCase):
             user.has_perm(
                 permissions.PermissionTypes.CAN_VIEW, self.instance_1))
 
-    def test_can_assign_user_as_editor(self):
-        user = self.user()
+    def test_editors_get_edit_and_view_perms(self):
+        user = self.user
         permissions.assign_user_as_instance_editor(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(user, self.instance_1))
-        self.assertTrue(
-            user.has_perm(permissions.PermissionTypes.CAN_EDIT, self.instance_1))
-        self.assertTrue(
-            user.has_perm(permissions.PermissionTypes.CAN_VIEW, self.instance_1))
-
-    def test_can_assign_user_as_viewer(self):
-        user = self.user()
-        permissions.assign_user_as_instance_viewer(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(user, self.instance_1))
-        self.assertTrue(
-            user.has_perm(permissions.PermissionTypes.CAN_VIEW, self.instance_1))
-
-    def test_can_remove_user_from_admin_group(self):
-        user = self.user()
-        permissions.assign_user_as_instance_admin(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
-        permissions.remove_user_as_instance_admin(user, self.instance_1)
+        self.assertIn(user, self.instance_1.editors)
         self.assertFalse(
-            permissions.user_is_admin_for_instance(user, self.instance_1))
-
-    def test_can_remove_user_from_editor_group(self):
-        user = self.user()
-        permissions.assign_user_as_instance_editor(user, self.instance_1)
+            user.has_perm(
+                permissions.PermissionTypes.CAN_MANAGE, self.instance_1))
         self.assertTrue(
-            permissions.user_is_editor_for_instance(user, self.instance_1))
+            user.has_perm(
+                permissions.PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertTrue(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_VIEW, self.instance_1))
+
+    def test_viewers_get_view_perm(self):
+        user = self.user
+        permissions.assign_user_as_instance_viewer(user, self.instance_1)
+        self.assertIn(user, self.instance_1.viewers)
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_MANAGE, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertTrue(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_VIEW, self.instance_1))
+
+    def test_removing_admin_removes_permissions(self):
+        user = self.user
+        permissions.assign_user_as_instance_admin(user, self.instance_1)
+        self.assertIn(user, self.instance_1.administrators)
+
+        permissions.remove_user_as_instance_admin(user, self.instance_1)
+        self.assertNotIn(user, self.instance_1.administrators)
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_MANAGE, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_VIEW, self.instance_1))
+
+    def test_removing_editor_removes_permissions(self):
+        user = self.user
+        permissions.assign_user_as_instance_editor(user, self.instance_1)
+        self.assertIn(user, self.instance_1.editors)
 
         permissions.remove_user_as_instance_editor(user, self.instance_1)
+        self.assertNotIn(user, self.instance_1.editors)
         self.assertFalse(
-            permissions.user_is_editor_for_instance(user, self.instance_1))
+            user.has_perm(
+                permissions.PermissionTypes.CAN_MANAGE, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_VIEW, self.instance_1))
 
-    def test_can_remove_user_from_viewer_group(self):
-        user = self.user()
+    def test_removing_viewer_removes_permissions(self):
+        user = self.user
         permissions.assign_user_as_instance_viewer(user, self.instance_1)
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(user, self.instance_1))
-        permissions.remove_user_as_instance_viewer(user, self.instance_1)
-        self.assertFalse(
-            permissions.user_is_viewer_for_instance(user, self.instance_1))
+        self.assertIn(user, self.instance_1.viewers)
 
-    def test_adding_user_to_group_twice_does_nothing(self):
-        user = self.user()
+        permissions.remove_user_as_instance_viewer(user, self.instance_1)
+        self.assertNotIn(user, self.instance_1.viewers)
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_MANAGE, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_EDIT, self.instance_1))
+        self.assertFalse(
+            user.has_perm(
+                permissions.PermissionTypes.CAN_VIEW, self.instance_1))
+
+    def test_adding_user_to_group_is_idempotent(self):
+        user = self.user
         permissions.assign_user_as_instance_viewer(user, self.instance_1)
         permissions.assign_user_as_instance_viewer(user, self.instance_1)
         self.assertEqual(user.groups.count(), 1)
@@ -514,16 +500,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         permissions.assign_user_as_instance_admin(bob, self.instance_1)
         permissions.assign_user_as_instance_admin(alice, self.instance_1)
 
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(alice, self.instance_1))
+        self.assertIn(bob, self.instance_1.administrators)
+        self.assertIn(alice, self.instance_1.administrators)
 
         permissions.update_admin_list_for_instance([], self.instance_1)
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(bob, self.instance_1))
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(alice, self.instance_1))
+        self.assertNotIn(bob, self.instance_1.administrators)
+        self.assertNotIn(alice, self.instance_1.administrators)
 
     def test_can_update_admin_group_with_user_list(self):
         bob = User.objects.create(username="bob")
@@ -531,16 +513,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         permissions.assign_user_as_instance_admin(bob, self.instance_1)
         permissions.assign_user_as_instance_admin(alice, self.instance_1)
 
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(alice, self.instance_1))
+        self.assertIn(bob, self.instance_1.administrators)
+        self.assertIn(alice, self.instance_1.administrators)
 
         permissions.update_admin_list_for_instance([alice], self.instance_1)
-        self.assertFalse(
-            permissions.user_is_admin_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_admin_for_instance(alice, self.instance_1))
+        self.assertNotIn(bob, self.instance_1.administrators)
+        self.assertIn(alice, self.instance_1.administrators)
 
     def test_update_admin_editor_empty_list_removes_all(self):
         bob = User.objects.create(username="bob")
@@ -548,16 +526,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         permissions.assign_user_as_instance_editor(bob, self.instance_1)
         permissions.assign_user_as_instance_editor(alice, self.instance_1)
 
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(alice, self.instance_1))
+        self.assertIn(bob, self.instance_1.editors)
+        self.assertIn(alice, self.instance_1.editors)
 
         permissions.update_editor_list_for_instance([], self.instance_1)
-        self.assertFalse(
-            permissions.user_is_editor_for_instance(bob, self.instance_1))
-        self.assertFalse(
-            permissions.user_is_editor_for_instance(alice, self.instance_1))
+        self.assertNotIn(bob, self.instance_1.editors)
+        self.assertNotIn(alice, self.instance_1.editors)
 
     def test_can_update_editor_group_with_user_list(self):
         bob = User.objects.create(username="bob")
@@ -565,16 +539,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         permissions.assign_user_as_instance_editor(bob, self.instance_1)
         permissions.assign_user_as_instance_editor(alice, self.instance_1)
 
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(alice, self.instance_1))
+        self.assertIn(bob, self.instance_1.editors)
+        self.assertIn(alice, self.instance_1.editors)
 
         permissions.update_editor_list_for_instance([alice], self.instance_1)
-        self.assertFalse(
-            permissions.user_is_editor_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_editor_for_instance(alice, self.instance_1))
+        self.assertNotIn(bob, self.instance_1.editors)
+        self.assertIn(alice, self.instance_1.editors)
 
     def test_update_viewer_group_empty_list_removes_all(self):
         bob = User.objects.create(username="bob")
@@ -582,16 +552,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         permissions.assign_user_as_instance_viewer(bob, self.instance_1)
         permissions.assign_user_as_instance_viewer(alice, self.instance_1)
 
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(alice, self.instance_1))
+        self.assertIn(bob, self.instance_1.viewers)
+        self.assertIn(alice, self.instance_1.viewers)
 
         permissions.update_viewer_list_for_instance([], self.instance_1)
-        self.assertFalse(
-            permissions.user_is_viewer_for_instance(bob, self.instance_1))
-        self.assertFalse(
-            permissions.user_is_viewer_for_instance(alice, self.instance_1))
+        self.assertNotIn(bob, self.instance_1.viewers)
+        self.assertNotIn(alice, self.instance_1.viewers)
 
     def test_can_update_viewer_group_with_user_list(self):
         bob = User.objects.create(username="bob")
@@ -599,16 +565,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         permissions.assign_user_as_instance_viewer(bob, self.instance_1)
         permissions.assign_user_as_instance_viewer(alice, self.instance_1)
 
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(alice, self.instance_1))
+        self.assertIn(bob, self.instance_1.viewers)
+        self.assertIn(alice, self.instance_1.viewers)
 
         permissions.update_viewer_list_for_instance([alice], self.instance_1)
-        self.assertFalse(
-            permissions.user_is_viewer_for_instance(bob, self.instance_1))
-        self.assertTrue(
-            permissions.user_is_viewer_for_instance(alice, self.instance_1))
+        self.assertNotIn(bob, self.instance_1.viewers)
+        self.assertIn(alice, self.instance_1.viewers)
 
     def test_can_get_instances_for_user_in_admin_group(self):
         bob = User.objects.create(username="bob")
@@ -648,64 +610,78 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         )
         self.assertEqual(len(anons), 0)
 
-    def test_error_incorrect_model_supplied(self):
-        bob = User.objects.create(username="bob")
-        with self.assertRaises(TypeError):
-            permissions.instances_for_user_with_group_permission(
-                user=bob,
-                model=User,
-                group_type=permissions.GroupTypes.ADMIN
-            )
-
-    def test_error_incorrect_group_type_supplied(self):
-        bob = User.objects.create(username="bob")
-        with self.assertRaises(ValueError):
-            permissions.instances_for_user_with_group_permission(
-                user=bob,
-                model=ExperimentSet,
-                group_type="InvalidGroup"
-            )
-
-    def test_can_get_contributors_for_instance(self):
-        alice = User.objects.create(username="alice")
-        bob = User.objects.create(username="bob")
-        farva = User.objects.create(username="farva")
-
-        permissions.assign_user_as_instance_admin(alice, self.instance_1)
-        permissions.assign_user_as_instance_editor(farva, self.instance_1)
-        permissions.assign_user_as_instance_viewer(bob, self.instance_1)
-
-        contributors = permissions.contributors_for_instance(self.instance_1)
-
-        self.assertIn(alice, contributors)
-        self.assertIn(farva, contributors)
-        self.assertIn(bob, contributors)
-
     def test_renaming_group_does_not_alter_permissions(self):
-        user = self.user()
+        user = self.user
         instance = ds_factories.ScoreSetFactory()
         permissions.assign_user_as_instance_admin(user, instance)
 
         # Test with old name
-        can_manage = user.has_perm(permissions.PermissionTypes.CAN_MANAGE, instance)
-        can_edit = user.has_perm(permissions.PermissionTypes.CAN_EDIT, instance)
-        can_view = user.has_perm(permissions.PermissionTypes.CAN_VIEW, instance)
+        can_manage = user.has_perm(
+            permissions.PermissionTypes.CAN_MANAGE, instance)
+        can_edit = user.has_perm(
+            permissions.PermissionTypes.CAN_EDIT, instance)
+        can_view = user.has_perm(
+            permissions.PermissionTypes.CAN_VIEW, instance)
         self.assertTrue(can_manage)
         self.assertTrue(can_edit)
         self.assertTrue(can_view)
 
         old_name = '{}:{}-{}'.format(
-            instance.class_name(), instance.pk, permissions.GroupTypes.ADMIN)
-        new_name = '{}-{}'.format(instance.urn, permissions.GroupTypes.ADMIN)
+            instance.class_name(), instance.pk,
+            permissions.GroupTypes.ADMIN
+        )
+        new_name = '{}-{}'.format(
+            instance.urn, permissions.GroupTypes.ADMIN)
         group = Group.objects.get(name=old_name)
         group.name = new_name
         group.save()
 
         # Test with new name
         instance.refresh_from_db()
-        can_manage = user.has_perm(permissions.PermissionTypes.CAN_MANAGE, instance)
-        can_edit = user.has_perm(permissions.PermissionTypes.CAN_EDIT, instance)
-        can_view = user.has_perm(permissions.PermissionTypes.CAN_VIEW, instance)
+        can_manage = user.has_perm(
+            permissions.PermissionTypes.CAN_MANAGE, instance)
+        can_edit = user.has_perm(
+            permissions.PermissionTypes.CAN_EDIT, instance)
+        can_view = user.has_perm(
+            permissions.PermissionTypes.CAN_VIEW, instance)
         self.assertTrue(can_manage)
         self.assertTrue(can_edit)
         self.assertTrue(can_view)
+
+
+class TestPermissionAreDisjoint(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        Experiment.objects.all().delete()
+        ExperimentSet.objects.all().delete()
+        User.objects.all().delete()
+
+    def tearDown(self):
+        Experiment.objects.all().delete()
+        ExperimentSet.objects.all().delete()
+        User.objects.all().delete()
+
+    def test_assignment_is_disjoint_between_different_instances(self):
+        experiment = ds_factories.ExperimentFactory()
+        experimentset = experiment.experimentset
+        self.assertEqual(experiment.pk, experimentset.pk)
+
+        user = factories.UserFactory()
+        permissions.assign_user_as_instance_admin(user, experiment)
+        self.assertIn(user, experiment.administrators)
+        self.assertNotIn(user, experimentset.administrators)
+
+    def test_instances_for_user_does_not_partial_match_model_names(self):
+        experiment = ds_factories.ExperimentFactory()
+        experimentset = experiment.experimentset
+        self.assertEqual(experiment.pk, experimentset.pk)
+
+        user = factories.UserFactory()
+        permissions.assign_user_as_instance_admin(user, experiment)
+        instances = permissions.instances_for_user_with_group_permission(
+            user=user, model=Experiment,
+            group_type=permissions.GroupTypes.ADMIN
+        )
+        self.assertIn(experiment, instances)
+        self.assertNotIn(experimentset, instances)

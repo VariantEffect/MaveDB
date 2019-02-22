@@ -345,10 +345,12 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         success = self.browser.find_element_by_class_name('success-icon')
         self.assertIsNotNone(success)
         
-        self.assertIn(self.user, scoreset.administrators())
-        self.assertIn(self.user, scoreset.experiment.administrators())
-        self.assertIn(self.user,
-                      scoreset.experiment.experimentset.administrators())
+        self.assertIn(
+            self.user, scoreset.administrators)
+        self.assertIn(
+            self.user, scoreset.experiment.administrators)
+        self.assertIn(
+            self.user, scoreset.experiment.experimentset.administrators)
 
 
 class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):

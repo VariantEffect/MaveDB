@@ -20,7 +20,7 @@
 
 * {
     font-family: 'Raleway', sans-serif;
-    border-radius: 0px !important;
+    /*border-radius: 0px !important;*/
     /* border: 1px solid red !important; */
 }
 
@@ -28,6 +28,13 @@
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
 ;    box-sizing: border-box;
+}
+
+.dropdown-menu .divider {
+    height: 1px;
+    margin: 9px 0;
+    overflow: hidden;
+    background-color: #e5e5e5;
 }
 
 body {
@@ -156,14 +163,14 @@ table {
 
 
 #search-table {
-    border: 2px solid #987cb8;
+    border: 1px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
-    /*overflow-x: scroll;*/
+    overflow-x: scroll;
 }
 
 #counts-table, #scores-table {
-    border: 2px solid #987cb8;
+    border: 1px solid #987cb8;
     padding: 0 0.25px 0.25px 1px;
     display: block;
     min-width: 25% !important;
@@ -172,7 +179,7 @@ table {
 
 .styled-table {
     margin-bottom: 0; 
-    background: whitesmoke;
+    background: #f7f7f7;
 }
 .styled-table th {
     background: #dadff1;
@@ -676,4 +683,12 @@ span.select2-selection.select2-selection--multiple ul.select2-selection__rendere
 }
 .inline-link {
   display: inline-block;
+}
+
+/* Define an animation behavior */
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+.fa-spinner {
+  animation: spinner 1s linear infinite;
 }

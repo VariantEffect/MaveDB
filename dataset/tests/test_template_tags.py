@@ -1,20 +1,36 @@
 import json
 
-from django.test import TestCase, mock
+from django.test import TestCase, mock, TransactionTestCase
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 
 from accounts.factories import UserFactory
 
-from genome.factories import TargetGeneFactory, WildTypeSequenceFactory, \
-    ReferenceGenomeFactory, ReferenceMapFactory
+from genome.factories import (
+    TargetGeneFactory,
+    WildTypeSequenceFactory,
+    ReferenceGenomeFactory,
+    ReferenceMapFactory,
+)
 
-from metadata.factories import PubmedIdentifierFactory, GenomeIdentifierFactory
+from metadata.factories import (
+    PubmedIdentifierFactory,
+    GenomeIdentifierFactory,
+)
 
-from ..factories import ExperimentWithScoresetFactory, \
-    ExperimentFactory, ScoreSetFactory
+from ..factories import (
+    ExperimentWithScoresetFactory,
+    ExperimentFactory,
+    ScoreSetFactory,
+)
 from ..models.experiment import Experiment
+from ..models.scoreset import ScoreSet
+from ..models.experimentset import ExperimentSet
 from ..templatetags import dataset_tags
-
 from ..utilities import publish_dataset
+
+
+User = get_user_model()
 
 
 class TestGroupByTarget(TestCase):
@@ -70,6 +86,7 @@ class TestGroupByTarget(TestCase):
             [s.urn for s in result[0][1]],
             [s.urn for s in sorted([s2, s1], key=lambda s: s.urn)]
         )
+
 
 class TestDisplayTargetsTag(TestCase):
     @mock.patch('dataset.templatetags.dataset_tags.visible_children', retun_value=[])
@@ -212,28 +229,112 @@ class TestUrnNameFormatTag(TestCase):
         )
         
         
-class TestFilterVisible(TestCase):
+class TestFilterVisible(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        Experiment.objects.all().delete()
+        ExperimentSet.objects.all().delete()
+        User.objects.all().delete()
+
+    def tearDown(self):
+        Experiment.objects.all().delete()
+        ExperimentSet.objects.all().delete()
+        User.objects.all().delete()
+
+    def test_returns_empty_list_none_passed(self):
+        result = dataset_tags.filter_visible(None)
+        self.assertEqual(result, [])
+
     def test_filters_out_private_if_not_in_contrubtor_list(self):
         user = UserFactory()
-        instance = ExperimentFactory(private=True)
-        self.assertEqual(
-            dataset_tags.filter_visible(Experiment.objects.all(), user).count(),
-            0
-        )
-        
+        ExperimentFactory(private=True)
+        result = dataset_tags.filter_visible(Experiment.objects.all(), user)
+        self.assertEqual(result.count(), 0)
+
+    def test_filters_out_private_anon_user(self):
+        user = AnonymousUser()
+        a = ExperimentFactory(private=True)
+        b = ExperimentFactory(private=False)
+        result = dataset_tags.filter_visible(Experiment.objects.all(), user)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(b, result)
+        self.assertNotIn(a, result)
+
     def test_doesnt_filter_public(self):
         user = UserFactory()
         instance = ExperimentFactory(private=False)
-        self.assertListEqual(
-            [instance, ],
-            list(dataset_tags.filter_visible(Experiment.objects.all(), user)),
-        )
-        
+        result = dataset_tags.filter_visible(Experiment.objects.all(), user)
+        self.assertIn(instance, result)
+
     def test_doesnt_filter_private_if_in_contributor_list(self):
         user = UserFactory()
-        instance = ExperimentFactory(private=True)
-        instance.add_administrators(user)
-        self.assertListEqual(
-            [instance, ],
-            list(dataset_tags.filter_visible(Experiment.objects.all(), user)),
+        instance1 = ExperimentFactory(private=True)
+        instance2 = ExperimentFactory(private=True)
+        instance3 = ExperimentFactory(private=True)
+        instance4 = ExperimentFactory(private=True)
+
+        instance1.add_administrators(user)
+        instance2.add_editors(user)
+        instance3.add_viewers(user)
+
+        result = dataset_tags.filter_visible(Experiment.objects.all(), user)
+        self.assertIn(instance1, result)
+        self.assertIn(instance2, result)
+        self.assertIn(instance3, result)
+        self.assertNotIn(instance4, result)
+
+    def test_doesnt_partial_match_incorrect_class_name(self):
+        user = UserFactory()
+
+        experiment = ExperimentFactory(private=True)
+        experimentset = experiment.experimentset
+        self.assertEqual(experiment.pk, experimentset.pk)
+
+        experiment.add_administrators(user)
+
+        result = dataset_tags.filter_visible(Experiment.objects.all(), user)
+        self.assertEqual(result.count(), 1)
+        self.assertIn(experiment, result)
+
+        result = dataset_tags.filter_visible(ExperimentSet.objects.all(), user)
+        self.assertEqual(result.count(), 0)
+
+
+class TestCurrentVersions(TestCase):
+    def test_returns_empty_list_none_passed(self):
+        result = dataset_tags.current_versions(None)
+        self.assertEqual(result, [])
+
+    def test_keeps_current_public_version(self):
+        instance1 = ScoreSetFactory(private=False)
+        instance2 = ScoreSetFactory(
+            private=False,
+            replaces=instance1,
+            experiment=instance1.parent
         )
+        result = dataset_tags.current_versions([instance1, instance2])
+        self.assertNotIn(instance1, result)
+        self.assertIn(instance2, result)
+
+    @mock.patch.object(ScoreSet, 'get_current_version',
+                       side_effect=lambda x: ScoreSetFactory())
+    def test_calls_get_current_version_with_user(self, patch):
+        user = UserFactory()
+        instance = ScoreSetFactory(private=False)
+        dataset_tags.current_versions([instance, ], user=user)
+        patch.assert_called_with(*(user, ))
+
+    def test_keeps_current_private_version_for_contributor(self):
+        user = UserFactory()
+        instance1 = ScoreSetFactory(private=False)
+        instance2 = ScoreSetFactory(
+            private=True,
+            replaces=instance1,
+            experiment=instance1.parent
+        )
+        instance2.add_viewers(user)
+        result = dataset_tags.current_versions(
+            [instance1, instance2], user=user)
+        self.assertNotIn(instance1, result)
+        self.assertIn(instance2, result)

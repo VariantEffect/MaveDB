@@ -116,13 +116,13 @@ class SelectUsersForm(forms.Form):
             raise ValueError("Unrecognised instance type {}".format(
                 instance.__class__.__name__
             ))
-        
+
         self.instance = instance
         if instance is not None:
             kwargs["initial"] = {
-                "administrators": [u.pk for u in instance.administrators()],
-                "editors": [u.pk for u in instance.editors()],
-                "viewers": [u.pk for u in instance.viewers()],
+                "administrators": [u.pk for u in instance.administrators],
+                "editors": [u.pk for u in instance.editors],
+                "viewers": [u.pk for u in instance.viewers],
             }
 
         super(SelectUsersForm, self).__init__(*args, **kwargs)
@@ -186,9 +186,9 @@ class SelectUsersForm(forms.Form):
         if not self.is_valid():
             raise ValueError("Cannot process an invalid management form.")
         
-        existing_administrators = self.instance.administrators()
-        existing_editors = self.instance.editors()
-        existing_viewers = self.instance.viewers()
+        existing_administrators = self.instance.administrators
+        existing_editors = self.instance.editors
+        existing_viewers = self.instance.viewers
         existing_users = {}
         
         for user in existing_administrators:
@@ -225,7 +225,7 @@ class SelectUsersForm(forms.Form):
         for user in list(new_administrators) + list(new_editors) + list(new_viewers):
             instance = self.instance
             while instance.parent:
-                if user not in instance.parent.contributors():
+                if user not in instance.parent.contributors:
                     instance.parent.add_viewers(user)
                     user.profile.notify_user_group_change(
                         instance=instance.parent,

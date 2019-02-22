@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 
 from guardian.shortcuts import assign_perm
-from guardian.conf.settings import ANONYMOUS_USER_NAME
+
 
 User = get_user_model()
 
@@ -83,7 +83,8 @@ def user_is_anonymous(user):
     if not hasattr(user, 'username'):
         return
     return isinstance(user, AnonymousUser) or \
-        user.username == ANONYMOUS_USER_NAME
+        str(user) == str(AnonymousUser) or \
+        str(user).lower() == "AnonymousUser".lower()
 
 
 def get_admin_group_name_for_instance(instance):
@@ -104,43 +105,6 @@ def get_viewer_group_name_for_instance(instance):
         return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.VIEWER)
 
 
-def user_is_admin_for_instance(user, instance):
-    group_name = get_admin_group_name_for_instance(instance)
-    if group_name is not None:
-        return group_name in set([g.name for g in user.groups.all()])
-    else:
-        return False
-
-
-def user_is_editor_for_instance(user, instance):
-    group_name = get_editor_group_name_for_instance(instance)
-    if group_name is not None:
-        return group_name in set([g.name for g in user.groups.all()])
-    else:
-        return False
-
-
-def user_is_viewer_for_instance(user, instance):
-    group_name = get_viewer_group_name_for_instance(instance)
-    if group_name is not None:
-        return group_name in set([g.name for g in user.groups.all()])
-    else:
-        return False
-
-
-def user_is_contributor_for_instance(user, instance):
-    return user_is_admin_for_instance(user, instance) or \
-           user_is_editor_for_instance(user, instance) or \
-           user_is_viewer_for_instance(user, instance)
-
-
-GROUP_TYPE_CALLBACK = {
-    GroupTypes.ADMIN: user_is_admin_for_instance,
-    GroupTypes.EDITOR: user_is_editor_for_instance,
-    GroupTypes.VIEWER: user_is_viewer_for_instance,
-}
-
-
 def instances_for_user_with_group_permission(user, model, group_type):
     """
     Return all instances that the user is in `group_type` for.
@@ -149,7 +113,7 @@ def instances_for_user_with_group_permission(user, model, group_type):
     ----------
     user : `User`
         The user to retrieve instances for.
-    model : `class`
+    model : `DatasetModel`
         The instance model class.
     group_type : `str`
         The group, which is either admins, editors or viewers.
@@ -158,41 +122,12 @@ def instances_for_user_with_group_permission(user, model, group_type):
     -------
     `QuerySet`
     """
-    from dataset.models.experimentset import ExperimentSet
-    from dataset.models.experiment import Experiment
-    from dataset.models.scoreset import ScoreSet
-
     if user_is_anonymous(user):
         return model.objects.none()
-
-    if model == ExperimentSet:
-        instances = ExperimentSet.objects.all()
-    elif model == Experiment:
-        instances = Experiment.objects.all()
-    elif model == ScoreSet:
-        instances = ScoreSet.objects.all()
-    else:
-        raise TypeError("Unrecognised model type {}.".format(model))
-
-    is_in_group = GROUP_TYPE_CALLBACK.get(group_type, None)
-    if is_in_group is None:
-        raise ValueError("Unrecognised group type {}.".format(group_type))
-    
     groups = user.groups.\
         filter(name__iregex=r'{}:\d+-{}'.format(model.__name__, group_type))
-    ids = set(g.name.split(':')[-1].split('-')[0] for g in groups)
-    return instances.filter(id__in=ids)
-
-
-def contributors_for_instance(instance):
-    author_pks = set()
-    if not valid_model_instance(instance):
-        raise TypeError("Invalid type supplied {}".format(type(instance)))
-    users = User.objects.all()
-    for u in users:
-        if user_is_contributor_for_instance(u, instance):
-            author_pks.add(u.pk)
-    return User.objects.filter(pk__in=author_pks)
+    pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
+    return model.objects.filter(pk__in=pks)
 
 
 # Group construction
@@ -286,9 +221,7 @@ def assign_user_as_instance_admin(user, instance):
             "Expected type User, found {}.".format(type(user).__name__))
 
     group_name = get_admin_group_name_for_instance(instance)
-    try:
-        Group.objects.get(name=group_name)
-    except ObjectDoesNotExist:
+    if not Group.objects.filter(name=group_name).count():
         create_admin_group_for_instance(instance)
 
     admin_group, _ = Group.objects.get_or_create(name=group_name)
@@ -307,9 +240,7 @@ def assign_user_as_instance_editor(user, instance):
             "Expected type User, found {}.".format(type(user).__name__))
 
     group_name = get_editor_group_name_for_instance(instance)
-    try:
-        Group.objects.get(name=group_name)
-    except ObjectDoesNotExist:
+    if not Group.objects.filter(name=group_name).count():
         create_editor_group_for_instance(instance)
 
     author_group = Group.objects.get(name=group_name)
@@ -328,9 +259,7 @@ def assign_user_as_instance_viewer(user, instance):
             "Expected type User, found {}.".format(type(user).__name__))
 
     group_name = get_viewer_group_name_for_instance(instance)
-    try:
-        Group.objects.get(name=group_name)
-    except ObjectDoesNotExist:
+    if not Group.objects.filter(name=group_name).count():
         create_viewer_group_for_instance(instance)
 
     viewer_group = Group.objects.get(name=group_name)
@@ -388,29 +317,29 @@ def remove_user_as_instance_viewer(user, instance):
 # Updates
 # -------------------------------------------------------------------------- #
 def update_admin_list_for_instance(users, instance):
-    for user in instance.administrators():
+    for user in instance.administrators:
         if user not in users:
             remove_user_as_instance_admin(user, instance)
     for user in users:
-        if user not in instance.administrators():
+        if user not in instance.administrators:
             assign_user_as_instance_admin(user, instance)
 
 
 def update_editor_list_for_instance(users, instance):
-    for user in instance.editors():
+    for user in instance.editors:
         if user not in users:
             remove_user_as_instance_editor(user, instance)
     for user in users:
-        if user not in instance.editors():
+        if user not in instance.editors:
             assign_user_as_instance_editor(user, instance)
 
 
 def update_viewer_list_for_instance(users, instance):
-    for user in instance.viewers():
+    for user in instance.viewers:
         if user not in users:
             remove_user_as_instance_viewer(user, instance)
     for user in users:
-        if user not in instance.viewers():
+        if user not in instance.viewers:
             assign_user_as_instance_viewer(user, instance)
 
 

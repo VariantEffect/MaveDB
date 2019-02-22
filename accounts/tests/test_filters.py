@@ -64,6 +64,19 @@ class TestUserFilter(TestCase):
         self.assertEqual(f.qs.count(), 1)
         self.assertIn(self.user1, f.qs)
 
+    def test_search_by_display_name_csv(self):
+        f = filters.UserFilter(
+            queryset=self.queryset,
+            data={
+                filters.UserFilter.DISPLAY_NAME: '{},{}'.format(
+                    self.user1.profile.get_display_name(),
+                    self.user2.profile.get_display_name()
+                )
+            }
+        )
+        self.assertEqual(f.qs.count(), 2)
+        self.assertIn(self.user1, f.qs)
+
     def test_searching_multiple_fields_joins_results_by_AND(self):
         # No results since the two querysets are disjoint
         f = filters.UserFilter(

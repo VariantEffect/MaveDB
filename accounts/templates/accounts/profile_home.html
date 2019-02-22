@@ -6,20 +6,6 @@
       <div class="col-auto">
         <h2> {{ request.user.profile.get_display_name_hyperlink }} </h2>
       </div>
-      <div class="col-auto">
-        <div class="dropdown pull-left">
-          <button class="white-button btn btn-outline-dark dropdown-toggle" type="button"
-                  id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                  aria-expanded="false">
-            <i class="fas fa-bars"></i>
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <a class="dropdown-item" href="{% url 'accounts:profile_settings' %}">Settings</a>
-            <a class="dropdown-item" href="{% url 'dataset:experiment_new' %}">New experiment</a>
-            <a class="dropdown-item" href="{% url 'dataset:scoreset_new' %}">New score set</a>
-          </div>
-        </div>
-      </div>
     </div> <!-- End dashboard header -->
     <hr>
 
@@ -32,7 +18,7 @@
             </p>
 
             <!-- Score sets -->
-            {% if request.user.profile.contributor_scoresets %}
+            {% if request.user.profile.contributor_scoresets.count %}
               <h2 class="underline left-align section-heading">Score sets</h2>
               <div>
                 <div class="card-deck">
@@ -63,13 +49,13 @@
                           </small>
 
                           <small class="col-auto text-muted float-right">
-                            {% if instance in request.user.profile.administrator_scoresets %}
+                            {% if request.user in instance.administrators %}
                               <a href="{% url 'accounts:manage_instance' instance.urn %}">
                                 <i class="icon fas fa-users-cog pl-1" data-toggle="tooltip" data-placement="top"
                                  title="Edit user management for this score set."></i>
                               </a>
                             {% endif %}
-                            {% if instance in request.user.profile.administrator_scoresets or instance in request.user.profile.editor_scoresets %}
+                            {% if request.user in instance.administrators or request.user in instance.editors %}
                              <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
                               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
                                  title="Edit this score set."></i>
@@ -95,7 +81,7 @@
                               </a>
                             {% endif %}
 
-                            {% if instance in request.user.profile.administrator_scoresets and instance.private %}
+                            {% if instance.private and request.user in instance.administrators %}
                               <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
                                {% csrf_token %}
                                 <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
@@ -166,20 +152,20 @@
                           </small>
 
                           <small class="col-auto text-muted float-right">
-                            {% if instance in request.user.profile.administrator_experiments %}
+                            {% if request.user in instance.administrators %}
                               <a href="{% url 'accounts:manage_instance' instance.urn %}">
                                 <i class="icon fas fa-users-cog pl-1" data-toggle="tooltip" data-placement="top"
                                  title="Edit user management for this experiment."></i>
                               </a>
                             {% endif %}
-                            {% if instance in request.user.profile.administrator_experiments or instance in request.user.profile.editor_experiments %}
+                            {% if request.user in instance.administrators or request.user in instance.editors %}
                              <a href="{% url 'accounts:edit_experiment' instance.urn %}">
                               <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
                                  title="Edit this experiment."></i>
                              </a>
                             {% endif %}
 
-                            {% if instance in request.user.profile.administrator_experiments and instance.private %}
+                            {% if instance.private and request.user in instance.administrators %}
                               <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
                                {% csrf_token %}
                                 <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
@@ -232,22 +218,17 @@
                                title="This experiment set is public and may be viewed by anyone visiting the site." >
                             </i>
                           {% endif %}
-
-                          <p class="pl-2 pt-1">
-                            Last updated {{ instance.format_last_edit_date }} by
-                            <a> {{ instance.modified_by.profile.get_display_name_hyperlink }} </a>
-                          </p>
                         </small>
 
                         <small class="col-auto text-muted float-right">
-                          {% if instance in request.user.profile.administrator_experimentsets %}
+                          {% if request.user in instance.administrators %}
                             <a href="{% url 'accounts:manage_instance' instance.urn %}">
                               <i class="icon fas fa-users-cog" data-toggle="tooltip" data-placement="top"
                                title="Edit user management for this experiment set."></i>
                             </a>
                           {% endif %}
 
-                          {% if instance in request.user.profile.administrator_experimentsets and instance.private %}
+                          {% if instance.private and request.user in instance.administrators %}
                             <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
                              {% csrf_token %}
                               <input value="{{ instance.urn }}" title="delete" name="delete" hidden />

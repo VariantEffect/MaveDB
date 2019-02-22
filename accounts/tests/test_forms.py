@@ -45,8 +45,8 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.user2 in instance.editors())
-        self.assertFalse(self.user2 in instance.viewers())
+        self.assertTrue(self.user2 in instance.editors)
+        self.assertFalse(self.user2 in instance.viewers)
         
     def test_can_reassign_editor_to_admin(self):
         instance = ExperimentFactory()
@@ -59,8 +59,8 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.user2 in instance.administrators())
-        self.assertFalse(self.user2 in instance.editors())
+        self.assertTrue(self.user2 in instance.administrators)
+        self.assertFalse(self.user2 in instance.editors)
 
     def test_can_reassign_admin_to_editor(self):
         instance = ExperimentFactory()
@@ -74,8 +74,8 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.user2 in instance.editors())
-        self.assertFalse(self.user2 in instance.administrators())
+        self.assertTrue(self.user2 in instance.editors)
+        self.assertFalse(self.user2 in instance.administrators)
         
     def test_can_reassign_editor_to_viewer(self):
         instance = ExperimentFactory()
@@ -89,8 +89,8 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertTrue(self.user2 in instance.viewers())
-        self.assertFalse(self.user2 in instance.editors())
+        self.assertTrue(self.user2 in instance.viewers)
+        self.assertFalse(self.user2 in instance.editors)
     
     def test_anon_not_in_queryset(self):
         instance = ExperimentFactory()
@@ -211,8 +211,8 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertIn(self.user1, instance.parent.viewers())
-        self.assertIn(self.user1, instance.parent.parent.viewers())
+        self.assertIn(self.user1, instance.parent.viewers)
+        self.assertIn(self.user1, instance.parent.parent.viewers)
 
     def test_does_not_change_parent_membership(self):
         instance = ScoreSetFactory()
@@ -223,4 +223,4 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
-        self.assertIn(self.user1, instance.parent.editors())
+        self.assertIn(self.user1, instance.parent.editors)
