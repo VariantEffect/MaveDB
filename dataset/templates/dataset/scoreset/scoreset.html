@@ -112,13 +112,6 @@
   <!-- Scores data tab -->
   <div class="tab-pane fade show active" id="scores" role="tabpanel" aria-labelledby="scores-tab">
     <div class="container-fluid mt-4">
-
-      <div class="row mt-1 mb-3">						
-        <div class="col-sm-3 col-md-3">
-          <h3 style="margin: 0;">Scores dataset</h3>
-        </div>
-      </div>
-
       {% if not instance.has_score_dataset %}
         <p class="text-muted"> No score data available.</p>
       {% else %}
@@ -146,13 +139,6 @@
   <div class="tab-pane fade" id="counts" role="tabpanel"
        aria-labelledby="counts-tab">
     <div class="container-fluid mt-4">
-
-      <div class="row mt-1 mb-3">
-        <div class="col-sm-3 col-md-3">
-          <h3 style="margin: 0;">Counts dataset</h3>
-        </div>
-      </div>
-
       {% if not instance.has_count_dataset %}
         <p class="text-muted"> No count data available.</p>
       {% else %}
