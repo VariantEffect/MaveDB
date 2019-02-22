@@ -1,4 +1,4 @@
-/* Global
+  /* Global
 ----------------------------------- */
 /* COLORS
     #343a40 - 'Charcoal gray'
@@ -19,6 +19,7 @@
  */
 
 * {
+    text-rendering: optimizeLegibility;
     font-family: 'Raleway', sans-serif;
     /*border-radius: 0px !important;*/
     /* border: 1px solid red !important; */

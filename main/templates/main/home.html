@@ -8,12 +8,16 @@
       <div id="about-citation-wrapper">
         <h1> About </h1>
         <div id="about">
-          {{ site_information.about|safe|escape|default:"None" }}
+          <p>{{ site_information.about|safe|escape|default:"None" }}</p>
         </div>
         <hr>
         <h1> Citation </h1>
         <div id="citation">
-          {{ site_information.citation|safe|escape|default:"None" }}
+          {% if site_information.citation|length %}
+            <p>{{ site_information.citation|safe|escape|default:"Coming soon." }}</p>
+          {% else %}
+            <p>Coming soon.</p>
+          {% endif %}
         </div>
         <hr class="visible-xs invisible">
       </div>
@@ -22,7 +26,7 @@
     <div class="col-md-6">
       <div id="news-items">
         <h1> News <i class="far fa-newspaper" style="font-size: 32px"></i> </h1>
-        <div class="news hover-card">
+        <div class="news hover-card" style="min-height: 208px; max-height: 350px; overflow-y: scroll;">
           {% if news_items %}
             {% for news_item in news_items %}
               <div id="news-item-{{forloop.counter}}">

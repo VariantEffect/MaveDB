@@ -14,12 +14,17 @@
     <meta name="author" content="Daniel C. Esposito, Alan F. Rubin">
     <meta name="keywords" content="dms,deep mutational scanning,mave,multiplex assays of
           variant effect,variant effect,gene,genomic,variants,functional assay,multiplex assay">
-    <link href="{% static 'core/google/fonts_icons.css' %}" rel="stylesheet" type="text/css">
+{#    <link href="{% static 'core/google/fonts_icons.css' %}" rel="stylesheet" type="text/css">#}
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css"
+          integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ"
+          crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:200,200i,300,300i,400,400i"
+          rel="stylesheet">
+
     <link href="{% static 'core/bootstrap/bootstrap.min.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'core/tocbot/tocbot_4.3.0.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'core/select2/select2_4.0.5.min.css' %}" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css"
-          integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
     <link href="{% static 'core/datatables/datatables.min.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'core/mavedb/dna.png' %}" rel="icon" type="image/png"/>
     <link href="{% static 'core/mavedb/base.css' %}" rel="stylesheet" type="text/css">
@@ -218,7 +223,7 @@
           {% endif %}
 
           <div class="row justify-content-center">
-            <a target="_blank" href="https://github.com/FowlerLab/mavedb">
+            <a target="_blank" href="https://github.com/VariantEffect/mavedb">
               <img class="mb-2" src="{% static 'core/mavedb/github_64px.png' %}" alt="" width="24" height="24">
             </a>
           </div>

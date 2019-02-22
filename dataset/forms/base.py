@@ -1,7 +1,6 @@
 from django import forms as forms
 from django.db import transaction
 
-from accounts.permissions import assign_superusers_as_admin
 from metadata.fields import FlexibleModelMultipleChoiceField
 
 from metadata.models import (

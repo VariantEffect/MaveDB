@@ -43,7 +43,7 @@ def group_targets(scoresets):
 
 @register.simple_tag
 def display_targets(instance, user, javascript=False,
-                    categories=False, organisms=False):
+                    categories=False, organisms=False, all_fields=False):
     targets = []
     if isinstance(instance, models.experiment.Experiment):
         children = visible_children(instance, user)
@@ -62,6 +62,8 @@ def display_targets(instance, user, javascript=False,
     if not targets:
         if javascript:
             return mark_safe(json.dumps(['-']))
+        if all_fields:
+            return '-', '-', '-'
         return '-'
     
     t_categories = [t.category for t in targets]
@@ -72,12 +74,21 @@ def display_targets(instance, user, javascript=False,
         for t in targets
     ]
     if javascript:
-        if categories:
+        if all_fields:
+            return mark_safe(json.dumps(t_names)), \
+                   mark_safe(json.dumps(t_categories)), \
+                   mark_safe(json.dumps(t_organisms))
+        elif categories:
             return mark_safe(json.dumps(t_categories))
         elif organisms:
             return mark_safe(json.dumps(t_organisms))
         else:
             return mark_safe(json.dumps(t_names))
+        
+    if all_fields:
+        return mark_safe(', '.join(t_names)), \
+               mark_safe(', '.join(t_categories)), \
+               mark_safe(', '.join(t_organisms))
     if categories:
         return mark_safe(', '.join(t_categories))
     elif organisms:

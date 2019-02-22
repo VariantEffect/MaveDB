@@ -165,28 +165,6 @@
 {#  </div>#}
 
   <div class="model-detail">
-     <!-- Renders contributors as ORCID url-->
-    <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
-    <ul>
-      {% for contributor in instance.contributors %}
-      <li>
-        {{ contributor.profile.get_display_name_hyperlink }}
-        <i class="external-link fas fa-external-link-alt"></i>
-      </li>
-      {% endfor %}
-    </ul>
-
-    {% if instance.class_name == "scoreset" %}
-      <h2 id="data-usage" class="underline left-align section-heading">
-        Data usage policy
-      </h2>
-      {% if instance.data_usage_policy|length %}
-        <p>{{ instance.data_usage_policy }}</p>
-      {% else %}
-        <p>Not specified.</p>
-      {% endif %}
-    {% endif %}
-
     <!-- Renders markdown abstract text -->
     {% if instance.class_name != "experimentset" %}
       <h2 id="title" class="underline left-align section-heading">Title</h2>
@@ -216,6 +194,73 @@
         <p class="text-muted">No method has been provided for this entry.</p>
       {% else %}
         <p>{{ instance.md_method|safe}}</p>
+      {% endif %}
+
+      <!-- Renders PubMed references -->
+      <h2 id="references" class="underline left-align section-heading">References</h2>
+      {% if instance.pubmed_ids.count %}
+        <ol>
+        {% for pm in instance.pubmed_ids.all %}
+          <li>{{ pm.reference_html|safe }} PMID:
+            <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </li>
+        {% endfor %}
+        </ol>
+        {% if instance.class_name == 'scoreset' %}
+          {% parent_references instance as parent_refs %}
+          {% if parent_refs|length %}
+            <p class="pl-4">References from
+              <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:
+            </p>
+            <ol start="{{instance.pubmed_ids.count|add:1}}">
+            {% for pm in parent_refs %}
+              <li>{{ pm.reference_html|safe }} PMID:
+                <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
+                <i class="external-link fas fa-external-link-alt"></i>
+              </li>
+            {% endfor %}
+            </ol>
+          {% endif %}
+        {% endif %}
+      {% else %}
+        <p>No associated publications.</p>
+      {% endif %}
+
+      <!-- Renders contributors as ORCID url-->
+      <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
+      <ul>
+        {% for contributor in instance.administrators %}
+        <li>
+          {{ contributor.profile.get_display_name_hyperlink }}
+          <i class="external-link fas fa-external-link-alt"></i>
+        </li>
+        {% endfor %}
+
+        {% for contributor in instance.editors %}
+        <li>
+          {{ contributor.profile.get_display_name_hyperlink }}
+          <i class="external-link fas fa-external-link-alt"></i>
+        </li>
+        {% endfor %}
+
+        {% for contributor in instance.viewers %}
+        <li>
+          {{ contributor.profile.get_display_name_hyperlink }}
+          <i class="external-link fas fa-external-link-alt"></i>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% if instance.class_name == "scoreset" %}
+        <h2 id="data-usage" class="underline left-align section-heading">
+          Data usage policy
+        </h2>
+        {% if instance.data_usage_policy|length %}
+          <p>{{ instance.data_usage_policy }}</p>
+        {% else %}
+          <p>Not specified.</p>
+        {% endif %}
       {% endif %}
 
       <!-- Renders Keywords -->
@@ -268,37 +313,6 @@
         {% else %}
           <p><strong>SRA:</strong> No associated SRAs </p>
         {% endif %}
-      {% endif %}
-
-      <!-- Renders PubMed references -->
-      <h2 id="references" class="underline left-align section-heading">References</h2>
-      {% if instance.pubmed_ids.count %}
-        <ol>
-        {% for pm in instance.pubmed_ids.all %}
-          <li>{{ pm.reference_html|safe }} PMID:
-            <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
-            <i class="external-link fas fa-external-link-alt"></i>
-          </li>
-        {% endfor %}
-        </ol>
-        {% if instance.class_name == 'scoreset' %}
-          {% parent_references instance as parent_refs %}
-          {% if parent_refs|length %}
-            <p class="pl-4">References from
-              <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:
-            </p>
-            <ol start="{{instance.pubmed_ids.count|add:1}}">
-            {% for pm in parent_refs %}
-              <li>{{ pm.reference_html|safe }} PMID:
-                <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
-                <i class="external-link fas fa-external-link-alt"></i>
-              </li>
-            {% endfor %}
-            </ol>
-          {% endif %}
-        {% endif %}
-      {% else %}
-        <p>No associated publications.</p>
       {% endif %}
     {% endif %}
 
