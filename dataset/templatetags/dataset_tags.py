@@ -62,6 +62,8 @@ def display_targets(instance, user, javascript=False,
     if not targets:
         if javascript:
             return mark_safe(json.dumps(['-']))
+        if all_fields:
+            return '-', '-', '-'
         return '-'
     
     t_categories = [t.category for t in targets]
