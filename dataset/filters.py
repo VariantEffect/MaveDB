@@ -82,20 +82,6 @@ class DatasetModelFilter(FilterSet):
         if not isinstance(value, list):
             value = [value]
         return value
-    
-    @property
-    def qs(self):
-        qs = super().qs
-        return qs
-
-    def filter_for_user(self, user, qs=None):
-        if qs is None:
-            qs = self.qs
-        exclude = []
-        for instance in qs.all():
-            if user not in instance.contributors and instance.private:
-                exclude.append(instance.pk)
-        return qs.exclude(pk__in=exclude)
 
     @property
     def qs_or(self):
@@ -122,7 +108,17 @@ class DatasetModelFilter(FilterSet):
                         qs |= filter_.filter(self.queryset, value)
                 self._qs_or = qs
         return self._qs_or
-    
+
+    # TODO: Optimise these methods and remove list iteration
+    def filter_for_user(self, user, qs=None):
+        if qs is None:
+            qs = self.qs
+        exclude = []
+        for instance in qs.all():
+            if user not in instance.contributors and instance.private:
+                exclude.append(instance.pk)
+        return qs.exclude(pk__in=exclude)
+
     def filter_contributor(self, queryset, name, value):
         instances_pks = []
         if not queryset.count():
