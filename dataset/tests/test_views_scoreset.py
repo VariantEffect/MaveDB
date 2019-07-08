@@ -145,6 +145,45 @@ class TestScoreSetSetDetailView(TestCase , TestMessageMixin):
         for i, value in enumerate(var.count_data):
             self.assertIn(str(value), data[0][str(i)])
 
+    # --- MaveVis link visibility
+    def test_hides_mavevis_if_private(self):
+        scs_private = ScoreSetWithTargetFactory(private=True)
+        scs_public = ScoreSetWithTargetFactory(private=False)
+        self.assertIsNotNone(scs_private.target.uniprot_id)
+        self.assertIsNotNone(scs_public.target.uniprot_id)
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_private.urn))
+        request.user = UserFactory()
+        scs_private.add_viewers(request.user)
+        response = ScoreSetDetailView.as_view()(request, urn=scs_private.urn)
+        self.assertNotContains(response, 'Visualize with')
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_public.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_public.urn)
+        self.assertContains(response, 'Visualize with')
+
+    def test_hides_mavevis_if_target_has_no_uniprot_id(self):
+        scs_uniprot = ScoreSetWithTargetFactory(private=False)
+        scs_no_uniprot = ScoreSetWithTargetFactory(private=False)
+        self.assertFalse(scs_uniprot.private)
+        self.assertFalse(scs_no_uniprot.private)
+
+        scs_no_uniprot.target.uniprot_id = None
+        scs_no_uniprot.target.save()
+        self.assertIsNotNone(scs_uniprot.target.uniprot_id)
+        self.assertIsNone(scs_no_uniprot.target.uniprot_id)
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_no_uniprot.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_no_uniprot.urn)
+        self.assertNotContains(response, 'Visualize with')
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_uniprot.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_uniprot.urn)
+        self.assertContains(response, 'Visualize with')
+
     # --- Next version links
     def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(self):
         scs = ScoreSetFactory(private=False)
