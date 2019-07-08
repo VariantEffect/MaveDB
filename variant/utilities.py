@@ -84,14 +84,15 @@ def format_variant(variant):
         return None
 
     variant = variant.strip()
-    if 'p.' in variant:
-        variant, _ = re.subn(r'\?+', 'X', variant)
-        variant, _ = re.subn(r'Xaa', 'X', variant)
-    elif 'g.' in variant or 'n.' in variant or \
-            'c.' in variant or 'm.' in variant:
-        variant, _ = re.subn(r'X', 'N', variant)
-    elif 'r.' in variant:
-        variant, _ = re.subn(r'x', 'n', variant)
+    # Fixme: Un-comment if wanting to apply basic formatting of HGVS strings.
+    # if 'p.' in variant:
+    #     variant, _ = re.subn(r'\?+', 'X', variant)
+    #     variant, _ = re.subn(r'Xaa', 'X', variant)
+    # elif 'g.' in variant or 'n.' in variant or \
+    #         'c.' in variant or 'm.' in variant:
+    #     variant, _ = re.subn(r'X', 'N', variant)
+    # elif 'r.' in variant:
+    #     variant, _ = re.subn(r'x', 'n', variant)
     return variant
     
 

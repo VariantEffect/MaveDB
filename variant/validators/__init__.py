@@ -202,7 +202,7 @@ def validate_variant_rows(file):
     else:
         primary_hgvs_column = hgvs_nt_column
 
-    # Apply variant formatting.
+    # Apply variant formatting. Replace null type with None and strip.
     if defines_nt_hgvs:
         df[hgvs_nt_column] = df.loc[:, hgvs_nt_column].\
             apply(utilities.format_variant)
