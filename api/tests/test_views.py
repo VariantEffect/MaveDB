@@ -1,4 +1,7 @@
+import io
 import json
+import pandas as pd
+import numpy as np
 from datetime import timedelta
 
 from django.test import TestCase, RequestFactory, mock
@@ -9,6 +12,8 @@ from django.http import HttpResponse
 from rest_framework import exceptions
 
 from accounts.factories import UserFactory
+
+from core.utilities import null_values_list
 
 import dataset.constants as constants
 from dataset.utilities import publish_dataset
@@ -38,6 +43,7 @@ class TestFormatPolicy(TestCase):
             ['# Not specified\n'],
             lines
         )
+
 
 class TestAuthenticate(TestCase):
     def setUp(self):
@@ -412,7 +418,7 @@ class TestFormatResponse(TestCase):
 
     def test_double_quotes_column_values_containing_commas(self):
         self.instance.dataset_columns = {
-            constants.score_columns: ['hello,world',]}
+            constants.score_columns: ['hello,world', ]}
 
         for i in range(5):
             data = {constants.variant_score_data: {'hello,world': i}}
@@ -422,6 +428,34 @@ class TestFormatResponse(TestCase):
             self.response, self.instance, dtype='scores')
         content = response.content.decode()
         self.assertIn('"hello,world"', content)
+
+    def test_formats_null_values_as_NA(self):
+        for null in null_values_list:
+            response = HttpResponse(content_type='text/csv')
+            self.instance.variants.all().delete()
+            self.assertFalse(self.instance.variants.count())
+            self.instance.dataset_columns = {
+                constants.score_columns: ['score', ]
+            }
+            variant_count = 5
+            for i in range(variant_count):
+                data = {constants.variant_score_data: {'score': null}}
+                VariantFactory(scoreset=self.instance, data=data)
+            response = views.format_response(
+                response, self.instance, dtype='scores'
+            )
+
+            handle = io.StringIO(response.content.decode())
+            comment_line_count = 0
+            for line in handle:
+                if line.startswith('#'):
+                    comment_line_count += 1
+                else:
+                    break
+            handle.seek(0)
+            df = pd.read_csv(handle, skiprows=comment_line_count)
+            self.assertEqual(df.score.where(np.isnan).size, variant_count)
+            handle.close()
 
 
 class TestScoreSetAPIViews(TestCase):

@@ -17,9 +17,16 @@ from dataset import models
 User = get_user_model()
 logger = logging.getLogger("django")
 
+# Used in CSV formatting
+NA_value = 'NA'
 
-null_values_list = ('nan', 'na', 'none', '', 'undefined', 'n/a', 'null')
-null_values_re = re.compile(r'\s+|none|nan|na|undefined|n/a|null')
+null_values_list = (
+    'nan', 'na', 'none', '', 'undefined', 'n/a', 'null', NA_value
+)
+null_values_re = re.compile(
+    r'\s+|none|nan|na|undefined|n/a|null|{}'.format(NA_value),
+    flags=re.IGNORECASE
+)
 readable_null_values = [
     "'{}'".format(v)
     for v in set([v.lower() for v in null_values_list]) if v.strip()

@@ -7,6 +7,8 @@ from rest_framework import viewsets, exceptions
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 
+from core.utilities import is_null
+
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
 from accounts.serializers import UserSerializer
@@ -172,7 +174,7 @@ def validate_request(request, urn):
         return JsonResponse({'detail': e.detail}, status=e.status_code)
 
 
-def format_csv_rows(variants, columns, dtype):
+def format_csv_rows(variants, columns, dtype, na_rep='NA'):
     """
     Formats each variant into a dictionary row containing the keys specified
     in `columns`.
@@ -185,6 +187,8 @@ def format_csv_rows(variants, columns, dtype):
         Columns to serialize.
     dtype : str, {'scores', 'counts'}
         The type of data requested. Either the 'score_data' or 'count_data'.
+    na_rep : str
+        String to represent null values.
 
     Returns
     -------
@@ -195,13 +199,16 @@ def format_csv_rows(variants, columns, dtype):
         data = {}
         for column_key in columns:
             if column_key == constants.hgvs_nt_column:
-                data[column_key] = str(variant.hgvs_nt)
+                value = str(variant.hgvs_nt)
             elif column_key == constants.hgvs_pro_column:
-                data[column_key] = str(variant.hgvs_pro)
+                value = str(variant.hgvs_pro)
             elif column_key == 'accession':
-                data[column_key] = str(variant.urn)
+                value = str(variant.urn)
             else:
-                data[column_key] = str(variant.data[dtype][column_key])
+                value = str(variant.data[dtype][column_key])
+            if is_null(value):
+                value = na_rep
+            data[column_key] = value
         rowdicts.append(data)
     return rowdicts
 
