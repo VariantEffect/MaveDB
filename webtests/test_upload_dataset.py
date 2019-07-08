@@ -26,8 +26,8 @@ from .utilities import authenticate_webdriver, \
 
 celery_app.conf['task_always_eager'] = False
 
+
 class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
-    
     def setUp(self):
         self.user = UserFactory()
         if  STAGING_OR_PROD:
@@ -273,6 +273,11 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         ensembl_offset = self.browser.find_element_by_id(
             'id_ensembl-offset-offset')
         self.perform_action(ensembl_offset, 'send_keys', 30)
+
+        # select target type
+        self.browser.find_element_by_xpath(
+            "//select[@id='id_category']/option[text()='Protein coding']"
+        ).click()
         
         # Delete these identifier to see if new ones will be created
         uniprot.delete()
@@ -408,7 +413,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
         self.perform_action(item, 'click')
     
         submit = self.browser.find_element_by_id('submit-form')
-        self.perform_action(submit,'click')
+        self.perform_action(submit, 'click')
         
         messages = self.browser.find_elements_by_class_name('invalid-feedback')
         self.assertGreater(len(messages), 0)
@@ -453,6 +458,11 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
         self.perform_action(target_name, 'send_keys', "BRCA1")
         target_seq = self.browser.find_element_by_id('id_wt_sequence')
         self.perform_action(target_seq, 'send_keys', "atcg")
+
+        # select target type
+        self.browser.find_element_by_xpath(
+            "//select[@id='id_category']/option[text()='Protein coding']"
+        ).click()
         
         genome_input = self.browser.find_element_by_id(
             'select2-id_genome-container')
