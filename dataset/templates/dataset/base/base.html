@@ -26,7 +26,19 @@
       {% endif %}
     </span>
     {% if instance.class_name == "scoreset" %}
+
       <div class="inline-elements">
+        {% if instance.target.uniprot_id and not instance.private %}
+          <div class="mavevis-link" style="display: block;" data-toggle="tooltip" data-placement="auto"
+               title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis.">
+            <a class="btn btn-outline-dark white-button" target="_blank" href="http://varianteffect.com/?ssid={{ instance.urn }}">
+              <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
+              Visualize with MaveVis
+              <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
+            </a>
+          </div>
+        {% endif %}
+
         {% if instance.licence %}
           <a href="{{ instance.licence.link }}" target="_blank" data-toggle="tooltip" data-placement="auto"
               title="{{ instance.licence.long_name }}">
@@ -51,16 +63,6 @@
             <a class="dropdown-item" href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>
           </div>
         </div>
-
-        {% if not instance.private %}
-          <div class="mavevis-link" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
-               title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis.">
-            <a class="btn btn-outline-dark white-button" target="_blank" href="http://varianteffect.com/?ssid={{ instance.urn }}">
-              <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
-              <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
-            </a>
-          </div>
-        {% endif %}
       </div>
     {% endif %}
   </h1>
@@ -322,4 +324,13 @@
 
   </div>
 </div>
+
+<style lang="css">
+  .mavevis-link {
+    width: 100%;
+  }
+  .mavevis-link.button {
+      width: 195px;
+    }
+</style>
 {% endblock body %}
