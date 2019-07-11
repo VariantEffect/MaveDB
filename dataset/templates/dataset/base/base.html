@@ -183,6 +183,10 @@
         <p>{{ instance.short_description}}</p>
       {% endif %}
 
+      {% block child_list_under_description %}
+        <!-- Block for quick links -->
+      {% endblock %}
+
       <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
       {% if not instance.abstract_text %}
         <p class="text-muted">No abstract has been provided for this entry.</p>

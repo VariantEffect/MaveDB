@@ -80,6 +80,44 @@
   {% endif %}
 {% endblock %}
 
+{% block child_list_under_description %}
+  {% visible_children instance user as visible_scoresets %}
+  {% current_versions visible_scoresets user as current_visible %}
+  <h2 id='scoresets' class="underline left-align section-heading">Score sets</h2>
+  {% if current_visible|length %}
+    {% for child in current_visible %}
+      {% if forloop.counter == 1 %}
+        <span data-toggle="popover"
+           title="<b>{{ child.urn }}</b><hr>{{ child.get_title }}"
+           data-content="{{ child.get_description }}"
+           data-placement=auto
+           onmouseenter="$(this).popover({ trigger:'hover', html: true });"
+        >
+          <a style="display:inline-block; margin-right: 4px" href="{% url 'dataset:scoreset_detail' child.urn %}">
+            {{ child.urn }} {% if child.private %}[Private]{% endif %}
+          </a>
+        </span>
+      {% else %}
+        <span data-toggle="popover"
+           title="<b>{{ child.urn }}</b><hr>{{ child.get_title }}"
+           data-content="{{ child.get_description }}"
+           data-placement=auto
+           onmouseenter="$(this).popover({ trigger:'hover', html: true });"
+        >
+          <a style="display:inline-block; margin: 0 4px" href="{% url 'dataset:scoreset_detail' child.urn %}">
+            {{ child.urn }} {% if child.private %}[Private]{% endif %}
+          </a>
+        </span>
+      {% endif %}
+      {% if forloop.counter < current_visible|length %}
+        <p class="text-muted" style="display: inline-block; font-weight: 600">&middot;</p>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No score sets have been associated with this experiment.</p>
+  {% endif %}
+{% endblock %}
+
 {% block child_list %}
   {% visible_children instance user as visible_scoresets %}
   {% current_versions visible_scoresets user as current_visible %}
@@ -110,3 +148,20 @@
   {% endif %}
 {% endblock %}
 
+{% block extra_scripts %}
+  <style lang="css">
+    .slash-divider {
+      display: inline-block;
+      margin: 0 2px;
+    }
+  .not-selectable {
+    -webkit-user-select: none;  /* Chrome 49+ */
+    -moz-user-select: none;     /* Firefox 43+ */
+    -ms-user-select: none;      /* No support yet */
+    user-select: none;          /* Likely future */
+  }
+  .inline {
+    display: inline-block;
+  }
+  </style>
+{% endblock %}
