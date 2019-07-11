@@ -1,13 +1,18 @@
+import re
 import csv
 
 from django_filters import FilterSet, filters, constants
 from django.db.models import Q
+from django.contrib.auth.models import Group, User
 
 from django import forms
 
 from core.filters import CSVCharFilter
 
 from . import models
+
+
+digit_re = re.compile(r"\d+")
 
 
 class DatasetModelFilter(FilterSet):
@@ -109,29 +114,44 @@ class DatasetModelFilter(FilterSet):
                 self._qs_or = qs
         return self._qs_or
 
-    # TODO: Optimise these methods and remove list iteration
+    def contributor_model_ids(self, user, queryset=None):
+        if queryset is None:
+            queryset = self.qs
+        model_class_name = queryset.model.__name__.lower()
+        instance_group_names = (
+            user.groups.filter(name__icontains=model_class_name)
+        ).values_list('name', flat=True)
+        ids = re.findall(
+            digit_re, ','.join(instance_group_names)
+        )
+        return ids
+
     def filter_for_user(self, user, qs=None):
         if qs is None:
             qs = self.qs
-        exclude = []
-        for instance in qs.all():
-            if user not in instance.contributors and instance.private:
-                exclude.append(instance.pk)
-        return qs.exclude(pk__in=exclude)
+
+        private_visible_ids = []
+        if user is not None:
+            private_visible_ids = self.contributor_model_ids(user, qs)
+
+        public = qs.filter(private=False)
+        private = qs.filter(private=True).filter(id__in=private_visible_ids)
+        return (public | private).distinct()
 
     def filter_contributor(self, queryset, name, value):
-        instances_pks = []
-        if not queryset.count():
-            return queryset
-        model = queryset.first().__class__
-        for instance in queryset.all():
-            for v in self.split(value):
-                contributors = instance.contributors.filter(**{name: v})
-                if contributors.count():
-                    instances_pks.append(instance.pk)
-        return model.objects.filter(pk__in=set(instances_pks))
-        
+        model_ids = set()
+        for v in self.split(value):
+            users = User.objects.filter(**{name: v})
+            for user in users:
+                model_ids |= set(
+                    self.contributor_model_ids(user, queryset=queryset)
+                )
+        return queryset.filter(id__in=model_ids)
+
     def filter_contributor_display_name(self, queryset, name, value):
+        # FIXME: Optimize this. Remove triple for loop. Can make a new
+        #  field on profile display_name that hoists credit-name from
+        #  social_auth extra_data.
         instances_pks = []
         if not queryset.count():
             return queryset

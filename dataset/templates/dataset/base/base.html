@@ -191,7 +191,7 @@
       {% if not instance.abstract_text %}
         <p class="text-muted">No abstract has been provided for this entry.</p>
       {% else %}
-        <p>{{ instance.md_abstract|safe}}</p>
+        <p>{{ instance.md_abstract|safe }}</p>
       {% endif %}
 
       <!-- Renders markdown method text -->
@@ -199,7 +199,7 @@
       {% if not instance.method_text %}
         <p class="text-muted">No method has been provided for this entry.</p>
       {% else %}
-        <p>{{ instance.md_method|safe}}</p>
+        <p>{{ instance.md_method|safe }}</p>
       {% endif %}
 
       <!-- Renders PubMed references -->

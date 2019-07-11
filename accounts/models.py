@@ -1,5 +1,4 @@
 import re
-import base64
 import logging
 import datetime
 from datetime import timedelta
@@ -13,7 +12,6 @@ from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.html import format_html
-from django.shortcuts import reverse
 from django.utils.crypto import get_random_string
 
 from core.models import TimeStampedModel
