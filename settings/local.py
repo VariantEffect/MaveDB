@@ -124,3 +124,33 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 CELERY_TASK_ALWAYS_EAGER = False
 CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_COMPRESSION = 'gzip'
+
+INSTALLED_APPS = [
+    'metadata',
+    'main',
+    'genome',
+    'urn',
+    'variant',
+    'dataset',
+    'search',
+    'api',
+    'accounts',
+    'core',
+
+    'guardian',
+    'reversion',
+    'social_django',
+    'django_extensions',
+    'widget_tweaks',
+    'rest_framework',
+    'django_filters',
+    'tracking',
+    'import_export',
+
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]

@@ -36,6 +36,33 @@ CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_COMPRESSION = 'gzip'
 
 # Celery needs this for autodiscover to work
-INSTALLED_APPS.extend([
-    'mod_wsgi.server'
-])
+INSTALLED_APPS = [
+    'metadata',
+    'main',
+    'genome',
+    'urn',
+    'variant',
+    'dataset',
+    'search',
+    'api',
+    'accounts',
+    'core',
+
+    'guardian',
+    'reversion',
+    'social_django',
+    'django_extensions',
+    'widget_tweaks',
+    'rest_framework',
+    'django_filters',
+    'tracking',
+    'import_export',
+    'mod_wsgi.server',
+
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]

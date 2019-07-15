@@ -18,11 +18,6 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# Extend the base installed_apps with any extra requirements
-INSTALLED_APPS.extend([
-    'mod_wsgi.server'
-])
-
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Database
@@ -148,6 +143,9 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'rest_framework',
     'django_filters',
+    'tracking',
+    'import_export',
+    'mod_wsgi.server',
 
     'django.contrib.admin',
     'django.contrib.auth',
