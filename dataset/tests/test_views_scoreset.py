@@ -196,29 +196,29 @@ class TestScoreSetSetDetailView(TestCase , TestMessageMixin):
         response = ScoreSetDetailView.as_view()(request, urn=scs_no_protein.urn)
         self.assertContains(response, 'disabled')
 
-    def test_hides_mavevis_if_target_has_no_uniprot_id(self):
-        scs_uniprot = ScoreSetWithTargetFactory(private=False)
-        scs_no_uniprot = ScoreSetWithTargetFactory(private=False)
-
-        v1 = VariantFactory(scoreset=scs_uniprot)
-        v2 = VariantFactory(scoreset=scs_no_uniprot)
-        scs_no_uniprot.target.uniprot_id = None
-        scs_no_uniprot.target.save()
-
-        self.assertTrue(scs_uniprot.has_protein_variants)
-        self.assertTrue(scs_no_uniprot.has_protein_variants)
-        self.assertTrue(scs_uniprot.has_uniprot_metadata)
-        self.assertFalse(scs_no_uniprot.has_uniprot_metadata)
-
-        request = self.factory.get('/scoreset/{}/'.format(scs_no_uniprot.urn))
-        request.user = UserFactory()
-        response = ScoreSetDetailView.as_view()(request, urn=scs_no_uniprot.urn)
-        self.assertContains(response, 'disabled')
-
-        request = self.factory.get('/scoreset/{}/'.format(scs_uniprot.urn))
-        request.user = UserFactory()
-        response = ScoreSetDetailView.as_view()(request, urn=scs_uniprot.urn)
-        self.assertNotContains(response, 'disabled')
+    # def test_hides_mavevis_if_target_has_no_uniprot_id(self):
+    #     scs_uniprot = ScoreSetWithTargetFactory(private=False)
+    #     scs_no_uniprot = ScoreSetWithTargetFactory(private=False)
+    #
+    #     v1 = VariantFactory(scoreset=scs_uniprot)
+    #     v2 = VariantFactory(scoreset=scs_no_uniprot)
+    #     scs_no_uniprot.target.uniprot_id = None
+    #     scs_no_uniprot.target.save()
+    #
+    #     self.assertTrue(scs_uniprot.has_protein_variants)
+    #     self.assertTrue(scs_no_uniprot.has_protein_variants)
+    #     self.assertTrue(scs_uniprot.has_uniprot_metadata)
+    #     self.assertFalse(scs_no_uniprot.has_uniprot_metadata)
+    #
+    #     request = self.factory.get('/scoreset/{}/'.format(scs_no_uniprot.urn))
+    #     request.user = UserFactory()
+    #     response = ScoreSetDetailView.as_view()(request, urn=scs_no_uniprot.urn)
+    #     self.assertContains(response, 'disabled')
+    #
+    #     request = self.factory.get('/scoreset/{}/'.format(scs_uniprot.urn))
+    #     request.user = UserFactory()
+    #     response = ScoreSetDetailView.as_view()(request, urn=scs_uniprot.urn)
+    #     self.assertNotContains(response, 'disabled')
 
     # --- Next version links
     def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(self):
