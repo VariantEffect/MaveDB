@@ -217,6 +217,15 @@ class ScoreSet(DatasetModel):
     def variant_count(self):
         return self.variants.count()
 
+    @property
+    def has_protein_variants(self):
+        return self.variants.exclude(hgvs_pro=None).count()
+
+    @property
+    def has_uniprot_metadata(self):
+        return hasattr(self, 'target') and \
+               getattr(self.target, 'uniprot_id', None)
+
     def delete_variants(self):
         self.variants.all().delete()
         self.dataset_columns = default_dataset()

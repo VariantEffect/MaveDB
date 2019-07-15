@@ -238,7 +238,27 @@ class TestScoreSet(TestCase):
         instance.get_current_version()
         patch.assert_called_with(
             *('current_version', 'current_public_version', None))
-        
+
+    def test_has_uniprot_metadata_returns_correct_boolean(self):
+        instance = ScoreSetWithTargetFactory()
+        target = instance.target
+        self.assertTrue(instance.has_uniprot_metadata)
+
+        target.uniprot_id = None
+        target.save()
+        instance.refresh_from_db()
+        self.assertFalse(instance.has_uniprot_metadata)
+
+    def test_has_protein_variants_returns_correct_boolean(self):
+        instance = ScoreSetWithTargetFactory()
+
+        v1 = VariantFactory(scoreset=instance)
+        self.assertTrue(instance.has_protein_variants)
+
+        v1.hgvs_pro = None
+        v1.save()
+        self.assertFalse(instance.has_protein_variants)
+
 
 class TestAssignPublicUrn(TestCase):
     def setUp(self):

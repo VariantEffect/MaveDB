@@ -26,33 +26,14 @@
       {% endif %}
     </span>
     {% if instance.class_name == "scoreset" %}
-
       <div class="inline-elements">
-        {% if not instance.private %}
+        {% if instance.private %}
           <div
             class="mavevis-link"
             style="display: block;"
             data-toggle="tooltip"
             data-placement="auto"
-            title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis."
-          >
-            <a
-              class="btn btn-outline-dark white-button"
-              href="http://varianteffect.com/?ssid={{ instance.urn }}"
-              target="_blank"
-            >
-              <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
-              Visualize with MaveVis
-              <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
-            </a>
-          </div>
-        {% else %}
-          <div
-            class="mavevis-link"
-            style="display: block;"
-            data-toggle="tooltip"
-            data-placement="auto"
-            title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. This button will become enabled once published."
+            title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information. This button will activate once published."
           >
             <button class="btn btn-outline-dark white-button" disabled>
               <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
@@ -60,6 +41,41 @@
               <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
             </button>
           </div>
+        {% else %}
+          {% if instance.has_protein_variants and instance.has_uniprot_metadata %}
+            <div
+              class="mavevis-link"
+              style="display: block;"
+              data-toggle="tooltip"
+              data-placement="auto"
+              title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information."
+            >
+              <a
+                class="btn btn-outline-dark white-button"
+                href="http://varianteffect.com/?ssid={{ instance.urn }}"
+                target="_blank"
+              >
+                <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
+                Visualize with MaveVis
+                <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
+              </a>
+            </div>
+          {% else %}
+            <div
+              class="mavevis-link"
+              style="display: block;"
+              data-toggle="tooltip"
+              data-placement="auto"
+              title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information."
+            >
+              <button class="btn btn-outline-dark white-button" disabled>
+                <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
+                Visualize with MaveVis
+                <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
+              </button>
+            </div>
+        {% endif %}
+
         {% endif %}
 
         {% if instance.licence %}

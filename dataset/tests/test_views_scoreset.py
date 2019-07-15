@@ -149,6 +149,14 @@ class TestScoreSetSetDetailView(TestCase , TestMessageMixin):
     def test_disables_mavevis_if_private(self):
         scs_private = ScoreSetWithTargetFactory(private=True)
         scs_public = ScoreSetWithTargetFactory(private=False)
+        v1 = VariantFactory(scoreset=scs_private)
+        v2 = VariantFactory(scoreset=scs_public)
+
+        self.assertTrue(scs_private.has_protein_variants)
+        self.assertTrue(scs_public.has_protein_variants)
+        self.assertTrue(scs_private.has_uniprot_metadata)
+        self.assertTrue(scs_public.has_uniprot_metadata)
+
         self.assertTrue(scs_private.private)
         self.assertFalse(scs_public.private)
 
@@ -157,15 +165,60 @@ class TestScoreSetSetDetailView(TestCase , TestMessageMixin):
         scs_private.add_viewers(request.user)
         response = ScoreSetDetailView.as_view()(request, urn=scs_private.urn)
         self.assertContains(
-            response, 'This button will become enabled once published'
+            response, 'This button will activate once published'
         )
 
         request = self.factory.get('/scoreset/{}/'.format(scs_public.urn))
         request.user = UserFactory()
         response = ScoreSetDetailView.as_view()(request, urn=scs_public.urn)
         self.assertNotContains(
-            response, 'This button will become enabled once published'
+            response, 'This button will activate once published'
         )
+
+    def test_disables_mavevis_if_not_protein_coding_variants(self):
+        scs_protein = ScoreSetWithTargetFactory(private=False)
+        scs_no_protein = ScoreSetWithTargetFactory(private=False)
+        v1 = VariantFactory(scoreset=scs_protein)
+        v2 = VariantFactory(scoreset=scs_no_protein, hgvs_pro=None)
+
+        self.assertTrue(scs_protein.has_uniprot_metadata)
+        self.assertTrue(scs_no_protein.has_uniprot_metadata)
+        self.assertTrue(scs_protein.has_protein_variants)
+        self.assertFalse(scs_no_protein.has_protein_variants)
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_protein.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_protein.urn)
+        self.assertNotContains(response, 'disabled')
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_no_protein.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_no_protein.urn)
+        self.assertContains(response, 'disabled')
+
+    def test_hides_mavevis_if_target_has_no_uniprot_id(self):
+        scs_uniprot = ScoreSetWithTargetFactory(private=False)
+        scs_no_uniprot = ScoreSetWithTargetFactory(private=False)
+
+        v1 = VariantFactory(scoreset=scs_uniprot)
+        v2 = VariantFactory(scoreset=scs_no_uniprot)
+        scs_no_uniprot.target.uniprot_id = None
+        scs_no_uniprot.target.save()
+
+        self.assertTrue(scs_uniprot.has_protein_variants)
+        self.assertTrue(scs_no_uniprot.has_protein_variants)
+        self.assertTrue(scs_uniprot.has_uniprot_metadata)
+        self.assertFalse(scs_no_uniprot.has_uniprot_metadata)
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_no_uniprot.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_no_uniprot.urn)
+        self.assertContains(response, 'disabled')
+
+        request = self.factory.get('/scoreset/{}/'.format(scs_uniprot.urn))
+        request.user = UserFactory()
+        response = ScoreSetDetailView.as_view()(request, urn=scs_uniprot.urn)
+        self.assertNotContains(response, 'disabled')
 
     # --- Next version links
     def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(self):
