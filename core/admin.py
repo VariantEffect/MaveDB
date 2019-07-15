@@ -1,8 +1,8 @@
 from import_export import resources
-from tracking.models import Pageview, Visitor
 
 from django.contrib import admin
 from reversion.models import Version
+from tracking.models import Pageview, Visitor
 
 from . import models
 

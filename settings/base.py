@@ -71,9 +71,6 @@ SOCIAL_AUTH_PIPELINE = [
 
 # Application definition
 INSTALLED_APPS = [
-    'tracking',
-    'import_export',
-    
     'metadata',
     'main',
     'genome',
@@ -92,6 +89,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'rest_framework',
     'django_filters',
+    'tracking',
+    'import_export',
 
     'django.contrib.admin',
     'django.contrib.auth',
