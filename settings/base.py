@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'rest_framework',
     'django_filters',
+    "tracking",
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -106,6 +107,7 @@ AUTHENTICATION_BACKENDS = (
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'tracking.middleware.VisitorTrackingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -202,3 +204,34 @@ REST_FRAMEWORK = {
         'user': '10000/day'
     },
 }
+
+
+# Django-tracking2 settings
+TRACK_AJAX_REQUESTS = True
+TRACK_ANONYMOUS_USERS = True
+TRACK_SUPERUSERS = True
+TRACK_PAGEVIEWS = True
+TRACK_USING_GEOIP = False
+TRACK_REFERER = True
+TRACK_QUERY_STRING = True
+TRACK_IGNORE_STATUS_CODES = [400, 404, 403, 405, 410, 500]
+TRACK_IGNORE_URLS = [
+    # Admin
+    r'admin/.*',
+    # Static pages
+    r'^(favicon\.ico|robots\.txt)$',
+    r'^terms_privacy/$',
+    r'^contact/$',
+    r'^docs/$',
+    # Profile/Account
+    r'^profile/.*',
+    r'^register/$',
+    r'^login/.*',
+    r'^logout/.*',
+    # OAuth
+    r'^oauth/.*',
+    r'^complete/.*',
+    r'^disconnect/.*',
+    # Django-tracking2
+    r'^tracking/.*',
+]
