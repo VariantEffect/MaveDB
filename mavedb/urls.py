@@ -22,6 +22,8 @@ from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
 
+import core.views
+
 
 handler403 = 'main.views.handler403'
 handler404 = 'main.views.handler404'
@@ -43,10 +45,13 @@ urlpatterns = [
         r'^search/',
         include("search.urls", namespace="search"), name="search"
     ),
+    # ----- Admin
+    url(r"^admin/stats/$", core.views.get_pageview_stats, name="page-stats"),
 ]
 
 if settings.ADMIN_ENABLED:
     urlpatterns += [
         url(r'^admin/', admin.site.urls),
+        url(r'^tracking/', include('tracking.urls')),
     ]
 
