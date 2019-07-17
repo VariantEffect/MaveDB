@@ -160,7 +160,7 @@ class ScoreSet(DatasetModel):
 
     dataset_columns = JSONField(
         verbose_name="Dataset columns",
-        default=default_dataset(),
+        default=default_dataset,
         validators=[validate_scoreset_json],
     )
 

@@ -15,6 +15,13 @@ column_order = defaultdict(lambda: 1)
 column_order[constants.required_score_column] = 0
 
 
+def default_data_dict():
+    return dict({
+        constants.variant_score_data: {},
+        constants.variant_count_data: {},
+    })
+
+
 @transaction.atomic
 def assign_public_urn(variant):
     """
@@ -122,10 +129,7 @@ class Variant(UrnModel):
     # ---------------------------------------------------------------------- #
     data = JSONField(
         verbose_name="Data columns",
-        default=dict({
-            constants.variant_score_data: {},
-            constants.variant_count_data: {},
-        }),
+        default=default_data_dict,
         validators=[validate_variant_json],
     )
 

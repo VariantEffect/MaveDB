@@ -183,7 +183,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     extra_metadata = JSONField(
         blank=True,
-        default={},
+        default=dict,
         verbose_name="Additional metadata",
     )
 
