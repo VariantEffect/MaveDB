@@ -1,7 +1,9 @@
 from django.test import TestCase
 from django.forms.formsets import (
-    TOTAL_FORM_COUNT, INITIAL_FORM_COUNT,
-    MIN_NUM_FORM_COUNT, MAX_NUM_FORM_COUNT,
+    TOTAL_FORM_COUNT,
+    INITIAL_FORM_COUNT,
+    MIN_NUM_FORM_COUNT,
+    MAX_NUM_FORM_COUNT,
 )
 
 from core.utilities import null_values_list
@@ -10,7 +12,7 @@ from ..factories import (
     ReferenceMapFactory,
     TargetGeneFactory,
     ReferenceGenomeFactory,
-    GenomicIntervalFactory
+    GenomicIntervalFactory,
 )
 from ..models import GenomicInterval, ReferenceMap
 from ..forms import create_genomic_interval_formset
@@ -24,36 +26,36 @@ GenomicIntervaLFormSet = create_genomic_interval_formset(
 class TestGenomicIntervalFormset(TestCase):
     @staticmethod
     def prefix():
-        return 'form'
+        return "form"
 
     @staticmethod
     def management_form():
         return {
-            'form-' + TOTAL_FORM_COUNT: 3,
-            'form-' + INITIAL_FORM_COUNT: 0,
-            'form-' + MIN_NUM_FORM_COUNT: 1,
-            'form-' + MAX_NUM_FORM_COUNT: 1000
+            "form-" + TOTAL_FORM_COUNT: 3,
+            "form-" + INITIAL_FORM_COUNT: 0,
+            "form-" + MIN_NUM_FORM_COUNT: 1,
+            "form-" + MAX_NUM_FORM_COUNT: 1000,
         }
 
     @staticmethod
     def test_data():
-        prefix = 'form'
+        prefix = "form"
         dict_ = {
             # Form 1
-            '{}-0-start'.format(prefix): '1',
-            '{}-0-end'.format(prefix): '2',
-            '{}-0-chromosome'.format(prefix): 'chr1',
-            '{}-0-strand'.format(prefix): '+',
+            "{}-0-start".format(prefix): "1",
+            "{}-0-end".format(prefix): "2",
+            "{}-0-chromosome".format(prefix): "chr1",
+            "{}-0-strand".format(prefix): "+",
             # Form 2
-            '{}-1-start'.format(prefix): '2',
-            '{}-1-end'.format(prefix): '3',
-            '{}-1-chromosome'.format(prefix): 'chr2',
-            '{}-1-strand'.format(prefix): '-',
+            "{}-1-start".format(prefix): "2",
+            "{}-1-end".format(prefix): "3",
+            "{}-1-chromosome".format(prefix): "chr2",
+            "{}-1-strand".format(prefix): "-",
             # Form 3
-            '{}-2-start'.format(prefix): '3',
-            '{}-2-end'.format(prefix): '4',
-            '{}-2-chromosome'.format(prefix): 'chr3',
-            '{}-2-strand'.format(prefix): '+',
+            "{}-2-start".format(prefix): "3",
+            "{}-2-end".format(prefix): "4",
+            "{}-2-chromosome".format(prefix): "chr3",
+            "{}-2-strand".format(prefix): "+",
         }
         dict_.update(TestGenomicIntervalFormset.management_form())
         return dict_
@@ -79,8 +81,8 @@ class TestGenomicIntervalFormset(TestCase):
         data = self.test_data()
         data["%s-1-start" % self.prefix()] = 1
         data["%s-1-end" % self.prefix()] = 2
-        data["%s-1-chromosome" % self.prefix()] = 'chr1'
-        data["%s-1-strand" % self.prefix()] = '+'
+        data["%s-1-chromosome" % self.prefix()] = "chr1"
+        data["%s-1-strand" % self.prefix()] = "+"
         formset = GenomicIntervaLFormSet(data=data)
         self.assertFalse(formset.is_valid())
         self.assertTrue(formset.non_form_errors)
@@ -94,8 +96,8 @@ class TestGenomicIntervalFormset(TestCase):
         data = self.management_form()
         data["%s-1-start" % self.prefix()] = 1
         data["%s-1-end" % self.prefix()] = 2
-        data["%s-1-chromosome" % self.prefix()] = 'chr1'
-        data["%s-1-strand" % self.prefix()] = '+'
+        data["%s-1-chromosome" % self.prefix()] = "chr1"
+        data["%s-1-strand" % self.prefix()] = "+"
         formset = GenomicIntervaLFormSet(data=data)
         self.assertFalse(formset.is_valid())
         self.assertTrue(formset.non_form_errors)
@@ -126,11 +128,11 @@ class TestGenomicIntervalFormset(TestCase):
 
         queryset = GenomicInterval.objects.all()
         data = self.test_data()
-        data['form-' + INITIAL_FORM_COUNT] = queryset.count()
-        data['form-' + TOTAL_FORM_COUNT] = queryset.count() + 2  # extra
-        data['form-0-id'] = g1.pk
-        data['form-1-id'] = g2.pk
-        data['form-2-id'] = g3.pk
+        data["form-" + INITIAL_FORM_COUNT] = queryset.count()
+        data["form-" + TOTAL_FORM_COUNT] = queryset.count() + 2  # extra
+        data["form-0-id"] = g1.pk
+        data["form-1-id"] = g2.pk
+        data["form-2-id"] = g3.pk
         formset = GenomicIntervaLFormSet(data, queryset=queryset)
 
         self.assertEqual(formset.initial_form_count(), 3)
@@ -146,11 +148,11 @@ class TestGenomicIntervalFormset(TestCase):
         queryset = GenomicInterval.objects.all()
 
         data = self.test_data()
-        data['form-' + INITIAL_FORM_COUNT] = 3
-        data['form-' + TOTAL_FORM_COUNT] = 3
-        data['form-0-id'] = g1.pk
-        data['form-1-id'] = g2.pk
-        data['form-2-id'] = g3.pk
+        data["form-" + INITIAL_FORM_COUNT] = 3
+        data["form-" + TOTAL_FORM_COUNT] = 3
+        data["form-0-id"] = g1.pk
+        data["form-1-id"] = g2.pk
+        data["form-2-id"] = g3.pk
 
         formset = GenomicIntervaLFormSet(data, queryset=queryset)
         self.assertTrue(formset.is_valid())
@@ -175,11 +177,11 @@ class TestGenomicIntervalFormset(TestCase):
         queryset = GenomicInterval.objects.all()
 
         data = self.test_data()
-        data['form-' + INITIAL_FORM_COUNT] = 3
-        data['form-' + TOTAL_FORM_COUNT] = 3
-        data['form-0-id'] = g1.pk
-        data['form-1-id'] = g2.pk
-        data['form-2-id'] = g3.pk
+        data["form-" + INITIAL_FORM_COUNT] = 3
+        data["form-" + TOTAL_FORM_COUNT] = 3
+        data["form-0-id"] = g1.pk
+        data["form-1-id"] = g2.pk
+        data["form-2-id"] = g3.pk
 
         formset = GenomicIntervaLFormSet(data, queryset=queryset)
         self.assertTrue(formset.is_valid())

@@ -16,22 +16,21 @@ from dataset.utilities import publish_dataset
 
 
 class TestPublishDataset(TestCase):
-    
     def test_publish_experimentset_sets_private_to_false(self):
         obj = ExperimentSetFactory()
         obj = publish_dataset(obj)
         self.assertFalse(obj.private)
-        
+
     def test_publish_experiment_sets_private_to_false(self):
         obj = ExperimentFactory()
         obj = publish_dataset(obj)
         self.assertFalse(obj.private)
-        
+
     def test_publish_scoreset_sets_private_to_false(self):
         obj = ScoreSetFactory()
         obj = publish_dataset(obj)
         self.assertFalse(obj.private)
-        
+
     def test_publish_experimentset_creates_public_urn(self):
         obj = ExperimentSetFactory()
         obj = publish_dataset(obj)
@@ -86,17 +85,16 @@ class TestPublishDataset(TestCase):
         obj = publish_dataset(obj)
         obj = publish_dataset(obj)
         self.assertEqual(publish_dataset(obj).urn, publish_dataset(obj).urn)
-        
+
     def test_can_publish_sequential_with_same_parent(self):
         obj1 = ScoreSetFactory()
         obj2 = ScoreSetFactory(experiment=obj1.parent)
         obj1 = publish_dataset(obj1)
         obj2 = publish_dataset(obj2)
         self.assertNotEqual(
-            publish_dataset(obj1).urn,
-            publish_dataset(obj2).urn
+            publish_dataset(obj1).urn, publish_dataset(obj2).urn
         )
-        
+
     def test_publish_scoreset_sequential_values_assigned_to_variants(self):
         obj1 = ScoreSetFactory()
         v1 = VariantFactory(scoreset=obj1)
@@ -105,7 +103,7 @@ class TestPublishDataset(TestCase):
         v1.refresh_from_db()
         v2.refresh_from_db()
         self.assertNotEqual(v1.urn[-1], v2.urn[-1])
-        
+
     def test_typeerror_not_a_dataset(self):
         with self.assertRaises(TypeError):
             publish_dataset(VariantFactory())

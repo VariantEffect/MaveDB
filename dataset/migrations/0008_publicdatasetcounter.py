@@ -9,25 +9,40 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0007_auto_20180516_1214'),
-    ]
+    dependencies = [("dataset", "0007_auto_20180516_1214")]
 
     operations = [
         migrations.CreateModel(
-            name='PublicDatasetCounter',
+            name="PublicDatasetCounter",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(default=datetime.date.today, verbose_name='Modification date')),
-                ('scoresets', models.IntegerField(default=0)),
-                ('experiments', models.IntegerField(default=0)),
-                ('experimentsets', models.IntegerField(default=0)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Modification date",
+                    ),
+                ),
+                ("scoresets", models.IntegerField(default=0)),
+                ("experiments", models.IntegerField(default=0)),
+                ("experimentsets", models.IntegerField(default=0)),
             ],
-            options={
-                'ordering': ['-creation_date'],
-                'abstract': False,
-            },
+            options={"ordering": ["-creation_date"], "abstract": False},
             bases=(core.mixins.SingletonMixin, models.Model),
-        ),
+        )
     ]

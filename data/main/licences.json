@@ -23,6 +23,14 @@
       "logo": "by.svg",
       "link": "https://creativecommons.org/licenses/by/4.0/",
       "version": "4.0"
+    },
+    {
+      "short_name": "Other - See Data Usage Guidelines licence",
+      "long_name": "Other - See Data Usage Guidelines licence",
+      "legal_code": "CC_BY_4.0.txt",
+      "logo": "by.svg",
+      "link": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "4.0"
     }
   ]
 }

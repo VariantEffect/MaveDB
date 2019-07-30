@@ -10,6 +10,7 @@ class TestNewsModel(TestCase):
     """
     Test that News items can be created, deleted and modified.
     """
+
     def test_message_property_displays_date_and_text(self):
         message = "Hello World!"
         date = datetime.date.today().replace(1985, 7, 10)
@@ -38,6 +39,7 @@ class SiteInformationModelTest(TestCase):
     """
     Test that a SiteInformation can be created, deleted and modified.
     """
+
     def test_can_create_and_save_information(self):
         info = SiteInformationFactory()
         self.assertEqual(SiteInformation.objects.count(), 1)

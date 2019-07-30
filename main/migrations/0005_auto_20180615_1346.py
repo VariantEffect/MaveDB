@@ -7,39 +7,33 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0004_auto_20180516_1100'),
-    ]
+    dependencies = [("main", "0004_auto_20180516_1100")]
 
     operations = [
         migrations.RenameField(
-            model_name='siteinformation',
-            old_name='about',
-            new_name='md_about',
+            model_name="siteinformation", old_name="about", new_name="md_about"
         ),
         migrations.RenameField(
-            model_name='siteinformation',
-            old_name='citation',
-            new_name='md_citation',
+            model_name="siteinformation",
+            old_name="citation",
+            new_name="md_citation",
         ),
         migrations.RenameField(
-            model_name='siteinformation',
-            old_name='documentation',
-            new_name='md_documentation',
+            model_name="siteinformation",
+            old_name="documentation",
+            new_name="md_documentation",
         ),
         migrations.RenameField(
-            model_name='siteinformation',
-            old_name='privacy',
-            new_name='md_privacy',
+            model_name="siteinformation",
+            old_name="privacy",
+            new_name="md_privacy",
         ),
         migrations.RenameField(
-            model_name='siteinformation',
-            old_name='terms',
-            new_name='md_terms',
+            model_name="siteinformation", old_name="terms", new_name="md_terms"
         ),
         migrations.RenameField(
-            model_name='siteinformation',
-            old_name='usage_guide',
-            new_name='md_usage_guide',
+            model_name="siteinformation",
+            old_name="usage_guide",
+            new_name="md_usage_guide",
         ),
     ]

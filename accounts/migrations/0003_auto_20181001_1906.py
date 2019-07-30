@@ -7,19 +7,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('accounts', '0002_auto_20180510_1355'),
-    ]
+    dependencies = [("accounts", "0002_auto_20180510_1355")]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='auth_token',
+            model_name="profile",
+            name="auth_token",
             field=models.CharField(default=None, max_length=64, null=True),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='auth_token_expiry',
+            model_name="profile",
+            name="auth_token_expiry",
             field=models.DateField(default=None, null=True),
         ),
     ]

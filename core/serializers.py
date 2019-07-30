@@ -11,4 +11,4 @@ class TimeStampedModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TimeStampedModel
-        fields = ('creation_date', 'modification_date',)
+        fields = ("creation_date", "modification_date")

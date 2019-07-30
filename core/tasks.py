@@ -3,9 +3,15 @@ import logging
 import time
 
 from kombu.exceptions import (
-    OperationalError, ConnectionLimitExceeded, ConnectionError,
-    LimitExceeded, KombuError, ContentDisallowed, SerializationError,
-    DecodeError, EncodeError
+    OperationalError,
+    ConnectionLimitExceeded,
+    ConnectionError,
+    LimitExceeded,
+    KombuError,
+    ContentDisallowed,
+    SerializationError,
+    DecodeError,
+    EncodeError,
 )
 
 from celery.utils.log import get_task_logger
@@ -21,8 +27,8 @@ from .models import FailedTask
 
 
 User = get_user_model()
-logger = get_task_logger('core.tasks')
-django_logger = logging.getLogger('django')
+logger = get_task_logger("core.tasks")
+django_logger = logging.getLogger("django")
 error_message = (
     "Submitting task {name} raised a {exc_name} error. "
     "Failed task has been saved."
@@ -34,9 +40,15 @@ network_message = (
     "been processed within the week."
 )
 kombu_errors = (
-    OperationalError, ConnectionLimitExceeded, ConnectionError,
-    LimitExceeded, KombuError, ContentDisallowed, SerializationError,
-    DecodeError, EncodeError
+    OperationalError,
+    ConnectionLimitExceeded,
+    ConnectionError,
+    LimitExceeded,
+    KombuError,
+    ContentDisallowed,
+    SerializationError,
+    DecodeError,
+    EncodeError,
 )
 
 
@@ -44,9 +56,10 @@ class BaseTask(Task):
     """
     Base task that will save the task to the database and log the error.
     """
+
     def run(self, *args, **kwargs):
         raise NotImplementedError()
-        
+
     @staticmethod
     def get_user(user):
         if isinstance(user, User):
@@ -66,7 +79,7 @@ class BaseTask(Task):
             user = None
 
         return user
-        
+
     def on_failure(self, exc, task_id, args, kwargs, einfo, user=None):
         """
         Error handler.
@@ -99,9 +112,9 @@ class BaseTask(Task):
         # The kwargs can be potentially big in dataset tasks so truncate
         # the variants key before logging.
         str_kwargs = kwargs.copy()
-        variants = str(str_kwargs.get('variants', {}))[0:250]
+        variants = str(str_kwargs.get("variants", {}))[0:250]
         if variants in str_kwargs:
-            str_kwargs['variants'] = variants
+            str_kwargs["variants"] = variants
         logger.exception(
             "{0} with id {1} called with args={2}, kwargs={3} "
             "raised:\n'{4}' with traceback:\n{5}".format(
@@ -110,15 +123,16 @@ class BaseTask(Task):
         )
         self.save_failed_task(exc, task_id, args, kwargs, einfo, user)
         super(BaseTask, self).on_failure(exc, task_id, args, kwargs, einfo)
-    
-    def save_failed_task(self, exc, task_id, args, kwargs, traceback,
-                         user=None):
+
+    def save_failed_task(
+        self, exc, task_id, args, kwargs, traceback, user=None
+    ):
         """
         Save a failed task. If it exists, the modification_date and failure
         counter are updated.
         """
         task, _ = FailedTask.update_or_create(
-            name=self.name.split('.')[-1],
+            name=self.name.split(".")[-1],
             full_name=self.name,
             exc=exc,
             task_id=task_id,
@@ -129,8 +143,14 @@ class BaseTask(Task):
         )
         return task
 
-    def submit_task(self, args=None, kwargs=None, async_options=None,
-                    request=None, countdown=10):
+    def submit_task(
+        self,
+        args=None,
+        kwargs=None,
+        async_options=None,
+        request=None,
+        countdown=10,
+    ):
         """
         Calls `task.apply_async` and handles any connection errors by
         logging the error to the `django` default log and saving the
@@ -159,22 +179,32 @@ class BaseTask(Task):
         if not async_options:
             async_options = {}
         try:
-            return True, self.apply_async(
-                args=args, kwargs=kwargs, countdown=countdown, **async_options)
+            return (
+                True,
+                self.apply_async(
+                    args=args,
+                    kwargs=kwargs,
+                    countdown=countdown,
+                    **async_options
+                ),
+            )
         except kombu_errors as e:
-            logger.exception(error_message.format(
-                name=self.name, exc_name=e.__class__.__name__))
+            logger.exception(
+                error_message.format(
+                    name=self.name, exc_name=e.__class__.__name__
+                )
+            )
             if request:
                 messages.warning(request, network_message)
             task, _ = FailedTask.update_or_create(
-                name=self.name.split('.')[-1],
+                name=self.name.split(".")[-1],
                 full_name=self.name,
                 exc=e,
-                task_id='-1',
+                task_id="-1",
                 args=args,
                 kwargs=kwargs,
                 traceback=traceback.format_exc(),
-                user=None if not request else request.user
+                user=None if not request else request.user,
             )
             return False, task
 
@@ -199,4 +229,3 @@ def add(a, b, raise_=False, wait=False):
     if wait:
         time.sleep(wait)
     return a + b
-

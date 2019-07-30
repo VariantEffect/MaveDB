@@ -23,7 +23,7 @@ from ..permissions import (
     assign_user_as_instance_viewer,
     remove_user_as_instance_admin,
     remove_user_as_instance_editor,
-    remove_user_as_instance_viewer
+    remove_user_as_instance_viewer,
 )
 
 User = get_user_model()
@@ -37,41 +37,48 @@ class TestUserProfile(TestCase):
         self.exp_2 = Experiment.objects.create()
         self.scs_1 = ScoreSet.objects.create(experiment=self.exp_1)
         self.scs_2 = ScoreSet.objects.create(experiment=self.exp_2)
-        
+
     def test_generate_token_creates_new_token(self):
         user = User.objects.create(username="bob", password="secretkey")
         self.assertIsNone(user.profile.auth_token)
         user.profile.generate_token()
         self.assertIsNotNone(user.profile.auth_token)
         self.assertEqual(len(user.profile.auth_token), Profile.TOKEN_LEGNTH)
-        
-    def test_generate_token_creates_new_token_expiry_date_days_from_today(self):
+
+    def test_generate_token_creates_new_token_expiry_date_days_from_today(
+        self
+    ):
         user = User.objects.create(username="bob", password="secretkey")
         self.assertIsNone(user.profile.auth_token_expiry)
         user.profile.generate_token()
         today = datetime.date.today()
         self.assertEqual(
             user.profile.auth_token_expiry,
-            today + timedelta(days=Profile.TOKEN_EXPIRY)
+            today + timedelta(days=Profile.TOKEN_EXPIRY),
         )
-        
+
     def test_validate_token_false_incorrect_token(self):
         user = User.objects.create(username="bob", password="secretkey")
         user.profile.generate_token()
-        self.assertFalse(user.profile.auth_token_is_valid('aaa'))
+        self.assertFalse(user.profile.auth_token_is_valid("aaa"))
         self.assertTrue(
-            user.profile.auth_token_is_valid(user.profile.auth_token))
-        
+            user.profile.auth_token_is_valid(user.profile.auth_token)
+        )
+
     def test_validate_token_false_expriy_date_has_passed(self):
         user = User.objects.create(username="bob", password="secretkey")
         user.profile.generate_token()
         self.assertTrue(
-            user.profile.auth_token_is_valid(user.profile.auth_token))
-        user.profile.auth_token_expiry -= timedelta(days=Profile.TOKEN_EXPIRY*2)
+            user.profile.auth_token_is_valid(user.profile.auth_token)
+        )
+        user.profile.auth_token_expiry -= timedelta(
+            days=Profile.TOKEN_EXPIRY * 2
+        )
         user.profile.save()
         self.assertFalse(
-            user.profile.auth_token_is_valid(user.profile.auth_token))
-        
+            user.profile.auth_token_is_valid(user.profile.auth_token)
+        )
+
     def test_can_get_non_anonymous_profiles(self):
         bob = User.objects.create(username="bob", password="secretkey")
         anon = User.objects.get(username=ANONYMOUS_USER_NAME)
@@ -97,39 +104,48 @@ class TestUserProfile(TestCase):
 
     def test_can_get_full_name(self):
         bob = User.objects.create(
-            username="bob", password="secretkey",
-            first_name="daniel", last_name="smith"
+            username="bob",
+            password="secretkey",
+            first_name="daniel",
+            last_name="smith",
         )
         self.assertEqual(bob.profile.get_full_name(), "Daniel Smith")
 
     def test_can_get_short_name(self):
         bob = User.objects.create(
-            username="bob", password="secretkey",
-            first_name="daniel", last_name="smith"
+            username="bob",
+            password="secretkey",
+            first_name="daniel",
+            last_name="smith",
         )
         self.assertEqual(bob.profile.get_short_name(), "Smith, D")
 
-    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch("core.tasks.send_mail.apply_async")
     def test_send_email_uses_profile_by_email_by_default(self, patch):
         bob = User.objects.create(
-            username="bob", password="secretkey",
-            first_name="daniel", last_name="smith"
+            username="bob",
+            password="secretkey",
+            first_name="daniel",
+            last_name="smith",
         )
         bob.profile.email = "email@email.com"
         bob.profile.save()
         bob.profile.email_user(message="hello", subject="None")
-        
+
         patch.assert_called()
         send_mail.apply(**patch.call_args[1])
-        
+
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [bob.profile.email])
 
-    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch("core.tasks.send_mail.apply_async")
     def test_send_email_uses_user_email_as_backup(self, patch):
         bob = User.objects.create(
-            username="bob", password="secretkey",
-            first_name="daniel", last_name="smith", email="bob@email.com"
+            username="bob",
+            password="secretkey",
+            first_name="daniel",
+            last_name="smith",
+            email="bob@email.com",
         )
         bob.profile.email = None
         bob.profile.save()
@@ -138,15 +154,17 @@ class TestUserProfile(TestCase):
 
         patch.assert_called()
         send_mail.apply(**patch.call_args[1])
-        
+
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [bob.email])
 
-    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch("core.tasks.send_mail.apply_async")
     def test_email_user_sends_no_email_if_no_email_present(self, patch):
         bob = User.objects.create(
-            username="bob", password="secretkey",
-            first_name="daniel", last_name="smith",
+            username="bob",
+            password="secretkey",
+            first_name="daniel",
+            last_name="smith",
             email="",
         )
         bob.profile.email = None
@@ -304,33 +322,35 @@ class TestUserProfile(TestCase):
 
         remove_user_as_instance_viewer(bob, self.exps_1)
         self.assertEqual(len(bob.profile.viewer_experimentsets()), 0)
-    
-    @mock.patch('core.tasks.send_mail.apply_async')
+
+    @mock.patch("core.tasks.send_mail.apply_async")
     def test_notify_group_change_full_url_rendererd_in_template(self, patch):
         user = UserFactory()
         instance = factories.ExperimentFactory()
         user.profile.notify_user_group_change(
-            instance, 'added', 'administrator')
+            instance, "added", "administrator"
+        )
         patch.assert_called()
         self.assertIn(
-            instance.get_url(),
-            patch.call_args[1]['kwargs']['message']
+            instance.get_url(), patch.call_args[1]["kwargs"]["message"]
         )
-        
-    @mock.patch('core.tasks.send_mail.apply_async')
+
+    @mock.patch("core.tasks.send_mail.apply_async")
     def test_delegates_correct_template_fail(self, patch):
         user = UserFactory()
         user.profile.notify_user_submission_status(
-            success=False, task_id=1, description='do the thing')
+            success=False, task_id=1, description="do the thing"
+        )
         patch.assert_called()
-        message = patch.call_args[1]['kwargs']['message']
+        message = patch.call_args[1]["kwargs"]["message"]
         self.assertIn("could not be processed", message)
 
-    @mock.patch('core.tasks.send_mail.apply_async')
+    @mock.patch("core.tasks.send_mail.apply_async")
     def test_delegates_correct_template_success(self, patch):
         user = UserFactory()
         user.profile.notify_user_submission_status(
-            success=True, task_id=1, description='do the thing')
+            success=True, task_id=1, description="do the thing"
+        )
         patch.assert_called()
-        message = patch.call_args[1]['kwargs']['message']
+        message = patch.call_args[1]["kwargs"]["message"]
         self.assertIn("has been successfully processed", message)

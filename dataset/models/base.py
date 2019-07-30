@@ -12,7 +12,10 @@ from accounts.mixins import GroupPermissionMixin
 
 from core.utilities import pandoc
 from metadata.models import (
-    Keyword, SraIdentifier, DoiIdentifier, PubmedIdentifier,
+    Keyword,
+    SraIdentifier,
+    DoiIdentifier,
+    PubmedIdentifier,
 )
 from urn.models import UrnModel
 
@@ -26,8 +29,9 @@ class PublicDatasetCounter(SingletonMixin, TimeStampedModel):
     """
     Keeps track of the number of public datasets for each model type.
     """
+
     experimentsets = models.IntegerField(default=0)
-    
+
 
 class DatasetModel(UrnModel, GroupPermissionMixin):
     """
@@ -100,12 +104,8 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         NCBI PubMed identifiers (https://www.ncbi.nlm.nih.gov/pubmed). These
         will be formatted and displayed as publications.
     """
-    M2M_FIELD_NAMES = (
-        'keywords',
-        'doi_ids',
-        'pubmed_ids',
-        'sra_ids',
-    )
+
+    M2M_FIELD_NAMES = ("keywords", "doi_ids", "pubmed_ids", "sra_ids")
     STATUS_CHOICES = (
         (constants.processing, constants.processing),
         (constants.success, constants.success),
@@ -114,7 +114,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     class Meta:
         abstract = True
-        ordering = ['-creation_date']
+        ordering = ["-creation_date"]
 
     @classmethod
     def class_name(cls):
@@ -123,18 +123,21 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     @classmethod
     def tracked_fields(cls):
         return (
-            "title", "short_description", "abstract_text", "method_text",
-            "keywords", "sra_ids", "doi_ids", "pubmed_ids",
+            "title",
+            "short_description",
+            "abstract_text",
+            "method_text",
+            "keywords",
+            "sra_ids",
+            "doi_ids",
+            "pubmed_ids",
         )
 
     # ---------------------------------------------------------------------- #
     #                       Model fields
     # ---------------------------------------------------------------------- #
     publish_date = models.DateField(
-        blank=True,
-        null=True,
-        default=None,
-        verbose_name="Published on",
+        blank=True, null=True, default=None, verbose_name="Published on"
     )
 
     modified_by = models.ForeignKey(
@@ -142,7 +145,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Last edited by",
-        related_name='last_edited_%(class)s',
+        related_name="last_edited_%(class)s",
     )
 
     created_by = models.ForeignKey(
@@ -150,7 +153,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Created by",
-        related_name='last_created_%(class)s',
+        related_name="last_created_%(class)s",
     )
 
     processing_state = models.CharField(
@@ -159,75 +162,65 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         default=None,
         max_length=32,
         verbose_name="Processing state",
-        choices=STATUS_CHOICES
+        choices=STATUS_CHOICES,
     )
 
     approved = models.BooleanField(
-        blank=True,
-        null=False,
-        default=False,
-        verbose_name="Approved",
+        blank=True, null=False, default=False, verbose_name="Approved"
     )
 
     private = models.BooleanField(
-        blank=True,
-        null=False,
-        default=True,
-        verbose_name="Private",
+        blank=True, null=False, default=True, verbose_name="Private"
     )
 
     last_child_value = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(limit_value=0)],
+        default=0, validators=[MinValueValidator(limit_value=0)]
     )
 
     extra_metadata = JSONField(
-        blank=True,
-        default=dict,
-        verbose_name="Additional metadata",
+        blank=True, default=dict, verbose_name="Additional metadata"
     )
 
     abstract_text = models.TextField(
-        blank=True,
-        default="",
-        verbose_name="Abstract",
+        blank=True, default="", verbose_name="Abstract"
     )
     method_text = models.TextField(
-        blank=True,
-        default="",
-        verbose_name="Method description"
+        blank=True, default="", verbose_name="Method description"
     )
     short_description = models.TextField(
-        blank=False,
-        default="",
-        verbose_name="Short description",
+        blank=False, default="", verbose_name="Short description"
     )
     title = models.CharField(
-        blank=False,
-        default="",
-        verbose_name="Short title",
-        max_length=250
+        blank=False, default="", verbose_name="Short title", max_length=250
     )
 
     # ---------------------------------------------------------------------- #
     #                       Optional Model fields
     # ---------------------------------------------------------------------- #
     keywords = models.ManyToManyField(
-        Keyword, blank=True,
-        verbose_name='Keywords',
-        related_name='associated_%(class)ss',)
+        Keyword,
+        blank=True,
+        verbose_name="Keywords",
+        related_name="associated_%(class)ss",
+    )
     sra_ids = models.ManyToManyField(
-        SraIdentifier, blank=True,
-        verbose_name='SRA identifiers',
-        related_name='associated_%(class)ss',)
+        SraIdentifier,
+        blank=True,
+        verbose_name="SRA identifiers",
+        related_name="associated_%(class)ss",
+    )
     doi_ids = models.ManyToManyField(
-        DoiIdentifier, blank=True,
-        verbose_name='DOI identifiers',
-        related_name='associated_%(class)ss',)
+        DoiIdentifier,
+        blank=True,
+        verbose_name="DOI identifiers",
+        related_name="associated_%(class)ss",
+    )
     pubmed_ids = models.ManyToManyField(
-        PubmedIdentifier, blank=True,
-        verbose_name='PubMed identifiers',
-        related_name='associated_%(class)ss',)
+        PubmedIdentifier,
+        blank=True,
+        verbose_name="PubMed identifiers",
+        related_name="associated_%(class)ss",
+    )
 
     # ---------------------------------------------------------------------- #
     #                       Methods
@@ -247,9 +240,9 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         """
         if hasattr(self, attr):
             self.__setattr__(attr, value)
-        if hasattr(self, 'experiment'):
+        if hasattr(self, "experiment"):
             self.experiment.propagate_set_value(attr, value)
-        if hasattr(self, 'experimentset'):
+        if hasattr(self, "experimentset"):
             self.experimentset.propagate_set_value(attr, value)
 
     @transaction.atomic
@@ -260,15 +253,15 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         return self
 
     def save_parents(self, *args, **kwargs):
-        if hasattr(self, 'experiment'):
+        if hasattr(self, "experiment"):
             self.experiment.save(*args, **kwargs)
             self.experiment.save_parents(*args, **kwargs)
-        if hasattr(self, 'experimentset'):
+        if hasattr(self, "experimentset"):
             self.experimentset.save(*args, **kwargs)
 
     def set_modified_by(self, user, propagate=False):
         if propagate:
-            self.propagate_set_value('modified_by', user)
+            self.propagate_set_value("modified_by", user)
         else:
             self.modified_by = user
 
@@ -276,13 +269,13 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
         if not date:
             date = datetime.date.today()
         if propagate:
-            self.propagate_set_value('publish_date', date)
+            self.propagate_set_value("publish_date", date)
         else:
             self.publish_date = date
 
     def set_created_by(self, user, propagate=False):
         if propagate:
-            self.propagate_set_value('created_by', user)
+            self.propagate_set_value("created_by", user)
         else:
             self.created_by = user
 
@@ -300,14 +293,13 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
 
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
-        
+
     def parent_for_user(self, user=None):
         if self.parent is None:
             return None
         elif not self.parent.private:
             return self.parent
-        elif user and self.parent.private and \
-                user in self.parent.contributors:
+        elif user and self.parent.private and user in self.parent.contributors:
             return self.parent
         else:
             return None
@@ -315,7 +307,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     @property
     def parent(self):
         return None
-        
+
     @property
     def children(self):
         return None

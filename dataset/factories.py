@@ -13,8 +13,10 @@ from factory.django import DjangoModelFactory
 
 from main.models import Licence
 from metadata.factories import (
-    KeywordFactory, SraIdentifierFactory, DoiIdentifierFactory,
-    PubmedIdentifierFactory
+    KeywordFactory,
+    SraIdentifierFactory,
+    DoiIdentifierFactory,
+    PubmedIdentifierFactory,
 )
 
 from .constants import success
@@ -28,13 +30,14 @@ class DatasetModelFactory(DjangoModelFactory):
     """
     Factory for producing test instances for :class:`DatasetModel`.
     """
+
     class Meta:
         model = DatasetModel
 
-    method_text = factory.faker.Faker('text', max_nb_chars=1500)
-    abstract_text = factory.faker.Faker('text', max_nb_chars=1500)
-    title = factory.faker.Faker('text', max_nb_chars=250)
-    short_description = factory.faker.Faker('text', max_nb_chars=1000)
+    method_text = factory.faker.Faker("text", max_nb_chars=1500)
+    abstract_text = factory.faker.Faker("text", max_nb_chars=1500)
+    title = factory.faker.Faker("text", max_nb_chars=250)
+    short_description = factory.faker.Faker("text", max_nb_chars=1000)
     extra_metadata = {"foo": "bar"}
     private = True
     processing_state = success
@@ -68,6 +71,7 @@ class ExperimentSetFactory(DatasetModelFactory):
     """
     Factory for producing test instances for :class:`ExperimentSet`.
     """
+
     class Meta:
         model = ExperimentSet
 
@@ -76,6 +80,7 @@ class ExperimentFactory(DatasetModelFactory):
     """
     Factory for producing test instances for :class:`Experiment`.
     """
+
     class Meta:
         model = Experiment
 
@@ -87,6 +92,7 @@ class ExperimentWithScoresetFactory(ExperimentFactory):
     Factory for producing test instances for :class:`Experiment` with an
     associated fully specified :class:`ScoreSet` (target, references etc).
     """
+
     @factory.post_generation
     def scoreset(self, create, extracted, **kwargs):
         if create:
@@ -97,6 +103,7 @@ class ScoreSetFactory(DatasetModelFactory):
     """
     Factory for producing test instances for :class:`Scoreset`.
     """
+
     class Meta:
         model = ScoreSet
 
@@ -119,8 +126,10 @@ class ScoreSetWithTargetFactory(ScoreSetFactory):
     Factory for producing test instances for :class:`Scoreset` with an
     associated fully specified :class:`TargetGene` (references etc).
     """
+
     @factory.post_generation
     def target(self, create, extracted, **kwargs):
         from genome.factories import TargetGeneWithReferenceMapFactory
+
         if create and not self.get_target():
             TargetGeneWithReferenceMapFactory(scoreset=self)

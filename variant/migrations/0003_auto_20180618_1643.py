@@ -9,25 +9,26 @@ import variant.validators.hgvs
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('variant', '0002_auto_20180510_1355'),
-    ]
+    dependencies = [("variant", "0002_auto_20180510_1355")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='variant',
-            name='hgvs',
+        migrations.RemoveField(model_name="variant", name="hgvs"),
+        migrations.AddField(
+            model_name="variant",
+            name="hgvs_nt",
+            field=models.TextField(
+                default=None,
+                null=True,
+                validators=[variant.validators.hgvs.validate_hgvs_string],
+            ),
         ),
         migrations.AddField(
-            model_name='variant',
-            name='hgvs_nt',
-            field=models.TextField(default=None, null=True, validators=[
-                variant.validators.hgvs.validate_hgvs_string]),
-        ),
-        migrations.AddField(
-            model_name='variant',
-            name='hgvs_p',
-            field=models.TextField(default=None, null=True, validators=[
-                variant.validators.hgvs.validate_hgvs_string]),
+            model_name="variant",
+            name="hgvs_p",
+            field=models.TextField(
+                default=None,
+                null=True,
+                validators=[variant.validators.hgvs.validate_hgvs_string],
+            ),
         ),
     ]

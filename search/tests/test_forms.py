@@ -11,25 +11,29 @@ class TestAdvancedSearchForm(TestCase):
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertFalse(result)
-        
+
     def test_format_for_filter_does_not_split_on_double_quotes(self):
-        request = RequestFactory().get("/?{key}=Homo&{key}=\"s,d\"".format(
-            key=ds_filters.ScoreSetFilter.ORGANISM))
+        request = RequestFactory().get(
+            '/?{key}=Homo&{key}="s,d"'.format(
+                key=ds_filters.ScoreSetFilter.ORGANISM
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.ScoreSetFilter.ORGANISM], 'Homo,"s,d"')
-    
+            result[ds_filters.ScoreSetFilter.ORGANISM], 'Homo,"s,d"'
+        )
+
     # DatasetModel Filter fields
     # ------------------------------------------------------------------- #
     def test_format_for_filter_formats_title_field(self):
-        request = RequestFactory().get("/?{}=hello".format(
-            ds_filters.DatasetModelFilter.TITLE))
+        request = RequestFactory().get(
+            "/?{}=hello".format(ds_filters.DatasetModelFilter.TITLE)
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.TITLE], 'hello')
-    
+        self.assertEqual(result[ds_filters.DatasetModelFilter.TITLE], "hello")
+
     # def test_format_for_filter_formats_desc_field(self):
     #     request = RequestFactory().get("/?{}=hello".format(
     #         ds_filters.DatasetModelFilter.DESCRIPTION))
@@ -53,132 +57,168 @@ class TestAdvancedSearchForm(TestCase):
     #     result = form.format_data_for_filter()
     #     self.assertEqual(
     #         result[ds_filters.DatasetModelFilter.ABSTRACT], 'hello\nworld')
-    
+
     def test_format_for_filter_formats_sra_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.SRA))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(key=ds_filters.DatasetModelFilter.SRA)
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.SRA], '1,2')
-    
+        self.assertEqual(result[ds_filters.DatasetModelFilter.SRA], "1,2")
+
     def test_format_for_filter_formats_doi_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.DOI))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(key=ds_filters.DatasetModelFilter.DOI)
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.DOI], '1,2')
-    
+        self.assertEqual(result[ds_filters.DatasetModelFilter.DOI], "1,2")
+
     def test_format_for_filter_formats_pubmed_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.PUBMED))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(
+                key=ds_filters.DatasetModelFilter.PUBMED
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.PUBMED], '1,2')
-    
+        self.assertEqual(result[ds_filters.DatasetModelFilter.PUBMED], "1,2")
+
     def test_format_for_filter_formats_keyword_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.KEYWORD))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(
+                key=ds_filters.DatasetModelFilter.KEYWORD
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.KEYWORD], '1,2')
+        self.assertEqual(result[ds_filters.DatasetModelFilter.KEYWORD], "1,2")
 
     # User filter fields
     # ------------------------------------------------------------------- #
     def test_format_for_filter_formats_fn_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.FIRST_NAME))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(
+                key=ds_filters.DatasetModelFilter.FIRST_NAME
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.DatasetModelFilter.FIRST_NAME], '1,2')
+            result[ds_filters.DatasetModelFilter.FIRST_NAME], "1,2"
+        )
 
     def test_format_for_filter_formats_ln_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.LAST_NAME))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(
+                key=ds_filters.DatasetModelFilter.LAST_NAME
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.DatasetModelFilter.LAST_NAME], '1,2')
+            result[ds_filters.DatasetModelFilter.LAST_NAME], "1,2"
+        )
 
     def test_format_for_filter_formats_un_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.USERNAME))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(
+                key=ds_filters.DatasetModelFilter.USERNAME
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.DatasetModelFilter.USERNAME], '1,2')
+        self.assertEqual(result[ds_filters.DatasetModelFilter.USERNAME], "1,2")
 
     def test_format_for_filter_formats_dn_field(self):
-        request = RequestFactory().get("/?{key}=1&{key}=2".format(
-            key=ds_filters.DatasetModelFilter.DISPLAY_NAME))
+        request = RequestFactory().get(
+            "/?{key}=1&{key}=2".format(
+                key=ds_filters.DatasetModelFilter.DISPLAY_NAME
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.DatasetModelFilter.DISPLAY_NAME], '1,2')
+            result[ds_filters.DatasetModelFilter.DISPLAY_NAME], "1,2"
+        )
 
     # ScoreSet/Experiment filter fields
     # ------------------------------------------------------------------- #
     def test_format_for_filter_formats_target_field(self):
-        request = RequestFactory().get("/?{key}=BRCA1&{key}=JAK".format(
-            key=ds_filters.ScoreSetFilter.TARGET))
+        request = RequestFactory().get(
+            "/?{key}=BRCA1&{key}=JAK".format(
+                key=ds_filters.ScoreSetFilter.TARGET
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.ScoreSetFilter.TARGET], 'BRCA1,JAK')
-        
+        self.assertEqual(result[ds_filters.ScoreSetFilter.TARGET], "BRCA1,JAK")
+
     def test_format_for_filter_formats_organism_field(self):
-        request = RequestFactory().get("/?{key}=Homo&{key}=Sapiens".format(
-            key=ds_filters.ScoreSetFilter.ORGANISM))
+        request = RequestFactory().get(
+            "/?{key}=Homo&{key}=Sapiens".format(
+                key=ds_filters.ScoreSetFilter.ORGANISM
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.ScoreSetFilter.ORGANISM], 'Homo,Sapiens')
-        
+            result[ds_filters.ScoreSetFilter.ORGANISM], "Homo,Sapiens"
+        )
+
     def test_format_for_filter_formats_genome_field(self):
-        request = RequestFactory().get("/?{key}=111&{key}=222".format(
-            key=ds_filters.ScoreSetFilter.GENOME))
+        request = RequestFactory().get(
+            "/?{key}=111&{key}=222".format(
+                key=ds_filters.ScoreSetFilter.GENOME
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.ScoreSetFilter.GENOME], '111,222')
-        
+        self.assertEqual(result[ds_filters.ScoreSetFilter.GENOME], "111,222")
+
     def test_format_for_filter_formats_uniprot_field(self):
-        request = RequestFactory().get("/?{key}=111&{key}=222".format(
-            key=ds_filters.ScoreSetFilter.UNIPROT))
+        request = RequestFactory().get(
+            "/?{key}=111&{key}=222".format(
+                key=ds_filters.ScoreSetFilter.UNIPROT
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.ScoreSetFilter.UNIPROT], '111,222')
-        
+        self.assertEqual(result[ds_filters.ScoreSetFilter.UNIPROT], "111,222")
+
     def test_format_for_filter_formats_refseq_field(self):
-        request = RequestFactory().get("/?{key}=111&{key}=222".format(
-            key=ds_filters.ScoreSetFilter.REFSEQ))
+        request = RequestFactory().get(
+            "/?{key}=111&{key}=222".format(
+                key=ds_filters.ScoreSetFilter.REFSEQ
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.ScoreSetFilter.REFSEQ], '111,222')
-        
+        self.assertEqual(result[ds_filters.ScoreSetFilter.REFSEQ], "111,222")
+
     def test_format_for_filter_formats_ensembl_field(self):
-        request = RequestFactory().get("/?{key}=111&{key}=222".format(
-            key=ds_filters.ScoreSetFilter.ENSEMBL))
+        request = RequestFactory().get(
+            "/?{key}=111&{key}=222".format(
+                key=ds_filters.ScoreSetFilter.ENSEMBL
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(
-            result[ds_filters.ScoreSetFilter.ENSEMBL], '111,222')
-        
+        self.assertEqual(result[ds_filters.ScoreSetFilter.ENSEMBL], "111,222")
+
     def test_format_for_filter_formats_licence_field(self):
-        request = RequestFactory().get("/?{key}=CC0&{key}=CC by SA 4.0".format(
-            key=ds_filters.ScoreSetFilter.LICENCE))
+        request = RequestFactory().get(
+            "/?{key}=CC0&{key}=CC by SA 4.0".format(
+                key=ds_filters.ScoreSetFilter.LICENCE
+            )
+        )
         form = forms.AdvancedSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertEqual(
-            result[ds_filters.ScoreSetFilter.LICENCE], 'CC0,CC by SA 4.0')
-    
-    
+            result[ds_filters.ScoreSetFilter.LICENCE], "CC0,CC by SA 4.0"
+        )
+
+
 class TestBasicSearchForm(TestCase):
     def test_format_for_filters_returns_falsey_if_no_input(self):
         request = RequestFactory().get("/")
@@ -186,18 +226,18 @@ class TestBasicSearchForm(TestCase):
         self.assertFalse(form.format_data_for_filter())
 
     def test_format_for_filters_does_not_split_double_qouted_csvs(self):
-        request = RequestFactory().get("/?{key}=\"Hello,World\"".format(
-            key='search'))
+        request = RequestFactory().get(
+            '/?{key}="Hello,World"'.format(key="search")
+        )
         form = forms.BasicSearchForm(request.GET)
         result = form.format_data_for_filter()
-        self.assertEqual(result['title'], '"Hello,World"')
+        self.assertEqual(result["title"], '"Hello,World"')
 
     def test_format_for_filters_adds_in_all_fields(self):
-        request = RequestFactory().get("/?{key}=Hello".format(
-            key='search'))
+        request = RequestFactory().get("/?{key}=Hello".format(key="search"))
         form = forms.BasicSearchForm(request.GET)
         result = form.format_data_for_filter()
         self.assertTrue(result)
-        self.assertEqual(result['title'], 'Hello')
+        self.assertEqual(result["title"], "Hello")
         n_fields = 21
         self.assertEqual(len(result), n_fields)

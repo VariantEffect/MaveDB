@@ -7,18 +7,29 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0009_targetgene_category'),
-    ]
+    dependencies = [("genome", "0009_targetgene_category")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='referencegenome',
-            options={'ordering': ('id',), 'verbose_name': 'Reference genome', 'verbose_name_plural': 'Reference genomes'},
+            name="referencegenome",
+            options={
+                "ordering": ("id",),
+                "verbose_name": "Reference genome",
+                "verbose_name_plural": "Reference genomes",
+            },
         ),
         migrations.AlterField(
-            model_name='targetgene',
-            name='category',
-            field=models.CharField(choices=[('Protein coding', 'Protein coding'), ('Regulatory', 'Regulatory'), ('Other noncoding', 'Other noncoding')], default='Protein coding', max_length=250, verbose_name='Target type'),
+            model_name="targetgene",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("Protein coding", "Protein coding"),
+                    ("Regulatory", "Regulatory"),
+                    ("Other noncoding", "Other noncoding"),
+                ],
+                default="Protein coding",
+                max_length=250,
+                verbose_name="Target type",
+            ),
         ),
     ]

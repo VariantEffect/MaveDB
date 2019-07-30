@@ -19,9 +19,7 @@ class TestUtilities(TestCase):
         scs2 = factories.ScoreSetFactory(experiment=exp)
         user = UserFactory()
         results = views.group_children([exp], [scs1, scs2], user=user)
-        expected = {exp: list(
-            sorted({scs1, scs2}, key=lambda i: i.urn))
-        }
+        expected = {exp: list(sorted({scs1, scs2}, key=lambda i: i.urn))}
         self.assertDictEqual(results, expected)
 
     def test_group_adds_parents_to_keys_if_missing(self):
@@ -30,7 +28,7 @@ class TestUtilities(TestCase):
         results = views.group_children([], [scs], user=user)
         expected = {scs.parent: [scs]}
         self.assertDictEqual(results, expected)
-        
+
     def test_replaces_child_with_most_recent_for_user(self):
         scs1 = factories.ScoreSetFactory()
         scs2 = factories.ScoreSetFactory(
@@ -38,9 +36,9 @@ class TestUtilities(TestCase):
         )
         user = UserFactory()
         scs2.add_viewers(user)
-        
+
         results = views.group_children([], [scs1], user=user)
-        expected = {scs2.parent: [scs2, ]}
+        expected = {scs2.parent: [scs2]}
         self.assertDictEqual(results, expected)
 
     def test_replaces_child_with_most_recent(self):
@@ -50,7 +48,7 @@ class TestUtilities(TestCase):
         )
         user = UserFactory()
         results = views.group_children([], [scs1], user=user)
-        expected = {scs1.parent: [scs1, ]}
+        expected = {scs1.parent: [scs1]}
         self.assertDictEqual(results, expected)
 
 
@@ -59,7 +57,7 @@ class TestToJson(TestCase):
         self.exp = factories.ExperimentWithScoresetFactory()
         self.user = UserFactory()
 
-    @mock.patch("search.views.display_targets", return_value=('', '', ''))
+    @mock.patch("search.views.display_targets", return_value=("", "", ""))
     def test_calls_display_targets(self, patch):
         grouped = {self.exp: self.exp.children}
         views.to_json(grouped, user=self.user)
@@ -69,13 +67,13 @@ class TestToJson(TestCase):
     def test_calls_format_urn_name_for_user_with_user(self, patch):
         grouped = {self.exp: self.exp.children}
         views.to_json(grouped, user=self.user)
-        patch.assert_called_with(*(self.exp, self.user,))
+        patch.assert_called_with(*(self.exp, self.user))
 
 
 class TestSearchView(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.path = '/search/?json=true'
+        self.path = "/search/?json=true"
         self.exp1 = factories.ExperimentWithScoresetFactory()
         self.exp2 = factories.ExperimentWithScoresetFactory()
         self.exp3 = factories.ExperimentWithScoresetFactory()
@@ -94,7 +92,8 @@ class TestSearchView(TestCase):
     @mock.patch("search.views.filter_visible", return_value=[])
     def test_calls_filter_visible(self, patch):
         request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         request.user = UserFactory()
         views.search_view(request)
         patch.assert_called()
@@ -102,7 +101,8 @@ class TestSearchView(TestCase):
     @mock.patch("search.views.group_children", return_value={})
     def test_calls_group_children(self, patch):
         request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         request.user = UserFactory()
         views.search_view(request)
         patch.assert_called()
@@ -110,7 +110,8 @@ class TestSearchView(TestCase):
     @mock.patch("search.views.to_json", return_value={})
     def test_calls_to_json(self, patch):
         request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         request.user = UserFactory()
         views.search_view(request)
         patch.assert_called()
@@ -127,16 +128,18 @@ class TestSearchView(TestCase):
         self.scs1.save()
 
         request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         request.user = user
 
         response = views.search_view(request)
-        self.assertContains(response, '{} [Private]'.format(self.exp1.urn))
-        self.assertContains(response, '{} [Private]'.format(self.scs1.urn))
+        self.assertContains(response, "{} [Private]".format(self.exp1.urn))
+        self.assertContains(response, "{} [Private]".format(self.scs1.urn))
 
     def test_search_empty_returns_all_public(self):
         request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         request.user = UserFactory()
         response = views.search_view(request)
 
@@ -150,7 +153,8 @@ class TestSearchView(TestCase):
 
     def test_search_shows_tmp_parent_if_user_not_contributor(self):
         request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         user = UserFactory()
         request.user = user
         response = views.search_view(request)
@@ -164,8 +168,10 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.scs1.urn)
 
     def test_basic_search_delegates_to_basic_form(self):
-        request = self.factory.get(self.path + '&search={}'.format(
-            self.exp1.urn), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        request = self.factory.get(
+            self.path + "&search={}".format(self.exp1.urn),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
 
         request.user = UserFactory()
         response = views.search_view(request)
@@ -177,8 +183,10 @@ class TestSearchView(TestCase):
         self.assertNotContains(response, self.scs3.urn)
 
     def test_adv_search_delegates_to_adv_form(self):
-        request = self.factory.get(self.path + '&title={}'.format(
-            self.exp1.title), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        request = self.factory.get(
+            self.path + "&title={}".format(self.exp1.title),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
         request.user = UserFactory()
         response = views.search_view(request)
         self.assertContains(response, self.exp1.urn)

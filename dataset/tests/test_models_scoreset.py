@@ -21,7 +21,11 @@ from urn.validators import MAVEDB_SCORESET_URN_RE
 from dataset import constants
 
 from ..models.scoreset import default_dataset, ScoreSet, assign_public_urn
-from ..factories import ScoreSetFactory, ScoreSetWithTargetFactory, ExperimentFactory
+from ..factories import (
+    ScoreSetFactory,
+    ScoreSetWithTargetFactory,
+    ExperimentFactory,
+)
 from ..utilities import publish_dataset
 
 
@@ -32,6 +36,7 @@ class TestScoreSet(TestCase):
     :py:class:`Variant` objects. We will test correctness of creation,
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
+
     def test_new_is_assigned_all_permission_groups(self):
         self.assertEqual(Group.objects.count(), 0)
         _ = ScoreSetFactory()
@@ -112,23 +117,27 @@ class TestScoreSet(TestCase):
     def test_can_traverse_public_replaced_by_tree(self):
         scs_1 = ScoreSetFactory(private=False)
         scs_2 = ScoreSetFactory(
-            private=False, experiment=scs_1.experiment, replaces=scs_1)
+            private=False, experiment=scs_1.experiment, replaces=scs_1
+        )
         scs_3 = ScoreSetFactory(
-            private=True, experiment=scs_2.experiment, replaces=scs_2)
+            private=True, experiment=scs_2.experiment, replaces=scs_2
+        )
         self.assertEqual(scs_1.current_public_version, scs_2)
         self.assertEqual(scs_2.current_public_version, scs_2)
 
     def test_next_public_version_returns_none_if_next_is_private(self):
         scs_1 = ScoreSetFactory(private=False)
         scs_2 = ScoreSetFactory(
-            private=True, experiment=scs_1.experiment, replaces=scs_1)
+            private=True, experiment=scs_1.experiment, replaces=scs_1
+        )
         self.assertEqual(scs_1.next_public_version, None)
         self.assertEqual(scs_2.next_public_version, None)
 
     def test_next_public_version_returns_next_if_next_is_public(self):
         scs_1 = ScoreSetFactory(private=False)
         scs_2 = ScoreSetFactory(
-            private=False, experiment=scs_1.experiment, replaces=scs_1)
+            private=False, experiment=scs_1.experiment, replaces=scs_1
+        )
         self.assertEqual(scs_1.next_public_version, scs_2)
 
     def test_previous_public_version_returns_none_if_previous_is_private(self):
@@ -137,10 +146,13 @@ class TestScoreSet(TestCase):
         self.assertEqual(scs_1.previous_public_version, None)
         self.assertEqual(scs_2.previous_public_version, None)
 
-    def test_previous_public_version_returns_previous_if_previous_is_public(self):
+    def test_previous_public_version_returns_previous_if_previous_is_public(
+        self
+    ):
         scs_1 = ScoreSetFactory(private=False)
         scs_2 = ScoreSetFactory(
-            private=True, experiment=scs_1.experiment, replaces=scs_1)
+            private=True, experiment=scs_1.experiment, replaces=scs_1
+        )
         scs_3 = ScoreSetFactory(experiment=scs_2.experiment, replaces=scs_2)
         self.assertEqual(scs_3.previous_public_version, scs_1)
         self.assertEqual(scs_2.previous_public_version, scs_1)
@@ -169,45 +181,47 @@ class TestScoreSet(TestCase):
         obj = ScoreSetFactory()
         self.assertEqual(
             obj.get_url(),
-            base_url() + reverse('dataset:scoreset_detail', args=(obj.urn,))
+            base_url() + reverse("dataset:scoreset_detail", args=(obj.urn,)),
         )
-        
+
     def test_primary_column_is_nt_when_nt_is_present(self):
         obj = ScoreSetFactory()
-        VariantFactory(scoreset=obj, hgvs_nt='a')
+        VariantFactory(scoreset=obj, hgvs_nt="a")
         VariantFactory(scoreset=obj)
         self.assertEqual(obj.primary_hgvs_column, constants.hgvs_nt_column)
-        
+
     def test_primary_column_is_pro_when_nt_is_not_present(self):
         obj = ScoreSetFactory()
         VariantFactory(scoreset=obj, hgvs_nt=None)
         self.assertEqual(obj.primary_hgvs_column, constants.hgvs_pro_column)
-               
+
     def test_get_version_is_public_user_is_none(self):
         instance1 = ScoreSetFactory(private=False)
         instance2 = ScoreSetFactory(replaces=instance1, private=False)
         instance3 = ScoreSetFactory(replaces=instance2, private=True)
         self.assertEqual(
-            instance1.get_version('next_version', 'next_public_version'),
-            instance1.next_public_version
+            instance1.get_version("next_version", "next_public_version"),
+            instance1.next_public_version,
         )
-        
+
     def test_get_version_is_returns_public_attr_result_if_attr_is_none(self):
         instance1 = ScoreSetFactory(private=False)
         self.assertEqual(
-            instance1.get_version('next_version', 'next_public_version'),
-            instance1.next_public_version
+            instance1.get_version("next_version", "next_public_version"),
+            instance1.next_public_version,
         )
-        
-    def test_get_version_returns_public_when_user_not_contributor_on_private_version(self):
+
+    def test_get_version_returns_public_when_user_not_contributor_on_private_version(
+        self
+    ):
         instance1 = ScoreSetFactory(private=False)
         instance2 = ScoreSetFactory(replaces=instance1, private=True)
         user = UserFactory()
         self.assertEqual(
-            instance1.get_version('next_version', 'next_public_version', user),
-            instance1.next_public_version
+            instance1.get_version("next_version", "next_public_version", user),
+            instance1.next_public_version,
         )
-        
+
     def test_get_version_returns_private_when_user_is_a_contributor(self):
         instance1 = ScoreSetFactory(private=False)
         instance2 = ScoreSetFactory(replaces=instance1, private=True)
@@ -215,29 +229,33 @@ class TestScoreSet(TestCase):
         instance2.add_viewers(user)
         self.assertIsNotNone(instance1.next_version)
         self.assertEqual(
-            instance1.get_version('next_version', 'next_public_version', user),
-            instance1.next_version
+            instance1.get_version("next_version", "next_public_version", user),
+            instance1.next_version,
         )
-    
-    @mock.patch.object(ScoreSet, 'get_version')
+
+    @mock.patch.object(ScoreSet, "get_version")
     def test_get_next_version_calls_get_version_with_correct_args(self, patch):
         instance = ScoreSetFactory()
         instance.get_next_version()
-        patch.assert_called_with(*('next_version', 'next_public_version', None))
-        
-    @mock.patch.object(ScoreSet, 'get_version')
+        patch.assert_called_with(
+            *("next_version", "next_public_version", None)
+        )
+
+    @mock.patch.object(ScoreSet, "get_version")
     def test_get_prev_version_calls_get_version_with_correct_args(self, patch):
         instance = ScoreSetFactory()
         instance.get_previous_version()
         patch.assert_called_with(
-            *('previous_version', 'previous_public_version', None))
-        
-    @mock.patch.object(ScoreSet, 'get_version')
+            *("previous_version", "previous_public_version", None)
+        )
+
+    @mock.patch.object(ScoreSet, "get_version")
     def test_get_curr_version_calls_get_version_with_correct_args(self, patch):
         instance = ScoreSetFactory()
         instance.get_current_version()
         patch.assert_called_with(
-            *('current_version', 'current_public_version', None))
+            *("current_version", "current_public_version", None)
+        )
 
     def test_has_uniprot_metadata_returns_correct_boolean(self):
         instance = ScoreSetWithTargetFactory()
@@ -265,26 +283,26 @@ class TestAssignPublicUrn(TestCase):
         self.factory = ScoreSetFactory
         self.private_parent = ExperimentFactory()
         self.public_parent = publish_dataset(ExperimentFactory())
-    
+
     def test_assigns_public_urn(self):
         instance = self.factory(experiment=self.public_parent)
         instance = assign_public_urn(instance)
         self.assertIsNotNone(MAVEDB_SCORESET_URN_RE.fullmatch(instance.urn))
         self.assertTrue(instance.has_public_urn)
-    
+
     def test_increments_parent_last_child_value(self):
         instance = self.factory(experiment=self.public_parent)
         self.assertEqual(instance.parent.last_child_value, 0)
         instance = assign_public_urn(instance)
         self.assertEqual(instance.parent.last_child_value, 1)
-       
+
     def test_attr_error_parent_has_tmp_urn(self):
         instance = self.factory(experiment=self.private_parent)
         self.private_parent.private = False
         self.private_parent.save()
         with self.assertRaises(AttributeError):
             assign_public_urn(instance)
-    
+
     def test_assigns_sequential_urns(self):
         instance1 = self.factory(experiment=self.public_parent)
         instance2 = self.factory(experiment=self.public_parent)
@@ -292,7 +310,7 @@ class TestAssignPublicUrn(TestCase):
         instance2 = assign_public_urn(instance2)
         self.assertEqual(int(instance1.urn[-1]), 1)
         self.assertEqual(int(instance2.urn[-1]), 2)
-    
+
     def test_applying_twice_does_not_change_urn(self):
         instance = self.factory(experiment=self.public_parent)
         i1 = assign_public_urn(instance)

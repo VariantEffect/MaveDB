@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from pandas.testing import assert_index_equal
 
+from hgvsp import protein, dna, rna
+
 from core.utilities import is_null
 
 from .constants import wildtype, synonymous
@@ -25,9 +27,14 @@ def split_variant(variant):
         A list of single `HGVS` strings.
     """
     prefix = variant[0]
-    if len(variant.split(';')) > 1:
-        return prefix, ['{}.{}'.format(prefix, e.strip())
-                for e in variant[3:-1].split(';')]
+    if len(variant.split(";")) > 1:
+        return (
+            prefix,
+            [
+                "{}.{}".format(prefix, e.strip())
+                for e in variant[3:-1].split(";")
+            ],
+        )
     return prefix, [variant]
 
 
@@ -48,28 +55,29 @@ def join_variants(variants, prefix):
     """
     if isinstance(variants, str):
         return variants
-    
+
     if len(variants) == 1 and variants[0] in (wildtype, synonymous):
         return variants[0]
-    
+
     if len(variants) == 1:
-        return '{}.{}'.format(
-            prefix,
-            variants[0].replace('{}.'.format(prefix), '')
+        return "{}.{}".format(
+            prefix, variants[0].replace("{}.".format(prefix), "")
         )
     elif len(variants) > 1:
-        return '{}.[{}]'.format(
+        return "{}.[{}]".format(
             prefix,
-            ';'.join([v.replace('{}.'.format(prefix), '') for v in variants])
+            ";".join([v.replace("{}.".format(prefix), "") for v in variants]),
         )
     else:
         return None
 
 
-def format_variant(variant):
+def normalize_variant(variant):
     """
-    Replaces `???` for `X` in protein variants and `Xx` for `Nn` in
+    Replaces `???` for `Xaa` in protein variants and `X` for `N` in
     nucleotide variants to be compliant with the `hgvs` biocommons package.
+
+    Use for enrich and enrich2 inputs.
 
     Parameters
     ----------
@@ -80,21 +88,57 @@ def format_variant(variant):
     -------
     str
     """
+    if variant is None:
+        return variant
+    if protein.substitution_re.fullmatch(variant):
+        # If regex matches there should be only two cases a variant with
+        # triple '???' or one '?'
+        # Sub groups of three first.
+        variant = re.sub(r"\?{3}", "Xaa", variant)
+        # Sub singular next.
+        variant = re.sub(r"\?", "X", variant)
+    elif (
+        dna.substitution_re.fullmatch(variant)
+        or dna.deletion_re.fullmatch(variant)
+        or dna.insertion_re.fullmatch(variant)
+        or dna.delins_re.fullmatch(variant)
+    ):
+        variant = variant.replace(r"X", "N")
+    elif (
+        rna.substitution_re.fullmatch(variant)
+        or rna.deletion_re.fullmatch(variant)
+        or rna.insertion_re.fullmatch(variant)
+        or rna.delins_re.fullmatch(variant)
+    ):
+        variant = variant.replace(r"x", "n")
+    return variant.strip()
+
+
+def format_variant(variant, normalize=False):
+    """
+    Returns None for null variants and strips trailing whitespace.
+
+    Parameters
+    ----------
+    variant : str, optional.
+        HGVS_ formatted string.
+
+    normalize : bool, optional.
+        Run variant normalization. Mainly for formatting enrich2/enrich input.
+        Off by default.
+
+    Returns
+    -------
+    str
+    """
     if is_null(variant):
         return None
 
     variant = variant.strip()
-    # Fixme: Un-comment if wanting to apply basic formatting of HGVS strings.
-    # if 'p.' in variant:
-    #     variant, _ = re.subn(r'\?+', 'X', variant)
-    #     variant, _ = re.subn(r'Xaa', 'X', variant)
-    # elif 'g.' in variant or 'n.' in variant or \
-    #         'c.' in variant or 'm.' in variant:
-    #     variant, _ = re.subn(r'X', 'N', variant)
-    # elif 'r.' in variant:
-    #     variant, _ = re.subn(r'x', 'n', variant)
+    if normalize:
+        return normalize_variant(variant)
     return variant
-    
+
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
     """
@@ -126,14 +170,18 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
         instances.
     """
     from dataset.validators import validate_datasets_define_same_variants
-    from dataset.constants import hgvs_nt_column, hgvs_pro_column, \
-        variant_count_data, variant_score_data
-        
+    from dataset.constants import (
+        hgvs_nt_column,
+        hgvs_pro_column,
+        variant_count_data,
+        variant_score_data,
+    )
+
     if isinstance(scores, str):
-        scores = pd.read_json(scores, orient='records')
+        scores = pd.read_json(scores, orient="records")
     if isinstance(counts, str):
-        counts = pd.read_json(counts, orient='records')
-   
+        counts = pd.read_json(counts, orient="records")
+
     has_count_data = counts is not None and len(counts) > 0
     has_score_data = scores is not None and len(scores) > 0
 
@@ -141,35 +189,34 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
         scores.index = pd.Index(scores[index])
         if has_count_data:
             counts.index = pd.Index(counts[index])
-    
+
     if not has_score_data:
         return []
-    
+
     if has_count_data:
         assert_index_equal(
-            scores.index.sort_values(),
-            counts.index.sort_values()
+            scores.index.sort_values(), counts.index.sort_values()
         )
         validate_datasets_define_same_variants(scores, counts)
 
     variants = []
-    for (primary_hgvs, group) in scores.groupby(
-            by=scores.index, sort=False):
-        score_records = group.to_dict('record')
+    for (primary_hgvs, group) in scores.groupby(by=scores.index, sort=False):
+        score_records = group.to_dict("record")
         if has_count_data:
-            count_records = counts[counts.index == primary_hgvs].\
-                to_dict('record')
+            count_records = counts[counts.index == primary_hgvs].to_dict(
+                "record"
+            )
             assert len(score_records) == len(count_records)
         else:
             # Make duplicates to zip with self when no count data.
             count_records = [r.copy() for r in score_records]
-        
+
         for (sr, cr) in zip(score_records, count_records):
             hgvs_nt = sr.pop(hgvs_nt_column)
             hgvs_pro = sr.pop(hgvs_pro_column)
-            if is_null(hgvs_nt) or hgvs_nt is np.NaN or hgvs_nt == 'nan':
+            if is_null(hgvs_nt) or hgvs_nt is np.NaN or hgvs_nt == "nan":
                 hgvs_nt = None
-            if is_null(hgvs_pro) or hgvs_pro is np.NaN or hgvs_pro == 'nan':
+            if is_null(hgvs_pro) or hgvs_pro is np.NaN or hgvs_pro == "nan":
                 hgvs_pro = None
             cr.pop(hgvs_nt_column)
             cr.pop(hgvs_pro_column)
@@ -191,8 +238,8 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
             variant = {
                 hgvs_nt_column: hgvs_nt,
                 hgvs_pro_column: hgvs_pro,
-                'data': data
+                "data": data,
             }
             variants.append(variant)
-        
+
     return variants

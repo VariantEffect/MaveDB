@@ -35,29 +35,38 @@ def assign_public_urn(experimentset):
     `ExperimentSet`
         experimentset with new urn or same urn if already public.
     """
-    experimentset = ExperimentSet.objects.filter(
-        id=experimentset.id
-    ).select_for_update(nowait=False).first()
+    experimentset = (
+        ExperimentSet.objects.filter(id=experimentset.id)
+        .select_for_update(nowait=False)
+        .first()
+    )
     if not experimentset.has_public_urn:
-        counter = PublicDatasetCounter.objects.filter(
-            id=PublicDatasetCounter.load().id
-        ).select_for_update(nowait=False).first()
-        
+        counter = (
+            PublicDatasetCounter.objects.filter(
+                id=PublicDatasetCounter.load().id
+            )
+            .select_for_update(nowait=False)
+            .first()
+        )
+
         expset_number = counter.experimentsets + 1
         padded_expset_number = str(expset_number).zfill(
-            ExperimentSet.URN_DIGITS)
+            ExperimentSet.URN_DIGITS
+        )
         urn = "{}{}".format(ExperimentSet.URN_PREFIX, padded_expset_number)
-        
+
         experimentset.urn = urn
         counter.experimentsets += 1
         experimentset.save()
         counter.save()
-        
+
         # Refresh the instance.
-        experimentset = ExperimentSet.objects.filter(
-            id=experimentset.id
-        ).select_for_update(nowait=False).first()
-    
+        experimentset = (
+            ExperimentSet.objects.filter(id=experimentset.id)
+            .select_for_update(nowait=False)
+            .first()
+        )
+
     return experimentset
 
 
@@ -75,7 +84,7 @@ class ExperimentSet(DatasetModel):
         permissions = (
             (PermissionTypes.CAN_VIEW, "Can view"),
             (PermissionTypes.CAN_EDIT, "Can edit"),
-            (PermissionTypes.CAN_MANAGE, "Can manage")
+            (PermissionTypes.CAN_MANAGE, "Can manage"),
         )
 
     # ---------------------------------------------------------------------- #
@@ -95,7 +104,7 @@ class ExperimentSet(DatasetModel):
 
     def public_experiments(self):
         return self.children.exclude(private=True)
-    
+
     def get_url(self, request=None):
         base = base_url(request)
         return base + reverse("dataset:experimentset_detail", args=(self.urn,))

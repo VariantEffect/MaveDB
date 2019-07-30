@@ -28,9 +28,9 @@ from .forms import (
 
 User = get_user_model()
 logger = logging.getLogger(name="django")
-ExperimentSet = apps.get_model('dataset', 'ExperimentSet')
-Experiment = apps.get_model('dataset', 'Experiment')
-ScoreSet = apps.get_model('dataset', 'ScoreSet')
+ExperimentSet = apps.get_model("dataset", "ExperimentSet")
+Experiment = apps.get_model("dataset", "Experiment")
+ScoreSet = apps.get_model("dataset", "ScoreSet")
 
 
 # Profile views
@@ -62,31 +62,31 @@ def profile_settings(request):
         profile = request.user.profile
         profile.generate_token()
         profile.save()
-        return JsonResponse({
-            'token': profile.auth_token,
-            'expiry': profile.auth_token_expiry
-        })
-    
+        return JsonResponse(
+            {"token": profile.auth_token, "expiry": profile.auth_token_expiry}
+        )
+
     if request.method == "POST":
         profile_form = ProfileForm(
-                instance=request.user.profile, data=request.POST)
+            instance=request.user.profile, data=request.POST
+        )
         if profile_form.is_valid():
             profile = profile_form.save(commit=True)
             messages.success(request, "Successfully updated your profile.")
             if profile.email:
                 template_name = "accounts/confirm_email.html"
-                message = render_to_string(template_name, {
-                    'user': request.user,
-                })
+                message = render_to_string(
+                    template_name, {"user": request.user}
+                )
                 request.user.profile.email_user(
-                    subject='Profile email updated.',
-                    message=message,
+                    subject="Profile email updated.", message=message
                 )
                 return HttpResponseRedirect(
-                    reverse_lazy("accounts:profile_settings"))
+                    reverse_lazy("accounts:profile_settings")
+                )
 
     context = {"profile_form": profile_form}
-    return render(request, 'accounts/profile_settings.html', context)
+    return render(request, "accounts/profile_settings.html", context)
 
 
 @login_required(login_url=reverse_lazy("accounts:login"))
@@ -96,7 +96,7 @@ def profile_view(request):
     when a user requests for an instance to be deleted.
     """
     context = {}
-    if request.method == 'POST':
+    if request.method == "POST":
         delete_urn = request.POST.get("delete", False)
         publish_urn = request.POST.get("publish", False)
         if delete_urn:
@@ -107,7 +107,7 @@ def profile_view(request):
             published = publish(publish_urn, request)
             if published:
                 return HttpResponseRedirect(reverse_lazy("accounts:profile"))
-    return render(request, 'accounts/profile_home.html', context)
+    return render(request, "accounts/profile_home.html", context)
 
 
 class ManageDatasetUsersView(DatasetPermissionMixin, SessionWizardView):
@@ -115,55 +115,58 @@ class ManageDatasetUsersView(DatasetPermissionMixin, SessionWizardView):
     Multi-step form view allowing a user to edit the group memberships
     for an instance.
     """
+
     # Second form is a dummy form for the confirmation step
     login_url = reverse_lazy("accounts:login")
     form_list = (
-        ('manage_users', SelectUsersForm),
-        ('confirm_changes', ConfirmationForm),
+        ("manage_users", SelectUsersForm),
+        ("confirm_changes", ConfirmationForm),
     )
-    permission_required = 'dataset.can_manage'
+    permission_required = "dataset.can_manage"
     templates = {
-        'manage_users': 'accounts/profile_manage.html',
-        'confirm_changes': 'accounts/contributor_summary.html'
+        "manage_users": "accounts/profile_manage.html",
+        "confirm_changes": "accounts/contributor_summary.html",
     }
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect(self.login_url)
         self.instance = self.get_object()
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get_object(self):
         try:
-          instance = get_model_by_urn(self.kwargs.get('urn', None))
-          if not isinstance(instance, (ExperimentSet, Experiment, ScoreSet)):
-              raise Http404()
-          return instance
+            instance = get_model_by_urn(self.kwargs.get("urn", None))
+            if not isinstance(instance, (ExperimentSet, Experiment, ScoreSet)):
+                raise Http404()
+            return instance
         except ObjectDoesNotExist:
             raise Http404()
-            
+
     def get_template_names(self):
         return self.templates[self.steps.current]
-    
+
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step)
-        if step == 'confirm_changes':
+        if step == "confirm_changes":
             return kwargs
-        kwargs['instance'] = self.instance
+        kwargs["instance"] = self.instance
         return kwargs
-    
+
     def get_context_data(self, form, **kwargs):
         context = super().get_context_data(form, **kwargs)
-        context['all_data'] = self.get_all_cleaned_data()
-        context['instance'] = self.instance
+        context["all_data"] = self.get_all_cleaned_data()
+        context["instance"] = self.instance
         return context
-    
+
     def done(self, form_list, **kwargs):
         list(form_list)[0].process_user_list()
-        messages.success(self.request, "Management updated for '{}'.".format(
-            self.instance.urn))
-        return redirect('accounts:profile')
- 
+        messages.success(
+            self.request,
+            "Management updated for '{}'.".format(self.instance.urn),
+        )
+        return redirect("accounts:profile")
+
 
 # Registration views [DEBUG MODE ONLY]
 # ------------------------------------------------------------------------- #
@@ -175,7 +178,7 @@ def registration_view(request):
             user = form.save(commit=False)
             user.is_active = True
             user.save()
-            return redirect('accounts:profile')
+            return redirect("accounts:profile")
 
-    context = {'form': form}
-    return render(request, 'registration/register.html', context)
+    context = {"form": form}
+    return render(request, "registration/register.html", context)

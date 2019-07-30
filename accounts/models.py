@@ -24,13 +24,13 @@ from dataset.models.scoreset import ScoreSet
 from .permissions import (
     GroupTypes,
     user_is_anonymous,
-    instances_for_user_with_group_permission
+    instances_for_user_with_group_permission,
 )
 
 
-AUTH_TOKEN = r'[a-zA-Z0-9]{64}'
+AUTH_TOKEN = r"[a-zA-Z0-9]{64}"
 AUTH_TOKEN_RE = re.compile(AUTH_TOKEN)
-logger = logging.getLogger('django')
+logger = logging.getLogger("django")
 
 
 class Profile(TimeStampedModel):
@@ -45,31 +45,36 @@ class Profile(TimeStampedModel):
     user : :class:`models.OnOneToOneField`
         The foreign key relationship associating a profile with a user.
     """
+
     TOKEN_LEGNTH = 64
     TOKEN_EXPIRY = 14
-    
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)
     auth_token = models.CharField(
-        max_length=TOKEN_LEGNTH, null=True, default=None)
+        max_length=TOKEN_LEGNTH, null=True, default=None
+    )
     auth_token_expiry = models.DateField(null=True, default=None)
-    
+
     def __str__(self):
         return "{}_profile".format(self.user.username)
-    
+
     def generate_token(self):
         self.auth_token = get_random_string(length=self.TOKEN_LEGNTH)
         self.auth_token_expiry = datetime.date.today() + timedelta(
-            days=self.TOKEN_EXPIRY)
+            days=self.TOKEN_EXPIRY
+        )
         self.save()
         return self.auth_token, self.auth_token_expiry
-        
+
     def auth_token_is_valid(self, token=None):
         if token is None:
             token = self.auth_token
-        return self.auth_token == token and \
-               datetime.date.today() < self.auth_token_expiry
-    
+        return (
+            self.auth_token == token
+            and datetime.date.today() < self.auth_token_expiry
+        )
+
     def email_user(self, subject, message, from_email=None, **kwargs):
         email = self.email or self.user.email
         if email:
@@ -87,32 +92,46 @@ class Profile(TimeStampedModel):
                 "email address.".format(self.user.username)
             )
 
-    def notify_user_submission_status(self, success, task_id=None, description=None):
+    def notify_user_submission_status(
+        self, success, task_id=None, description=None
+    ):
         subject = "Your submission has been processed."
         template_name = "accounts/celery_job_status_email.html"
-        message = render_to_string(template_name, {
-            'profile': self, 'success': success,
-            'task_id': task_id, 'description': description,
-        })
+        message = render_to_string(
+            template_name,
+            {
+                "profile": self,
+                "success": success,
+                "task_id": task_id,
+                "description": description,
+            },
+        )
         self.email_user(subject=subject, message=message)
 
     def notify_user_group_change(self, instance, action, group):
-        if action == 'removed':
-            conjunction = 'from'
+        if action == "removed":
+            conjunction = "from"
         else:
-            conjunction = 'for'
+            conjunction = "for"
 
-        if group in ('administrator', 'editor'):
-            group = 'an {}'.format(group)
+        if group in ("administrator", "editor"):
+            group = "an {}".format(group)
         else:
-            group = 'a {}'.format(group)
-            
+            group = "a {}".format(group)
+
         template_name = "accounts/group_change_email.html"
-        subject = 'Updates to entry {}.'.format(instance.urn)
-        message = render_to_string(template_name, {
-            'profile': self, 'group': group, 'conjunction': conjunction,
-            'url': instance.get_url(), 'action': action, 'urn': instance.urn
-        })
+        subject = "Updates to entry {}.".format(instance.urn)
+        message = render_to_string(
+            template_name,
+            {
+                "profile": self,
+                "group": group,
+                "conjunction": conjunction,
+                "url": instance.get_url(),
+                "action": action,
+                "urn": instance.urn,
+            },
+        )
         self.email_user(subject=subject, message=message)
 
     @classmethod
@@ -122,8 +141,8 @@ class Profile(TimeStampedModel):
 
     @property
     def unique_name(self):
-        return '{} | {}'.format(self.get_display_name(), self.user.username)
-    
+        return "{} | {}".format(self.get_display_name(), self.user.username)
+
     def is_anon(self):
         """
         Checks if the user associated with this profile is anonymous.
@@ -134,7 +153,7 @@ class Profile(TimeStampedModel):
             True if the profile and user are anonymous.
         """
         return user_is_anonymous(self.user)
-    
+
     def get_orcid_url(self):
         """
         Returns the ORCID url for the owner of this profile, which is
@@ -149,7 +168,7 @@ class Profile(TimeStampedModel):
         if self.is_anon():
             return None
         else:
-            return 'https://orcid.org/{}'.format(self.user.username)
+            return "https://orcid.org/{}".format(self.user.username)
 
     def get_display_name_hyperlink(self):
         """
@@ -169,12 +188,13 @@ class Profile(TimeStampedModel):
             <a/> tag with the user's credit-name as the inner HTML.
         """
         if self.is_anon():
-            return 'anonymous user'
+            return "anonymous user"
         else:
             return format_html(
                 '<a target="_blank" href="{url}">{name}</a>'.format(
-                    url=self.get_orcid_url(),
-                    name=self.get_display_name()))
+                    url=self.get_orcid_url(), name=self.get_display_name()
+                )
+            )
 
     def get_full_name_hyperlink(self):
         """
@@ -188,12 +208,13 @@ class Profile(TimeStampedModel):
             <a/> tag with the user's full name as the inner HTML.
         """
         if self.is_anon():
-            return 'anonymous user'
+            return "anonymous user"
         else:
             return format_html(
                 '<a target="_blank" href="{url}">{name}</a>'.format(
-                    url=self.get_orcid_url(),
-                    name=self.get_full_name()))
+                    url=self.get_orcid_url(), name=self.get_full_name()
+                )
+            )
 
     def get_display_name(self):
         """
@@ -210,11 +231,12 @@ class Profile(TimeStampedModel):
             return None
 
         social_auth = UserSocialAuth.get_social_auth_for_user(
-            self.user).first()
+            self.user
+        ).first()
         if not isinstance(social_auth, UserSocialAuth):
             return self.get_full_name()
         else:
-            credit_name = social_auth.extra_data.get('credit-name', None)
+            credit_name = social_auth.extra_data.get("credit-name", None)
             if not credit_name:
                 return self.get_full_name()
             return credit_name
@@ -240,9 +262,9 @@ class Profile(TimeStampedModel):
                 # support for mononyms
                 return self.user.first_name.capitalize()
         else:
-            return '{} {}'.format(
+            return "{} {}".format(
                 self.user.first_name.capitalize(),
-                self.user.last_name.capitalize()
+                self.user.last_name.capitalize(),
             )
 
     def get_short_name(self):
@@ -267,9 +289,9 @@ class Profile(TimeStampedModel):
                 # support for mononyms
                 return self.user.first_name.capitalize()
         else:
-            return '{}, {}'.format(
+            return "{}, {}".format(
                 self.user.last_name.capitalize(),
-                self.user.first_name[0].capitalize()
+                self.user.first_name[0].capitalize(),
             )
 
     # Contributor
@@ -283,9 +305,11 @@ class Profile(TimeStampedModel):
         -------
         `list`
         """
-        instances = list(self.contributor_experimentsets()) + \
-            list(self.contributor_experiments()) + \
-            list(self.contributor_scoresets())
+        instances = (
+            list(self.contributor_experimentsets())
+            + list(self.contributor_experiments())
+            + list(self.contributor_scoresets())
+        )
         return instances
 
     def contributor_experimentsets(self):
@@ -297,10 +321,12 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = self.administrator_experimentsets() | \
-            self.editor_experimentsets() | \
-            self.viewer_experimentsets()
-        return instances.order_by('urn')
+        instances = (
+            self.administrator_experimentsets()
+            | self.editor_experimentsets()
+            | self.viewer_experimentsets()
+        )
+        return instances.order_by("urn")
 
     def contributor_experiments(self):
         """
@@ -311,10 +337,12 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = self.administrator_experiments() | \
-            self.editor_experiments() | \
-            self.viewer_experiments()
-        return instances.order_by('urn')
+        instances = (
+            self.administrator_experiments()
+            | self.editor_experiments()
+            | self.viewer_experiments()
+        )
+        return instances.order_by("urn")
 
     def contributor_scoresets(self):
         """
@@ -325,25 +353,27 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = self.administrator_scoresets() | \
-            self.editor_scoresets() | \
-            self.viewer_scoresets()
-        return instances.order_by('urn')
+        instances = (
+            self.administrator_scoresets()
+            | self.editor_scoresets()
+            | self.viewer_scoresets()
+        )
+        return instances.order_by("urn")
 
     def public_contributor_experimentsets(self):
         """Filters out private experimentsets"""
         instances = self.contributor_experimentsets().exclude(private=True)
-        return instances.order_by('urn')
+        return instances.order_by("urn")
 
     def public_contributor_experiments(self):
         """Filters out private experiments"""
         instances = self.contributor_experiments().exclude(private=True)
-        return instances.order_by('urn')
+        return instances.order_by("urn")
 
     def public_contributor_scoresets(self):
         """Filters out private scoresets"""
         instances = self.contributor_scoresets().exclude(private=True)
-        return instances.order_by('urn')
+        return instances.order_by("urn")
 
     # Administrator
     # ----------------------------------------------------------------------- #
@@ -356,9 +386,11 @@ class Profile(TimeStampedModel):
         -------
         `list`
         """
-        instances = list(self.administrator_experimentsets()) + \
-            list(self.administrator_experiments()) + \
-            list(self.administrator_scoresets())
+        instances = (
+            list(self.administrator_experimentsets())
+            + list(self.administrator_experiments())
+            + list(self.administrator_scoresets())
+        )
         return instances
 
     def administrator_experimentsets(self):
@@ -371,9 +403,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ExperimentSet,
-            group_type=GroupTypes.ADMIN
+            user=self.user, model=ExperimentSet, group_type=GroupTypes.ADMIN
         )
 
     def administrator_experiments(self):
@@ -386,9 +416,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=Experiment,
-            group_type=GroupTypes.ADMIN
+            user=self.user, model=Experiment, group_type=GroupTypes.ADMIN
         )
 
     def administrator_scoresets(self):
@@ -401,9 +429,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ScoreSet,
-            group_type=GroupTypes.ADMIN
+            user=self.user, model=ScoreSet, group_type=GroupTypes.ADMIN
         )
 
     # Editor
@@ -417,9 +443,11 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = list(self.editor_experimentsets()) + \
-            list(self.editor_experiments()) + \
-            list(self.editor_scoresets())
+        instances = (
+            list(self.editor_experimentsets())
+            + list(self.editor_experiments())
+            + list(self.editor_scoresets())
+        )
         return instances
 
     def editor_experimentsets(self):
@@ -432,9 +460,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ExperimentSet,
-            group_type=GroupTypes.EDITOR
+            user=self.user, model=ExperimentSet, group_type=GroupTypes.EDITOR
         )
 
     def editor_experiments(self):
@@ -447,9 +473,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=Experiment,
-            group_type=GroupTypes.EDITOR
+            user=self.user, model=Experiment, group_type=GroupTypes.EDITOR
         )
 
     def editor_scoresets(self):
@@ -462,9 +486,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ScoreSet,
-            group_type=GroupTypes.EDITOR
+            user=self.user, model=ScoreSet, group_type=GroupTypes.EDITOR
         )
 
     # Viewer
@@ -478,9 +500,11 @@ class Profile(TimeStampedModel):
         -------
         `list`
         """
-        instances = list(self.viewer_experimentsets()) + \
-            list(self.viewer_experiments()) + \
-            list(self.viewer_scoresets())
+        instances = (
+            list(self.viewer_experimentsets())
+            + list(self.viewer_experiments())
+            + list(self.viewer_scoresets())
+        )
         return instances
 
     def viewer_experimentsets(self):
@@ -493,9 +517,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ExperimentSet,
-            group_type=GroupTypes.VIEWER
+            user=self.user, model=ExperimentSet, group_type=GroupTypes.VIEWER
         )
 
     def viewer_experiments(self):
@@ -508,9 +530,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=Experiment,
-            group_type=GroupTypes.VIEWER
+            user=self.user, model=Experiment, group_type=GroupTypes.VIEWER
         )
 
     def viewer_scoresets(self):
@@ -523,9 +543,7 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         return instances_for_user_with_group_permission(
-            user=self.user,
-            model=ScoreSet,
-            group_type=GroupTypes.VIEWER
+            user=self.user, model=ScoreSet, group_type=GroupTypes.VIEWER
         )
 
 
@@ -549,5 +567,5 @@ def save_user_profile(sender, instance, **kwargs):
     """
     Saves profile whenever associated user is saved.
     """
-    if hasattr(instance, 'profile'):
+    if hasattr(instance, "profile"):
         instance.profile.save()

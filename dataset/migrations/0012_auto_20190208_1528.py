@@ -7,54 +7,97 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0011_scoreset_data_usage_policy'),
-    ]
+    dependencies = [("dataset", "0011_scoreset_data_usage_policy")]
 
     operations = [
         migrations.AlterField(
-            model_name='experiment',
-            name='doi_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_experiments', to='metadata.DoiIdentifier', verbose_name='DOI identifiers'),
+            model_name="experiment",
+            name="doi_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_experiments",
+                to="metadata.DoiIdentifier",
+                verbose_name="DOI identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='experiment',
-            name='pubmed_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_experiments', to='metadata.PubmedIdentifier', verbose_name='PubMed identifiers'),
+            model_name="experiment",
+            name="pubmed_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_experiments",
+                to="metadata.PubmedIdentifier",
+                verbose_name="PubMed identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='experiment',
-            name='sra_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_experiments', to='metadata.SraIdentifier', verbose_name='SRA identifiers'),
+            model_name="experiment",
+            name="sra_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_experiments",
+                to="metadata.SraIdentifier",
+                verbose_name="SRA identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='experimentset',
-            name='doi_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_experimentsets', to='metadata.DoiIdentifier', verbose_name='DOI identifiers'),
+            model_name="experimentset",
+            name="doi_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_experimentsets",
+                to="metadata.DoiIdentifier",
+                verbose_name="DOI identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='experimentset',
-            name='pubmed_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_experimentsets', to='metadata.PubmedIdentifier', verbose_name='PubMed identifiers'),
+            model_name="experimentset",
+            name="pubmed_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_experimentsets",
+                to="metadata.PubmedIdentifier",
+                verbose_name="PubMed identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='experimentset',
-            name='sra_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_experimentsets', to='metadata.SraIdentifier', verbose_name='SRA identifiers'),
+            model_name="experimentset",
+            name="sra_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_experimentsets",
+                to="metadata.SraIdentifier",
+                verbose_name="SRA identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='scoreset',
-            name='doi_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_scoresets', to='metadata.DoiIdentifier', verbose_name='DOI identifiers'),
+            model_name="scoreset",
+            name="doi_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_scoresets",
+                to="metadata.DoiIdentifier",
+                verbose_name="DOI identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='scoreset',
-            name='pubmed_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_scoresets', to='metadata.PubmedIdentifier', verbose_name='PubMed identifiers'),
+            model_name="scoreset",
+            name="pubmed_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_scoresets",
+                to="metadata.PubmedIdentifier",
+                verbose_name="PubMed identifiers",
+            ),
         ),
         migrations.AlterField(
-            model_name='scoreset',
-            name='sra_ids',
-            field=models.ManyToManyField(blank=True, related_name='associated_scoresets', to='metadata.SraIdentifier', verbose_name='SRA identifiers'),
+            model_name="scoreset",
+            name="sra_ids",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="associated_scoresets",
+                to="metadata.SraIdentifier",
+                verbose_name="SRA identifiers",
+            ),
         ),
     ]

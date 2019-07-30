@@ -6,9 +6,12 @@ from django.db import models, transaction
 
 from core.models import TimeStampedModel
 
-from .validators import MAVEDB_EXPERIMENTSET_URN_DIGITS, \
-    MAVEDB_URN_MAX_LENGTH, MAVEDB_URN_NAMESPACE, \
-    MAVEDB_TMP_URN_DIGITS
+from .validators import (
+    MAVEDB_EXPERIMENTSET_URN_DIGITS,
+    MAVEDB_URN_MAX_LENGTH,
+    MAVEDB_URN_NAMESPACE,
+    MAVEDB_TMP_URN_DIGITS,
+)
 
 
 RANDOM_CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
@@ -19,7 +22,7 @@ def get_model_by_urn(urn):
     from dataset.models.scoreset import ScoreSet
     from dataset.models.experiment import Experiment
     from dataset.models.experimentset import ExperimentSet
-    
+
     instance = None
     for model in [ScoreSet, Experiment, ExperimentSet, Variant]:
         if model.objects.filter(urn=urn).exists():
@@ -37,11 +40,11 @@ def get_model_by_urn(urn):
 
 
 def generate_tmp_urn():
-    return 'tmp:{}'.format(
-        ''.join([
-            random.choice(RANDOM_CHARS)
-            for _ in range(MAVEDB_TMP_URN_DIGITS)
-    ]))
+    return "tmp:{}".format(
+        "".join(
+            [random.choice(RANDOM_CHARS) for _ in range(MAVEDB_TMP_URN_DIGITS)]
+        )
+    )
 
 
 class UrnModel(TimeStampedModel):
@@ -59,12 +62,13 @@ class UrnModel(TimeStampedModel):
         ExperimentSet), `<ScoreSet>` is an integer with no padding, and
         `<Variant>` is an integer with no padding.
     """
+
     URN_PREFIX = "urn:{}:".format(MAVEDB_URN_NAMESPACE)
     URN_DIGITS = MAVEDB_EXPERIMENTSET_URN_DIGITS
 
     class Meta:
         abstract = True
-        ordering = ['-creation_date']
+        ordering = ["-creation_date"]
 
     default_urn_kwargs = {
         "unique": True,
@@ -101,11 +105,11 @@ class UrnModel(TimeStampedModel):
         while cls.objects.filter(urn=urn).count() > 0:
             urn = generate_tmp_urn()
         return urn
-        
+
     def get_display_urn(self):
         if self.urn:
             return self.urn
-        
+
     @property
     def has_public_urn(self):
-        return 'urn:' in str(self.urn)
+        return "urn:" in str(self.urn)

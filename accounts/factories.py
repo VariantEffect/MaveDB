@@ -23,14 +23,20 @@ def AnonymousUserFactory():
     return AnonymousUser()
 
 
-def UserFactory(username=None, password=None, first_name=None,
-                last_name=None, email=None, **kwargs):
+def UserFactory(
+    username=None,
+    password=None,
+    first_name=None,
+    last_name=None,
+    email=None,
+    **kwargs
+):
     """
     Test fixture factory for the user class which sets username,
     first_name, last_name and password.
     """
     if email is None:
-        email = factory.faker.Faker('email').generate({})
+        email = factory.faker.Faker("email").generate({})
     if username is None:
         username = factory.fuzzy.FuzzyText(length=8).fuzz()
     if password is None:
@@ -39,7 +45,7 @@ def UserFactory(username=None, password=None, first_name=None,
     if User.objects.filter(username=username).count():
         return User.objects.filter(username=username).first()
 
-    name = factory.faker.Faker('name').generate({}).split(' ')
+    name = factory.faker.Faker("name").generate({}).split(" ")
     if first_name is None:
         first_name = name[0]
     if last_name is None:
@@ -54,4 +60,3 @@ def UserFactory(username=None, password=None, first_name=None,
     )
     user.set_password(password)
     return user
-

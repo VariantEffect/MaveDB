@@ -8,14 +8,12 @@ import genome.validators
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0004_auto_20180510_1355'),
-    ]
+    dependencies = [("genome", "0004_auto_20180510_1355")]
 
     operations = [
         migrations.RenameField(
-            model_name='referencegenome',
-            old_name='species_name',
-            new_name='organism_name',
-        ),
+            model_name="referencegenome",
+            old_name="species_name",
+            new_name="organism_name",
+        )
     ]

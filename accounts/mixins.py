@@ -37,8 +37,9 @@ def _add_users(instance, users, group):
     elif isinstance(users, User):
         return func(user=users, instance=instance)
     else:
-        raise TypeError("Expected iterable or User. Found {}.".format(
-            type(users).__name__))
+        raise TypeError(
+            "Expected iterable or User. Found {}.".format(type(users).__name__)
+        )
 
 
 def _remove_users(instance, users, group):
@@ -58,8 +59,9 @@ def _remove_users(instance, users, group):
     elif isinstance(users, User):
         return func(user=users, instance=instance)
     else:
-        raise TypeError("Expected iterable or User. Found {}.".format(
-            type(users).__name__))
+        raise TypeError(
+            "Expected iterable or User. Found {}.".format(type(users).__name__)
+        )
 
 
 class GroupPermissionMixin(object):
@@ -68,6 +70,7 @@ class GroupPermissionMixin(object):
     allows access to the users assigned to each group for a particular
     instance.
     """
+
     @property
     def admin_group_name(self):
         return get_admin_group_name_for_instance(self)

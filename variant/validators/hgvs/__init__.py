@@ -25,7 +25,8 @@ def validate_multi_variant(hgvs):
     match = multi_variant_re.fullmatch(hgvs)
     if not match:
         raise ValidationError(
-            "'{}' is not a supported HGVS syntax.".format(hgvs))
+            "'{}' is not a supported HGVS syntax.".format(hgvs)
+        )
 
 
 def validate_single_variant(hgvs):
@@ -35,7 +36,8 @@ def validate_single_variant(hgvs):
     match = single_variant_re.fullmatch(hgvs)
     if not match:
         raise ValidationError(
-            "'{}' is not a supported HGVS syntax.".format(hgvs))
+            "'{}' is not a supported HGVS syntax.".format(hgvs)
+        )
 
 
 def validate_hgvs_string(value, level=None):
@@ -54,13 +56,13 @@ def validate_hgvs_string(value, level=None):
     else:
         validate_single_variant(value)
 
-    if level == 'nt' and value not in wt_or_sy:
+    if level == "nt" and value not in wt_or_sy:
         if value[0] not in dna_prefix + rna_prefix:
             raise ValidationError("{} is not a valid nucleotide syntax.")
-    elif level == 'p' and value not in wt_or_sy:
+    elif level == "p" and value not in wt_or_sy:
         if value[0] not in protein_prefix:
             raise ValidationError("{} is not a valid protein syntax.")
 
 
-validate_nt_variant = partial(validate_hgvs_string, **{'level': 'nt'})
-validate_pro_variant = partial(validate_hgvs_string, **{'level': 'p'})
+validate_nt_variant = partial(validate_hgvs_string, **{"level": "nt"})
+validate_pro_variant = partial(validate_hgvs_string, **{"level": "p"})

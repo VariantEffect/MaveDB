@@ -7,17 +7,13 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0008_publicdatasetcounter'),
-    ]
+    dependencies = [("dataset", "0008_publicdatasetcounter")]
 
     operations = [
         migrations.RemoveField(
-            model_name='publicdatasetcounter',
-            name='experiments',
+            model_name="publicdatasetcounter", name="experiments"
         ),
         migrations.RemoveField(
-            model_name='publicdatasetcounter',
-            name='scoresets',
+            model_name="publicdatasetcounter", name="scoresets"
         ),
     ]

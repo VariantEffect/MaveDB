@@ -7,14 +7,22 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0008_auto_20181203_1331'),
-    ]
+    dependencies = [("genome", "0008_auto_20181203_1331")]
 
     operations = [
         migrations.AddField(
-            model_name='targetgene',
-            name='category',
-            field=models.CharField(choices=[('Coding', 'Coding'), ('Non-coding', 'Non-coding'), ('Promoter', 'Promoter'), ('Enhancer', 'Enhancer')], default='Coding', max_length=250, verbose_name='Target category'),
-        ),
+            model_name="targetgene",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("Coding", "Coding"),
+                    ("Non-coding", "Non-coding"),
+                    ("Promoter", "Promoter"),
+                    ("Enhancer", "Enhancer"),
+                ],
+                default="Coding",
+                max_length=250,
+                verbose_name="Target category",
+            ),
+        )
     ]

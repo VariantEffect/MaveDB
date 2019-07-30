@@ -9,8 +9,12 @@ from .validators import (
     validate_ensembl_identifier,
 )
 from .models import (
-    UniprotIdentifier, EnsemblIdentifier, RefseqIdentifier,
-    UniprotOffset, RefseqOffset, EnsemblOffset
+    UniprotIdentifier,
+    EnsemblIdentifier,
+    RefseqIdentifier,
+    UniprotOffset,
+    RefseqOffset,
+    EnsemblOffset,
 )
 
 
@@ -19,14 +23,14 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['offset'].required = False
-        self.fields['identifier'] = FlexibleModelChoiceField(
+        self.fields["offset"].required = False
+        self.fields["identifier"] = FlexibleModelChoiceField(
             klass=self.id_class,
             to_field_name="identifier",
             required=False,
             queryset=self.id_class.objects.all(),
             widget=forms.Select(
-                attrs={"class": "select2 select2-token-select"},
+                attrs={"class": "select2 select2-token-select"}
             ),
         )
         # Re-order the fields manually. Setting field order before `super`
@@ -38,10 +42,10 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
         self.fields["offset"] = offset_field
         self.fields["offset"].label = "Reference offset"
 
-        instance = kwargs.get('instance', None)
-        if hasattr(instance, 'pk') and instance.pk is not None:
-            self.fields['identifier'].initial = instance.identifier
-            self.fields['offset'].initial = instance.offset
+        instance = kwargs.get("instance", None)
+        if hasattr(instance, "pk") and instance.pk is not None:
+            self.fields["identifier"].initial = instance.identifier
+            self.fields["offset"].initial = instance.offset
 
     def clean_identifier(self):
         identifier = self.cleaned_data.get("identifier", None)
@@ -64,7 +68,7 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
             return None
 
     def is_blank(self):
-        identifier = self.cleaned_data.get('identifier', None)
+        identifier = self.cleaned_data.get("identifier", None)
         return identifier is None
 
     def save(self, target=None, commit=True):
@@ -72,7 +76,7 @@ class BaseIdentifierWithOffsetForm(forms.ModelForm):
             return super().save(commit=commit)
         # Don't attempt a save if identifier is None. This will cause
         # a database IntegrityError so return None instead.
-        identifier = self.cleaned_data.get('identifier', None)
+        identifier = self.cleaned_data.get("identifier", None)
         if commit and not self.is_blank():
             if target is not None:
                 self.instance.target = target
@@ -100,11 +104,11 @@ class UniprotOffsetForm(BaseIdentifierWithOffsetForm):
 
     class Meta:
         model = UniprotOffset
-        fields = ('offset',)
+        fields = ("offset",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['identifier'].label = "UniProt identifier"
+        self.fields["identifier"].label = "UniProt identifier"
 
 
 class RefseqOffsetForm(BaseIdentifierWithOffsetForm):
@@ -112,11 +116,11 @@ class RefseqOffsetForm(BaseIdentifierWithOffsetForm):
 
     class Meta:
         model = RefseqOffset
-        fields = ('offset',)
+        fields = ("offset",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['identifier'].label = "RefSeq identifier"
+        self.fields["identifier"].label = "RefSeq identifier"
 
 
 class EnsemblOffsetForm(BaseIdentifierWithOffsetForm):
@@ -124,8 +128,8 @@ class EnsemblOffsetForm(BaseIdentifierWithOffsetForm):
 
     class Meta:
         model = EnsemblOffset
-        fields = ('offset',)
+        fields = ("offset",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['identifier'].label = "Ensembl identifier"
+        self.fields["identifier"].label = "Ensembl identifier"

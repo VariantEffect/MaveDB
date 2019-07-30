@@ -132,20 +132,22 @@
     </h2>
   </span>
   {% if current_visible|length %}
-    <ul>
-      {% for child in current_visible %}
-        <li class="child-list-item">
-          <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
-            <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
-          </a>
-          <p class="child-list-description"><b>{{ child.get_title }}</b></p>
-          <p class="child-list-description">{{ child.get_description }}</p>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-muted">No score sets have been associated with this experiment.</p>
-  {% endif %}
+    <div class="children-detail-list">
+      <ul>
+        {% for child in current_visible %}
+          <li class="child-list-item">
+            <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
+              <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
+            </a>
+            <p class="child-list-description"><b>{{ child.get_title }}</b></p>
+            <p class="child-list-description">{{ child.get_description }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="text-muted">No score sets have been associated with this experiment.</p>
+      {% endif %}
+    </div>
 {% endblock %}
 
 {% block extra_scripts %}

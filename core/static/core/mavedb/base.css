@@ -42,6 +42,9 @@ body {
    /*margin: 1%;*/
    color: #343a40;
    background-color: #f7f7f7;
+    line-height: 1.75;
+    font-size: 16px;
+    
    /*display: flex;*/
    /*!*min-height: 85vh;*!*/
    /*flex-direction: column;*/
@@ -692,4 +695,10 @@ span.select2-selection.select2-selection--multiple ul.select2-selection__rendere
 }
 .fa-spinner {
   animation: spinner 1s linear infinite;
+}
+
+
+.two-columns {
+    margin-top: 1rem;
+    /*column-count: 2;*/
 }

@@ -16,6 +16,7 @@ class PermissionTypes:
     """
     A static utility class for defining permission types that groups can have.
     """
+
     CAN_VIEW = "can_view"
     CAN_EDIT = "can_edit"
     CAN_MANAGE = "can_manage"
@@ -30,10 +31,11 @@ class GroupTypes:
     A static utility class for defining permission groups for instances such 
     as `ExperimentSet`, `Experiment` and `ScoreSet`.
     """
+
     ADMIN = "administrator"
     EDITOR = "editor"
     VIEWER = "viewer"
-    
+
     def __iter__(self):
         return iter([self.ADMIN, self.EDITOR, self.VIEWER])
 
@@ -47,16 +49,11 @@ class GroupTypes:
 
     @staticmethod
     def editor_permissions():
-        return [
-            PermissionTypes.CAN_EDIT,
-            PermissionTypes.CAN_VIEW,
-        ]
+        return [PermissionTypes.CAN_EDIT, PermissionTypes.CAN_VIEW]
 
     @staticmethod
     def viewer_permissions():
-        return [
-            PermissionTypes.CAN_VIEW
-        ]
+        return [PermissionTypes.CAN_VIEW]
 
 
 # Utilities
@@ -64,9 +61,9 @@ class GroupTypes:
 def valid_model_instance(instance):
     from dataset.models.base import DatasetModel
 
-    if not hasattr(instance, 'urn'):
+    if not hasattr(instance, "urn"):
         return False
-    if not getattr(instance, 'urn'):
+    if not getattr(instance, "urn"):
         return False
     if not isinstance(instance, DatasetModel):
         return False
@@ -74,35 +71,35 @@ def valid_model_instance(instance):
 
 
 def valid_group_type(group):
-    return group in {
-        GroupTypes.ADMIN, GroupTypes.EDITOR, GroupTypes.VIEWER
-    }
+    return group in {GroupTypes.ADMIN, GroupTypes.EDITOR, GroupTypes.VIEWER}
 
 
 def user_is_anonymous(user):
-    if not hasattr(user, 'username'):
+    if not hasattr(user, "username"):
         return
-    return isinstance(user, AnonymousUser) or \
-        str(user) == str(AnonymousUser) or \
-        str(user).lower() == "AnonymousUser".lower()
+    return (
+        isinstance(user, AnonymousUser)
+        or str(user) == str(AnonymousUser)
+        or str(user).lower() == "AnonymousUser".lower()
+    )
 
 
 def get_admin_group_name_for_instance(instance):
     if valid_model_instance(instance):
         klass = instance.__class__.__name__.lower()
-        return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.ADMIN)
+        return "{}:{}-{}".format(klass, instance.pk, GroupTypes.ADMIN)
 
 
 def get_editor_group_name_for_instance(instance):
     if valid_model_instance(instance):
         klass = instance.__class__.__name__.lower()
-        return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.EDITOR)
+        return "{}:{}-{}".format(klass, instance.pk, GroupTypes.EDITOR)
 
 
 def get_viewer_group_name_for_instance(instance):
     if valid_model_instance(instance):
         klass = instance.__class__.__name__.lower()
-        return '{}:{}-{}'.format(klass, instance.pk, GroupTypes.VIEWER)
+        return "{}:{}-{}".format(klass, instance.pk, GroupTypes.VIEWER)
 
 
 def instances_for_user_with_group_permission(user, model, group_type):
@@ -124,9 +121,10 @@ def instances_for_user_with_group_permission(user, model, group_type):
     """
     if user_is_anonymous(user):
         return model.objects.none()
-    groups = user.groups.\
-        filter(name__iregex=r'{}:\d+-{}'.format(model.__name__, group_type))
-    pks = set(g.name.split(':')[-1].split('-')[0] for g in groups)
+    groups = user.groups.filter(
+        name__iregex=r"{}:\d+-{}".format(model.__name__, group_type)
+    )
+    pks = set(g.name.split(":")[-1].split("-")[0] for g in groups)
     return model.objects.filter(pk__in=pks)
 
 
@@ -218,7 +216,8 @@ def assign_user_as_instance_admin(user, instance):
         return False
     if not isinstance(user, User):
         raise TypeError(
-            "Expected type User, found {}.".format(type(user).__name__))
+            "Expected type User, found {}.".format(type(user).__name__)
+        )
 
     group_name = get_admin_group_name_for_instance(instance)
     if not Group.objects.filter(name=group_name).count():
@@ -237,7 +236,8 @@ def assign_user_as_instance_editor(user, instance):
         return False
     if not isinstance(user, User):
         raise TypeError(
-            "Expected type User, found {}.".format(type(user).__name__))
+            "Expected type User, found {}.".format(type(user).__name__)
+        )
 
     group_name = get_editor_group_name_for_instance(instance)
     if not Group.objects.filter(name=group_name).count():
@@ -256,7 +256,8 @@ def assign_user_as_instance_viewer(user, instance):
         return False
     if not isinstance(user, User):
         raise TypeError(
-            "Expected type User, found {}.".format(type(user).__name__))
+            "Expected type User, found {}.".format(type(user).__name__)
+        )
 
     group_name = get_viewer_group_name_for_instance(instance)
     if not Group.objects.filter(name=group_name).count():
@@ -275,7 +276,8 @@ def assign_user_as_instance_viewer(user, instance):
 def remove_user_as_instance_admin(user, instance):
     if not isinstance(user, User):
         raise TypeError(
-            "Expected type User, found {}.".format(type(user).__name__))
+            "Expected type User, found {}.".format(type(user).__name__)
+        )
     try:
         group_name = get_admin_group_name_for_instance(instance)
         admin_group = Group.objects.get(name=group_name)
@@ -289,7 +291,8 @@ def remove_user_as_instance_admin(user, instance):
 def remove_user_as_instance_editor(user, instance):
     if not isinstance(user, User):
         raise TypeError(
-            "Expected type User, found {}.".format(type(user).__name__))
+            "Expected type User, found {}.".format(type(user).__name__)
+        )
     try:
         group_name = get_editor_group_name_for_instance(instance)
         author_group = Group.objects.get(name=group_name)
@@ -303,7 +306,8 @@ def remove_user_as_instance_editor(user, instance):
 def remove_user_as_instance_viewer(user, instance):
     if not isinstance(user, User):
         raise TypeError(
-            "Expected type User, found {}.".format(type(user).__name__))
+            "Expected type User, found {}.".format(type(user).__name__)
+        )
     try:
         group_name = get_viewer_group_name_for_instance(instance)
         viewer_group = Group.objects.get(name=group_name)

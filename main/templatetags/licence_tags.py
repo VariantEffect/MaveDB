@@ -10,14 +10,11 @@ register = template.Library()
 @register.simple_tag
 def get_licence_logo_path(licence):
     name = licence.get_short_name()
-    if name == 'CC0':
-        return mark_safe(
-            settings.STATIC_URL + 'core/mavedb/cc-zero.svg')
-    elif name == 'CC BY-NC-SA 4.0':
-        return mark_safe(
-            settings.STATIC_URL + 'core/mavedb/by-nc-sa.svg')
+    if name == "CC0":
+        return mark_safe(settings.STATIC_URL + "core/mavedb/cc-zero.svg")
+    elif name == "CC BY-NC-SA 4.0":
+        return mark_safe(settings.STATIC_URL + "core/mavedb/by-nc-sa.svg")
     elif name == "CC BY 4.0":
-        return mark_safe(
-            settings.STATIC_URL + 'core/mavedb/by.svg')
+        return mark_safe(settings.STATIC_URL + "core/mavedb/by.svg")
     else:
         raise ValueError("Unrecognised licence name '{}'.".format(name))

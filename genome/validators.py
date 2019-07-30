@@ -17,13 +17,15 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
-DNA_SEQ_PATTERN = r'[ATGCatgc]+'
+DNA_SEQ_PATTERN = r"[ATGCatgc]+"
 
 
 min_start_validator = MinValueValidator(
-    1, message=_("Start coordinate must be a positive integer."))
+    1, message=_("Start coordinate must be a positive integer.")
+)
 min_end_validator = MinValueValidator(
-    1, message=_("End coordinate must be a positive integer."))
+    1, message=_("End coordinate must be a positive integer.")
+)
 
 
 # GenomicInterval
@@ -42,9 +44,10 @@ def validate_interval_start_lteq_end(start, end):
 
 
 def validate_strand(value):
-    if value not in ('+', '-'):
+    if value not in ("+", "-"):
         raise ValidationError(
-            "GenomicInterval strand must be either '+' or '-'")
+            "GenomicInterval strand must be either '+' or '-'"
+        )
 
 
 def validate_chromosome(value):
@@ -52,16 +55,18 @@ def validate_chromosome(value):
     if value is None:
         return
     if is_null(value):
-        raise ValidationError(
-            "Chromosome identifier must not be null.")
+        raise ValidationError("Chromosome identifier must not be null.")
 
 
 def validate_unique_intervals(intervals):
     for interval1 in intervals:
         for interval2 in intervals:
-            if (interval1.pk is not None) and (interval2.pk is not None) and \
-                    (interval1.pk == interval2.pk):
-                    continue
+            if (
+                (interval1.pk is not None)
+                and (interval2.pk is not None)
+                and (interval1.pk == interval2.pk)
+            ):
+                continue
             elif interval1 is interval2:
                 continue
             elif interval1.equals(interval2):
@@ -75,8 +80,7 @@ def validate_unique_intervals(intervals):
 def validate_wildtype_sequence(seq):
     if not re.fullmatch(DNA_SEQ_PATTERN, seq):
         raise ValidationError(
-            "'%(seq)s' is not a valid wild type sequence.",
-            params={"seq": seq}
+            "'%(seq)s' is not a valid wild type sequence.", params={"seq": seq}
         )
 
 
@@ -94,6 +98,7 @@ def validate_reference_genome_has_one_external_identifier(referencegenome):
             "genome."
         )
 
+
 def validate_genome_short_name(value):
     if is_null(value):
         raise ValidationError("Genome short name must not be null.")
@@ -102,7 +107,9 @@ def validate_genome_short_name(value):
 # ReferenceMap
 # ------------------------------------------------------------------------- #
 def validate_map_has_unique_reference_genome(annotations):
-    genomes = set([str(a.get_reference_genome_name()).lower() for a in annotations])
+    genomes = set(
+        [str(a.get_reference_genome_name()).lower() for a in annotations]
+    )
     if len(genomes) < len(annotations):
         raise ValidationError(
             "Each reference map must specify a different reference genome."
@@ -127,9 +134,7 @@ def validate_one_primary_map(reference_maps):
     primary_count = sum(a.is_primary_reference_map() for a in reference_maps)
     if primary_count > 1 or primary_count < 1:
         raise ValidationError(
-            (
-                "A target must have one primary reference map."
-            )
+            ("A target must have one primary reference map.")
         )
 
 

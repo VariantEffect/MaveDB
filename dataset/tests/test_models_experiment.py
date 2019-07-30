@@ -12,7 +12,9 @@ from ..models.experimentset import ExperimentSet
 from ..models.experiment import Experiment, assign_public_urn
 from ..utilities import publish_dataset
 from ..factories import (
-    ExperimentFactory, ScoreSetFactory, ScoreSetWithTargetFactory,
+    ExperimentFactory,
+    ScoreSetFactory,
+    ScoreSetWithTargetFactory,
     ExperimentSetFactory,
 )
 
@@ -24,6 +26,7 @@ class TestExperiment(TestCase):
     :py:class:`ScoreSet` objects. We will test correctness of creation,
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
+
     def test_new_experiment_is_assigned_all_permission_groups(self):
         self.assertEqual(Group.objects.count(), 0)
         _ = ExperimentFactory()
@@ -66,29 +69,30 @@ class TestExperiment(TestCase):
         genome1 = scs1.target.get_reference_genomes().first()
         genome2 = scs2.target.get_reference_genomes().first()
 
-        genome1.organsim_name = 'A'
+        genome1.organsim_name = "A"
         genome1.save()
-        genome2.organsim_name = 'B'
+        genome2.organsim_name = "B"
         genome2.save()
 
-        expected = sorted(set(
-            [genome1.format_organism_name_html()] +
-            [genome2.format_organism_name_html()]
-        ))
+        expected = sorted(
+            set(
+                [genome1.format_organism_name_html()]
+                + [genome2.format_organism_name_html()]
+            )
+        )
         self.assertEqual(exp.get_targets().count(), 2)
         self.assertEqual(exp.get_display_target_organisms(), expected)
 
-        expected = sorted(set(
-            [genome1.get_organism_name()] +
-            [genome2.get_organism_name()]
-        ))
+        expected = sorted(
+            set([genome1.get_organism_name()] + [genome2.get_organism_name()])
+        )
         self.assertEqual(exp.get_target_organisms(), expected)
 
     def test_can_get_url(self):
         obj = ExperimentFactory()
         self.assertEqual(
             obj.get_url(),
-            base_url() + reverse('dataset:experiment_detail', args=(obj.urn,))
+            base_url() + reverse("dataset:experiment_detail", args=(obj.urn,)),
         )
 
 
@@ -97,34 +101,34 @@ class TestAssignPublicUrn(TestCase):
         self.factory = ExperimentFactory
         self.private_parent = ExperimentSetFactory()
         self.public_parent = publish_dataset(ExperimentSetFactory())
-    
+
     def test_assigns_public_urn(self):
         instance = self.factory(experimentset=self.public_parent)
         instance = assign_public_urn(instance)
         self.assertIsNotNone(MAVEDB_EXPERIMENT_URN_RE.fullmatch(instance.urn))
         self.assertTrue(instance.has_public_urn)
-    
+
     def test_increments_parent_last_child_value(self):
         instance = self.factory(experimentset=self.public_parent)
         self.assertEqual(instance.parent.last_child_value, 0)
         instance = assign_public_urn(instance)
         self.assertEqual(instance.parent.last_child_value, 1)
-    
+
     def test_attr_error_parent_has_tmp_urn(self):
         instance = self.factory(experimentset=self.private_parent)
         self.private_parent.private = False
         self.private_parent.save()
         with self.assertRaises(AttributeError):
             assign_public_urn(instance)
-    
+
     def test_assigns_sequential_urns(self):
         instance1 = self.factory(experimentset=self.public_parent)
         instance2 = self.factory(experimentset=self.public_parent)
         instance1 = assign_public_urn(instance1)
         instance2 = assign_public_urn(instance2)
-        self.assertEqual(instance1.urn[-1], 'a')
-        self.assertEqual(instance2.urn[-1], 'b')
-    
+        self.assertEqual(instance1.urn[-1], "a")
+        self.assertEqual(instance2.urn[-1], "b")
+
     def test_applying_twice_does_not_change_urn(self):
         instance = self.factory(experimentset=self.public_parent)
         i1 = assign_public_urn(instance)

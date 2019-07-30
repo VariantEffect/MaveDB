@@ -31,10 +31,12 @@ User = get_user_model()
 
 
 def default_dataset():
-    return dict({
-        constants.score_columns: [constants.required_score_column],
-        constants.count_columns: [],
-    })
+    return dict(
+        {
+            constants.score_columns: [constants.required_score_column],
+            constants.count_columns: [],
+        }
+    )
 
 
 @transaction.atomic
@@ -60,31 +62,37 @@ def assign_public_urn(scoreset):
     `ScoreSet`
         scoreset with new urn or same urn if already public.
     """
-    scoreset = ScoreSet.objects.filter(
-        id=scoreset.id
-    ).select_for_update(nowait=False).first()
+    scoreset = (
+        ScoreSet.objects.filter(id=scoreset.id)
+        .select_for_update(nowait=False)
+        .first()
+    )
 
     if not scoreset.has_public_urn:
-        parent = Experiment.objects.filter(
-            id=scoreset.experiment.id
-        ).select_for_update(nowait=False).first()
-        
+        parent = (
+            Experiment.objects.filter(id=scoreset.experiment.id)
+            .select_for_update(nowait=False)
+            .first()
+        )
+
         if not parent.has_public_urn:
             raise AttributeError(
                 "Cannot assign a public urn when parent has a temporary urn."
             )
-        
+
         child_value = parent.last_child_value + 1
         scoreset.urn = "{}-{}".format(parent.urn, child_value)
         parent.last_child_value = child_value
         scoreset.save()
         parent.save(force_update=True)
-    
+
         # Refresh the scoreset and nested parents
-        scoreset = ScoreSet.objects.filter(
-            id=scoreset.id
-        ).select_for_update(nowait=False).first()
-    
+        scoreset = (
+            ScoreSet.objects.filter(id=scoreset.id)
+            .select_for_update(nowait=False)
+            .first()
+        )
+
     return scoreset
 
 
@@ -119,6 +127,7 @@ class ScoreSet(DatasetModel):
     replaces : `models.ForeignKey`
         Indicates a scoreset instances that replaces the current instance.
     """
+
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
     # ---------------------------------------------------------------------- #
@@ -129,7 +138,7 @@ class ScoreSet(DatasetModel):
         permissions = (
             (PermissionTypes.CAN_VIEW, "Can view"),
             (PermissionTypes.CAN_EDIT, "Can edit"),
-            (PermissionTypes.CAN_MANAGE, "Can manage")
+            (PermissionTypes.CAN_MANAGE, "Can manage"),
         )
 
     # ---------------------------------------------------------------------- #
@@ -145,12 +154,13 @@ class ScoreSet(DatasetModel):
         on_delete=models.PROTECT,
         null=False,
         default=None,
-        verbose_name='Experiment',
-        related_name='scoresets',
+        verbose_name="Experiment",
+        related_name="scoresets",
     )
 
     licence = models.ForeignKey(
-        to=Licence, on_delete=models.DO_NOTHING,
+        to=Licence,
+        on_delete=models.DO_NOTHING,
         verbose_name="Licence",
         related_name="attached_scoresets",
         default=None,
@@ -165,7 +175,7 @@ class ScoreSet(DatasetModel):
     )
 
     replaces = models.OneToOneField(
-        to='dataset.ScoreSet',
+        to="dataset.ScoreSet",
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Replaces",
@@ -179,11 +189,13 @@ class ScoreSet(DatasetModel):
         null=False,
         verbose_name="Scores are normalised",
     )
-    
+
     data_usage_policy = models.TextField(
-        null=True, default="", blank=True,
-        verbose_name='Data usage policy',
-        validators=[WordLimitValidator(250), ]
+        null=True,
+        default="",
+        blank=True,
+        verbose_name="Data usage policy",
+        validators=[WordLimitValidator(250)],
     )
 
     # ---------------------------------------------------------------------- #
@@ -197,13 +209,13 @@ class ScoreSet(DatasetModel):
 
     @classmethod
     def tracked_fields(cls):
-        return super().tracked_fields() + ('licence', 'data_usage_policy', )
+        return super().tracked_fields() + ("licence", "data_usage_policy")
 
     # Variant related methods
     # ---------------------------------------------------------------------- #
     @property
     def parent(self):
-        return getattr(self, 'experiment', None)
+        return getattr(self, "experiment", None)
 
     @property
     def children(self):
@@ -211,7 +223,7 @@ class ScoreSet(DatasetModel):
 
     @property
     def has_variants(self):
-        return hasattr(self, 'variants') and self.variants.count() > 0
+        return hasattr(self, "variants") and self.variants.count() > 0
 
     @property
     def variant_count(self):
@@ -223,8 +235,9 @@ class ScoreSet(DatasetModel):
 
     @property
     def has_uniprot_metadata(self):
-        return hasattr(self, 'target') and \
-               getattr(self.target, 'uniprot_id', None)
+        return hasattr(self, "target") and getattr(
+            self.target, "uniprot_id", None
+        )
 
     def delete_variants(self):
         self.variants.all().delete()
@@ -234,56 +247,70 @@ class ScoreSet(DatasetModel):
         return self
 
     def get_target(self):
-        if not hasattr(self, 'target'):
+        if not hasattr(self, "target"):
             return None
         return self.target
 
     def get_target_organisms(self):
         if not self.get_target():
             return set()
-        return set([
-            g.get_organism_name()
-            for g in self.get_target().get_reference_genomes()
-        ])
+        return set(
+            [
+                g.get_organism_name()
+                for g in self.get_target().get_reference_genomes()
+            ]
+        )
 
     def get_display_target_organisms(self):
         if not self.get_target():
             return set()
-        return set(sorted([
-            r.format_reference_genome_organism_html()
-            for r in self.get_target().get_reference_maps()
-        ]))
+        return set(
+            sorted(
+                [
+                    r.format_reference_genome_organism_html()
+                    for r in self.get_target().get_reference_maps()
+                ]
+            )
+        )
 
     def get_url(self, request=None):
         base = base_url(request)
         return base + reverse("dataset:scoreset_detail", args=(self.urn,))
-    
+
     # JSON field related methods
     # ---------------------------------------------------------------------- #
     @property
     def score_columns(self):
-        return [constants.hgvs_nt_column, constants.hgvs_pro_column] + \
-               self.dataset_columns[constants.score_columns]
+        return [
+            constants.hgvs_nt_column,
+            constants.hgvs_pro_column,
+        ] + self.dataset_columns[constants.score_columns]
 
     @property
     def count_columns(self):
-        return [constants.hgvs_nt_column, constants.hgvs_pro_column] + \
-               self.dataset_columns[constants.count_columns]
+        return [
+            constants.hgvs_nt_column,
+            constants.hgvs_pro_column,
+        ] + self.dataset_columns[constants.count_columns]
 
     @property
     def has_score_dataset(self):
-        return self.has_variants and \
-               len(self.dataset_columns[constants.score_columns]) >= 1
+        return (
+            self.has_variants
+            and len(self.dataset_columns[constants.score_columns]) >= 1
+        )
 
     @property
     def has_count_dataset(self):
-        return self.has_variants and \
-               len(self.dataset_columns[constants.count_columns]) > 0
+        return (
+            self.has_variants
+            and len(self.dataset_columns[constants.count_columns]) > 0
+        )
 
     @property
     def has_metadata(self):
         return len(self.extra_metadata) > 0
-    
+
     @property
     def primary_hgvs_column(self):
         # Primary hgvs column will be _nt whenever there are any variants
@@ -296,12 +323,12 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     @property
     def has_replacement(self):
-        return getattr(self, 'replaced_by', None) is not None
+        return getattr(self, "replaced_by", None) is not None
 
     @property
     def replaces_previous(self):
-        return getattr(self, 'replaces', None) is not None
-    
+        return getattr(self, "replaces", None) is not None
+
     # ----- Return public/private versions
     @property
     def current_version(self):
@@ -315,13 +342,13 @@ class ScoreSet(DatasetModel):
         if self.has_replacement:
             return self.replaced_by
         return None
-    
+
     @property
     def previous_version(self):
         if self.replaces_previous:
             return self.replaces
         return None
-    
+
     # ---- Return public version only
     @property
     def current_public_version(self):
@@ -351,7 +378,7 @@ class ScoreSet(DatasetModel):
             return None
         else:
             return public_versions[-1]
-    
+
     # ----- Returns version suitable for user
     def get_version(self, attr, public_attr, user=None):
         """
@@ -369,7 +396,7 @@ class ScoreSet(DatasetModel):
             return version
         else:
             return public_version
-        
+
     def get_next_version(self, user=None):
         """
         Get the next version of this scoreset. Checks if an authenticated
@@ -378,9 +405,8 @@ class ScoreSet(DatasetModel):
         the next private version, otherwise returns the next public
         version, which may be `None`.
         """
-        return self.get_version(
-            'next_version', 'next_public_version', user)
-    
+        return self.get_version("next_version", "next_public_version", user)
+
     def get_previous_version(self, user=None):
         """
         Get the previous version of this scoreset. Checks if an authenticated
@@ -390,8 +416,9 @@ class ScoreSet(DatasetModel):
         version, which may be `None`.
         """
         return self.get_version(
-            'previous_version', 'previous_public_version', user)
-    
+            "previous_version", "previous_public_version", user
+        )
+
     def get_current_version(self, user=None):
         """
         Get the current version of this scoreset. Checks if an authenticated
@@ -401,28 +428,34 @@ class ScoreSet(DatasetModel):
         version.
         """
         return self.get_version(
-            'current_version', 'current_public_version', user)
-    
+            "current_version", "current_public_version", user
+        )
+
     def get_error_message(self):
         """
         Return the error message associated with the most recent task submitted
         for this scoreset.
         """
-        failedtask = FailedTask.objects.\
-            filter(kwargs__icontains=self.urn).\
-            order_by('-modification_date').first()
+        failedtask = (
+            FailedTask.objects.filter(kwargs__icontains=self.urn)
+            .order_by("-modification_date")
+            .first()
+        )
         if failedtask:
             if failedtask.exception_class == SoftTimeLimitExceeded.__name__:
                 return "Soft time limit was exceeded."
-            msg = failedtask.exception_msg.\
-                replace(str(failedtask.exception_class), '').\
-                replace('(', '').\
-                replace(')', '')
+            msg = (
+                failedtask.exception_msg.replace(
+                    str(failedtask.exception_class), ""
+                )
+                .replace("(", "")
+                .replace(")", "")
+            )
             if not msg:
                 return str(failedtask.exception_class)
             return msg
-        
-        return 'An error occured during processing. Please contact support.'
+
+        return "An error occured during processing. Please contact support."
 
 
 # --------------------------------------------------------------------------- #

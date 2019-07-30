@@ -2,12 +2,19 @@ from django.test import TestCase
 from django.db.models.deletion import ProtectedError
 
 from metadata.models import UniprotOffset, RefseqOffset, EnsemblOffset
-from metadata.factories import RefseqOffsetFactory, \
-    UniprotOffsetFactory, EnsemblOffsetFactory, GenomeIdentifierFactory
+from metadata.factories import (
+    RefseqOffsetFactory,
+    UniprotOffsetFactory,
+    EnsemblOffsetFactory,
+    GenomeIdentifierFactory,
+)
 
 from ..models import (
-    WildTypeSequence, ReferenceGenome, GenomicInterval,
-    ReferenceMap, TargetGene,
+    WildTypeSequence,
+    ReferenceGenome,
+    GenomicInterval,
+    ReferenceMap,
+    TargetGene,
 )
 
 from ..factories import (
@@ -17,7 +24,7 @@ from ..factories import (
     GenomicIntervalFactory,
     WildTypeSequenceFactory,
     TargetGeneWithReferenceMapFactory,
-    ReferenceMapWithIntervalsFactory
+    ReferenceMapWithIntervalsFactory,
 )
 
 
@@ -25,13 +32,14 @@ class TestWildTypeSequenceModel(TestCase):
     """
     Tests instance and class methods for :class:`WildTypeSequence`
     """
+
     def test_sequence_returned_as_uppercase(self):
-        wt = WildTypeSequenceFactory(sequence='atcg')
-        self.assertEqual(wt.get_sequence(), 'ATCG')
+        wt = WildTypeSequenceFactory(sequence="atcg")
+        self.assertEqual(wt.get_sequence(), "ATCG")
 
     def test_sequence_saved_in_uppercase(self):
-        wt = WildTypeSequenceFactory(sequence='atcg')
-        self.assertEqual(wt.sequence, 'ATCG')
+        wt = WildTypeSequenceFactory(sequence="atcg")
+        self.assertEqual(wt.sequence, "ATCG")
 
     def test_cannot_delete_when_associated_with_a_target(self):
         gene = TargetGeneFactory()
@@ -43,6 +51,7 @@ class TestIntervalModel(TestCase):
     """
     Tests instance and class methods for :class:`GenomicInterval`
     """
+
     def test_get_start_adds_offset(self):
         interval = GenomicIntervalFactory()
         self.assertEqual(interval.start + 1, interval.get_start(offset=1))
@@ -52,8 +61,8 @@ class TestIntervalModel(TestCase):
         self.assertEqual(interval.end + -1, interval.get_end(offset=-1))
 
     def test_strand_returned_as_uppercase(self):
-        interval = GenomicIntervalFactory(strand='f')
-        self.assertEqual(interval.get_strand(), 'F')
+        interval = GenomicIntervalFactory(strand="f")
+        self.assertEqual(interval.get_strand(), "F")
 
 
 class TestReferenceGenomeModel(TestCase):
@@ -71,7 +80,7 @@ class TestReferenceGenomeModel(TestCase):
         ref = ReferenceGenomeFactory()
         self.assertIn(
             ref.get_organism_name().capitalize(),
-            ref.format_organism_name_html()
+            ref.format_organism_name_html(),
         )
 
     def test_format_organism_name_html_capitalises(self):
@@ -97,6 +106,7 @@ class TestReferenceMapModel(TestCase):
     """
     Tests instance and class methods for :class:`ReferenceMap`
     """
+
     def test_set_is_primary_does_not_save_reference_map(self):
         ann = ReferenceMapFactory()
         ann.set_is_primary(False)
@@ -124,171 +134,191 @@ class TestTargetGene(TestCase):
     """
     Tests instance and class methods for :class:`TargetGene`
     """
+
     def test_can_hash_without_ref_map(self):
         target1 = TargetGeneFactory(
-            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
-        repr_ = str((
-            target1.name,
-            target1.wt_sequence.sequence,
-            target1.category,
-            "", "", ""
-        ))
-        self.assertEqual(
-            target1.hash(),
-            hash(repr_)
+        repr_ = str(
+            (
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                "",
+                "",
+                "",
+            )
         )
-        
+        self.assertEqual(target1.hash(), hash(repr_))
+
     def test_hash_uses_first_primary_ref_map_as_default(self):
         target1 = TargetGeneFactory(
-            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
-        genome_id = GenomeIdentifierFactory(identifier='GCF_000146045.2')
+        genome_id = GenomeIdentifierFactory(identifier="GCF_000146045.2")
         ref_map = ReferenceMapFactory(
             target=target1,
             genome=ReferenceGenomeFactory(
-                short_name='hg38',
-                organism_name='A',
-                genome_id=genome_id,
+                short_name="hg38", organism_name="A", genome_id=genome_id
             ),
-            is_primary=False
+            is_primary=False,
         )
-        repr_ = str((
-            target1.name,
-            target1.wt_sequence.sequence,
-            target1.category,
-            ref_map.genome.short_name,
-            ref_map.genome.organism_name,
-            ref_map.genome.genome_id.identifier,
-        ))
-        self.assertEqual(
-            target1.hash(),
-            hash(repr_)
+        repr_ = str(
+            (
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                ref_map.genome.short_name,
+                ref_map.genome.organism_name,
+                ref_map.genome.genome_id.identifier,
+            )
         )
-        
+        self.assertEqual(target1.hash(), hash(repr_))
+
     def test_hash_uses_primary_ref_map_as_default(self):
         target1 = TargetGeneFactory(
-            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
-        genome_id_1 = GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        genome_id_2 = GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        
+        genome_id_1 = GenomeIdentifierFactory(identifier="GCF_000146045.2")
+        genome_id_2 = GenomeIdentifierFactory(identifier="GCF_000146045.2")
+
         primary = ReferenceMapFactory(
             target=target1,
             genome=ReferenceGenomeFactory(
-                short_name='hg38',
-                organism_name='A',
-                genome_id=genome_id_1,
+                short_name="hg38", organism_name="A", genome_id=genome_id_1
             ),
-            is_primary=True
+            is_primary=True,
         )
         _ = ReferenceMapFactory(
             target=target1,
             genome=ReferenceGenomeFactory(
-                short_name='hg19',
-                organism_name='B',
-                genome_id=genome_id_2,
+                short_name="hg19", organism_name="B", genome_id=genome_id_2
             ),
-            is_primary=False
+            is_primary=False,
         )
-        
-        repr_ = str((
-            target1.name,
-            target1.wt_sequence.sequence,
-            target1.category,
-            primary.genome.short_name,
-            primary.genome.organism_name,
-            primary.genome.genome_id.identifier,
-        ))
-        self.assertEqual(
-            target1.hash(),
-            hash(repr_)
+
+        repr_ = str(
+            (
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                primary.genome.short_name,
+                primary.genome.organism_name,
+                primary.genome.genome_id.identifier,
+            )
         )
-        
+        self.assertEqual(target1.hash(), hash(repr_))
+
     def test_can_hash_without_ref_map_genome(self):
         target1 = TargetGeneFactory(
-            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
-        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
-            short_name='hg38',
-            organism_name='A',
-            genome_id=None
-        ))
-        repr_ = str((
-            target1.name,
-            target1.wt_sequence.sequence,
-            target1.category,
-            target1.get_reference_maps().first().genome.short_name,
-            target1.get_reference_maps().first().genome.organism_name,
-            '',
-        ))
-        self.assertEqual(
-            target1.hash(),
-            hash(repr_)
+        ReferenceMapFactory(
+            target=target1,
+            genome=ReferenceGenomeFactory(
+                short_name="hg38", organism_name="A", genome_id=None
+            ),
         )
-        
+        repr_ = str(
+            (
+                target1.name,
+                target1.wt_sequence.sequence,
+                target1.category,
+                target1.get_reference_maps().first().genome.short_name,
+                target1.get_reference_maps().first().genome.organism_name,
+                "",
+            )
+        )
+        self.assertEqual(target1.hash(), hash(repr_))
+
     def test_equals_returns_true_name_wt_category_the_same(self):
         target1 = TargetGeneFactory(
-            name='BRCA1', wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
         target2 = TargetGeneFactory(
-            name='BRCA2', wt_sequence=WildTypeSequenceFactory(sequence='TTTT'),
-            category='Protein coding'
+            name="BRCA2",
+            wt_sequence=WildTypeSequenceFactory(sequence="TTTT"),
+            category="Protein coding",
         )
         self.assertTrue(target1.equals(target1))
         self.assertFalse(target1.equals(target2))
-        
+
     def test_equals_returns_true_same_genome_properties(self):
         target1 = TargetGeneFactory(
-            name='BRCA1',
-            wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
         target2 = TargetGeneFactory(
-            name='BRCA1',
-            wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
-        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
-            short_name='hg38',
-            organism_name='A',
-            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        ))
-        ReferenceMapFactory(target=target2, genome=ReferenceGenomeFactory(
-            short_name='hg38',
-            organism_name='A',
-            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        ))
+        ReferenceMapFactory(
+            target=target1,
+            genome=ReferenceGenomeFactory(
+                short_name="hg38",
+                organism_name="A",
+                genome_id=GenomeIdentifierFactory(
+                    identifier="GCF_000146045.2"
+                ),
+            ),
+        )
+        ReferenceMapFactory(
+            target=target2,
+            genome=ReferenceGenomeFactory(
+                short_name="hg38",
+                organism_name="A",
+                genome_id=GenomeIdentifierFactory(
+                    identifier="GCF_000146045.2"
+                ),
+            ),
+        )
         self.assertTrue(target1.equals(target2))
-        
+
     def test_equals_returns_false_diff_genome_properties(self):
         target1 = TargetGeneFactory(
-            name='BRCA1',
-            wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
         target2 = TargetGeneFactory(
-            name='BRCA1',
-            wt_sequence=WildTypeSequenceFactory(sequence='ATCG'),
-            category='Protein coding'
+            name="BRCA1",
+            wt_sequence=WildTypeSequenceFactory(sequence="ATCG"),
+            category="Protein coding",
         )
-        ReferenceMapFactory(target=target1, genome=ReferenceGenomeFactory(
-            short_name='hg38',
-            organism_name='A',
-            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        ))
-        ReferenceMapFactory(target=target2, genome=ReferenceGenomeFactory(
-            short_name='hg19',
-            organism_name='B',
-            genome_id=GenomeIdentifierFactory(identifier='GCF_000146045.2')
-        ))
+        ReferenceMapFactory(
+            target=target1,
+            genome=ReferenceGenomeFactory(
+                short_name="hg38",
+                organism_name="A",
+                genome_id=GenomeIdentifierFactory(
+                    identifier="GCF_000146045.2"
+                ),
+            ),
+        )
+        ReferenceMapFactory(
+            target=target2,
+            genome=ReferenceGenomeFactory(
+                short_name="hg19",
+                organism_name="B",
+                genome_id=GenomeIdentifierFactory(
+                    identifier="GCF_000146045.2"
+                ),
+            ),
+        )
         self.assertFalse(target1.equals(target2))
-    
+
     def test_does_not_have_wt_sequence_if_is_none(self):
         target = TargetGeneFactory()
         target.wt_sequence = None

@@ -7,19 +7,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0002_auto_20180510_1355'),
-    ]
+    dependencies = [("main", "0002_auto_20180510_1355")]
 
     operations = [
         migrations.AddField(
-            model_name='siteinformation',
-            name='branch',
-            field=models.CharField(default='', max_length=50),
+            model_name="siteinformation",
+            name="branch",
+            field=models.CharField(default="", max_length=50),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='version',
-            field=models.CharField(default='', max_length=250),
+            model_name="siteinformation",
+            name="version",
+            field=models.CharField(default="", max_length=250),
         ),
     ]

@@ -40,68 +40,77 @@ def home_view(request):
         for k in s.keywords.all()
     ]
 
-    return render(request, 'main/home.html', {
-        "news_items": news_items,
-        "site_information": SiteInformation.get_instance(),
-        "top_organisms": sorted(get_top_n(3, organism)),
-        "top_targets": sorted(get_top_n(3, targets)),
-        "top_keywords": sorted(get_top_n(3, keywords)),
-        "all_organisms": sorted(set([i[0] for i in organism])),
-        "all_targets": sorted(set([i[0] for i in targets]))
-    })
+    return render(
+        request,
+        "main/home.html",
+        {
+            "news_items": news_items,
+            "site_information": SiteInformation.get_instance(),
+            "top_organisms": sorted(get_top_n(3, organism)),
+            "top_targets": sorted(get_top_n(3, targets)),
+            "top_keywords": sorted(get_top_n(3, keywords)),
+            "all_organisms": sorted(set([i[0] for i in organism])),
+            "all_targets": sorted(set([i[0] for i in targets])),
+        },
+    )
 
 
 def documentation_view(request):
-    return render(request, 'main/documentation.html', {
-        "site_information": SiteInformation.get_instance()
-    })
+    return render(
+        request,
+        "main/documentation.html",
+        {"site_information": SiteInformation.get_instance()},
+    )
 
 
 def help_contact_view(request):
     contact_form = ContactForm()
-    if request.method == 'POST':
+    if request.method == "POST":
         contact_form = ContactForm(data=request.POST)
         if contact_form.is_valid():
             contact_form.send_mail()
             messages.success(
                 request,
                 "Thank you for contacting us. We'll get back to you as soon"
-                " as possible."
+                " as possible.",
             )
-            return redirect('main:contact')
+            return redirect("main:contact")
 
-    return render(request, 'main/help_contact.html', {
-        "site_information": SiteInformation.get_instance(),
-        'contact_form': contact_form
-    })
+    return render(
+        request,
+        "main/help_contact.html",
+        {
+            "site_information": SiteInformation.get_instance(),
+            "contact_form": contact_form,
+        },
+    )
 
 
 def terms_privacy_view(request):
-    return render(request, 'main/terms_privacy.html', {
-        "site_information": SiteInformation.get_instance()
-    })
+    return render(
+        request,
+        "main/terms_privacy.html",
+        {"site_information": SiteInformation.get_instance()},
+    )
 
 
-def handler403(request, exception=None, template_name='main/403.html'):
-    response = render(
-        request, template_name, context={})
+def handler403(request, exception=None, template_name="main/403.html"):
+    response = render(request, template_name, context={})
     response.status_code = 403
     return response
 
 
-def handler404(request, exception=None, template_name='main/404.html'):
-    response = render(
-        request, template_name, context={})
+def handler404(request, exception=None, template_name="main/404.html"):
+    response = render(request, template_name, context={})
     response.status_code = 404
     return response
 
 
-def handler500(request, exception=None, template_name='main/500.html'):
-    response = render(
-        request, template_name, context={})
+def handler500(request, exception=None, template_name="main/500.html"):
+    response = render(request, template_name, context={})
     response.status_code = 500
     return response
 
 
 def robots(request):
-    return render(request, 'main/robots.txt', content_type='text/plain')
+    return render(request, "main/robots.txt", content_type="text/plain")

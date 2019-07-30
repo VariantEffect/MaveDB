@@ -31,7 +31,9 @@ def delete_experimentset(experimentset):
     if not isinstance(experimentset, ExperimentSet):
         raise TypeError(
             "Expected ExperimentSet, found {}.".format(
-                type(experimentset).__name__))
+                type(experimentset).__name__
+            )
+        )
     for child in experimentset.children:
         delete_experiment(child)
     experimentset.delete()
@@ -41,8 +43,8 @@ def delete_experimentset(experimentset):
 def delete_experiment(experiment):
     if not isinstance(experiment, Experiment):
         raise TypeError(
-            "Expected Experiment, found {}.".format(
-                type(experiment).__name__))
+            "Expected Experiment, found {}.".format(type(experiment).__name__)
+        )
     for child in experiment.children:
         delete_scoreset(child)
     experiment.delete()
@@ -52,8 +54,8 @@ def delete_experiment(experiment):
 def delete_scoreset(scoreset):
     if not isinstance(scoreset, ScoreSet):
         raise TypeError(
-            "Expected ScoreSet, found {}.".format(
-                type(scoreset).__name__))
+            "Expected ScoreSet, found {}.".format(type(scoreset).__name__)
+        )
     for variant in scoreset.children:
         variant.delete()
     scoreset.delete()
@@ -90,32 +92,32 @@ def publish_dataset(dataset, user=None):
                 dataset.__class__.__name__
             )
         )
-    
+
     if not dataset.private or dataset.has_public_urn:
         return dataset
-    
+
     scoreset = None
     experiment = None
     # Forces a full refresh on on the dataset including nested parents.
     dataset = get_model_by_urn(dataset.urn)
-    
+
     if isinstance(dataset, models.scoreset.ScoreSet):
         experimentset = models.experimentset.assign_public_urn(
-            dataset.experiment.experimentset)
-        experiment = models.experiment.assign_public_urn(
-            dataset.experiment)
-        scoreset = models.scoreset.assign_public_urn(
-            dataset)
+            dataset.experiment.experimentset
+        )
+        experiment = models.experiment.assign_public_urn(dataset.experiment)
+        scoreset = models.scoreset.assign_public_urn(dataset)
         urns = Variant.bulk_create_urns(
-            scoreset.children.count(), scoreset, reset_counter=True)
+            scoreset.children.count(), scoreset, reset_counter=True
+        )
         for urn, child in zip(urns, scoreset.children.all()):
             child.urn = urn
             child.save()
     elif isinstance(dataset, models.experiment.Experiment):
         experimentset = models.experimentset.assign_public_urn(
-            dataset.experimentset)
-        experiment = models.experiment.assign_public_urn(
-            dataset)
+            dataset.experimentset
+        )
+        experiment = models.experiment.assign_public_urn(dataset)
     elif isinstance(dataset, models.experimentset.ExperimentSet):
         experimentset = models.experimentset.assign_public_urn(dataset)
     else:
@@ -134,14 +136,14 @@ def publish_dataset(dataset, user=None):
         scoreset.private = False
         scoreset.set_modified_by(user, propagate=False)
         scoreset.save()
-        
+
     if experiment:
         experiment.refresh_from_db()
         experiment.publish_date = datetime.date.today()
         experiment.private = False
         experiment.set_modified_by(user, propagate=False)
         experiment.save()
-        
+
     if experimentset:
         experimentset.refresh_from_db()
         experimentset.publish_date = datetime.date.today()
@@ -150,4 +152,4 @@ def publish_dataset(dataset, user=None):
         experimentset.save()
 
     dataset.refresh_from_db()
-    return get_model_by_urn(dataset.urn) # Full refresh on nested parents.
+    return get_model_by_urn(dataset.urn)  # Full refresh on nested parents.

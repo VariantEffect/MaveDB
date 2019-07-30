@@ -21,9 +21,10 @@ class KeywordSerializer(serializers.ModelSerializer):
     """
     Serializes the `text` field of a Keyword.
     """
+
     class Meta:
         model = Keyword
-        fields = ('text',)
+        fields = ("text",)
 
 
 # Offsets
@@ -32,9 +33,10 @@ class AnnotationOffsetSerializer(serializers.ModelSerializer):
     """
     Serializes the `offset` field of an :class:`AnnotationOffset` subclass.
     """
+
     class Meta:
         model = AnnotationOffset
-        fields = ('offset',)
+        fields = ("offset",)
         read_only_fields = fields
 
 
@@ -42,6 +44,7 @@ class UniprotOffsetSerializer(serializers.ModelSerializer):
     """
     Serializes the `offset` field of an :class:`UniprotOffset`.
     """
+
     class Meta(AnnotationOffsetSerializer.Meta):
         model = UniprotOffset
 
@@ -50,7 +53,8 @@ class UniprotOffsetSerializer(serializers.ModelSerializer):
         if instance:
             serializer = UniprotIdentifierSerializer()
             identifier_rep = serializer.to_representation(
-                instance=instance.identifier)
+                instance=instance.identifier
+            )
             representation.update(identifier_rep)
             return representation
         return representation
@@ -60,6 +64,7 @@ class EnsemblOffsetSerializer(serializers.ModelSerializer):
     """
     Serializes the `offset` field of an :class:`EnsemblOffset`.
     """
+
     class Meta(AnnotationOffsetSerializer.Meta):
         model = EnsemblOffset
 
@@ -68,7 +73,8 @@ class EnsemblOffsetSerializer(serializers.ModelSerializer):
         if instance:
             serializer = EnsemblIdentifierSerializer()
             identifier_rep = serializer.to_representation(
-                instance=instance.identifier)
+                instance=instance.identifier
+            )
             representation.update(identifier_rep)
             return representation
         return representation
@@ -78,6 +84,7 @@ class RefseqOffsetSerializer(serializers.ModelSerializer):
     """
     Serializes the `offset` field of an :class:`RefseqIdentifier.
     """
+
     class Meta(AnnotationOffsetSerializer.Meta):
         model = RefseqOffset
 
@@ -86,7 +93,8 @@ class RefseqOffsetSerializer(serializers.ModelSerializer):
         if instance:
             serializer = RefseqIdentifierSerializer()
             identifier_rep = serializer.to_representation(
-                instance=instance.identifier)
+                instance=instance.identifier
+            )
             representation.update(identifier_rep)
             return representation
         return representation
@@ -99,15 +107,17 @@ class ExternalIdentifierSerializer(serializers.ModelSerializer):
     Serializes the `url` and `identifier` fields of an
     :class:`ExternalIdentifier subclass.
     """
+
     class Meta:
         model = ExternalIdentifier
-        fields = ('identifier', 'url', 'dbversion', 'dbname',)
+        fields = ("identifier", "url", "dbversion", "dbname")
 
 
 class SraIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`SraIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = SraIdentifier
 
@@ -116,6 +126,7 @@ class DoiIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`DoiIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = DoiIdentifier
 
@@ -124,6 +135,7 @@ class PubmedIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`PubmedIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = PubmedIdentifier
 
@@ -132,6 +144,7 @@ class GenomeIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`PubmedIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = GenomeIdentifier
 
@@ -142,6 +155,7 @@ class EnsemblIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`EnsemblIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = EnsemblIdentifier
 
@@ -150,6 +164,7 @@ class RefseqIdentifierSerializer(ExternalIdentifierSerializer):
     """
     Serializes a :class:`RefseqIdentifier` instance/queryset.
     """
+
     class Meta(ExternalIdentifierSerializer.Meta):
         model = RefseqIdentifier
 

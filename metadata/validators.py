@@ -8,89 +8,96 @@ from core.utilities import is_null
 
 def validate_sra_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not (idutils.is_sra(identifier) or idutils.is_bioproject(identifier)):
         raise ValidationError(
             "%(id)s is not a valid SRA or BioProject accession.",
-            params={"id": identifier}
+            params={"id": identifier},
         )
 
 
 def validate_keyword(kw):
     from .models import Keyword
+
     if isinstance(kw, Keyword):
         kw = kw.text
     if is_null(kw) or not isinstance(kw, str):
         raise ValidationError(
             "%(kw)s is not a valid keyword. Keywords must be valid strings.",
-            params={"kw": kw}
+            params={"kw": kw},
         )
 
 
 def validate_pubmed_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not idutils.is_pmid(identifier):
         raise ValidationError(
             "%(id)s is not a valid PubMed identifier.",
-            params={"id": identifier}
+            params={"id": identifier},
         )
 
 
 def validate_doi_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not idutils.is_doi(identifier):
         raise ValidationError(
-            "%(id)s is not a valid DOI.",
-            params={"id": identifier}
+            "%(id)s is not a valid DOI.", params={"id": identifier}
         )
 
 
 def validate_ensembl_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not idutils.is_ensembl(identifier):
         raise ValidationError(
             "%(id)s is not a valid Ensembl accession.",
-            params={"id": identifier}
+            params={"id": identifier},
         )
 
 
 def validate_uniprot_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not idutils.is_uniprot(identifier):
         raise ValidationError(
             "%(id)s is not a valid UniProt accession.",
-            params={"id": identifier}
+            params={"id": identifier},
         )
 
 
 def validate_refseq_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not idutils.is_refseq(identifier):
         raise ValidationError(
             "%(id)s is not a valid RefSeq accession.",
-            params={"id": identifier}
+            params={"id": identifier},
         )
 
 
 def validate_genome_identifier(identifier):
     from .models import ExternalIdentifier
+
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
     if not idutils.is_genome(identifier):
         raise ValidationError(
             "%(id)s is not a valid GenBank or RefSeq genome assembly.",
-            params={"id": identifier}
+            params={"id": identifier},
         )
 
 

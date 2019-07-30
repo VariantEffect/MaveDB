@@ -15,12 +15,14 @@ from ..factories import (
 )
 
 from ..utilities import (
-    delete_instance, delete_experiment, delete_scoreset, delete_experimentset
+    delete_instance,
+    delete_experiment,
+    delete_scoreset,
+    delete_experimentset,
 )
 
 
 class TestDeleteInstance(TestCase):
-
     def test_delegates_to_correct_method(self):
         delete_instance(ExperimentSetFactory())
         self.assertEqual(models.experimentset.ExperimentSet.objects.count(), 0)
@@ -33,7 +35,6 @@ class TestDeleteInstance(TestCase):
 
 
 class TestDataSetDelete(TestCase):
-
     def test_does_not_delete_keywords(self):
         obj = ExperimentSetFactory()
         self.assertEqual(meta_models.Keyword.objects.count(), 1)
@@ -60,7 +61,6 @@ class TestDataSetDelete(TestCase):
 
 
 class TestDeleteExperimentSet(TestCase):
-
     def test_deletes_experiments(self):
         exps = ExperimentSetFactory()
         ExperimentWithScoresetFactory(experimentset=exps)
@@ -76,7 +76,6 @@ class TestDeleteExperimentSet(TestCase):
 
 
 class TestDeleteExperiment(TestCase):
-
     def test_deletes_scoresets(self):
         exp = ExperimentWithScoresetFactory()
         self.assertEqual(models.experiment.Experiment.objects.count(), 1)
@@ -96,7 +95,6 @@ class TestDeleteExperiment(TestCase):
 
 
 class TestDeleteScoreSet(TestCase):
-
     def test_deletes_variants(self):
         scs = ScoreSetWithTargetFactory()
         VariantFactory(scoreset=scs)

@@ -12,5 +12,3 @@ class Command(BaseCommand):
         sys.stdout.write("Created %s licence\n" % l.short_name)
         l = Licence.get_cc_by()
         sys.stdout.write("Created %s licence\n" % l.short_name)
-
-

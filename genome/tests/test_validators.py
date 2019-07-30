@@ -6,7 +6,7 @@ from core.utilities import null_values_list
 from ..factories import (
     ReferenceMapFactory,
     ReferenceGenomeFactory,
-    GenomicIntervalFactory
+    GenomicIntervalFactory,
 )
 from ..validators import (
     validate_interval_start_lteq_end,
@@ -35,6 +35,7 @@ class TestIntervalValidators(TestCase):
         - validate_strand
         - validate_chromosome
     """
+
     def test_ve_when_start_is_greater_than_end(self):
         with self.assertRaises(ValidationError):
             validate_interval_start_lteq_end(start=3, end=2)
@@ -49,29 +50,29 @@ class TestIntervalValidators(TestCase):
                 start=interval.start,
                 end=interval.end,
                 chromosome=interval.chromosome.upper(),
-                strand=interval.strand
+                strand=interval.strand,
             ),
-            interval
+            interval,
         ]
         with self.assertRaises(ValidationError):
             validate_unique_intervals(intervals)
 
     def test_ve_strand_not_in_choices(self):
         with self.assertRaises(ValidationError):
-            validate_strand('f')
+            validate_strand("f")
 
         with self.assertRaises(ValidationError):
-            validate_strand('r')
+            validate_strand("r")
 
         with self.assertRaises(ValidationError):
-            validate_strand('Forward')
+            validate_strand("Forward")
 
         with self.assertRaises(ValidationError):
-            validate_strand('Reverse')
+            validate_strand("Reverse")
 
         # Should pass
-        validate_strand('+')
-        validate_strand('-')
+        validate_strand("+")
+        validate_strand("-")
 
     def test_ve_null_chr(self):
         for v in null_values_list:
@@ -85,9 +86,10 @@ class TestWildTypeSequenceValidators(TestCase):
 
         - validate_wildtype_sequence
     """
+
     def test_ve_not_a_sequence_of_nucleotides(self):
         with self.assertRaises(ValidationError):
-            validate_wildtype_sequence('AAF')
+            validate_wildtype_sequence("AAF")
 
     def test_ve_null(self):
         for v in null_values_list:
@@ -95,10 +97,10 @@ class TestWildTypeSequenceValidators(TestCase):
                 validate_wildtype_sequence(v)
 
     def test_passes_lowercase_nucleotides(self):
-        validate_wildtype_sequence('atcg')
+        validate_wildtype_sequence("atcg")
 
     def test_passes_uppercase_nucleotides(self):
-        validate_wildtype_sequence('ATCG')
+        validate_wildtype_sequence("ATCG")
 
 
 class TestReferenceGenomeValidators(TestCase):
@@ -109,6 +111,7 @@ class TestReferenceGenomeValidators(TestCase):
         - validate_organism_name
         - validate_genome_short_name
     """
+
     def test_ve_null_organism_name(self):
         for v in null_values_list:
             with self.assertRaises(ValidationError):
@@ -123,7 +126,8 @@ class TestReferenceGenomeValidators(TestCase):
         referencegenome = ReferenceGenomeFactory(genome_id=None)
         with self.assertRaises(ValidationError):
             validate_reference_genome_has_one_external_identifier(
-                referencegenome)
+                referencegenome
+            )
 
     def test_passes_reference_genome_has_one_external_identifiers(self):
         referencegenome = ReferenceGenomeFactory()
@@ -138,11 +142,12 @@ class TestReferenceMapValidators(TestCase):
         - validate_map_has_at_least_one_interval
         - validate_unique_intervals
     """
+
     def test_ve_reference_map_does_not_have_a_unique_genome(self):
         reference_map1 = ReferenceMapFactory()
         reference_map2 = ReferenceMapFactory(
             genome=reference_map1.get_reference_genome(),
-            target=reference_map1.get_target()
+            target=reference_map1.get_target(),
         )
         with self.assertRaises(ValidationError):
             validate_map_has_unique_reference_genome(
@@ -151,12 +156,15 @@ class TestReferenceMapValidators(TestCase):
 
     def test_ve_duplicate_intervals_in_list(self):
         interval = GenomicIntervalFactory()
-        intervals = [GenomicIntervalFactory(
-            start=interval.start,
-            end=interval.end,
-            chromosome=interval.chromosome,
-            strand=interval.strand
-        ), interval]
+        intervals = [
+            GenomicIntervalFactory(
+                start=interval.start,
+                end=interval.end,
+                chromosome=interval.chromosome,
+                strand=interval.strand,
+            ),
+            interval,
+        ]
         with self.assertRaises(ValidationError):
             validate_unique_intervals(intervals)
 
@@ -196,6 +204,7 @@ class TestTargetGeneValidators(TestCase):
         - validate_gene_name
         - validate_target_has_one_primary_reference_map
     """
+
     def test_ve_null_gene_name(self):
         for v in null_values_list:
             with self.assertRaises(ValidationError):

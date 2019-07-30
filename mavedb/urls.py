@@ -1,4 +1,3 @@
-
 """
 mavedb URL Configuration
 
@@ -25,25 +24,18 @@ from django.contrib import admin
 import core.views
 
 
-handler403 = 'main.views.handler403'
-handler404 = 'main.views.handler404'
-handler500 = 'main.views.handler500'
+handler403 = "main.views.handler403"
+handler404 = "main.views.handler404"
+handler500 = "main.views.handler500"
 
 urlpatterns = [
-    url('^', include('social_django.urls', namespace='social')),
-    url(r'^', include('main.urls', namespace='main'), name='main'),
-    url(r'^api/', include('api.urls', namespace='api'), name='api'),
+    url("^", include("social_django.urls", namespace="social")),
+    url(r"^", include("main.urls", namespace="main"), name="main"),
+    url(r"^api/", include("api.urls", namespace="api"), name="api"),
+    url(r"^", include("accounts.urls", namespace="accounts"), name="accounts"),
+    url(r"^", include("dataset.urls", namespace="dataset"), name="dataset"),
     url(
-        r'^',
-        include('accounts.urls', namespace='accounts'), name='accounts'
-    ),
-    url(
-        r'^',
-        include("dataset.urls", namespace="dataset"), name="dataset"
-    ),
-    url(
-        r'^search/',
-        include("search.urls", namespace="search"), name="search"
+        r"^search/", include("search.urls", namespace="search"), name="search"
     ),
     # ----- Admin
     url(r"^admin/stats/$", core.views.get_pageview_stats, name="page-stats"),
@@ -51,7 +43,6 @@ urlpatterns = [
 
 if settings.ADMIN_ENABLED:
     urlpatterns += [
-        url(r'^admin/', admin.site.urls),
-        url(r'^tracking/', include('tracking.urls')),
+        url(r"^admin/", admin.site.urls),
+        url(r"^tracking/", include("tracking.urls")),
     ]
-

@@ -10,7 +10,8 @@ def validate_substitution(hgvs):
     match = substitution_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
-            "'{}' is not a supported substitution syntax.".format(hgvs))
+            "'{}' is not a supported substitution syntax.".format(hgvs)
+        )
     ref_nt = match.groupdict().get(constants.hgvsp_ref, None)
     alt_nt = match.groupdict().get(constants.hgvsp_alt, None)
     silent = match.groupdict().get(constants.hgvsp_silent, None)
@@ -26,18 +27,21 @@ def validate_deletion(hgvs):
     match = deletion_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
-            "'{}' is not a supported deletion syntax.".format(hgvs))
+            "'{}' is not a supported deletion syntax.".format(hgvs)
+        )
 
 
 def validate_insertion(hgvs):
     match = insertion_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
-            "'{}' is not a supported insertion syntax.".format(hgvs))
+            "'{}' is not a supported insertion syntax.".format(hgvs)
+        )
 
 
 def validate_delins(hgvs):
     match = delins_re.fullmatch(hgvs)
     if match is None:
         raise ValidationError(
-            "'{}' is not a supported deletion-insertion syntax.".format(hgvs))
+            "'{}' is not a supported deletion-insertion syntax.".format(hgvs)
+        )

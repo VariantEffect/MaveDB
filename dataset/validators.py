@@ -14,54 +14,54 @@ from core.utilities import is_null, readable_null_values
 from . import constants
 
 
-validate_csv_extension = FileExtensionValidator(allowed_extensions=['csv'])
-validate_gz_extension = FileExtensionValidator(allowed_extensions=['gz'])
-validate_json_extension = FileExtensionValidator(allowed_extensions=['json'])
+validate_csv_extension = FileExtensionValidator(allowed_extensions=["csv"])
+validate_gz_extension = FileExtensionValidator(allowed_extensions=["gz"])
+validate_json_extension = FileExtensionValidator(allowed_extensions=["json"])
 
 
 @deconstructible
 class WordLimitValidator:
     message = "This field is limited to {} words."
-    code = 'invalid'
-    counter = re.compile(r'\w+\b', flags=re.IGNORECASE)
-    
+    code = "invalid"
+    counter = re.compile(r"\w+\b", flags=re.IGNORECASE)
+
     def __init__(self, word_limit, message=None, code=None):
         if message is not None:
             self.message = message
         if code is not None:
             self.code = code
         self.word_limit = int(word_limit)
-    
+
     def __call__(self, value):
         if not value:
             return
         if len(self.counter.findall(value)) > self.word_limit:
-            raise ValidationError(self.message.format(
-                self.word_limit
-            ))
+            raise ValidationError(self.message.format(self.word_limit))
 
 
 def read_header_from_io(file, label=None, msg=None):
     if label is None:
-        label = 'Uploaded'
+        label = "Uploaded"
     try:
         header_line = file.readline()
         if isinstance(header_line, bytes):
             header_line = header_line.decode()
         file.seek(0)
         f = io.StringIO(header_line.strip())
-        return [h.strip() for h in csv.DictReader(f, delimiter=',').fieldnames]
+        return [h.strip() for h in csv.DictReader(f, delimiter=",").fieldnames]
     except Exception:
         if not msg:
-            msg = "A header could not be parsed from your {} file. Make sure" \
-                  "Columns are comma delimited. Column names with commas must be" \
-                  "escaped by enclosing them in double quotes.".format(label)
+            msg = (
+                "A header could not be parsed from your {} file. Make sure"
+                "Columns are comma delimited. Column names with commas must be"
+                "escaped by enclosing them in double quotes.".format(label)
+            )
         raise ValidationError(msg)
 
 
 def validate_has_hgvs_in_header(header, label=None, msg=None):
     if label is None:
-        label = 'Uploaded'
+        label = "Uploaded"
     params = {}
     if msg is None:
         msg = (
@@ -70,9 +70,9 @@ def validate_has_hgvs_in_header(header, label=None, msg=None):
             "Columns are case-sensitive and must be comma delimited."
         )
         params = {
-            'label': label,
-            'col_nt': constants.hgvs_nt_column,
-            'col_p': constants.hgvs_pro_column,
+            "label": label,
+            "col_nt": constants.hgvs_nt_column,
+            "col_p": constants.hgvs_pro_column,
         }
     if not set(header) & set(constants.hgvs_columns):
         raise ValidationError(msg, params=params)
@@ -80,33 +80,35 @@ def validate_has_hgvs_in_header(header, label=None, msg=None):
 
 def validate_at_least_one_additional_column(header, label=None, msg=None):
     if label is None:
-        label = 'Uploaded'
+        label = "Uploaded"
     params = {}
     if not any(v not in constants.hgvs_columns for v in header):
         if msg is None:
-            msg = "Your %(label)s file must define at " \
-                  "least one additional column different " \
-                  "from '{}' and '{}'.".format(constants.hgvs_nt_column,
-                                               constants.hgvs_pro_column)
-            params = {'label': label}
+            msg = (
+                "Your %(label)s file must define at "
+                "least one additional column different "
+                "from '{}' and '{}'.".format(
+                    constants.hgvs_nt_column, constants.hgvs_pro_column
+                )
+            )
+            params = {"label": label}
         raise ValidationError(msg, params=params)
 
 
 def validate_header_contains_no_null_columns(header, label=None, msg=None):
     if label is None:
-        label = 'File'
+        label = "File"
     any_null = any([is_null(v) for v in header])
     if any_null:
         if msg is None:
             msg = (
                 "%(label)s file header cannot contain blank/empty/whitespace "
                 "only columns or the following case-insensitive null "
-                "values: [{}].".format(
-                    label, ', '.join(readable_null_values))
+                "values: [{}].".format(label, ", ".join(readable_null_values))
             )
         raise ValidationError(msg)
-    
-    
+
+
 def validate_datasets_define_same_variants(scores, counts):
     """
     Checks if two `pd.DataFrame` objects parsed from uploaded files
@@ -122,11 +124,11 @@ def validate_datasets_define_same_variants(scores, counts):
     try:
         assert_array_equal(
             scores[constants.hgvs_nt_column].sort_values().values,
-            counts[constants.hgvs_nt_column].sort_values().values
+            counts[constants.hgvs_nt_column].sort_values().values,
         )
         assert_array_equal(
             scores[constants.hgvs_pro_column].sort_values().values,
-            counts[constants.hgvs_pro_column].sort_values().values
+            counts[constants.hgvs_pro_column].sort_values().values,
         )
     except AssertionError:
         raise ValidationError(
@@ -147,10 +149,10 @@ def validate_scoreset_score_data_input(file):
         An open file handle in read mode.
     """
     file.seek(0)
-    header = read_header_from_io(file, label='Score')
-    validate_header_contains_no_null_columns(header, label='Score')
-    validate_has_hgvs_in_header(header, label='Score')
-    validate_at_least_one_additional_column(header, label='Score')
+    header = read_header_from_io(file, label="Score")
+    validate_header_contains_no_null_columns(header, label="Score")
+    validate_has_hgvs_in_header(header, label="Score")
+    validate_at_least_one_additional_column(header, label="Score")
 
     if constants.required_score_column not in header:
         raise ValidationError(
@@ -158,7 +160,7 @@ def validate_scoreset_score_data_input(file):
                 "Score data file is missing the required column '%(col)s'. "
                 "Columns are case-sensitive and must be comma delimited."
             ),
-            params={'col': constants.required_score_column}
+            params={"col": constants.required_score_column},
         )
 
 
@@ -174,10 +176,10 @@ def validate_scoreset_count_data_input(file):
         File parsed by a `django` form.
     """
     file.seek(0)
-    header = read_header_from_io(file, label='Count')
-    validate_header_contains_no_null_columns(header, label='Count')
-    validate_has_hgvs_in_header(header, label='Count')
-    validate_at_least_one_additional_column(header, label='Count')
+    header = read_header_from_io(file, label="Count")
+    validate_header_contains_no_null_columns(header, label="Count")
+    validate_has_hgvs_in_header(header, label="Count")
+    validate_at_least_one_additional_column(header, label="Count")
 
 
 def validate_scoreset_json(dict_):
@@ -190,17 +192,15 @@ def validate_scoreset_json(dict_):
     dict_ : dict
         Dictionary of keys mapping to a list.
     """
-    required_columns = [
-        constants.score_columns,
-        constants.count_columns,
-    ]
+    required_columns = [constants.score_columns, constants.count_columns]
 
     for key in required_columns:
         if key not in dict_.keys():
             raise ValidationError(
-                ugettext("Scoreset data is missing the required key "
-                         "'%(key)s'."),
-                params={"key": key}
+                ugettext(
+                    "Scoreset data is missing the required key " "'%(key)s'."
+                ),
+                params={"key": key},
             )
 
         columns = dict_[key]
@@ -211,7 +211,7 @@ def validate_scoreset_json(dict_):
             type_ = type(columns).__name__
             raise ValidationError(
                 ugettext("Value for %(key)s must be a list not %(type)s."),
-                params={"key": key.replace('_', ' '), "type": type_}
+                params={"key": key.replace("_", " "), "type": type_},
             )
 
         # Check score columns is not-empty and at least contains hgvs and score
@@ -220,8 +220,9 @@ def validate_scoreset_json(dict_):
                 raise ValidationError(
                     ugettext(
                         "Missing required column '%(col)s' for "
-                        "score dataset."),
-                    params={"col": constants.required_score_column}
+                        "score dataset."
+                    ),
+                    params={"col": constants.required_score_column},
                 )
 
     # Check there are not unexptected columns supplied to the scoreset json
@@ -231,5 +232,5 @@ def validate_scoreset_json(dict_):
         extras = [k for k in dict_.keys() if k not in required_columns]
         raise ValidationError(
             ugettext("Encountered unexpected keys '%(extras)s'."),
-            params={"extras": extras}
+            params={"extras": extras},
         )

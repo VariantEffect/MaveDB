@@ -8,14 +8,18 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0010_remove_experiment_targets'),
-    ]
+    dependencies = [("dataset", "0010_remove_experiment_targets")]
 
     operations = [
         migrations.AddField(
-            model_name='scoreset',
-            name='data_usage_policy',
-            field=models.TextField(blank=True, default='', null=True, validators=[dataset.validators.WordLimitValidator(250)], verbose_name='Data usage policy'),
-        ),
+            model_name="scoreset",
+            name="data_usage_policy",
+            field=models.TextField(
+                blank=True,
+                default="",
+                null=True,
+                validators=[dataset.validators.WordLimitValidator(250)],
+                verbose_name="Data usage policy",
+            ),
+        )
     ]

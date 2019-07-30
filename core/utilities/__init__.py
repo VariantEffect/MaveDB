@@ -18,19 +18,27 @@ User = get_user_model()
 logger = logging.getLogger("django")
 
 # Used in CSV formatting
-NA_value = 'NA'
+NA_value = "NA"
 
 null_values_list = (
-    'nan', 'na', 'none', '', 'undefined', 'n/a', 'null', NA_value
+    "nan",
+    "na",
+    "none",
+    "",
+    "undefined",
+    "n/a",
+    "null",
+    NA_value,
 )
 null_values_re = re.compile(
-    r'\s+|none|nan|na|undefined|n/a|null|{}'.format(NA_value),
-    flags=re.IGNORECASE
+    r"\s+|none|nan|na|undefined|n/a|null|{}".format(NA_value),
+    flags=re.IGNORECASE,
 )
 readable_null_values = [
     "'{}'".format(v)
-    for v in set([v.lower() for v in null_values_list]) if v.strip()
-] + ['whitespace']
+    for v in set([v.lower() for v in null_values_list])
+    if v.strip()
+] + ["whitespace"]
 
 
 def is_null(value):
@@ -75,26 +83,25 @@ def notify_admins(user, instance):
     """
     from main.context_processors import baseurl
 
-    url = baseurl(request=None)['base_url']
+    url = baseurl(request=None)["base_url"]
 
     if isinstance(instance, models.scoreset.ScoreSet):
-        url += reverse('dataset:scoreset_detail', args=(instance.urn,))
+        url += reverse("dataset:scoreset_detail", args=(instance.urn,))
     elif isinstance(instance, models.experiment.Experiment):
-        url += reverse('dataset:experiment_detail', args=(instance.urn,))
+        url += reverse("dataset:experiment_detail", args=(instance.urn,))
     elif isinstance(instance, models.experimentset.ExperimentSet):
-        url += reverse('dataset:experimentset_detail', args=(instance.urn,))
+        url += reverse("dataset:experimentset_detail", args=(instance.urn,))
     else:
-        raise TypeError("{} does not have a reverse url".format(
-            type(instance).__name__
-        ))
+        raise TypeError(
+            "{} does not have a reverse url".format(type(instance).__name__)
+        )
 
     template_name = "core/alert_admin_new_entry_email.html"
     admins = User.objects.filter(is_superuser=True)
-    message = render_to_string(template_name, {
-        'user': user,
-        'url': url,
-        'class_name': type(instance).__name__,
-    })
+    message = render_to_string(
+        template_name,
+        {"user": user, "url": url, "class_name": type(instance).__name__},
+    )
 
     subject = "[MAVEDB ADMIN] New entry requires your attention."
     for admin in admins:
@@ -104,12 +111,12 @@ def notify_admins(user, instance):
 
 def base_url(request=None):
     if request is None:
-        scheme = 'http://'
+        scheme = "http://"
     else:
         if request.is_secure():
-            scheme = 'https://'
+            scheme = "https://"
         else:
-            scheme = 'http://'
+            scheme = "http://"
     return scheme + settings.BASE_URL
 
 
@@ -142,4 +149,4 @@ def format_column(values, astype=float):
 def chunks(ls, n):
     """Return elements in a list, n at a time."""
     for i in range(0, len(ls), n):
-        yield ls[i:i+n]
+        yield ls[i : i + n]
