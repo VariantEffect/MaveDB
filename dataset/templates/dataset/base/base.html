@@ -95,7 +95,13 @@
               {% if instance.licence %}
                 <a href="{{ instance.licence.link }}" target="_blank" data-toggle="tooltip" data-placement="auto"
                     title="{{ instance.licence.long_name }}">
-                  <img alt="See legal code" src="{% get_licence_logo_path instance.licence %}" height="38px"/>
+                  {% get_licence_logo_path instance.licence as licence_link %}
+                  {% if licence_link %}
+                    <img alt="See legal code" src="{{ licence_link }}" height="38px"/>
+                  {% else %}
+                    <a class="btn btn-outline-dark white-button" href="#data-usage">{{ instance.licence.long_name }}</a>
+                  {% endif %}
+
                 </a>
               {% endif %}
 
