@@ -415,7 +415,7 @@ session.
     alias run-rabbitmq='sudo /sbin/service rabbitmq-server'
         
     alias cd-mavedb='cd /usr/local/webapps/mavedb/'
-    alias cd-mavedb-logs='cd /usr/local/webapps/logsv/'
+    alias cd-mavedb-logs='cd /usr/local/webapps/logs/'
     alias cd-rmq-logs='cd /var/log/rabbitmq/'
     alias cd-celery-logs='cd /var/log/celery/'
     
