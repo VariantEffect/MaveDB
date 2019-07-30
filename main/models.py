@@ -205,11 +205,15 @@ class Licence(TimeStampedModel):
         Semantic version number of the licence.
     """
 
+    short_name = models.CharField(
+        null=False,
+        default=None,
+        verbose_name="Short name",
+        max_length=200,
+        unique=True,
+    )
     long_name = models.CharField(
         null=False, default=None, verbose_name="Long name", max_length=200
-    )
-    short_name = models.CharField(
-        null=False, default=None, verbose_name="Short name", max_length=200
     )
     legal_code = models.TextField(
         verbose_name="Legal Code", null=False, default=None
@@ -238,26 +242,50 @@ class Licence(TimeStampedModel):
     # not currently used
     # additional validation to make sure link is valid?
     @classmethod
-    def create_licence(cls, short_name, long_name, file_name, link, version):
-        try:
-            legal_code = open(
-                os.path.join(settings.MAIN_DIR, file_name), mode="rt"
-            ).read()
-        except IOError as e:
-            logging.error(
-                "Failed to read licence file for{license} "
-                "('{file}'): {error}".format(
-                    license=short_name, file=file_name, error=e
+    def create_licence(
+        cls,
+        short_name,
+        long_name,
+        link,
+        version,
+        file_name=None,
+        legal_code="UNDEFINED",
+    ):
+        if file_name:
+            try:
+                legal_code = open(
+                    os.path.join(
+                        settings.MAIN_DIR, "licence_legal_code", file_name
+                    ),
+                    mode="rt",
+                ).read()
+            except IOError as e:
+                logging.error(
+                    "Failed to read licence file for{license} "
+                    "('{file}'): {error}".format(
+                        license=short_name, file=file_name, error=e
+                    )
                 )
-            )
-            legal_code = "UNDEFINED"
-        cls.objects.create(
+                legal_code = "UNDEFINED"
+
+        instance, created = cls.objects.get_or_create(
             short_name=short_name,
-            long_name=long_name,
-            legal_code=legal_code,
-            link=link,
-            version=version,
+            defaults={
+                "short_name": short_name,
+                "long_name": long_name,
+                "legal_code": legal_code,
+                "link": link,
+                "version": version,
+            },
         )
+        if not created:
+            instance.short_name = short_name
+            instance.long_name = long_name
+            instance.legal_code = legal_code
+            instance.link = link
+            instance.version = version
+            instance.save()
+        return instance
 
     @classmethod
     def populate(cls):
