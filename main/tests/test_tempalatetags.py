@@ -15,8 +15,7 @@ class TestLicenceTags(TestCase):
         path = licence_tags.get_licence_logo_path(l)
         self.assertIn("by-nc-sa.svg", path)
 
-    def test_error_unknown_licence(self):
+    def test_returns_none_unknown_licence(self):
         l = models.Licence.get_cc_by_nc_sa()
         l.short_name = "by-sa"
-        with self.assertRaises(ValueError):
-            licence_tags.get_licence_logo_path(l)
+        self.assertIsNone(licence_tags.get_licence_logo_path(l))
