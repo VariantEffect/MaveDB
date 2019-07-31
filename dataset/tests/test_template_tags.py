@@ -195,24 +195,119 @@ class TestVisibleChildren(TestCase):
         self.assertEqual(len(result), 1)
 
 
-class TestParentReferences(TestCase):
-    def test_excludes_duplicated_references_in_child(self):
-        instance = ExperimentWithScoresetFactory()
+class TestLexSortedReferences(TestCase):
+    def test_returns_empty_queryset_unknown_instance(self):
+        self.assertEqual(dataset_tags.lex_sorted_references([]).count(), 0)
 
-        instance.pubmed_ids.clear()
-        instance.children.first().pubmed_ids.clear()
+    def test_gets_reference_html_sorted_references_for_scoreset(self):
+        instance = ScoreSetFactory()
+        parent = instance.parent
+        grandparent = parent.parent
 
         pm1 = PubmedIdentifierFactory(identifier="25075907")
         pm2 = PubmedIdentifierFactory(identifier="20711194")
         pm3 = PubmedIdentifierFactory(identifier="29269382")
+        pm4 = PubmedIdentifierFactory(identifier="11248461")
+
+        instance.pubmed_ids.clear()
         instance.pubmed_ids.add(pm1)
         instance.pubmed_ids.add(pm2)
-        instance.children.first().pubmed_ids.add(pm2)
-        instance.children.first().pubmed_ids.add(pm3)
 
-        pmids = dataset_tags.parent_references(instance.children.first())
+        parent.pubmed_ids.clear()
+        parent.pubmed_ids.add(pm2)
+        parent.pubmed_ids.add(pm3)
+
+        grandparent.pubmed_ids.clear()
+        grandparent.pubmed_ids.add(pm3)
+        grandparent.pubmed_ids.add(pm4)
+
+        pmids = dataset_tags.lex_sorted_references(instance)
+        self.assertEqual(len(pmids), 4)
+        expected_order = sorted(
+            [pm1, pm2, pm3, pm4], key=lambda x: x.reference_html
+        )
+        self.assertListEqual(
+            [x.reference_html for x in expected_order],
+            [x.reference_html for x in pmids],
+        )
+
+    def test_gets_reference_html_sorted_references_for_experiment(self):
+        instance = ExperimentFactory()
+        parent = instance.parent
+
+        pm1 = PubmedIdentifierFactory(identifier="25075907")
+        pm2 = PubmedIdentifierFactory(identifier="20711194")
+        pm3 = PubmedIdentifierFactory(identifier="29269382")
+
+        instance.pubmed_ids.clear()
+        instance.pubmed_ids.add(pm1)
+        instance.pubmed_ids.add(pm2)
+
+        parent.pubmed_ids.clear()
+        parent.pubmed_ids.add(pm2)
+        parent.pubmed_ids.add(pm3)
+
+        pmids = dataset_tags.lex_sorted_references(instance)
+        self.assertEqual(len(pmids), 3)
+        expected_order = sorted(
+            [pm1, pm2, pm3], key=lambda x: x.reference_html
+        )
+        self.assertListEqual(
+            [x.reference_html for x in expected_order],
+            [x.reference_html for x in pmids],
+        )
+
+
+class TestUniqueParentReferences(TestCase):
+    def test_returns_empty_queryset_unknown_instance(self):
+        self.assertEqual(dataset_tags.unique_parent_references([]).count(), 0)
+
+    def test_gets_ancestor_references_for_scoreset(self):
+        instance = ScoreSetFactory()
+        parent = instance.parent
+        grandparent = parent.parent
+
+        pm1 = PubmedIdentifierFactory(identifier="25075907")
+        pm2 = PubmedIdentifierFactory(identifier="20711194")
+        pm3 = PubmedIdentifierFactory(identifier="29269382")
+        pm4 = PubmedIdentifierFactory(identifier="11248461")
+
+        instance.pubmed_ids.clear()
+        instance.pubmed_ids.add(pm1)
+        instance.pubmed_ids.add(pm2)
+
+        parent.pubmed_ids.clear()
+        parent.pubmed_ids.add(pm2)
+        parent.pubmed_ids.add(pm3)
+
+        grandparent.pubmed_ids.clear()
+        grandparent.pubmed_ids.add(pm3)
+        grandparent.pubmed_ids.add(pm4)
+
+        pmids = dataset_tags.unique_parent_references(instance)
+        self.assertEqual(len(pmids), 2)
+        self.assertIn(pm3, pmids)
+        self.assertIn(pm4, pmids)
+
+    def test_gets_ancestor_references_for_experiment(self):
+        instance = ExperimentFactory()
+        parent = instance.parent
+
+        pm1 = PubmedIdentifierFactory(identifier="25075907")
+        pm2 = PubmedIdentifierFactory(identifier="20711194")
+        pm3 = PubmedIdentifierFactory(identifier="29269382")
+
+        instance.pubmed_ids.clear()
+        instance.pubmed_ids.add(pm1)
+        instance.pubmed_ids.add(pm2)
+
+        parent.pubmed_ids.clear()
+        parent.pubmed_ids.add(pm2)
+        parent.pubmed_ids.add(pm3)
+
+        pmids = dataset_tags.unique_parent_references(instance)
         self.assertEqual(len(pmids), 1)
-        self.assertEqual(pmids[0], pm1)
+        self.assertEqual(pmids[0], pm3)
 
 
 class TestUrnNameFormatTag(TestCase):

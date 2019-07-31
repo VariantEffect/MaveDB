@@ -264,7 +264,7 @@ def lex_sorted_references(instance):
     Sort the references of an instance based on lex order using the
     `reference_html` field on `PubmedIdentifier`
 
-    Includes parent references.
+    Includes ancestor references.
 
     Parameters
     ----------
@@ -279,16 +279,11 @@ def lex_sorted_references(instance):
         references = PubmedIdentifier.objects.filter(
             associated_experimentsets__in=[instance]
         )
-    elif isinstance(instance, models.experiment.Experiment):
-        references = PubmedIdentifier.objects.filter(
-            Q(associated_experimentsets__in=[instance.parent])
-            | Q(associated_experiments__in=[instance])
-        )
-    elif isinstance(instance, models.scoreset.ScoreSet):
-        references = PubmedIdentifier.objects.filter(
-            Q(associated_experimentsets__in=[instance.parent.parent])
-            | Q(associated_experiments__in=[instance.parent])
-            | Q(associated_scoresets__in=[instance])
+    elif isinstance(
+        instance, (models.experiment.Experiment, models.scoreset.ScoreSet)
+    ):
+        references = instance.pubmed_ids.all().distinct() | unique_parent_references(
+            instance
         )
     else:
         references = PubmedIdentifier.objects.none()
@@ -297,10 +292,11 @@ def lex_sorted_references(instance):
 
 
 @register.assignment_tag
-def parent_references(instance):
+def unique_parent_references(instance):
     """
     Returns the parent references of a dataset model sorted by the
-    `reference_html` field on `PubmedIdentifier`.
+    `reference_html` field on `PubmedIdentifier` that are not in the
+    instance's pubmed references.
 
     Parameters
     ----------
@@ -314,14 +310,13 @@ def parent_references(instance):
     if isinstance(instance, models.experiment.Experiment):
         references = PubmedIdentifier.objects.filter(
             Q(associated_experimentsets__in=[instance.parent])
-            | Q(associated_experiments__in=[instance])
-        )
+        ).exclude(Q(associated_experiments__in=[instance]))
     elif isinstance(instance, models.scoreset.ScoreSet):
         references = PubmedIdentifier.objects.filter(
             Q(associated_experimentsets__in=[instance.parent.parent])
             | Q(associated_experiments__in=[instance.parent])
-            | Q(associated_scoresets__in=[instance])
-        )
+            | Q(associated_experiments__in=[instance.parent])
+        ).exclude(Q(associated_scoresets__in=[instance]))
     else:
         references = PubmedIdentifier.objects.none()
 
