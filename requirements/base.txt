@@ -27,5 +27,4 @@ idutils==1.1.0
 hg+https://bitbucket.org/metapub/metapub@default
 git+https://github.com/VariantEffect/hgvs-patterns.git
 lxml==4.3.5
-metapub==0.4.3.6
 eutils==0.5.0
