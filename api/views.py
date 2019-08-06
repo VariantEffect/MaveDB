@@ -274,7 +274,7 @@ def format_response(response, scoreset, dtype):
             "# Accession: {}\n".format(scoreset.urn),
             "# Downloaded (UTC): {}\n".format(datetime.utcnow()),
             "# Licence: {}\n".format(scoreset.licence.long_name),
-            "# Licence URL: {}\n".format(scoreset.licence.link),
+            "# Licence URL: {}\n".format(scoreset.licence.link or str(None)),
         ]
     )
 
