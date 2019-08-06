@@ -1,7 +1,7 @@
 import datetime
 import idutils
 import metapub
-from eutils.exceptions import EutilsNCBIError
+from eutils import EutilsNCBIError
 
 from django.db import models
 
