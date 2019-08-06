@@ -1,11 +1,17 @@
 [run]
 omit =
     */tests/*
-    */factories.py
-    */__init__.py
     */admin.py
     */apps.py
     */manage.py
     */settings/*
     */migrations/*
     */webtests/*
+    */data/*
+    */mavedb/*
+    */requirements/*
+    *.md
+    *.sh
+    *.txt
+    LICENCE
+    celeryd
