@@ -284,7 +284,7 @@ class PubmedIdentifier(ExternalIdentifier):
                 self.identifier
             )
         else:
-            reference = article.citation_html
+            reference = article.citation
         return reference
 
     def save(self, *args, **kwargs):
