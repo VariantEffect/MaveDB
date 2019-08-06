@@ -298,7 +298,7 @@ class TestPubmedIdentifier(TestCase):
         pubmed = PubmedIdentifierFactory(reference_html=None)
         fetch = metapub.PubMedFetcher()
         article = fetch.article_by_pmid(pubmed.identifier)
-        self.assertEqual(pubmed.reference_html, article.citation_html)
+        self.assertEqual(pubmed.reference_html, article.citation)
 
     def test_save_sets_dbname_as_PubMeD(self):
         pm = PubmedIdentifierFactory()
