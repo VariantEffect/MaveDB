@@ -16,6 +16,7 @@ echo "Using requirements $requirements"
 
 pip install -r requirements/$requirements \
   && python manage.py migrate $settings \
+  && python manage.py updatesiteinfo $settings \
   && python manage.py createlicences $settings \
   && python manage.py createreferences $settings \
   && python manage.py collectstatic $settings \
