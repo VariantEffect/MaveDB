@@ -14,14 +14,19 @@ def make_files(score_data=None, count_data=None, meta_data=None):
     Make mock file objects used by django during a request post with a file
     input from text data.
     """
-    hgvs_nt = generate_hgvs(prefix='c')
-    hgvs_pro = generate_hgvs(prefix='p')
-    
+    hgvs_nt = generate_hgvs(prefix="c")
+    hgvs_pro = generate_hgvs(prefix="p")
+
     if not score_data:
-        string_io = StringIO("{},{},{},se\n{},{},0.5,0.4\n".format(
-            constants.hgvs_nt_column, constants.hgvs_pro_column,
-            constants.required_score_column, hgvs_nt, hgvs_pro,
-        ))
+        string_io = StringIO(
+            "{},{},{},se\n{},{},0.5,0.4\n".format(
+                constants.hgvs_nt_column,
+                constants.hgvs_pro_column,
+                constants.required_score_column,
+                hgvs_nt,
+                hgvs_pro,
+            )
+        )
     else:
         string_io = StringIO(score_data)
     size = string_io.seek(0, os.SEEK_END)
@@ -30,25 +35,29 @@ def make_files(score_data=None, count_data=None, meta_data=None):
         file=string_io,
         name="scores.csv",
         field_name=None,
-        content_type='text/csv',
+        content_type="text/csv",
         size=size,
-        charset="utf-8"
+        charset="utf-8",
     )
 
     if isinstance(count_data, bool) and count_data:
-        string_io = StringIO("{},{},count,sig\n{},{},10,-1\n".format(
-            constants.hgvs_nt_column, constants.hgvs_pro_column,
-            hgvs_nt, hgvs_pro,
-        ))
+        string_io = StringIO(
+            "{},{},count,sig\n{},{},10,-1\n".format(
+                constants.hgvs_nt_column,
+                constants.hgvs_pro_column,
+                hgvs_nt,
+                hgvs_pro,
+            )
+        )
         size = string_io.seek(0, os.SEEK_END)
         string_io.seek(0)
         counts_file = InMemoryUploadedFile(
             file=string_io,
             name="counts.csv",
             field_name=None,
-            content_type='text/csv',
+            content_type="text/csv",
             size=size,
-            charset="utf-8"
+            charset="utf-8",
         )
     elif count_data:
         counts_io = StringIO(count_data)
@@ -58,9 +67,9 @@ def make_files(score_data=None, count_data=None, meta_data=None):
             file=counts_io,
             name="counts.csv",
             field_name=None,
-            content_type='text/csv',
+            content_type="text/csv",
             size=size,
-            charset="utf-8"
+            charset="utf-8",
         )
     else:
         counts_file = None
@@ -69,10 +78,7 @@ def make_files(score_data=None, count_data=None, meta_data=None):
         meta_data = json.dumps(meta_data)
 
     if isinstance(meta_data, bool) and meta_data:
-        dict_ = {
-            "inner": {"foo": 2, "bar": 1},
-            "hello": ["world"]
-        }
+        dict_ = {"inner": {"foo": 2, "bar": 1}, "hello": ["world"]}
         string_io = StringIO(json.dumps(dict_))
         size = string_io.seek(0, os.SEEK_END)
         string_io.seek(0)
@@ -80,9 +86,9 @@ def make_files(score_data=None, count_data=None, meta_data=None):
             file=string_io,
             name="meta.json",
             field_name=None,
-            content_type='json',
+            content_type="json",
             size=size,
-            charset="utf-8"
+            charset="utf-8",
         )
     elif meta_data:
         string_io = StringIO(meta_data)
@@ -92,9 +98,9 @@ def make_files(score_data=None, count_data=None, meta_data=None):
             file=string_io,
             name="meta.json",
             field_name=None,
-            content_type='json',
+            content_type="json",
             size=size,
-            charset="utf-8"
+            charset="utf-8",
         )
     else:
         meta_file = None

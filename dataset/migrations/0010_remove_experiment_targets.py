@@ -7,13 +7,8 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0009_auto_20180718_1916'),
-    ]
+    dependencies = [("dataset", "0009_auto_20180718_1916")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='experiment',
-            name='targets',
-        ),
+        migrations.RemoveField(model_name="experiment", name="targets")
     ]

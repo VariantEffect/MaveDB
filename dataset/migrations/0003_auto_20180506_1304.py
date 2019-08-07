@@ -7,39 +7,85 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0002_auto_20180504_1101'),
-    ]
+    dependencies = [("dataset", "0002_auto_20180504_1101")]
 
     operations = [
         migrations.AddField(
-            model_name='experiment',
-            name='processing_state',
-            field=models.CharField(blank=True, choices=[('processing', 'processing'), ('success', 'success'), ('failed', 'failed')], default=None, max_length=100, null=True, verbose_name='Processing state'),
+            model_name="experiment",
+            name="processing_state",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processing", "processing"),
+                    ("success", "success"),
+                    ("failed", "failed"),
+                ],
+                default=None,
+                max_length=100,
+                null=True,
+                verbose_name="Processing state",
+            ),
         ),
         migrations.AddField(
-            model_name='experimentset',
-            name='processing_state',
-            field=models.CharField(blank=True, choices=[('processing', 'processing'), ('success', 'success'), ('failed', 'failed')], default=None, max_length=100, null=True, verbose_name='Processing state'),
+            model_name="experimentset",
+            name="processing_state",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processing", "processing"),
+                    ("success", "success"),
+                    ("failed", "failed"),
+                ],
+                default=None,
+                max_length=100,
+                null=True,
+                verbose_name="Processing state",
+            ),
         ),
         migrations.AddField(
-            model_name='scoreset',
-            name='processing_state',
-            field=models.CharField(blank=True, choices=[('processing', 'processing'), ('success', 'success'), ('failed', 'failed')], default=None, max_length=100, null=True, verbose_name='Processing state'),
+            model_name="scoreset",
+            name="processing_state",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processing", "processing"),
+                    ("success", "success"),
+                    ("failed", "failed"),
+                ],
+                default=None,
+                max_length=100,
+                null=True,
+                verbose_name="Processing state",
+            ),
         ),
         migrations.AlterField(
-            model_name='experiment',
-            name='publish_date',
-            field=models.DateField(blank=True, default=None, null=True, verbose_name='Published on'),
+            model_name="experiment",
+            name="publish_date",
+            field=models.DateField(
+                blank=True,
+                default=None,
+                null=True,
+                verbose_name="Published on",
+            ),
         ),
         migrations.AlterField(
-            model_name='experimentset',
-            name='publish_date',
-            field=models.DateField(blank=True, default=None, null=True, verbose_name='Published on'),
+            model_name="experimentset",
+            name="publish_date",
+            field=models.DateField(
+                blank=True,
+                default=None,
+                null=True,
+                verbose_name="Published on",
+            ),
         ),
         migrations.AlterField(
-            model_name='scoreset',
-            name='publish_date',
-            field=models.DateField(blank=True, default=None, null=True, verbose_name='Published on'),
+            model_name="scoreset",
+            name="publish_date",
+            field=models.DateField(
+                blank=True,
+                default=None,
+                null=True,
+                verbose_name="Published on",
+            ),
         ),
     ]

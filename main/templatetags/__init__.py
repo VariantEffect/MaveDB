@@ -1,3 +1,1 @@
-__all__ = [
-    'licence_tags'
-]
+__all__ = ["licence_tags"]

@@ -10,10 +10,10 @@ User = get_user_model()
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('clear', nargs='?', type=bool, default=False)
+        parser.add_argument("clear", nargs="?", type=bool, default=False)
 
     def handle(self, *args, **kwargs):
-        if kwargs.get('clear', False):
+        if kwargs.get("clear", False):
             if not settings.DEBUG:
                 raise ValueError("Cannot clear user table when DEBUG is False")
             else:
@@ -21,7 +21,9 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             password = "1234qwer"
-            usera = UserFactory(username="usera", is_superuser=True, is_staff=True)
+            usera = UserFactory(
+                username="usera", is_superuser=True, is_staff=True
+            )
             userb = UserFactory(username="userb")
             userc = UserFactory(username="userc")
 

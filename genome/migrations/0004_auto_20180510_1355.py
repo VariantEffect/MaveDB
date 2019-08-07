@@ -8,34 +8,42 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0003_auto_20180509_1400'),
-    ]
+    dependencies = [("genome", "0003_auto_20180509_1400")]
 
     operations = [
         migrations.AlterField(
-            model_name='genomicinterval',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="genomicinterval",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
         migrations.AlterField(
-            model_name='referencegenome',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="referencegenome",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
         migrations.AlterField(
-            model_name='referencemap',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="referencemap",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
         migrations.AlterField(
-            model_name='targetgene',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="targetgene",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
         migrations.AlterField(
-            model_name='wildtypesequence',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="wildtypesequence",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
     ]

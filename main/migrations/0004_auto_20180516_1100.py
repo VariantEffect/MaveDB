@@ -7,44 +7,42 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0003_auto_20180510_1521'),
-    ]
+    dependencies = [("main", "0003_auto_20180510_1521")]
 
     operations = [
         migrations.AlterField(
-            model_name='siteinformation',
-            name='about',
-            field=models.TextField(default=''),
+            model_name="siteinformation",
+            name="about",
+            field=models.TextField(default=""),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='citation',
-            field=models.TextField(default=''),
+            model_name="siteinformation",
+            name="citation",
+            field=models.TextField(default=""),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='documentation',
-            field=models.TextField(default=''),
+            model_name="siteinformation",
+            name="documentation",
+            field=models.TextField(default=""),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='email',
-            field=models.EmailField(default='', max_length=254),
+            model_name="siteinformation",
+            name="email",
+            field=models.EmailField(default="", max_length=254),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='privacy',
-            field=models.TextField(default=''),
+            model_name="siteinformation",
+            name="privacy",
+            field=models.TextField(default=""),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='terms',
-            field=models.TextField(default=''),
+            model_name="siteinformation",
+            name="terms",
+            field=models.TextField(default=""),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='usage_guide',
-            field=models.TextField(default=''),
+            model_name="siteinformation",
+            name="usage_guide",
+            field=models.TextField(default=""),
         ),
     ]

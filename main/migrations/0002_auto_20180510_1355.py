@@ -8,24 +8,28 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('main', '0001_initial'),
-    ]
+    dependencies = [("main", "0001_initial")]
 
     operations = [
         migrations.AlterField(
-            model_name='licence',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="licence",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
         migrations.AlterField(
-            model_name='news',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="news",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
         migrations.AlterField(
-            model_name='siteinformation',
-            name='modification_date',
-            field=models.DateField(default=datetime.date.today, verbose_name='Modification date'),
+            model_name="siteinformation",
+            name="modification_date",
+            field=models.DateField(
+                default=datetime.date.today, verbose_name="Modification date"
+            ),
         ),
     ]

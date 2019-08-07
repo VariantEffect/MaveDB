@@ -30,8 +30,8 @@ class BasicSearchForm(forms.Form):
     def format_data_for_filter(self):
         if not self.is_valid():
             return {}
-        
-        value = self.cleaned_data.get('search', "")
+
+        value = self.cleaned_data.get("search", "")
         if not value:
             return {}
 
@@ -74,8 +74,7 @@ class AdvancedSearchForm(forms.Form):
     # DatasetModel Filter fields
     # ---------------------------------------------------------------------- #
     title = forms.CharField(
-        label="Title", required=False,
-        help_text='Search entries by title.',
+        label="Title", required=False, help_text="Search entries by title."
     )
     # description = forms.CharField(
     #     label="Description", required=False,
@@ -92,77 +91,96 @@ class AdvancedSearchForm(forms.Form):
     #     help_text='Search entries by their abstract description.',
     #     widget=forms.widgets.Textarea()
     # )
-    
+
     pubmed = fields.CSVCharField(
-        label='PubMed identifiers', required=False,
-        help_text='Search datasets by associated PubMed accessions.',
+        label="PubMed identifiers",
+        required=False,
+        help_text="Search datasets by associated PubMed accessions.",
     )
     sra = fields.CSVCharField(
-        label='SRA accessions', required=False,
-        help_text='Search datasets by associated SRA accessions.',
+        label="SRA accessions",
+        required=False,
+        help_text="Search datasets by associated SRA accessions.",
     )
     doi = fields.CSVCharField(
-        label='DOI accessions', required=False,
-        help_text='Search datasets by associated DOI accessions.',
+        label="DOI accessions",
+        required=False,
+        help_text="Search datasets by associated DOI accessions.",
     )
     keyword = fields.CSVCharField(
-        label='Keywords', required=False,
-        help_text='Search datasets by associated keywords.',
+        label="Keywords",
+        required=False,
+        help_text="Search datasets by associated keywords.",
     )
 
     # User filter fields
     # ---------------------------------------------------------------------- #
     first_name = fields.CSVCharField(
-        max_length=None, label='Contributor first name', required=False,
-        help_text='Search by a contributor\'s first name'
+        max_length=None,
+        label="Contributor first name",
+        required=False,
+        help_text="Search by a contributor's first name",
     )
     last_name = fields.CSVCharField(
-        max_length=None, label='Contributor last name', required=False,
-        help_text='Search by a contributor\'s last name'
+        max_length=None,
+        label="Contributor last name",
+        required=False,
+        help_text="Search by a contributor's last name",
     )
     username = fields.CSVCharField(
-        max_length=None, label='Contributor ORCID', required=False,
-        help_text='Search by a contributor\'s ORCID'
+        max_length=None,
+        label="Contributor ORCID",
+        required=False,
+        help_text="Search by a contributor's ORCID",
     )
     display_name = fields.CSVCharField(
-        max_length=None, label='Contributor display name', required=False,
-        help_text='Search by a contributor\'s display name'
+        max_length=None,
+        label="Contributor display name",
+        required=False,
+        help_text="Search by a contributor's display name",
     )
-    
+
     # ScoreSet/Experiment filter fields
     # ---------------------------------------------------------------------- #
     target = fields.CSVCharField(
-        label='Target name', required=False,
-        help_text='Search by a target\'s name.',
+        label="Target name",
+        required=False,
+        help_text="Search by a target's name.",
     )
     target_type = fields.CSVCharField(
-        label='Target type', required=False,
-        help_text='Search by a target\'s type.',
+        label="Target type",
+        required=False,
+        help_text="Search by a target's type.",
     )
     organism = fields.CSVCharField(
-        label='Reference organism', required=False,
-        help_text='Search by a target\'s reference genome organism.',
+        label="Reference organism",
+        required=False,
+        help_text="Search by a target's reference genome organism.",
     )
     genome = fields.CSVCharField(
-        label='Reference name/assembly identifier', required=False,
-        help_text='Search by a target\'s reference genome name or assembly '
-                  'accession',
+        label="Reference name/assembly identifier",
+        required=False,
+        help_text="Search by a target's reference genome name or assembly "
+        "accession",
     )
     uniprot = fields.CSVCharField(
-        label='UniProt accession',
-        help_text='Search by a target\'s UniProt accession.',
+        label="UniProt accession",
+        help_text="Search by a target's UniProt accession.",
         required=False,
     )
     ensembl = fields.CSVCharField(
-        required=False, label='Ensembl accession',
-        help_text='Search by a target\'s Ensembl accession.',
+        required=False,
+        label="Ensembl accession",
+        help_text="Search by a target's Ensembl accession.",
     )
     refseq = fields.CSVCharField(
-        label='RefSeq accession', required=False,
-        help_text='Search by a target\'s RefSeq accession.',
+        label="RefSeq accession",
+        required=False,
+        help_text="Search by a target's RefSeq accession.",
     )
     licence = fields.CSVCharField(
-        label='Licence', required=False,
+        label="Licence",
+        required=False,
         help_text="Search datasets matching the selected licence type.",
     )
 
@@ -170,136 +188,199 @@ class AdvancedSearchForm(forms.Form):
         super().__init__(*args, **kwargs)
         # These must be loaded when the form is served so the the queryset
         # is dynamically loaded to show new entries.
-        
+
         # DatasetModel Filter fields
         # ------------------------------------------------------------------- #
-        self.fields['sra'].widget = forms.SelectMultiple(
+        self.fields["sra"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in SraIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in SraIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['doi'].widget = forms.SelectMultiple(
+        self.fields["doi"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in PubmedIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in PubmedIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['pubmed'].widget = forms.SelectMultiple(
+        self.fields["pubmed"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in DoiIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in DoiIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['keyword'].widget = forms.SelectMultiple(
+        self.fields["keyword"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.text, i.text)
-                for i in Keyword.objects.all()
-            ]))
+            choices=sorted(
+                set([(i.text, i.text) for i in Keyword.objects.all()])
+            ),
         )
 
         # User filter fields
         # ------------------------------------------------------------------- #
-        self.fields[user_filters.UserFilter.USERNAME].widget = forms.\
-            SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.username, i.username)
-                    for i in filter_anon(User.objects.filter(
-                        is_superuser=False))
-                ]))
-            )
-        self.fields[user_filters.UserFilter.FIRST_NAME].widget = forms.\
-            SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.first_name, i.first_name)
-                    for i in filter_anon(User.objects.filter(
-                        is_superuser=False))
-                ]))
-            )
-        self.fields[user_filters.UserFilter.LAST_NAME].widget = forms.\
-            SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.last_name, i.last_name)
-                    for i in filter_anon(User.objects.filter(
-                        is_superuser=False))
-                ]))
-            )
-        self.fields[user_filters.UserFilter.DISPLAY_NAME].widget = forms.\
-            SelectMultiple(
-                attrs={"class": "select2 select2-token-select"},
-                choices=sorted(set([
-                    (i.profile.get_display_name(), i.profile.get_display_name())
-                    for i in filter_anon(User.objects.filter(
-                        is_superuser=False))
-                ]))
-            )
+        self.fields[
+            user_filters.UserFilter.USERNAME
+        ].widget = forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(
+                set(
+                    [
+                        (i.username, i.username)
+                        for i in filter_anon(
+                            User.objects.filter(is_superuser=False)
+                        )
+                    ]
+                )
+            ),
+        )
+        self.fields[
+            user_filters.UserFilter.FIRST_NAME
+        ].widget = forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(
+                set(
+                    [
+                        (i.first_name, i.first_name)
+                        for i in filter_anon(
+                            User.objects.filter(is_superuser=False)
+                        )
+                    ]
+                )
+            ),
+        )
+        self.fields[
+            user_filters.UserFilter.LAST_NAME
+        ].widget = forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(
+                set(
+                    [
+                        (i.last_name, i.last_name)
+                        for i in filter_anon(
+                            User.objects.filter(is_superuser=False)
+                        )
+                    ]
+                )
+            ),
+        )
+        self.fields[
+            user_filters.UserFilter.DISPLAY_NAME
+        ].widget = forms.SelectMultiple(
+            attrs={"class": "select2 select2-token-select"},
+            choices=sorted(
+                set(
+                    [
+                        (
+                            i.profile.get_display_name(),
+                            i.profile.get_display_name(),
+                        )
+                        for i in filter_anon(
+                            User.objects.filter(is_superuser=False)
+                        )
+                    ]
+                )
+            ),
+        )
 
         # ScoreSet/Experiment filter fields
         # ------------------------------------------------------------------- #
-        self.fields['licence'].widget = forms.SelectMultiple(
+        self.fields["licence"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.long_name, i.long_name)
-                for i in Licence.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [(i.long_name, i.long_name) for i in Licence.objects.all()]
+                )
+            ),
         )
-        self.fields['target'].widget = forms.SelectMultiple(
+        self.fields["target"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.name, i.name)
-                for i in TargetGene.objects.all()
-            ]))
+            choices=sorted(
+                set([(i.name, i.name) for i in TargetGene.objects.all()])
+            ),
         )
-        self.fields['target_type'].widget = forms.SelectMultiple(
+        self.fields["target_type"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=TargetGene.CATEGORY_CHOICES
+            choices=TargetGene.CATEGORY_CHOICES,
         )
-        self.fields['genome'].widget = forms.SelectMultiple(
+        self.fields["genome"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.short_name, i.short_name)
-                for i in ReferenceGenome.objects.all()
-            ])) + sorted(set([
-                (i.identifier, i.identifier)
-                for i in GenomeIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.short_name, i.short_name)
+                        for i in ReferenceGenome.objects.all()
+                    ]
+                )
+            )
+            + sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in GenomeIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['organism'].widget = forms.SelectMultiple(
+        self.fields["organism"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.organism_name, i.organism_name)
-                for i in ReferenceGenome.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.organism_name, i.organism_name)
+                        for i in ReferenceGenome.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['uniprot'].widget = forms.SelectMultiple(
+        self.fields["uniprot"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in UniprotIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in UniprotIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['refseq'].widget = forms.SelectMultiple(
+        self.fields["refseq"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in RefseqIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in RefseqIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        self.fields['ensembl'].widget = forms.SelectMultiple(
+        self.fields["ensembl"].widget = forms.SelectMultiple(
             attrs={"class": "select2 select2-token-select"},
-            choices=sorted(set([
-                (i.identifier, i.identifier)
-                for i in EnsemblIdentifier.objects.all()
-            ]))
+            choices=sorted(
+                set(
+                    [
+                        (i.identifier, i.identifier)
+                        for i in EnsemblIdentifier.objects.all()
+                    ]
+                )
+            ),
         )
-        
+
     def format_data_for_filter(self):
         if not self.is_valid():
             return {}
@@ -307,15 +388,15 @@ class AdvancedSearchForm(forms.Form):
         data = {}
         # DatasetModel Filter fields
         # ------------------------------------------------------------------- #
-        title = self.cleaned_data.get('title', "").strip()
+        title = self.cleaned_data.get("title", "").strip()
         # description = self.cleaned_data.get('description', "").strip()
         # method = self.cleaned_data.get('method', "").strip()
         # abstract = self.cleaned_data.get('abstract', "").strip()
-        pubmed = ','.join(self.cleaned_data.get('pubmed', []))
-        sra = ','.join(self.cleaned_data.get('sra', []))
-        doi = ','.join(self.cleaned_data.get('doi', []))
-        keyword = ','.join(self.cleaned_data.get('keyword', []))
-        
+        pubmed = ",".join(self.cleaned_data.get("pubmed", []))
+        sra = ",".join(self.cleaned_data.get("sra", []))
+        doi = ",".join(self.cleaned_data.get("doi", []))
+        keyword = ",".join(self.cleaned_data.get("keyword", []))
+
         if title:
             data[ds_filters.DatasetModelFilter.TITLE] = title
         # if description:
@@ -332,14 +413,14 @@ class AdvancedSearchForm(forms.Form):
             data[ds_filters.DatasetModelFilter.DOI] = doi
         if keyword:
             data[ds_filters.DatasetModelFilter.KEYWORD] = keyword
-        
+
         # User filter fields
         # ------------------------------------------------------------------- #
-        first_name = ','.join(self.cleaned_data.get('first_name', []))
-        last_name = ','.join(self.cleaned_data.get('last_name', []))
-        username = ','.join(self.cleaned_data.get('username', []))
-        display_name = ','.join(self.cleaned_data.get('display_name', []))
-        
+        first_name = ",".join(self.cleaned_data.get("first_name", []))
+        last_name = ",".join(self.cleaned_data.get("last_name", []))
+        username = ",".join(self.cleaned_data.get("username", []))
+        display_name = ",".join(self.cleaned_data.get("display_name", []))
+
         if first_name:
             data[ds_filters.DatasetModelFilter.FIRST_NAME] = first_name
         if last_name:
@@ -351,15 +432,15 @@ class AdvancedSearchForm(forms.Form):
 
         # ScoreSet/Experiment filter fields
         # ------------------------------------------------------------------- #
-        target = ','.join(self.cleaned_data.get('target', []))
-        target_type = ','.join(self.cleaned_data.get('target_type', []))
-        organism = ','.join(self.cleaned_data.get('organism', []))
-        genome = ','.join(self.cleaned_data.get('genome', []))
-        uniprot = ','.join(self.cleaned_data.get('uniprot', []))
-        ensembl = ','.join(self.cleaned_data.get('ensembl', []))
-        refseq = ','.join(self.cleaned_data.get('refseq', []))
-        licence = ','.join(self.cleaned_data.get('licence', []))
-        
+        target = ",".join(self.cleaned_data.get("target", []))
+        target_type = ",".join(self.cleaned_data.get("target_type", []))
+        organism = ",".join(self.cleaned_data.get("organism", []))
+        genome = ",".join(self.cleaned_data.get("genome", []))
+        uniprot = ",".join(self.cleaned_data.get("uniprot", []))
+        ensembl = ",".join(self.cleaned_data.get("ensembl", []))
+        refseq = ",".join(self.cleaned_data.get("refseq", []))
+        licence = ",".join(self.cleaned_data.get("licence", []))
+
         if target:
             data[ds_filters.ScoreSetFilter.TARGET] = target
         if target_type:

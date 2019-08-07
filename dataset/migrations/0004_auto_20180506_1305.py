@@ -7,24 +7,55 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0003_auto_20180506_1304'),
-    ]
+    dependencies = [("dataset", "0003_auto_20180506_1304")]
 
     operations = [
         migrations.AlterField(
-            model_name='experiment',
-            name='processing_state',
-            field=models.CharField(blank=True, choices=[('processing', 'processing'), ('success', 'success'), ('failed', 'failed')], default=None, max_length=32, null=True, verbose_name='Processing state'),
+            model_name="experiment",
+            name="processing_state",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processing", "processing"),
+                    ("success", "success"),
+                    ("failed", "failed"),
+                ],
+                default=None,
+                max_length=32,
+                null=True,
+                verbose_name="Processing state",
+            ),
         ),
         migrations.AlterField(
-            model_name='experimentset',
-            name='processing_state',
-            field=models.CharField(blank=True, choices=[('processing', 'processing'), ('success', 'success'), ('failed', 'failed')], default=None, max_length=32, null=True, verbose_name='Processing state'),
+            model_name="experimentset",
+            name="processing_state",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processing", "processing"),
+                    ("success", "success"),
+                    ("failed", "failed"),
+                ],
+                default=None,
+                max_length=32,
+                null=True,
+                verbose_name="Processing state",
+            ),
         ),
         migrations.AlterField(
-            model_name='scoreset',
-            name='processing_state',
-            field=models.CharField(blank=True, choices=[('processing', 'processing'), ('success', 'success'), ('failed', 'failed')], default=None, max_length=32, null=True, verbose_name='Processing state'),
+            model_name="scoreset",
+            name="processing_state",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processing", "processing"),
+                    ("success", "success"),
+                    ("failed", "failed"),
+                ],
+                default=None,
+                max_length=32,
+                null=True,
+                verbose_name="Processing state",
+            ),
         ),
     ]

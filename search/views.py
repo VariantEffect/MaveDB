@@ -4,8 +4,11 @@ from django.http.response import JsonResponse
 
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
-from dataset.templatetags.dataset_tags import \
-    format_urn_name_for_user, display_targets, filter_visible
+from dataset.templatetags.dataset_tags import (
+    format_urn_name_for_user,
+    display_targets,
+    filter_visible,
+)
 from dataset.filters import ScoreSetFilter, ExperimentFilter
 
 from . import forms
@@ -34,40 +37,42 @@ def to_json(groups, user):
         child_data = []
         for child in children:
             names, types, orgs = display_targets(child, user, all_fields=True)
-            child_data.append({
+            child_data.append(
+                {
+                    "urn": '<a href="{}">{}</a>'.format(
+                        child.get_url(), format_urn_name_for_user(child, user)
+                    ),
+                    "description": child.short_description,
+                    "target": names,
+                    "type": types,
+                    "organism": orgs,
+                }
+            )
+
+        names, types, orgs = display_targets(parent, user, all_fields=True)
+        data.append(
+            {
                 "urn": '<a href="{}">{}</a>'.format(
-                    child.get_url(),
-                    format_urn_name_for_user(child, user)
+                    parent.get_url(), format_urn_name_for_user(parent, user)
                 ),
-                "description": child.short_description,
+                "description": parent.short_description,
                 "target": names,
                 "type": types,
                 "organism": orgs,
-            })
-
-        names, types, orgs = display_targets(parent, user, all_fields=True)
-        data.append({
-            "urn": '<a href="{}">{}</a>'.format(
-                parent.get_url(),
-                format_urn_name_for_user(parent, user)
-            ),
-            "description": parent.short_description,
-            "target": names,
-            "type": types,
-            "organism": orgs,
-            "children": child_data,
-        })
+                "children": child_data,
+            }
+        )
     return data
 
 
 def process_search_request(request):
     experiments = Experiment.objects.all()
     scoresets = ScoreSet.objects.all()
-    if 'search' in request.GET:
+    if "search" in request.GET:
         form = forms.BasicSearchForm(data=request.GET)
     else:
         form = forms.AdvancedSearchForm(data=request.GET)
-    
+
     if form.is_valid():
         data = form.format_data_for_filter()
         experiment_filter = ExperimentFilter(
@@ -82,7 +87,7 @@ def process_search_request(request):
         else:
             experiments = experiment_filter.qs
             scoresets = scoreset_filter.qs
-    
+
     instances = group_children(
         parents=filter_visible(experiments.distinct(), request.user),
         children=filter_visible(scoresets.distinct(), request.user),
@@ -95,7 +100,7 @@ def process_search_request(request):
 def search_view(request):
     b_search_form = forms.BasicSearchForm()
     adv_search_form = forms.AdvancedSearchForm()
-    if str(request.GET.get('json')).lower() == 'true':
+    if str(request.GET.get("json")).lower() == "true":
         return process_search_request(request)
     context = {
         "b_search_form": b_search_form,

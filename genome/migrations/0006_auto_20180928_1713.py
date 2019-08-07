@@ -8,14 +8,17 @@ import genome.validators
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0005_auto_20180904_1228'),
-    ]
+    dependencies = [("genome", "0005_auto_20180904_1228")]
 
     operations = [
         migrations.AlterField(
-            model_name='referencegenome',
-            name='organism_name',
-            field=models.CharField(default=None, max_length=256, validators=[genome.validators.validate_organism_name], verbose_name='Organism'),
-        ),
+            model_name="referencegenome",
+            name="organism_name",
+            field=models.CharField(
+                default=None,
+                max_length=256,
+                validators=[genome.validators.validate_organism_name],
+                verbose_name="Organism",
+            ),
+        )
     ]

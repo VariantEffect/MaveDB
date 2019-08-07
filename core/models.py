@@ -14,7 +14,7 @@ from .utilities import format_delta
 User = get_user_model()
 
 
-def dump_df(df, orient='records'):
+def dump_df(df, orient="records"):
     handle = io.StringIO()
     df.to_json(handle, orient=orient)
     handle.seek(0)
@@ -26,17 +26,16 @@ class TimeStampedModel(models.Model):
     Base model representing a time stamped model updating the modification
     date everytime a change is saved.
     """
+
     class Meta:
         abstract = True
-        ordering = ['-creation_date']
+        ordering = ["-creation_date"]
 
     creation_date = models.DateField(
-        default=datetime.date.today,
-        verbose_name='Creation date',
+        default=datetime.date.today, verbose_name="Creation date"
     )
     modification_date = models.DateField(
-        default=datetime.date.today,
-        verbose_name='Modification date',
+        default=datetime.date.today, verbose_name="Modification date"
     )
 
     def save(self, *args, **kwargs):
@@ -52,10 +51,11 @@ class FailedTask(models.Model):
     Database model to store a failed task. Adapted from gist
     https://gist.github.com/darklow/c70a8d1147f05be877c3
     """
+
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(null=True, blank=True)
     failures = models.PositiveSmallIntegerField(default=1)
-    
+
     # Required by instantiate method
     name = models.CharField(max_length=125)
     full_name = models.TextField()
@@ -68,26 +68,38 @@ class FailedTask(models.Model):
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
-        related_name='failed_tasks',
+        related_name="failed_tasks",
         null=True,
     )
-    
+
     class Meta:
-        ordering = ('-modification_date',)
-        
+        ordering = ("-modification_date",)
+
     def save(self, *args, **kwargs):
         self.modification_date = timezone.now()
         return super().save(*args, **kwargs)
-    
+
     def __str__(self):
-        return '{0} {1} {2}, [{3}], failures:{4}'.format(
-            self.name, self.args, self.kwargs, self.exception_class,
-            self.failures
+        return "{0} {1} {2}, [{3}], failures:{4}".format(
+            self.name,
+            self.args,
+            self.kwargs,
+            self.exception_class,
+            self.failures,
         )
-    
+
     @classmethod
-    def update_or_create(cls, name, full_name, exc, task_id, args, kwargs,
-                         traceback=None, user=None):
+    def update_or_create(
+        cls,
+        name,
+        full_name,
+        exc,
+        task_id,
+        args,
+        kwargs,
+        traceback=None,
+        user=None,
+    ):
         """
         Save a failed task. If it exists, the modification_date and failure
         counter are updated.
@@ -95,14 +107,19 @@ class FailedTask(models.Model):
         # Find if task with same args, name and exception already exists
         # If it does, update failures count and last updated_at
         task = cls.instantiate_task(
-            name=name, full_name=full_name, exc=exc,
-            task_id=task_id, args=args, kwargs=kwargs,
-            traceback=traceback, user=user
+            name=name,
+            full_name=full_name,
+            exc=exc,
+            task_id=task_id,
+            args=args,
+            kwargs=kwargs,
+            traceback=traceback,
+            user=user,
         )
         existing_task = task.find_existing()
         if existing_task is not None:
             existing_task.failures += 1
-            existing_task.save(force_update=True, update_fields=('failures',))
+            existing_task.save(force_update=True, update_fields=("failures",))
             task = existing_task
             created = False
         else:
@@ -111,8 +128,17 @@ class FailedTask(models.Model):
         return task, created
 
     @classmethod
-    def instantiate_task(cls, name, full_name, exc, task_id, args, kwargs,
-                         traceback=None, user=None):
+    def instantiate_task(
+        cls,
+        name,
+        full_name,
+        exc,
+        task_id,
+        args,
+        kwargs,
+        traceback=None,
+        user=None,
+    ):
         """
         Convenience function to instantiate a task, handling the `json.dumps`
         process of args and kwargs and the extraction of exception traceback,
@@ -150,12 +176,15 @@ class FailedTask(models.Model):
             traceback=str(traceback).strip(),
             user=user,
         )
-        
+
         if args:
-            args = [dump_df(i) if isinstance(i, pd.DataFrame) else i for i in args]
+            args = [
+                dump_df(i) if isinstance(i, pd.DataFrame) else i for i in args
+            ]
             task.args = json.dumps(list(args))
         if kwargs:
             import io
+
             for key, item in kwargs.items():
                 if isinstance(item, pd.DataFrame):
                     kwargs[key] = dump_df(item)
@@ -180,16 +209,16 @@ class FailedTask(models.Model):
         for task in existing_tasks.all():
             task_kwargs = None
             self_kwargs = None
-        
+
             if task.kwargs:
                 task_kwargs = json.loads(task.kwargs)
             if self.kwargs:
                 self_kwargs = json.loads(self.kwargs)
-        
+
             if task_kwargs == self_kwargs:
                 existing_task = task
                 break
-    
+
         return existing_task
 
     def retry(self, inline=False):
@@ -207,13 +236,13 @@ class FailedTask(models.Model):
         `any`
             Task result
         """
-        mod_name, func_name = self.full_name.rsplit('.', 1)
+        mod_name, func_name = self.full_name.rsplit(".", 1)
         mod = importlib.import_module(mod_name)
         func = getattr(mod, func_name)
 
         args = json.loads(self.args) if self.args else ()
         kwargs = json.loads(self.kwargs) if self.kwargs else {}
-        
+
         if inline:
             return func(*args, **kwargs)
         else:

@@ -46,19 +46,23 @@ def assign_public_urn(experiment):
     `Experiment`
         experiment with new urn or same urn if already public.
     """
-    experiment = Experiment.objects.filter(
-        id=experiment.id
-    ).select_for_update(nowait=False).first()
+    experiment = (
+        Experiment.objects.filter(id=experiment.id)
+        .select_for_update(nowait=False)
+        .first()
+    )
     if not experiment.has_public_urn:
-        parent = ExperimentSet.objects.filter(
-            id=experiment.experimentset.id
-        ).select_for_update(nowait=False).first()
-        
+        parent = (
+            ExperimentSet.objects.filter(id=experiment.experimentset.id)
+            .select_for_update(nowait=False)
+            .first()
+        )
+
         if not parent.has_public_urn:
             raise AttributeError(
                 "Cannot assign a public urn when parent has a temporary urn."
             )
-        
+
         # Convert child_value to a letter (a-z)
         child_value = parent.last_child_value + 1
         suffix = ""
@@ -68,15 +72,17 @@ def assign_public_urn(experiment):
             suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
         experiment.urn = "{}-{}".format(parent.urn, suffix)
         parent.last_child_value = child_value
-        
+
         experiment.save()
         parent.save()
-        
+
         # Refresh the instance and nested parents
-        experiment = Experiment.objects.filter(
-            id=experiment.id
-        ).select_for_update(nowait=False).first()
-    
+        experiment = (
+            Experiment.objects.filter(id=experiment.id)
+            .select_for_update(nowait=False)
+            .first()
+        )
+
     return experiment
 
 
@@ -94,6 +100,7 @@ class Experiment(DatasetModel):
         The experimentset is instance assciated with. New `ExperimentSet` is
         created if this is not provided.
     """
+
     # ---------------------------------------------------------------------- #
     #                       Class members/functions
     # ---------------------------------------------------------------------- #
@@ -103,7 +110,7 @@ class Experiment(DatasetModel):
         permissions = (
             (PermissionTypes.CAN_VIEW, "Can view"),
             (PermissionTypes.CAN_EDIT, "Can edit"),
-            (PermissionTypes.CAN_MANAGE, "Can manage")
+            (PermissionTypes.CAN_MANAGE, "Can manage"),
         )
 
     # ---------------------------------------------------------------------- #
@@ -120,8 +127,8 @@ class Experiment(DatasetModel):
         null=True,
         default=None,
         blank=True,
-        related_name='experiments',
-        verbose_name="Experiment Set"
+        related_name="experiments",
+        verbose_name="Experiment Set",
     )
 
     # ---------------------------------------------------------------------- #
@@ -135,16 +142,19 @@ class Experiment(DatasetModel):
 
     @property
     def parent(self):
-        return getattr(self, 'experimentset', None)
+        return getattr(self, "experimentset", None)
 
     @property
     def children(self):
         return self.scoresets.all()
-    
+
     def get_targets(self):
-        target_pks = set([
-            child.get_target().pk for child in self.children
-            if child.get_target()]
+        target_pks = set(
+            [
+                child.get_target().pk
+                for child in self.children
+                if child.get_target()
+            ]
         )
         return TargetGene.objects.filter(pk__in=target_pks)
 
@@ -152,20 +162,22 @@ class Experiment(DatasetModel):
         return list(sorted(set([t.get_name() for t in self.get_targets()])))
 
     def get_target_organisms(self):
-        organism_sets = [
-            s.get_target_organisms() for s in self.children]
+        organism_sets = [s.get_target_organisms() for s in self.children]
         return list(
-            sorted(set(reduce(lambda x, y: x | y, organism_sets, set()))))
+            sorted(set(reduce(lambda x, y: x | y, organism_sets, set())))
+        )
 
     def get_display_target_organisms(self):
         organism_sets = [
-            s.get_display_target_organisms() for s in self.children]
+            s.get_display_target_organisms() for s in self.children
+        ]
         return list(
-            sorted(set(reduce(lambda x, y: x | y, organism_sets, set()))))
+            sorted(set(reduce(lambda x, y: x | y, organism_sets, set())))
+        )
 
     def public_scoresets(self):
         return self.children.exclude(private=True)
-    
+
     def get_url(self, request=None):
         base = base_url(request)
         return base + reverse("dataset:experiment_detail", args=(self.urn,))

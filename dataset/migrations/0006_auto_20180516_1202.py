@@ -7,24 +7,22 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dataset', '0005_auto_20180510_1355'),
-    ]
+    dependencies = [("dataset", "0005_auto_20180510_1355")]
 
     operations = [
         migrations.AddField(
-            model_name='experiment',
-            name='last_urn_index',
+            model_name="experiment",
+            name="last_urn_index",
             field=models.IntegerField(default=1),
         ),
         migrations.AddField(
-            model_name='experimentset',
-            name='last_urn_index',
+            model_name="experimentset",
+            name="last_urn_index",
             field=models.IntegerField(default=1),
         ),
         migrations.AddField(
-            model_name='scoreset',
-            name='last_urn_index',
+            model_name="scoreset",
+            name="last_urn_index",
             field=models.IntegerField(default=1),
         ),
     ]

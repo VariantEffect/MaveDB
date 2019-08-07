@@ -62,6 +62,10 @@ extra metadata. This feature will be added in a future version.
 * Variant counts (uploaded with counts file)
 * Additional variant scoring columns (uploaded with score file)
 
+Score sets with a UniProt identifier will show a banner that links out to 
+[MaveVis](http://varianteffect.com/), which visualizes variant effect maps and
+structure information.
+
 ## Experiments
 
 Experiments describe a single set of assay data. The experiment can include one 

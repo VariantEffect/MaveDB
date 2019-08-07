@@ -16,12 +16,14 @@ class TestScoreSetEditForm(TestCase):
     """
     Tests functionality of the fields specific to the ScoreSetForm.
     """
+
     def setUp(self):
         self.user = UserFactory()
         self.factory = RequestFactory()
 
-    def make_post_data(self, score_data=None, count_data=None, meta_data=None,
-                       make_exp=True):
+    def make_post_data(
+        self, score_data=None, count_data=None, meta_data=None, make_exp=True
+    ):
         """
         Makes sample test input for instantiating the form to simulate
         POST data from a view. By default creates an experiment and
@@ -43,8 +45,8 @@ class TestScoreSetEditForm(TestCase):
             experiment = ExperimentFactory()
             assign_user_as_instance_admin(self.user, experiment)
         data = {
-            'short_description': 'experiment',
-            'title': 'title',
+            "short_description": "experiment",
+            "title": "title",
             "experiment": experiment.pk if experiment else None,
         }
         s_file, c_file, m_file = make_files(score_data, count_data, meta_data)
@@ -63,38 +65,38 @@ class TestScoreSetEditForm(TestCase):
     def test_pops_data_policy_if_user_not_administrator(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertNotIn('data_usage_policy', form.fields)
+        self.assertNotIn("data_usage_policy", form.fields)
 
     def test_keeps_data_policy_if_user_not_administrator(self):
         obj = ScoreSetFactory()
         obj.add_administrators(self.user)
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertIn('data_usage_policy', form.fields)
+        self.assertIn("data_usage_policy", form.fields)
 
     def test_experiment_not_in_form(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertNotIn('experiment', form.fields)
+        self.assertNotIn("experiment", form.fields)
 
     def test_score_data_not_in_form(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertNotIn('score_data', form.fields)
+        self.assertNotIn("score_data", form.fields)
 
     def test_count_data_not_in_form(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertNotIn('count_data', form.fields)
+        self.assertNotIn("count_data", form.fields)
 
     def test_meta_data_not_in_form(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertNotIn('meta_data', form.fields)
+        self.assertNotIn("meta_data", form.fields)
 
     def test_replaces_not_in_form(self):
         obj = ScoreSetFactory()
         form = ScoreSetEditForm(data={}, user=self.user, instance=obj)
-        self.assertNotIn('replaces', form.fields)
+        self.assertNotIn("replaces", form.fields)
 
     def test_cannot_save_popped_field(self):
         exp = ExperimentFactory()
@@ -109,8 +111,8 @@ class TestScoreSetEditForm(TestCase):
         old_variants = obj.children
 
         data, files = self.make_post_data()
-        data['licence'] = Licence.get_cc0().pk
-        data['replaces'] = ScoreSetFactory(experiment=exp).pk
+        data["licence"] = Licence.get_cc0().pk
+        data["replaces"] = ScoreSetFactory(experiment=exp).pk
         form = ScoreSetEditForm(
             data=data, files=files, user=self.user, instance=obj
         )

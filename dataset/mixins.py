@@ -29,11 +29,12 @@ class DatasetUrnMixin:
     `model` or `model_class` to be defined. `model` is defined by Django in
     DetailView. `model` is prioritized over `model_class`.
     """
+
     model_class = None
 
     def get_object(self, queryset=None):
-        urn = self.kwargs.get('urn', None)
-        if hasattr(self, 'model'):
+        urn = self.kwargs.get("urn", None)
+        if hasattr(self, "model"):
             return get_object_or_404(self.model, urn=urn)
         return get_object_or_404(self.model_class, urn=urn)
 
@@ -43,9 +44,10 @@ class DatasetPermissionMixin(PermissionRequiredMixin):
     Overrides the `has_permission` method of `PermissionRequiredMixin`.
     Returns
     """
+
     redirect_unauthenticated_users = "/login/"
     raise_exception = True
-    permission_required = 'dataset.can_view'
+    permission_required = "dataset.can_view"
 
     def has_permission(self):
         """
@@ -61,9 +63,9 @@ class DatasetPermissionMixin(PermissionRequiredMixin):
 
         if is_private and anon_user:
             return False
-        elif is_public and self.permission_required == 'dataset.can_view':
+        elif is_public and self.permission_required == "dataset.can_view":
             return True
-        elif is_private and perm != 'dataset.can_view' and anon_user:
+        elif is_private and perm != "dataset.can_view" and anon_user:
             return False
         else:
             return user.has_perms(self.get_permission_required(), instance)
@@ -74,6 +76,7 @@ class DatasetFormViewContextMixin:
     Overrides the `get_context_data` function from form-based Django class
     based views.
     """
+
     def get_context_data(self, **kwargs):
         """
         Inserts common context parameters into a context which javascript
@@ -83,13 +86,13 @@ class DatasetFormViewContextMixin:
 
         # We're customising `FormView` to handle multiple forms so remove
         # the default form that is created by the base class.
-        if 'form' in context:
-            context.pop('form')
+        if "form" in context:
+            context.pop("form")
         # Below is invoked if paired with a MultiFormMixin
-        if hasattr(self, 'get_forms'):
+        if hasattr(self, "get_forms"):
             for key, form in self.get_forms().items():
-                if not key.endswith('_form'):
-                    key += '_form'
+                if not key.endswith("_form"):
+                    key += "_form"
                 if key not in context:
                     context[key] = form
 
@@ -109,24 +112,27 @@ class DatasetFormViewContextMixin:
             pubmed_ids = [i for i in pubmed_ids if not is_null(i)]
 
             uniprot_id = self.request.POST.getlist(
-                "uniprot-offset-identifier", [])
+                "uniprot-offset-identifier", []
+            )
             uniprot_id = [i for i in uniprot_id if not is_null(i)]
 
             ensembl_id = self.request.POST.getlist(
-                "ensembl-offset-identifier", [])
+                "ensembl-offset-identifier", []
+            )
             ensembl_id = [i for i in ensembl_id if not is_null(i)]
 
             refseq_id = self.request.POST.getlist(
-                "refseq-offset-identifier", [])
+                "refseq-offset-identifier", []
+            )
             refseq_id = [i for i in refseq_id if not is_null(i)]
 
-            context["repop_keywords"] = ','.join(keywords)
-            context["repop_sra_identifiers"] = ','.join(sra_ids)
-            context["repop_doi_identifiers"] = ','.join(doi_ids)
-            context["repop_pubmed_identifiers"] = ','.join(pubmed_ids)
-            context["repop_uniprot_identifier"] = ','.join(uniprot_id)
-            context["repop_ensembl_identifier"] = ','.join(ensembl_id)
-            context["repop_refseq_identifier"] = ','.join(refseq_id)
+            context["repop_keywords"] = ",".join(keywords)
+            context["repop_sra_identifiers"] = ",".join(sra_ids)
+            context["repop_doi_identifiers"] = ",".join(doi_ids)
+            context["repop_pubmed_identifiers"] = ",".join(pubmed_ids)
+            context["repop_uniprot_identifier"] = ",".join(uniprot_id)
+            context["repop_ensembl_identifier"] = ",".join(ensembl_id)
+            context["repop_refseq_identifier"] = ",".join(refseq_id)
 
         return context
 
@@ -150,69 +156,75 @@ class MultiFormMixin:
     -----
     `restricted_forms` is currently unused.
     """
+
     forms = {}
     # Forms for update views form when an instance if not private.
     # restricted_forms is used when an instance is public instead of forms.
     restricted_forms = {}
     prefixes = {}
-    form_string = 'get_{}_form'
-    kwargs_string = 'get_{}_form_kwargs'
+    form_string = "get_{}_form"
+    kwargs_string = "get_{}_form_kwargs"
 
     def get_generic_form(self, form_class, **form_kwargs):
         return form_class(**form_kwargs)
 
     def get_generic_kwargs(self, key, **kwargs):
-        if 'instance' not in kwargs:
-            kwargs['instance'] = getattr(self, 'instance', None)
-        if 'data' not in kwargs:
-            kwargs['data'] = self.get_form_data()
-        if 'files' not in kwargs:
-            kwargs['files'] = self.get_form_files()
-        if 'prefix' not in kwargs:
-            kwargs['prefix'] = self.prefixes.get(key, None)
-        
+        if "instance" not in kwargs:
+            kwargs["instance"] = getattr(self, "instance", None)
+        if "data" not in kwargs:
+            kwargs["data"] = self.get_form_data()
+        if "files" not in kwargs:
+            kwargs["files"] = self.get_form_files()
+        if "prefix" not in kwargs:
+            kwargs["prefix"] = self.prefixes.get(key, None)
+
         form_class = self.forms[key]
-        has_attr = form_class in \
-                   (ExperimentForm, ScoreSetForm,
-                    ExperimentEditForm, ScoreSetEditForm,)
-        if has_attr and 'user' not in kwargs:
-            kwargs['user'] = self.request.user
-        
+        has_attr = form_class in (
+            ExperimentForm,
+            ScoreSetForm,
+            ExperimentEditForm,
+            ScoreSetEditForm,
+        )
+        if has_attr and "user" not in kwargs:
+            kwargs["user"] = self.request.user
+
         return kwargs
 
     def get_form_files(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return self.request.FILES
         return None
 
     def get_form_data(self):
-        if self.request.method == 'POST':
+        if self.request.method == "POST":
             return self.request.POST
         return None
 
     def get_forms(self):
         created_forms = {}
         forms_dict = self.forms
-        if getattr(self, 'instance', None):
-            instance = getattr(self, 'instance')
+        if getattr(self, "instance", None):
+            instance = getattr(self, "instance")
             if not instance.private:
                 forms_dict = self.restricted_forms
 
         for key, form_class in forms_dict.items():
-            form_get_func = getattr(
-                self, self.form_string.format(key), None)
+            form_get_func = getattr(self, self.form_string.format(key), None)
             kwargs_get_func = getattr(
-                self, self.kwargs_string.format(key), None)
+                self, self.kwargs_string.format(key), None
+            )
             if not form_get_func:
                 form_get_func = self.get_generic_form
                 logger.info(
                     "'{}' has not been defined. Using default "
-                    "method.".format("get_%s_form" % key))
+                    "method.".format("get_%s_form" % key)
+                )
             if not kwargs_get_func:
                 kwargs_get_func = self.get_generic_kwargs
                 logger.info(
                     "'{}' has not been defined. Using default "
-                    "method.".format("get_%s_kwargs" % key))
+                    "method.".format("get_%s_kwargs" % key)
+                )
 
             form_kwargs = kwargs_get_func(key)
             form_kwargs = self.get_generic_kwargs(key, **form_kwargs)
@@ -232,30 +244,37 @@ class MultiFormMixin:
         for key, form in forms.items():
             form.save()
         return forms
-    
-    
+
+
 class DataSetAjaxMixin:
     def get_ajax(self, request, return_dict=False, *args, **kwargs):
         # If the request is ajax, then it's for previewing the abstract
         # or method description. This code is coupled with base.js. Changes
         # here might break the javascript code.
         data = {}
-        if 'abstractText' in request.GET:
-            data.update({
-                "abstractText": convert_md_to_html(
-                    request.GET.get("abstractText", "")),
-            })
-        if 'methodText' in request.GET:
-            data.update({
-                "methodText": convert_md_to_html(
-                    request.GET.get("methodText", "")),
-            })
+        if "abstractText" in request.GET:
+            data.update(
+                {
+                    "abstractText": convert_md_to_html(
+                        request.GET.get("abstractText", "")
+                    )
+                }
+            )
+        if "methodText" in request.GET:
+            data.update(
+                {
+                    "methodText": convert_md_to_html(
+                        request.GET.get("methodText", "")
+                    )
+                }
+            )
         if return_dict:
             return data
         else:
             return HttpResponse(
-                json.dumps(data), content_type="application/json")
-        
+                json.dumps(data), content_type="application/json"
+            )
+
     def post_ajax(self, request, return_dict=False, *args, **kwargs):
         return HttpResponse(json.dumps({}), content_type="application/json")
 
@@ -274,34 +293,35 @@ class ScoreSetAjaxMixin(DataSetAjaxMixin):
     also to obtain the scoresets for a selected experiment to dynamically fill
     the replaces options with allowable selections.
     """
+
     def get_ajax(self, request, *args, **kwargs):
         # If the request is ajax, then it's for previewing the abstract
         # or method description. This code is coupled with base.js. Changes
         # here might break the javascript code.
         data = super().get_ajax(request, return_dict=True, *args, **kwargs)
 
-        if 'targetId' in request.GET:
+        if "targetId" in request.GET:
             pk = request.GET.get("targetId", "")
             if pk and TargetGene.objects.filter(pk=pk).count():
                 targetgene = TargetGene.objects.get(pk=pk)
                 data.update(TargetGeneSerializer(targetgene).data)
                 map = targetgene.reference_maps.first()
                 if map is not None:
-                    data['genome'] = map.genome.pk
+                    data["genome"] = map.genome.pk
 
-        if 'experiment' in request.GET:
+        if "experiment" in request.GET:
             pk = request.GET.get("experiment", "")
             if pk and Experiment.objects.filter(pk=pk).count():
                 experiment = Experiment.objects.get(pk=pk)
                 scoresets = [
                     (s.pk, s.urn, s.title)
-                    for s in experiment.scoresets.order_by('urn')
+                    for s in experiment.scoresets.order_by("urn")
                     if request.user.has_perm(PermissionTypes.CAN_EDIT, s)
                     and not s.private
                 ]
-                data.update({'scoresets': scoresets})
+                data.update({"scoresets": scoresets})
                 data.update(
-                    {'keywords': [k.text for k in experiment.keywords.all()]}
+                    {"keywords": [k.text for k in experiment.keywords.all()]}
                 )
 
         return HttpResponse(json.dumps(data), content_type="application/json")
@@ -311,6 +331,7 @@ class PrivateDatasetFilterMixin:
     """
     Splits datasets into those viewable, filtering out those that are not.
     """
+
     def filter_and_split_instances(self, instances):
         private_viewable = []
         public = []
@@ -319,7 +340,8 @@ class PrivateDatasetFilterMixin:
                 continue
 
             has_perm = self.request.user.has_perm(
-                PermissionTypes.CAN_VIEW, instance)
+                PermissionTypes.CAN_VIEW, instance
+            )
             if not instance.private:
                 public.append(instance)
             elif instance.private and has_perm:

@@ -10,61 +10,155 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Licence',
+            name="Licence",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('long_name', models.CharField(default=None, max_length=200, verbose_name='Long name')),
-                ('short_name', models.CharField(default=None, max_length=200, verbose_name='Short name')),
-                ('legal_code', models.TextField(default=None, verbose_name='Legal Code')),
-                ('link', models.URLField(default=None, verbose_name='Link')),
-                ('version', models.CharField(default=None, max_length=200, verbose_name='Version')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "long_name",
+                    models.CharField(
+                        default=None, max_length=200, verbose_name="Long name"
+                    ),
+                ),
+                (
+                    "short_name",
+                    models.CharField(
+                        default=None, max_length=200, verbose_name="Short name"
+                    ),
+                ),
+                (
+                    "legal_code",
+                    models.TextField(default=None, verbose_name="Legal Code"),
+                ),
+                ("link", models.URLField(default=None, verbose_name="Link")),
+                (
+                    "version",
+                    models.CharField(
+                        default=None, max_length=200, verbose_name="Version"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Licence',
-                'verbose_name_plural': 'Licence',
+                "verbose_name": "Licence",
+                "verbose_name_plural": "Licence",
             },
         ),
         migrations.CreateModel(
-            name='News',
+            name="News",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('text', models.TextField(default='default news.')),
-                ('level', models.CharField(blank=True, choices=[('Happy holidays', 'Happy holidays'), ('April fools', 'April fools'), ('Information', 'Information'), ('Important', 'Important'), ('Critical', 'Critical')], default='Information', max_length=250)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                ("text", models.TextField(default="default news.")),
+                (
+                    "level",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("Happy holidays", "Happy holidays"),
+                            ("April fools", "April fools"),
+                            ("Information", "Information"),
+                            ("Important", "Important"),
+                            ("Critical", "Critical"),
+                        ],
+                        default="Information",
+                        max_length=250,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'News item',
-                'ordering': ['-creation_date'],
-                'verbose_name_plural': 'News items',
+                "verbose_name": "News item",
+                "ordering": ["-creation_date"],
+                "verbose_name_plural": "News items",
             },
         ),
         migrations.CreateModel(
-            name='SiteInformation',
+            name="SiteInformation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('about', models.TextField(blank=True, default='')),
-                ('citation', models.TextField(blank=True, default='')),
-                ('usage_guide', models.TextField(blank=True, default='')),
-                ('documentation', models.TextField(blank=True, default='')),
-                ('terms', models.TextField(blank=True, default='')),
-                ('privacy', models.TextField(blank=True, default='')),
-                ('email', models.EmailField(blank=True, default='', max_length=254)),
-                ('version', models.CharField(default='1', max_length=256)),
-                ('version_date', models.DateField(default=datetime.date.today)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                ("about", models.TextField(blank=True, default="")),
+                ("citation", models.TextField(blank=True, default="")),
+                ("usage_guide", models.TextField(blank=True, default="")),
+                ("documentation", models.TextField(blank=True, default="")),
+                ("terms", models.TextField(blank=True, default="")),
+                ("privacy", models.TextField(blank=True, default="")),
+                (
+                    "email",
+                    models.EmailField(blank=True, default="", max_length=254),
+                ),
+                ("version", models.CharField(default="1", max_length=256)),
+                (
+                    "version_date",
+                    models.DateField(default=datetime.date.today),
+                ),
             ],
             options={
-                'verbose_name': 'Site Information',
-                'verbose_name_plural': 'Site Information',
+                "verbose_name": "Site Information",
+                "verbose_name_plural": "Site Information",
             },
         ),
     ]

@@ -23,29 +23,30 @@ class News(TimeStampedModel):
     text : `models.TextField`
         The content of the news item.abs
     """
+
     STATUS_CHOICES = (
-        ('Happy holidays', 'Happy holidays'),
-        ('April fools', 'April fools'),
-        ('Information', 'Information'),
-        ('Important', 'Important'),
-        ('Critical', 'Critical'),
+        ("Happy holidays", "Happy holidays"),
+        ("April fools", "April fools"),
+        ("Information", "Information"),
+        ("Important", "Important"),
+        ("Critical", "Critical"),
     )
     text = models.TextField(default="default news.", blank=False)
     level = models.CharField(
         max_length=250,
-        default='Information',
+        default="Information",
         null=False,
         blank=True,
-        choices=STATUS_CHOICES
+        choices=STATUS_CHOICES,
     )
 
     class Meta:
-        ordering = ['-creation_date']
+        ordering = ["-creation_date"]
         verbose_name_plural = "News items"
         verbose_name = "News item"
 
     def __str__(self):
-        return '[{}]: {}'.format(str(self.creation_date), self.text)
+        return "[{}]: {}".format(str(self.creation_date), self.text)
 
     @property
     def date(self):
@@ -56,16 +57,15 @@ class News(TimeStampedModel):
         """
         Return the 10 most recently published news items.
         """
-        return News.objects.order_by("-creation_date")[0: 10]
+        return News.objects.order_by("-creation_date")[0:10]
 
     @property
     def message(self):
         """
         Property for obtaining the text of a news item instance.
         """
-        return '[{}]: {}'.format(
-            self.creation_date,
-            convert_md_to_html(self.text)
+        return "[{}]: {}".format(
+            self.creation_date, convert_md_to_html(self.text)
         )
 
     def save(self, *args, **kwargs):
@@ -104,6 +104,7 @@ class SiteInformation(TimeStampedModel):
     branch : `CharField`
         MaveDB active git branch.
     """
+
     md_about = models.TextField(default="")
     md_citation = models.TextField(default="")
     md_usage_guide = models.TextField(default="")
@@ -164,7 +165,7 @@ class SiteInformation(TimeStampedModel):
     @property
     def release_date(self):
         return self.version_date
-    
+
     @property
     def release_branch(self):
         return self.branch
@@ -203,33 +204,23 @@ class Licence(TimeStampedModel):
     version : `models.CharField`
         Semantic version number of the licence.
     """
-    long_name = models.CharField(
-        null=False,
-        default=None,
-        verbose_name="Long name",
-        max_length=200,
-    )
+
     short_name = models.CharField(
         null=False,
         default=None,
         verbose_name="Short name",
         max_length=200,
+        unique=True,
+    )
+    long_name = models.CharField(
+        null=False, default=None, verbose_name="Long name", max_length=200
     )
     legal_code = models.TextField(
-        verbose_name="Legal Code",
-        null=False,
-        default=None,
+        verbose_name="Legal Code", null=False, default=None
     )
-    link = models.URLField(
-        null=False,
-        default=None,
-        verbose_name="Link",
-    )
+    link = models.URLField(null=False, default=None, verbose_name="Link")
     version = models.CharField(
-        null=False,
-        default=None,
-        verbose_name="Version",
-        max_length=200,
+        null=False, default=None, verbose_name="Version", max_length=200
     )
 
     class Meta:
@@ -251,26 +242,50 @@ class Licence(TimeStampedModel):
     # not currently used
     # additional validation to make sure link is valid?
     @classmethod
-    def create_licence(cls, short_name, long_name, file_name, link, version):
-        try:
-            legal_code = open(
-                os.path.join(settings.MAIN_DIR,
-                             file_name),
-                mode='rt'
-            ).read()
-        except IOError as e:
-            logging.error("Failed to read licence file for{license} "
-                          "('{file}'): {error}".format(license=short_name,
-                                                       file=file_name,
-                                                       error=e))
-            legal_code = "UNDEFINED"
-        cls.objects.create(
+    def create_licence(
+        cls,
+        short_name,
+        long_name,
+        link,
+        version,
+        file_name=None,
+        legal_code="UNDEFINED",
+    ):
+        if file_name:
+            try:
+                legal_code = open(
+                    os.path.join(
+                        settings.MAIN_DIR, "licence_legal_code", file_name
+                    ),
+                    mode="rt",
+                ).read()
+            except IOError as e:
+                logging.error(
+                    "Failed to read licence file for{license} "
+                    "('{file}'): {error}".format(
+                        license=short_name, file=file_name, error=e
+                    )
+                )
+                legal_code = "UNDEFINED"
+
+        instance, created = cls.objects.get_or_create(
             short_name=short_name,
-            long_name=long_name,
-            legal_code=legal_code,
-            link=link,
-            version=version,
+            defaults={
+                "short_name": short_name,
+                "long_name": long_name,
+                "legal_code": legal_code,
+                "link": link,
+                "version": version,
+            },
         )
+        if not created:
+            instance.short_name = short_name
+            instance.long_name = long_name
+            instance.legal_code = legal_code
+            instance.link = link
+            instance.version = version
+            instance.save()
+        return instance
 
     @classmethod
     def populate(cls):
@@ -291,10 +306,10 @@ class Licence(TimeStampedModel):
                 short_name="CC0",
                 long_name="CC0 (Public domain)",
                 legal_code=open(
-                    os.path.join(settings.MAIN_DIR,
-                                 "licence_legal_code",
-                                 "CC0.txt"),
-                    mode='rt'
+                    os.path.join(
+                        settings.MAIN_DIR, "licence_legal_code", "CC0.txt"
+                    ),
+                    mode="rt",
                 ).read(),
                 link="https://creativecommons.org/publicdomain/zero/1.0/",
                 version="1.0",
@@ -310,10 +325,12 @@ class Licence(TimeStampedModel):
                 short_name="CC BY-NC-SA 4.0",
                 long_name="CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)",
                 legal_code=open(
-                    os.path.join(settings.MAIN_DIR,
-                                 "licence_legal_code",
-                                 "CC_BY-NC-SA_4.0.txt"),
-                    mode='rt'
+                    os.path.join(
+                        settings.MAIN_DIR,
+                        "licence_legal_code",
+                        "CC_BY-NC-SA_4.0.txt",
+                    ),
+                    mode="rt",
                 ).read(),
                 link="https://creativecommons.org/licenses/by-nc-sa/4.0/",
                 version="4.0",
@@ -329,10 +346,12 @@ class Licence(TimeStampedModel):
                 short_name="CC BY 4.0",
                 long_name="CC BY 4.0 (Attribution)",
                 legal_code=open(
-                    os.path.join(settings.MAIN_DIR,
-                                 "licence_legal_code",
-                                 "CC_BY_4.0.txt"),
-                    mode='rt'
+                    os.path.join(
+                        settings.MAIN_DIR,
+                        "licence_legal_code",
+                        "CC_BY_4.0.txt",
+                    ),
+                    mode="rt",
                 ).read(),
                 link="https://creativecommons.org/licenses/by/4.0/",
                 version="4.0",

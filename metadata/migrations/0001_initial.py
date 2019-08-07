@@ -12,179 +12,666 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        ('genome', '0001_initial'),
-    ]
+    dependencies = [("genome", "0001_initial")]
 
     operations = [
         migrations.CreateModel(
-            name='DoiIdentifier',
+            name="DoiIdentifier",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
+            ],
+            options={"verbose_name": "DOI", "verbose_name_plural": "DOIs"},
+        ),
+        migrations.CreateModel(
+            name="EnsemblIdentifier",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'DOI',
-                'verbose_name_plural': 'DOIs',
+                "verbose_name": "Ensembl accession",
+                "verbose_name_plural": "Ensembl accessions",
             },
         ),
         migrations.CreateModel(
-            name='EnsemblIdentifier',
+            name="EnsemblOffset",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "offset",
+                    models.PositiveIntegerField(
+                        blank=True, default=0, verbose_name="Wild-type offset"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="offset",
+                        to="metadata.EnsemblIdentifier",
+                        validators=[
+                            metadata.validators.validate_ensembl_identifier
+                        ],
+                        verbose_name="Ensembl accession",
+                    ),
+                ),
+                (
+                    "target",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="ensembloffset",
+                        to="genome.TargetGene",
+                        verbose_name="Target gene",
+                    ),
+                ),
+            ],
+            options={"abstract": False},
+        ),
+        migrations.CreateModel(
+            name="GenomeIdentifier",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Ensembl accession',
-                'verbose_name_plural': 'Ensembl accessions',
+                "verbose_name": "Genome assembly accession",
+                "verbose_name_plural": "Genome assembly accessions",
             },
         ),
         migrations.CreateModel(
-            name='EnsemblOffset',
+            name="Keyword",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('offset', models.PositiveIntegerField(blank=True, default=0, verbose_name='Wild-type offset')),
-                ('identifier', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='offset', to='metadata.EnsemblIdentifier', validators=[metadata.validators.validate_ensembl_identifier], verbose_name='Ensembl accession')),
-                ('target', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='ensembloffset', to='genome.TargetGene', verbose_name='Target gene')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='GenomeIdentifier',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
-            ],
-            options={
-                'verbose_name': 'Genome assembly accession',
-                'verbose_name_plural': 'Genome assembly accessions',
-            },
-        ),
-        migrations.CreateModel(
-            name='Keyword',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('creation_date', models.DateField(default=datetime.date.today)),
-                ('text', models.CharField(default=None, max_length=256, unique=True, verbose_name='Keyword')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(default=datetime.date.today),
+                ),
+                (
+                    "text",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Keyword",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PubmedIdentifier',
+            name="PubmedIdentifier",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
-                ('reference_html', models.TextField(blank=True, default=None, null=True, verbose_name='Formatted reference')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
+                (
+                    "reference_html",
+                    models.TextField(
+                        blank=True,
+                        default=None,
+                        null=True,
+                        verbose_name="Formatted reference",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'PubMed identifier',
-                'verbose_name_plural': 'PubMed identifiers',
+                "verbose_name": "PubMed identifier",
+                "verbose_name_plural": "PubMed identifiers",
             },
         ),
         migrations.CreateModel(
-            name='RefseqIdentifier',
+            name="RefseqIdentifier",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'RefSeq accession',
-                'verbose_name_plural': 'RefSeq accessions',
+                "verbose_name": "RefSeq accession",
+                "verbose_name_plural": "RefSeq accessions",
             },
         ),
         migrations.CreateModel(
-            name='RefseqOffset',
+            name="RefseqOffset",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('offset', models.PositiveIntegerField(blank=True, default=0, verbose_name='Wild-type offset')),
-                ('identifier', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='offset', to='metadata.RefseqIdentifier', validators=[metadata.validators.validate_refseq_identifier], verbose_name='RefSeq accession')),
-                ('target', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='refseqoffset', to='genome.TargetGene', verbose_name='Target gene')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "offset",
+                    models.PositiveIntegerField(
+                        blank=True, default=0, verbose_name="Wild-type offset"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="offset",
+                        to="metadata.RefseqIdentifier",
+                        validators=[
+                            metadata.validators.validate_refseq_identifier
+                        ],
+                        verbose_name="RefSeq accession",
+                    ),
+                ),
+                (
+                    "target",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="refseqoffset",
+                        to="genome.TargetGene",
+                        verbose_name="Target gene",
+                    ),
+                ),
+            ],
+            options={"abstract": False},
+        ),
+        migrations.CreateModel(
+            name="SraIdentifier",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "verbose_name": "SRA accession",
+                "verbose_name_plural": "SRA accessions",
             },
         ),
         migrations.CreateModel(
-            name='SraIdentifier',
+            name="UniprotIdentifier",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        unique=True,
+                        verbose_name="Identifier",
+                    ),
+                ),
+                (
+                    "dbname",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        verbose_name="Database name",
+                    ),
+                ),
+                (
+                    "dbversion",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Database version",
+                    ),
+                ),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        default=None,
+                        max_length=256,
+                        null=True,
+                        verbose_name="Identifier URL",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'SRA accession',
-                'verbose_name_plural': 'SRA accessions',
+                "verbose_name": "UniProt accession",
+                "verbose_name_plural": "UniProt accessions",
             },
         ),
         migrations.CreateModel(
-            name='UniprotIdentifier',
+            name="UniprotOffset",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('identifier', models.CharField(default=None, max_length=256, unique=True, verbose_name='Identifier')),
-                ('dbname', models.CharField(default=None, max_length=256, verbose_name='Database name')),
-                ('dbversion', models.CharField(blank=True, default=None, max_length=256, null=True, verbose_name='Database version')),
-                ('url', models.URLField(blank=True, default=None, max_length=256, null=True, verbose_name='Identifier URL')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "offset",
+                    models.PositiveIntegerField(
+                        blank=True, default=0, verbose_name="Wild-type offset"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="offset",
+                        to="metadata.UniprotIdentifier",
+                        validators=[
+                            metadata.validators.validate_uniprot_identifier
+                        ],
+                        verbose_name="UniProt accession",
+                    ),
+                ),
+                (
+                    "target",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="uniprotoffset",
+                        to="genome.TargetGene",
+                        verbose_name="Target gene",
+                    ),
+                ),
             ],
-            options={
-                'verbose_name': 'UniProt accession',
-                'verbose_name_plural': 'UniProt accessions',
-            },
-        ),
-        migrations.CreateModel(
-            name='UniprotOffset',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('offset', models.PositiveIntegerField(blank=True, default=0, verbose_name='Wild-type offset')),
-                ('identifier', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='offset', to='metadata.UniprotIdentifier', validators=[metadata.validators.validate_uniprot_identifier], verbose_name='UniProt accession')),
-                ('target', models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, related_name='uniprotoffset', to='genome.TargetGene', verbose_name='Target gene')),
-            ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False},
         ),
         migrations.AlterUniqueTogether(
-            name='uniprotoffset',
-            unique_together=set([('target', 'identifier')]),
+            name="uniprotoffset",
+            unique_together=set([("target", "identifier")]),
         ),
         migrations.AlterUniqueTogether(
-            name='refseqoffset',
-            unique_together=set([('target', 'identifier')]),
+            name="refseqoffset",
+            unique_together=set([("target", "identifier")]),
         ),
         migrations.AlterUniqueTogether(
-            name='ensembloffset',
-            unique_together=set([('target', 'identifier')]),
+            name="ensembloffset",
+            unique_together=set([("target", "identifier")]),
         ),
     ]

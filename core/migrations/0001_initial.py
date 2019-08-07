@@ -11,30 +11,45 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-    ]
+    dependencies = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
 
     operations = [
         migrations.CreateModel(
-            name='FailedTask',
+            name="FailedTask",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateTimeField(auto_now_add=True)),
-                ('modification_date', models.DateTimeField(blank=True, null=True)),
-                ('name', models.CharField(max_length=125)),
-                ('full_name', models.TextField()),
-                ('args', models.TextField(blank=True, null=True)),
-                ('kwargs', models.TextField(blank=True, null=True)),
-                ('exception_class', models.TextField()),
-                ('exception_msg', models.TextField()),
-                ('traceback', models.TextField(blank=True, null=True)),
-                ('celery_task_id', models.CharField(max_length=36)),
-                ('failures', models.PositiveSmallIntegerField(default=1)),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='failed_tasks', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("creation_date", models.DateTimeField(auto_now_add=True)),
+                (
+                    "modification_date",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                ("name", models.CharField(max_length=125)),
+                ("full_name", models.TextField()),
+                ("args", models.TextField(blank=True, null=True)),
+                ("kwargs", models.TextField(blank=True, null=True)),
+                ("exception_class", models.TextField()),
+                ("exception_msg", models.TextField()),
+                ("traceback", models.TextField(blank=True, null=True)),
+                ("celery_task_id", models.CharField(max_length=36)),
+                ("failures", models.PositiveSmallIntegerField(default=1)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="failed_tasks",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-            options={
-                'ordering': ('-modification_date',),
-            },
-        ),
+            options={"ordering": ("-modification_date",)},
+        )
     ]

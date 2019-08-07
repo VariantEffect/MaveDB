@@ -5,16 +5,28 @@ from django.db import IntegrityError
 from django.test import TestCase
 
 from genome.factories import TargetGeneFactory, ReferenceGenomeFactory
-from dataset.factories import ExperimentFactory, ScoreSetFactory, ExperimentSetFactory
+from dataset.factories import (
+    ExperimentFactory,
+    ScoreSetFactory,
+    ExperimentSetFactory,
+)
 
 from ..models import Keyword
 from ..factories import (
-    KeywordFactory, DoiIdentifierFactory,
-    PubmedIdentifierFactory, SraIdentifierFactory,
-    UniprotIdentifierFactory, EnsemblIdentifierFactory,
-    RefseqIdentifierFactory, GenomeIdentifierFactory,
-    UniprotOffsetFactory, RefseqOffsetFactory, EnsemblOffsetFactory,
-    UniprotOffset, RefseqOffset, EnsemblOffset
+    KeywordFactory,
+    DoiIdentifierFactory,
+    PubmedIdentifierFactory,
+    SraIdentifierFactory,
+    UniprotIdentifierFactory,
+    EnsemblIdentifierFactory,
+    RefseqIdentifierFactory,
+    GenomeIdentifierFactory,
+    UniprotOffsetFactory,
+    RefseqOffsetFactory,
+    EnsemblOffsetFactory,
+    UniprotOffset,
+    RefseqOffset,
+    EnsemblOffset,
 )
 
 
@@ -23,6 +35,7 @@ class TestM2MRelationships(TestCase):
     Tests that M2M relationships behave as expected. Uses :class:`Keyword`
     as the driver of :class:`..models.ExternalIdentifier`
     """
+
     def setUp(self):
         self.exp_1 = ExperimentFactory()
         self.exp_1.keywords.clear()
@@ -77,6 +90,7 @@ class TestKeyword(TestCase):
     Tests basic :class:`Keyword` functionality and checks to ensure
     database integrity is maintained (no duplicates, null text, etc).
     """
+
     def test_cannot_create_duplicates(self):
         keyword = KeywordFactory()
         with self.assertRaises(IntegrityError):
@@ -114,37 +128,38 @@ class TestKeyword(TestCase):
         self.assertTrue(kw.is_attached())
         dataset.delete()
         self.assertFalse(kw.is_attached())
-        
+
     def test_get_association_count(self):
-        kw = KeywordFactory(text='blahblahblah')
+        kw = KeywordFactory(text="blahblahblah")
         self.assertEqual(kw.get_association_count(), 0)
-        
+
         exps = ExperimentSetFactory()
         _ = [kw.delete() for kw in exps.keywords.all()]
         exps.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 1)
-        
+
         exp = ExperimentFactory()
         _ = [kw.delete() for kw in exp.keywords.all()]
         exp.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 2)
-        
+
         scs = ScoreSetFactory()
         _ = [kw.delete() for kw in scs.keywords.all()]
         scs.keywords.add(kw)
         self.assertEqual(kw.get_association_count(), 3)
-        
+
         exps.keywords.clear()
         exp.keywords.clear()
         scs.keywords.clear()
         self.assertEqual(kw.get_association_count(), 0)
-        
-        
+
+
 class TestDoiIdentifierModel(TestCase):
     """
     Tests basic :class:`DoiIdentifier` functionality, specifically that the
     `save` and `format_url` methods handle DOI instances correctly.
     """
+
     def test_format_url_creates_doi_url(self):
         doi = DoiIdentifierFactory()
         url = doi.format_url()
@@ -153,8 +168,7 @@ class TestDoiIdentifierModel(TestCase):
 
     def test_save_normalises_doi(self):
         doi = DoiIdentifierFactory()
-        expected_id = idutils.normalize_pid(
-            doi.identifier, doi.IDUTILS_SCHEME)
+        expected_id = idutils.normalize_pid(doi.identifier, doi.IDUTILS_SCHEME)
         self.assertEqual(expected_id, doi.identifier)
 
     def test_save_sets_dbname_as_DOI(self):
@@ -197,31 +211,32 @@ class TestSraIdentidier(TestCase):
     Tests basic :class:`SraIdentifier` functionality, specifically that the
     `save` and `format_url` methods handle SRA instances correctly.
     """
+
     def test_format_url_creates_bioproject_ncbi_url(self):
-        sra = SraIdentifierFactory(identifier='PRJNA362734')
-        expected_url = (
-            "http://www.ebi.ac.uk/ena/data/view/{}".format(sra.identifier)
+        sra = SraIdentifierFactory(identifier="PRJNA362734")
+        expected_url = "http://www.ebi.ac.uk/ena/data/view/{}".format(
+            sra.identifier
         )
         self.assertEqual(sra.url, expected_url)
 
     def test_format_url_creates_study_ncbi_url(self):
-        sra = SraIdentifierFactory(identifier='SRP3407687')
-        expected_url = (
-            "http://www.ebi.ac.uk/ena/data/view/{id}".format(id=sra.identifier)
+        sra = SraIdentifierFactory(identifier="SRP3407687")
+        expected_url = "http://www.ebi.ac.uk/ena/data/view/{id}".format(
+            id=sra.identifier
         )
         self.assertEqual(sra.url, expected_url)
 
     def test_format_url_creates_experiment_ncbi_url(self):
-        sra = SraIdentifierFactory(identifier='SRX3407687')
-        expected_url = (
-            "http://www.ebi.ac.uk/ena/data/view/{}".format(sra.identifier)
+        sra = SraIdentifierFactory(identifier="SRX3407687")
+        expected_url = "http://www.ebi.ac.uk/ena/data/view/{}".format(
+            sra.identifier
         )
         self.assertEqual(sra.url, expected_url)
 
     def test_format_url_creates_run_ncbi_url(self):
-        sra = SraIdentifierFactory(identifier='SRR3407687')
-        expected_url = (
-            "http://www.ebi.ac.uk/ena/data/view/{id}".format(id=sra.identifier)
+        sra = SraIdentifierFactory(identifier="SRR3407687")
+        expected_url = "http://www.ebi.ac.uk/ena/data/view/{id}".format(
+            id=sra.identifier
         )
         self.assertEqual(sra.url, expected_url)
 
@@ -265,6 +280,7 @@ class TestPubmedIdentifier(TestCase):
     `save`,`format_url` and `format_reference_html` methods handle PubMed
     instances correctly.
     """
+
     def test_format_url_creates_pubmed_url(self):
         pubmed = PubmedIdentifierFactory()
         url = pubmed.format_url()
@@ -274,14 +290,15 @@ class TestPubmedIdentifier(TestCase):
     def test_save_normalises_pubmed(self):
         pubmed = PubmedIdentifierFactory()
         expected_id = idutils.normalize_pid(
-            pubmed.identifier, pubmed.IDUTILS_SCHEME)
+            pubmed.identifier, pubmed.IDUTILS_SCHEME
+        )
         self.assertEqual(expected_id, pubmed.identifier)
 
     def test_format_reference_url_hyperlinks_references(self):
         pubmed = PubmedIdentifierFactory(reference_html=None)
         fetch = metapub.PubMedFetcher()
         article = fetch.article_by_pmid(pubmed.identifier)
-        self.assertEqual(pubmed.reference_html, article.citation_html)
+        self.assertEqual(pubmed.reference_html, article.citation)
 
     def test_save_sets_dbname_as_PubMeD(self):
         pm = PubmedIdentifierFactory()
@@ -318,7 +335,6 @@ class TestPubmedIdentifier(TestCase):
 
 
 class TestUniProtIdentifier(TestCase):
-
     def test_format_url_creates_url(self):
         obj = UniprotIdentifierFactory()
         url = obj.format_url()
@@ -340,7 +356,6 @@ class TestUniProtIdentifier(TestCase):
 
 
 class TestRefSeqIdentifier(TestCase):
-
     def test_format_url_creates_url(self):
         obj = RefseqIdentifierFactory()
         url = obj.format_url()
@@ -362,7 +377,6 @@ class TestRefSeqIdentifier(TestCase):
 
 
 class TestEnsemblIdentifier(TestCase):
-
     def test_format_url_creates_url(self):
         obj = EnsemblIdentifierFactory()
         url = obj.format_url()

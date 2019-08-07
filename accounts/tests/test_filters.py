@@ -9,8 +9,8 @@ User = get_user_model()
 
 class TestUserFilter(TestCase):
     def setUp(self):
-        self.user1 = UserFactory(first_name='Alice', last_name='Mare')
-        self.user2 = UserFactory(first_name='David', last_name='Davidson')
+        self.user1 = UserFactory(first_name="Alice", last_name="Mare")
+        self.user2 = UserFactory(first_name="David", last_name="Davidson")
         self.queryset = User.objects.all()
 
     def test_empty_search_all_results(self):
@@ -34,7 +34,7 @@ class TestUserFilter(TestCase):
     def test_search_by_first_name(self):
         f = filters.UserFilter(
             queryset=self.queryset,
-            data={filters.UserFilter.FIRST_NAME: self.user1.first_name}
+            data={filters.UserFilter.FIRST_NAME: self.user1.first_name},
         )
         self.assertEqual(f.qs.count(), 1)
         self.assertIn(self.user1, f.qs)
@@ -42,7 +42,7 @@ class TestUserFilter(TestCase):
     def test_search_by_last_name(self):
         f = filters.UserFilter(
             queryset=self.queryset,
-            data={filters.UserFilter.LAST_NAME: self.user1.last_name}
+            data={filters.UserFilter.LAST_NAME: self.user1.last_name},
         )
         self.assertEqual(f.qs.count(), 1)
         self.assertIn(self.user1, f.qs)
@@ -50,7 +50,7 @@ class TestUserFilter(TestCase):
     def test_search_by_username(self):
         f = filters.UserFilter(
             queryset=self.queryset,
-            data={filters.UserFilter.USERNAME: self.user1.username}
+            data={filters.UserFilter.USERNAME: self.user1.username},
         )
         self.assertEqual(f.qs.count(), 1)
         self.assertIn(self.user1, f.qs)
@@ -58,8 +58,9 @@ class TestUserFilter(TestCase):
     def test_search_by_display_name(self):
         f = filters.UserFilter(
             queryset=self.queryset,
-            data={filters.UserFilter.DISPLAY_NAME:
-                      self.user1.profile.get_display_name()}
+            data={
+                filters.UserFilter.DISPLAY_NAME: self.user1.profile.get_display_name()
+            },
         )
         self.assertEqual(f.qs.count(), 1)
         self.assertIn(self.user1, f.qs)
@@ -68,11 +69,11 @@ class TestUserFilter(TestCase):
         f = filters.UserFilter(
             queryset=self.queryset,
             data={
-                filters.UserFilter.DISPLAY_NAME: '{},{}'.format(
+                filters.UserFilter.DISPLAY_NAME: "{},{}".format(
                     self.user1.profile.get_display_name(),
-                    self.user2.profile.get_display_name()
+                    self.user2.profile.get_display_name(),
                 )
-            }
+            },
         )
         self.assertEqual(f.qs.count(), 2)
         self.assertIn(self.user1, f.qs)
@@ -84,7 +85,7 @@ class TestUserFilter(TestCase):
             data={
                 filters.UserFilter.LAST_NAME: self.user1.last_name,
                 filters.UserFilter.FIRST_NAME: self.user2.first_name,
-            }
+            },
         )
         self.assertEqual(f.qs.count(), 0)
 
@@ -94,7 +95,7 @@ class TestUserFilter(TestCase):
             data={
                 filters.UserFilter.LAST_NAME: self.user1.last_name,
                 filters.UserFilter.FIRST_NAME: self.user1.first_name,
-            }
+            },
         )
         self.assertEqual(f.qs.count(), 1)
         self.assertIn(self.user1, f.qs.all())

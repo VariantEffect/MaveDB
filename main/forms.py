@@ -14,29 +14,24 @@ class ContactForm(forms.Form):
     """
     Contact form. Emails are send to administrators.
     """
+
     name = forms.CharField(
-        label="Preferred contact name",
-        required=True,
-        max_length=64
+        label="Preferred contact name", required=True, max_length=64
     )
     email = forms.EmailField(
         label="Contact Email",
         required=True,
         help_text="The email address you would like to be contacted with.",
-        max_length=64
+        max_length=64,
     )
-    subject = forms.CharField(
-        label="Subject",
-        required=True,
-        max_length=128
-    )
+    subject = forms.CharField(label="Subject", required=True, max_length=128)
     message = forms.CharField(
         label="Message",
         help_text="Please leave your message below.",
         required=True,
-        widget=forms.Textarea(attrs={'rows': 20})
+        widget=forms.Textarea(attrs={"rows": 20}),
     )
-    
+
     def send_mail(self):
         if self.is_bound and self.is_valid():
             name = self.cleaned_data.get("name", "")
@@ -46,23 +41,27 @@ class ContactForm(forms.Form):
             if email and message and subject and name:
                 admins = User.objects.filter(is_superuser=True).all()
                 for admin in admins:
-                    logger.debug("Sending contact email to {} from {}".format(
-                        admin.username, email))
+                    logger.debug(
+                        "Sending contact email to {} from {}".format(
+                            admin.username, email
+                        )
+                    )
                     admin.profile.email_user(
-                        subject='[MaveDB Help] ' + subject,
+                        subject="[MaveDB Help] " + subject,
                         message=message,
-                        from_email=email
+                        from_email=email,
                     )
 
                 # Send confirmation response.
-                template = 'main/message_received.html'
-                fmt_message = render_to_string(template, {
-                    'name': name,
-                    'message': message,
-                })
-                send_mail.submit_task(kwargs=dict(
-                    subject="Your message has been recieved.",
-                    message=fmt_message,
-                    from_email="noreply@mavedb.org",
-                    recipient_list=[email],
-                ))
+                template = "main/message_received.html"
+                fmt_message = render_to_string(
+                    template, {"name": name, "message": message}
+                )
+                send_mail.submit_task(
+                    kwargs=dict(
+                        subject="Your message has been recieved.",
+                        message=fmt_message,
+                        from_email="noreply@mavedb.org",
+                        recipient_list=[email],
+                    )
+                )

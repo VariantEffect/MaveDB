@@ -7,17 +7,23 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0007_auto_20181203_1303'),
-    ]
+    dependencies = [("genome", "0007_auto_20181203_1303")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='referencegenome',
-            options={'ordering': ('id',), 'verbose_name': 'Reference Genome', 'verbose_name_plural': 'Reference Genomes'},
+            name="referencegenome",
+            options={
+                "ordering": ("id",),
+                "verbose_name": "Reference Genome",
+                "verbose_name_plural": "Reference Genomes",
+            },
         ),
         migrations.AlterModelOptions(
-            name='targetgene',
-            options={'ordering': ('name',), 'verbose_name': 'Target Gene', 'verbose_name_plural': 'Target Genes'},
+            name="targetgene",
+            options={
+                "ordering": ("name",),
+                "verbose_name": "Target Gene",
+                "verbose_name_plural": "Target Genes",
+            },
         ),
     ]

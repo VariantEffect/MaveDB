@@ -16,7 +16,9 @@ from ..models.experimentset import ExperimentSet
 from ..mixins import ExperimentAjaxMixin
 
 from .base import (
-    DatasetModelView, CreateDatasetModelView, UpdateDatasetModelView
+    DatasetModelView,
+    CreateDatasetModelView,
+    UpdateDatasetModelView,
 )
 
 logger = logging.getLogger("django")
@@ -33,10 +35,11 @@ class ExperimentDetailView(DatasetModelView):
     urn : :class:`HttpRequest`
         The urn of the `Experiment` to render.
     """
+
     # Overriding from `DatasetModelView`.
     # -------
     model = Experiment
-    template_name = 'dataset/experiment/experiment.html'
+    template_name = "dataset/experiment/experiment.html"
     # -------
 
     def get_context_data(self, **kwargs):
@@ -44,8 +47,9 @@ class ExperimentDetailView(DatasetModelView):
         instance = self.get_object()
         keywords = set([kw for kw in instance.keywords.all()])
         keywords = sorted(
-            keywords, key=lambda kw: -1 * kw.get_association_count())
-        context['keywords'] = keywords
+            keywords, key=lambda kw: -1 * kw.get_association_count()
+        )
+        context["keywords"] = keywords
         return context
 
 
@@ -63,29 +67,31 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
     request : :class:`HttpRequest`
         The request object that django passes into all views.
     """
+
     # Overridden from `CreateDatasetModelView`
     # -------
     form_class = ExperimentForm
-    template_name = 'dataset/experiment/new_experiment.html'
-    model_class_name = 'Experiment'
+    template_name = "dataset/experiment/new_experiment.html"
+    model_class_name = "Experiment"
     # -------
 
     forms = {"experiment": ExperimentForm}
-    
+
     def dispatch(self, request, *args, **kwargs):
         if self.request.GET.get("experimentset", ""):
             urn = self.request.GET.get("experimentset")
             if ExperimentSet.objects.filter(urn=urn).count():
                 experimentset = ExperimentSet.objects.get(urn=urn)
                 has_permission = self.request.user.has_perm(
-                    PermissionTypes.CAN_EDIT, experimentset)
+                    PermissionTypes.CAN_EDIT, experimentset
+                )
                 if has_permission:
-                    self.kwargs['experimentset'] = experimentset
+                    self.kwargs["experimentset"] = experimentset
         return super().dispatch(request, *args, **kwargs)
 
     @transaction.atomic
     def save_forms(self, forms):
-        experiment_form = forms['experiment']
+        experiment_form = forms["experiment"]
         experiment = experiment_form.save(commit=True)
         # Save and update permissions. If no experimentset was selected,
         # by default a new experimentset is created with the current user
@@ -96,8 +102,8 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
         experiment.set_created_by(self.request.user, propagate=False)
         experiment.set_modified_by(self.request.user, propagate=False)
         experiment.save(save_parents=False)
-        
-        if not self.request.POST['experimentset']:
+
+        if not self.request.POST["experimentset"]:
             experiment.experimentset.add_administrators(self.request.user)
             propagate = True
             save_parents = True
@@ -109,19 +115,19 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
         experiment.set_modified_by(self.request.user, propagate=propagate)
         with create_revision():
             experiment.save(save_parents=save_parents)
-        self.kwargs['urn'] = experiment.urn
+        self.kwargs["urn"] = experiment.urn
         return forms
 
     def get_experiment_form_kwargs(self, key):
         return {
-            'user': self.request.user,
-            'experimentset': self.kwargs.get('experimentset', None)
+            "user": self.request.user,
+            "experimentset": self.kwargs.get("experimentset", None),
         }
 
     def get_success_url(self):
         return "{}{}".format(
             reverse_lazy("dataset:scoreset_new"),
-            "?experiment={}".format(self.kwargs['urn'])
+            "?experiment={}".format(self.kwargs["urn"]),
         )
 
 
@@ -139,11 +145,12 @@ class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetModelView):
     request : :class:`HttpRequest`
         The request object that django passes into all views.
     """
+
     # Overridden from `CreateDatasetModelView`
     # -------
     form_class = ExperimentForm
-    template_name = 'dataset/experiment/update_experiment.html'
-    model_class_name = 'Experiment'
+    template_name = "dataset/experiment/update_experiment.html"
+    model_class_name = "Experiment"
     model_class = Experiment
     # -------
 
@@ -152,27 +159,31 @@ class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetModelView):
 
     @transaction.atomic
     def save_forms(self, forms):
-        experiment_form = forms['experiment']
+        experiment_form = forms["experiment"]
         experiment = experiment_form.save(commit=True)
         experiment.set_modified_by(self.request.user, propagate=False)
         with create_revision():
             experiment.save()
-        self.kwargs['urn'] = experiment.urn
+        self.kwargs["urn"] = experiment.urn
         return forms
 
     def get_experiment_form(self, form_class, **form_kwargs):
         if self.request.method == "POST":
             if self.instance.private:
                 return ExperimentForm.from_request(
-                    self.request, self.instance, initial=None,
-                    prefix=self.prefixes.get('experiment', None)
+                    self.request,
+                    self.instance,
+                    initial=None,
+                    prefix=self.prefixes.get("experiment", None),
                 )
             else:
                 return ExperimentEditForm.from_request(
-                    self.request, self.instance, initial=None,
-                    prefix=self.prefixes.get('experiment', None)
+                    self.request,
+                    self.instance,
+                    initial=None,
+                    prefix=self.prefixes.get("experiment", None),
                 )
         else:
-            if 'user' not in form_kwargs:
-                form_kwargs.update({'user': self.request.user})
+            if "user" not in form_kwargs:
+                form_kwargs.update({"user": self.request.user})
             return form_class(**form_kwargs)

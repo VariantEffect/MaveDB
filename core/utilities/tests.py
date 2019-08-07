@@ -7,9 +7,10 @@ class TestMessageMixin:
     these tests failing. Assumes the caller has a `django.test.RequestFactory`
     attribute `self.factory`.
     """
-    def create_request(self, method='get', **kwargs):
+
+    def create_request(self, method="get", **kwargs):
         request = getattr(self.factory, method)(**kwargs)
-        setattr(request, 'session', 'session')
+        setattr(request, "session", "session")
         messages = FallbackStorage(request)
-        setattr(request, '_messages', messages)
+        setattr(request, "_messages", messages)
         return request

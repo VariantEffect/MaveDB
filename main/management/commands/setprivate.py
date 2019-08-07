@@ -6,11 +6,10 @@ from urn.models import get_model_by_urn
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--urn', type=str, help="Dataset URN",)
+        parser.add_argument("--urn", type=str, help="Dataset URN")
 
     def handle(self, *args, **kwargs):
-        urn = kwargs.get('urn', None)
+        urn = kwargs.get("urn", None)
         if urn:
             instance = get_model_by_urn(urn)
         else:

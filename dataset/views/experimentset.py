@@ -15,8 +15,9 @@ class ExperimentSetDetailView(DatasetModelView):
     urn : `str`
         The urn of the `ExperimentSet` to render.
     """
+
     # Overriding from `DatasetModelView`.
     # -------
     model = ExperimentSet
-    template_name = 'dataset/experimentset/experimentset.html'
+    template_name = "dataset/experimentset/experimentset.html"
     # -------

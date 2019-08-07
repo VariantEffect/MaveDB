@@ -1,3 +1,1 @@
-__all__ = [
-    'dataset_tags'
-]
+__all__ = ["dataset_tags"]

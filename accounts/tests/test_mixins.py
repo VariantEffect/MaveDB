@@ -20,25 +20,25 @@ class TestFunctions(TestCase):
         self.user_a = UserFactory()
         self.user_b = UserFactory()
         self.user_c = UserFactory()
-       
+
     def test_filter_anon_filters_out_anon(self):
         anon = AnonymousUser()
         result = mixins.filter_anon(User.objects.all())
         self.assertEqual(result.count(), 3)
         self.assertNotIn(anon, result)
-        
+
     def test_add_users_adds_viewers(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.VIEWER)
         self.assertIn(self.user_a, self.instance.viewers)
         self.assertNotIn(self.user_a, self.instance.editors)
         self.assertNotIn(self.user_a, self.instance.administrators)
-        
+
     def test_add_users_adds_editors(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.EDITOR)
         self.assertNotIn(self.user_a, self.instance.viewers)
         self.assertIn(self.user_a, self.instance.editors)
         self.assertNotIn(self.user_a, self.instance.administrators)
-        
+
     def test_add_users_adds_administrators(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.ADMIN)
         self.assertNotIn(self.user_a, self.instance.viewers)
@@ -59,7 +59,7 @@ class TestFunctions(TestCase):
         mixins._add_users(self.instance, self.user_a, GroupTypes.ADMIN)
         mixins._remove_users(self.instance, self.user_a, GroupTypes.ADMIN)
         self.assertNotIn(self.user_a, self.instance.administrators)
-        
+
     def test_add_list_adds_all_users(self):
         all_assigned = mixins._add_users(
             users=[self.user_a, self.user_b, self.user_c],
@@ -70,7 +70,7 @@ class TestFunctions(TestCase):
         self.assertIn(self.user_a, self.instance.administrators)
         self.assertIn(self.user_b, self.instance.administrators)
         self.assertIn(self.user_c, self.instance.administrators)
-        
+
     def test_remove_list_adds_all_users(self):
         mixins._add_users(self.instance, self.user_a, GroupTypes.ADMIN)
         mixins._add_users(self.instance, self.user_b, GroupTypes.ADMIN)
@@ -87,9 +87,9 @@ class TestFunctions(TestCase):
 
     def test_valueerror_add_or_remove_unknown_group(self):
         with self.assertRaises(ValueError):
-            mixins._add_users(self.instance, self.user_a, 'invalid')
+            mixins._add_users(self.instance, self.user_a, "invalid")
         with self.assertRaises(ValueError):
-            mixins._add_users(self.instance, self.user_a, 'invalid')
+            mixins._add_users(self.instance, self.user_a, "invalid")
 
     def test_typeerror_add_or_remove_not_supported_iterable(self):
         with self.assertRaises(TypeError):
@@ -104,6 +104,7 @@ class TestGroupPermisionMixin(TestCase):
     :class:`ExperimentSet` as the driver class. The driver class is needed so
     we can associate instances with admin/contrib/viewer group permissions.
     """
+
     def setUp(self):
         self.instance_a = ExperimentFactory()
         self.instance_b = ExperimentFactory()

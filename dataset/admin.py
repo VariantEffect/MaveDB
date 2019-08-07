@@ -39,5 +39,3 @@ class ScoreSetVersion(VersionAdmin):
 
 
 admin.site.register(models.base.PublicDatasetCounter)
-
-

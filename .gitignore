@@ -67,7 +67,6 @@ docs/_build/
 
 # Ignore secrets
 secrets.json
-!/logs/
 /.ipynb_checkpoints/regex-test-checkpoint.ipynb
 *-checkpoint.ipynb
 .ipynb_checkpoints/
@@ -75,3 +74,4 @@ secrets.json
 /uml.dot
 /cprofile/
 cprofile/*
+logs/

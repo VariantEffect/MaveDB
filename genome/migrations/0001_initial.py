@@ -12,80 +12,253 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='GenomicInterval',
+            name="GenomicInterval",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('start', models.PositiveIntegerField(default=None, validators=[django.core.validators.MinValueValidator(1, message='Start coordinate must be a positive integer.')], verbose_name='Start')),
-                ('end', models.PositiveIntegerField(default=None, validators=[django.core.validators.MinValueValidator(1, message='End coordinate must be a positive integer.')], verbose_name='End (inclusive)')),
-                ('chromosome', models.CharField(default=None, max_length=32, validators=[genome.validators.validate_chromosome], verbose_name='Chromosome identifier')),
-                ('strand', models.CharField(choices=[('+', '+'), ('-', '-')], default=None, max_length=1, validators=[genome.validators.validate_strand], verbose_name='Strand')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "start",
+                    models.PositiveIntegerField(
+                        default=None,
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                1,
+                                message="Start coordinate must be a positive integer.",
+                            )
+                        ],
+                        verbose_name="Start",
+                    ),
+                ),
+                (
+                    "end",
+                    models.PositiveIntegerField(
+                        default=None,
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                1,
+                                message="End coordinate must be a positive integer.",
+                            )
+                        ],
+                        verbose_name="End (inclusive)",
+                    ),
+                ),
+                (
+                    "chromosome",
+                    models.CharField(
+                        default=None,
+                        max_length=32,
+                        validators=[genome.validators.validate_chromosome],
+                        verbose_name="Chromosome identifier",
+                    ),
+                ),
+                (
+                    "strand",
+                    models.CharField(
+                        choices=[("+", "+"), ("-", "-")],
+                        default=None,
+                        max_length=1,
+                        validators=[genome.validators.validate_strand],
+                        verbose_name="Strand",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Reference interval',
-                'ordering': ['start'],
-                'verbose_name_plural': 'Reference intervals',
+                "verbose_name": "Reference interval",
+                "ordering": ["start"],
+                "verbose_name_plural": "Reference intervals",
             },
         ),
         migrations.CreateModel(
-            name='ReferenceGenome',
+            name="ReferenceGenome",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('short_name', models.CharField(default=None, max_length=256, validators=[genome.validators.validate_genome_short_name], verbose_name='Name')),
-                ('species_name', models.CharField(default=None, max_length=256, validators=[genome.validators.validate_organism_name], verbose_name='Species')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "short_name",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        validators=[
+                            genome.validators.validate_genome_short_name
+                        ],
+                        verbose_name="Name",
+                    ),
+                ),
+                (
+                    "species_name",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        validators=[genome.validators.validate_organism_name],
+                        verbose_name="Species",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Reference Genome',
-                'ordering': ['short_name'],
-                'verbose_name_plural': 'Reference Genomes',
+                "verbose_name": "Reference Genome",
+                "ordering": ["short_name"],
+                "verbose_name_plural": "Reference Genomes",
             },
         ),
         migrations.CreateModel(
-            name='ReferenceMap',
+            name="ReferenceMap",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('is_primary', models.BooleanField(default=False, verbose_name='Primary')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "is_primary",
+                    models.BooleanField(default=False, verbose_name="Primary"),
+                ),
             ],
             options={
-                'verbose_name': 'Reference map',
-                'verbose_name_plural': 'Reference maps',
+                "verbose_name": "Reference map",
+                "verbose_name_plural": "Reference maps",
             },
         ),
         migrations.CreateModel(
-            name='TargetGene',
+            name="TargetGene",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('name', models.CharField(default=None, max_length=256, validators=[genome.validators.validate_gene_name], verbose_name='Target name')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        default=None,
+                        max_length=256,
+                        validators=[genome.validators.validate_gene_name],
+                        verbose_name="Target name",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Target Gene',
-                'ordering': ['name'],
-                'verbose_name_plural': 'Target Genes',
+                "verbose_name": "Target Gene",
+                "ordering": ["name"],
+                "verbose_name_plural": "Target Genes",
             },
         ),
         migrations.CreateModel(
-            name='WildTypeSequence',
+            name="WildTypeSequence",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('sequence', models.TextField(default=None, validators=[genome.validators.validate_wildtype_sequence], verbose_name='Wild-type sequence')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "sequence",
+                    models.TextField(
+                        default=None,
+                        validators=[
+                            genome.validators.validate_wildtype_sequence
+                        ],
+                        verbose_name="Wild-type sequence",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Wild-type sequence',
-                'verbose_name_plural': 'Wild-type sequences',
+                "verbose_name": "Wild-type sequence",
+                "verbose_name_plural": "Wild-type sequences",
             },
         ),
     ]

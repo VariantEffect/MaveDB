@@ -17,83 +17,369 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-    ]
+    dependencies = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
 
     operations = [
         migrations.CreateModel(
-            name='Experiment',
+            name="Experiment",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('publish_date', models.DateField(default=None, null=True, verbose_name='Published on')),
-                ('approved', models.BooleanField(default=False, verbose_name='Approved')),
-                ('private', models.BooleanField(default=True, verbose_name='Private')),
-                ('last_child_value', models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(limit_value=0)])),
-                ('extra_metadata', django.contrib.postgres.fields.jsonb.JSONField(blank=True, default={}, verbose_name='Additional metadata')),
-                ('abstract_text', models.TextField(blank=True, default='', verbose_name='Abstract')),
-                ('method_text', models.TextField(blank=True, default='', verbose_name='Method description')),
-                ('short_description', models.TextField(default='', verbose_name='Short description')),
-                ('title', models.CharField(default='', max_length=250, verbose_name='Short title')),
-                ('urn', models.CharField(blank=True, default=None, max_length=64, null=True, unique=True, validators=[urn.validators.validate_mavedb_urn_experiment], verbose_name='URN')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "publish_date",
+                    models.DateField(
+                        default=None, null=True, verbose_name="Published on"
+                    ),
+                ),
+                (
+                    "approved",
+                    models.BooleanField(
+                        default=False, verbose_name="Approved"
+                    ),
+                ),
+                (
+                    "private",
+                    models.BooleanField(default=True, verbose_name="Private"),
+                ),
+                (
+                    "last_child_value",
+                    models.IntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                limit_value=0
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "extra_metadata",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        blank=True,
+                        default={},
+                        verbose_name="Additional metadata",
+                    ),
+                ),
+                (
+                    "abstract_text",
+                    models.TextField(
+                        blank=True, default="", verbose_name="Abstract"
+                    ),
+                ),
+                (
+                    "method_text",
+                    models.TextField(
+                        blank=True,
+                        default="",
+                        verbose_name="Method description",
+                    ),
+                ),
+                (
+                    "short_description",
+                    models.TextField(
+                        default="", verbose_name="Short description"
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        default="", max_length=250, verbose_name="Short title"
+                    ),
+                ),
+                (
+                    "urn",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=64,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            urn.validators.validate_mavedb_urn_experiment
+                        ],
+                        verbose_name="URN",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Experiment',
-                'verbose_name_plural': 'Experiments',
-                'permissions': (('can_view', 'Can view'), ('can_edit', 'Can edit'), ('can_manage', 'Can manage')),
+                "verbose_name": "Experiment",
+                "verbose_name_plural": "Experiments",
+                "permissions": (
+                    ("can_view", "Can view"),
+                    ("can_edit", "Can edit"),
+                    ("can_manage", "Can manage"),
+                ),
             },
             bases=(models.Model, accounts.mixins.GroupPermissionMixin),
         ),
         migrations.CreateModel(
-            name='ExperimentSet',
+            name="ExperimentSet",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('publish_date', models.DateField(default=None, null=True, verbose_name='Published on')),
-                ('approved', models.BooleanField(default=False, verbose_name='Approved')),
-                ('private', models.BooleanField(default=True, verbose_name='Private')),
-                ('last_child_value', models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(limit_value=0)])),
-                ('extra_metadata', django.contrib.postgres.fields.jsonb.JSONField(blank=True, default={}, verbose_name='Additional metadata')),
-                ('abstract_text', models.TextField(blank=True, default='', verbose_name='Abstract')),
-                ('method_text', models.TextField(blank=True, default='', verbose_name='Method description')),
-                ('short_description', models.TextField(default='', verbose_name='Short description')),
-                ('title', models.CharField(default='', max_length=250, verbose_name='Short title')),
-                ('urn', models.CharField(blank=True, default=None, max_length=64, null=True, unique=True, validators=[urn.validators.validate_mavedb_urn_experimentset], verbose_name='URN')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "publish_date",
+                    models.DateField(
+                        default=None, null=True, verbose_name="Published on"
+                    ),
+                ),
+                (
+                    "approved",
+                    models.BooleanField(
+                        default=False, verbose_name="Approved"
+                    ),
+                ),
+                (
+                    "private",
+                    models.BooleanField(default=True, verbose_name="Private"),
+                ),
+                (
+                    "last_child_value",
+                    models.IntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                limit_value=0
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "extra_metadata",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        blank=True,
+                        default={},
+                        verbose_name="Additional metadata",
+                    ),
+                ),
+                (
+                    "abstract_text",
+                    models.TextField(
+                        blank=True, default="", verbose_name="Abstract"
+                    ),
+                ),
+                (
+                    "method_text",
+                    models.TextField(
+                        blank=True,
+                        default="",
+                        verbose_name="Method description",
+                    ),
+                ),
+                (
+                    "short_description",
+                    models.TextField(
+                        default="", verbose_name="Short description"
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        default="", max_length=250, verbose_name="Short title"
+                    ),
+                ),
+                (
+                    "urn",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=64,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            urn.validators.validate_mavedb_urn_experimentset
+                        ],
+                        verbose_name="URN",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'ExperimentSet',
-                'verbose_name_plural': 'ExperimentSets',
-                'permissions': (('can_view', 'Can view'), ('can_edit', 'Can edit'), ('can_manage', 'Can manage')),
+                "verbose_name": "ExperimentSet",
+                "verbose_name_plural": "ExperimentSets",
+                "permissions": (
+                    ("can_view", "Can view"),
+                    ("can_edit", "Can edit"),
+                    ("can_manage", "Can manage"),
+                ),
             },
             bases=(models.Model, accounts.mixins.GroupPermissionMixin),
         ),
         migrations.CreateModel(
-            name='ScoreSet',
+            name="ScoreSet",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('publish_date', models.DateField(default=None, null=True, verbose_name='Published on')),
-                ('approved', models.BooleanField(default=False, verbose_name='Approved')),
-                ('private', models.BooleanField(default=True, verbose_name='Private')),
-                ('last_child_value', models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(limit_value=0)])),
-                ('extra_metadata', django.contrib.postgres.fields.jsonb.JSONField(blank=True, default={}, verbose_name='Additional metadata')),
-                ('abstract_text', models.TextField(blank=True, default='', verbose_name='Abstract')),
-                ('method_text', models.TextField(blank=True, default='', verbose_name='Method description')),
-                ('short_description', models.TextField(default='', verbose_name='Short description')),
-                ('title', models.CharField(default='', max_length=250, verbose_name='Short title')),
-                ('urn', models.CharField(blank=True, default=None, max_length=64, null=True, unique=True, validators=[urn.validators.validate_mavedb_urn_scoreset], verbose_name='URN')),
-                ('dataset_columns', django.contrib.postgres.fields.jsonb.JSONField(default={'count_columns': [], 'score_columns': ['score']}, validators=[dataset.validators.validate_scoreset_json], verbose_name='Dataset columns')),
-                ('normalised', models.BooleanField(default=False, verbose_name='Scores are normalised')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='last_created_scoreset', to=settings.AUTH_USER_MODEL, verbose_name='Created by')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "publish_date",
+                    models.DateField(
+                        default=None, null=True, verbose_name="Published on"
+                    ),
+                ),
+                (
+                    "approved",
+                    models.BooleanField(
+                        default=False, verbose_name="Approved"
+                    ),
+                ),
+                (
+                    "private",
+                    models.BooleanField(default=True, verbose_name="Private"),
+                ),
+                (
+                    "last_child_value",
+                    models.IntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(
+                                limit_value=0
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "extra_metadata",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        blank=True,
+                        default={},
+                        verbose_name="Additional metadata",
+                    ),
+                ),
+                (
+                    "abstract_text",
+                    models.TextField(
+                        blank=True, default="", verbose_name="Abstract"
+                    ),
+                ),
+                (
+                    "method_text",
+                    models.TextField(
+                        blank=True,
+                        default="",
+                        verbose_name="Method description",
+                    ),
+                ),
+                (
+                    "short_description",
+                    models.TextField(
+                        default="", verbose_name="Short description"
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        default="", max_length=250, verbose_name="Short title"
+                    ),
+                ),
+                (
+                    "urn",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=64,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            urn.validators.validate_mavedb_urn_scoreset
+                        ],
+                        verbose_name="URN",
+                    ),
+                ),
+                (
+                    "dataset_columns",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        default={
+                            "count_columns": [],
+                            "score_columns": ["score"],
+                        },
+                        validators=[dataset.validators.validate_scoreset_json],
+                        verbose_name="Dataset columns",
+                    ),
+                ),
+                (
+                    "normalised",
+                    models.BooleanField(
+                        default=False, verbose_name="Scores are normalised"
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="last_created_scoreset",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Created by",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'ScoreSet',
-                'verbose_name_plural': 'ScoreSets',
-                'permissions': (('can_view', 'Can view'), ('can_edit', 'Can edit'), ('can_manage', 'Can manage')),
+                "verbose_name": "ScoreSet",
+                "verbose_name_plural": "ScoreSets",
+                "permissions": (
+                    ("can_view", "Can view"),
+                    ("can_edit", "Can edit"),
+                    ("can_manage", "Can manage"),
+                ),
             },
             bases=(models.Model, accounts.mixins.GroupPermissionMixin),
         ),

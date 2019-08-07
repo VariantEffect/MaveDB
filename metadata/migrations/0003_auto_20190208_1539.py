@@ -7,24 +7,28 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('metadata', '0002_auto_20180510_1355'),
-    ]
+    dependencies = [("metadata", "0002_auto_20180510_1355")]
 
     operations = [
         migrations.AlterField(
-            model_name='ensembloffset',
-            name='offset',
-            field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Reference offset'),
+            model_name="ensembloffset",
+            name="offset",
+            field=models.PositiveIntegerField(
+                blank=True, default=0, verbose_name="Reference offset"
+            ),
         ),
         migrations.AlterField(
-            model_name='refseqoffset',
-            name='offset',
-            field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Reference offset'),
+            model_name="refseqoffset",
+            name="offset",
+            field=models.PositiveIntegerField(
+                blank=True, default=0, verbose_name="Reference offset"
+            ),
         ),
         migrations.AlterField(
-            model_name='uniprotoffset',
-            name='offset',
-            field=models.PositiveIntegerField(blank=True, default=0, verbose_name='Reference offset'),
+            model_name="uniprotoffset",
+            name="offset",
+            field=models.PositiveIntegerField(
+                blank=True, default=0, verbose_name="Reference offset"
+            ),
         ),
     ]

@@ -23,16 +23,16 @@ def delete(urn, request):
     """
     try:
         instance = get_model_by_urn(urn=urn)
-        if not request.user.has_perm(
-                PermissionTypes.CAN_MANAGE, instance):
+        if not request.user.has_perm(PermissionTypes.CAN_MANAGE, instance):
             raise PermissionDenied()
     except ObjectDoesNotExist:
         messages.error(request, "{} has already been deleted.".format(urn))
         return False
     except PermissionDenied:
         messages.error(
-            request, "You must be an administrator for {} to delete "
-                     "it.".format(urn))
+            request,
+            "You must be an administrator for {} to delete " "it.".format(urn),
+        )
         return False
 
     # Check doesn't have children if experiment or experimentset
@@ -42,10 +42,12 @@ def delete(urn, request):
                 "Child {child_class}s must be deleted prior "
                 "to deleting this {parent_class}."
             ).format(
-                child_class=instance.children.first().__class__
-                                    .__name__.replace('Set', ' Set'),
-                parent_class=instance.__class__
-                                    .__name__.replace('Set', ' Set'),
+                child_class=instance.children.first().__class__.__name__.replace(
+                    "Set", " Set"
+                ),
+                parent_class=instance.__class__.__name__.replace(
+                    "Set", " Set"
+                ),
             )
             messages.error(request, message)
             return False
@@ -57,7 +59,8 @@ def delete(urn, request):
             request,
             "{} cannot be deleted because it is currently being "
             "processed. Try again once your submission has "
-            "been processed.".format(instance.urn))
+            "been processed.".format(instance.urn),
+        )
         return False
 
     # Check the private status
@@ -65,19 +68,18 @@ def delete(urn, request):
         current_state = instance.processing_state
         instance.processing_state = constants.processing
         instance.save()
-        task_kwargs = dict(
-            urn=instance.urn,
-            user_pk=request.user.pk,
-        )
+        task_kwargs = dict(urn=instance.urn, user_pk=request.user.pk)
         success, _ = delete_instance.submit_task(
-            kwargs=task_kwargs,
-            request=request,
+            kwargs=task_kwargs, request=request
         )
         if success:
             messages.success(
                 request,
                 "{} has been queued for deletion. Editing has been "
-                "disabled until your submission has been processed.".format(urn))
+                "disabled until your submission has been processed.".format(
+                    urn
+                ),
+            )
             return True
         else:
             instance.processing_state = current_state
@@ -85,12 +87,13 @@ def delete(urn, request):
             messages.error(
                 request,
                 "We are experiencing server issues at the moment. Please try"
-                "again later."
+                "again later.",
             )
             return False
     else:
         messages.error(
-            request, "{} is public and cannot be deleted.".format(instance.urn))
+            request, "{} is public and cannot be deleted.".format(instance.urn)
+        )
         return False
 
 
@@ -106,23 +109,28 @@ def publish(urn, request):
     """
     try:
         instance = get_model_by_urn(urn=urn)
-        if not request.user.has_perm(
-                PermissionTypes.CAN_MANAGE, instance):
+        if not request.user.has_perm(PermissionTypes.CAN_MANAGE, instance):
             raise PermissionDenied()
     except ObjectDoesNotExist:
-        messages.error(request, "Could not find {}. It may have been "
-                                "deleted.".format(urn))
+        messages.error(
+            request,
+            "Could not find {}. It may have been " "deleted.".format(urn),
+        )
         return False
     except PermissionDenied:
         messages.error(
-            request, "You must be an administrator for {} to publish "
-                     "it.".format(urn))
+            request,
+            "You must be an administrator for {} to publish "
+            "it.".format(urn),
+        )
         return False
-    
+
     if not isinstance(instance, ScoreSet):
-        messages.error(request, "Only Score Sets can be published.".format(urn))
+        messages.error(
+            request, "Only Score Sets can be published.".format(urn)
+        )
         return False
-  
+
     # Check the processing state
     being_processed = instance.processing_state == constants.processing
     if being_processed:
@@ -130,9 +138,11 @@ def publish(urn, request):
             request,
             "{} cannot be publish because it is currently being "
             "processed. Try again once your processing has completed.".format(
-                urn))
+                urn
+            ),
+        )
         return False
-    
+
     # check if in fail state
     failed = instance.processing_state == constants.failed
     if failed:
@@ -140,9 +150,10 @@ def publish(urn, request):
             request,
             "{} cannot be publish because there were errors during "
             "the previous submission attempt. You will need to complete your "
-            "submission before publishing.".format(urn))
+            "submission before publishing.".format(urn),
+        )
         return False
-    
+
     # Check if has variants
     has_variants = instance.has_variants
     if not has_variants:
@@ -150,28 +161,26 @@ def publish(urn, request):
             request,
             "{} cannot be publish because there are no associated variants. "
             "You will need to complete your submission before "
-            "publishing.".format(urn))
+            "publishing.".format(urn),
+        )
         return False
-    
+
     # Check the private status
     if instance.private:
         current_state = instance.processing_state
         instance.processing_state = constants.processing
         instance.save()
-        task_kwargs = dict(
-            scoreset_urn=instance.urn,
-            user_pk=request.user.pk,
-        )
+        task_kwargs = dict(scoreset_urn=instance.urn, user_pk=request.user.pk)
         success, _ = publish_scoreset.submit_task(
-            kwargs=task_kwargs,
-            request=request,
+            kwargs=task_kwargs, request=request
         )
         if success:
             messages.success(
                 request,
                 "{} has been queued for publication. Editing has been "
                 "disabled until your submission has been processed. A public urn "
-                "will be assigned upon successful completion.".format(urn))
+                "will be assigned upon successful completion.".format(urn),
+            )
             return True
         else:
             instance.processing_state = current_state
@@ -179,10 +188,11 @@ def publish(urn, request):
             messages.error(
                 request,
                 "We are experiencing server issues at the moment. Please try"
-                "again later."
+                "again later.",
             )
             return False
     else:
         messages.error(
-            request, "{} is public and cannot be published again.".format(urn))
+            request, "{} is public and cannot be published again.".format(urn)
+        )
         return False

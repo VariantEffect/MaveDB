@@ -11,10 +11,9 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **kwargs):
-        path = os.path.join(settings.MAIN_DIR, 'site_info.json')
-        with open(path, 'wt') as fp:
+        path = os.path.join(settings.MAIN_DIR, "site_info.json")
+        with open(path, "wt") as fp:
             instance = SiteInformation.get_instance()
             if instance:
                 data = SiteInformationSerializer(instance).data

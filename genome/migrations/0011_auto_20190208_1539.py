@@ -9,23 +9,34 @@ import genome.validators
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('genome', '0010_auto_20190208_1528'),
-    ]
+    dependencies = [("genome", "0010_auto_20190208_1528")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='wildtypesequence',
-            options={'verbose_name': 'Reference sequence', 'verbose_name_plural': 'Reference sequences'},
+            name="wildtypesequence",
+            options={
+                "verbose_name": "Reference sequence",
+                "verbose_name_plural": "Reference sequences",
+            },
         ),
         migrations.AlterField(
-            model_name='targetgene',
-            name='wt_sequence',
-            field=models.OneToOneField(default=None, on_delete=django.db.models.deletion.PROTECT, related_name='target', to='genome.WildTypeSequence', verbose_name='Reference sequence'),
+            model_name="targetgene",
+            name="wt_sequence",
+            field=models.OneToOneField(
+                default=None,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="target",
+                to="genome.WildTypeSequence",
+                verbose_name="Reference sequence",
+            ),
         ),
         migrations.AlterField(
-            model_name='wildtypesequence',
-            name='sequence',
-            field=models.TextField(default=None, validators=[genome.validators.validate_wildtype_sequence], verbose_name='Reference sequence'),
+            model_name="wildtypesequence",
+            name="sequence",
+            field=models.TextField(
+                default=None,
+                validators=[genome.validators.validate_wildtype_sequence],
+                verbose_name="Reference sequence",
+            ),
         ),
     ]

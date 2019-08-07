@@ -134,6 +134,8 @@ the executable, and the `.stack-work` directory can be deleted to save space.
     tar xf pandoc-1.19.2.1.tar.gz
     cd pandoc-1.19.2.1
     stack setup
+    stack install
+    stack install hsb2hs
     stack build --flag pandoc:embed_data_files
     mv .stack-work/install/x86_64-linux-gmp4/lts-7.14/8.0.1/bin/pandoc /usr/local/bin/
 
@@ -151,29 +153,29 @@ repository by following the CentOS 6 instructions [here](https://github.com/rabb
 To summarize:
 
 	# In /etc/yum.repos.d/rabbitmq-erlang.repo
-	[rabbitmq-erlang]
-	name=rabbitmq-erlang
-	baseurl=https://dl.bintray.com/rabbitmq/rpm/erlang/20/el/6
-	gpgcheck=1
-	gpgkey=https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc
-	repo_gpgcheck=0
-	enabled=1
+    [rabbitmq-erlang]
+    name=rabbitmq-erlang
+    baseurl=https://dl.bintray.com/rabbitmq-erlang/rpm/erlang/22/el/6
+    gpgcheck=1
+    gpgkey=https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc
+    repo_gpgcheck=0
+    enabled=1
 
 Once you have added the additional repository you can install erlang by invoking the `yum` command
 
     sudo yum -y install erlang
     
 There are several ways to install the `rabbitmq-server`. The quickest is to download
-the `3.7.5` rpm
+the `3.7.15` rpm
 
-	wget https://dl.bintray.com/rabbitmq/all/rabbitmq-server/3.7.5/rabbitmq-server-3.7.5-1.el6.noarch.rpm
+	wget https://dl.bintray.com/rabbitmq/all/rabbitmq-server/3.7.15/rabbitmq-server-3.7.15-1.el6.noarch.rpm
    
 If you need a later version, you can check the available rps [here](https://www.rabbitmq.com/install-rpm.html#install-rabbitmq).
 Once you have downloaded the rpm, follow [these](https://www.rabbitmq.com/install-rpm.html#install-rabbitmq) instructions. To
 summarize
 
 	rpm --import https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
-	sudo yum -y install rabbitmq-server-3.7.5-1.el6.noarch.rpm
+	sudo yum -y install rabbitmq-server-3.7.15-1.el6.noarch.rpm
 
 Once the installation has completed, you will need to start the RabbitMQ service. By default,
 this service listens on port 5672, which you may need to configure. To start the daemon by default 
@@ -221,7 +223,7 @@ To clone the project. **Warning: Do not install the requirements with `sudo` as 
 will use the system python, and not the one in your mavedb environment. This
 will cause issues with mod-wsgi and Apache later on.**
 
-    git clone -b develop https://afrubin@github.com/fowlerlab/mavedb
+    git clone -b <branch-name> https://github.com/VariantEffect/mavedb
     pip3 install -r mavedb/requirements.txt
     cd mavedb
     python manage.py migrate
@@ -258,10 +260,40 @@ when Apache tries to write to the `logs` folder. Ensure that were resolved by
 giving `rwx` permission to anyone. This is not ideal in a production environment however.
 
     sudo chown 777 -R /usr/local/webapps/logs/
+	
+## Configuring celery as an unprivileged user
+You can use celery multi to run a detached worker without the fuss of managing 
+a root configuration script.
 
+    celery multi start worker1 -A mavedb --pidfile=logs/run/celery/%n.pid --logfile=logs/celery/%n%I.log --concurrency=4
+    celery multi restart worker1 -A mavedb --pidfile=logs/run/celery/%n.pid --logfile=logs/celery/%n%I.log --concurrency=4
+    celery multi stop worker1 -A mavedb --pidfile=logs/run/celery/%n.pid --logfile=logs/celery/%n%I.log --concurrency=4
+    
+For ease of use export a variable in your `.bashrc`:
 
-## Configuring Celery
-Running celery as a daemon process will requrie additional configuration. First
+    export CELERY_CONF="worker1 -A mavedb --pidfile=logs/run/celery/%n.pid --logfile=logs/celery/%n%I.log --concurrency=4"
+
+## Validating the Celery worker
+With the virtual environment created earlier active, run the command 
+`celery inspect registered`. You should see an output which looks something like:
+
+    -> worker1@ip-172-31-14-187: OK
+        * core.tasks.BaseTask
+        * core.tasks.add
+        * core.tasks.send_mail
+        * dataset.tasks.BaseCreateVariantsTask
+        * dataset.tasks.BaseDatasetTask
+        * dataset.tasks.BaseDeleteTask
+        * dataset.tasks.BasePublishTask
+        * dataset.tasks.create_variants
+        * dataset.tasks.delete_instance
+        * dataset.tasks.publish_scoreset
+
+If not, then celery is not auto-detecting tasks. Check the mavedb and log folder 
+permissions or your celery multi configration parameters.
+
+## Configuring Celery as superuser (optional)
+Running celery as a root daemon process will requrie additional configuration. First
 copy the celeryd configuration file (no extension) to `/etc/default/celeryd`. Next
 you will need to copy the celeryd bash script to `/etc/init.d/celeryd`. You may
 need to make the celeryd bash script executable
@@ -288,23 +320,6 @@ default directories
 To use the celery script
 
 	sudo /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
-
-## Selenium and Geckodriver
-Geckodriver needs to be on the system path before being able to run the webtests. Download
-and mv geckodriver to `/usr/local/bin`
-
-
-## Jenkins, Selenium and Xbvf (In-progress)
-Jenkin can be configured to periodically run a complete build-test whenever changes
-are made to the development branch. First install Jenkins
-
-```bash
-sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
-sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
-sudo yum -y update
-sudo yum install jenkins
-```
-
 
 ## Issues with SELinux
 SElinux restricted Apache's access to the mavedb project files, mavedb log files and the pandoc binary. 
@@ -400,7 +415,7 @@ session.
     alias run-rabbitmq='sudo /sbin/service rabbitmq-server'
         
     alias cd-mavedb='cd /usr/local/webapps/mavedb/'
-    alias cd-mavedb-logs='cd /usr/local/webapps/logsv/'
+    alias cd-mavedb-logs='cd /usr/local/webapps/logs/'
     alias cd-rmq-logs='cd /var/log/rabbitmq/'
     alias cd-celery-logs='cd /var/log/celery/'
     

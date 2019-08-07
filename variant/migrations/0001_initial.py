@@ -15,26 +15,78 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        ('dataset', '0001_initial'),
-    ]
+    dependencies = [("dataset", "0001_initial")]
 
     operations = [
         migrations.CreateModel(
-            name='Variant',
+            name="Variant",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('creation_date', models.DateField(default=datetime.date.today, verbose_name='Creation date')),
-                ('modification_date', models.DateField(auto_now=True, verbose_name='Modification date')),
-                ('urn', models.CharField(blank=True, default=None, max_length=64, null=True, unique=True, validators=[urn.validators.validate_mavedb_urn_variant], verbose_name='URN')),
-                ('hgvs', models.TextField(default=None, validators=[
-                    variant.validators.hgvs.validate_hgvs_string])),
-                ('data', django.contrib.postgres.fields.jsonb.JSONField(default={'count_data': {}, 'score_data': {}}, validators=[variant.validators.validate_variant_json], verbose_name='Data columns')),
-                ('scoreset', models.ForeignKey(default=None, on_delete=django.db.models.deletion.PROTECT, related_name='variants', to='dataset.ScoreSet')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "creation_date",
+                    models.DateField(
+                        default=datetime.date.today,
+                        verbose_name="Creation date",
+                    ),
+                ),
+                (
+                    "modification_date",
+                    models.DateField(
+                        auto_now=True, verbose_name="Modification date"
+                    ),
+                ),
+                (
+                    "urn",
+                    models.CharField(
+                        blank=True,
+                        default=None,
+                        max_length=64,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            urn.validators.validate_mavedb_urn_variant
+                        ],
+                        verbose_name="URN",
+                    ),
+                ),
+                (
+                    "hgvs",
+                    models.TextField(
+                        default=None,
+                        validators=[
+                            variant.validators.hgvs.validate_hgvs_string
+                        ],
+                    ),
+                ),
+                (
+                    "data",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        default={"count_data": {}, "score_data": {}},
+                        validators=[variant.validators.validate_variant_json],
+                        verbose_name="Data columns",
+                    ),
+                ),
+                (
+                    "scoreset",
+                    models.ForeignKey(
+                        default=None,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="variants",
+                        to="dataset.ScoreSet",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Variant',
-                'verbose_name_plural': 'Variants',
+                "verbose_name": "Variant",
+                "verbose_name_plural": "Variants",
             },
-        ),
+        )
     ]
