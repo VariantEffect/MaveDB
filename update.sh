@@ -1,11 +1,11 @@
 if [ "$1" != "" ]; then
-    settings="--settings=$1"
+    settings="--settings=settings.$1"
 else
     settings="--settings=settings.production"
 fi
 
 if [ "$2" != "" ]; then
-    requirements="$2"
+    requirements="$2.txt"
 else
     requirements="production.txt"
 fi
