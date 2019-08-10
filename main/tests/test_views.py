@@ -25,6 +25,15 @@ class HomePageTest(TestCase):
         response = self.client.get("/")
         self.assertTemplateUsed(response, "main/home.html")
 
+    def test_render_default_metadata_description_tag(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        tag = (
+            '<meta name="description" content="MaveDB - '
+            'A repository for MAVE assay datasets.">'
+        )
+        self.assertContains(response, tag)
+
     def test_news_items_display(self):
         n1 = NewsFactory()
         n2 = NewsFactory()
