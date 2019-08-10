@@ -10,7 +10,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="MaveDB - repository for DMS/MAVE assay datasets">
+      {% if instance.title %}
+          <meta name="description" content="{{ instance.title }}">
+      {% else %}
+          <meta name="description" content="MaveDB - A repository for MAVE assay datasets">
+      {% endif %}
     <meta name="author" content="Daniel C. Esposito, Alan F. Rubin">
     <meta name="keywords" content="dms,deep mutational scanning,mave,multiplex assays of
           variant effect,variant effect,gene,genomic,variants,functional assay,multiplex assay">
