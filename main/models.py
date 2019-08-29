@@ -278,6 +278,7 @@ class Licence(TimeStampedModel):
                 "version": version,
             },
         )
+        # Update existing.
         if not created:
             instance.short_name = short_name
             instance.long_name = long_name

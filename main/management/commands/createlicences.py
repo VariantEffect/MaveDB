@@ -16,6 +16,12 @@ class Command(BaseCommand):
 
         for licence_params in data["licences"]:
             legal = licence_params["legal_code"]
+            created = (
+                Licence.objects.filter(
+                    short_name=licence_params["short_name"]
+                ).count()
+                == 0
+            )
             licence = Licence.create_licence(
                 short_name=licence_params["short_name"],
                 long_name=licence_params["long_name"],
@@ -27,7 +33,9 @@ class Command(BaseCommand):
                 version=licence_params["version"],
             )
             sys.stdout.write(
-                "Created {}\n\n".format(
+                "{} '{}' with fields:\n{}\n\n".format(
+                    "Created" if created else "Updated",
+                    licence.short_name,
                     json.dumps(
                         {
                             "short_name": licence.short_name,
@@ -40,6 +48,6 @@ class Command(BaseCommand):
                             "version": licence.version,
                         },
                         indent=2,
-                    )
+                    ),
                 )
             )
