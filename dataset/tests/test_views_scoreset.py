@@ -72,6 +72,14 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         self.template_404 = "main/404.html"
         celery_app.conf.update(CELERY_TASK_ALWAYS_EAGER=True)
 
+    def test_title_in_metadata_description_tag(self):
+        obj = ScoreSetFactory()
+        obj = publish_dataset(obj)
+        response = self.client.get("/scoreset/{}/".format(obj.urn))
+        self.assertEqual(response.status_code, 200)
+        tag = '<meta name="description" content="{}">'.format(obj.title)
+        self.assertContains(response, tag)
+
     def test_404_status_and_template_used_when_object_not_found(self):
         obj = ScoreSetFactory()
         urn = obj.urn
