@@ -2,7 +2,8 @@
 MaveDB is a biological database for Multiplex Assays of Variant Effect (MAVE) 
 datasets. The primary installation of MaveDB is located at 
 https://www.mavedb.org. For more information about MaveDB or to cite MaveDB 
-please refer to the [MaveDB preprint](https://www.biorxiv.org/).
+please refer to the 
+[MaveDB paper in *Genome Biology*](https://doi.org/10.1186/s13059-019-1845-6).
 
 # Installation
 ## Required software
