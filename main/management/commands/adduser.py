@@ -23,8 +23,10 @@ class Command(BaseCommand):
         )
         if role not in valid_states:
             raise ValueError(
-                "Valid states are {}.".format("{} or {}".format(
-                    ", ".join(valid_states[:-1]), valid_states[-1])
+                "Valid states are {}.".format(
+                    "{} or {}".format(
+                        ", ".join(valid_states[:-1]), valid_states[-1]
+                    )
                 )
             )
 
@@ -47,4 +49,6 @@ class Command(BaseCommand):
         else:
             raise ValueError("Invalid user role.")
         instance.save()
-        sys.stderr.write("Added {} to {} with role {}.\n".format(user, instance, role))
+        sys.stdout.write(
+            "Added {} to {} with role {}.\n".format(user, instance, role)
+        )
