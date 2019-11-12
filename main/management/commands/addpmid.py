@@ -19,11 +19,12 @@ class Command(BaseCommand):
         pmid = kwargs.get("pmid", None)
         if not pmid:
             raise ValueError("A PubMed ID is required.")
-        elif not validate_pubmed_identifier(pmid):
-            raise ValueError("A valid PubMed ID is required.")
+        validate_pubmed_identifier(pmid)
 
-        pmid_instance, created = PubmedIdentifier.objects.get_or_create(identifier=pmid)
+        pmid_instance, created = PubmedIdentifier.objects.get_or_create(
+            identifier=pmid
+        )
         instance = get_model_by_urn(urn)
-        instance.pubmedids.add(pmid_instance)
+        instance.pubmed_ids.add(pmid_instance)
         instance.save()
-        sys.stderr.write("Added PMID {} to {}.\n".format(pmid, instance))
+        sys.stdout.write("Added PMID {} to {}.\n".format(pmid, instance))
