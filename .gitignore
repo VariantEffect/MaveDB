@@ -1,4 +1,5 @@
 venv/
+sphinx-venv/
 *.pyc
 staticfiles/
 /static/
