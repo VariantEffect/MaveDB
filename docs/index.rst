@@ -5,7 +5,7 @@ Welcome to MaveDB's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-    upload_guide
+   upload_guide
 
 
 Indices and tables
