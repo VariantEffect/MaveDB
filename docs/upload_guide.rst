@@ -47,10 +47,48 @@ Required information checklist
 Descriptive information
 ###################################
 
+Each experiment and score set in MaveDB should have a short description, title, abstract,
+and methods section. The title and short descriptions are required for submission, and
+the abstract and methods are strongly recommended.
+
+The short description will be displayed in the search table and should summarize the
+experimental design at a high level.
+
+The title is typically an abbreviated version of the short description, and is displayed
+at the top of the experiment or score set page.
+
+The abstract should describe the motivation and approach for the dataset at a high level.
+Some MaveDB abstracts include a summary of the results of the related publications but
+many do not. The entry describes the MAVE data rather than a full study so the submitter
+should use their judgement when deciding what details to include. When a dataset is first
+uploaded, the experiment and score set typically have the same abstract.
+
+The methods section should describe the approach in a condensed form, suitable for a
+specialist audience of MAVE researchers. Because
+
+For an experiment the methods section should include:
+
+* Variant and library construction methods
+* Description of the functional assay, including model and selection type
+* Sequencing strategy
+
+For a score set the methods section should include:
+
+* High-level description of the statistical model for converting counts to scores
+* Read filtering used
+* Normalization used, including any cutoffs applied
+* Description of any additional data columns included in the score or count table, including column naming conventions
 
 Additional metadata fields
 ###################################
 
+* Publications by PMID
+* bioRxiv by DOI as external identifier (improvements TBA)
+* JSON-format "bonus metadata" (score set only)
+* User-specified keywords
+* SRA, etc. raw data accessions (experiment only)
+* Data usage policy (score set only)
+* ???
 
 Score set targets
 ###################################
@@ -61,6 +99,9 @@ Score set targets
     sure that the full-length nucleotide sequence is the same as for your
     dataset! Typically you will only want to use an existing target that you
     created yourself.
+
+Data license
+###################################
 
 Suggestions for writing the abstract and methods
 --------------------------------------------------------
