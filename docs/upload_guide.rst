@@ -4,16 +4,22 @@ Depositing your data into MaveDB
 Understanding experiments and score sets
 -------------------------------------------
 
-MaveDB datasets are organized as experiment sets, experiments, and score sets.
+MaveDB datasets are organized into experiment sets, experiments, and score sets.
 
-**Experiment sets** do not have their own metadata and are used to group related
+Experiment sets
+###################################
+
+Experiment sets do not have their own metadata and are used to group related
 experiments, such as when different functional assays are performed on the
 same target and typically described in the same publication
 (`example <https://www.mavedb.org/experimentset/urn:mavedb:00000003/>`_).
 New experiment sets are automatically created when their first experiment is
 saved.
 
-**Experiments** are records that describe the data generated from performing a MAVE
+Experiments
+###################################
+
+Experiments are records that describe the data generated from performing a MAVE
 on a target. The descriptions and other metadata in an experiment describe the
 experimental procedure, including library construction, assay design, and
 sequencing strategy. Links to the raw data in an external resource such as the
@@ -21,28 +27,65 @@ sequencing strategy. Links to the raw data in an external resource such as the
 Importantly, experiments do not have scores directly. Instead, each experiment
 can have one or more linked score sets.
 
-**Score sets** are records that describe the process of calculating scores from raw
-data (sequencing data) and contain the variant scores and (optionally) counts.
-
-Metadata score sets
+Score sets
 ###################################
 
-Metadata score sets are a new feature in MaveDB version 1.8.0. While a normal score
-set is based on data from a single experiment, a metadata score set is instead based
+Score sets are records that describe the process of calculating scores from raw
+data (sequencing data) and contain the variant scores and (optionally) counts.
+Importantly, score sets contain the target information that describes the sequence
+used in the experiment.
+
+Meta-analysis score sets
+###################################
+
+Meta-analysis score sets are a new feature in MaveDB version 1.8.0. While a normal score
+set is based on data from a single experiment, a meta-analysis score set is instead based
 on multiple existing score sets. These score sets can be from one or more experiments
 or experiment sets.
 
-Like a regular score set, a metadata score set reports scores for a single target.
-The primary use case for metadata score sets is combining the results from two different
+Like a regular score set, a meta-analysis score set reports scores for a single target.
+The primary use case for meta-analysis score sets is combining the results from two different
 MAVEs on the same target (example TBA - *NUDT15*? *VKOR*?). This allows the uploader to
 combine multiple score sets across existing experiments or experiment sets.
 
-Another use case for metadata score sets reporting scores that have been substantially
-altered by imputation or score recalibration. In this case, the metadata score set
+Another use case for meta-analysis score sets reporting scores that have been substantially
+altered by imputation or score recalibration. In this case, the meta-analysis score set
 would be based on a single existing score set and be part of that experiment.
 
 Required information checklist
 --------------------------------------
+
+## TODO: many of these items should have links
+
+For each experiment and score set:
+
+* Short description (1-3 brief sentences)
+* Title
+* Abstract
+* Methods
+* Keywords
+* ORCID iDs for other people you want to add as contributors
+* PubMed IDs for the study reference(s) or DOIs for references not listed in PubMed (such as on bioRxiv)
+
+For each experiment you will also want:
+
+* SRA accessions or DOIs for raw sequence data (if available)
+
+For each score set you will also want:
+
+* Target information
+    * Nucleotide sequence for the target region
+    * Type (coding, non-coding)
+    * Organism the sequence is derived from (if applicable)
+    * Sequence reference genome and assembly version (if applicable)
+    * UniProt ID (if applicable)
+    * RefSeq ID (if applicable)
+    * Ensembl ID (if applicable)
+* DOIs for additional data specific to the score set (and not the experiment)
+* Variant score table
+* Variant count table (if available)
+* Choice of data license
+* Data usage policy text (if needed)
 
 Descriptive information
 ###################################
