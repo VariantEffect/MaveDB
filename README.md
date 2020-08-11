@@ -2,7 +2,8 @@
 MaveDB is a biological database for Multiplex Assays of Variant Effect (MAVE) 
 datasets. The primary installation of MaveDB is located at 
 https://www.mavedb.org. For more information about MaveDB or to cite MaveDB 
-please refer to the [MaveDB preprint](https://www.biorxiv.org/).
+please refer to the 
+[MaveDB paper in *Genome Biology*](https://doi.org/10.1186/s13059-019-1845-6).
 
 # Installation
 ## Required software
@@ -31,33 +32,9 @@ development server, then you can skip this setup and start below.
  description of OAuth and detailed instructions.
  
  ## Required Python packages
-The packages below are the base packages required to run local and live
-versions of MaveDB:
-- django==1.11.5
-- django-braces>=1.12.0
-- django-extensions>=2.0.6
-- django-guardian>=1.4.9
-- django-reversion>=2.0.9
-- django-widget-tweaks>=1.4.2
-- djangorestframework>=3.8.2
-- djangorestframework-filters>=0.10.2
-- social-auth-app-django>=1.2.0
-- factory-boy>=2.9.2
-- numpy>=1.12.1
-- celery>=4.1.1
-- flower>=0.9.2
-- psycopg2-binary
-- pypandoc>=1.4
-- selenium>=3.4.3
-- Faker>=0.7.18
-- dj-database-url
-- coverage
-- git+https://github.com/afrubin/idutils.git@bio
-- hg+http://bitbucket.org/afrubin/metapub@html_citation
-- git+https://github.com/FowlerLab/hgvs-patterns.git
+The packages required to run local and live versions of MaveDB are listed in the `requirements/base.txt` file in the repository.
 
-Running a live server using Apache requires the following additional packages:
-- mod_wsgi
+Requirements files including additional packages for local, production and staging environments are provided. These files include the base requirements file, so the appropriate file can be installed using `pip install -r requirements/<environment>.txt`.
 
  ## PostgreSQL setup
  By default the local server will use the following PostgreSQL settings:

@@ -1,4 +1,5 @@
 venv/
+sphinx-venv/
 *.pyc
 staticfiles/
 /static/
@@ -35,6 +36,12 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# mypy
+.mypy_cache/*
+
+# postgres
+*.dump
 
 # Installer logs
 pip-log.txt
@@ -75,3 +82,4 @@ secrets.json
 /cprofile/
 cprofile/*
 logs/
+.settings-*.env
