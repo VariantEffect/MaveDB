@@ -37,6 +37,12 @@ var/
 .installed.cfg
 *.egg
 
+# mypy
+.mypy_cache/*
+
+# postgres
+*.dump
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -76,3 +82,4 @@ secrets.json
 /cprofile/
 cprofile/*
 logs/
+.settings-*.env
