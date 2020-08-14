@@ -49,3 +49,8 @@ scoreset_to_variant_column = {
 processing = "processing"
 failed = "failed"
 success = "success"
+
+# User roles
+administrator = "administrator"
+editor = "editor"
+viewer = "viewer"
