@@ -1,7 +1,6 @@
 from io import StringIO
 import numpy as np
 import pandas as pd
-from pandas.io.common import _NA_VALUES
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext
@@ -36,8 +35,7 @@ from .. import utilities
 
 
 _EXTRA_NA_VALUES = set(
-    [str(x).lower() for x in _NA_VALUES]
-    + list(null_values_list)
+    list(null_values_list)
     + [str(x).lower() for x in null_values_list]
     + [str(x).upper() for x in null_values_list]
 )
@@ -196,6 +194,7 @@ def validate_variant_rows(file):
         names=header,
         skiprows=1,
         na_values=_EXTRA_NA_VALUES,
+        keep_default_na=True,
     )
     df.rename(columns=lambda x: x.strip(), inplace=True)
     if not len(df):

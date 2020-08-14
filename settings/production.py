@@ -7,10 +7,7 @@ ADMIN_ENABLED = not DEBUG
 
 USE_SOCIAL_AUTH = True
 
-os.environ.setdefault("PYPANDOC_PANDOC", "/usr/local/bin/pandoc")
-
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "www.mavedb.org", "mavedb.org"]
-
+ALLOWED_HOSTS += ["www.mavedb.org", "mavedb.org"]
 
 # Email these users whenever an exception is raised causing a 500 error.
 # This will email the stack trace.
@@ -26,20 +23,6 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "mavedb",
-        "USER": get_secret("database_user"),
-        "PASSWORD": get_secret("database_password"),
-        "HOST": get_secret("database_host"),
-        "PORT": get_secret("database_port"),
-    }
-}
-
 # Set up logging
 LOGGING = {
     "version": 1,
@@ -54,31 +37,31 @@ LOGGING = {
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/data/mavedb_project/mavedb/info.log",
+            "filename": "logs/info.log",
             "formatter": "verbose",
         },
         "celery": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/data/mavedb_project/mavedb/celery.log",
+            "filename": "logs/celery.log",
             "formatter": "verbose",
         },
         "core.tasks": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/data/mavedb_project/mavedb/celery_core_tasks.log",
+            "filename": "logs/celery_core_tasks.log",
             "formatter": "verbose",
         },
         "accounts.tasks": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/data/mavedb_project/mavedb/celery_accounts_tasks.log",
+            "filename": "logs/celery_accounts_tasks.log",
             "formatter": "verbose",
         },
         "dataset.tasks": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "/data/mavedb_project/mavedb/celery_dataset_tasks.log",
+            "filename": "logs/celery_dataset_tasks.log",
             "formatter": "verbose",
         },
     },
@@ -112,7 +95,10 @@ LOGGING = {
 # Celery needs these in each settings file
 CELERY_TASK_SOFT_TIME_LIMIT = 7 * 24 * 60 * 60  # 7 days
 CELERY_TASK_TIME_LIMIT = CELERY_TASK_SOFT_TIME_LIMIT
-CELERY_BROKER_URL = "amqp://localhost:5672//"
+CELERY_BROKER_URL = "amqp://{host}:{port}//".format(
+    host=os.getenv("APP_BROKER_HOST", "localhost"),
+    port=os.getenv("APP_BROKER_PORT", "5672"),
+)
 CELERY_ACCEPT_CONTENT = ("pickle", "application/x-python-serialize", "json")
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -144,7 +130,6 @@ INSTALLED_APPS = [
     "django_filters",
     "tracking",
     "import_export",
-    "mod_wsgi.server",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

@@ -74,6 +74,8 @@ docs/_build/
 
 # Ignore secrets
 secrets.json
+.settings-*.env
+
 /.ipynb_checkpoints/regex-test-checkpoint.ipynb
 *-checkpoint.ipynb
 .ipynb_checkpoints/
@@ -82,4 +84,3 @@ secrets.json
 /cprofile/
 cprofile/*
 logs/
-.settings-*.env
