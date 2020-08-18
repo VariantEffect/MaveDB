@@ -1,7 +1,7 @@
 # Quick start
 Welcome to MaveDB; a place where all your wildest dreams will come true. This is a short guide on
 how to set up your development environment. Windows is not supported due to the Celery package not
-supporting Windows but you could potentially use WSL2 to host your developmnent environment and then
+supporting Windows, but you could potentially use WSL2 to host your developmnent environment and then
 develop from within Windows. However, at the time of writing this guide, my PC is apprently 'Not 
 yet ready for the Windows 10 2004 update', which contains the WSL2 update. Therefore, if you
 would like to proceed with a WSL2 development environment so you can play Steam games between 
@@ -26,7 +26,7 @@ the **develop** branch, unless you enjoy pushing updates right into production, 
 If you're eager to start developing new features, you may notice a red bloodbath of squiggly lines 
 and PyCharm having a fit about uninstalled packages; not so fast, you'll need to setup up your 
 project interpreter first. Go to `File > Settings > Project: <branch> > Project Interpreter` and 
-click the gear icon at the top right and click `Add`. Create a new virtual environment pointing to 
+click the gear icon at the top right, then click `Add`. Create a new virtual environment pointing to 
 python 3.6 (You can install additional python versions using [pyenv](https://github.com/pyenv/pyenv-installer)).
 
 Done! Now open up a terminal within PyCharm and run `pip install -r requirements/development.txt`.
@@ -46,15 +46,16 @@ settings input box to `settings/development.py`.
 
 ## Settings file
 
-This project now uses `.env` files to configure project settings, like database connections, 
+This project now uses `.env` files to configure project settings like database connections, 
 allowed hosts, celery configuration etc. There is a template file waiting for you in the `settings`
-directory. Create a new file in the same directory called `.settings-development.env` and then cut 
+directory. Create a new file in the same directory called `.settings-development.env` and then copy 
 and paste the template into this file. The most important ones are the database and broker connection 
-settings. Please choose your favourite database password and username; They can be anything, so let 
+settings. Please choose your favourite database password and username; they can be anything, so let 
 your wildest dreams become a reality! However, the database name must be `mavedb`. As for the broker 
 and database ports, I've used 5763 and 5433 respectively. You can change these to whatever your like, 
 as long as your remain consistent in the next step. The remaining settings can be adjusted to 
-whatever you like. Gunicorn settings are not required for development so you may ignore these.
+whatever you like, except for `CELERY_PROJECT`. Gunicorn settings are not required for development 
+so you may ignore these.
 
 ## Docker
 
@@ -81,7 +82,8 @@ Do this everytime you want to start working on the project, but only once per sy
 
 ## Seeding the database
 
-Please run the following commands to in a PyCharm terminal to initialize the database:
+Please run the following commands to in a PyCharm terminal to initialize the database and check 
+everything is working:
 
 ```shell script
 python manage.py migrate \
@@ -101,7 +103,7 @@ docker exec -i \
   pg_restore -Fc \ 
   -U ${MAVEDB_DB_USER} \
   -d ${MAVEDB_DB_NAME} \
-  < "/home/daniel/Desktop/m_test/mavedb_2020_07_28.dump"
+  < "<path to your database dump>"
 ```
 
 You can find your docker-compose database container name by typing `docker ps` in the terminal and
