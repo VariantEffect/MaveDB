@@ -1,10 +1,10 @@
 # Quick start
 Welcome to MaveDB; a place where all your wildest dreams will come true. This is a short guide on
 how to set up your development environment. Windows is not supported due to the Celery package not
-supporting Windows, but you could potentially use WSL2 to host your developmnent environment and then
-develop from within Windows. However, at the time of writing this guide, my PC is apprently 'Not 
+supporting Windows, but you could potentially use WSL2 to host your development environment and then
+develop from within Windows. However, at the time of writing this guide, my PC is apparently 'Not 
 yet ready for the Windows 10 2004 update', which contains the WSL2 update. Therefore, if you
-would like to proceed with a WSL2 development environment so you can play Steam games between 
+would like to proceed with a WSL2 development environment so you can play Origin games while 
 running the test suite, good luck.
 
 ## Requirements
@@ -13,6 +13,7 @@ system package version dependencies. So, please install the following software:
 
 - Docker
 - Docker Compose
+- geckodriver (required for tests)
 
 Consult the official documentation on how to do this. These may require the installation of 
 additional system packages on Linux/MacOS.
@@ -27,10 +28,12 @@ If you're eager to start developing new features, you may notice a red bloodbath
 and PyCharm having a fit about uninstalled packages; not so fast, you'll need to setup up your 
 project interpreter first. Go to `File > Settings > Project: <branch> > Project Interpreter` and 
 click the gear icon at the top right, then click `Add`. Create a new virtual environment pointing to 
-python 3.6 (You can install additional python versions using [pyenv](https://github.com/pyenv/pyenv-installer)).
+Python 3.6> You can install additional python versions using 
+[pyenv](https://github.com/pyenv/pyenv-installer) or, if you're running Ubuntu, from the 
+[deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa).
 
 Done! Now open up a terminal within PyCharm and run `pip install -r requirements/development.txt`.
-Your envrionment is now ready to roll. 
+Your environment is now ready to roll. 
 
 ### Auto-formatting
 
@@ -60,16 +63,19 @@ so you may ignore these.
 ## Docker
 
 Docker expects a few environment variables when running the database and broker services. The file
-`host_env.sh` contains a template for you to copy into your shell profile. Do not modify this file 
-since it is tracked by git. The settings I've exported in my bash profile for development are:
+`host_env.sh` contains a template for you to use with [direnv](https://direnv.net/) or copy into your
+profile directly. Do not modify this file since it is tracked by version control. The environment
+variables needed by the development environment are:
 
-```shell
+```shell script
 export MAVEDB_DB_USER=whatever_you_set_from_last_step
 export MAVEDB_DB_PASSWORD=whatever_you_set_from_last_step
 export MAVEDB_DB_PORT=whatever_you_set_from_last_step
 export MAVEDB_DB_NAME=mavedb
 export MAVEDB_BROKER_PORT=whatever_you_set_from_last_step
 ```
+
+The remaining entries in this file are for the production database and can be ignored.
 
 Refresh your shell environment as these are referenced by the docker compose file. Speaking of 
 which, to run the development server and test suite, you'll need to start the services with:
@@ -82,16 +88,24 @@ Do this everytime you want to start working on the project, but only once per sy
 
 ## Seeding the database
 
-Please run the following commands to in a PyCharm terminal to initialize the database and check 
-everything is working:
+The following commands will initialize the database and set up the website. You will need to
+either add the option `--settings=settings.development` to each `manage.py` command so that
+Django uses the right settings file, or add `export DJANGO_SETTINGS_MODULE=settings.development`
+to your .envrc (if you're using direnv) or bash profile.
 
 ```shell script
 python manage.py migrate \
   && python manage.py updatesiteinfo \
   && python manage.py createlicences \
   && python manage.py createreferences \
-  && python manage.py collectstatic \
-  && python manage.py test
+  && python manage.py collectstatic
+```
+
+The following command will run the tests. Note that the Selenium tests may fail unexpectedly
+if the test browser is interacted with.
+
+```shell script
+python manage.py test
 ```
 
 Developing with a copy of the production database is not a half bad idea, since we can test on
