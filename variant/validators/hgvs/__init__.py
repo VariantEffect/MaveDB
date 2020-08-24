@@ -8,13 +8,16 @@ or p.[Leu4Gly;Gly7Leu]
 """
 from functools import partial
 
-from hgvsp import multi_variant_re, single_variant_re, is_multi
-from hgvsp.constants import dna_prefix, rna_prefix, protein_prefix
-
 from django.core.exceptions import ValidationError
+from hgvsp import is_multi, protein, dna, infer_level, Level
+from hgvsp.constants import (
+    protein_prefix,
+    genomic_prefix,
+    non_coding_prefix,
+    coding_prefix,
+)
 
 from core.utilities import is_null
-
 from ...constants import wt_or_sy
 
 
@@ -22,25 +25,35 @@ def validate_multi_variant(hgvs):
     """Validate a multi variant. Raises error if None."""
     if hgvs in wt_or_sy:
         return
-    match = multi_variant_re.fullmatch(hgvs)
+
+    if infer_level(hgvs) == Level.PROTEIN:
+        match = protein.multi_variant_re.fullmatch(hgvs)
+    elif infer_level(hgvs) == Level.DNA:
+        match = dna.multi_variant_re.fullmatch(hgvs)
+    else:
+        match = None
+
     if not match:
-        raise ValidationError(
-            "'{}' is not a supported HGVS syntax.".format(hgvs)
-        )
+        raise ValidationError(f"'{hgvs}' is not supported HGVS syntax.")
 
 
 def validate_single_variant(hgvs):
     """Validate a single variant. Raises error if None."""
     if hgvs in wt_or_sy:
         return
-    match = single_variant_re.fullmatch(hgvs)
+
+    if infer_level(hgvs) == Level.PROTEIN:
+        match = protein.single_variant_re.fullmatch(hgvs)
+    elif infer_level(hgvs) == Level.DNA:
+        match = dna.single_variant_re.fullmatch(hgvs)
+    else:
+        match = None
+
     if not match:
-        raise ValidationError(
-            "'{}' is not a supported HGVS syntax.".format(hgvs)
-        )
+        raise ValidationError(f"'{hgvs}' is not supported HGVS syntax.")
 
 
-def validate_hgvs_string(value, level=None):
+def validate_hgvs_string(value, column=None, tx_present=False):
     if is_null(value):
         return
     if isinstance(value, bytes):
@@ -51,18 +64,46 @@ def validate_hgvs_string(value, level=None):
             "'{}' has the type '{}'.".format(value, type(value).__name__)
         )
 
+    if value in wt_or_sy:
+        return
+
     if is_multi(value):
         validate_multi_variant(value)
     else:
         validate_single_variant(value)
 
-    if level == "nt" and value not in wt_or_sy:
-        if value[0] not in dna_prefix + rna_prefix:
-            raise ValidationError("{} is not a valid nucleotide syntax.")
-    elif level == "p" and value not in wt_or_sy:
+    if column == "nt":
+        if tx_present:
+            if value[0] not in genomic_prefix:
+                raise ValidationError(
+                    f"'{value}' is not a genomic variant (prefix 'g.'). "
+                    f"Nucletotide variants must be genomic if transcript "
+                    f"variants are also defined."
+                )
+        else:
+            if value[0] not in coding_prefix + non_coding_prefix:
+                raise ValidationError(
+                    f"'{value}' is not a transcript variant. The accepted "
+                    f"transcript variant prefixes are 'c.', 'n.'."
+                )
+    elif column == "tx":
+        if value[0] not in coding_prefix + non_coding_prefix:
+            raise ValidationError(
+                f"'{value}' is not a transcript variant. The accepted "
+                f"transcript variant prefixes are 'c.', 'n.'."
+            )
+    elif column == "p":
         if value[0] not in protein_prefix:
-            raise ValidationError("{} is not a valid protein syntax.")
+            raise ValidationError(
+                f"'{value}' is not a protein variant. The accepted "
+                f"protein variant prefix is 'p.'."
+            )
+    else:
+        raise ValueError(
+            "Unknown column '{}'. Expected nt, tx or p".format(column)
+        )
 
 
-validate_nt_variant = partial(validate_hgvs_string, **{"level": "nt"})
-validate_pro_variant = partial(validate_hgvs_string, **{"level": "p"})
+validate_nt_variant = partial(validate_hgvs_string, **{"column": "nt"})
+validate_tx_variant = partial(validate_hgvs_string, **{"column": "tx"})
+validate_pro_variant = partial(validate_hgvs_string, **{"column": "p"})
