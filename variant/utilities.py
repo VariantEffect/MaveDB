@@ -1,13 +1,11 @@
 import re
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from hgvsp import protein, dna, rna
 from pandas.testing import assert_index_equal
 
-from hgvsp import protein, dna, rna
-
 from core.utilities import is_null
-
 from .constants import wildtype, synonymous
 
 
@@ -173,6 +171,7 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
     from dataset.constants import (
         hgvs_nt_column,
         hgvs_pro_column,
+        hgvs_tx_column,
         variant_count_data,
         variant_score_data,
     )
@@ -213,12 +212,18 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
 
         for (sr, cr) in zip(score_records, count_records):
             hgvs_nt = sr.pop(hgvs_nt_column)
+            hgvs_tx = sr.pop(hgvs_tx_column)
             hgvs_pro = sr.pop(hgvs_pro_column)
+
             if is_null(hgvs_nt) or hgvs_nt is np.NaN or hgvs_nt == "nan":
                 hgvs_nt = None
+            if is_null(hgvs_tx) or hgvs_tx is np.NaN or hgvs_tx == "nan":
+                hgvs_tx = None
             if is_null(hgvs_pro) or hgvs_pro is np.NaN or hgvs_pro == "nan":
                 hgvs_pro = None
+
             cr.pop(hgvs_nt_column)
+            cr.pop(hgvs_tx_column)
             cr.pop(hgvs_pro_column)
 
             # Postgres JSON field cannot store np.NaN values so convert
@@ -237,6 +242,7 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
             }
             variant = {
                 hgvs_nt_column: hgvs_nt,
+                hgvs_tx_column: hgvs_tx,
                 hgvs_pro_column: hgvs_pro,
                 "data": data,
             }
