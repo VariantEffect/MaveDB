@@ -87,8 +87,10 @@ def validate_at_least_one_additional_column(header, label=None, msg=None):
             msg = (
                 "Your %(label)s file must define at "
                 "least one additional column different "
-                "from '{}' and '{}'.".format(
-                    constants.hgvs_nt_column, constants.hgvs_pro_column
+                "from '{}', '{}' and '{}'.".format(
+                    constants.hgvs_nt_column,
+                    constants.hgvs_tx_column,
+                    constants.hgvs_pro_column,
                 )
             )
             params = {"label": label}
@@ -125,6 +127,10 @@ def validate_datasets_define_same_variants(scores, counts):
         assert_array_equal(
             scores[constants.hgvs_nt_column].sort_values().values,
             counts[constants.hgvs_nt_column].sort_values().values,
+        )
+        assert_array_equal(
+            scores[constants.hgvs_tx_column].sort_values().values,
+            counts[constants.hgvs_tx_column].sort_values().values,
         )
         assert_array_equal(
             scores[constants.hgvs_pro_column].sort_values().values,
