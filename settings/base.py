@@ -1,7 +1,5 @@
 # settings/base.py
 import os
-import json
-import sys
 
 # Set path for pypandoc
 os.environ.setdefault("PYPANDOC_PANDOC", "/usr/bin/pandoc")
@@ -10,7 +8,6 @@ os.environ.setdefault("PYPANDOC_PANDOC", "/usr/bin/pandoc")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ALLOWED_HOSTS = os.getenv("APP_ALLOWED_HOSTS", "127.0.0.1 localhost").split(" ")
-sys.stdout.write(', '.join(ALLOWED_HOSTS))
 
 BASE_URL = os.getenv("APP_BASE_URL", "localhost:8000")
 API_BASE_URL = os.getenv("APP_API_BASE_URL", "localhost:8000/api")
