@@ -7,7 +7,9 @@ os.environ.setdefault("PYPANDOC_PANDOC", "/usr/bin/pandoc")
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-ALLOWED_HOSTS = os.getenv("APP_ALLOWED_HOSTS", "127.0.0.1 localhost").split(" ")
+ALLOWED_HOSTS = os.getenv("APP_ALLOWED_HOSTS", "127.0.0.1 localhost").split(
+    " "
+)
 
 BASE_URL = os.getenv("APP_BASE_URL", "localhost:8000")
 API_BASE_URL = os.getenv("APP_API_BASE_URL", "localhost:8000/api")
@@ -139,7 +141,9 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
     },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"
+    },
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"
     },
