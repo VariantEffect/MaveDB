@@ -29,7 +29,9 @@ USE_TZ = True
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-CACHES = {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}
+}
 
 # Database - fetch settings from dotenv file to override from local env if not
 # in docker
@@ -122,7 +124,7 @@ CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
-CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_COMPRESSION = "gzip"
 
