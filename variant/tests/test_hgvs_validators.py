@@ -90,18 +90,33 @@ class TestValidateHgvsString(TestCase):
         with self.assertRaises(ValidationError):
             hgvs.validate_hgvs_string(1.0)
 
+    def test_error_unknown_level(self):
+        with self.assertRaises(ValueError):
+            hgvs.validate_hgvs_string("c.1A>G", column="random")
+
+    def test_error_level_does_not_match_tx(self):
+        with self.assertRaises(ValidationError):
+            hgvs.validate_hgvs_string("g.G4L", column="tx")
+
+    def test_error_nt_is_not_g_when_tx_present(self):
+        hgvs.validate_hgvs_string("c.1A>G", column="nt", tx_present=False)
+        with self.assertRaises(ValidationError):
+            hgvs.validate_hgvs_string("c.1A>G", column="nt", tx_present=True)
+
     def test_error_level_does_not_match_nt(self):
         with self.assertRaises(ValidationError):
-            hgvs.validate_hgvs_string("p.G4L", level="nt")
+            hgvs.validate_hgvs_string("p.G4L", column="nt")
 
     def test_error_level_does_not_match_pro(self):
         with self.assertRaises(ValidationError):
-            hgvs.validate_hgvs_string("c.1A>G", level="p")
+            hgvs.validate_hgvs_string("c.1A>G", column="p")
 
     def test_passes_on_special_types(self):
         hgvs.validate_hgvs_string(constants.wildtype)
         hgvs.validate_hgvs_string(constants.synonymous)
 
     def test_validates_valid_hgvs(self):
-        hgvs.validate_hgvs_string("c.1A>G")
-        hgvs.validate_hgvs_string("p.G4L")
+        hgvs.validate_hgvs_string("c.1A>G", column="nt", tx_present=False)
+        hgvs.validate_hgvs_string("g.1A>G", column="nt", tx_present=True)
+        hgvs.validate_hgvs_string("c.1A>G", column="tx")
+        hgvs.validate_hgvs_string("p.G4L", column="p")

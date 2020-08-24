@@ -99,12 +99,14 @@ class TestCreateVariantsTask(TestCase):
     def setUp(self):
         self.user = UserFactory()
         self.scoreset = ScoreSetFactory()
-        self.hgvs_nt = generate_hgvs(prefix="c")
+        self.hgvs_nt = generate_hgvs(prefix="p")
+        self.hgvs_tx = generate_hgvs(prefix="c")
         self.hgvs_pro = generate_hgvs(prefix="p")
         self.df_scores = pd.DataFrame(
             {
                 constants.hgvs_nt_column: [self.hgvs_nt],
                 constants.hgvs_pro_column: [self.hgvs_pro],
+                constants.hgvs_tx_column: [self.hgvs_tx],
                 "score": 1.1,
             }
         )
@@ -112,6 +114,7 @@ class TestCreateVariantsTask(TestCase):
             {
                 constants.hgvs_nt_column: [self.hgvs_nt],
                 constants.hgvs_pro_column: [self.hgvs_pro],
+                constants.hgvs_tx_column: [self.hgvs_tx],
                 "counts": 10,
             }
         )
@@ -224,6 +227,7 @@ class TestDeleteInstance(TestCase):
         exp = self.scoreset.parent
         exp.processing_state = constants.processing
         exp.save()
+
         delete_instance.apply(
             kwargs=dict(urn=self.scoreset.parent.urn, user_pk=self.user.pk)
         )

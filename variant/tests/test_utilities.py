@@ -118,6 +118,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: nt_score,
                 constants.hgvs_pro_column: pro_score,
+                constants.hgvs_tx_column: [None] * len(nt_score),
                 constants.required_score_column: [3.1, 3.2],
             },
             index=nt_score if index == constants.hgvs_nt_column else pro_score,
@@ -126,6 +127,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: nt_count,
                 constants.hgvs_pro_column: pro_count,
+                constants.hgvs_tx_column: [None] * len(nt_count),
                 "count": [1, 2],
             },
             index=nt_count if index == constants.hgvs_nt_column else pro_count,
@@ -155,6 +157,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.1A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.1
@@ -165,6 +168,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.2A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.2
@@ -182,6 +186,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.1A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.1
@@ -192,6 +197,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.2A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.2
@@ -213,6 +219,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.1A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.1
@@ -223,6 +230,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.2A>G",
                 constants.hgvs_pro_column: "p.G2L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.2
@@ -244,6 +252,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.2A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.1
@@ -254,6 +263,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.1A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.2
@@ -271,6 +281,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.1A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.1
@@ -281,6 +292,7 @@ class TestCreateVariantAttrsUtility(TestCase):
             {
                 constants.hgvs_nt_column: "c.2A>G",
                 constants.hgvs_pro_column: "p.G1L",
+                constants.hgvs_tx_column: None,
                 "data": {
                     constants.variant_score_data: {
                         constants.required_score_column: 3.2
@@ -337,11 +349,15 @@ class TestCreateVariantAttrsUtility(TestCase):
         d1, d2 = self.fixture_data()
 
         d1[constants.hgvs_pro_column] = np.NaN
+        d1[constants.hgvs_tx_column] = np.NaN
         d2[constants.hgvs_pro_column] = np.NaN
+        d2[constants.hgvs_tx_column] = np.NaN
+
         d1[constants.required_score_column] = np.NaN
         d2["count"] = np.NaN
 
         variants = utilities.convert_df_to_variant_records(d1, d2)
+
         self.assertIsNone(
             variants[0]["data"][constants.variant_score_data][
                 constants.required_score_column
@@ -351,11 +367,13 @@ class TestCreateVariantAttrsUtility(TestCase):
             variants[0]["data"][constants.variant_count_data]["count"]
         )
         self.assertIsNone(variants[0][constants.hgvs_pro_column])
+        self.assertIsNone(variants[0][constants.hgvs_tx_column])
 
+        self.assertIsNone(
+            variants[1]["data"][constants.variant_count_data]["count"]
+        )
+        self.assertIsNone(
+            variants[1]["data"][constants.variant_count_data]["count"]
+        )
         self.assertIsNone(variants[1][constants.hgvs_pro_column])
-        self.assertIsNone(
-            variants[1]["data"][constants.variant_count_data]["count"]
-        )
-        self.assertIsNone(
-            variants[1]["data"][constants.variant_count_data]["count"]
-        )
+        self.assertIsNone(variants[1][constants.hgvs_tx_column])

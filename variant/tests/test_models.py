@@ -60,6 +60,11 @@ class TestVariant(TestCase):
         with self.assertRaises(ValidationError):
             var.full_clean()
 
+    def test_validation_error_nt_does_not_use_g_when_tx_present(self):
+        var = VariantFactory(hgvs_nt="c.1A>G", hgvs_tx="c.1A>G")
+        with self.assertRaises(ValidationError):
+            var.full_clean()
+
     def test_variant_created_with_tmp_urn(self):
         scs = ScoreSetFactory()
         obj = VariantFactory(scoreset=scs)
