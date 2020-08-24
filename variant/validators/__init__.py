@@ -1,12 +1,11 @@
 from io import StringIO
+
 import numpy as np
 import pandas as pd
-
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext
 
 from core.utilities import is_null, null_values_list, format_column
-
 from dataset.constants import (
     hgvs_pro_column,
     hgvs_nt_column,
@@ -16,6 +15,7 @@ from dataset.constants import (
     count_columns,
     variant_count_data,
     required_score_column,
+    hgvs_tx_column,
 )
 from dataset.validators import (
     read_header_from_io,
@@ -23,16 +23,12 @@ from dataset.validators import (
     validate_has_hgvs_in_header,
     validate_header_contains_no_null_columns,
 )
-
 from .hgvs import (
     validate_multi_variant,
     validate_single_variant,
-    validate_nt_variant,
-    validate_pro_variant,
+    validate_hgvs_string,
 )
-
 from .. import utilities
-
 
 _EXTRA_NA_VALUES = set(
     list(null_values_list)
@@ -48,6 +44,21 @@ def validate_hgvs_nt_uniqueness(df):
         dup_list = [
             "{} ({})".format(x, y)
             for x, y in zip(df.loc[dups, hgvs_nt_column], dups.index[dups])
+        ]
+        raise ValidationError(
+            "duplicate HGVS nucleotide strings found: {}".format(
+                ", ".join(sorted(dup_list))
+            )
+        )
+
+
+def validate_hgvs_tx_uniqueness(df):
+    """Validate that hgvs columns only define a variant once."""
+    dups = df.loc[:, hgvs_tx_column].duplicated(keep=False)
+    if np.any(dups):
+        dup_list = [
+            "{} ({})".format(x, y)
+            for x, y in zip(df.loc[dups, hgvs_tx_column], dups.index[dups])
         ]
         raise ValidationError(
             "duplicate HGVS nucleotide strings found: {}".format(
@@ -131,7 +142,7 @@ def validate_variant_json(dict_):
 def validate_columns_are_numeric(df):
     """Checks non-hgvs columns for float or int data."""
     for column in df.columns:
-        if column in [hgvs_pro_column, hgvs_nt_column]:
+        if column in hgvs_columns:
             continue
         else:
             if not (
@@ -152,6 +163,8 @@ def validate_variant_rows(file):
         1) Datatypes of rows must be either int, float or NoneType
         2) HGVS string is a valid hgvs string,
         3) Hgvs does not appear more than once in rows
+        4) Validate hgvs_tx is present with hgvs_nt
+        5) Validate g. prefix in hgvs_nt is accompanied by n./c. in hgvs_tx
 
     Variant strings must be `double-quoted` to ignore splitting multi-mutants
     on commas.
@@ -218,6 +231,32 @@ def validate_variant_rows(file):
     # selected when _nt is not provided.
     defines_nt_hgvs = hgvs_nt_column in df.columns
     defines_p_hgvs = hgvs_pro_column in df.columns
+    defines_tx_hgvs = hgvs_tx_column in df.columns
+
+    if defines_nt_hgvs:
+        prefixes = {
+            str(x).split(".")[0].lower() for x in df[hgvs_nt_column].values
+        }
+
+        if ("c" in prefixes or "n" in prefixes) and "g" in prefixes:
+            raise ValidationError(
+                "Genomic variants (prefix 'g.') cannot be mixed with "
+                "transcript variants (prefix 'c.' or 'n.')."
+            )
+
+        if prefixes == {"g"} and not defines_tx_hgvs:
+            raise ValidationError(
+                "Transcript variants ('hgvs_tx' column) are required when "
+                "specifying genomic variants (prefix 'g.' in the 'hgvs_nt' "
+                "column)."
+            )
+
+    if defines_tx_hgvs and not defines_nt_hgvs:
+        raise ValidationError(
+            "Genomic variants ('hgvs_nt' column) must be defined when "
+            "specifying transcript variants ('hgvs_tx' column)."
+        )
+
     if defines_nt_hgvs and defines_p_hgvs:
         primary_hgvs_column = hgvs_nt_column
     elif defines_p_hgvs and not defines_nt_hgvs:
@@ -228,11 +267,15 @@ def validate_variant_rows(file):
     # Apply variant formatting. Replace null type with None and strip.
     if defines_nt_hgvs:
         df[hgvs_nt_column] = df.loc[:, hgvs_nt_column].apply(
-            utilities.format_variant
+            utilities.format_variant, normalize=False
         )
     if defines_p_hgvs:
         df[hgvs_pro_column] = df.loc[:, hgvs_pro_column].apply(
-            utilities.format_variant
+            utilities.format_variant, normalize=False
+        )
+    if defines_tx_hgvs:
+        df[hgvs_tx_column] = df.loc[:, hgvs_tx_column].apply(
+            utilities.format_variant, normalize=False
         )
 
     # Check that the primary column is fully specified.
@@ -251,9 +294,13 @@ def validate_variant_rows(file):
 
     # Validate variants where applicable
     if defines_nt_hgvs:
-        df.loc[:, hgvs_nt_column].apply(validate_nt_variant)
+        df.loc[:, hgvs_nt_column].apply(
+            validate_hgvs_string, column="nt", tx_present=defines_tx_hgvs
+        )
+    if defines_tx_hgvs:
+        df.loc[:, hgvs_tx_column].apply(validate_hgvs_string, column="tx")
     if defines_p_hgvs:
-        df.loc[:, hgvs_pro_column].apply(validate_pro_variant)
+        df.loc[:, hgvs_pro_column].apply(validate_hgvs_string, column="p")
 
     # Finally validate all other columns are numeric.
     validate_columns_are_numeric(df)
@@ -263,6 +310,8 @@ def validate_variant_rows(file):
         df[hgvs_nt_column] = None
     if hgvs_pro_column not in df.columns:
         df[hgvs_pro_column] = None
+    if hgvs_tx_column not in df.columns:
+        df[hgvs_tx_column] = None
 
     sorted_columns = [v for v in df.columns if v in hgvs_columns]
     sorted_columns += list(
