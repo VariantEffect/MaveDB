@@ -1,31 +1,25 @@
-from django.contrib.postgres.fields import JSONField
+from billiard.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
-
-from billiard.exceptions import SoftTimeLimitExceeded
 
 from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
     delete_all_groups_for_instance,
 )
-
 from core.models import FailedTask
 from core.utilities import base_url
-
+from dataset import constants as constants
 from main.models import Licence
-
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
-
-from dataset import constants as constants
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json, WordLimitValidator
-
 
 User = get_user_model()
 
@@ -283,6 +277,7 @@ class ScoreSet(DatasetModel):
     def score_columns(self):
         return [
             constants.hgvs_nt_column,
+            constants.hgvs_tx_column,
             constants.hgvs_pro_column,
         ] + self.dataset_columns[constants.score_columns]
 
@@ -290,6 +285,7 @@ class ScoreSet(DatasetModel):
     def count_columns(self):
         return [
             constants.hgvs_nt_column,
+            constants.hgvs_tx_column,
             constants.hgvs_pro_column,
         ] + self.dataset_columns[constants.count_columns]
 
