@@ -9,7 +9,12 @@ or p.[Leu4Gly;Gly7Leu]
 from functools import partial
 
 from django.core.exceptions import ValidationError
-from hgvsp import is_multi, protein, dna, infer_level, Level
+
+from hgvsp import is_multi, infer_level, Level
+from hgvsp.dna import single_variant_re as dna_single_re
+from hgvsp.dna import multi_variant_re as dna_multi_re
+from hgvsp.protein import single_variant_re as protein_single_re
+from hgvsp.protein import multi_variant_re as protein_multi_re
 from hgvsp.constants import (
     protein_prefix,
     genomic_prefix,
@@ -27,9 +32,9 @@ def validate_multi_variant(hgvs):
         return
 
     if infer_level(hgvs) == Level.PROTEIN:
-        match = protein.multi_variant_re.fullmatch(hgvs)
+        match = protein_multi_re.fullmatch(hgvs)
     elif infer_level(hgvs) == Level.DNA:
-        match = dna.multi_variant_re.fullmatch(hgvs)
+        match = dna_multi_re.fullmatch(hgvs)
     else:
         match = None
 
@@ -43,9 +48,9 @@ def validate_single_variant(hgvs):
         return
 
     if infer_level(hgvs) == Level.PROTEIN:
-        match = protein.single_variant_re.fullmatch(hgvs)
+        match = protein_single_re.fullmatch(hgvs)
     elif infer_level(hgvs) == Level.DNA:
-        match = dna.single_variant_re.fullmatch(hgvs)
+        match = dna_single_re.fullmatch(hgvs)
     else:
         match = None
 
