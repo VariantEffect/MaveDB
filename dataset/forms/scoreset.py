@@ -111,14 +111,21 @@ class ScoreSetForm(DatasetModelForm):
         required=False,
         label="Variant score data",
         help_text=(
-            "A valid CSV file containing variant score information. "
-            "The file must at least specify the columns 'hgvs_nt' or 'hgvs_pro' "
-            "(or both) and 'score'. There are no constraints on other column "
-            "names. Apart from the 'hgvs' column, all data must be numeric.\n\n"
+            "A valid CSV file containing variant score information. The file "
+            "must at least specify the columns 'hgvs_nt' or 'hgvs_pro' (or "
+            "both) and 'score'. There are no constraints on other column "
+            "names. Apart from the hgvs columns, all data must be numeric. "
+            "You may additionally specify a 'hgvs_tx' column containing "
+            "transcript variants with a 'n.' or 'c.' prefix. If a 'hgvs_tx' "
+            "column is present, the 'hgvs_nt' column must only contain "
+            "variants with a 'g.' prefix. Conversely, if your 'hgvs_nt' "
+            "column only specifies 'g.' variants, a 'hgvs_nt' column must "
+            "also be supplied as described above."
+            "\n\n"
             "Row scores that are empty, whitespace or the strings {} "
-            "(case-insensitive) will be converted to a null score. The columns "
-            "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
-            "the count file below."
+            "(case-insensitive) will be converted to a null score. The "
+            "columns 'hgvs_nt' and 'hgvs_pro' must define the same variants "
+            "as those in the count file below."
         ).format(", ".join(readable_null_values)),
         validators=[
             validate_scoreset_score_data_input,
@@ -130,14 +137,15 @@ class ScoreSetForm(DatasetModelForm):
         required=False,
         label="Variant count data",
         help_text=(
-            "A valid CSV file containing variant count information. "
-            "The file must at least specify the column 'hgvs_nt' or 'hgvs_pro' "
-            "(or both) and one additional column containing numeric count data. "
-            "There are no constraints on the other column names.\n\n"
+            "A valid CSV file containing variant count information. The hgvs"
+            "columns in this file must adhere to the same requirements as the"
+            "scores file. Non-hgvs columns must contain numeric count data, "
+            "and there are no name requirements for these columns."
+            "\n\n"
             "Row counts that are empty, whitepace or any of the strings {} "
-            "(case-insensitive) will be converted to a null score. The columns "
-            "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
-            "the score file above."
+            "(case-insensitive) will be converted to a null score. The "
+            "columns 'hgvs_nt' and 'hgvs_pro' must define the same variants "
+            "as those in the score file above."
         ).format(", ".join(readable_null_values)),
         validators=[
             validate_scoreset_count_data_input,
@@ -308,9 +316,11 @@ class ScoreSetForm(DatasetModelForm):
         score_file = self.cleaned_data.get("score_data", None)
         if not score_file:
             return pd.DataFrame(), None
-        non_hgvs_columns, primary_hgvs_column, score_df = validate_variant_rows(
-            score_file
-        )
+        (
+            non_hgvs_columns,
+            primary_hgvs_column,
+            score_df,
+        ) = validate_variant_rows(score_file)
         self.dataset_columns[constants.score_columns] = non_hgvs_columns
         return score_df, primary_hgvs_column
 
