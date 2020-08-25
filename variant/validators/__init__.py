@@ -3,7 +3,6 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext
 
 from core.utilities import is_null, null_values_list, format_column
 from dataset.constants import (
@@ -35,6 +34,26 @@ _EXTRA_NA_VALUES = set(
     + [str(x).lower() for x in null_values_list]
     + [str(x).upper() for x in null_values_list]
 )
+
+
+def validate_columns_match(variant, scoreset):
+    """
+    Validate that a child matches parents defined columns to keep
+    data in sync.
+    """
+    try:
+        if not variant.score_columns != scoreset.score_columns:
+            raise ValidationError(
+                f"Variant defines score columns '{variant.score_columns}' "
+                f"but parent defines columns '{scoreset.score_columns}. "
+            )
+        if not variant.count_columns != scoreset.count_columns:
+            raise ValidationError(
+                f"Variant defines count columns '{variant.count_columns}' "
+                f"but parent defines columns '{scoreset.count_columns}. "
+            )
+    except KeyError as error:
+        raise ValidationError(error)
 
 
 def validate_hgvs_nt_uniqueness(df):
@@ -111,7 +130,7 @@ def validate_variant_json(dict_):
     for key in expected_keys:
         if key not in dict_.keys():
             raise ValidationError(
-                ugettext("Missing the required key '%(key)'."),
+                "Missing the required key '%(key)'.",
                 params={"data": dict_, "key": key},
             )
 
@@ -125,7 +144,7 @@ def validate_variant_json(dict_):
     if len(extras) > 0:
         extras = [k for k in dict_.keys() if k not in expected_keys]
         raise ValidationError(
-            ugettext("Encountered unexpected keys '%(extras)s'."),
+            "Encountered unexpected keys '%(extras)s'.",
             params={"extras": extras},
         )
 
@@ -134,7 +153,7 @@ def validate_variant_json(dict_):
         if not isinstance(dict_[key], dict):
             type_ = type(dict_[key]).__name__
             raise ValidationError(
-                ugettext("Value for '%(key)' must be a dict not %(type)s."),
+                "Value for '%(key)' must be a dict not %(type)s.",
                 params={"key": key, "type": type_},
             )
 
