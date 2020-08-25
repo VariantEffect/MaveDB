@@ -26,15 +26,11 @@ class TestValidateMulti(TestCase):
         hgvs.validate_multi_variant("m.[123A>G;19del]")
         hgvs.validate_multi_variant("n.[123A>G;19del]")
 
-    def test_can_validate_rna_multi(self):
-        hgvs.validate_multi_variant("r.[123a>g;19del]")
-        hgvs.validate_multi_variant("r.[123a>g,19del]")
-
     def test_validationerror_invalid_multi(self):
         with self.assertRaises(ValidationError):
             hgvs.validate_multi_variant("c.[1A>G]")
         with self.assertRaises(ValidationError):
-            hgvs.validate_multi_variant("r.1a>u")
+            hgvs.validate_multi_variant("r.[1a>u,2a>u]")
 
     def test_validationerror_mixed_multi(self):
         with self.assertRaises(ValidationError):
@@ -64,9 +60,11 @@ class TestValidateSingle(TestCase):
         hgvs.validate_single_variant("m.19_21insXXX")
         hgvs.validate_single_variant("n.123_127delinsAAA")
 
-    def test_can_validate_rna_multi(self):
-        hgvs.validate_single_variant("r.123a>g")
-        hgvs.validate_single_variant("r.19del")
+    def test_does_not_validate_rna(self):
+        with self.assertRaises(ValidationError):
+            hgvs.validate_single_variant("r.123a>g")
+        with self.assertRaises(ValidationError):
+            hgvs.validate_multi_variant("r.[19del,20del]")
 
     def test_validationerror_invalid_multi(self):
         with self.assertRaises(ValidationError):
