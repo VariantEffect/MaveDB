@@ -210,6 +210,8 @@ def format_csv_rows(variants, columns, dtype, na_rep="NA"):
                 value = str(variant.hgvs_nt)
             elif column_key == constants.hgvs_pro_column:
                 value = str(variant.hgvs_pro)
+            elif column_key == constants.hgvs_tx_column:
+                value = str(variant.hgvs_tx)
             elif column_key == "accession":
                 value = str(variant.urn)
             else:
@@ -303,8 +305,8 @@ def format_response(response, scoreset, dtype):
             "either 'scores' or 'counts'.".format(dtype)
         )
 
-    # 'hgvs_nt', 'hgvs_pro', 'urn' are present by default, hence <= 2
-    if not variants or len(columns) <= 3:
+    # 'hgvs_nt', 'hgvs_tx', 'hgvs_pro', 'urn' are present by default
+    if not variants or len(columns) <= 4:
         return response
 
     rows = format_csv_rows(variants, columns=columns, dtype=type_column)

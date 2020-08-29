@@ -315,6 +315,16 @@ class TestFormatCSVRows(TestCase):
         for v, row in zip(vs, rows):
             self.assertEqual(v.hgvs_nt, row[constants.hgvs_nt_column])
 
+    def test_dicts_include_tx_hgvs(self):
+        vs = [VariantFactory() for _ in range(5)]
+        rows = views.format_csv_rows(
+            vs,
+            columns=["score", constants.hgvs_tx_column],
+            dtype=constants.variant_score_data,
+        )
+        for v, row in zip(vs, rows):
+            self.assertEqual(v.hgvs_tx, row[constants.hgvs_tx_column])
+
     def test_dicts_include_pro_hgvs(self):
         vs = [VariantFactory() for _ in range(5)]
         rows = views.format_csv_rows(
@@ -401,7 +411,14 @@ class TestFormatResponse(TestCase):
 
         called_dtype = patch.call_args[1]["dtype"]
         called_columns = patch.call_args[1]["columns"]
-        expected_columns = ["accession"] + self.instance.score_columns
+        expected_columns = [
+            "accession",
+            constants.hgvs_nt_column,
+            constants.hgvs_tx_column,
+            constants.hgvs_pro_column,
+            "score",
+            "se",
+        ]
         self.assertEqual(called_dtype, constants.variant_score_data)
         self.assertListEqual(called_columns, expected_columns)
 
@@ -419,7 +436,14 @@ class TestFormatResponse(TestCase):
 
         called_dtype = patch.call_args[1]["dtype"]
         called_columns = patch.call_args[1]["columns"]
-        expected_columns = ["accession"] + self.instance.count_columns
+        expected_columns = [
+            "accession",
+            constants.hgvs_nt_column,
+            constants.hgvs_tx_column,
+            constants.hgvs_pro_column,
+            "count",
+            "se",
+        ]
         self.assertEqual(called_dtype, constants.variant_count_data)
         self.assertListEqual(called_columns, expected_columns)
 
