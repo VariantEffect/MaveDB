@@ -58,16 +58,17 @@
 
   <div class="identifier-offset-form-group">
     <h4>Target identifiers</h4>
-      <p class="text-muted">
-        Associate an external identifier with your target. Select an existing
-        identifier from the dropdown list or type in a new one and press enter.
-      </p>
-      <p class="text-muted">
-        The reference offset is added to each position in the reference
-        sequence to place it within the given target. Reference offset should be
-        in amino acids for protein identifiers.
-      </p>
+    <p class="text-muted">
+      Associate an external identifier with your target. Select an existing
+      identifier from the dropdown list or type in a new one and press enter.
+    </p>
+    <p class="text-muted">
+      The reference offset is added to each position in the reference
+      sequence to place it within the given target. Reference offset should be
+      in amino acids for protein identifiers.
+    </p>
   </div>
+  <div id="sge-warning" class="alert alert-warning" role="alert" hidden></div>
   <div class="uniprot-offset-form-group">
     {% include 'core/bs_inline_form.html' with form=uniprot_offset_form %}
   </div>
