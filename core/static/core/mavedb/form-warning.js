@@ -8,11 +8,20 @@ $(document).ready(function () {
   });
   
   function warn_sge_missing_metadata(results, file) {
-    let tx_column_index = results.data[0].indexOf('hgvs_tx');
+    if (
+      (has_tx_variants(results.data) || has_genomic_variants(results.data)) &&
+      metadata_is_empty()
+    ) {
+      display_warnings();
+    }
+  }
+  
+  function has_tx_variants(data) {
+    let tx_column_index = data[0].indexOf('hgvs_tx');
     if (tx_column_index < 0) return;
     
     let tx_variants = new Set()
-    results.data.slice(1,).forEach(function (row) {
+    data.slice(1).forEach(function (row) {
       if (row[tx_column_index] != null) {
         tx_variants.add(row[tx_column_index]);
       }
@@ -20,14 +29,42 @@ $(document).ready(function () {
     
     // Check if any tx variants are supplied. If not, return since we don't need to then do a
     // further check for metadata presence.
-    if (
-      tx_variants.size === 0 ||
-      tx_variants.size === 1 && ['c', 'n'].indexOf(Array.from(tx_variants)[0][0]) < 0
-    ) {
-      console.log('This is not the SGE dataset you are looking for, move along.');
-      return;
-    }
+    let has_tx_variants = Array.from(tx_variants).some(function (variant) {
+      return variant.toString().startsWith('n.') || variant.toString().startsWith('c.')
+    })
     
+    if (tx_variants.size === 0 || !has_tx_variants) {
+      console.log('There are no transcript variants.');
+      return false;
+    }
+    return true;
+  }
+  
+  function has_genomic_variants(data) {
+    let nt_column_index = data[0].indexOf('hgvs_nt');
+    if (nt_column_index < 0) return;
+    
+    let nt_variants = new Set()
+    data.slice(1).forEach(function (row) {
+      if (row[nt_column_index] != null) {
+        nt_variants.add(row[nt_column_index]);
+      }
+    });
+    
+    // Check if any g. variants are supplied. If not, return since we don't need to then do a
+    // further check for metadata presence.
+    let has_g_variants = Array.from(nt_variants).some(function (variant) {
+      return variant.toString().startsWith('g.')
+    })
+    
+    if (nt_variants.size === 0 || !has_g_variants) {
+      console.log('There are no genomic variants.');
+      return false;
+    }
+    return true;
+  }
+  
+  function metadata_is_empty() {
     let refseq = $("#id_refseq-offset-identifier").val();
     let uniprot = $("#id_uniprot-offset-identifier").val();
     let ensembl = $("#id_ensembl-offset-identifier").val();
@@ -36,10 +73,7 @@ $(document).ready(function () {
     let uniprot_blank = (uniprot === "") || (uniprot == null)
     let ensembl_blank = (ensembl === "") || (ensembl == null)
     
-    if (refseq_blank && uniprot_blank && ensembl_blank) {
-      console.log(refseq, uniprot, ensembl);
-      display_warnings();
-    }
+    return refseq_blank && uniprot_blank && ensembl_blank
   }
   
   function display_warnings() {
