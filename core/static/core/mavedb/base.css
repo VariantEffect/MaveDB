@@ -663,8 +663,11 @@ input[name*='offset'] {
 
 
 /* Select overrides */
-.select2-selection, .select2-selection--single {
+.select2-selection--single {
   height: 40px !important;
+}
+.select2-selection--multiple {
+  height: auto;
 }
 .select2-selection__rendered {
   line-height: 36px !important;
@@ -696,7 +699,6 @@ span.select2-selection.select2-selection--multiple ul.select2-selection__rendere
 .fa-spinner {
   animation: spinner 1s linear infinite;
 }
-
 
 .two-columns {
     margin-top: 1rem;
