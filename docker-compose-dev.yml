@@ -21,19 +21,19 @@ services:
     image: postgres:9.6
     restart: always
     ports:
-      - ${MAVEDB_DB_PORT}:5432
+      - $MAVEDB_DB_PORT:5432
     volumes:
       - dev-database-data:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: ${MAVEDB_DB_USER}
-      POSTGRES_PASSWORD: ${MAVEDB_DB_PASSWORD}
-      POSTGRES_DB: ${MAVEDB_DB_NAME}
+      POSTGRES_USER: $MAVEDB_DB_USER
+      POSTGRES_PASSWORD: $MAVEDB_DB_PASSWORD
+      POSTGRES_DB: $MAVEDB_DB_NAME
 
   broker:
     image: rabbitmq:3.8.3
     restart: always
     ports:
-      - ${MAVEDB_BROKER_PORT}:5672
+      - $MAVEDB_BROKER_PORT:5672
 
 volumes:
   dev-database-data:
