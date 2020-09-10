@@ -53,7 +53,7 @@ RUN mkdir -p ${CELERY_PID_DIR}
 RUN useradd -m ${APP_USER}
 RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y build-essential
-RUN apt-get install -y git mercurial wget curl vim pandoc 
+RUN apt-get install -y git wget curl pandoc
 
 # Create application subdirectories
 WORKDIR ${APP_SOURCE}
@@ -62,6 +62,7 @@ RUN mkdir ${HOME}/database
 
 COPY ${HOST_SRC}/requirements/base.txt .
 COPY ${HOST_SRC}/requirements/${DJANGO_REQUIREMENTS}.txt .
+RUN pip3 install --no-cache-dir wheel
 RUN pip3 install --no-cache-dir -r ${DJANGO_REQUIREMENTS}.txt
 
 ###############################################################################
