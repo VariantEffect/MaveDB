@@ -1,17 +1,15 @@
 import pandas as pd
-
 from django.test import TestCase, RequestFactory
-from accounts.factories import UserFactory
 
+from accounts.factories import UserFactory
 from main.models import Licence
 from variant.factories import generate_hgvs, VariantFactory
-
+from .utility import make_files
 from .. import constants
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm, ErrorMessages
+from ..models.scoreset import ScoreSet
 from ..utilities import publish_dataset
-
-from .utility import make_files
 
 
 class TestScoreSetForm(TestCase):
@@ -101,6 +99,115 @@ class TestScoreSetForm(TestCase):
 
         instance = form.save(commit=True)
         self.assertEqual(instance.parent.pk, data["experiment"])
+
+    def test_cannot_link_to_experiment_and_meta_analysis_children(self):
+        data, files = self.make_post_data()
+
+        child1, child2 = ScoreSetFactory(), ScoreSetFactory()
+        child1 = publish_dataset(child1)
+        child2 = publish_dataset(child2)
+
+        data["meta_analysis_for"] = [child1.pk, child2.pk]
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            ErrorMessages.MetaAnalysis.experiment_present, str(form.errors)
+        )
+
+    def test_need_more_than_one_meta_analysis_child(self):
+        data, files = self.make_post_data()
+
+        child = ScoreSetFactory()
+        child = publish_dataset(child)
+        data["experiment"] = None
+        data["meta_analysis_for"] = [child.pk]
+
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn(ErrorMessages.MetaAnalysis.too_few, str(form.errors))
+
+    def test_cant_link_to_other_meta_analysis(self):
+        data, files = self.make_post_data()
+
+        meta, child = ScoreSetFactory(), ScoreSetFactory()
+        meta, child = publish_dataset(meta), publish_dataset(child)
+        meta.meta_analysis_for.add(child)
+
+        data["experiment"] = None
+        data["meta_analysis_for"] = [meta.pk, child.pk]
+
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn("select a valid choice", str(form.errors).lower())
+        self.assertIn(child.urn, str(form.errors).lower())
+
+    def test_cant_link_to_private_when_creating_meta_analysis(self):
+        data, files = self.make_post_data()
+
+        child = ScoreSetFactory(private=True)
+        data["experiment"] = None
+        data["meta_analysis_for"] = [child.pk]
+
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn("select a valid choice", str(form.errors).lower())
+        self.assertIn(child.urn, str(form.errors).lower())
+
+    def test_meta_analysis_cannot_self_reference(self):
+        data, files = self.make_post_data()
+
+        i = publish_dataset(ScoreSetFactory())
+        data["experiment"] = None
+        data["meta_analysis_for"] = [i.pk]
+
+        form = ScoreSetForm(data=data, instance=i, files=files, user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn("select a valid choice", str(form.errors).lower())
+
+    def test_new_meta_creates_new_parents(self):
+        data, files = self.make_post_data()
+
+        existing, child1, child2, child3 = (
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+        )
+        existing.meta_analysis_for.add(child1, child2, child3)
+
+        data["experiment"] = None
+        data["meta_analysis_for"] = [child1.pk, child2.pk]
+
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
+
+        s = form.save(commit=True)
+        self.assertEqual(s.parent.id, child3.parent.parent.id + 1)
+        self.assertEqual(s.parent.parent.id, child3.parent.parent.id + 1)
+        self.assertIn(child1, s.meta_analysis_for.all())
+        self.assertIn(child2, s.meta_analysis_for.all())
+
+    def test_existing_meta_uses_existing_parents(self):
+        data, files = self.make_post_data()
+
+        existing, child1, child2 = (
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+        )
+        existing.meta_analysis_for.add(child1, child2)
+
+        data["experiment"] = None
+        data["meta_analysis_for"] = [child1.pk, child2.pk]
+
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
+
+        s = form.save(commit=True)
+        self.assertEqual(s.parent.id, existing.parent.parent.id)
+        self.assertEqual(s.parent.parent.id, existing.parent.parent.id)
+        self.assertIn(child1, s.meta_analysis_for.all())
+        self.assertIn(child2, s.meta_analysis_for.all())
 
     def test_error_replaces_does_not_match_experiment_selection(self):
         data, files = self.make_post_data()
@@ -506,7 +613,7 @@ class TestScoreSetForm(TestCase):
         self.assertEqual(exp2.urn, instance.parent.urn)
 
     def test_invalid_set_replaces_that_is_not_member_of_a_changed_experiment(
-        self
+        self,
     ):
         exp = ExperimentFactory()
         obj = ScoreSetFactory(experiment=exp)
@@ -572,8 +679,8 @@ class TestScoreSetForm(TestCase):
         self.assertTrue(form.is_valid())
         self.assertTrue(form.has_variants())
 
-    def test_form_has_variants_is_false_when_no_files_uploaded_and_scoreset_has_variants(
-        self
+    def test_has_variants_is_false_when_no_files_uploaded_and_scoreset_has_variants(
+        self,
     ):
         data, files = self.make_post_data()
         instance = ScoreSetFactory()
@@ -586,8 +693,8 @@ class TestScoreSetForm(TestCase):
         self.assertTrue(form.is_valid())
         self.assertFalse(form.has_variants())
 
-    def test_invalid_form_no_variants_on_existing_scoreset_and_no_files_uploaded(
-        self
+    def test_invalid_no_variants_on_existing_scoreset_and_no_files_uploaded(
+        self,
     ):
         data, files = self.make_post_data()
         instance = ScoreSetFactory()
@@ -598,7 +705,7 @@ class TestScoreSetForm(TestCase):
         self.assertFalse(form.has_variants())
 
     def test_valid_form_variants_on_existing_scoreset_and_no_files_uploaded(
-        self
+        self,
     ):
         data, files = self.make_post_data()
         instance = ScoreSetFactory()

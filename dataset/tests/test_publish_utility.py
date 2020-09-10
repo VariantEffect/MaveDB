@@ -48,6 +48,18 @@ class TestPublishDataset(TestCase):
         self.assertFalse(obj.private)
         self.assertTrue(obj.has_public_urn)
 
+    def test_publish_scoreset_creates_meta_analysis_parent(self):
+        meta, child1, child2 = (
+            ScoreSetFactory(),
+            ScoreSetFactory(),
+            ScoreSetFactory(),
+        )
+        meta.meta_analysis_for.add(child1, child2)
+        obj = publish_dataset(meta)
+        self.assertFalse(obj.private)
+        self.assertTrue(obj.has_public_urn)
+        self.assertEqual(obj.urn, "urn:mavedb:00000001-0-1")
+
     def test_publish_scoreset_propagates_to_parents(self):
         obj = ScoreSetFactory()
         obj = publish_dataset(obj)
