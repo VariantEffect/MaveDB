@@ -20,10 +20,9 @@ Faker==0.8.15
 coverage==4.5.1
 idutils==1.1.0
 urllib3==1.24.3
-hg+https://bitbucket.org/metapub/metapub@6fe5735
-git+https://github.com/VariantEffect/hgvs-patterns.git
+metapub==0.5.5
+git+https://github.com/VariantEffect/hgvs-patterns.git@0.4a
 lxml==4.3.5
-eutils==0.5.0
-psycopg2-binary
-pandas
-numpy
+psycopg2-binary==2.8.6
+pandas==1.1.2
+numpy==1.19.1
