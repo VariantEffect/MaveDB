@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
@@ -22,9 +23,9 @@ def assign_public_urn(experimentset):
     """
     Assigns a public urn of the form urn:mavedb:0000000X. Blocks until it can
     place of lock the passed experimentset and `PublicDatasetCounter` singleton.
-    
+
     Does nothing if passed model is already public.
-    
+
     Parameters
     ----------
     experimentset : `ExperimentSet`
@@ -98,9 +99,38 @@ class ExperimentSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    @classmethod
+    def meta_analyses(cls):
+        o = cls.objects.annotate(
+            experiments__scoresets__meta_analysis_for_count=Count(
+                "experiments__scoresets__meta_analysis_for"
+            )
+        )
+        return o.filter(experiments__scoresets__meta_analysis_for_count__gt=0)
+
+    @classmethod
+    def non_meta_analyses(cls):
+        o = cls.objects.annotate(
+            experiments__scoresets__meta_analysis_for_count=Count(
+                "experiments__scoresets__meta_analysis_for"
+            )
+        )
+        return o.exclude(experiments__scoresets__meta_analysis_for_count__gt=0)
+
     @property
     def children(self):
         return self.experiments.all()
+
+    @property
+    def is_parent_of_meta_analysis(self):
+        from .experiment import Experiment
+
+        return (
+            Experiment.meta_analyses()
+            .filter(id__in=self.children.all())
+            .count()
+            > 0
+        )
 
     def public_experiments(self):
         return self.children.exclude(private=True)
