@@ -1,6 +1,7 @@
 import string
 from functools import reduce
 
+from django.db.models import Count
 from django.shortcuts import reverse
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_delete
@@ -28,7 +29,8 @@ def assign_public_urn(experiment):
     """
     Assigns a public urn of the form <parent_urn>-[a-z]+ Blocks until it can
     place of lock the passed experiment and experimentset parent. Assumes that
-    the parent is already public with a public urn.
+    the parent is already public with a public urn. If the experiment has a
+    meta-analysis child, then <parent_urn>-0 is assigned.
 
     Does nothing if passed model is already public.
 
@@ -36,7 +38,7 @@ def assign_public_urn(experiment):
     ----------
     experiment : `Experiment`
         The experiment instance to assign a public urn to.
-        
+
     Raises
     ------
     `AttributeError` : Parent does not have a public urn.
@@ -63,13 +65,20 @@ def assign_public_urn(experiment):
                 "Cannot assign a public urn when parent has a temporary urn."
             )
 
-        # Convert child_value to a letter (a-z)
-        child_value = parent.last_child_value + 1
-        suffix = ""
-        x = child_value
-        while x > 0:
-            x, y = divmod(x - 1, len(string.ascii_lowercase))
-            suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
+        if experiment.is_parent_of_meta_analysis:
+            suffix = "0"
+            # Do not increment for meta-analysis, since this is a singleton
+            # dummy experiment for a meta-analysis experimentset.
+            child_value = 0
+        else:
+            # Convert child_value to a letter (a-z)
+            child_value = parent.last_child_value + 1
+            suffix = ""
+            x = child_value
+            while x > 0:
+                x, y = divmod(x - 1, len(string.ascii_lowercase))
+                suffix = "{}{}".format(string.ascii_lowercase[y], suffix)
+
         experiment.urn = "{}-{}".format(parent.urn, suffix)
         parent.last_child_value = child_value
 
@@ -91,13 +100,13 @@ class Experiment(DatasetModel):
     This is the class representing an Experiment. The experiment object
     houses all information relating to a particular experiment up to the
     scoring of its associated variants. This class assumes that all validation
-    was handled at the form level, and as such performs no additonal
-    validation and will raise IntegreityError if there's bad input.
+    was handled at the form level, and as such performs no additional
+    validation and will raise IntegrityError if there's bad input.
 
     Parameters
     ----------
     experimentset : `models.ForeignKey`.
-        The experimentset is instance assciated with. New `ExperimentSet` is
+        The experimentset is instance associated with. New `ExperimentSet` is
         created if this is not provided.
     """
 
@@ -134,6 +143,24 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    @classmethod
+    def meta_analyses(cls):
+        o = cls.objects.annotate(
+            scoresets__meta_analysis_for_count=Count(
+                "scoresets__meta_analysis_for"
+            )
+        )
+        return o.filter(scoresets__meta_analysis_for_count__gt=0)
+
+    @classmethod
+    def non_meta_analyses(cls):
+        o = cls.objects.annotate(
+            scoresets__meta_analysis_for_count=Count(
+                "scoresets__meta_analysis_for"
+            )
+        )
+        return o.exclude(scoresets__meta_analysis_for_count__gt=0)
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.experimentset is None:
@@ -143,6 +170,15 @@ class Experiment(DatasetModel):
     @property
     def parent(self):
         return getattr(self, "experimentset", None)
+
+    @property
+    def is_parent_of_meta_analysis(self):
+        from .scoreset import ScoreSet
+
+        return (
+            ScoreSet.meta_analyses().filter(id__in=self.children.all()).count()
+            > 0
+        )
 
     @property
     def children(self):
