@@ -2,6 +2,7 @@ from billiard.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.db import models, transaction
+from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
@@ -46,7 +47,7 @@ def assign_public_urn(scoreset):
     ----------
     scoreset : `ScoreSet`
         The scoreset instance to assign a public urn to.
-        
+
     Raises
     ------
     `AttributeError` : Parent does not have a public urn.
@@ -140,7 +141,7 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_scoreset],
-        **UrnModel.default_urn_kwargs
+        **UrnModel.default_urn_kwargs,
     )
 
     experiment = models.ForeignKey(
@@ -150,6 +151,18 @@ class ScoreSet(DatasetModel):
         default=None,
         verbose_name="Experiment",
         related_name="scoresets",
+    )
+
+    meta_analysis_for = models.ManyToManyField(
+        to="dataset.ScoreSet",
+        verbose_name="Meta-analysis for",
+        related_name="meta_analysed_in",
+        blank=True,
+        help_text=(
+            "Select one for more score sets that this entry will create a "
+            "meta-analysis for. Please leave the experiment field blank if "
+            "this score set is a meta-analysis."
+        ),
     )
 
     licence = models.ForeignKey(
@@ -205,8 +218,23 @@ class ScoreSet(DatasetModel):
     def tracked_fields(cls):
         return super().tracked_fields() + ("licence", "data_usage_policy")
 
-    # Variant related methods
-    # ---------------------------------------------------------------------- #
+    @classmethod
+    def annotate_meta_children_count(cls):
+        field_name = "meta_analysis_child_count"
+        return field_name, cls.objects.annotate(
+            **{field_name: Count("meta_analysis_for")}
+        )
+
+    @classmethod
+    def meta_analyses(cls):
+        field, objects = cls.annotate_meta_children_count()
+        return objects.filter(**{f"{field}__gt": 0})
+
+    @classmethod
+    def non_meta_analyses(cls):
+        field, objects = cls.annotate_meta_children_count()
+        return objects.exclude(**{f"{field}__gt": 0})
+
     @property
     def parent(self):
         return getattr(self, "experiment", None)
@@ -214,6 +242,14 @@ class ScoreSet(DatasetModel):
     @property
     def children(self):
         return self.variants.all()
+
+    @property
+    def is_meta_analysis(self):
+        return self.meta_analysis_for.count() > 0
+
+    @property
+    def is_included_in_meta_analysis(self):
+        return self.meta_analysed_in.count() > 0
 
     @property
     def has_variants(self):
@@ -451,7 +487,7 @@ class ScoreSet(DatasetModel):
                 return str(failedtask.exception_class)
             return msg
 
-        return "An error occured during processing. Please contact support."
+        return "An error occurred during processing. Please contact support."
 
 
 # --------------------------------------------------------------------------- #
