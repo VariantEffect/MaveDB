@@ -96,8 +96,13 @@ class ExperimentForm(DatasetModelForm):
             choices = set(
                 [i.pk for i in admin_instances.union(editor_instances)]
             )
-            choices_qs = ExperimentSet.objects.filter(pk__in=choices).order_by(
-                "urn"
+
+            # Prevent attaching a regular experiment to a meta-analysis
+            # experimentset
+            choices_qs = (
+                ExperimentSet.non_meta_analyses()
+                .filter(pk__in=choices)
+                .order_by("urn")
             )
             self.fields["experimentset"].queryset = choices_qs
             self.fields["experimentset"].widget.choices = [
