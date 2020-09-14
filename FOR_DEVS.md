@@ -87,6 +87,20 @@ docker-compose -f docker-compose-dev.yml up database broker
 Do this everytime you want to start working on the project, but only once per system login.
 
 ## Seeding the database
+Developing with a copy of the production database is not a half bad idea, since we can test on
+real data. Once you've done your initial database migrations for a fresh project run:
+
+```shell script
+docker exec -i \
+  "your docker-compose database container name" \
+  pg_restore -Fc \ 
+  -U ${MAVEDB_DB_USER} \
+  -d ${MAVEDB_DB_NAME} \
+  < "path to your database dump"
+```
+You can find your docker-compose database container name by typing `docker ps` in the terminal and
+looking for your postgres service. It should follow the format `<root folder>_database_1`. This should be run before 
+making migrations, otherwise the restore operation will not work. If you do not want to restore from a dump file, ignore this step.
 
 The following commands will initialize the database and set up the website. You will need to
 either add the option `--settings=settings.development` to each `manage.py` command so that
@@ -107,21 +121,6 @@ if the test browser is interacted with.
 ```shell script
 python manage.py test
 ```
-
-Developing with a copy of the production database is not a half bad idea, since we can test on
-real data. Once you've done your initial database migrations for a fresh project run:
-
-```shell script
-docker exec -i \ 
-  <your docker-compose database container name> \
-  pg_restore -Fc \ 
-  -U ${MAVEDB_DB_USER} \
-  -d ${MAVEDB_DB_NAME} \
-  < "<path to your database dump>"
-```
-
-You can find your docker-compose database container name by typing `docker ps` in the terminal and
-looking for your postgres service. It should follow the format `<root folder>_database_1`.
 
 ## Conclusion
 
