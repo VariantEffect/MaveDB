@@ -3,7 +3,11 @@ from django.test import TestCase, RequestFactory
 from accounts.factories import UserFactory
 
 from ..utilities import publish_dataset
-from ..factories import ExperimentFactory, ExperimentSetFactory
+from ..factories import (
+    ExperimentFactory,
+    ExperimentSetFactory,
+    ScoreSetFactory,
+)
 from ..forms.experiment import ExperimentForm, ErrorMessages
 from ..models.experiment import Experiment
 from ..models.experimentset import ExperimentSet
@@ -72,6 +76,24 @@ class TestExperimentForm(TestCase):
         form = ExperimentForm(user=self.user)
         self.assertEqual(form.fields["experimentset"].queryset.count(), 1)
         self.assertIn(obj1, form.fields["experimentset"].queryset)
+
+    def test_meta_experiment_sets_not_in_options(self):
+        meta = publish_dataset(ScoreSetFactory())
+        meta.meta_analysis_for.add(
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+        )
+
+        exps = meta.parent.parent
+        exps.add_editors(self.user)
+
+        data = self.make_form_data()
+        data["experimentset"] = exps.pk
+
+        form = ExperimentForm(user=self.user, data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn("select a valid choice", str(form.errors).lower())
+        self.assertIn("experimentset", str(form.errors).lower())
 
     def test_from_request_modifies_existing_instance(self):
         exp = ExperimentFactory()
