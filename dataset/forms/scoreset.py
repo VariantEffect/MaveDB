@@ -1,23 +1,20 @@
-import json
 import io
+import json
 from enum import Enum
 
 import pandas as pd
-
 from django import forms as forms
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
+from django.conf import settings
 from django.utils.translation import ugettext
 
 from core.mixins import NestedEnumMixin
 from core.utilities import readable_null_values
-
-from main.models import Licence
-
-from variant.validators import validate_variant_rows
-
 from dataset import constants as constants
+from main.models import Licence
+from variant.validators import validate_variant_rows
 from ..forms.base import DatasetModelForm
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
@@ -45,14 +42,37 @@ class ErrorMessages(NestedEnumMixin, Enum):
             "a public score set is not supported."
         )
 
+    class MetaAnalysis(Enum):
+        experiment_present = ugettext(
+            "When submitting a meta-analysis, please leave the experiment "
+            "field blank.",
+        )
+        too_few = ugettext(
+            "Please select more than one score set to include in this "
+            "meta-analysis."
+        )
+        linking_other_meta = ugettext(
+            "A meta-analysis cannot include other meta-analyses score sets."
+        )
+        linking_private = ugettext(
+            "Please select public score sets to use in this meta-analysis."
+        )
+
     class Replaces(Enum):
         different_experiment = ugettext(
-            "Replaces field selection must be a member of the "
-            "selected experiment."
+            "The experiment for a score set replacing another score set must "
+            "match the experiment for the score set being replaced."
         )
         already_replaced = ugettext("{} has already been replaced.")
         is_not_public = ugettext("Only public entries can be replaced.")
         replacing_self = ugettext("A score set cannot replace itself.")
+        meta_replacing_non_meta = ugettext(
+            "A meta-analysis can only replace other meta-analysis score sets."
+        )
+        non_meta_replacing_meta = ugettext(
+            "A non meta-analysis score set can only replace other "
+            "non meta-analyses"
+        )
 
     class MetaData(Enum):
         incorrect_format = ugettext("Incorrectly formatted json file: {}")
@@ -102,6 +122,7 @@ class ScoreSetForm(DatasetModelForm):
         model = ScoreSet
         fields = DatasetModelForm.Meta.fields + (
             "experiment",
+            "meta_analysis_for",
             "licence",
             "data_usage_policy",
             "replaces",
@@ -142,7 +163,7 @@ class ScoreSetForm(DatasetModelForm):
             "scores file. Non-hgvs columns must contain numeric count data, "
             "and there are no name requirements for these columns."
             "\n\n"
-            "Row counts that are empty, whitepace or any of the strings {} "
+            "Row counts that are empty, whitespace or any of the strings {} "
             "(case-insensitive) will be converted to a null score. The "
             "columns 'hgvs_nt' and 'hgvs_pro' must define the same variants "
             "as those in the score file above."
@@ -166,7 +187,13 @@ class ScoreSetForm(DatasetModelForm):
 
     def __init__(self, *args, **kwargs):
         self.field_order = (
-            ("experiment", "replaces", "licence", "data_usage_policy")
+            (
+                "experiment",
+                "meta_analysis_for",
+                "replaces",
+                "licence",
+                "data_usage_policy",
+            )
             + self.FIELD_ORDER
             + ("score_data", "count_data", "meta_data")
         )
@@ -215,45 +242,180 @@ class ScoreSetForm(DatasetModelForm):
         )
 
         self.fields["short_description"].max_length = 500
+        self.fields["meta_analysis_for"] = forms.ModelMultipleChoiceField(
+            queryset=ScoreSet.objects.none(),
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={"class": "form-control select2"},
+            ),
+        )
         self.fields["experiment"] = forms.ModelChoiceField(
-            queryset=None,
-            required=True,
-            widget=forms.Select(attrs={"class": "form-control"}),
+            queryset=Experiment.objects.none(),
+            required=False,
+            empty_label="--------",
+            widget=forms.Select(attrs={"class": "form-control select2"}),
         )
         self.fields["replaces"] = forms.ModelChoiceField(
             queryset=ScoreSet.objects.none(),
             required=False,
-            widget=forms.Select(attrs={"class": "form-control"}),
+            empty_label="--------",
+            widget=forms.Select(attrs={"class": "form-control select2"}),
         )
         self.fields["licence"] = forms.ModelChoiceField(
             queryset=Licence.objects.all(),
+            initial=Licence.get_default(),
             required=False,
-            widget=forms.Select(attrs={"class": "form-control "}),
+            empty_label="--------",
+            widget=forms.Select(
+                attrs={"class": "form-control select2"},
+                choices=self.__class__.format_licence_options(),
+            ),
         )
 
-        self.fields["replaces"].required = False
         self.set_replaces_options()
         self.set_experiment_options()
-
+        self.set_meta_analysis_options()
         self.set_initial_keywords()
         self.set_initial_dois()
         self.set_initial_pmids()
 
-        self.fields["licence"].required = False
-        if not self.fields["licence"].initial:
-            self.fields["licence"].initial = Licence.get_default()
-
+    # ----------------------- SETUP CONFIG ------------------------- #
+    @staticmethod
+    def format_licence_options():
         choices = [("", "--------")]
         for licence in Licence.objects.all():
             name = licence.get_long_name()
             if licence == Licence.get_default():
                 name += " [Default]"
             choices.append((licence.pk, name))
-        self.fields["licence"].widget.choices = choices
+        return choices
 
-        for field in ("licence", "replaces", "experiment"):
-            if field in self.fields:
-                self.fields[field].widget.attrs.update(**{"class": "select2"})
+    def set_initial_keywords(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields["keywords"].initial = self.experiment.keywords.all()
+
+    def set_initial_dois(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields["doi_ids"].initial = self.experiment.doi_ids.all()
+
+    def set_initial_pmids(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields[
+                "pubmed_ids"
+            ].initial = self.experiment.pubmed_ids.all()
+
+    def set_meta_analysis_options(self):
+        if "meta_analysis_for" in self.fields:
+            # Remove scoreset options which are already a meta analysis
+            options = (
+                (
+                    ScoreSet.objects.all()
+                    if settings.ALLOW_META_DAISY_CHAIN
+                    else ScoreSet.non_meta_analyses()
+                )
+                .exclude(private=True)
+                .exclude(pk=self.instance.pk)
+                .exclude(urn=self.instance.urn)
+                .order_by("urn")
+            )
+
+            self.fields["meta_analysis_for"].queryset = options
+            choices = [
+                (
+                    s.pk,
+                    "{} | {} (meta)".format(s.urn, s.title)
+                    if s.is_meta_analysis
+                    else "{} | {}".format(s.urn, s.title),
+                )
+                for s in options.all()
+            ]
+            self.fields["meta_analysis_for"].widget.choices = choices
+
+    def set_replaces_options(self):
+        if "replaces" in self.fields:
+            admin_instances = self.user.profile.administrator_scoresets()
+            editor_instances = self.user.profile.editor_scoresets()
+            choices = set(
+                [i.pk for i in admin_instances.union(editor_instances)]
+            )
+            if self.experiment is not None:
+                choices &= set([i.pk for i in self.experiment.scoresets.all()])
+            elif self.instance.parent is not None:
+                choices &= set(
+                    [i.pk for i in self.instance.parent.scoresets.all()]
+                )
+            scoresets_qs = (
+                ScoreSet.objects.filter(pk__in=choices)
+                .exclude(private=True)
+                .exclude(pk=self.instance.pk)
+                .exclude(urn=self.instance.urn)
+                .order_by("urn")
+            )
+            self.fields["replaces"].queryset = scoresets_qs
+
+            fmt_options = [("", self.fields["replaces"].empty_label)] + [
+                (s.pk, "{} | {}".format(s.urn, s.title))
+                for s in scoresets_qs.all()
+            ]
+            self.fields["replaces"].widget.choices = fmt_options
+
+    def set_experiment_options(self):
+        if "experiment" in self.fields:
+            admin_instances = self.user.profile.administrator_experiments()
+            editor_instances = self.user.profile.editor_experiments()
+            choices = set(
+                [i.pk for i in admin_instances.union(editor_instances)]
+            )
+
+            # Prevent attaching a regular score set to a meta-analysis
+            # experiment
+            experiment_qs = (
+                Experiment.non_meta_analyses()
+                .filter(pk__in=choices)
+                .order_by("urn")
+            )
+            self.fields["experiment"].queryset = experiment_qs
+
+            fmt_options = [("", self.fields["experiment"].empty_label)] + [
+                (e.pk, "{} | {}".format(e.urn, e.title))
+                for e in experiment_qs.all()
+            ]
+            self.fields["experiment"].widget.choices = fmt_options
+
+            if self.experiment is not None:
+                choices_qs = Experiment.objects.filter(
+                    pk__in=[self.experiment.pk]
+                ).order_by("urn")
+                self.fields["experiment"].queryset = choices_qs
+                self.fields["experiment"].widget.choices = (
+                    (
+                        self.experiment.pk,
+                        "{} | {}".format(
+                            self.experiment.urn, self.experiment.title
+                        ),
+                    ),
+                )
+                self.fields["experiment"].initial = self.experiment
+
+    # -------------------- CLEANING ---------------------- #
+    def clean_meta_analysis_for(self):
+        children = (
+            self.cleaned_data.get("meta_analysis_for", ScoreSet.objects.none())
+            or ScoreSet.objects.none()
+        )
+        if children.count() == 1:
+            raise ValidationError(ErrorMessages.MetaAnalysis.too_few)
+
+        for child in children:
+            if child.private:
+                raise ValidationError(
+                    ErrorMessages.MetaAnalysis.linking_private
+                )
+            if child.is_meta_analysis and not settings.ALLOW_META_DAISY_CHAIN:
+                raise ValidationError(
+                    ErrorMessages.MetaAnalysis.linking_other_meta
+                )
+        return children
 
     def clean_experiment(self):
         experiment = self.cleaned_data["experiment"]
@@ -280,18 +442,19 @@ class ScoreSetForm(DatasetModelForm):
                     self.cleaned_data["replaces"] = self.clean_replaces()
         return experiment
 
-    def clean_licence(self):
-        licence = self.cleaned_data.get("licence", None)
-        if not licence:
-            licence = Licence.get_default()
-        return licence
-
     def clean_replaces(self):
         replaces = self.cleaned_data.get("replaces", None)
         experiment = self.cleaned_data.get("experiment", None)
+        is_meta_analysis = (
+            self.cleaned_data.get(
+                "meta_analysis_for", ScoreSet.objects.none()
+            ).count()
+            > 0
+        )
         if replaces is not None:
             if (
                 experiment is not None
+                and not replaces.is_meta_analysis
                 and replaces not in experiment.scoresets.all()
             ):
                 raise ValidationError(
@@ -310,7 +473,21 @@ class ScoreSetForm(DatasetModelForm):
                 raise ValidationError(ErrorMessages.Replaces.is_not_public)
             if replaces.pk == self.instance.pk:
                 raise ValidationError(ErrorMessages.Replaces.replacing_self)
+            if is_meta_analysis and (not replaces.is_meta_analysis):
+                raise ValidationError(
+                    ErrorMessages.Replaces.meta_replacing_non_meta
+                )
+            if (not is_meta_analysis) and replaces.is_meta_analysis:
+                raise ValidationError(
+                    ErrorMessages.Replaces.non_meta_replacing_meta
+                )
         return replaces
+
+    def clean_licence(self):
+        licence = self.cleaned_data.get("licence", None)
+        if not licence:
+            licence = Licence.get_default()
+        return licence
 
     def clean_score_data(self):
         score_file = self.cleaned_data.get("score_data", None)
@@ -360,6 +537,17 @@ class ScoreSetForm(DatasetModelForm):
             # There are errors, maybe from the `clean_<field_name>` methods.
             # End here and run the parent method to quickly return the form.
             return cleaned_data
+
+        if "experiment" in self.fields and "meta_analysis_for" in self.fields:
+            parent = cleaned_data.get("experiment", None)
+            meta_children = cleaned_data.get(
+                "meta_analysis_for", ScoreSet.objects.none()
+            )
+            if (parent is not None) and (meta_children.count() > 0):
+                self.add_error(
+                    None, ErrorMessages.MetaAnalysis.experiment_present
+                )
+                return cleaned_data
 
         # Indicates that a new scoreset is being created or a failed scoreset
         # is being edited. Failed scoresets have not variants.
@@ -435,14 +623,37 @@ class ScoreSetForm(DatasetModelForm):
 
         return cleaned_data
 
+    # --------------- SAVING ------------------------------------ #
     @transaction.atomic
     def _save_m2m(self):
         return super()._save_m2m()
 
     @transaction.atomic
     def save(self, commit=True):
+        if (
+            hasattr(self, "cleaned_data")
+            and self.cleaned_data.get("meta_analysis_for").count() > 0
+        ):
+            existing = self.get_existing_meta_analysis()
+            if existing is None:
+                self.instance.experiment = Experiment.objects.create()
+            else:
+                self.instance.experiment = existing.experiment
         return super().save(commit=commit)
 
+    def get_existing_meta_analysis(self):
+        children = self.cleaned_data.get("meta_analysis_for")
+        field_name, objects = ScoreSet.annotate_meta_children_count()
+        # Keep all meta-analysis score sets which contain exactly the number
+        # of child score sets the user is trying to link to.
+        meta_analyses = objects.filter(**{f"{field_name}": children.count()})
+        for child in children:
+            # Filter out any meta-analyses which do not have the exact same
+            # child score sets. Ordering is not important.
+            meta_analyses = meta_analyses.filter(meta_analysis_for=child)
+        return meta_analyses.first()
+
+    # ---------------------- PUBLIC ----------------------------- #
     def serialize_variants(self):
         """Serializes variants in JSON format."""
         variants = self.cleaned_data.get("variants", {})
@@ -454,81 +665,7 @@ class ScoreSetForm(DatasetModelForm):
     def has_variants(self):
         return bool(self.cleaned_data.get("variants", {}))
 
-    def set_initial_keywords(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields["keywords"].initial = self.experiment.keywords.all()
-
-    def set_initial_dois(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields["doi_ids"].initial = self.experiment.doi_ids.all()
-
-    def set_initial_pmids(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields[
-                "pubmed_ids"
-            ].initial = self.experiment.pubmed_ids.all()
-
-    def set_replaces_options(self):
-        if "replaces" in self.fields:
-            admin_instances = self.user.profile.administrator_scoresets()
-            editor_instances = self.user.profile.editor_scoresets()
-            choices = set(
-                [i.pk for i in admin_instances.union(editor_instances)]
-            )
-            if self.experiment is not None:
-                choices &= set([i.pk for i in self.experiment.scoresets.all()])
-            elif self.instance.parent is not None:
-                choices &= set(
-                    [i.pk for i in self.instance.parent.scoresets.all()]
-                )
-            scoresets_qs = (
-                ScoreSet.objects.filter(pk__in=choices)
-                .exclude(private=True)
-                .exclude(pk=self.instance.pk)
-                .exclude(urn=self.instance.urn)
-                .order_by("urn")
-            )
-            self.fields["replaces"].queryset = scoresets_qs
-            self.fields["replaces"].widget.choices = [
-                ("", self.fields["replaces"].empty_label)
-            ] + [
-                (s.pk, "{} | {}".format(s.urn, s.title))
-                for s in scoresets_qs.all()
-            ]
-
-    def set_experiment_options(self):
-        if "experiment" in self.fields:
-            admin_instances = self.user.profile.administrator_experiments()
-            editor_instances = self.user.profile.editor_experiments()
-            choices = set(
-                [i.pk for i in admin_instances.union(editor_instances)]
-            )
-            experiment_qs = Experiment.objects.filter(pk__in=choices).order_by(
-                "urn"
-            )
-            self.fields["experiment"].queryset = experiment_qs
-            self.fields["experiment"].widget.choices = [
-                ("", self.fields["experiment"].empty_label)
-            ] + [
-                (e.pk, "{} | {}".format(e.urn, e.title))
-                for e in experiment_qs.all()
-            ]
-
-            if self.experiment is not None:
-                choices_qs = Experiment.objects.filter(
-                    pk__in=[self.experiment.pk]
-                ).order_by("urn")
-                self.fields["experiment"].queryset = choices_qs
-                self.fields["experiment"].widget.choices = (
-                    (
-                        self.experiment.pk,
-                        "{} | {}".format(
-                            self.experiment.urn, self.experiment.title
-                        ),
-                    ),
-                )
-                self.fields["experiment"].initial = self.experiment
-
+    # --------------- FACTORY ----------------------------------- #
     @classmethod
     def from_request(cls, request, instance=None, prefix=None, initial=None):
         form = super().from_request(request, instance, prefix, initial)
@@ -551,6 +688,7 @@ class ScoreSetEditForm(ScoreSetForm):
         super().__init__(*args, **kwargs)
         self.edit_mode = True
         self.fields.pop("experiment")
+        self.fields.pop("meta_analysis_for")
         self.fields.pop("score_data")
         self.fields.pop("count_data")
         self.fields.pop("meta_data")
