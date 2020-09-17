@@ -13,14 +13,21 @@ from .constants import (
     experiment_url_pattern,
     experimentset_url_pattern,
     scoreset_url_pattern,
+    any_url_pattern,
 )
 
 from .views.experimentset import ExperimentSetDetailView
 from .views.experiment import ExperimentDetailView, ExperimentCreateView
 from .views.scoreset import ScoreSetDetailView, ScoreSetCreateView
+from .views.dispatch import DatasetRedirectView
 
 
 urlpatterns = [
+    url(
+        r"^(?P<urn>{})/$".format(any_url_pattern),
+        DatasetRedirectView.as_view(),
+        name="dataset_detail",
+    ),
     url(
         r"^scoreset/(?P<urn>{})/$".format(scoreset_url_pattern),
         ScoreSetDetailView.as_view(),
