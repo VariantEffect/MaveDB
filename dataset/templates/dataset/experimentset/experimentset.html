@@ -2,24 +2,54 @@
 {% load dataset_tags %}
 
 {% block child_list %}
-  {% visible_children instance user as visible_experiments %}
-  <span>
-    <h2 id='experiments' class="underline left-align section-heading">Experiments
-      {% if request.user in instance.editors or request.user in instance.administrators %}
-        <a href="{% url 'dataset:experiment_new' %}?experimentset={{ instance.urn }}">
-          <i class="icon fa fa-plus pl-1" data-toggle="tooltip" data-placement="top" title="Add an experiment."
-             style="font-size: 32px; padding-bottom: 4px"></i>
-        </a>
+  {% is_meta_analysis instance as is_meta_analysis %}
+  {% visible_children instance user as visible_children %}
+
+  <div style="display: inline-block">
+    {% if request.user in instance.editors or request.user in instance.administrators %}
+      {% if is_meta_analysis %}
+        <h2 id='scoresets' class="underline left-align section-heading">Meta-analyses
+          <a href="{% url 'dataset:scoreset_new' %}">
+            <i class="icon fa fa-plus pl-1"
+               data-toggle="tooltip"
+               data-placement="top"
+               title="Add a new meta-analysis."
+               style="font-size: 32px;
+             padding-bottom: 4px"
+            >
+            </i>
+          </a>
+        </h2>
+      {% else %}
+        <h2 id='experiments' class="underline left-align section-heading">Experiments
+          <a href="{% url 'dataset:experiment_new' %}?experimentset={{ instance.urn }}">
+            <i class="icon fa fa-plus pl-1"
+               data-toggle="tooltip"
+               data-placement="top"
+               title="Add a new experiment."
+               style="font-size: 32px;
+             padding-bottom: 4px"
+            >
+            </i>
+          </a>
+        </h2>
       {% endif %}
-    </h2>
-  </span>
-  {% if visible_experiments|length %}
+    {% endif %}
+  </div>
+
+  {% if visible_children|length %}
     <ul>
-      {% for child in visible_experiments %}
+      {% for child in visible_children %}
         <li class="child-list-item">
+        {% if is_meta_analysis %}
+          <a style="display:block;" href="{% url 'dataset:scoreset_detail' child.urn %}">
+            <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
+          </a>
+        {% else %}
           <a style="display:block;" href="{% url 'dataset:experiment_detail' child.urn %}">
             <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
           </a>
+        {% endif %}
           <p class="child-list-description"><b>{{ child.get_title }}</b></p>
           <p class="child-list-description">{{ child.get_description }}</p>
         </li>
