@@ -11,8 +11,6 @@ from django.shortcuts import reverse
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 
-from dataset import models
-
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -81,6 +79,7 @@ def notify_admins(user, instance):
     instance : `DatasetModel`
         instance that was published
     """
+    from dataset import models
     from main.context_processors import baseurl
 
     url = baseurl(request=None)["base_url"]
