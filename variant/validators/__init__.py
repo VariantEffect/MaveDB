@@ -118,14 +118,14 @@ def validate_scoreset_columns_match_variant(dataset_columns, variant_data):
 
 def validate_variant_json(dict_):
     """
-   Checks a given dictionary to ensure that it is suitable to be used
-   as the `data` attribute in a :class:`Variant` instance.
+    Checks a given dictionary to ensure that it is suitable to be used
+    as the `data` attribute in a :class:`Variant` instance.
 
-   Parameters
-   ----------
-   dict_ : dict
-       Dictionary of keys mapping to a list.
-   """
+    Parameters
+    ----------
+    dict_ : dict
+        Dictionary of keys mapping to a list.
+    """
     expected_keys = [variant_score_data, variant_count_data]
     for key in expected_keys:
         if key not in dict_.keys():
@@ -179,7 +179,7 @@ def validate_variant_rows(file):
     """
     Variant data validator that checks the following:
 
-        1) Datatypes of rows must be either int, float or NoneType
+        1) Data types of rows must be either int, float or NoneType
         2) HGVS string is a valid hgvs string,
         3) Hgvs does not appear more than once in rows
         4) Validate hgvs_tx is present with hgvs_nt
@@ -249,8 +249,8 @@ def validate_variant_rows(file):
     # Determine which is the primary hgvs column. Defaults to _nt. _pro is only
     # selected when _nt is not provided.
     defines_nt_hgvs = hgvs_nt_column in df.columns
-    defines_p_hgvs = hgvs_pro_column in df.columns
     defines_tx_hgvs = hgvs_tx_column in df.columns
+    defines_p_hgvs = hgvs_pro_column in df.columns
 
     if defines_nt_hgvs:
         prefixes = {
