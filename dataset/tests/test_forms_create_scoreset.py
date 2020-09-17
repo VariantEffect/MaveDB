@@ -8,7 +8,6 @@ from .utility import make_files
 from .. import constants
 from ..factories import ExperimentFactory, ScoreSetFactory
 from ..forms.scoreset import ScoreSetForm, ErrorMessages
-from ..models.scoreset import ScoreSet
 from ..utilities import publish_dataset
 
 

@@ -43,10 +43,10 @@ class TestUserProfile(TestCase):
         self.assertIsNone(user.profile.auth_token)
         user.profile.generate_token()
         self.assertIsNotNone(user.profile.auth_token)
-        self.assertEqual(len(user.profile.auth_token), Profile.TOKEN_LEGNTH)
+        self.assertEqual(len(user.profile.auth_token), Profile.TOKEN_LENGTH)
 
     def test_generate_token_creates_new_token_expiry_date_days_from_today(
-        self
+        self,
     ):
         user = User.objects.create(username="bob", password="secretkey")
         self.assertIsNone(user.profile.auth_token_expiry)
