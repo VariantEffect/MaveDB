@@ -4,377 +4,415 @@
 {% load licence_tags %}
 
 {% block body %}
-<div id="dataset-detail-content">
-  <div class="model-detail">
-    <!-- Renders markdown abstract text -->
-    {% if instance.class_name != "experimentset" %}
-      <h1 id="title">
-        {{ instance.title|default:"This entry does not have a title." }}
-      </h1>
-      <hr>
-      <p id="description" class="two-columns">
-        {{ instance.short_description|default:"This entry does not have a description."}}
-      </p>
+  <div id="dataset-detail-content">
+    <div class="model-detail">
+      {% is_experiment_set instance as is_experiment_set %}
+      {% is_experiment instance as is_experiment %}
+      {% is_score_set instance as is_score_set %}
 
-      <div style="width:100%; margin: 2rem 0">
-        <h2 class="underline left-align section-heading">
-          <span class="urn-title" style="word-wrap: break-word; font-weight: 500" >
+      <!-- Renders markdown abstract text -->
+      {% if not is_experiment_set %}
+        <h1 id="title">
+          {{ instance.title|default:"This entry does not have a title." }}
+        </h1>
+        <hr>
+        <p id="description" class="two-columns">
+          {{ instance.short_description|default:"This entry does not have a description." }}
+        </p>
+
+        <div style="width:100%; margin: 2rem 0">
+          <h2 class="underline left-align section-heading">
+          <span class="urn-title" style="word-wrap: break-word; font-weight: 500">
             {{ instance.get_display_urn }}
-            {% if instance.class_name != "experimentset" %}
+            {% if not is_experiment_set %}
               {% if request.user in instance.editors or request.user in instance.administrators %}
-                {% if instance.class_name == "scoreset" %}
-                   <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
-                     <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this score set."
+                {% if is_score_set %}
+                  <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
+                     <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
+                        title="Edit this score set."
                         style="font-size: 32px; padding-bottom: 6px"></i>
                    </a>
                 {% endif %}
-                {% if instance.class_name == "experiment" %}
-                   <a href="{% url 'accounts:edit_experiment' instance.urn %}">
-                     <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top" title="Edit this experiment."
+                {% if is_experiment %}
+                  <a href="{% url 'accounts:edit_experiment' instance.urn %}">
+                     <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
+                        title="Edit this experiment."
                         style="font-size: 32px; padding-bottom: 6px"></i>
                    </a>
                 {% endif %}
               {% endif %}
             {% endif %}
           </span>
-        </h2>
-        <div class="urn-buttons">
-          {% if instance.class_name == "scoreset" %}
-            <div class="inline-elements">
-              {% if instance.private %}
-                <div
-                  class="mavevis-link"
-                  style="display: inline-block; margin-bottom: 0.5rem;"
-                  data-toggle="tooltip"
-                  data-placement="auto"
-                  title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information. This button will activate once published."
-                >
-                  <button class="btn btn-outline-dark white-button" disabled>
-                    <img alt="Visualize with MaveVis" src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
-                    Visualize with MaveVis
-                    <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
-                  </button>
-                </div>
-              {% else %}
-                {% if instance.has_protein_variants %}
+          </h2>
+          <div class="urn-buttons">
+            {% if is_score_set %}
+              <div class="inline-elements">
+                {% if instance.private %}
                   <div
-                    class="mavevis-link"
-                    style="display: inline-block; margin-bottom: 0.5rem;"
-                    data-toggle="tooltip"
-                    data-placement="auto"
-                    title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information."
-                  >
-                    <a
-                      class="btn btn-outline-dark white-button"
-                      href="http://varianteffect.com/?ssid={{ instance.urn }}"
-                      target="_blank"
-                    >
-                      <img alt="Visualize with MaveVis" src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
-                      Visualize with MaveVis
-                      <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
-                    </a>
-                  </div>
-                {% else %}
-                  <div
-                    class="mavevis-link"
-                    style="display: inline-block;"
-                    data-toggle="tooltip"
-                    data-placement="auto"
-                    title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information."
+                      class="mavevis-link"
+                      style="display: inline-block; margin-bottom: 0.5rem;"
+                      data-toggle="tooltip"
+                      data-placement="auto"
+                      title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information. This button will activate once published."
                   >
                     <button class="btn btn-outline-dark white-button" disabled>
-                      <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
+                      <img alt="Visualize with MaveVis" src="{% static 'core/mavedb/mavevis_small.png' %}"
+                           style="width: 24px; height: 24px;">
                       Visualize with MaveVis
                       <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
                     </button>
                   </div>
-              {% endif %}
-
-              {% endif %}
-
-              {% if instance.licence %}
-                <a href="{{ instance.licence.link }}" target="_blank" data-toggle="tooltip" data-placement="auto"
-                    title="{{ instance.licence.long_name }}">
-                  {% get_licence_logo_path instance.licence as licence_link %}
-                  {% if licence_link %}
-                    <img alt="See legal code" src="{{ licence_link }}" height="38px"/>
+                {% else %}
+                  {% if instance.has_protein_variants %}
+                    <div
+                        class="mavevis-link"
+                        style="display: inline-block; margin-bottom: 0.5rem;"
+                        data-toggle="tooltip"
+                        data-placement="auto"
+                        title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information."
+                    >
+                      <a
+                          class="btn btn-outline-dark white-button"
+                          href="http://varianteffect.com/?ssid={{ instance.urn }}"
+                          target="_blank"
+                      >
+                        <img alt="Visualize with MaveVis" src="{% static 'core/mavedb/mavevis_small.png' %}"
+                             style="width: 24px; height: 24px;">
+                        Visualize with MaveVis
+                        <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
+                      </a>
+                    </div>
                   {% else %}
-                    <a class="btn btn-outline-dark white-button" href="#data-usage">{{ instance.licence.long_name }}</a>
+                    <div
+                        class="mavevis-link"
+                        style="display: inline-block;"
+                        data-toggle="tooltip"
+                        data-placement="auto"
+                        title="Visualize this dataset as a genophenogram with structure information tracks on MaveVis. Enabled for datasets with protein coding information."
+                    >
+                      <button class="btn btn-outline-dark white-button" disabled>
+                        <img src="{% static 'core/mavedb/mavevis_small.png' %}" style="width: 24px; height: 24px;">
+                        Visualize with MaveVis
+                        <i class="external-link fas fa-external-link-alt mavevis-ext"></i>
+                      </button>
+                    </div>
                   {% endif %}
 
-                </a>
-              {% endif %}
+                {% endif %}
 
-              <div class="dropdown" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
-                   {% if instance.processing_state != 'success'%}
-                      title="Download the scores, counts or metadata files associated with this score set (disabled until successfully processed)."
-                   {% else %}
-                      title="Download the scores, counts or metadata files associated with this score set."
-                   {% endif %}>
-                <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                    {% if instance.processing_state != 'success'%} disabled {% endif %}>
-                  <i class="fas fa-download"></i>
-                </button>
-                <div class="dropdown-menu download-menu" aria-labelledby="scoresetDropDown">
-                  <a class="dropdown-item" href="{% url 'dataset:scores_download' instance.urn %}">Scores</a>
-                  <a class="dropdown-item" href="{% url 'dataset:counts_download' instance.urn %}">Counts</a>
-                  <a class="dropdown-item" href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>
+                {% if instance.licence %}
+                  <a href="{{ instance.licence.link }}" target="_blank" data-toggle="tooltip" data-placement="auto"
+                     title="{{ instance.licence.long_name }}">
+                    {% get_licence_logo_path instance.licence as licence_link %}
+                    {% if licence_link %}
+                      <img alt="See legal code" src="{{ licence_link }}" height="38px"/>
+                    {% else %}
+                      <a class="btn btn-outline-dark white-button"
+                         href="#data-usage">{{ instance.licence.long_name }}</a>
+                    {% endif %}
+
+                  </a>
+                {% endif %}
+
+                <div class="dropdown" style="display: inline-block;" data-toggle="tooltip" data-placement="auto"
+                    {% if instance.processing_state != 'success' %}
+                     title="Download the scores, counts or metadata files associated with this score set (disabled until successfully processed)."
+                    {% else %}
+                     title="Download the scores, counts or metadata files associated with this score set."
+                    {% endif %}>
+                  <button class="btn btn-outline-dark white-button dropdown-toggle" type="button" id="scoresetDropDown"
+                          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                      {% if instance.processing_state != 'success' %} disabled {% endif %}>
+                    <i class="fas fa-download"></i>
+                  </button>
+                  <div class="dropdown-menu download-menu" aria-labelledby="scoresetDropDown">
+                    <a class="dropdown-item" href="{% url 'dataset:scores_download' instance.urn %}">Scores</a>
+                    <a class="dropdown-item" href="{% url 'dataset:counts_download' instance.urn %}">Counts</a>
+                    <a class="dropdown-item" href="{% url 'api:api_download_metadata' instance.urn %}">Metadata</a>
+                  </div>
                 </div>
               </div>
-            </div>
-          {% endif %}
+            {% endif %}
+          </div>
+
+          <p class="text-muted urn-detail">
+          <span>
+            Created
+            <a target="_blank" href="{{ instance.created_by.profile.get_orcid_url }}">{{ instance.creation_date }}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </span>
+            <br>
+
+            <span>
+            Last updated
+            <a target="_blank"
+               href="{{ instance.modified_by.profile.get_orcid_url }}">{{ instance.modification_date }}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </span>
+            <br>
+
+            {% if instance.private %}
+              Private entry
+            {% else %}
+              Published {{ instance.publish_date }}
+            {% endif %}
+            <br>
+
+            {% if is_experiment %}
+              Member of <a href="{% url 'dataset:experimentset_detail' instance.parent.urn %}">{{ instance.parent }}</a>
+              <br>
+            {% endif %}
+
+            {% if is_score_set %}
+              Member of <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{ instance.parent.urn }}</a>
+              <br>
+              {% if previous_version %}
+                {% if previous_version.private %}
+                  Previous version:
+                  <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{ previous_version }}
+                    [Private]</a><br>
+                {% else %}
+                  Previous version:
+                  <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{ previous_version }}</a><br>
+                {% endif %}
+              {% endif %}
+
+              {% if next_version %}
+                {% if next_version.private %}
+                  Next version:
+                  <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{ next_version }} [Private]</a><br>
+                {% else %}
+                  Next version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{ next_version }}</a>
+                  <br>
+                {% endif %}
+              {% endif %}
+
+              {% if current_version %}
+                {% if current_version.private %}
+                  Current version:
+                  <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{ current_version }} [Private]</a>
+                  <br>
+                {% else %}
+                  Current version:
+                  <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{ current_version }}</a><br>
+                {% endif %}
+              {% endif %}
+
+              {% if meta_analysed_by|length > 0 %}
+                Meta-analyzed by:
+                {% for urn in meta_analysed_by %}
+                  <a href="{% url 'dataset:scoreset_detail' urn %}">{{ urn }}</a>
+                  {% if not forloop.last %}&middot;{% endif %}
+                {% endfor %}
+              {% endif %}
+
+              {% if meta_analysis_for|length > 0 %}
+                Meta-analyzes:
+                {% for urn in meta_analysis_for %}
+                  <a href="{% url 'dataset:scoreset_detail' urn %}">{{ urn }}</a>
+                  {% if not forloop.last %}&middot;{% endif %}
+                {% endfor %}
+              {% endif %}
+
+            {% endif %}
+          </p>
         </div>
 
-        <p class="text-muted urn-detail">
-          <span>
-            Created
-            <a target="_blank" href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a>
-            <i class="external-link fas fa-external-link-alt"></i>
-          </span>
-          <br>
+        {% block child_list_under_description %}
+          <!-- Block for quick links -->
+        {% endblock %}
 
-          <span>
-            Last updated
-            <a target="_blank" href="{{instance.modified_by.profile.get_orcid_url}}">{{instance.modification_date}}</a>
-            <i class="external-link fas fa-external-link-alt"></i>
-          </span>
-          <br>
-
-          {% if instance.private %}
-            Private entry
-          {% else %}
-            Published {{ instance.publish_date }}
-          {% endif %}
-          <br>
-
-          {% if instance.class_name == "experiment" %}
-            Member of <a href="{% url 'dataset:experimentset_detail' instance.parent.urn %}">{{instance.parent}}</a><br>
-          {% endif %}
-
-          {% if instance.class_name == "scoreset" %}
-            Member of <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a><br>
-            {% if previous_version %}
-              {% if previous_version.private %}
-                Previous version: <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{previous_version}} [Private]</a><br>
-              {% else %}
-                Previous version: <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{previous_version}}</a><br>
-              {% endif %}
-            {% endif %}
-
-            {% if next_version %}
-              {% if next_version.private %}
-                Next version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}} [Private]</a><br>
-              {% else %}
-                Next version: <a href="{% url 'dataset:scoreset_detail' next_version.urn %}">{{next_version}}</a><br>
-              {% endif %}
-            {% endif %}
-
-            {% if current_version %}
-              {% if current_version.private %}
-                Current version: <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{current_version}} [Private]</a><br>
-              {% else %}
-                Current version: <a href="{% url 'dataset:scoreset_detail' current_version.urn %}">{{current_version}}</a><br>
-              {% endif %}
-            {% endif %}
-
-          {% endif %}
-        </p>
-      </div>
-
-      {% block child_list_under_description %}
-        <!-- Block for quick links -->
-      {% endblock %}
-
-      <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
-      {% if not instance.abstract_text %}
-        <p class="text-muted">No abstract has been provided for this entry.</p>
-      {% else %}
-        <div class="two-columns">{{ instance.md_abstract|safe }}</div>
-      {% endif %}
-
-      <!-- Renders markdown method text -->
-      <h2 id="method" class="underline left-align section-heading">Method</h2>
-      {% if not instance.method_text %}
-        <p class="text-muted" >No method has been provided for this entry.</p>
-      {% else %}
-        <div class="two-columns">{{ instance.md_method|safe }}</div>
-      {% endif %}
-
-      <!-- Renders PubMed references -->
-      <h2 id="references" class="underline left-align section-heading">References</h2>
-      {% lex_sorted_references instance as references %}
-      {% if references.count %}
-        <ul>
-        {% for pm in references.all %}
-          <li style="margin-top: 0.5rem">{{ pm.reference_html|safe }} PMID:
-            <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>
-            <i class="external-link fas fa-external-link-alt"></i>
-          </li>
-        {% endfor %}
-        </ul>
-{#        {% if instance.class_name == 'scoreset' %}#}
-{#          {% parent_references instance as parent_refs %}#}
-{#          {% if parent_refs|length %}#}
-{#            <p class="pl-4">References from#}
-{#              <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:#}
-{#            </p>#}
-{#            <ol start="{{instance.pubmed_ids.count|add:1}}">#}
-{#            {% for pm in parent_refs %}#}
-{#              <li>{{ pm.reference_html|safe }} PMID:#}
-{#                <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>#}
-{#                <i class="external-link fas fa-external-link-alt"></i>#}
-{#              </li>#}
-{#            {% endfor %}#}
-{#            </ol>#}
-{#          {% endif %}#}
-{#        {% endif %}#}
-      {% else %}
-        <p>No associated publications.</p>
-      {% endif %}
-
-      <!-- Renders contributors as ORCID url-->
-      <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
-      <ul>
-        {% for contributor in instance.administrators %}
-        <li>
-          {{ contributor.profile.get_display_name_hyperlink }}
-          <i class="external-link fas fa-external-link-alt"></i>
-        </li>
-        {% endfor %}
-
-        {% for contributor in instance.editors %}
-        <li>
-          {{ contributor.profile.get_display_name_hyperlink }}
-          <i class="external-link fas fa-external-link-alt"></i>
-        </li>
-        {% endfor %}
-
-        {% for contributor in instance.viewers %}
-        <li>
-          {{ contributor.profile.get_display_name_hyperlink }}
-          <i class="external-link fas fa-external-link-alt"></i>
-        </li>
-        {% endfor %}
-      </ul>
-
-      {% if instance.class_name == "scoreset" %}
-        <h2 id="data-usage" class="underline left-align section-heading" >
-          Data usage policy
-        </h2>
-        {% if instance.data_usage_policy|length %}
-          <div class="two-columns">{{ instance.data_usage_policy }}</div>
+        <h2 id="abstract" class="underline left-align section-heading">Abstract</h2>
+        {% if not instance.abstract_text %}
+          <p class="text-muted">No abstract has been provided for this entry.</p>
         {% else %}
-          <p>Not specified.</p>
+          <div class="two-columns">{{ instance.md_abstract|safe }}</div>
         {% endif %}
-      {% endif %}
 
-      <!-- Renders Keywords -->
-      <h2 id="method" class="underline left-align section-heading">Keywords</h2>
-      {% if not keywords %}
-        <p class="text-muted">No keywords are associated with this entry.</p>
-      {% else %}
-        <ul>
-          {% for kw in keywords %}
-            <li><a href="/search/?keywords={{ kw.text }}">{{ kw.text }}</a></li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+        <!-- Renders markdown method text -->
+        <h2 id="method" class="underline left-align section-heading">Method</h2>
+        {% if not instance.method_text %}
+          <p class="text-muted">No method has been provided for this entry.</p>
+        {% else %}
+          <div class="two-columns">{{ instance.md_method|safe }}</div>
+        {% endif %}
 
-    {% else %}
-      <div style="width:100%; margin: 2rem 0">
-        <h2 class="underline left-align section-heading">
-          <span class="urn-title" style="word-wrap: break-word; font-weight: 500" >
-            {{ instance.get_display_urn }}
-          </span>
-        </h2>
-        <p class="text-muted urn-detail">
-          <span>
-            Created
-            <a target="_blank" href="{{instance.created_by.profile.get_orcid_url}}">{{instance.creation_date}}</a>
-            <i class="external-link fas fa-external-link-alt"></i>
-          </span>
-          <br>
-
-          <span>
-            Last updated
-            <a target="_blank" href="{{instance.modified_by.profile.get_orcid_url}}">{{instance.modification_date}}</a>
-            <i class="external-link fas fa-external-link-alt"></i>
-          </span>
-          <br>
-
-          {% if instance.private %}
-            Private entry
-          {% else %}
-            Published {{ instance.publish_date }}
-          {% endif %}
-          <br>
-        </p>
-      </div>
-    {% endif %}
-
-    {% block target %}
-    <!-- Block for placing experiment target information -->
-    {% endblock %}
-
-    {% if instance.class_name != "experimentset" %}
-      <!-- Renders External Identifier urls -->
-      <h2 id="metadata" class="underline left-align section-heading">
-        External identifiers
-      </h2>
-      {% if instance.doi_ids.count %}
-        <strong>DOI:</strong>
+        <!-- Renders PubMed references -->
+        <h2 id="references" class="underline left-align section-heading">References</h2>
+        {% lex_sorted_references instance as references %}
+        {% if references.count %}
           <ul>
-          {% for doi in instance.doi_ids.all %}
-            <li>
-              <a target="_blank" href="{{doi.url}}">{{doi.identifier}}</a>
-              <i class="external-link fas fa-external-link-alt"></i>
-            </li>
-          {% endfor %}
-          </ul>
-      {% else %}
-        <p><strong>DOI:</strong> No associated DOIs </p>
-      {% endif %}
-
-      {% if instance.class_name == 'experiment' %}
-        {% if instance.sra_ids.count %}
-          <strong>SRA:</strong>
-            <ul>
-            {% for sra in instance.sra_ids.all %}
-              <li>
-                <a target='_blank' href="{{sra.url}}">{{sra.identifier}}</a>
+            {% for pm in references.all %}
+              <li style="margin-top: 0.5rem">{{ pm.reference_html|safe }} PMID:
+                <a target="_blank" href="{{ pm.url }}">{{ pm.identifier }}</a>
                 <i class="external-link fas fa-external-link-alt"></i>
               </li>
             {% endfor %}
-            </ul>
+          </ul>
+          {#        {% if is_score_set %}#}
+          {#          {% parent_references instance as parent_refs %}#}
+          {#          {% if parent_refs|length %}#}
+          {#            <p class="pl-4">References from#}
+          {#              <a href="{% url 'dataset:experiment_detail' instance.parent.urn %}">{{instance.parent}}</a>:#}
+          {#            </p>#}
+          {#            <ol start="{{instance.pubmed_ids.count|add:1}}">#}
+          {#            {% for pm in parent_refs %}#}
+          {#              <li>{{ pm.reference_html|safe }} PMID:#}
+          {#                <a target="_blank" href="{{pm.url}}">{{pm.identifier}}</a>#}
+          {#                <i class="external-link fas fa-external-link-alt"></i>#}
+          {#              </li>#}
+          {#            {% endfor %}#}
+          {#            </ol>#}
+          {#          {% endif %}#}
+          {#        {% endif %}#}
         {% else %}
-          <p><strong>SRA:</strong> No associated SRAs </p>
+          <p>No associated publications.</p>
+        {% endif %}
+
+        <!-- Renders contributors as ORCID url-->
+        <h2 id="contributors" class="underline left-align section-heading">Contributors</h2>
+        <ul>
+          {% for contributor in instance.administrators %}
+            <li>
+              {{ contributor.profile.get_display_name_hyperlink }}
+              <i class="external-link fas fa-external-link-alt"></i>
+            </li>
+          {% endfor %}
+
+          {% for contributor in instance.editors %}
+            <li>
+              {{ contributor.profile.get_display_name_hyperlink }}
+              <i class="external-link fas fa-external-link-alt"></i>
+            </li>
+          {% endfor %}
+
+          {% for contributor in instance.viewers %}
+            <li>
+              {{ contributor.profile.get_display_name_hyperlink }}
+              <i class="external-link fas fa-external-link-alt"></i>
+            </li>
+          {% endfor %}
+        </ul>
+
+        {% if is_score_set %}
+          <h2 id="data-usage" class="underline left-align section-heading">
+            Data usage policy
+          </h2>
+          {% if instance.data_usage_policy|length %}
+            <div class="two-columns">{{ instance.data_usage_policy }}</div>
+          {% else %}
+            <p>Not specified.</p>
+          {% endif %}
+        {% endif %}
+
+        <!-- Renders Keywords -->
+        <h2 id="method" class="underline left-align section-heading">Keywords</h2>
+        {% if not keywords %}
+          <p class="text-muted">No keywords are associated with this entry.</p>
+        {% else %}
+          <ul>
+            {% for kw in keywords %}
+              <li><a href="/search/?keywords={{ kw.text }}">{{ kw.text }}</a></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+      {% else %}
+        <div style="width:100%; margin: 2rem 0">
+          <h2 class="underline left-align section-heading">
+          <span class="urn-title" style="word-wrap: break-word; font-weight: 500">
+            {{ instance.get_display_urn }}
+          </span>
+          </h2>
+          <p class="text-muted urn-detail">
+          <span>
+            Created
+            <a target="_blank" href="{{ instance.created_by.profile.get_orcid_url }}">{{ instance.creation_date }}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </span>
+            <br>
+
+            <span>
+            Last updated
+            <a target="_blank"
+               href="{{ instance.modified_by.profile.get_orcid_url }}">{{ instance.modification_date }}</a>
+            <i class="external-link fas fa-external-link-alt"></i>
+          </span>
+            <br>
+
+            {% if instance.private %}
+              Private entry
+            {% else %}
+              Published {{ instance.publish_date }}
+            {% endif %}
+            <br>
+          </p>
+        </div>
+      {% endif %}
+
+      {% block target %}
+        <!-- Block for placing experiment target information -->
+      {% endblock %}
+
+      {% if not is_experiment_set %}
+        <!-- Renders External Identifier urls -->
+        <h2 id="metadata" class="underline left-align section-heading">
+          External identifiers
+        </h2>
+        {% if instance.doi_ids.count %}
+          <strong>DOI:</strong>
+          <ul>
+            {% for doi in instance.doi_ids.all %}
+              <li>
+                <a target="_blank" href="{{ doi.url }}">{{ doi.identifier }}</a>
+                <i class="external-link fas fa-external-link-alt"></i>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p><strong>DOI:</strong> No associated DOIs </p>
+        {% endif %}
+
+        {% if is_experiment %}
+          {% if instance.sra_ids.count %}
+            <strong>SRA:</strong>
+            <ul>
+              {% for sra in instance.sra_ids.all %}
+                <li>
+                  <a target='_blank' href="{{ sra.url }}">{{ sra.identifier }}</a>
+                  <i class="external-link fas fa-external-link-alt"></i>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p><strong>SRA:</strong> No associated SRAs </p>
+          {% endif %}
         {% endif %}
       {% endif %}
-    {% endif %}
 
-    {% block child_list %}
+      {% block child_list %}
         <!-- Main template body block -->
-    {% endblock %}
+      {% endblock %}
 
+    </div>
   </div>
-</div>
 
-<style lang="css">
-  .mavevis-link {
-    width: 100%;
-  }
-  .mavevis-link.button {
-      width: 195px;
-    }
+  <style lang="css">
+      .mavevis-link {
+          width: 100%;
+      }
 
-  #dataset-detail-content {
-    max-width: 75%;
-    {#column-width: 544px;#}
-  }
+      .mavevis-link.button {
+          width: 195px;
+      }
 
-  .urn-buttons {
-    margin: 1rem 0;
-  }
-</style>
+      #dataset-detail-content {
+          max-width: 75%;
+      {#column-width: 544px;#}
+      }
+
+      .urn-buttons {
+          margin: 1rem 0;
+      }
+  </style>
 {% endblock body %}
