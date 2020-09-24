@@ -169,8 +169,8 @@
               {% if previous_version %}
                 {% if previous_version.private %}
                   Previous version:
-                  <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{ previous_version }}
-                    [Private]</a><br>
+                  <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{ previous_version }} [Private]</a>
+                  <br>
                 {% else %}
                   Previous version:
                   <a href="{% url 'dataset:scoreset_detail' previous_version.urn %}">{{ previous_version }}</a><br>
@@ -198,10 +198,15 @@
                 {% endif %}
               {% endif %}
 
+              {% filter_visible meta_analysed_by user as meta_analysed_by %}
               {% if meta_analysed_by|length > 0 %}
                 Meta-analyzed by:
-                {% for urn in meta_analysed_by %}
-                  <a href="{% url 'dataset:scoreset_detail' urn %}">{{ urn }}</a>
+                {% for meta in meta_analysed_by %}
+                  {% if meta.private %}
+                    <a href="{% url 'dataset:scoreset_detail' meta.urn %}">{{ meta.urn }} [Private]</a>
+                  {% else %}
+                    <a href="{% url 'dataset:scoreset_detail' meta.urn %}">{{ meta.urn }}</a>
+                  {% endif %}
                   {% if not forloop.last %}&middot;{% endif %}
                 {% endfor %}
               {% endif %}
