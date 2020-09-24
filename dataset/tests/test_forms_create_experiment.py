@@ -106,24 +106,9 @@ class TestExperimentForm(TestCase):
 
         form = ExperimentForm.from_request(request, exp)
         instance = form.save(commit=True)
-        self.assertEqual(instance.experimentset.pk, data["experimentset"])
+        self.assertNotEqual(instance.experimentset.pk, data["experimentset"])
         self.assertEqual(instance.get_title(), data["title"])
         self.assertEqual(instance.get_description(), data["short_description"])
-
-    def test_invalid_change_experimentset_public_experiment(self):
-        obj = ExperimentFactory()
-        obj.parent.add_administrators(self.user)
-        obj.add_administrators(self.user)
-        obj = publish_dataset(obj)
-
-        # Make the data, which also sets the selected experiment
-        data = self.make_form_data(create_experimentset=True)
-        form = ExperimentForm(data=data, user=self.user, instance=obj)
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.ExperimentSet.public_experiment,
-            form.errors["experimentset"][0],
-        )
 
     def test_experimentset_options_frozen_when_passing_instance(self):
         data = self.make_form_data(create_experimentset=False)

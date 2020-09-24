@@ -95,6 +95,7 @@ class UtilitiesTest(TestCase):
         self.exps.add_administrators(self.user1)
         self.exps.add_editors(self.user2)
         self.exps.add_viewers(self.user3)
+
         self.assertIn(self.user1, self.exps.contributors)
         self.assertIn(self.user2, self.exps.contributors)
         self.assertIn(self.user3, self.exps.contributors)
@@ -102,34 +103,49 @@ class UtilitiesTest(TestCase):
 
     def test_instances_for_user_returns_instance_user_if_admin_for(self):
         self.exps.add_administrators(self.user1)
-        self.exp.add_viewers(self.user1)
         result = permissions.instances_for_user_with_group_permission(
-            self.user1, ExperimentSet, permissions.GroupTypes.ADMIN
+            self.user1,
+            ExperimentSet.objects.all(),
+            permissions.GroupTypes.ADMIN,
         )
         self.assertEqual(result.count(), 1)
         self.assertIn(self.exps, result)
 
     def test_instances_for_user_returns_instance_user_if_editor_for(self):
         self.exps.add_editors(self.user1)
-        self.exp.add_viewers(self.user1)
         result = permissions.instances_for_user_with_group_permission(
-            self.user1, ExperimentSet, permissions.GroupTypes.EDITOR
+            self.user1,
+            ExperimentSet.objects.all(),
+            permissions.GroupTypes.EDITOR,
         )
         self.assertEqual(result.count(), 1)
         self.assertIn(self.exps, result)
 
     def test_instances_for_user_returns_instance_user_if_viewer_for(self):
         self.exps.add_viewers(self.user1)
-        self.exp.add_editors(self.user1)
         result = permissions.instances_for_user_with_group_permission(
-            self.user1, ExperimentSet, permissions.GroupTypes.VIEWER
+            self.user1,
+            ExperimentSet.objects.all(),
+            permissions.GroupTypes.VIEWER,
+        )
+        self.assertEqual(result.count(), 1)
+        self.assertIn(self.exps, result)
+
+    def test_instances_for_user_returns_returns_any_contributor_scoreset(self):
+        self.exps.add_viewers(self.user1)
+        result = permissions.instances_for_user_with_group_permission(
+            self.user1,
+            ExperimentSet.objects.all(),
+            "any",
         )
         self.assertEqual(result.count(), 1)
         self.assertIn(self.exps, result)
 
     def test_anon_user_returns_empty_qs(self):
         result = permissions.instances_for_user_with_group_permission(
-            AnonymousUser(), ExperimentSet, permissions.GroupTypes.ADMIN
+            AnonymousUser(),
+            ExperimentSet.objects.all(),
+            permissions.GroupTypes.ADMIN,
         )
         self.assertEqual(result.count(), 0)
 
@@ -664,12 +680,12 @@ class UserAssignmentToInstanceGroupTest(TestCase):
 
         alices = permissions.instances_for_user_with_group_permission(
             user=alice,
-            model=ExperimentSet,
+            queryset=ExperimentSet.objects.all(),
             group_type=permissions.GroupTypes.ADMIN,
         )
         bobs = permissions.instances_for_user_with_group_permission(
             user=bob,
-            model=ExperimentSet,
+            queryset=ExperimentSet.objects.all(),
             group_type=permissions.GroupTypes.ADMIN,
         )
 
@@ -680,7 +696,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         alice = User.objects.create(username="alice")
         alices = permissions.instances_for_user_with_group_permission(
             user=alice,
-            model=ExperimentSet,
+            queryset=ExperimentSet.objects.all(),
             group_type=permissions.GroupTypes.ADMIN,
         )
         self.assertEqual(len(alices), 0)
@@ -689,7 +705,7 @@ class UserAssignmentToInstanceGroupTest(TestCase):
         user = AnonymousUser()
         anons = permissions.instances_for_user_with_group_permission(
             user=user,
-            model=ExperimentSet,
+            queryset=ExperimentSet.objects.all(),
             group_type=permissions.GroupTypes.ADMIN,
         )
         self.assertEqual(len(anons), 0)
@@ -769,7 +785,7 @@ class TestPermissionAreDisjoint(TransactionTestCase):
         permissions.assign_user_as_instance_admin(user, experiment)
         instances = permissions.instances_for_user_with_group_permission(
             user=user,
-            model=Experiment,
+            queryset=Experiment.objects.all(),
             group_type=permissions.GroupTypes.ADMIN,
         )
         self.assertIn(experiment, instances)

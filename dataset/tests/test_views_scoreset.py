@@ -243,7 +243,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
 
     # --- Next version links
     def test_next_version_not_shown_if_private_and_user_is_not_a_contributor(
-        self
+        self,
     ):
         scs = ScoreSetFactory(private=False)
         scs1 = ScoreSetFactory(private=True, replaces=scs)
@@ -274,7 +274,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
 
     # --- Prev version links
     def test_prev_version_not_shown_if_private_and_user_is_not_a_contributor(
-        self
+        self,
     ):
         scs = ScoreSetFactory(private=True)
         scs1 = ScoreSetFactory(private=False, replaces=scs)
@@ -288,8 +288,10 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         scs1 = ScoreSetFactory(private=False, replaces=scs)
         user = UserFactory()
         scs.add_viewers(user)
+
         request = self.factory.get("/scoreset/{}/".format(scs1.urn))
         request.user = user
+
         response = ScoreSetDetailView.as_view()(request, urn=scs1.urn)
         self.assertContains(response, scs.urn + " [Private]", count=1)
 
@@ -303,7 +305,7 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
 
     # --- Current Version
     def test_curr_version_not_shown_if_private_and_user_is_not_a_contributor(
-        self
+        self,
     ):
         scs = ScoreSetFactory(private=False)
         scs1 = ScoreSetFactory(private=False, replaces=scs)
@@ -571,7 +573,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
     def test_invalid_form_does_not_redirect(self):
         data = self.post_data.copy()
-        data["experiment"] = ["wrong_pk"]
+        data["experiment"] = ["999"]
 
         request = self.create_request(method="post", path=self.path, data=data)
         request.user = self.user

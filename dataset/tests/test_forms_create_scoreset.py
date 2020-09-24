@@ -85,9 +85,10 @@ class TestScoreSetForm(TestCase):
             "not one of the available choices", form.errors["experiment"][0]
         )
 
-    def test_can_change_experiment_on_saved_instance(self):
+    def test_cannot_change_experiment_on_saved_instance(self):
         data, files = self.make_post_data()
         instance = ScoreSetFactory()
+        parent_pk = instance.experiment.pk
         self.assertNotEqual(instance.parent.pk, data["experiment"])
 
         instance.parent.add_administrators(self.user)
@@ -97,7 +98,7 @@ class TestScoreSetForm(TestCase):
         self.assertTrue(form.is_valid())
 
         instance = form.save(commit=True)
-        self.assertEqual(instance.parent.pk, data["experiment"])
+        self.assertEqual(instance.parent.pk, parent_pk)
 
     def test_cannot_link_to_experiment_and_meta_analysis_children(self):
         data, files = self.make_post_data()
@@ -113,17 +114,17 @@ class TestScoreSetForm(TestCase):
             ErrorMessages.MetaAnalysis.experiment_present, str(form.errors)
         )
 
-    def test_need_more_than_one_meta_analysis_child(self):
-        data, files = self.make_post_data()
-
-        child = ScoreSetFactory()
-        child = publish_dataset(child)
-        data["experiment"] = None
-        data["meta_analysis_for"] = [child.pk]
-
-        form = ScoreSetForm(data=data, files=files, user=self.user)
-        self.assertFalse(form.is_valid())
-        self.assertIn(ErrorMessages.MetaAnalysis.too_few, str(form.errors))
+    # def test_need_more_than_min_meta_analysis_child(self):
+    #     data, files = self.make_post_data()
+    #
+    #     child = ScoreSetFactory()
+    #     child = publish_dataset(child)
+    #     data["experiment"] = None
+    #     data["meta_analysis_for"] = [child.pk]
+    #
+    #     form = ScoreSetForm(data=data, files=files, user=self.user)
+    #     self.assertFalse(form.is_valid())
+    #     self.assertIn(ErrorMessages.MetaAnalysis.too_few, str(form.errors))
 
     def test_cant_link_to_other_meta_analysis(self):
         data, files = self.make_post_data()
@@ -160,8 +161,8 @@ class TestScoreSetForm(TestCase):
         data["meta_analysis_for"] = [i.pk]
 
         form = ScoreSetForm(data=data, instance=i, files=files, user=self.user)
-        self.assertFalse(form.is_valid())
-        self.assertIn("select a valid choice", str(form.errors).lower())
+        i = form.save(commit=True)
+        self.assertEqual(i.meta_analysis_for.count(), 0)
 
     def test_new_meta_creates_new_parents(self):
         data, files = self.make_post_data()
@@ -186,7 +187,7 @@ class TestScoreSetForm(TestCase):
         self.assertIn(child1, s.meta_analysis_for.all())
         self.assertIn(child2, s.meta_analysis_for.all())
 
-    def test_existing_meta_uses_existing_parents(self):
+    def test_should_use_existing_parents_of_meta_with_same_children(self):
         data, files = self.make_post_data()
 
         existing, child1, child2 = (
@@ -208,7 +209,21 @@ class TestScoreSetForm(TestCase):
         self.assertIn(child1, s.meta_analysis_for.all())
         self.assertIn(child2, s.meta_analysis_for.all())
 
-    def test_error_replaces_does_not_match_experiment_selection(self):
+    def test_meta_with_single_child_inherits_child_experimentset(self):
+        data, files = self.make_post_data()
+
+        child = publish_dataset(ScoreSetFactory())
+        data["experiment"] = None
+        data["meta_analysis_for"] = [child.pk]
+
+        form = ScoreSetForm(data=data, files=files, user=self.user)
+        self.assertTrue(form.is_valid())
+
+        s = form.save(commit=True)
+        self.assertEqual(s.parent.parent.id, child.parent.parent.id)
+        self.assertEqual(s.parent.id, child.parent.id + 1)
+
+    def test_error_replaces_has_different_experiment(self):
         data, files = self.make_post_data()
         new_exp = ExperimentFactory()
         new_scs = ScoreSetFactory(experiment=new_exp)
@@ -615,7 +630,7 @@ class TestScoreSetForm(TestCase):
             ErrorMessages.Field.invalid_choice, form.errors["replaces"][0]
         )
 
-    def test_form_scoreset_instance_not_in_replace_options(self):
+    def test_form_scoreset_instance_removes_exp_meta_and_replaces_fields(self):
         scs = ScoreSetFactory(private=False)
         data, files = self.make_post_data()
 
@@ -625,7 +640,9 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=scs
         )
-        self.assertNotIn(scs, form.fields["replaces"].queryset.all())
+        self.assertNotIn("replaces", form.fields)
+        self.assertNotIn("experiment", form.fields)
+        self.assertNotIn("meta_analysis_for", form.fields)
 
     def test_cant_replace_self(self):
         scs1 = ScoreSetFactory(private=False)
@@ -639,75 +656,25 @@ class TestScoreSetForm(TestCase):
         form = ScoreSetForm(
             data=data, files=files, instance=scs1, user=self.user
         )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.Field.invalid_choice, form.errors["replaces"][0]
-        )
-
-    def test_changing_experiment_sets_replaces_to_none(self):
-        exp1 = ExperimentFactory()
-        exp2 = ExperimentFactory()
-        replaced = ScoreSetFactory(experiment=exp1)
-        obj = ScoreSetFactory(experiment=exp1, replaces=replaced)
-        self.assertEqual(obj.replaces, replaced)
-        self.assertEqual(replaced.replaced_by, obj)
-
-        exp1.add_administrators(self.user)
-        exp2.add_administrators(self.user)
-        replaced.add_administrators(self.user)
-        obj.add_administrators(self.user)
-
-        data, files = self.make_post_data()
-        data["experiment"] = exp2.pk
-        form = ScoreSetForm(
-            data=data, files=files, user=self.user, instance=obj
-        )
         self.assertTrue(form.is_valid())
-        instance = form.save(commit=True)
-        self.assertIsNone(instance.replaces)
-        self.assertIsNone(replaced.next_version)
-        self.assertEqual(exp2.urn, instance.parent.urn)
+        self.assertEqual(scs1.replaces, None)
 
-    def test_invalid_set_replaces_that_is_not_member_of_a_changed_experiment(
-        self,
-    ):
-        exp = ExperimentFactory()
-        obj = ScoreSetFactory(experiment=exp)
-        replaced = ScoreSetFactory(experiment=exp, private=False)
-
-        exp.add_administrators(self.user)
-        replaced.add_administrators(self.user)
-        obj.add_administrators(self.user)
-
-        # Make the data, which also sets the selected experiment
-        data, files = self.make_post_data()
-        # Set the replaces to an option not in the selected experiment
-        data["replaces"] = replaced.pk
-        form = ScoreSetForm(
-            data=data, files=files, user=self.user, instance=obj
-        )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.Replaces.different_experiment,
-            form.errors["replaces"][0],
-        )
-
-    def test_invalid_change_experiment_public_scoreset(self):
+    def test_cannot_change_experiment_public_scoreset(self):
         obj = ScoreSetFactory()
         obj.parent.add_administrators(self.user)
         obj.add_administrators(self.user)
         obj = publish_dataset(obj)
 
+        existing_parent = obj.parent.pk
+
         # Make the data, which also sets the selected experiment
         data, files = self.make_post_data()
         form = ScoreSetForm(
             data=data, files=files, user=self.user, instance=obj
         )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.Experiment.public_scoreset,
-            form.errors["experiment"][0],
-        )
+
+        i = form.save(commit=True)
+        self.assertEqual(i.experiment.pk, existing_parent)
 
     def test_from_request_modifies_existing_instance(self):
         scs = ScoreSetFactory()
@@ -723,7 +690,11 @@ class TestScoreSetForm(TestCase):
 
         form = ScoreSetForm.from_request(request, scs)
         instance = form.save(commit=True)
-        self.assertEqual(instance.parent.pk, data["experiment"])
+
+        # Should ignore these
+        self.assertNotEqual(instance.parent.pk, data["experiment"])
+
+        # Should change these
         self.assertEqual(instance.get_title(), data["title"])
         self.assertEqual(instance.get_description(), data["short_description"])
 

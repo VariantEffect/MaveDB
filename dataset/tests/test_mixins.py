@@ -14,6 +14,9 @@ from ..forms.experiment import ExperimentForm
 from ..factories import (
     ExperimentWithScoresetFactory,
     ScoreSetWithTargetFactory,
+    ExperimentFactory,
+    ScoreSetFactory,
+    ExperimentSetFactory,
 )
 from ..mixins import (
     PrivateDatasetFilterMixin,
@@ -193,7 +196,7 @@ class TestDatasetPermissionMixin(TestCase):
         driver.permission_required = "dataset.can_manage"
         self.assertFalse(driver.has_permission())
 
-    def test_true_private_and_mange_permssion_match(self):
+    def test_true_private_and_mange_permission_match(self):
         scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get("/")
         request.user = UserFactory()
@@ -236,7 +239,7 @@ class TestDatasetPermissionMixin(TestCase):
         driver.permission_required = "dataset.can_edit"
         self.assertFalse(driver.has_permission())
 
-    def test_true_private_and_edit_permssion_match(self):
+    def test_true_private_and_edit_permission_match(self):
         scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get("/")
         request.user = UserFactory()
@@ -279,7 +282,7 @@ class TestDatasetPermissionMixin(TestCase):
         driver.permission_required = "dataset.can_view"
         self.assertFalse(driver.has_permission())
 
-    def test_true_private_and_view_permssion_match(self):
+    def test_true_private_and_view_permission_match(self):
         scoreset = ScoreSetWithTargetFactory()  # type: ScoreSet
         request = self.factory.get("/")
         request.user = UserFactory()
@@ -326,9 +329,70 @@ class TestDatasetPermissionMixin(TestCase):
         driver.permission_required = "dataset.can_manage"
         self.assertFalse(driver.has_permission())
 
+    # Meta
+    def test_can_only_view_public_or_private_meta_analysis_parent(self):
+        instance = ExperimentFactory()
+
+        meta_analysis = ScoreSetFactory(experiment=instance)
+        child = ScoreSetFactory()
+        meta_analysis.meta_analysis_for.add(child)
+
+        request = self.factory.get("/")
+        request.user = UserFactory()
+        meta_analysis.add_administrators(request.user)
+
+        def check_permissions():
+            driver = self.Driver(instance=i, request=request)
+
+            driver.permission_required = "dataset.can_edit"
+            self.assertFalse(driver.has_permission())
+
+            driver.permission_required = "dataset.can_manage"
+            self.assertFalse(driver.has_permission())
+
+            driver.permission_required = "dataset.can_view"
+            self.assertTrue(driver.has_permission())
+
+        for i in [instance, instance.parent]:
+            check_permissions()
+
+        for i in [instance, instance.parent]:
+            i.private = False
+            i.save()
+            check_permissions()
+
+    def test_can_access_mixed_meta_analysis_if_permissions_are_present(self):
+        experiment = ExperimentFactory()
+        dummy = ExperimentFactory(experimentset=experiment.parent)
+
+        child = ScoreSetFactory(experiment=experiment)
+        meta_analysis = ScoreSetFactory(experiment=dummy)
+        meta_analysis.meta_analysis_for.add(child)
+
+        request = self.factory.get("/")
+        request.user = UserFactory()
+        meta_analysis.add_administrators(request.user)
+
+        driver = self.Driver(instance=experiment.parent, request=request)
+
+        perms = (
+            ("can_edit", False),
+            ("can_manage", False),
+            ("can_view", False),
+        )
+        for perm, answer in perms:
+            driver.permission_required = f"dataset.{perm}"
+            self.assertEqual(driver.has_permission(), answer)
+
+        experiment.parent.add_administrators(request.user)
+        perms = (("can_edit", True), ("can_manage", True), ("can_view", True))
+        for perm, answer in perms:
+            driver.permission_required = f"dataset.{perm}"
+            self.assertEqual(driver.has_permission(), answer)
+
 
 class TestDatasetUrnMixin(TestCase):
-    """Tests the `get_object` method overriden by `DatasetUrnMixin"""
+    """Tests the `get_object` method overridden by `DatasetUrnMixin"""
 
     class Driver(DatasetUrnMixin):
         def __init__(self, kwargs):
@@ -348,7 +412,7 @@ class TestDatasetUrnMixin(TestCase):
         driver.model = ScoreSet
         self.assertEqual(scoreset, driver.get_object())
 
-    def test_fallsback_to_model_class(self):
+    def test_falls_back_to_model_class(self):
         scoreset = ScoreSetWithTargetFactory()
         driver = self.Driver(kwargs={"urn": scoreset.urn})
         driver.model_class = ScoreSet

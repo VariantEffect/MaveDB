@@ -65,7 +65,7 @@ class TestUserProfile(TestCase):
             user.profile.auth_token_is_valid(user.profile.auth_token)
         )
 
-    def test_validate_token_false_expriy_date_has_passed(self):
+    def test_validate_token_false_expiry_date_has_passed(self):
         user = User.objects.create(username="bob", password="secretkey")
         user.profile.generate_token()
         self.assertTrue(
@@ -324,7 +324,7 @@ class TestUserProfile(TestCase):
         self.assertEqual(len(bob.profile.viewer_experimentsets()), 0)
 
     @mock.patch("core.tasks.send_mail.apply_async")
-    def test_notify_group_change_full_url_rendererd_in_template(self, patch):
+    def test_notify_group_change_full_url_rendered_in_template(self, patch):
         user = UserFactory()
         instance = factories.ExperimentFactory()
         user.profile.notify_user_group_change(
