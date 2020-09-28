@@ -76,8 +76,17 @@ input[type=number] {
     width: auto;
 }
 
+#mavedb-logo-text {
+    color: #222222;
+    transition: none;
+}
+#mavedb-logo-text:hover {
+    color: #222222 !important;
+    transition: none;
+}
+
 a {
-    color: #987cb8 !important;
+    color: #987cb8;
     text-decoration: none !important;
     -webkit-transition: 0.1s;
     -moz-transition: 0.1s;
