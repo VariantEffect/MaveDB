@@ -47,7 +47,7 @@
           <div class="urn-buttons">
             {% if is_score_set %}
               <div class="inline-elements">
-                {% if instance.private %}
+                {% if instance.private or instance.is_meta_analysis %}
                   <div
                       class="mavevis-link"
                       style="display: inline-block; margin-bottom: 0.5rem;"
