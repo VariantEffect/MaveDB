@@ -12,7 +12,8 @@ ALLOWED_HOSTS = os.getenv("APP_ALLOWED_HOSTS", "127.0.0.1 localhost").split(
 )
 
 # MaveDB APP behaviour settings
-ALLOW_META_DAISY_CHAIN = False
+META_ANALYSIS_ALLOW_DAISY_CHAIN = False
+META_ANALYSIS_MINIMUM_CHILDREN = 1
 
 BASE_URL = os.getenv("APP_BASE_URL", "localhost:8000")
 API_BASE_URL = os.getenv("APP_API_BASE_URL", "localhost:8000/api")
