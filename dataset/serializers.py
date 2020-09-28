@@ -68,7 +68,6 @@ class DatasetModelSerializer(TimeStampedModelSerializer):
 
 
 class ScoreSetSerializer(DatasetModelSerializer):
-
     target = TargetGeneSerializer(many=False)
     experiment = serializers.SerializerMethodField()
 
@@ -79,6 +78,8 @@ class ScoreSetSerializer(DatasetModelSerializer):
     previous_version = serializers.SerializerMethodField()
     next_version = serializers.SerializerMethodField()
     current_version = serializers.SerializerMethodField()
+
+    is_meta_analysis = serializers.BooleanField()
 
     def get_experiment(self, obj):
         return self.stringify_instance(
@@ -109,6 +110,7 @@ class ScoreSetSerializer(DatasetModelSerializer):
             "current_version",
             "variant_count",
             "experiment",
+            "is_meta_analysis",
             "data_usage_policy",
         )
         fields = tuple([f for f in fields if f != "sra_ids"])
