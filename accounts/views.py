@@ -122,7 +122,7 @@ class ManageDatasetUsersView(DatasetPermissionMixin, SessionWizardView):
         ("manage_users", SelectUsersForm),
         ("confirm_changes", ConfirmationForm),
     )
-    permission_required = "dataset.can_manage"
+    permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
     templates = {
         "manage_users": "accounts/profile_manage.html",
         "confirm_changes": "accounts/contributor_summary.html",

@@ -11,6 +11,7 @@ from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.serializers import UserSerializer
 from core.utilities import is_null
 from dataset import models, filters, constants
+from dataset.mixins import DatasetPermissionMixin
 from dataset.serializers import (
     ExperimentSetSerializer,
     ExperimentSerializer,
@@ -54,9 +55,19 @@ def check_permission(instance, user=None):
     if instance.private and user is None:
         raise exceptions.PermissionDenied()
     elif instance.private and user is not None:
-        has_perm = user in instance.contributors
-        if not has_perm:
-            raise exceptions.PermissionDenied()
+        if instance.is_meta_analysis:
+            metas = getattr(
+                instance, "meta_analysis_scoresets", ScoreSet.objects.none()
+            )
+            can_access_at_least_one_meta_scoreset = any(
+                user.has_perm(DatasetPermissionMixin.VIEW_PERMISSION, s)
+                for s in metas
+            )
+            return can_access_at_least_one_meta_scoreset
+        else:
+            has_perm = user in instance.contributors
+            if not has_perm:
+                raise exceptions.PermissionDenied()
     return instance
 
 
