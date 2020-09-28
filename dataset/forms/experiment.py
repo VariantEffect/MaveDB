@@ -45,13 +45,16 @@ class ExperimentForm(DatasetModelForm):
             self.experimentset = kwargs.pop("experimentset")
         super().__init__(*args, **kwargs)
 
-        self.fields["experimentset"] = forms.ModelChoiceField(
-            queryset=None,
-            required=False,
-            widget=forms.Select(attrs={"class": "form-control"}),
-        )
-        self.fields["experimentset"].label = "Experiment set"
-        self.set_experimentset_options()
+        if self.instance.pk is None:
+            self.fields["experimentset"] = forms.ModelChoiceField(
+                queryset=None,
+                required=False,
+                widget=forms.Select(attrs={"class": "form-control"}),
+            )
+            self.fields["experimentset"].label = "Experiment set"
+            self.set_experimentset_options()
+        else:
+            self.fields.pop("experimentset", None)
 
         self.fields["abstract_text"].help_text = (
             "A plain text or markdown abstract relating to the study "
@@ -131,7 +134,7 @@ class ExperimentForm(DatasetModelForm):
 
 class ExperimentEditForm(ExperimentForm):
     """
-    A subset of `ExperimentForm` for editiing instances. Follows the same
+    A subset of `ExperimentForm` for editing instances. Follows the same
     logic as `ExperimentForm`
     """
 
@@ -143,4 +146,6 @@ class ExperimentEditForm(ExperimentForm):
             )
         super().__init__(*args, **kwargs)
         self.edit_mode = True
-        self.fields.pop("experimentset")
+
+        # Might be popped already
+        self.fields.pop("experimentset", None)
