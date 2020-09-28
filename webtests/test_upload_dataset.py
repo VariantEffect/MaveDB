@@ -141,7 +141,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         self.perform_action(submit, "click")
 
         # ------ CHECK EXPERIMENT IS CONFIGURED CORRECTLY ------ #
-        # Delete uneccessary objects
+        # Delete unnecessary objects
         exps1.delete()
         exps2.delete()
         exps3.delete()
@@ -154,7 +154,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         experiment = data_models.experiment.Experiment.objects.first()
         messages = self.browser.find_elements_by_class_name("alert")
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertIsNotNone(experiment)
         self.assertFalse(experiment.has_public_urn)
         self.assertEqual(list(experiment.keywords.all()), [kw])
@@ -550,7 +550,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
         # in `DatasetModelForm`
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[0]
+        )[1]
         self.perform_action(field, "send_keys", "new keyword")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"
@@ -559,7 +559,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
 
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[1]
+        )[2]
         self.perform_action(field, "send_keys", "invalid doi")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"
@@ -568,7 +568,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
 
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[2]
+        )[3]
         self.perform_action(field, "send_keys", "invalid sra")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"

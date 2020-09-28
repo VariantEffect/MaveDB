@@ -557,7 +557,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             create_mock.assert_called_once()
             scores, counts, index = form.serialize_variants()
             expected = create_mock.call_args[1]["kwargs"]
-            expected_socres = expected.pop("scores_records")
+            expected_scores = expected.pop("scores_records")
             expected_counts = expected.pop("counts_records")
             self.assertEqual(
                 {
@@ -568,7 +568,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
                 },
                 expected,
             )
-            assert_frame_equal(scores, expected_socres)
+            assert_frame_equal(scores, expected_scores)
             assert_frame_equal(counts, expected_counts)
 
     def test_invalid_form_does_not_redirect(self):

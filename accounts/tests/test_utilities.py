@@ -108,16 +108,19 @@ class TestPublish(TestCase, TestMessageMixin):
         return request
 
     @staticmethod
-    def create_scoreset():
+    def create_scoreset(experiment=None):
         """
         Create a minimal scoreset with variants.
-        
+
         Returns
         -------
         py:class:`dataset.models.scoreset.ScoreSet`
             A `ScoreSet` instance
         """
-        scoreset = ScoreSetFactory()
+        if experiment is not None:
+            scoreset = ScoreSetFactory(experiment=experiment)
+        else:
+            scoreset = ScoreSetFactory()
         for i in range(3):
             VariantFactory(scoreset=scoreset)
         return scoreset
@@ -128,15 +131,83 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_false_user_does_not_have_manage_permissions(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.experiment.add_administrators(self.user)
+        scoreset.experiment.experimentset.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
 
         scoreset = self.create_scoreset()
         scoreset.add_editors(self.user)
+        scoreset.experiment.add_administrators(self.user)
+        scoreset.experiment.experimentset.add_administrators(self.user)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
 
         scoreset = self.create_scoreset()
         scoreset.add_viewers(self.user)
+        scoreset.experiment.add_administrators(self.user)
+        scoreset.experiment.experimentset.add_administrators(self.user)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
+
+    def test_true_user_does_not_have_manage_perm_on_parents_but_they_are_public(
+        self,
+    ):
+        scoreset = self.create_scoreset()
+        publish_dataset(scoreset.parent, user=self.user)
+        scoreset.refresh_from_db()
+
+        scoreset.add_administrators(self.user)
+        self.assertTrue(publish(scoreset.urn, self.create_request()))
+
+    def test_false_user_does_not_have_manage_perm_on_parents(self):
+        scoreset = self.create_scoreset()
+        scoreset.add_administrators(self.user)
+        scoreset.experiment.add_editors(self.user)
+        self.assertFalse(publish(scoreset.urn, self.create_request()))
+
+        scoreset = self.create_scoreset()
+        scoreset.add_administrators(self.user)
+        scoreset.experiment.add_administrators(self.user)
+        scoreset.experiment.experimentset.add_editors(self.user)
+        self.assertFalse(publish(scoreset.urn, self.create_request()))
+
+    def test_false_user_does_not_have_manage_perm_on_private_mixed_meta_experimentset(
+        self,
+    ):
+        child = self.create_scoreset()
+        meta = self.create_scoreset(experiment=child.experiment)
+        meta.meta_analysis_for.add(child)
+
+        meta.add_administrators(self.user)
+        self.assertFalse(publish(meta.urn, self.create_request()))
+
+    def test_true_user_has_manage_perm_on_private_mixed_meta_experimentset(
+        self,
+    ):
+        child = self.create_scoreset()
+        meta = self.create_scoreset(experiment=child.experiment)
+        meta.meta_analysis_for.add(child)
+
+        meta.add_administrators(self.user)
+        meta.parent.parent.add_administrators(self.user)
+        self.assertTrue(publish(meta.urn, self.create_request()))
+
+    def test_true_user_public_mixed_meta_experiment_set(self):
+        child = publish_dataset(self.create_scoreset(), user=self.user)
+        meta = self.create_scoreset(experiment=child.experiment)
+        meta.meta_analysis_for.add(child)
+
+        meta.add_administrators(self.user)
+        self.assertTrue(publish(meta.urn, self.create_request()))
+
+    def test_true_public_meta_analysis(self):
+        child1, child2 = self.create_scoreset(), self.create_scoreset()
+        meta = self.create_scoreset()
+        meta.meta_analysis_for.add(child1, child2)
+
+        meta.add_editors(self.user)
+        self.assertFalse(publish(meta.urn, self.create_request()))
+
+        meta.add_administrators(self.user)
+        self.assertTrue(publish(meta.urn, self.create_request()))
 
     def test_false_not_a_scoreset(self):
         scoreset = self.create_scoreset()
@@ -146,6 +217,8 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_false_publish_when_being_processed(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
 
         scoreset.processing_state = dataset.constants.processing
         scoreset.save()
@@ -158,6 +231,8 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_false_publish_in_fail_state(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
 
         scoreset.processing_state = dataset.constants.failed
         scoreset.save()
@@ -170,16 +245,22 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_false_publish_no_variants(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
 
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
         scoreset.variants.all().delete()
         self.assertFalse(publish(scoreset.urn, self.create_request()))
 
     def test_false_already_public(self):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
         publish_dataset(scoreset)
         self.assertFalse(publish(scoreset.urn, self.create_request()))
 
@@ -189,6 +270,7 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_calls_create_bulk_urns_with_reset_counter_as_true(self, patch):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+
         publish_dataset(scoreset)
         patch.assert_called_with(*(3, scoreset), reset_counter=True)
 
@@ -198,7 +280,10 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_sets_status_as_processing(self, patch):
         scoreset = self.create_scoreset()
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
         self.assertTrue(publish(scoreset.urn, self.create_request()))
+
         scoreset.refresh_from_db()
         patch.assert_called()
         self.assertEqual(
@@ -211,6 +296,9 @@ class TestPublish(TestCase, TestMessageMixin):
     def test_submits_task_to_celery(self, patch):
         instance = self.create_scoreset()
         instance.add_administrators(self.user)
+        instance.parent.add_administrators(self.user)
+        instance.parent.parent.add_administrators(self.user)
+
         request = self.create_request()
         publish(instance.urn, request)
         patch.assert_called_with(

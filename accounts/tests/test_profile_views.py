@@ -157,6 +157,9 @@ class TestPublish(TestCase, TestMessageMixin):
     def setUp(self):
         self.user = UserFactory()
         self.scoreset = ds_factories.ScoreSetWithTargetFactory()
+        self.scoreset.parent.add_administrators(self.user)
+        self.scoreset.parent.parent.add_administrators(self.user)
+
         self.path = "/profile/"
         self.factory = RequestFactory()
         self.post_data = {"publish": [self.scoreset.urn]}

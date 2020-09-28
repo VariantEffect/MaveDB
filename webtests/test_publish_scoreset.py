@@ -105,6 +105,8 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.experiment.add_administrators(self.user)
         scoreset.add_administrators(self.user)
+        scoreset.parent.add_administrators(self.user)
+        scoreset.parent.parent.add_administrators(self.user)
         scoreset.save()
 
         admin = UserFactory(is_superuser=True)
