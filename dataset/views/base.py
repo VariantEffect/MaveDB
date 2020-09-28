@@ -45,6 +45,7 @@ class DatasetModelView(DatasetPermissionMixin, DatasetUrnMixin, DetailView):
     # -------
     model = DatasetModel
     template_name = None
+    permission_required = DatasetPermissionMixin.VIEW_PERMISSION
     # -------
 
     context_object_name = "instance"
@@ -165,7 +166,7 @@ class UpdateDatasetModelView(
     """
 
     success_message = "Successfully updated {urn}."
-    permission_required = "dataset.can_edit"
+    permission_required = DatasetPermissionMixin.EDIT_PERMISSION
     model_class = None
     permission_denied_message = (
         "You do not have the required permissions to edit {urn}."
