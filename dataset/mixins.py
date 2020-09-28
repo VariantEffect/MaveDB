@@ -12,6 +12,7 @@ from accounts.permissions import user_is_anonymous, PermissionTypes
 
 from core.utilities import is_null
 from core.utilities.pandoc import convert_md_to_html
+from dataset.models import ExperimentSet, ScoreSet
 
 from dataset.models.experiment import Experiment
 from dataset.forms.experiment import ExperimentForm, ExperimentEditForm
@@ -45,9 +46,46 @@ class DatasetPermissionMixin(PermissionRequiredMixin):
     Returns
     """
 
+    VIEW_PERMISSION = f"dataset.{PermissionTypes.CAN_VIEW}"
+    EDIT_PERMISSION = f"dataset.{PermissionTypes.CAN_EDIT}"
+    MANAGE_PERMISSION = f"dataset.{PermissionTypes.CAN_MANAGE}"
+
     redirect_unauthenticated_users = "/login/"
     raise_exception = True
-    permission_required = "dataset.can_view"
+    permission_required = VIEW_PERMISSION
+
+    def has_permission_for_meta(self, instance, user):
+        """
+        Returns `True` if a user can view any of this dataset's
+        meta analysis score sets children. Children may not be directly
+        descendant as in the case for experiment sets.
+        """
+        if isinstance(instance, (Experiment, ExperimentSet)):
+            if instance.is_mixed_meta_analysis:
+                # Check special case where instance is an experiment/set with
+                # a mix of meta-analyses and regular score sets. This can happen
+                # when a score set meta-analyses only one score set, so the
+                # meta-analysis inherits the parent score set's experiment set.
+                # These parents are treated as regular datasets.
+                return user.has_perms(self.get_permission_required(), instance)
+            else:
+                # Otherwise check if user can access at least one of the score
+                # set meta-analyses as a viewer. Parents to meta-analyses can
+                # only be viewed.
+                metas = getattr(
+                    instance,
+                    "meta_analysis_scoresets",
+                    ScoreSet.objects.none(),
+                )
+                can_access_at_least_one_meta_scoreset = any(
+                    user.has_perm(self.VIEW_PERMISSION, s) for s in metas
+                )
+                return (
+                    self.permission_required == self.VIEW_PERMISSION
+                    and can_access_at_least_one_meta_scoreset
+                )
+        else:
+            return user.has_perms(self.get_permission_required(), instance)
 
     def has_permission(self):
         """
@@ -60,13 +98,17 @@ class DatasetPermissionMixin(PermissionRequiredMixin):
         user = self.request.user
         anon_user = user_is_anonymous(user)
         perm = self.permission_required
+        is_meta_analysis = instance.is_meta_analysis
+        is_mixed_analysis = getattr(instance, "is_mixed_meta_analysis", False)
 
         if is_private and anon_user:
             return False
-        elif is_public and self.permission_required == "dataset.can_view":
+        elif is_public and self.permission_required == self.VIEW_PERMISSION:
             return True
-        elif is_private and perm != "dataset.can_view" and anon_user:
+        elif is_private and perm != self.VIEW_PERMISSION and anon_user:
             return False
+        elif is_meta_analysis or is_mixed_analysis:
+            return self.has_permission_for_meta(instance, user)
         else:
             return user.has_perms(self.get_permission_required(), instance)
 
@@ -151,7 +193,7 @@ class MultiFormMixin:
 
     Generic methods with only pass on POST data/files. Write a custom function
     if you need GET data passed to the class constructor.
-    
+
     Notes
     -----
     `restricted_forms` is currently unused.
