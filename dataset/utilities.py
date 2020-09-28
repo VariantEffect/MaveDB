@@ -67,16 +67,16 @@ def publish_dataset(dataset, user=None):
     Publishes a dataset by traversing the parent tree. Assigns a public
     urn of the format <urn:mavedb:X>, sets the private bit and associated
     publish metadata.
-    
+
     Does nothing if the dataset already has a public urn or is not private.
-    
+
     Parameters
     ----------
     dataset : `models.base.DatasetModel`
         The dataset to publish.
     user :
         The user requesting the publish.
-        
+
     Raises
     ------
     TypeError : Not a dataset
