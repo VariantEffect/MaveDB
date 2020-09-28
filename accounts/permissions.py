@@ -113,7 +113,7 @@ def instances_for_user_with_group_permission(user, queryset, group_type):
     queryset : `django.db.models.QuerySet`
         The instance model class.
     group_type : `str`
-        The group, which is either admins, editors or viewers. Pass 'all'
+        The group, which is either admins, editors or viewers. Pass 'any'
         to get instances with any permission type (view, edit, admin).
 
     Returns
@@ -124,7 +124,7 @@ def instances_for_user_with_group_permission(user, queryset, group_type):
         return queryset.none()
 
     class_name = queryset.model.__name__
-    if group_type == "all":
+    if group_type == "any":
         pattern = r"{0}:\d+-\w+".format(class_name)
     else:
         pattern = r"{0}:\d+-{1}".format(class_name, group_type)
