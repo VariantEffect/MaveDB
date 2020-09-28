@@ -3,6 +3,7 @@
 import logging
 
 from django.http import HttpRequest
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.db import transaction
 
@@ -41,6 +42,13 @@ class ExperimentDetailView(DatasetModelView):
     model = Experiment
     template_name = "dataset/experiment/experiment.html"
     # -------
+
+    def dispatch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_meta_analysis:
+            kwargs["urn"] = instance.parent.urn
+            return redirect("dataset:experimentset_detail", *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
