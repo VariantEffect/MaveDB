@@ -92,6 +92,11 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         context["current_version"] = current_version
         context["previous_version"] = previous_version
         context["next_version"] = next_version
+        context["next_version"] = next_version
+        context["meta_analysed_by"] = instance.meta_analysed_by.all()
+        context["meta_analysis_for"] = instance.meta_analysis_for.all()
+        context["is_meta_analysis"] = instance.is_meta_analysis
+        context["is_meta_analysed"] = instance.is_meta_analysed
         return context
 
     def get_ajax(self):
@@ -174,6 +179,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         if self.request.GET.get("experiment", ""):
             urn = self.request.GET.get("experiment")
             if Experiment.objects.filter(urn=urn).count():
+                # TODO: allow if public
                 experiment = Experiment.objects.get(urn=urn)
                 has_permission = self.request.user.has_perm(
                     PermissionTypes.CAN_EDIT, experiment
