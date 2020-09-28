@@ -193,7 +193,7 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
 
-        driver.permission_required = "dataset.can_manage"
+        driver.permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
         self.assertFalse(driver.has_permission())
 
     def test_true_private_and_mange_permission_match(self):
@@ -203,7 +203,7 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
 
         scoreset.add_administrators(request.user)
-        driver.permission_required = "dataset.can_manage"
+        driver.permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
         self.assertTrue(driver.has_permission())
 
     def test_false_public_and_no_manage_permission(self):
@@ -214,7 +214,7 @@ class TestDatasetPermissionMixin(TestCase):
 
         scoreset.private = False
         scoreset.save()
-        driver.permission_required = "dataset.can_manage"
+        driver.permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
         self.assertFalse(driver.has_permission())
 
     def test_true_public_and_manage_permission(self):
@@ -226,7 +226,7 @@ class TestDatasetPermissionMixin(TestCase):
         scoreset.add_administrators(request.user)
         scoreset.private = False
         scoreset.save()
-        driver.permission_required = "dataset.can_manage"
+        driver.permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
         self.assertTrue(driver.has_permission())
 
     # Edit
@@ -236,7 +236,7 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
 
-        driver.permission_required = "dataset.can_edit"
+        driver.permission_required = DatasetPermissionMixin.EDIT_PERMISSION
         self.assertFalse(driver.has_permission())
 
     def test_true_private_and_edit_permission_match(self):
@@ -246,7 +246,7 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
 
         scoreset.add_editors(request.user)
-        driver.permission_required = "dataset.can_edit"
+        driver.permission_required = DatasetPermissionMixin.EDIT_PERMISSION
         self.assertTrue(driver.has_permission())
 
     def test_false_public_and_no_edit_permission(self):
@@ -257,7 +257,7 @@ class TestDatasetPermissionMixin(TestCase):
 
         scoreset.private = False
         scoreset.save()
-        driver.permission_required = "dataset.can_edit"
+        driver.permission_required = DatasetPermissionMixin.EDIT_PERMISSION
         self.assertFalse(driver.has_permission())
 
     def test_true_public_and_edit_permission(self):
@@ -269,7 +269,7 @@ class TestDatasetPermissionMixin(TestCase):
         scoreset.add_editors(request.user)
         scoreset.private = False
         scoreset.save()
-        driver.permission_required = "dataset.can_edit"
+        driver.permission_required = DatasetPermissionMixin.EDIT_PERMISSION
         self.assertTrue(driver.has_permission())
 
     # View
@@ -279,7 +279,7 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = UserFactory()
         driver = self.Driver(instance=scoreset, request=request)
 
-        driver.permission_required = "dataset.can_view"
+        driver.permission_required = DatasetPermissionMixin.VIEW_PERMISSION
         self.assertFalse(driver.has_permission())
 
     def test_true_private_and_view_permission_match(self):
@@ -289,7 +289,7 @@ class TestDatasetPermissionMixin(TestCase):
         driver = self.Driver(instance=scoreset, request=request)
 
         scoreset.add_viewers(request.user)
-        driver.permission_required = "dataset.can_view"
+        driver.permission_required = DatasetPermissionMixin.VIEW_PERMISSION
         self.assertTrue(driver.has_permission())
 
     def test_true_public_instance_view(self):
@@ -317,7 +317,7 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = AnonymousUserFactory()
         driver = self.Driver(instance=scoreset, request=request)
 
-        driver.permission_required = "dataset.can_edit"
+        driver.permission_required = DatasetPermissionMixin.EDIT_PERMISSION
         self.assertFalse(driver.has_permission())
 
     def test_false_public_no_manage_permission_anon(self):
@@ -326,7 +326,7 @@ class TestDatasetPermissionMixin(TestCase):
         request.user = AnonymousUserFactory()
         driver = self.Driver(instance=scoreset, request=request)
 
-        driver.permission_required = "dataset.can_manage"
+        driver.permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
         self.assertFalse(driver.has_permission())
 
     # Meta
@@ -344,13 +344,15 @@ class TestDatasetPermissionMixin(TestCase):
         def check_permissions():
             driver = self.Driver(instance=i, request=request)
 
-            driver.permission_required = "dataset.can_edit"
+            driver.permission_required = DatasetPermissionMixin.EDIT_PERMISSION
             self.assertFalse(driver.has_permission())
 
-            driver.permission_required = "dataset.can_manage"
+            driver.permission_required = (
+                DatasetPermissionMixin.MANAGE_PERMISSION
+            )
             self.assertFalse(driver.has_permission())
 
-            driver.permission_required = "dataset.can_view"
+            driver.permission_required = DatasetPermissionMixin.VIEW_PERMISSION
             self.assertTrue(driver.has_permission())
 
         for i in [instance, instance.parent]:
