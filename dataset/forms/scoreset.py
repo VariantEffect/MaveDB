@@ -437,12 +437,8 @@ class ScoreSetForm(DatasetModelForm):
             or ScoreSet.objects.none()
         )
 
-        if 0 < children.count() < settings.META_ANALYSIS_MINIMUM_CHILDREN:
-            raise ValidationError(
-                ErrorMessages.MetaAnalysis.too_few.value.format(
-                    settings.META_ANALYSIS_MINIMUM_CHILDREN
-                )
-            )
+        if children.count() == 0:
+            return children
 
         if (
             children.count() > 0
