@@ -85,3 +85,4 @@ secrets.json
 /cprofile/
 cprofile/*
 logs/
+default/
