@@ -19,7 +19,6 @@ services:
 
   database:
     image: postgres:9.6
-    restart: always
     ports:
       - $MAVEDB_DB_PORT:5432
     volumes:
@@ -31,7 +30,6 @@ services:
 
   broker:
     image: rabbitmq:3.8.3
-    restart: always
     ports:
       - $MAVEDB_BROKER_PORT:5672
 
