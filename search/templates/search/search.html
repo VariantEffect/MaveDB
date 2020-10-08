@@ -5,60 +5,61 @@
 
 {% block body %}
 
-<div id="search-content">
-  <div id="search-control">
-    <form class="mb-2" action="{% url 'search:search' %}" method="get">
-      <div class="input-group">
-        <input class="form-control" name="search" placeholder="BRCA1, Protein coding, Homo sapiens, ...">
-        <button class="btn btn-outline-dark white-button ml-1">
-          <i class="fa fa-search"></i>
-        </button>
-        <button id='adv-search'
-                class="btn btn-outline-dark white-button ml-1"
-                data-toggle="collapse"
-                data-target="#search-options"
-                type="button">
-          <i class="fas fa-cog"></i>
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <div id="search-options" class="collapse fade mt-2" aria-hidden="true">
-    <div class="container card" >
-      <div class="card-body">
-        <div class="card-header bg-white mb-2">
-          <h4 class="form-title"> Advanced search </h4>
+  <div id="search-content">
+    <div id="search-control">
+      <form class="mb-2" action="{% url 'search:search' %}" method="get">
+        <div class="input-group">
+          <input class="form-control" name="search" placeholder="BRCA1, Protein coding, Homo sapiens, ...">
+          <button class="btn btn-outline-dark white-button ml-1">
+            <i class="fa fa-search"></i>
+          </button>
+          <button id='adv-search'
+                  class="btn btn-outline-dark white-button ml-1"
+                  data-toggle="collapse"
+                  data-target="#search-options"
+                  type="button">
+            <i class="fas fa-cog"></i>
+          </button>
         </div>
+      </form>
+    </div>
 
-        <div id="form-loading" class="text-center pt-3">
-          <p class="text-muted text-center">Populating form fields...</p>
-          <i class="fas fa-spinner"></i>
-        </div>
-
-        <form action="{% url 'search:search' %}" method="GET" id="adv-search-form">
-          {% include 'core/bs_neutral_form.html' with form=adv_search_form %}
-          <div class="card-footer bg-white">
-            <button class="btn btn-outline-dark float-right white-button"
-                    style="width: 150px;" type="submit">Search</button>
+    <div id="search-options" class="collapse fade mt-2" aria-hidden="true">
+      <div class="container card">
+        <div class="card-body">
+          <div class="card-header bg-white mb-2">
+            <h4 class="form-title"> Advanced search </h4>
           </div>
-        </form>
 
-      </div> <!-- End card body -->
-    </div> <!-- End card -->
-  </div> <!-- end row -->
-  <hr>
+          <div id="form-loading" class="text-center pt-3">
+            <p class="text-muted text-center">Populating form fields...</p>
+            <i class="fas fa-spinner"></i>
+          </div>
 
-  <div id="table-wrapper" class="styled-table mt-4">
-    <div id="search-table-container" class="table-responsive">
-      <div id="search-loading" class="text-center">
-        <p class="text-muted text-center">Loading search results...</p>
-        <i class="fas fa-spinner" style="font-size: 20px"></i>
-        <i class="far fa-frown" style="display: none; font-size: 32px"></i>
-      </div>
-      <table id="search-table" class="styled-table table table-hover display"
-             style="width: 100%; display: none">
-        <thead>
+          <form action="{% url 'search:search' %}" method="GET" id="adv-search-form">
+            {% include 'core/bs_neutral_form.html' with form=adv_search_form %}
+            <div class="card-footer bg-white">
+              <button class="btn btn-outline-dark float-right white-button"
+                      style="width: 150px;" type="submit">Search
+              </button>
+            </div>
+          </form>
+
+        </div> <!-- End card body -->
+      </div> <!-- End card -->
+    </div> <!-- end row -->
+    <hr>
+
+    <div id="table-wrapper" class="styled-table mt-4">
+      <div id="search-table-container" class="table-responsive">
+        <div id="search-loading" class="text-center">
+          <p class="text-muted text-center">Loading search results...</p>
+          <i class="fas fa-spinner" style="font-size: 20px"></i>
+          <i class="far fa-frown" style="display: none; font-size: 32px"></i>
+        </div>
+        <table id="search-table" class="styled-table table table-hover display"
+               style="width: 100%; display: none">
+          <thead>
           <tr>
             <th style="max-width: 15px !important;"></th>
             <th class="clickable-row">Urn</th>
@@ -67,128 +68,141 @@
             <th class="clickable-row">Target type</th>
             <th class="clickable-row">Target organisms</th>
           </tr>
-        </thead>
-      </table>
+          </thead>
+        </table>
+      </div>
     </div>
   </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script type="text/javascript">
-  $(window).ready(function() {
-    let select2_init = false;
-    $("#adv-search-form").hide();
-    $("#form-loading").show();
+  <script type="text/javascript">
+      $(document).ready(function () {
+          let select2_init = false;
+          $("#adv-search-form").hide();
+          $("#form-loading").show();
 
-    $("#adv-search").click(function(event) {
-      if (!select2_init) {
-        setTimeout(function() {
-          $("#form-loading").hide();
-          $("#adv-search-form").show();
-        }, 2000);
-        setTimeout(function() {
-          init_select2();
-        }, 1000);
-        select2_init = true;
-      }
-    });
+          $("#adv-search").click(function (event) {
+              if (!select2_init) {
+                  setTimeout(function () {
+                      $("#form-loading").hide();
+                      $("#adv-search-form").show();
+                  }, 2000);
+                  setTimeout(function () {
+                      init_select2();
+                  }, 1000);
+                  select2_init = true;
+              }
+          });
 
-    let path = window.location.href;
-    if (window.location.href.includes('/?')) {
-        path = path.concat('&json=true')
-    } else {
-      path = path.concat('?json=true');
-    }
-    $.get(path, function (response) {
-      let table = $("#search-table").DataTable({
-        data: response,
-        bAutoWidth: true,
-        deferRender: true,
-        columns: [
-          {
-            className: 'details-control',
-            orderable: false,
-            data: null,
-            defaultContent: "",
-            render: function () {
-               return "<i class=\"fa fa-plus-square\" aria-hidden=\"true\"></i>";
-           },
-           width: "15px"
-          },
-          {data: "urn", width: "15%"},
-          {data: "description", width: "40%"},
-          {data: "target" },
-          {data: "type" },
-          {data: "organism"},
-        ],
-        order: [[1, 'asc']]
+          let path = window.location.href;
+          if (window.location.href.includes('/?')) {
+              path = path.concat('&json=true')
+          } else {
+              path = path.concat('?json=true');
+          }
+          $.get(path, function (response) {
+              let table = $("#search-table").DataTable({
+                  data: response,
+                  bAutoWidth: true,
+                  deferRender: true,
+                  columns: [
+                      {
+                          className: 'details-control',
+                          orderable: false,
+                          data: null,
+                          defaultContent: "",
+                          render: function () {
+                              return "<i class=\"fa fa-plus-square\" aria-hidden=\"true\"></i>";
+                          },
+                          width: "15px"
+                      },
+                      {data: "urn", width: "15%"},
+                      {data: "description", width: "40%"},
+                      {data: "target"},
+                      {data: "type"},
+                      {data: "organism"},
+                  ],
+                  order: [[1, 'asc']]
+              });
+
+              // Add event listener for opening and closing details
+              $('#search-table tbody').on('click', 'td.details-control', function () {
+                  let tr = $(this).closest('tr');
+                  let row = table.row(tr);
+                  if (row.child.isShown()) {
+                      // This row is already open - close it
+                      row.child.hide();
+                      tr.removeClass('shown');
+                      var tdi = tr.find(".fa-minus-square");
+                      tdi.first().removeClass('fa-minus-square');
+                      tdi.first().addClass('fa-plus-square');
+                      row.child().removeClass("no-hover");
+                  } else {
+                      // Open this row
+                      row.child(format(row.data())).show();
+                      tr.addClass('shown');
+                      let tdi = tr.find(".fa-plus-square");
+                      tdi.first().removeClass('fa-plus-square');
+                      tdi.first().addClass('fa-minus-square');
+                      row.child().addClass("no-hover");
+                  }
+              });
+          }).done(function () {
+              $("#search-loading").hide();
+              $("#search-table").show().resize();
+          })
+              .fail(function (jqXHR, textStatus, errorThrown) {
+                  console.log(jqXHR.status);
+                  console.log(textStatus);
+                  console.log(errorThrown);
+
+                  if (jqXHR.status === 500) {
+                      $("#search-loading p").text(
+                          "An internal server error has occurred during your search request."
+                      );
+                  } else {
+                      $("#search-loading p").text(
+                          "Your search request has failed with status " + jqXHR.status
+                      );
+                  }
+
+                  $("#search-loading .fa-spinner").remove();
+                  $("#search-loading .fa-frown").show()
+              });
+
+          $(".no-hover").parent().parent().addClass("no-hover");
       });
 
-      // Add event listener for opening and closing details
-      $('#search-table tbody').on('click', 'td.details-control', function () {
-        let tr = $(this).closest('tr');
-        let row = table.row(tr);
-        if (row.child.isShown()) {
-          // This row is already open - close it
-          row.child.hide();
-          tr.removeClass('shown');
-          var tdi = tr.find(".fa-minus-square");
-          tdi.first().removeClass('fa-minus-square');
-          tdi.first().addClass('fa-plus-square');
-          row.child().removeClass("no-hover");
-        }
-        else {
-          // Open this row
-          row.child(format(row.data())).show();
-          tr.addClass('shown');
-          let tdi = tr.find(".fa-plus-square");
-          tdi.first().removeClass('fa-plus-square');
-          tdi.first().addClass('fa-minus-square');
-          row.child().addClass("no-hover");
-        }
-      });
-    }).done(function () {
-      $("#search-loading").hide();
-      $("#search-table").show().resize();
-    })
-    .fail(function (jqXHR, textStatus, errorThrown) {
-      console.log(jqXHR.status);
-      console.log(textStatus);
-      console.log(errorThrown);
+      function format(rowData) {
+          let html = "";
+          for (let i = 0; i < rowData.children.length; i++) {
+              html += (
+                  "<tr>" +
+                  {#"<td></td>" +#}
+                  "<td>" + rowData.children[i].urn + "</td>" +
+                  "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +
+                  "<td>" + rowData.children[i].target + "</td>" +
+                  "<td>" + rowData.children[i].type + "</td>" +
+                  "<td>" + rowData.children[i].organism + "</td>" +
+                  "</tr>"
+              );
+          }
+          return html;
+      }
+  </script>
+{% endblock %}
 
-      if (jqXHR.status === 500) {
-        $("#search-loading p").text(
-          "An internal server error has occurred during your search request."
-        );
-      } else {
-        $("#search-loading p").text(
-          "Your search request has failed with status " + jqXHR.status
-        );
+{% block inline_styles %}
+    <style type="text/css">
+      .page-item.active .page-link {
+          background-color: #f7f7f7 !important;
+          color: rebeccapurple !important;
+          border-color: rebeccapurple !important;
       }
 
-      $("#search-loading .fa-spinner").remove();
-      $("#search-loading .fa-frown").show()
-    });
-
-    $(".no-hover").parent().parent().addClass("no-hover");
-  });
-
-  function format(rowData) {
-    let html = "";
-    for (let i=0; i < rowData.children.length; i++) {
-      html += (
-        "<tr>" +
-          {#"<td></td>" +#}
-          "<td>" + rowData.children[i].urn + "</td>" +
-          "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +
-          "<td>" + rowData.children[i].target + "</td>" +
-          "<td>" + rowData.children[i].type + "</td>" +
-          "<td>" + rowData.children[i].organism + "</td>" +
-        "</tr>"
-      );
-    }
-    return html;
-  }
-</script>
+      .page-link {
+          color: rebeccapurple;
+      }
+  </style>
 {% endblock %}
