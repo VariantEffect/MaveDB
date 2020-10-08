@@ -20,18 +20,19 @@ def delete(urn, request):
         - Does not have children (experiments and experimentsets only)
         - is not being processed by celery
         - does not have children being processed
+        - Cascade deletes meta-analysis parents if only score set is being
+          deleted
     """
     try:
         instance = get_model_by_urn(urn=urn)
         if not request.user.has_perm(PermissionTypes.CAN_MANAGE, instance):
             raise PermissionDenied()
     except ObjectDoesNotExist:
-        messages.error(request, "{} has already been deleted.".format(urn))
+        messages.error(request, f"{urn} has already been deleted.")
         return False
     except PermissionDenied:
         messages.error(
-            request,
-            "You must be an administrator for {} to delete " "it.".format(urn),
+            request, f"You must be an administrator for {urn} to delete it."
         )
         return False
 
@@ -57,9 +58,9 @@ def delete(urn, request):
     if being_processed:
         messages.error(
             request,
-            "{} cannot be deleted because it is currently being "
+            f"{instance.urn} cannot be deleted because it is currently being "
             "processed. Try again once your submission has "
-            "been processed.".format(instance.urn),
+            "been processed.",
         )
         return False
 
@@ -75,10 +76,8 @@ def delete(urn, request):
         if success:
             messages.success(
                 request,
-                "{} has been queued for deletion. Editing has been "
-                "disabled until your submission has been processed.".format(
-                    urn
-                ),
+                f"{urn} has been queued for deletion. Editing has been "
+                "disabled until your submission has been processed.",
             )
             return True
         else:
@@ -92,7 +91,7 @@ def delete(urn, request):
             return False
     else:
         messages.error(
-            request, "{} is public and cannot be deleted.".format(instance.urn)
+            request, f"{instance.urn} is public and cannot be deleted."
         )
         return False
 
