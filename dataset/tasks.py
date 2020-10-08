@@ -29,7 +29,7 @@ class BaseDatasetTask(BaseTask):
     """
     Base task which handles the `on_success`, `on_failure` and `run`
     callbacks.
-    
+
     Notifies users and sets the processing status of instances appropriately
     according to task status.
     """
@@ -138,7 +138,7 @@ class BaseDeleteTask(BaseDatasetTask):
 def publish_scoreset(self, user_pk, scoreset_urn):
     """
     Celery task to that publishes a `models.scoreset.ScoreSet` instance.
-    
+
     Parameters
     ----------
     self : `BasePublishTask`
@@ -199,15 +199,12 @@ def delete_instance(self, user_pk, urn):
     self.previous_processing_state = self.instance.processing_state
 
     if self.instance.children.count() and not isinstance(
-        self.instance, models.scoreset.ScoreSet
+        self.instance, models.ScoreSet
     ):
-        raise ValueError(
-            "{} has children and cannot be deleted.".format(self.urn)
-        )
+        raise ValueError(f"{self.urn} has children and cannot be deleted.")
     if (not self.instance.private) or self.instance.has_public_urn:
-        raise ValueError(
-            "{} is not private and cannot be deleted.".format(self.urn)
-        )
+        raise ValueError(f"{self.urn} is not private and cannot be deleted.")
+
     with transaction.atomic():
         return delete_instance_util(self.instance)
 
