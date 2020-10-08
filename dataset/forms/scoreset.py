@@ -702,7 +702,11 @@ class ScoreSetForm(DatasetModelForm):
         # Create a new experiment but linked to the child's experimentset
         # if this is a novel meta-analysis
         experimentset = None
-        if children.count() == 1:
+        all_from_same_experiment_set = (
+            len(set([c.experiment.experimentset.urn for c in children.all()]))
+            == 1
+        )
+        if all_from_same_experiment_set:
             experimentset = children.first().experiment.experimentset
 
         # Create new parent tree if this is a completely novel meta-analysis

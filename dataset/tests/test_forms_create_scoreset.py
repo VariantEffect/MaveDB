@@ -209,19 +209,23 @@ class TestScoreSetForm(TestCase):
         self.assertIn(child1, s.meta_analysis_for.all())
         self.assertIn(child2, s.meta_analysis_for.all())
 
-    def test_meta_with_single_child_inherits_child_experimentset(self):
+    def test_meta_parents_come_from_same_experiment_set_inherit_experiment_set(
+        self,
+    ):
         data, files = self.make_post_data()
 
-        child = publish_dataset(ScoreSetFactory())
+        child1 = publish_dataset(ScoreSetFactory())
+        child2 = publish_dataset(ScoreSetFactory(experiment=child1.experiment))
+
         data["experiment"] = None
-        data["meta_analysis_for"] = [child.pk]
+        data["meta_analysis_for"] = [child1.pk, child2.pk]
 
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertTrue(form.is_valid())
 
         s = form.save(commit=True)
-        self.assertEqual(s.parent.parent.id, child.parent.parent.id)
-        self.assertEqual(s.parent.id, child.parent.id + 1)
+        self.assertEqual(s.parent.parent.id, child1.parent.parent.id)
+        self.assertEqual(s.parent.id, child1.parent.id + 1)
 
     def test_error_replaces_has_different_experiment(self):
         data, files = self.make_post_data()
