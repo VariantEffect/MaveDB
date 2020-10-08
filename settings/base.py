@@ -11,6 +11,10 @@ ALLOWED_HOSTS = os.getenv("APP_ALLOWED_HOSTS", "127.0.0.1 localhost").split(
     " "
 )
 
+# Security settings
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
 # MaveDB APP behaviour settings
 META_ANALYSIS_ALLOW_DAISY_CHAIN = False
 
