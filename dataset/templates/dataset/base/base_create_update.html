@@ -70,43 +70,123 @@
 {% endblock body %}
 
 
-{% block extra_scripts %}
+{% block extra_scripts_2 %}
   <script type="text/javascript">
-    $("document").ready(function () {
+      $(document).ready(function () {
+          init_select2();
 
-      init_select2();
+          // Re-add any external_accession, keywords or target organism
+          // back to failed form submission
+          repopulateSelect(
+              "#id_keywords",
+              "#keywords-to-add"
+          );
+          repopulateSelect(
+              "#id_sra_ids",
+              "#sra-identifiers-to-add"
+          );
+          repopulateSelect(
+              "#id_doi_ids",
+              "#doi-identifiers-to-add"
+          );
+          repopulateSelect(
+              "#id_pubmed_ids",
+              "#pubmed-identifiers-to-add"
+          );
+          repopulateSelect(
+              "#id_uniprot-offset-identifier",
+              "#uniprot-identifier-to-add"
+          );
+          repopulateSelect(
+              "#id_ensembl-offset-identifier",
+              "#ensembl-identifier-to-add"
+          );
+          repopulateSelect(
+              "#id_refseq-offset-identifier",
+              "#refseq-identifier-to-add"
+          );
 
-      // Re-add any external_accession, keywords or target organism
-      // back to failed form submission
-      repopulateSelect(
-        "#id_keywords",
-        "#keywords-to-add"
-      );
-      repopulateSelect(
-        "#id_sra_ids",
-        "#sra-identifiers-to-add"
-      );
-      repopulateSelect(
-        "#id_doi_ids",
-        "#doi-identifiers-to-add"
-      );
-      repopulateSelect(
-        "#id_pubmed_ids",
-        "#pubmed-identifiers-to-add"
-      );
-      repopulateSelect(
-        "#id_uniprot-offset-identifier",
-        "#uniprot-identifier-to-add"
-      );
-      repopulateSelect(
-        "#id_ensembl-offset-identifier",
-        "#ensembl-identifier-to-add"
-      );
-      repopulateSelect(
-        "#id_refseq-offset-identifier",
-        "#refseq-identifier-to-add"
-      );
+          // Re-add any external_accession, keywords or target organism back to failed form submission
+          function repopulateSelect(selectId, listId) {
+              var selectItems = listId;
+              var i, j = 0;
 
-    });
+              if (selectItems !== undefined) {
+                  if (typeof listId === "string") {
+                      selectItems = $(listId).text();
+                      selectItems = selectItems.trim().split(",");
+                  }
+
+                  for (i = 0; i < selectItems.length; i++) {
+                      var optionExists = false;
+                      var select = document.getElementById(selectId.replace("#", ''));
+                      if (select === null) {
+                          return
+                      }
+                      var options = select.getElementsByTagName("option");
+
+                      for (j = 0; j < options.length; j++) {
+                          if (selectItems[i] === options[j].value) {
+                              options[j].selected = true;
+                              optionExists = true;
+                              break;
+                          }
+                      }
+
+                      if (!optionExists && selectItems[i]) {
+                          $(selectId).append($("<option/>", {
+                              value: selectItems[i],
+                              text: selectItems[i],
+                              selected: true
+                          }));
+                      }
+                  }
+              }
+          }
+
+          $("#preview-abstract").click(function (e) {
+              // First get whatever is in the form and send an ajax request
+              // to convert it to markdown.
+              var abstract = $("#id_abstract_text").val();
+              $.ajax({
+                  url: window.location.pathname,
+                  type: "GET",
+                  data: {"abstractText": abstract, "markdown": true},
+                  dataType: "json",
+                  success: function (data) {
+                      abstract = data.abstractText;
+                      $("#abstract-markdown-modal .modal-body")
+                          .text("")
+                          .append(abstract);
+                  },
+                  error: function (xhr, errmsg, err) {
+                      console.log(xhr.status + ": " + xhr.responseText);
+                  }
+              });
+              return true;
+          });
+
+          $("#preview-method").click(function (e) {
+              // First get whatever is in the form and send an ajax request
+              // to convert it to markdown.
+              var method = $("#id_method_text").val();
+              $.ajax({
+                  url: window.location.pathname,
+                  type: "GET",
+                  data: {"methodText": method, "markdown": true},
+                  dataType: "json",
+                  success: function (data) {
+                      method = data.methodText;
+                      $("#method-markdown-modal .modal-body")
+                          .text("")
+                          .append(method);
+                  },
+                  error: function (xhr, errmsg, err) {
+                      console.log(xhr.status + ": " + xhr.responseText);
+                  }
+              });
+              return true;
+          });
+      });
   </script>
 {% endblock %}
