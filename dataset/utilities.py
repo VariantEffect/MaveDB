@@ -58,7 +58,35 @@ def delete_scoreset(scoreset):
         )
     for variant in scoreset.children:
         variant.delete()
-    scoreset.delete()
+
+    should_delete_exp = False
+    should_delete_exp_set = False
+    experiment = None
+    experimentset = None
+
+    if scoreset.is_meta_analysis:
+        experiment = scoreset.experiment
+        experimentset = experiment.experimentset
+
+        # Clean up private dummy experiment and meta-analysis experiment
+        # set if deleting the only child.
+        should_delete_exp = (
+            experiment.private and experiment.children.count() == 1
+        )
+        should_delete_exp_set = (
+            experimentset.private
+            and not experimentset.is_mixed_meta_analysis
+            and experimentset.meta_analysis_scoresets.count() == 1
+        )
+
+    result = scoreset.delete()
+
+    if should_delete_exp and experiment is not None:
+        delete_experiment(experiment)
+    if should_delete_exp_set and experimentset is not None:
+        delete_experimentset(experimentset)
+
+    return result
 
 
 @transaction.atomic
