@@ -96,8 +96,8 @@ class ScoreSet(DatasetModel):
     This is the class representing a set of scores for an experiment.
     The ScoreSet object houses all information relating to a particular
     method of variant scoring. This class assumes that all validation
-    was handled at the form level, and as such performs no additonal
-    validation and will raise IntegreityError if there's bad input.
+    was handled at the form level, and as such performs no additional
+    validation and will raise IntegrityError if there's bad input.
 
     Parameters
     ----------
@@ -148,6 +148,7 @@ class ScoreSet(DatasetModel):
         to=Experiment,
         on_delete=models.PROTECT,
         null=False,
+        blank=True,
         default=None,
         verbose_name="Experiment",
         related_name="scoresets",
@@ -156,10 +157,10 @@ class ScoreSet(DatasetModel):
     meta_analysis_for = models.ManyToManyField(
         to="dataset.ScoreSet",
         verbose_name="Meta-analysis for",
-        related_name="meta_analysed_in",
+        related_name="meta_analysed_by",
         blank=True,
         help_text=(
-            "Select one for more score sets that this entry will create a "
+            "Select one or more score sets that this score set will create a "
             "meta-analysis for. Please leave the experiment field blank if "
             "this score set is a meta-analysis."
         ),
@@ -218,22 +219,32 @@ class ScoreSet(DatasetModel):
     def tracked_fields(cls):
         return super().tracked_fields() + ("licence", "data_usage_policy")
 
+    # todo: add tests for below methods
     @classmethod
-    def annotate_meta_children_count(cls):
+    def annotate_meta_children_count(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
         field_name = "meta_analysis_child_count"
-        return field_name, cls.objects.annotate(
+        return field_name, queryset.annotate(
             **{field_name: Count("meta_analysis_for")}
         )
 
     @classmethod
-    def meta_analyses(cls):
-        field, objects = cls.annotate_meta_children_count()
-        return objects.filter(**{f"{field}__gt": 0})
+    def meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        field, objects = cls.annotate_meta_children_count(queryset)
+        # Return un-annotated queryset
+        return queryset.filter(pk__in=objects.filter(**{f"{field}__gt": 0}))
 
     @classmethod
-    def non_meta_analyses(cls):
-        field, objects = cls.annotate_meta_children_count()
-        return objects.exclude(**{f"{field}__gt": 0})
+    def non_meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        return queryset.exclude(pk__in=cls.meta_analyses(queryset))
 
     @property
     def parent(self):
@@ -248,8 +259,8 @@ class ScoreSet(DatasetModel):
         return self.meta_analysis_for.count() > 0
 
     @property
-    def is_included_in_meta_analysis(self):
-        return self.meta_analysed_in.count() > 0
+    def is_meta_analysed(self):
+        return self.meta_analysed_by.count() > 0
 
     @property
     def has_variants(self):

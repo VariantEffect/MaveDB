@@ -1,5 +1,5 @@
 from django.db import models, transaction
-from django.db.models import Count
+from django.db.models import Count, Sum, F, IntegerField
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
@@ -93,43 +93,62 @@ class ExperimentSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_experimentset],
-        **UrnModel.default_urn_kwargs
+        **UrnModel.default_urn_kwargs,
     )
 
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    # todo: add tests for below methods
     @classmethod
-    def meta_analyses(cls):
-        o = cls.objects.annotate(
-            experiments__scoresets__meta_analysis_for_count=Count(
-                "experiments__scoresets__meta_analysis_for"
-            )
+    def meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        field_name = "experiments__scoresets__meta_analysis_for__count"
+        o = queryset.annotate(
+            **{field_name: Count("experiments__scoresets__meta_analysis_for")}
         )
-        return o.filter(experiments__scoresets__meta_analysis_for_count__gt=0)
+        return queryset.filter(pk__in=o.filter(**{f"{field_name}__gt": 0}))
 
     @classmethod
-    def non_meta_analyses(cls):
-        o = cls.objects.annotate(
-            experiments__scoresets__meta_analysis_for_count=Count(
-                "experiments__scoresets__meta_analysis_for"
-            )
-        )
-        return o.exclude(experiments__scoresets__meta_analysis_for_count__gt=0)
+    def non_meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        return queryset.exclude(pk__in=cls.meta_analyses(queryset))
 
     @property
     def children(self):
         return self.experiments.all()
 
     @property
-    def is_parent_of_meta_analysis(self):
+    def meta_analysis_scoresets(self):
+        from .scoreset import ScoreSet
+
+        return ScoreSet.meta_analyses().filter(
+            experiment__in=self.experiments.all()
+        )
+
+    @property
+    def is_meta_analysis(self):
         from .experiment import Experiment
 
         return (
-            Experiment.meta_analyses()
-            .filter(id__in=self.children.all())
-            .count()
-            > 0
+            0
+            < Experiment.meta_analyses().filter(experimentset=self).count()
+            == self.children.count()
+        )
+
+    @property
+    def is_mixed_meta_analysis(self):
+        from .scoreset import ScoreSet
+
+        scoreset_count = ScoreSet.objects.filter(
+            experiment__in=self.children.all()
+        ).count()
+        return self.meta_analysis_scoresets.count() > 0 and (
+            0 < scoreset_count != self.meta_analysis_scoresets.count()
         )
 
     def public_experiments(self):

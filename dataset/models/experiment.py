@@ -65,7 +65,7 @@ def assign_public_urn(experiment):
                 "Cannot assign a public urn when parent has a temporary urn."
             )
 
-        if experiment.is_parent_of_meta_analysis:
+        if experiment.is_meta_analysis:
             suffix = "0"
             # Do not increment for meta-analysis, since this is a singleton
             # dummy experiment for a meta-analysis experimentset.
@@ -127,7 +127,7 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_experiment],
-        **UrnModel.default_urn_kwargs
+        **UrnModel.default_urn_kwargs,
     )
 
     experimentset = models.ForeignKey(
@@ -143,23 +143,24 @@ class Experiment(DatasetModel):
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
+    # todo: add tests for below methods
     @classmethod
-    def meta_analyses(cls):
-        o = cls.objects.annotate(
-            scoresets__meta_analysis_for_count=Count(
-                "scoresets__meta_analysis_for"
-            )
+    def meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        field_name = "scoresets__meta_analysis_for_count"
+        o = queryset.annotate(
+            **{field_name: Count("scoresets__meta_analysis_for")}
         )
-        return o.filter(scoresets__meta_analysis_for_count__gt=0)
+        return queryset.filter(pk__in=o.filter(**{f"{field_name}__gt": 0}))
 
     @classmethod
-    def non_meta_analyses(cls):
-        o = cls.objects.annotate(
-            scoresets__meta_analysis_for_count=Count(
-                "scoresets__meta_analysis_for"
-            )
-        )
-        return o.exclude(scoresets__meta_analysis_for_count__gt=0)
+    def non_meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        return queryset.exclude(pk__in=cls.meta_analyses(queryset))
 
     @transaction.atomic
     def save(self, *args, **kwargs):
@@ -172,13 +173,20 @@ class Experiment(DatasetModel):
         return getattr(self, "experimentset", None)
 
     @property
-    def is_parent_of_meta_analysis(self):
+    def is_meta_analysis(self):
+        return (
+            0 < self.meta_analysis_scoresets.count() == self.children.count()
+        )
+
+    @property
+    def is_mixed_meta_analysis(self):
+        return False
+
+    @property
+    def meta_analysis_scoresets(self):
         from .scoreset import ScoreSet
 
-        return (
-            ScoreSet.meta_analyses().filter(id__in=self.children.all()).count()
-            > 0
-        )
+        return ScoreSet.meta_analyses().filter(experiment=self)
 
     @property
     def children(self):
