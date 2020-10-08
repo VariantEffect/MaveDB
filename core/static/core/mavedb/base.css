@@ -238,12 +238,6 @@ tr.shown td.details-control {
     padding-bottom: 1px;
 }
 
-.page-item.active .page-link {
-    background-color: #f7f7f7 !important;
-    border-color: rebeccapurple !important;
-
-}
-
 .nav-link.active {
     border-color: rebeccapurple !important;
     border-bottom: none;
