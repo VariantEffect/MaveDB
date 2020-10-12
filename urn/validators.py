@@ -23,7 +23,7 @@ MAVEDB_EXPERIMENTSET_URN_PATTERN = r"^urn:{namespace}:\d{{{width}}}$".format(
 MAVEDB_EXPERIMENTSET_URN_RE = re.compile(MAVEDB_EXPERIMENTSET_URN_PATTERN)
 
 # Experiment Pattern/Compiled RE
-MAVEDB_EXPERIMENT_URN_PATTERN = r"{pattern}-([a-z]+|\d+)$".format(
+MAVEDB_EXPERIMENT_URN_PATTERN = r"{pattern}-([a-z]+|0)$".format(
     pattern=MAVEDB_EXPERIMENTSET_URN_PATTERN[:-1]
 )
 MAVEDB_EXPERIMENT_URN_RE = re.compile(MAVEDB_EXPERIMENT_URN_PATTERN)
