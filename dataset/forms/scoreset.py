@@ -649,8 +649,11 @@ class ScoreSetForm(DatasetModelForm):
     @transaction.atomic
     def save(self, commit=True):
         if self.is_meta_analysis and commit:
-            self.instance.experiment.save()
-            self.instance.experiment_id = self.instance.experiment.id
+            if not (self.editing_public or self.editing_existing):
+                experiment = self.cleaned_data["experiment"]
+                experiment.save()
+                self.instance.experiment = experiment
+                self.instance.experiment_id = experiment.id
         return super().save(commit=commit)
 
     # ---------------------- PUBLIC ----------------------------- #
@@ -670,10 +673,10 @@ class ScoreSetForm(DatasetModelForm):
         if "meta_analysis_for" not in self.fields:
             return self.instance.is_meta_analysis
         else:
-            return len(self.data.get("meta_analysis_for", [])) > 0
+            return len(self.meta_analysis_form_field_data) > 0
 
     def get_existing_meta_analysis(self) -> Optional[ScoreSet]:
-        children = self.data.get("meta_analysis_for", [])
+        children = self.meta_analysis_form_field_data
         if len(children) < 1:
             return None
 
@@ -690,7 +693,7 @@ class ScoreSetForm(DatasetModelForm):
     def get_meta_analysis_experiment(self) -> Experiment:
         existing = self.get_existing_meta_analysis()
         children = ScoreSet.objects.filter(
-            id__in=self.data.get("meta_analysis_for", [])
+            id__in=self.meta_analysis_form_field_data
         )
 
         if children.count() == 0:
@@ -727,6 +730,13 @@ class ScoreSetForm(DatasetModelForm):
     @property
     def editing_public(self):
         return not self.instance.private
+
+    @property
+    def meta_analysis_form_field_data(self):
+        children = self.data.get("meta_analysis_for", [])
+        if isinstance(children, (int, str)):
+            children = [children]
+        return children
 
     # --------------- FACTORY ----------------------------------- #
     @classmethod
