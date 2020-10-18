@@ -244,7 +244,7 @@ def create_variants(
         HGVS column to use as the index when matching up variant data between
         scores and counts.
     dataset_columns : dict
-        Contians keys `scores` and `counts`. The values are lists of strings
+        Contains keys `scores` and `counts`. The values are lists of strings
         indicating the columns to be expected in the variants for this dataset.
 
     Returns
