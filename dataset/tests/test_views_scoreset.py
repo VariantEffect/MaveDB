@@ -386,7 +386,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
-    def test_correct_tamplate_when_logged_in(self):
+    def test_correct_template_when_logged_in(self):
         self.client.login(
             username=self.username, password=self.unencrypted_password
         )
@@ -551,7 +551,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertTrue(form.is_valid())
 
         with mock.patch(
-            "dataset.views.scoreset.create_variants.apply_async"
+            "dataset.views.scoreset.create_variants.submit_task"
         ) as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
@@ -945,7 +945,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request.FILES.update(self.files)
 
         with mock.patch(
-            "dataset.views.scoreset.create_variants.apply_async"
+            "dataset.views.scoreset.create_variants.submit_task"
         ) as create_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()
@@ -953,7 +953,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             self.assertEqual(scs.processing_state, constants.processing)
 
             with mock.patch(
-                "core.tasks.send_mail.apply_async"
+                "core.tasks.send_mail.submit_task"
             ) as notify_patch:
                 create_variants.apply(**create_mock.call_args[1])
                 self.assertEqual(notify_patch.call_count, 1)

@@ -36,7 +36,8 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.is_valid())
 
-    def test_can_reassign_viewer_to_editor(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_can_reassign_viewer_to_editor(self, patch):
         instance = ExperimentFactory()
         instance.add_viewers(self.user2)
         form = SelectUsersForm(
@@ -48,10 +49,12 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
+        patch.assert_called()
         self.assertTrue(self.user2 in instance.editors)
         self.assertFalse(self.user2 in instance.viewers)
 
-    def test_can_reassign_editor_to_admin(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_can_reassign_editor_to_admin(self, patch):
         instance = ExperimentFactory()
         instance.add_editors(self.user2)
         form = SelectUsersForm(
@@ -60,10 +63,12 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
+        patch.assert_called()
         self.assertTrue(self.user2 in instance.administrators)
         self.assertFalse(self.user2 in instance.editors)
 
-    def test_can_reassign_admin_to_editor(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_can_reassign_admin_to_editor(self, patch):
         instance = ExperimentFactory()
         instance.add_administrators(self.user2)
         form = SelectUsersForm(
@@ -75,10 +80,12 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
+        patch.assert_called()
         self.assertTrue(self.user2 in instance.editors)
         self.assertFalse(self.user2 in instance.administrators)
 
-    def test_can_reassign_editor_to_viewer(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_can_reassign_editor_to_viewer(self, patch):
         instance = ExperimentFactory()
         instance.add_editors(self.user2)
         form = SelectUsersForm(
@@ -90,6 +97,7 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
+        patch.assert_called()
         self.assertTrue(self.user2 in instance.viewers)
         self.assertFalse(self.user2 in instance.editors)
 
@@ -208,17 +216,20 @@ class TestSelectUsersForm(TestCase):
             },
         )
 
-    def test_adds_user_as_viewer_to_parents_by_default(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_adds_user_as_viewer_to_parents_by_default(self, patch):
         instance = ScoreSetFactory()
         form = SelectUsersForm(
             data={"administrators": [self.user1.pk]}, instance=instance
         )
         self.assertFalse(form.errors)
         form.process_user_list()
+        patch.assert_called()
         self.assertIn(self.user1, instance.parent.viewers)
         self.assertIn(self.user1, instance.parent.parent.viewers)
 
-    def test_does_not_change_parent_membership(self):
+    @mock.patch("accounts.models.Profile.notify_user_group_change")
+    def test_does_not_change_parent_membership(self, patch):
         instance = ScoreSetFactory()
         instance.parent.add_editors(self.user1)
         form = SelectUsersForm(
@@ -226,4 +237,5 @@ class TestSelectUsersForm(TestCase):
         )
         self.assertFalse(form.errors)
         form.process_user_list()
+        patch.assert_called()
         self.assertIn(self.user1, instance.parent.editors)

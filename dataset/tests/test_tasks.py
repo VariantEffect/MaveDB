@@ -28,7 +28,8 @@ class TestBaseDatasetTask(TestCase):
         self.instance = ScoreSetFactory()
         self.user = UserFactory()
 
-    def test_on_failure_sets_status_to_failed(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_on_failure_sets_status_to_failed(self, patch):
         base = BaseDatasetTask()
         base.instance = self.instance
         base.user = self.user
@@ -38,10 +39,12 @@ class TestBaseDatasetTask(TestCase):
         base.on_failure(
             exc=Exception("Test"), task_id="1", args=[], einfo=None, kwargs={}
         )
+        patch.assert_called()
         self.instance.refresh_from_db()
         self.assertEqual(self.instance.processing_state, constants.failed)
 
-    def test_on_success_sets_status_to_success(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_on_success_sets_status_to_success(self, patch):
         base = BaseDatasetTask()
         base.instance = self.instance
         base.user = self.user
@@ -49,6 +52,7 @@ class TestBaseDatasetTask(TestCase):
         base.description = "do the thing {urn}"
 
         base.on_success(retval=self.instance, task_id="1", args=[], kwargs={})
+        patch.assert_called()
         self.instance.refresh_from_db()
         self.assertEqual(self.instance.processing_state, constants.success)
 
@@ -82,7 +86,8 @@ class TestBaseDatasetTask(TestCase):
             **{"success": True, "description": description, "task_id": "1"}
         )
 
-    def test_fail_creates_a_failedtask_instances(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_fail_creates_a_failedtask_instances(self, patch):
         base = BaseDatasetTask()
         base.instance = self.instance
         base.user = self.user
@@ -92,6 +97,7 @@ class TestBaseDatasetTask(TestCase):
         base.on_failure(
             exc=Exception("Test"), task_id="1", args=[], einfo=None, kwargs={}
         )
+        patch.assert_called()
         self.assertEqual(FailedTask.objects.count(), 1)
 
 
@@ -169,7 +175,8 @@ class TestPublishScoresetTask(TestCase):
     def mock_kwargs(self):
         return dict(scoreset_urn=self.scoreset.urn, user_pk=self.user.pk)
 
-    def test_resets_public_to_false_if_failed(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_resets_public_to_false_if_failed(self, patch):
         self.scoreset.private = False
         experiment = self.scoreset.parent
         experiment.private = False
@@ -189,6 +196,7 @@ class TestPublishScoresetTask(TestCase):
         base.on_failure(
             exc=Exception("Test"), task_id="1", args=[], einfo=None, kwargs={}
         )
+        patch.assert_called()
         scoreset = ScoreSet.objects.first()
         self.assertTrue(scoreset.private)
         self.assertTrue(scoreset.parent.private)
@@ -234,10 +242,12 @@ class TestDeleteInstance(TestCase):
         exp.refresh_from_db()
         self.assertEqual(exp.processing_state, constants.processing)
 
-    def test_on_sucess_sets_self_instance_to_none(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_on_success_sets_self_instance_to_none(self, patch):
         delete_instance.apply(
             kwargs=dict(urn=self.scoreset.urn, user_pk=self.user.pk)
         )
+        patch.assert_called()
         self.assertIsNone(delete_instance.instance)
 
     def test_fails_if_deleting_public(self):

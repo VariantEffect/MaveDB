@@ -6,7 +6,7 @@ from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase, mock
 
-from mavedb import celery_app
+# from mavedb import celery_app
 
 from accounts.factories import UserFactory
 
@@ -28,7 +28,7 @@ from .utilities import (
     ActionMixin,
 )
 
-celery_app.conf["task_always_eager"] = False
+# celery_app.conf["task_always_eager"] = False
 
 
 class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
@@ -53,8 +53,10 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
             self.user.username, self.user._password, self, "browser"
         )
 
-    @mock.patch("dataset.tasks.create_variants.apply_async")
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    @mock.patch("core.tasks.send_mail.submit_task", return_value=(True, None))
     def test_create_experiment_flow(self, notify_patch, variants_patch):
         # Create some experimentsets that the user should not be able to see
         exps1 = data_factories.ExperimentSetFactory(private=False)
@@ -251,7 +253,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         # Add an extra keyword
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[0]
+        )[1]
         self.perform_action(field, "send_keys", "new kw")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"
@@ -273,6 +275,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         uniprot_offset = self.browser.find_element_by_id(
             "id_uniprot-offset-offset"
         )
+        uniprot_offset.clear()
         self.perform_action(uniprot_offset, "send_keys", 10)
 
         id_input = self.browser.find_element_by_id(
@@ -290,6 +293,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         refseq_offset = self.browser.find_element_by_id(
             "id_refseq-offset-offset"
         )
+        refseq_offset.clear()
         self.perform_action(refseq_offset, "send_keys", 20)
 
         id_input = self.browser.find_element_by_id(
@@ -307,6 +311,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         ensembl_offset = self.browser.find_element_by_id(
             "id_ensembl-offset-offset"
         )
+        ensembl_offset.clear()
         self.perform_action(ensembl_offset, "send_keys", 30)
 
         # select target type
@@ -348,7 +353,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         scoreset = data_models.scoreset.ScoreSet.objects.first()
         self.assertEqual(scoreset.processing_state, constants.success)
-        self.assertEqual(scoreset.variants.count(), 7)
+        self.assertEqual(scoreset.variants.count(), 6)
         self.assertEqual(
             scoreset.dataset_columns[constants.score_columns],
             ["score", "SE", "epsilon"],

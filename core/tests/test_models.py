@@ -114,7 +114,7 @@ class TestFailedTaskModel(TestCase):
         self.assertFalse(created)
         self.assertEqual(task.failures, 2)
 
-    @mock.patch("core.tasks.add.apply_async")
+    @mock.patch("core.tasks.add.submit_task")
     def test_can_retry_task(self, patch):
         kwargs = {"a": 1, "b": 2}
         task = models.FailedTask.instantiate_task(
@@ -131,9 +131,7 @@ class TestFailedTaskModel(TestCase):
 
         task.retry_and_delete()
         patch.assert_called()
-        self.assertEqual(
-            patch.call_args[1], {"args": (), "kwargs": kwargs, "countdown": 10}
-        )
+        self.assertEqual(patch.call_args[1], {"args": (), "kwargs": kwargs})
         self.assertEqual(models.FailedTask.objects.count(), 0)
 
     def test_inline_retry_does_not_delete_if_failure(self):

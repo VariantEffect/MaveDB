@@ -167,7 +167,7 @@ class TestGroupPermisionMixin(TestCase):
         self.assertNotIn(self.user_b, self.instance_a.viewers)
 
 
-class TestgPermissionGroupsAreDisjoint(TransactionTestCase):
+class TestPermissionGroupsAreDisjoint(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):

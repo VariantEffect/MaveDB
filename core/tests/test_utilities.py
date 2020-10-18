@@ -33,7 +33,7 @@ class TestBaseUrl(TestCase):
 
 
 class TestNotifyAdmins(TestCase):
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_send_admin_email_emails_all_admins(self, patch):
         user1 = UserFactory()
         user1.is_superuser = True
@@ -48,8 +48,8 @@ class TestNotifyAdmins(TestCase):
         notify_admins(user1, obj)
         patch.assert_called()
         self.assertEqual(patch.call_count, 2)
-        exptected = "http://{}/scoreset/{}/".format(settings.BASE_URL, obj.urn)
-        self.assertIn(exptected, patch.call_args[1]["kwargs"]["message"])
+        expected = "http://{}/scoreset/{}/".format(settings.BASE_URL, obj.urn)
+        self.assertIn(expected, patch.call_args[1]["kwargs"]["message"])
 
 
 class TestIsNull(TestCase):

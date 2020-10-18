@@ -4,8 +4,6 @@ from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
 from django.test import LiveServerTestCase, mock
 
-from mavedb import celery_app
-
 from accounts.factories import UserFactory
 
 from dataset import models as data_models
@@ -22,8 +20,6 @@ from .utilities import (
     STAGING_OR_PROD,
     ActionMixin,
 )
-
-celery_app.conf["task_always_eager"] = False
 
 
 class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
@@ -99,8 +95,8 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             self.browser.find_element_by_id("id_refseq-offset-offset")
             self.browser.find_element_by_id("id_ensembl-offset-offset")
 
-    @mock.patch("core.tasks.send_mail.apply_async")
-    @mock.patch("dataset.tasks.publish_scoreset.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
+    @mock.patch("dataset.tasks.publish_scoreset.submit_task")
     def test_publish_updates_states(self, publish_patch, notify_patch):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.experiment.add_administrators(self.user)
