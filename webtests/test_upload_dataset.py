@@ -4,9 +4,9 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
-from django.test import LiveServerTestCase, mock
+from django.test import LiveServerTestCase, mock, tag
 
-# from mavedb import celery_app
+from mavedb import celery_app
 
 from accounts.factories import UserFactory
 
@@ -28,7 +28,7 @@ from .utilities import (
     ActionMixin,
 )
 
-# celery_app.conf["task_always_eager"] = False
+celery_app.conf["task_always_eager"] = False
 
 
 class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
@@ -57,6 +57,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         "dataset.tasks.create_variants.submit_task", return_value=(True, None)
     )
     @mock.patch("core.tasks.send_mail.submit_task", return_value=(True, None))
+    @tag("webtest")
     def test_create_experiment_flow(self, notify_patch, variants_patch):
         # Create some experimentsets that the user should not be able to see
         exps1 = data_factories.ExperimentSetFactory(private=False)
@@ -410,6 +411,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
             self.user.username, self.user._password, self, "browser"
         )
 
+    @tag("webtest")
     def test_failed_experiment_submission_repops_m2m_fields(self):
         self.authenticate()
         self.browser.get(self.live_server_url + "/experiment/new/")
@@ -485,6 +487,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
             [o.text for o in select.all_selected_options], ["bad pm"]
         )
 
+    @tag("webtest")
     def test_failed_scoreset_submission_repops_m2m_fields(self):
         # Create a genome to select as this is a required field
         genome_factories.ReferenceGenomeFactory()

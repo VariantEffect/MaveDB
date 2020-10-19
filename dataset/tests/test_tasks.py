@@ -19,7 +19,6 @@ from dataset.tasks import (
     BaseDatasetTask,
     delete_instance,
     BasePublishTask,
-    BaseDeleteTask,
 )
 
 
@@ -231,7 +230,8 @@ class TestDeleteInstance(TestCase):
         self.scoreset = ScoreSetFactory()
         self.user = UserFactory()
 
-    def test_on_failure_sets_status_to_previous_state(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_on_failure_sets_status_to_previous_state(self, patch):
         exp = self.scoreset.parent
         exp.processing_state = constants.processing
         exp.save()
@@ -239,6 +239,7 @@ class TestDeleteInstance(TestCase):
         delete_instance.apply(
             kwargs=dict(urn=self.scoreset.parent.urn, user_pk=self.user.pk)
         )
+        patch.assert_called()
         exp.refresh_from_db()
         self.assertEqual(exp.processing_state, constants.processing)
 
@@ -250,26 +251,32 @@ class TestDeleteInstance(TestCase):
         patch.assert_called()
         self.assertIsNone(delete_instance.instance)
 
-    def test_fails_if_deleting_public(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_fails_if_deleting_public(self, patch):
         self.scoreset.private = False
         self.scoreset.save()
         delete_instance.apply(
             kwargs=dict(urn=self.scoreset.urn, user_pk=self.user.pk)
         )
+        patch.assert_called()
         self.assertEqual(FailedTask.objects.count(), 1)
 
-    def test_fails_if_deleting_with_public_urn(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_fails_if_deleting_with_public_urn(self, patch):
         publish_scoreset(user_pk=self.user.pk, scoreset_urn=self.scoreset.urn)
         delete_instance.apply(
             kwargs=dict(urn=self.scoreset.urn, user_pk=self.user.pk)
         )
+        patch.assert_called()
         self.assertEqual(FailedTask.objects.count(), 1)
 
-    def test_fails_if_deleting_non_scs_parent_with_children(self):
+    @mock.patch.object(Profile, "notify_user_submission_status")
+    def test_fails_if_deleting_non_scs_parent_with_children(self, patch):
         exp = self.scoreset.parent
         exp.processing_state = constants.processing
         exp.save()
         delete_instance.apply(
             kwargs=dict(urn=self.scoreset.parent.urn, user_pk=self.user.pk)
         )
+        patch.assert_called()
         self.assertEqual(FailedTask.objects.count(), 1)

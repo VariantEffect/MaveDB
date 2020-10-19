@@ -1,7 +1,6 @@
 import json
 from pandas.testing import assert_frame_equal
 
-from django.core import mail
 from django.test import TestCase, TransactionTestCase, RequestFactory, mock
 from django.urls import reverse_lazy
 from django.http import Http404
@@ -19,7 +18,6 @@ from accounts.permissions import (
 )
 
 from core.utilities.tests import TestMessageMixin
-from core.tasks import send_mail
 
 from genome.factories import ReferenceGenomeFactory
 
@@ -43,7 +41,6 @@ from variant.factories import VariantFactory
 
 from ..utilities import publish_dataset
 import dataset.constants as constants
-from ..tasks import create_variants
 from ..forms.scoreset import ScoreSetForm
 from ..factories import (
     ScoreSetFactory,
@@ -393,7 +390,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         response = self.client.get(self.path)
         self.assertTemplateUsed(response, self.template)
 
-    def test_redirects_to_profile_after_success(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_redirects_to_profile_after_success(self, patch):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_admin(self.user, exp1)
@@ -406,8 +406,12 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         # Redirects to scoreset_detail
         self.assertEqual(response.status_code, 302)
+        patch.assert_called()
 
-    def test_creates_new_reversion_instance(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_creates_new_reversion_instance(self, patch):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_admin(self.user, exp1)
@@ -418,10 +422,14 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.FILES.update(self.files)
 
         self.assertEqual(Version.objects.count(), 0)
-        response = ScoreSetCreateView.as_view()(request)
+        ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
         self.assertEqual(Version.objects.count(), 1)
 
-    def test_reference_map_created(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_reference_map_created(self, patch):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_admin(self.user, exp1)
@@ -431,6 +439,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
 
         # Redirects to scoreset_detail
         self.assertEqual(response.status_code, 302)
@@ -505,7 +514,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
     #         response, "{} | {}".format(scs_2.urn, scs_2.title)
     #     )
 
-    def test_can_submit_and_create_scoreset_when_forms_are_valid(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_can_submit_and_create_scoreset_when_forms_are_valid(self, patch):
         data = self.post_data.copy()
         scs1 = ScoreSetFactory(private=False)
         assign_user_as_instance_admin(self.user, scs1)
@@ -520,6 +532,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
 
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
@@ -571,7 +584,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             assert_frame_equal(scores, expected_scores)
             assert_frame_equal(counts, expected_counts)
 
-    def test_invalid_form_does_not_redirect(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_invalid_form_does_not_redirect(self, patch):
         data = self.post_data.copy()
         data["experiment"] = ["999"]
 
@@ -579,11 +595,15 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_not_called()
 
         self.assertEqual(ScoreSet.objects.count(), 0)
         self.assertEqual(response.status_code, 200)
 
-    def test_scoreset_created_with_current_user_as_admin(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_scoreset_created_with_current_user_as_admin(self, patch):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_admin(self.user, exp1)
@@ -593,11 +613,15 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         _ = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
 
         scs = ScoreSet.objects.all()[0]
         self.assertTrue(self.user in scs.administrators)
 
-    def test_failed_submission_adds_extern_identifier_to_context(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_failed_submission_adds_extern_identifier_to_context(self, patch):
         fs = [
             (SraIdentifierFactory, "sra_ids"),
             (PubmedIdentifierFactory, "pubmed_ids"),
@@ -613,10 +637,16 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             )
             request.user = self.user
             response = ScoreSetCreateView.as_view()(request)
+            patch.assert_not_called()
 
             self.assertContains(response, instance.identifier)
 
-    def test_failed_submission_adds_new_extern_identifier_to_context(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_failed_submission_adds_new_extern_identifier_to_context(
+        self, patch
+    ):
         fs = [
             (SraIdentifierFactory, "sra_ids"),
             (PubmedIdentifierFactory, "pubmed_ids"),
@@ -634,10 +664,14 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             )
             request.user = self.user
             response = ScoreSetCreateView.as_view()(request)
+            patch.assert_not_called()
 
             self.assertContains(response, instance.identifier)
 
-    def test_failed_submission_adds_keywords_to_context(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_failed_submission_adds_keywords_to_context(self, patch):
         data = self.post_data.copy()
         kw = KeywordFactory()
         data["keywords"] = ["protein", kw.text]
@@ -645,11 +679,15 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request = self.create_request(method="post", path=self.path, data=data)
         request.user = self.user
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_not_called()
 
         self.assertContains(response, "protein")
         self.assertContains(response, kw.text)
 
-    def test_failed_submission_adds_uniprot_ids_to_context(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_failed_submission_adds_uniprot_ids_to_context(self, patch):
         data = self.post_data.copy()
         up = UniprotIdentifierFactory()
         data["uniprot-offset-identifier"] = ["P12345", up.identifier]
@@ -657,11 +695,15 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request = self.create_request(method="post", path=self.path, data=data)
         request.user = self.user
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_not_called()
 
         self.assertContains(response, "P12345")
         self.assertContains(response, up.identifier)
 
-    def test_failed_submission_adds_refseq_ids_to_context(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_failed_submission_adds_refseq_ids_to_context(self, patch):
         data = self.post_data.copy()
         id_ = RefseqIdentifierFactory()
         data["ensembl-offset-identifier"] = ["RefSeq", id_.identifier]
@@ -669,11 +711,15 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request = self.create_request(method="post", path=self.path, data=data)
         request.user = self.user
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_not_called()
 
         self.assertContains(response, "RefSeq")
         self.assertContains(response, id_.identifier)
 
-    def test_failed_submission_adds_ensembl_ids_to_context(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_failed_submission_adds_ensembl_ids_to_context(self, patch):
         data = self.post_data.copy()
         id_ = EnsemblIdentifierFactory()
         data["refseq-offset-identifier"] = ["Ensembl", id_.identifier]
@@ -681,11 +727,15 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request = self.create_request(method="post", path=self.path, data=data)
         request.user = self.user
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_not_called()
 
         self.assertContains(response, "Ensembl")
         self.assertContains(response, id_.identifier)
 
-    def test_does_not_add_user_as_admin_to_selected_parent(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_does_not_add_user_as_admin_to_selected_parent(self, patch):
         data = self.post_data.copy()
         exp1 = ExperimentFactory()
         assign_user_as_instance_editor(self.user, exp1)
@@ -696,6 +746,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         _ = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
 
         scs = ScoreSet.objects.all()[0]
         self.assertNotIn(self.user, scs.parent.administrators)
@@ -742,7 +793,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertNotContains(response, exp1.urn)
         self.assertContains(response, exp2.urn)
 
-    def test_create_not_set_superusers_as_admins(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_create_does_not_set_superusers_as_admins(self, patch):
         su = UserFactory(is_superuser=True)
         ScoreSet.objects.all().delete()
 
@@ -755,6 +809,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
 
         # Redirects to scoreset_detail
         self.assertEqual(response.status_code, 302)
@@ -765,7 +820,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertNotIn(su, scoreset.parent.administrators)
         self.assertNotIn(su, scoreset.parent.parent.administrators)
 
-    def test_associates_new_uniprot_identifiers(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_associates_new_uniprot_identifiers(self, patch):
         data = self.post_data.copy()
         exp = ExperimentFactory(private=False)
         assign_user_as_instance_admin(self.user, exp)
@@ -781,6 +839,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
         self.assertEqual(response.status_code, 302)
         scoreset = ScoreSet.objects.order_by("-urn").first()
         self.assertEqual(
@@ -791,7 +850,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             scoreset.target.get_uniprot_offset_annotation().offset, 5
         )
 
-    def test_associates_new_ensembl_identifiers(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_associates_new_ensembl_identifiers(self, patch):
         data = self.post_data.copy()
         exp = ExperimentFactory(private=False)
         assign_user_as_instance_admin(self.user, exp)
@@ -807,6 +869,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
         self.assertEqual(response.status_code, 302)
         scoreset = ScoreSet.objects.order_by("-urn").first()
         self.assertEqual(
@@ -817,7 +880,10 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             scoreset.target.get_ensembl_offset_annotation().offset, 5
         )
 
-    def test_associates_new_refseq_identifiers(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_associates_new_refseq_identifiers(self, patch):
         data = self.post_data.copy()
         exp = ExperimentFactory(private=False)
         assign_user_as_instance_admin(self.user, exp)
@@ -833,6 +899,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
         self.assertEqual(response.status_code, 302)
         scoreset = ScoreSet.objects.order_by("-urn").first()
         self.assertEqual(
@@ -891,7 +958,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.user.save()
         self.client.logout()
 
-    def test_correct_tamplate_when_logged_in(self):
+    def test_correct_template_when_logged_in(self):
         scs = ScoreSetFactory()
         assign_user_as_instance_admin(self.user, scs)
         self.client.login(
@@ -952,16 +1019,6 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             scs.refresh_from_db()
             self.assertEqual(scs.processing_state, constants.processing)
 
-            with mock.patch(
-                "core.tasks.send_mail.submit_task"
-            ) as notify_patch:
-                create_variants.apply(**create_mock.call_args[1])
-                self.assertEqual(notify_patch.call_count, 1)
-                send_mail.apply(**notify_patch.call_args[1])
-                self.assertEqual(len(mail.outbox), 1)
-                scs.refresh_from_db()
-                self.assertEqual(scs.processing_state, constants.success)
-
     def test_published_instance_returns_edit_only_mode_form(self):
         scs = ScoreSetFactory(private=False)
         assign_user_as_instance_admin(self.user, scs)
@@ -977,7 +1034,10 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertNotContains(response, "id_count_data")
         self.assertNotContains(response, "id_meta_data")
 
-    def test_resubmit_blank_uniprot_id_deletes_offset_instance(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_resubmit_blank_uniprot_id_deletes_offset_instance(self, patch):
         data = self.post_data.copy()
         scs = ScoreSetWithTargetFactory()
         UniprotOffsetFactory(
@@ -995,6 +1055,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        patch.assert_called()
 
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
@@ -1004,7 +1065,10 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         scs = ScoreSet.objects.first()
         self.assertIsNone(scs.target.get_uniprot_offset_annotation())
 
-    def test_resubmit_blank_refseq_id_deletes_offset_instance(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_resubmit_blank_refseq_id_deletes_offset_instance(self, patch):
         data = self.post_data.copy()
         scs = ScoreSetWithTargetFactory()
         RefseqOffsetFactory(target=scs.target, identifier=scs.target.refseq_id)
@@ -1020,6 +1084,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        patch.assert_called()
 
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
@@ -1029,7 +1094,10 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         scs = ScoreSet.objects.first()
         self.assertIsNone(scs.target.get_refseq_offset_annotation())
 
-    def test_resubmit_blank_ensembl_id_deletes_offset_instance(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_resubmit_blank_ensembl_id_deletes_offset_instance(self, patch):
         data = self.post_data.copy()
         scs = ScoreSetWithTargetFactory()
         EnsemblOffsetFactory(
@@ -1048,6 +1116,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request.user = self.user
         request.FILES.update(self.files)
         response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        patch.assert_called()
 
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
@@ -1057,7 +1126,10 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         scs = ScoreSet.objects.first()
         self.assertIsNone(scs.target.get_ensembl_offset_annotation())
 
-    def test_cannot_edit_processing_scoreset(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_cannot_edit_processing_scoreset(self, patch):
         scs = ScoreSetWithTargetFactory()
         scs.processing_state = constants.processing
         scs.save()
@@ -1067,9 +1139,13 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             username=self.user.username, password=self.user._password
         )
         response = self.client.get(path)
+        patch.assert_not_called()
         self.assertEqual(response.status_code, 302)
 
-    def test_creates_new_reversion_instance(self):
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_creates_new_reversion_instance(self, patch):
         instance = ScoreSetWithTargetFactory()
         data = self.post_data.copy()
         data["experiment"] = [instance.parent.pk]
@@ -1083,4 +1159,5 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
 
         self.assertEqual(Version.objects.count(), 0)
         ScoreSetEditView.as_view()(request, urn=instance.urn)
+        patch.assert_called()
         self.assertEqual(Version.objects.count(), 1)

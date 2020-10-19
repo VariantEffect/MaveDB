@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
-from django.test import LiveServerTestCase, mock
+from django.test import LiveServerTestCase, mock, tag
 
 from accounts.factories import UserFactory
 
@@ -44,6 +44,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             self.user.username, self.user._password, self, "browser"
         )
 
+    @tag("webtest")
     def test_edit_blocked_if_scs_is_in_processing_state(self):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.experiment.add_administrators(self.user)
@@ -63,6 +64,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             "being processed and cannot be edited.", messages[0].text
         )
 
+    @tag("webtest")
     def test_publish_limits_edit_fields(self):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.add_administrators(self.user)
@@ -97,6 +99,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
 
     @mock.patch("core.tasks.send_mail.submit_task")
     @mock.patch("dataset.tasks.publish_scoreset.submit_task")
+    @tag("webtest")
     def test_publish_updates_states(self, publish_patch, notify_patch):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset.experiment.add_administrators(self.user)
@@ -145,6 +148,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
         icon = self.browser.find_element_by_class_name("success-icon")
         self.assertIsNotNone(icon)
 
+    @tag("webtest")
     def test_no_delete_icon_for_public_entry(self):
         scoreset = data_factories.ScoreSetWithTargetFactory()
         scoreset = utilities.publish_dataset(scoreset)

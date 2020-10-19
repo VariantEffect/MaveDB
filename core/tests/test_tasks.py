@@ -85,7 +85,13 @@ class TestBaseTask(TestCase, TestMessageMixin):
 class TestCeleryIntegration(CeleryTestCase):
     def test_can_async_task(self):
         ok, result = health_check.submit_task(
-            kwargs={"a": 1, "b": 2, "raise_": False, "wait": 3}
+            kwargs={
+                "a": 1,
+                "b": 2,
+                "raise_": False,
+                "wait": 3,
+                "allow_prod_db": False,
+            }
         )
         self.assertTrue(ok)
         self.assertEqual(result.get(), 3)
