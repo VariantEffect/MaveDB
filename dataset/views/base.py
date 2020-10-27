@@ -116,7 +116,7 @@ class DatasetModelFormView(
             return super().form_valid(forms)
         except Exception as e:
             logger.exception(
-                "The following error occured during "
+                "The following error occurred during "
                 "{} creation:\n{}".format(self.model_class_name, str(e))
             )
             messages.error(
