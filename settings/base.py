@@ -158,8 +158,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
+DOCS_STATIC_DIR = BASE_DIR + "/docs/build/"
+
 STATIC_URL = "/static/"
+STATICFILES_DIRS = [DOCS_STATIC_DIR]
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
+DOCS_ROOT = STATIC_ROOT + "/docs/html"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 
 # Redirect to home URL after login (Default redirects to /profile/)
