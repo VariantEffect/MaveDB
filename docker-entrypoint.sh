@@ -89,9 +89,9 @@ if inspection is None:
   raise RuntimeError("Could not inspect registered tasks")
 
 # Test tasks can be run
-from core.tasks import add
+from core.tasks import health_check
 
-result = add.delay(1, 2).get()
+result = health_check.delay(1, 2).get()
 assert result == 3, "Expected 3 as the result but '{}' was returned".format(result)
 
 sys.stdout.write("Celery has correctly initialized!")
@@ -140,12 +140,6 @@ python3 manage.py createreferences
 python3 manage.py collectstatic --noinput
 
 if [ "$ENVIRONMENT" = "production" ]; then
-  if [ "$RUN_TESTS" = "true" ]; then
-    python3 manage.py test \
-      accounts api core dataset genome main metadata search urn variant \
-      --noinput
-  fi
-
   gunicorn mavedb.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers=${GUNICORN_WORKERS} \
