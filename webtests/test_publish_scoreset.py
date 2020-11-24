@@ -88,7 +88,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             self.browser.find_element_by_id("id_experiment")
             self.browser.find_element_by_id("id_replaces")
             self.browser.find_element_by_id("id_name")
-            self.browser.find_element_by_id("id_wt_sequence")
+            self.browser.find_element_by_id("id_sequence_text")
             self.browser.find_element_by_id("id_genome")
             self.browser.find_element_by_id("id_uniprot-offset-identifier")
             self.browser.find_element_by_id("id_refseq-offset-identifier")

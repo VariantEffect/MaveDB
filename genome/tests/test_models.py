@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.db.models.deletion import ProtectedError
+from django.db import IntegrityError
 
 from metadata.models import UniprotOffset, RefseqOffset, EnsemblOffset
 from metadata.factories import (
@@ -45,6 +46,16 @@ class TestWildTypeSequenceModel(TestCase):
         gene = TargetGeneFactory()
         with self.assertRaises(ProtectedError):
             gene.wt_sequence.delete()
+
+    def test_infers_sequence_type(self):
+        self.assertTrue(WildTypeSequenceFactory(sequence="ATCG").is_dna)
+        self.assertFalse(WildTypeSequenceFactory(sequence="ATCG").is_protein)
+
+        self.assertFalse(WildTypeSequenceFactory(sequence="MLPL").is_dna)
+        self.assertTrue(WildTypeSequenceFactory(sequence="MLPL").is_protein)
+
+        with self.assertRaises(IntegrityError):
+            self.assertTrue(WildTypeSequenceFactory(sequence="123"))
 
 
 class TestIntervalModel(TestCase):

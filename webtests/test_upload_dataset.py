@@ -235,7 +235,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         target_name = self.browser.find_element_by_id("id_name")
         self.perform_action(target_name, "send_keys", "BRCA1")
-        target_seq = self.browser.find_element_by_id("id_wt_sequence")
+        target_seq = self.browser.find_element_by_id("id_sequence_text")
         self.perform_action(target_seq, "send_keys", "atcg")
 
         # Upload a local file.
@@ -511,7 +511,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
 
         target_name = self.browser.find_element_by_id("id_name")
         self.perform_action(target_name, "send_keys", "BRCA1")
-        target_seq = self.browser.find_element_by_id("id_wt_sequence")
+        target_seq = self.browser.find_element_by_id("id_sequence_text")
         self.perform_action(target_seq, "send_keys", "atcg")
 
         # select target type

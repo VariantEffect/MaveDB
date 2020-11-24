@@ -1,4 +1,8 @@
+import os
+from io import StringIO
+
 from django.test import TestCase
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from accounts.factories import UserFactory
 from accounts.permissions import (
@@ -106,43 +110,99 @@ class TestTargetGeneForm(TestCase):
     def setUp(self):
         self.user = UserFactory()
 
+    @staticmethod
+    def mock_form_data(**kwargs):
+        files = {}
+        data = dict(
+            name="GeneA",
+            category="Protein coding",
+            sequence_text="ATCG",
+            sequence_type=WildTypeSequence.SequenceType.INFER,
+            target=None,
+        )
+
+        fasta_content = kwargs.pop("sequence_fasta", None)
+        if fasta_content is not None:
+            handle = StringIO(fasta_content)
+            size = handle.seek(0, os.SEEK_END)
+            handle.seek(0)
+            file = InMemoryUploadedFile(
+                file=handle,
+                name="sequence.fa",
+                field_name="sequence_fasta",
+                content_type="text/plain",
+                size=size,
+                charset="utf-8",
+            )
+            files = dict(sequence_fasta=file)
+
+        data.update(dict(**kwargs))
+        return data, files
+
     def test_ve_null_wt_sequence(self):
         for v in null_values_list:
-            data = {"wt_sequence": v, "name": "brca1"}
+            data, _ = self.mock_form_data(sequence_text=v)
             form = TargetGeneForm(user=self.user, data=data)
             self.assertFalse(form.is_valid())
 
-    def test_ve_non_nucleotide_sequence(self):
-        data = {"wt_sequence": "fhfa", "name": "brca1"}
+    def test_fail_non_nucleotide_sequence(self):
+        data, _ = self.mock_form_data(sequence_text="1234")
         form = TargetGeneForm(user=self.user, data=data)
         self.assertFalse(form.is_valid())
 
     def test_ve_null_name(self):
         for v in null_values_list:
-            data = {"wt_sequence": "atcg", "name": v}
+            data, _ = self.mock_form_data(sequence_text="atcg", name=v)
             form = TargetGeneForm(user=self.user, data=data)
             self.assertFalse(form.is_valid())
 
-    def test_strips_whitespace_from_wt_seq(self):
-        data = {
-            "wt_sequence": " atcg ",
-            "name": "brca1",
-            "category": "Protein coding",
-        }
+    def test_can_read_sequence_from_fasta_file(self):
+        data, files = self.mock_form_data(
+            sequence_fasta=">sequence_1\nAAAA\n>sequence_2\nCCCC",
+            sequence_text=None,
+        )
+        form = TargetGeneForm(user=self.user, data=data, files=files)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.sequence_params["sequence"], "AAAA")
+
+    def test_must_have_either_sequence_or_fasta(self):
+        data, files = self.mock_form_data(
+            sequence_fasta=None,
+            sequence_text=None,
+        )
+        form = TargetGeneForm(user=self.user, data=data, files=files)
+        self.assertFalse(form.is_valid())
+        self.assertIn("sequence is required", str(form.errors).lower())
+
+    def test_infers_protein_sequence(self):
+        data, _ = self.mock_form_data(sequence_text="MLNS")
         form = TargetGeneForm(user=self.user, data=data)
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.wt_sequence, "atcg")
+
+        i = form.save(scoreset=ScoreSetFactory())
+        self.assertTrue(i.get_wt_sequence().is_protein)
+
+    def test_infers_dna_sequence(self):
+        data, _ = self.mock_form_data(sequence_text="ATCG")
+        form = TargetGeneForm(user=self.user, data=data)
+        self.assertTrue(form.is_valid())
+
+        i = form.save(scoreset=ScoreSetFactory())
+        self.assertTrue(i.get_wt_sequence().is_dna)
+
+    def test_strips_whitespace_from_wt_seq(self):
+        data, _ = self.mock_form_data(sequence_text=" atcg ")
+        form = TargetGeneForm(user=self.user, data=data)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.sequence_params["sequence"], "atcg")
 
     def test_strips_line_breaks_tabs_ws_from_wt_seq(self):
-        data = {
-            "wt_sequence": " atcg\ngtac\r\ngg\tgg aaaa",
-            "name": "brca1",
-            "category": "Protein coding",
-        }
+        data, _ = self.mock_form_data(
+            sequence_text=" atcg\ngtac\r\ngg\tgg aaaa"
+        )
         form = TargetGeneForm(user=self.user, data=data)
-        print(form.errors)
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.wt_sequence, "atcggtacggggaaaa")
+        self.assertEqual(form.sequence_params["sequence"], "atcggtacggggaaaa")
 
     def test_private_targets_hidden_if_user_has_no_permissions(self):
         instance = TargetGeneFactory()
@@ -177,32 +237,28 @@ class TestTargetGeneForm(TestCase):
         form = TargetGeneForm(user=self.user)
         self.assertEqual(form.fields["target"].queryset.count(), 1)
 
-    def test_save_sets_wt_sequence(self):
-        data = {
-            "wt_sequence": "atcg",
-            "name": "brca1",
-            "category": "Protein coding",
-        }
+    def test_save_sets_wt_sequence_and_type(self):
+        data, files = self.mock_form_data(sequence_text="atcg")
         form = TargetGeneForm(user=self.user, data=data)
         scs = ScoreSetFactory()
         form.instance.scoreset = scs
+
         instance = form.save(commit=True)
-        self.assertIsNotNone(instance.get_wt_sequence_string())
         self.assertEqual(instance.get_wt_sequence_string(), "ATCG")
+        self.assertTrue(instance.get_wt_sequence().is_dna)
 
     def test_updates_existing_wt_sequence(self):
         instance = TargetGeneFactory()
+
         wt = instance.get_wt_sequence()
-        data = {
-            "name": "JAK",
-            "wt_sequence": "CCCC",
-            "category": "Protein coding",
-        }
+        self.assertTrue(wt.is_dna)
+
+        data, _ = self.mock_form_data(sequence_text="MPLS", name="JAK")
         form = TargetGeneForm(user=self.user, data=data, instance=instance)
+
         instance = form.save(commit=True)
-        self.assertEqual(instance.get_name(), data["name"])
-        self.assertEqual(
-            instance.get_wt_sequence_string(), data["wt_sequence"].upper()
-        )
+        self.assertEqual(instance.get_name(), "JAK")
+        self.assertEqual(instance.get_wt_sequence_string(), "MPLS")
+        self.assertTrue(instance.get_wt_sequence().is_protein)
         self.assertIs(instance.get_wt_sequence(), wt)
         self.assertEqual(WildTypeSequence.objects.count(), 1)

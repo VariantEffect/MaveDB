@@ -1,4 +1,8 @@
 import json
+import os
+from io import StringIO
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from pandas.testing import assert_frame_equal
 
 from django.test import TestCase, TransactionTestCase, RequestFactory, mock
@@ -359,19 +363,29 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             "doi_ids": [""],
             "pubmed_ids": [""],
             "keywords": [""],
+            # Identifier fields
             "uniprot-identifier": [""],
             "uniprot-offset": [""],
             "ensembl-identifier": [""],
             "ensembl-offset": [""],
             "refseq-identifier": [""],
             "refseq-offset": [""],
-            "submit": ["submit"],
+            # Reference genome fields
             "genome": [self.ref.pk],
-            "wt_sequence": ["atcg"],
+            # Target related fields
             "name": ["BRCA1"],
+            "sequence_text": ["atcg"],
+            "sequence_type": ["infer"],
             "category": ["Protein coding"],
+            # Submit
+            "submit": ["submit"],
         }
-        self.files = {constants.variant_score_data: score_file}
+
+        self.files = {
+            constants.variant_score_data: score_file,
+            "sequence_fasta": None,
+        }
+
         self.user = UserFactory()
         self.username = self.user.username
         self.unencrypted_password = "secret_key"
@@ -910,6 +924,42 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             scoreset.target.get_refseq_offset_annotation().offset, 5
         )
 
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_passes_fasta_file_to_target_gene_form(self, patch):
+        data = self.post_data.copy()
+        files = self.files.copy()
+
+        parent = ExperimentFactory(private=False)
+        data["experiment"] = [parent.pk]
+
+        data["sequence_text"] = ""
+
+        fasta_handle = StringIO(">sequence_1\nAAAA\n>sequence_2\nCCCC")
+        fasta_size = fasta_handle.seek(0, os.SEEK_END)
+        fasta_handle.seek(0)
+        files["sequence_fasta"] = InMemoryUploadedFile(
+            file=fasta_handle,
+            name="sequence.fa",
+            field_name="sequence_fasta",
+            content_type="text/plain",
+            size=fasta_size,
+            charset="utf-8",
+        )
+
+        request = self.create_request(method="post", path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(files)
+
+        response = ScoreSetCreateView.as_view()(request)
+        patch.assert_called()
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 302)
+        scoreset = ScoreSet.objects.all().first()
+        self.assertEqual(scoreset.target.get_wt_sequence_string(), "AAAA")
+
 
 class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
     """
@@ -937,20 +987,29 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             "doi_ids": [""],
             "pubmed_ids": [""],
             "keywords": [""],
+            # Identifier fields
             "uniprot-identifier": [""],
             "uniprot-offset": [""],
             "ensembl-identifier": [""],
             "ensembl-offset": [""],
             "refseq-identifier": [""],
             "refseq-offset": [""],
-            "submit": ["submit"],
+            # Reference genome fields
             "genome": [self.ref.pk],
-            "wt_sequence": "atcg",
+            # Target gene fields
             "name": "BRCA1",
+            "sequence_text": "atcg",
+            "sequence_type": "infer",
             "category": ["Protein coding"],
+            # Submit fields
             "publish": [""],
+            "submit": ["submit"],
         }
-        self.files = {constants.variant_score_data: score_file}
+        self.files = {
+            constants.variant_score_data: score_file,
+            "sequence_fasta": None,
+        }
+
         self.user = UserFactory()
         self.username = self.user.username
         self.unencrypted_password = "secret_key"
