@@ -210,6 +210,7 @@ class ScoreSetForm(DatasetModelForm):
         # If an experiment is passed in we can used to it to seed initial
         # replaces and m2m field selections.
         self.experiment = None
+        self.allow_aa_sequence = False
         if "experiment" in kwargs:
             self.experiment = kwargs.pop("experiment")
         super().__init__(*args, **kwargs)
@@ -583,6 +584,10 @@ class ScoreSetForm(DatasetModelForm):
         )
         count_data, primary_hgvs_counts = cleaned_data.get(
             "count_data", (pd.DataFrame(), None)
+        )
+        self.allow_aa_sequence = (
+            primary_hgvs_counts == constants.hgvs_pro_column
+            and primary_hgvs_scores == constants.hgvs_pro_column
         )
         meta_data = cleaned_data.get("meta_data", {})
 
