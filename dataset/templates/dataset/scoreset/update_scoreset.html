@@ -107,3 +107,12 @@
     </div>
   {% endif %}
 {% endblock %}
+
+{% block extra_scripts %}
+  <script type="text/javascript">
+      $(document).ready(function () {
+          const isPrivate = '{{ instance.private }}';
+          initializeScoresetForm({newForm: false, privateDateset: isPrivate.toLowerCase() === 'true'});
+      });
+  </script>
+{% endblock %}
