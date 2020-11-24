@@ -154,7 +154,7 @@ class FailedTask(models.Model):
             The exception raised at runtime.
         task_id : str
             Character task id given by celery.
-        args : tuple
+        args : tuple | list
             Task arguments
         kwargs : dict
             Task kwargs
@@ -225,7 +225,7 @@ class FailedTask(models.Model):
         """
         Re-loads the task parameters and tries again. Executes task
         synchronously when inline is `False`.
-        
+
         Parameters
         ----------
         inline : `bool`
@@ -254,7 +254,7 @@ class FailedTask(models.Model):
         Setting `inline` to true will call the task synchronously without
         celery in a try/except block and only delete on success. A new task
         will be created on additional failures when `inline` is False.
-        
+
         Parameters
         ----------
         inline : `bool`
