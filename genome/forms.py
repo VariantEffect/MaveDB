@@ -1,10 +1,13 @@
 import re
+from io import StringIO
 
 from django import forms as forms
 from django.db import transaction
 from django.forms.models import BaseModelFormSet
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
+
+from fqfa.fasta.fasta import parse_fasta_records
 
 from core.utilities import is_null
 
@@ -41,13 +44,27 @@ class TargetGeneForm(forms.ModelForm):
         model = TargetGene
         fields = ("name", "category")
 
-    wt_sequence = forms.CharField(
+    sequence_text = forms.CharField(
         label="Target reference sequence",
-        required=True,
+        required=False,
         widget=forms.Textarea(),
         error_messages={
             "required": "You must supply a reference sequence for your target."
         },
+    )
+    sequence_fasta = forms.FileField(
+        label="Target reference sequence",
+        required=False,
+    )
+    sequence_type = forms.CharField(
+        label="Sequence type",
+        required=True,
+        help_text=(
+            "Select 'DNA' for nucleotide sequence, 'Protein' for amino acid "
+            "sequence, or 'Infer' to automatically infer sequence type."
+        ),
+        widget=forms.Select(choices=WildTypeSequence.SequenceType.choices()),
+        initial=WildTypeSequence.SequenceType.INFER,
     )
     target = forms.ModelChoiceField(
         label="Existing target",
@@ -57,16 +74,35 @@ class TargetGeneForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.field_order = ("target", "name", "category", "wt_sequence")
+        self.field_order = (
+            "target",
+            "name",
+            "category",
+            "sequence_type",
+            "sequence_fasta",
+            "sequence_text",
+        )
         self.user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
 
         instance = kwargs.get("instance", None)
-        self.wt_sequence = None
+        self.sequence_params = dict(sequence=None, sequence_type=None)
+        self.sequence_is_protein = False
+
         if instance and instance.get_wt_sequence():
-            self.fields[
-                "wt_sequence"
-            ].initial = instance.get_wt_sequence().get_sequence()
+            sequence = instance.get_wt_sequence().sequence
+            sequence_type = instance.get_wt_sequence().sequence_type
+
+            self.sequence_is_protein = (
+                WildTypeSequence.SequenceType.is_protein(sequence_type)
+            )
+            self.sequence_params.update(
+                sequence=sequence,
+                sequence_type=sequence_type,
+            )
+
+            self.fields["sequence_text"].initial = sequence
+            self.fields["sequence_type"].initial = sequence_type
 
         self.set_target_gene_options()
 
@@ -81,14 +117,6 @@ class TargetGeneForm(forms.ModelForm):
         self.fields["name"].error_messages.update(
             {"required": "You must supply a name for your target."}
         )
-
-    def clean_wt_sequence(self):
-        sequence = self.cleaned_data.get("wt_sequence", None)
-        if sequence is None:
-            raise ValidationError("Sequence cannot be empty.")
-        self.wt_sequence = re.sub(r"\\r|\\n|\\t|\s+", "", sequence)
-        validate_wildtype_sequence(self.wt_sequence)
-        return self.wt_sequence
 
     def set_target_gene_options(self):
         if "target" in self.fields:
@@ -116,36 +144,100 @@ class TargetGeneForm(forms.ModelForm):
                 for t in targets_qs.all()
             ]
 
-    @transaction.atomic
-    def save(self, commit=True):
-        if not self.is_valid():
-            raise ValidationError("Cannot save with invalid data.")
+    # ----------------------- Cleaning ------------------------------------ #
+    def clean_sequence_fasta(self):
+        fasta = self.files.get("sequence_fasta", None)
+        sequence_type = self.cleaned_data.get("sequence_type")
 
-        if self.instance.get_wt_sequence() is not None:
-            if isinstance(self.wt_sequence, str):
-                self.instance.get_wt_sequence().sequence = self.wt_sequence
+        content = fasta.read() if fasta else ""
+        if hasattr(content, "decode"):
+            content = content.decode("utf-8")
 
-        if commit:
-            if self.instance.get_wt_sequence() is None:
-                self.instance.set_wt_sequence(
-                    WildTypeSequence.objects.create(sequence=self.wt_sequence)
-                )
-            self.instance.get_wt_sequence().save()
-            return super().save(commit=True)
+        sequence = None
+        for _, seq in parse_fasta_records(StringIO(content)):
+            validate_wildtype_sequence(seq, as_type=sequence_type)
+            sequence = seq
+            break  # Only take first
 
-        return super().save(commit=False)
+        return sequence
+
+    def clean_sequence_text(self):
+        sequence = self.cleaned_data.get("sequence_text", None)
+        sequence_type = self.cleaned_data.get("sequence_type")
+
+        if isinstance(sequence, str):
+            sequence = sequence.strip()
+
+        if sequence:
+            sequence = re.sub(r"\\r|\\n|\\t|\s+", "", sequence)
+            validate_wildtype_sequence(sequence, as_type=sequence_type)
+
+        return sequence
 
     def clean(self):
         cleaned_data = super().clean()
-        if not self.errors:
-            wt_sequence = cleaned_data.get("wt_sequence", None)
-            if not wt_sequence:
-                self.add_error(
-                    "wt_sequence", "You must supply a reference sequence."
-                )
-                return cleaned_data
-            self.wt_sequence = wt_sequence
+        if self.errors:
+            return cleaned_data
+
+        sequence_text = cleaned_data.get("sequence_text")
+        sequence_fasta = cleaned_data.get("sequence_fasta")
+        sequence_type = cleaned_data.get("sequence_type")
+        sequence = sequence_text or sequence_fasta
+
+        if sequence_text and sequence_fasta:
+            self.add_error(
+                None,
+                (
+                    "Please supply either a FASTA sequence or a sequence via "
+                    "the text box, but not both."
+                ),
+            )
+            return cleaned_data
+
+        if not (sequence_text or sequence_fasta):
+            self.add_error(
+                None,
+                (
+                    "A reference sequence is required. Please supply either "
+                    "a FASTA sequence or a sequence via the text box."
+                ),
+            )
+            return cleaned_data
+
+        self.sequence_is_protein = WildTypeSequence.SequenceType.is_protein(
+            WildTypeSequence.SequenceType.detect_sequence_type(sequence)
+        )
+        self.sequence_params.update(
+            sequence=sequence,
+            sequence_type=sequence_type,
+        )
+
         return cleaned_data
+
+    # -------------------------- Post clean -------------------------------- #
+    @transaction.atomic
+    def save(self, commit=True, scoreset=None):
+        if not self.is_valid():
+            raise ValidationError(
+                "Some target gene fields are invalid. Please address the "
+                "errors and re-submit."
+            )
+
+        existing_seq = self.instance.get_wt_sequence()
+        if existing_seq is not None:
+            existing_seq.sequence_type = self.sequence_params["sequence_type"]
+            existing_seq.sequence = self.sequence_params["sequence"]
+        else:
+            existing_seq = WildTypeSequence(**self.sequence_params)
+
+        if scoreset is not None:
+            self.instance.scoreset = scoreset
+
+        if commit:
+            existing_seq.save()
+            self.instance.set_wt_sequence(existing_seq)
+
+        return super().save(commit=commit)
 
 
 # GenomicInterval
@@ -342,14 +434,14 @@ class ReferenceMapForm(forms.ModelForm):
         return genome
 
 
-class PimraryReferenceMapForm(ReferenceMapForm):
+class PrimaryReferenceMapForm(ReferenceMapForm):
     """
     Same as `ReferenceMapForm` except `is_primary` is popped and always
     sets as True.
     """
 
     def __init__(self, *args, **kwargs):
-        super(PimraryReferenceMapForm, self).__init__(*args, **kwargs)
+        super(PrimaryReferenceMapForm, self).__init__(*args, **kwargs)
         self.fields.pop("is_primary")
 
     def clean_is_primary(self):
