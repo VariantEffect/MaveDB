@@ -133,6 +133,8 @@ class DatasetFormViewContextMixin:
         # Below is invoked if paired with a MultiFormMixin
         if hasattr(self, "get_forms"):
             for key, form in self.get_forms().items():
+                if key in context:
+                    form = context.pop(key)
                 if not key.endswith("_form"):
                     key += "_form"
                 if key not in context:
@@ -278,7 +280,7 @@ class MultiFormMixin:
         forms = self.get_forms()
         for key, form in forms.items():
             if not form.is_valid():
-                return False, dict()
+                return False, forms
         return True, forms
 
     @transaction.atomic
