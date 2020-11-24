@@ -9,15 +9,22 @@ Validator functions for the fields of the following classes:
 Most validators should validate one specific field, unless fields need
 to be validated against each other.
 """
-import re
-
 from core.utilities import is_null
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.utils.translation import ugettext_lazy as _
 
-DNA_SEQ_PATTERN = r"[ATGCatgc]+"
+from fqfa.validator.validator import (
+    dna_bases_validator,
+    amino_acids_validator,
+)
+
+AA_LETTERS = "ABCDEFGHIKLMNPQRSTVWXYZ"
+DNA_LETTERS = "ATCG"
+
+DNA_SEQ_PATTERN = fr"[{DNA_LETTERS}]+"
+AA_SEQ_PATTERN = fr"[{AA_LETTERS}]+"
 
 
 min_start_validator = MinValueValidator(
@@ -77,11 +84,54 @@ def validate_unique_intervals(intervals):
 
 # WildTypeSequence
 # ------------------------------------------------------------------------- #
-def validate_wildtype_sequence(seq):
-    if not re.fullmatch(DNA_SEQ_PATTERN, seq):
+def validate_wildtype_sequence(seq, as_type="any"):
+    from .models import WildTypeSequence
+
+    # Explicitly check for these cases as they are also valid AA sequences.
+    if is_null(seq):
         raise ValidationError(
             "'%(seq)s' is not a valid wild type sequence.", params={"seq": seq}
         )
+
+    seq = seq.upper()
+    is_dna = dna_bases_validator(seq) is not None
+    is_aa = amino_acids_validator(seq) is not None
+
+    if as_type == WildTypeSequence.SequenceType.DNA and not is_dna:
+        raise ValidationError(
+            "'%(seq)s' is not a valid DNA reference sequence.",
+            params={"seq": seq},
+        )
+    elif as_type == WildTypeSequence.SequenceType.PROTEIN and not is_aa:
+        raise ValidationError(
+            "'%(seq)s' is not a valid protein reference sequence.",
+            params={"seq": seq},
+        )
+    elif (as_type == "any" or WildTypeSequence.SequenceType.INFER) and not (
+        is_dna or is_aa
+    ):
+        raise ValidationError(
+            "'%(seq)s' is not a valid DNA or protein reference sequence.",
+            params={"seq": seq},
+        )
+
+
+def sequence_is_dna(seq):
+    # Explicitly check for these cases as they are also valid AA sequences.
+    if is_null(seq):
+        return False
+    seq = seq.upper()
+    return dna_bases_validator(seq) is not None
+
+
+def sequence_is_protein(seq):
+    # Explicitly check for these cases as they are also valid AA sequences.
+    if is_null(seq):
+        return False
+    seq = seq.upper()
+    if dna_bases_validator(seq) is not None:
+        return False  # Very likely a DNA sequence if only ATG
+    return amino_acids_validator(seq) is not None
 
 
 # ReferenceGenome
