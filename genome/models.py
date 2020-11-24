@@ -11,6 +11,8 @@ from .validators import (
     validate_strand,
     validate_chromosome,
     min_end_validator,
+    sequence_is_protein,
+    sequence_is_dna,
 )
 
 
@@ -26,6 +28,12 @@ class TargetGene(TimeStampedModel):
 
     Parameters
     ----------
+    name : `models.CharField`
+        The name of the target gene.
+
+    category : `models.CharField`
+        Protein coding, regulatory or other
+
     wt_sequence : `models.OneToOneField`
         An instance of :class:`WildTypeSequence` defining the wildtype sequence
         of this target gene.
@@ -35,8 +43,14 @@ class TargetGene(TimeStampedModel):
         this scoreset is deleted, the target and associated reference_maps/intervals
         will also be deleted.
 
-    name : `models.CharField`
-        The name of the target gene.
+    refseq_id : `models.ForeignKeyField`
+        Related RefSeq identifier
+
+    uniprot_id : `models.ForeignKeyField`
+        Related UniProt identifier
+
+    ensembl_id : `models.ForeignKeyField`
+        Related Ensembl identifier
     """
 
     CATEGORY_CHOICES = (
@@ -70,7 +84,7 @@ class TargetGene(TimeStampedModel):
         null=False,
         default="Protein coding",
         verbose_name="Target type",
-        max_length=250,
+        max_length=32,
         choices=CATEGORY_CHOICES,
     )
 
@@ -549,7 +563,44 @@ class WildTypeSequence(TimeStampedModel):
     sequence : `models.CharField`
         The wild type DNA sequence that is related to the `target`. Will
         be converted to upper-case upon instantiation.
+
+    sequence_type : `models.CharField`
+        Protein sequence (amino acids) or DNA (nucleotides)
     """
+
+    class SequenceType:
+        DNA = "dna"
+        PROTEIN = "protein"
+        INFER = "infer"
+
+        @classmethod
+        def detect_sequence_type(cls, sequence):
+            # fixme: Prioritise DNA over protein in the rare case of a ATCG only
+            #   protein sequence. Fix this later if the need arises.
+            if sequence_is_dna(sequence):
+                return cls.DNA
+            elif sequence_is_protein(sequence):
+                return cls.PROTEIN
+            else:
+                raise ValueError(
+                    f"Unknown sequence '{sequence}'. It is not protein or DNA."
+                )
+
+        @classmethod
+        def is_protein(cls, value):
+            return value == cls.PROTEIN
+
+        @classmethod
+        def is_dna(cls, value):
+            return value == cls.DNA
+
+        @classmethod
+        def choices(cls):
+            return [
+                (cls.INFER, "Infer"),
+                (cls.DNA, "DNA"),
+                (cls.PROTEIN, "Protein"),
+            ]
 
     class Meta:
         verbose_name = "Reference sequence"
@@ -565,11 +616,38 @@ class WildTypeSequence(TimeStampedModel):
         verbose_name="Reference sequence",
         validators=[validate_wildtype_sequence],
     )
+    sequence_type = models.CharField(
+        blank=True,
+        null=False,
+        default=SequenceType.INFER,
+        verbose_name="Reference sequence type",
+        max_length=32,
+        choices=SequenceType.choices(),
+    )
+
+    @property
+    def is_dna(self):
+        return self.__class__.SequenceType.is_dna(self.sequence_type)
+
+    @property
+    def is_protein(self):
+        return self.__class__.SequenceType.is_protein(self.sequence_type)
 
     def save(self, *args, **kwargs):
+        # Fixme: Upper case all sequences?
         if self.sequence is not None:
             self.sequence = self.sequence.upper()
-        super().save(*args, **kwargs)
+            self.sequence_type = (
+                (
+                    self.__class__.SequenceType.detect_sequence_type(
+                        self.sequence
+                    )
+                )
+                if self.__class__.SequenceType.INFER
+                else self.sequence_type
+            )
+
+        return super().save(*args, **kwargs)
 
     def get_sequence(self):
         return self.sequence.upper()
