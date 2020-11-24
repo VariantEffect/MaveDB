@@ -54,7 +54,7 @@ class TestWildTypeSequenceModel(TestCase):
         self.assertFalse(WildTypeSequenceFactory(sequence="MLPL").is_dna)
         self.assertTrue(WildTypeSequenceFactory(sequence="MLPL").is_protein)
 
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValueError):
             self.assertTrue(WildTypeSequenceFactory(sequence="123"))
 
 

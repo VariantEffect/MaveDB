@@ -960,6 +960,31 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         scoreset = ScoreSet.objects.all().first()
         self.assertEqual(scoreset.target.get_wt_sequence_string(), "AAAA")
 
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_adds_error_if_adding_protein_sequence_to_nt_dataset(self, patch):
+        data = self.post_data.copy()
+
+        parent = ExperimentFactory(private=False)
+        data["experiment"] = [parent.pk]
+        data["sequence_text"] = "MLPQ"
+
+        request = self.create_request(method="post", path=self.path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+
+        response = ScoreSetCreateView.as_view()(request)
+        patch.assert_not_called()
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Protein sequences are allowed if your data set only defines "
+            "protein variants.",
+        )
+
 
 class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
     """
