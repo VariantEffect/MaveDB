@@ -108,8 +108,8 @@
 
           // Re-add any external_accession, keywords or target organism back to failed form submission
           function repopulateSelect(selectId, listId) {
-              var selectItems = listId;
-              var i, j = 0;
+              let selectItems = listId;
+              let i, j = 0;
 
               if (selectItems !== undefined) {
                   if (typeof listId === "string") {
@@ -118,12 +118,12 @@
                   }
 
                   for (i = 0; i < selectItems.length; i++) {
-                      var optionExists = false;
-                      var select = document.getElementById(selectId.replace("#", ''));
+                      let optionExists = false;
+                      let select = document.getElementById(selectId.replace("#", ''));
                       if (select === null) {
                           return
                       }
-                      var options = select.getElementsByTagName("option");
+                      let options = select.getElementsByTagName("option");
 
                       for (j = 0; j < options.length; j++) {
                           if (selectItems[i] === options[j].value) {
@@ -144,10 +144,10 @@
               }
           }
 
-          $("#preview-abstract").click(function (e) {
+          $("#preview-abstract").click(function () {
               // First get whatever is in the form and send an ajax request
               // to convert it to markdown.
-              var abstract = $("#id_abstract_text").val();
+              let abstract = $("#id_abstract_text").val();
               $.ajax({
                   url: window.location.pathname,
                   type: "GET",
@@ -160,16 +160,17 @@
                           .append(abstract);
                   },
                   error: function (xhr, errmsg, err) {
-                      console.log(xhr.status + ": " + xhr.responseText);
+                      console.error(errmsg, err)
+                      console.error(xhr.status + ": " + xhr.responseText);
                   }
               });
-              return true;
+              return true; // Show modal
           });
 
-          $("#preview-method").click(function (e) {
+          $("#preview-method").click(function () {
               // First get whatever is in the form and send an ajax request
               // to convert it to markdown.
-              var method = $("#id_method_text").val();
+              let method = $("#id_method_text").val();
               $.ajax({
                   url: window.location.pathname,
                   type: "GET",
@@ -182,10 +183,11 @@
                           .append(method);
                   },
                   error: function (xhr, errmsg, err) {
-                      console.log(xhr.status + ": " + xhr.responseText);
+                      console.error(errmsg, err)
+                      console.error(xhr.status + ": " + xhr.responseText);
                   }
               });
-              return true;
+              return true; // Show modal
           });
       });
   </script>
