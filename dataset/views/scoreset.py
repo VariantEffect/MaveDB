@@ -23,7 +23,7 @@ from metadata.forms import (
 from dataset.tasks import create_variants
 from dataset import constants
 
-from genome.forms import PimraryReferenceMapForm, TargetGeneForm
+from genome.forms import PrimaryReferenceMapForm, TargetGeneForm
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
@@ -162,7 +162,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
     forms = {
         "scoreset": ScoreSetForm,
         "target_gene": TargetGeneForm,
-        "reference_map": PimraryReferenceMapForm,
+        "reference_map": PrimaryReferenceMapForm,
         "uniprot_offset": UniprotOffsetForm,
         "refseq_offset": RefseqOffsetForm,
         "ensembl_offset": EnsemblOffsetForm,
@@ -188,10 +188,30 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
                     self.kwargs["experiment"] = experiment
         return super().dispatch(request, *args, **kwargs)
 
+    def forms_valid(self):
+        all_are_valid, form_dict = super().forms_valid()
+        if not all_are_valid:
+            return all_are_valid, form_dict
+
+        # Check that if AA sequence, dataset defined pro variants only.
+        if (
+            not form_dict["scoreset"].allow_aa_sequence
+            and form_dict["target_gene"].sequence_is_protein
+        ):
+            form_dict["target_gene"].add_error(
+                "sequence_text",
+                "Protein sequences are allowed if your data set only defines "
+                "protein variants.",
+            )
+            return False, form_dict
+
+        return all_are_valid, form_dict
+
     @transaction.atomic
     def save_forms(self, forms):
         scoreset_form = forms["scoreset"]
         target_gene_form = forms["target_gene"]
+
         reference_map_form = forms["reference_map"]
         uniprot_offset_form = forms["uniprot_offset"]
         refseq_offset_form = forms["refseq_offset"]
@@ -202,8 +222,7 @@ class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
         scoreset.set_modified_by(self.request.user)
         scoreset.save()
 
-        target_gene_form.instance.scoreset = scoreset
-        targetgene = target_gene_form.save(commit=True)
+        targetgene = target_gene_form.save(commit=True, scoreset=scoreset)
 
         reference_map_form.instance.target = targetgene
         reference_map_form.save(commit=True)
@@ -290,7 +309,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
     forms = {
         "scoreset": ScoreSetForm,
         "target_gene": TargetGeneForm,
-        "reference_map": PimraryReferenceMapForm,
+        "reference_map": PrimaryReferenceMapForm,
         "uniprot_offset": UniprotOffsetForm,
         "refseq_offset": RefseqOffsetForm,
         "ensembl_offset": EnsemblOffsetForm,
@@ -313,8 +332,7 @@ class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
             refseq_offset_form = forms["refseq_offset"]
             ensembl_offset_form = forms["ensembl_offset"]
 
-            target_gene_form.instance.scoreset = scoreset
-            targetgene = target_gene_form.save(commit=True)
+            targetgene = target_gene_form.save(commit=True, scoreset=scoreset)
 
             reference_map_form.instance.target = targetgene
             reference_map_form.save(commit=True)
