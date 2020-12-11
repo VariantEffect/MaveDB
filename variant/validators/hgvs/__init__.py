@@ -82,7 +82,7 @@ def validate_hgvs_string(value, column=None, tx_present=False):
             if value[0] not in genomic_prefix:
                 raise ValidationError(
                     f"'{value}' is not a genomic variant (prefix 'g.'). "
-                    f"Nucletotide variants must be genomic if transcript "
+                    f"Nucleotide variants must be genomic if transcript "
                     f"variants are also defined."
                 )
         else:
