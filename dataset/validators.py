@@ -41,7 +41,8 @@ class WordLimitValidator:
 
 def read_header_from_io(file, label=None, msg=None):
     if label is None:
-        label = "Uploaded"
+        label = "uploaded"
+
     try:
         header_line = file.readline()
         if isinstance(header_line, bytes):
@@ -106,7 +107,7 @@ def validate_header_contains_no_null_columns(header, label=None, msg=None):
             msg = (
                 "%(label)s file header cannot contain blank/empty/whitespace "
                 "only columns or the following case-insensitive null "
-                "values: [{}].".format(label, ", ".join(readable_null_values))
+                "values: {}.".format(label, ", ".join(readable_null_values))
             )
         raise ValidationError(msg)
 
@@ -115,7 +116,7 @@ def validate_datasets_define_same_variants(scores, counts):
     """
     Checks if two `pd.DataFrame` objects parsed from uploaded files
     define the same variants.
-    
+
     Parameters
     ----------
     scores : `pd.DataFrame`
