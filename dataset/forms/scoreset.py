@@ -568,8 +568,17 @@ class ScoreSetForm(DatasetModelForm):
             # End here and run the parent method to quickly return the form.
             return cleaned_data
 
+        if not self.editing_existing:
+            if not (
+                self.is_meta_analysis or cleaned_data.get("experiment", None)
+            ):
+                self.add_error(
+                    None,
+                    "Please select an Experiment or create a meta-analysis.",
+                )
+
         # Indicates that a new scoreset is being created or a failed scoreset
-        # is being edited. Failed scoresets have not variants.
+        # is being edited. Failed scoresets have no variants.
         if getattr(self, "edit_mode", False):
             scores_required = False
         else:
