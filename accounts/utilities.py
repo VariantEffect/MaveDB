@@ -169,9 +169,7 @@ def publish(urn, request):
         messages.error(
             request,
             "{} cannot be publish because it is currently being "
-            "processed. Try again once your processing has completed.".format(
-                urn
-            ),
+            "processed. Try again once processing has completed.".format(urn),
         )
         return False
 
