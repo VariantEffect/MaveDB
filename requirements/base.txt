@@ -18,7 +18,7 @@ celery==4.1.1
 pypandoc==1.4
 Faker==0.8.15
 coverage==4.5.1
-idutils==1.1.0
+idutils==1.1.8
 urllib3==1.24.3
 metapub==0.5.5
 git+https://github.com/VariantEffect/hgvs-patterns.git@0.4a
@@ -28,4 +28,4 @@ psycopg2-binary==2.8.6
 pandas==1.1.2
 numpy==1.19.1
 sphinx==3.2.1
-fqfa==1.1.0
+fqfa==1.2.0
