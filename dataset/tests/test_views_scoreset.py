@@ -126,7 +126,11 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         }
         scs.save()
         var = VariantFactory(
-            scoreset=scs, data={constants.variant_score_data: {"score": 0}}
+            scoreset=scs,
+            data={
+                constants.variant_score_data: {"score": 0},
+                constants.variant_count_data: {},
+            },
         )
         request = self.factory.get(
             "/scoreset/{}/".format(scs.urn),

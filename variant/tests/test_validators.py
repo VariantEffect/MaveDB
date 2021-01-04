@@ -62,14 +62,16 @@ class TestHGVSValidator(TestCase):
         with self.assertRaises(ValidationError):
             validate_hgvs_string([])
 
-    def test_passes_wt_hgvs(self):
-        validate_hgvs_string("_wt")
+    def test_does_not_pass_enrich_wt_hgvs(self):
+        with self.assertRaises(ValidationError):
+            validate_hgvs_string("_wt")
 
-    def test_passes_sy_hgvs(self):
-        validate_hgvs_string("_sy")
+    def test_does_not_pass_enrich_sy_hgvs(self):
+        with self.assertRaises(ValidationError):
+            validate_hgvs_string("_sy")
 
     def test_passes_multi(self):
-        validate_hgvs_string("p.[Lys4Gly;C34_G35insTGC]", column="p")
+        validate_hgvs_string("p.[Lys4Gly;Lys5Phe]", column="p")
         validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="nt")
         validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="tx")
 

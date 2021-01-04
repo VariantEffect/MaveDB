@@ -529,8 +529,9 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(score_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.ScoreData.no_variants, form.errors["score_data"][0]
+        self.assertIn(
+            "please upload a non-empty file",
+            form.errors["score_data"][0].lower(),
         )
 
     def test_serialize_variants_returns_empty_frames_and_index(self):

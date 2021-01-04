@@ -178,7 +178,8 @@ class TestSearchView(TestCase):
         self.assertContains(response, self.exp1.urn)
         self.assertNotContains(response, self.exp2.urn)
         self.assertNotContains(response, self.exp3.urn)
-        self.assertNotContains(response, self.scs1.urn)
+
+        self.assertContains(response, self.scs1.urn)
         self.assertNotContains(response, self.scs2.urn)
         self.assertNotContains(response, self.scs3.urn)
 
