@@ -237,9 +237,9 @@ def create_variants(
     scoreset_urn : str
         The urn of the instance to associate variants to.
     scores_records : str
-        JSON formatted dataframe that has been `records` oriented.
+        JSON formatted dataframe (NaN replaced with None).
     counts_records :
-        JSON formatted dataframe that has been `records` oriented.
+        JSON formatted dataframe (NaN replaced with None).
     index : str
         HGVS column to use as the index when matching up variant data between
         scores and counts.
