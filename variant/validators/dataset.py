@@ -236,7 +236,8 @@ class MaveDataset:
 
         if self.is_empty:
             self._errors.append(
-                f"No variants could be parsed from your {self.label} file"
+                f"No variants could be parsed from your {self.label} file. "
+                f"Please upload a non-empty file."
             )
             return self
 
