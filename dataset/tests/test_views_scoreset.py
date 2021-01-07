@@ -353,7 +353,13 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         self.template = "dataset/scoreset/new_scoreset.html"
         self.ref = ReferenceGenomeFactory()
 
-        score_file, count_file, meta_file = make_files()
+        # Make sure mutations match sequence ATCG, for example 1A>G implies
+        # ATC > GTC which implies Ile > Val
+        score_file, count_file, meta_file = make_files(
+            score_data="hgvs_nt,hgvs_pro,score,se\nc.1A>G,p.Ile1Val,0.5,0.4\n",
+            count_data="hgvs_nt,hgvs_pro,count\nc.1A>G,p.Ile1Val,1.0\n",
+        )
+
         self.post_data = {
             "experiment": [""],
             "replaces": [""],
@@ -367,6 +373,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             "doi_ids": [""],
             "pubmed_ids": [""],
             "keywords": [""],
+            "relaxed_ordering": [""],
             # Identifier fields
             "uniprot-identifier": [""],
             "uniprot-offset": [""],
@@ -399,7 +406,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
     def test_redirect_to_login_not_logged_in(self):
         response = self.client.get(self.path)
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_correct_template_when_logged_in(self):
         self.client.login(
@@ -579,10 +586,11 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         form_data = {k: v[0] for k, v in data.items()}
         form = ScoreSetForm(files=self.files, data=form_data, user=self.user)
-        self.assertTrue(form.is_valid())
+        self.assertTrue(form.is_valid(targetseq="ATCG"))
 
         with mock.patch(
-            "dataset.views.scoreset.create_variants.submit_task"
+            "dataset.views.scoreset.create_variants.submit_task",
+            return_value=(True, None),
         ) as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
@@ -940,7 +948,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         data["sequence_text"] = ""
 
-        fasta_handle = StringIO(">sequence_1\nAAAA\n>sequence_2\nCCCC")
+        fasta_handle = StringIO(">sequence_1\nATCG\n>sequence_2\nCCCC")
         fasta_size = fasta_handle.seek(0, os.SEEK_END)
         fasta_handle.seek(0)
         files["sequence_fasta"] = InMemoryUploadedFile(
@@ -962,7 +970,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
         scoreset = ScoreSet.objects.all().first()
-        self.assertEqual(scoreset.target.get_wt_sequence_string(), "AAAA")
+        self.assertEqual(scoreset.target.get_wt_sequence_string(), "ATCG")
 
     @mock.patch(
         "dataset.tasks.create_variants.submit_task", return_value=(True, None)
@@ -983,11 +991,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         # Redirects to profile
         self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response,
-            "Protein sequences are allowed if your data set only defines "
-            "protein variants.",
-        )
+        self.assertContains(response, "Protein sequences are allowed")
 
 
 class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
@@ -1002,7 +1006,13 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.template = "dataset/scoreset/update_scoreset.html"
         self.ref = ReferenceGenomeFactory()
 
-        score_file, count_file, meta_file = make_files()
+        # Make sure mutations match sequence ATCG, for example 1A>G implies
+        # ATC > GTC which implies Ile > Val
+        score_file, count_file, meta_file = make_files(
+            score_data="hgvs_nt,hgvs_pro,score,se\nc.1A>G,p.Ile1Val,0.5,0.4\n",
+            count_data="hgvs_nt,hgvs_pro,count\nc.1A>G,p.Ile1Val,1.0\n",
+        )
+
         self.post_data = {
             "experiment": [""],
             "replaces": [""],
@@ -1016,6 +1026,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             "doi_ids": [""],
             "pubmed_ids": [""],
             "keywords": [""],
+            "relaxed_ordering": [""],
             # Identifier fields
             "uniprot-identifier": [""],
             "uniprot-offset": [""],
@@ -1034,6 +1045,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             "publish": [""],
             "submit": ["submit"],
         }
+
         self.files = {
             constants.variant_score_data: score_file,
             "sequence_fasta": None,
@@ -1059,7 +1071,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.client.logout()
         obj = ScoreSetFactory()
         response = self.client.get(self.path.format(obj.urn))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_404_object_not_found(self):
         obj = ScoreSetFactory()
@@ -1078,8 +1090,8 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request = self.create_request(method="get", path=path)
         request.user = self.user
 
-        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
-        self.assertEqual(response.status_code, 302)
+        with self.assertRaises(PermissionDenied):
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
 
     def test_calls_create_variants_and_notifies_user(self):
         # Catch admin patch and prevent it being called
@@ -1100,7 +1112,8 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request.FILES.update(self.files)
 
         with mock.patch(
-            "dataset.views.scoreset.create_variants.submit_task"
+            "dataset.views.scoreset.create_variants.submit_task",
+            return_value=(True, None),
         ) as create_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()

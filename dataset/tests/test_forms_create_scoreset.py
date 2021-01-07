@@ -681,7 +681,7 @@ class TestScoreSetForm(TestCase):
         i = form.save(commit=True)
         self.assertEqual(i.experiment.pk, existing_parent)
 
-    def test_from_request_modifies_existing_instance(self):
+    def test_modifies_existing_instance(self):
         scs = ScoreSetFactory()
         scs.add_administrators(self.user)
         scs.parent.add_administrators(self.user)
@@ -690,10 +690,10 @@ class TestScoreSetForm(TestCase):
         )  # Create variant to bypass the file upload
 
         data, files = self.make_post_data(make_exp=True)
-        request = self.factory.post("/path/", data=data, files=files)
-        request.user = self.user
 
-        form = ScoreSetForm.from_request(request, scs)
+        form = ScoreSetForm(
+            user=self.user, data=data, files=files, instance=scs
+        )
         instance = form.save(commit=True)
 
         # Should ignore these

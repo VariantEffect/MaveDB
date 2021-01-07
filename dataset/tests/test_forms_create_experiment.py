@@ -95,16 +95,14 @@ class TestExperimentForm(TestCase):
         self.assertIn("select a valid choice", str(form.errors).lower())
         self.assertIn("experimentset", str(form.errors).lower())
 
-    def test_from_request_modifies_existing_instance(self):
+    def test_modifies_existing_instance(self):
         exp = ExperimentFactory()
         exp.add_administrators(self.user)
         exp.parent.add_administrators(self.user)
 
         data = self.make_form_data(create_experimentset=True)
-        request = self.factory.post("/path/", data=data)
-        request.user = self.user
 
-        form = ExperimentForm.from_request(request, exp)
+        form = ExperimentForm(user=self.user, data=data, instance=exp)
         instance = form.save(commit=True)
         self.assertNotEqual(instance.experimentset.pk, data["experimentset"])
         self.assertEqual(instance.get_title(), data["title"])
