@@ -22,7 +22,7 @@ idutils==1.1.0
 urllib3==1.24.3
 hg+https://bitbucket.org/metapub/metapub@6fe5735
 git+https://github.com/VariantEffect/hgvs-patterns.git
-lxml==4.3.5
+lxml==4.6.2
 eutils==0.5.0
 psycopg2-binary
 pandas
