@@ -1,5 +1,6 @@
 import re
 from io import StringIO
+from typing import Optional
 
 from django import forms as forms
 from django.db import transaction
@@ -10,6 +11,7 @@ from django.core.exceptions import ValidationError
 from fqfa.fasta.fasta import parse_fasta_records
 
 from core.utilities import is_null
+from dataset.models import ScoreSet
 
 from .validators import (
     validate_interval_start_lteq_end,
@@ -216,7 +218,7 @@ class TargetGeneForm(forms.ModelForm):
 
     # -------------------------- Post clean -------------------------------- #
     @transaction.atomic
-    def save(self, commit=True, scoreset=None):
+    def save(self, commit: bool = True, scoreset: Optional[ScoreSet] = None):
         if not self.is_valid():
             raise ValidationError(
                 "Some target gene fields are invalid. Please address the "
@@ -238,6 +240,11 @@ class TargetGeneForm(forms.ModelForm):
             self.instance.set_wt_sequence(existing_seq)
 
         return super().save(commit=commit)
+
+    def get_targetseq(self) -> Optional[str]:
+        if self.errors:
+            return None
+        return self.sequence_params.get("sequence").upper()
 
 
 # GenomicInterval
