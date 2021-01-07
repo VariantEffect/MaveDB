@@ -29,6 +29,7 @@ def make_files(score_data=None, count_data=None, meta_data=None):
         )
     else:
         string_io = StringIO(score_data)
+
     size = string_io.seek(0, os.SEEK_END)
     string_io.seek(0)
     scores_file = InMemoryUploadedFile(
