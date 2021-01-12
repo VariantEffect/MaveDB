@@ -20,4 +20,4 @@ pip install -r requirements/$requirements \
   && python manage.py createlicences $settings \
   && python manage.py createreferences $settings \
   && python manage.py collectstatic $settings \
-  && python manage.py test accounts api core dataset genome main metadata search urn variant $settings
+  && python manage.py test accounts api core dataset genome main manager metadata search urn variant $settings

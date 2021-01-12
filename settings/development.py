@@ -130,6 +130,7 @@ CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_COMPRESSION = "gzip"
 
 INSTALLED_APPS = [
+    "manager",
     "metadata",
     "main",
     "genome",
