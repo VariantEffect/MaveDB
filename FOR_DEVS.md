@@ -119,7 +119,31 @@ The following command will run the tests. Note that the Selenium tests may fail 
 if the test browser is interacted with.
 
 ```shell script
-python manage.py test
+python manage.py test --exclude-tags=webtest
+```
+
+## Celery
+If you want to tes the upload functionality and offline task handling, you'll need to start a Celery process. In a 
+separate terminal run:
+
+```shell
+celery -A mavedb worker -l debug --concurrency=2
+```
+
+You should see output indicating registered tasks similar to:
+
+```shell
+[tasks]
+  . core.tasks.BaseTask
+  . core.tasks.health_check
+  . core.tasks.send_mail
+  . dataset.tasks.BaseCreateVariantsTask
+  . dataset.tasks.BaseDatasetTask
+  . dataset.tasks.BaseDeleteTask
+  . dataset.tasks.BasePublishTask
+  . dataset.tasks.create_variants
+  . dataset.tasks.delete_instance
+  . dataset.tasks.publish_scoreset
 ```
 
 ## Conclusion

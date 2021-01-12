@@ -31,18 +31,25 @@ def make_data():
     }
 
 
-def generate_hgvs(prefix="c"):
+def generate_hgvs(prefix: str = "c") -> str:
     """Generates a random hgvs string from a small sample."""
     if prefix == "p":
-        return choice(
-            [
-                "p.Ala4Leu",
-                "p.G78L",
-                "p.(Ala32*)",
-                "p.C28_L29delinsTGL",
-                "p.(Ala32_Leu33ins(5))",
-            ]
-        )
+        # Subset of 3-letter codes, chosen at random.
+        amino_acids = [
+            "Ala",
+            "Leu",
+            "Gly",
+            "Val",
+            "Tyr",
+            "Met",
+            "Cys",
+            "His",
+            "Glu",
+            "Phe",
+        ]
+        ref = choice(amino_acids)
+        alt = choice(amino_acids)
+        return f"{prefix}.{ref}{choice(range(1, 100))}{alt}"
     else:
         alt = choice("ATCG")
         ref = choice("ATCG")

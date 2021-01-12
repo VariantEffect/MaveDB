@@ -18,7 +18,7 @@ class TestVariant(TestCase):
     validation, uniqueness, queries and that the appropriate errors are raised.
     """
 
-    def test_autoassign_urn_when_save(self):
+    def test_auto_assign_urn_when_save(self):
         variant = VariantFactory()
         self.assertIsNotNone(variant.urn)
 

@@ -25,7 +25,23 @@
                   {% for instance in request.user.profile.contributor_scoresets %}
                     <div class="card hover-card profile-card">
                       <div class="card-body">
-                        <h5 class="card-title right-align"><a href="{% url 'dataset:scoreset_detail' instance.urn %}">{{ instance.urn }}</a></h5><br>
+
+                        {% if instance.private and request.user in instance.administrators %}
+                        <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block; float: left">
+                         {% csrf_token %}
+                          <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
+                          <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
+                            <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
+                               title="Delete this score set. This action is final."></i>
+                          </a>
+                        </form>
+                        {% endif %}
+
+                        <h5 class="card-title right-align">
+                          <a href="{% url 'dataset:scoreset_detail' instance.urn %}">{{ instance.urn }}</a>
+                        </h5>
+                        <br>
+
                         <p class="card-text"><b>{{ instance.get_title }}</b></p>
                         <p class="card-text card-description">{{ instance.get_description }}</p>
                       </div>
@@ -82,25 +98,23 @@
                             {% endif %}
 
                             {% if instance.private and request.user in instance.administrators %}
-                              <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
-                               {% csrf_token %}
-                                <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
-                                <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
-                                  <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
-                                     title="Delete this score set. This action is final."></i>
-                                </a>
-                              </form>
                               <form id="{{ instance.urn }}-publish" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
                                {% csrf_token %}
                                 <input value="{{ instance.urn }}" title="publish" name="publish" hidden />
                                 <a class="publish-urn" onclick="confirmPublish('{{ instance.urn }}');" id="publish-btn">
-                                  <i class="publish-icon fa fa-lock pl-1" data-toggle="tooltip" data-placement="top"
-                                     title="Publish this score set. This action is final."></i>
+                                  <i class="fa fa-lock pl-1"
+                                     data-toggle="tooltip"
+                                     data-placement="top"
+                                     title="Publish this score set. This action is final."
+                                     style="font-size: 25px; position: relative; top: 3px"
+                                  >
+                                  </i>
                                 </a>
                               </form>
                             {% endif %}
+
                           </small>
-                        </div> <!-- end card foorter -->
+                        </div> <!-- end card footer -->
                       </div>
                     </div>
                   {% endfor %}
@@ -114,8 +128,21 @@
               <div>
                 <div class="card-deck">
                   {% for instance in request.user.profile.contributor_experiments %}
+
                     <div class="card hover-card profile-card">
                       <div class="card-body">
+
+                        {% if instance.private and request.user in instance.administrators %}
+                          <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block; float: left">
+                           {% csrf_token %}
+                            <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
+                            <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
+                              <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
+                                 title="Delete this experiment. This action is final."></i>
+                            </a>
+                          </form>
+                        {% endif %}
+
                         <h5 class="card-title right-align"><a href="{% url 'dataset:experiment_detail' instance.urn %}">{{ instance.urn }}</a></h5><br>
                         <p class="card-text"><b>{{ instance.get_title }}</b></p>
                         <p class="card-text card-description">{{ instance.get_description }}</p>
@@ -132,6 +159,7 @@
                           </p>
                         {% endif %}
                       </div>
+
                       <div class="card-footer">
                         <div class="row">
                           <small class="col text-muted d-flex">
@@ -165,18 +193,8 @@
                              </a>
                             {% endif %}
 
-                            {% if instance.private and request.user in instance.administrators %}
-                              <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
-                               {% csrf_token %}
-                                <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
-                                <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
-                                  <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
-                                     title="Delete this experiment. This action is final."></i>
-                                </a>
-                              </form>
-                            {% endif %}
                           </small>
-                        </div> <!-- end card foorter -->
+                        </div> <!-- end card footer -->
                       </div>
                     </div>
                   {% endfor %}
@@ -192,6 +210,18 @@
                 {% for instance in request.user.profile.contributor_experimentsets %}
                   <div class="card hover-card profile-card">
                     <div class="card-body">
+
+                      {% if instance.private and request.user in instance.administrators %}
+                        <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block; float: left">
+                         {% csrf_token %}
+                          <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
+                          <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
+                            <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
+                               title="Delete this experiment set. This action is final."></i>
+                          </a>
+                        </form>
+                      {% endif %}
+
                       <h5 class="card-title right-align"><a href="{% url 'dataset:experimentset_detail' instance.urn %}">{{ instance.urn }}</a></h5><br>
                       {% if not instance.children.count %}
                         <p class="card-text">No associated experiments.</p>
@@ -228,18 +258,8 @@
                             </a>
                           {% endif %}
 
-                          {% if instance.private and request.user in instance.administrators %}
-                            <form id="{{ instance.urn }}-delete" action="{% url 'accounts:profile' %}" method="post" style="display: inline-block">
-                             {% csrf_token %}
-                              <input value="{{ instance.urn }}" title="delete" name="delete" hidden />
-                              <a class="delete-urn" onclick="confirmDelete('{{ instance.urn }}');" id="delete-btn">
-                                <i class="trash-icon fas fa-trash-alt pl-1" data-toggle="tooltip" data-placement="top"
-                                   title="Delete this experiment set. This action is final."></i>
-                              </a>
-                            </form>
-                          {% endif %}
                         </small>
-                      </div> <!-- end card foorter -->
+                      </div> <!-- end card footer -->
                     </div>
                   </div>
                 {% endfor %}

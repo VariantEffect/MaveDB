@@ -103,7 +103,7 @@ def profile_view(request):
             deleted = delete(delete_urn, request)
             if deleted:
                 return HttpResponseRedirect(reverse_lazy("accounts:profile"))
-        if publish_urn:
+        elif publish_urn:
             published = publish(publish_urn, request)
             if published:
                 return HttpResponseRedirect(reverse_lazy("accounts:profile"))

@@ -34,6 +34,7 @@ function confirmDelete(urn) {
   if (yes) {
     return document.getElementById(urn + "-delete").submit();
   }
+  return false;
 }
 
 function confirmPublish(urn) {
@@ -47,6 +48,7 @@ function confirmPublish(urn) {
   if (yes) {
     return document.getElementById(urn + "-publish").submit();
   }
+  return false;
 }
 
 // Check management form submission
@@ -54,7 +56,7 @@ function confirmPublish(urn) {
 // `user` is a global defined in base.html using Django"s templating system.
 function askConfirmation() {
   return confirm(
-    "This assignment will remove you as an administartor. If you " +
+    "This assignment will remove you as an administrator. If you " +
     "continue, you will no longer be able to access this page. " +
     "Are you sure?"
   );

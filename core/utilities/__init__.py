@@ -26,10 +26,11 @@ null_values_list = (
     "undefined",
     "n/a",
     "null",
+    "nil",
     NA_value,
 )
 null_values_re = re.compile(
-    r"\s+|none|nan|na|undefined|n/a|null|{}".format(NA_value),
+    r"\s+|none|nan|na|undefined|n/a|null|nil|{}".format(NA_value),
     flags=re.IGNORECASE,
 )
 readable_null_values = [

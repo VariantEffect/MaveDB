@@ -1,141 +1,8 @@
-import re
-
 import numpy as np
 import pandas as pd
-from hgvsp import protein, dna, rna
 from pandas.testing import assert_index_equal
 
 from core.utilities import is_null
-from .constants import wildtype, synonymous
-
-
-def split_variant(variant):
-    """
-    Splits a multi-variant `HGVS` string into a list of single variants. If
-    a single variant string is provided, it is returned as a singular `list`.
-
-    Parameters
-    ----------
-    variant : str
-        A valid single or multi-variant `HGVS` string.
-
-    Returns
-    -------
-    list[str]
-        A list of single `HGVS` strings.
-    """
-    prefix = variant[0]
-    if len(variant.split(";")) > 1:
-        return (
-            prefix,
-            [
-                "{}.{}".format(prefix, e.strip())
-                for e in variant[3:-1].split(";")
-            ],
-        )
-    return prefix, [variant]
-
-
-def join_variants(variants, prefix):
-    """
-    Joins a list of single variant events into a multi-variant HGVS string.
-
-    Parameters
-    ----------
-    variants : union[str, list[str]]
-        A list of valid single or multi-variant `HGVS` string.
-    prefix : str
-        HGVS prefix.
-
-    Returns
-    -------
-    str
-    """
-    if isinstance(variants, str):
-        return variants
-
-    if len(variants) == 1 and variants[0] in (wildtype, synonymous):
-        return variants[0]
-
-    if len(variants) == 1:
-        return "{}.{}".format(
-            prefix, variants[0].replace("{}.".format(prefix), "")
-        )
-    elif len(variants) > 1:
-        return "{}.[{}]".format(
-            prefix,
-            ";".join([v.replace("{}.".format(prefix), "") for v in variants]),
-        )
-    else:
-        return None
-
-
-def normalize_variant(variant):
-    """
-    Replaces `???` for `Xaa` in protein variants and `X` for `N` in
-    nucleotide variants to be compliant with the `hgvs` biocommons package.
-
-    Use for enrich and enrich2 inputs.
-
-    Parameters
-    ----------
-    variant : str, optional.
-        HGVS_ formatted string.
-
-    Returns
-    -------
-    str
-    """
-    if variant is None:
-        return variant
-    if protein.substitution_re.fullmatch(variant):
-        # If regex matches there should be only two cases a variant with
-        # triple '???' or one '?'
-        # Sub groups of three first.
-        variant = re.sub(r"\?{3}", "Xaa", variant)
-        # Sub singular next.
-        variant = re.sub(r"\?", "X", variant)
-    elif (
-        dna.substitution_re.fullmatch(variant)
-        or dna.deletion_re.fullmatch(variant)
-        or dna.insertion_re.fullmatch(variant)
-        or dna.delins_re.fullmatch(variant)
-    ):
-        variant = variant.replace(r"X", "N")
-    elif (
-        rna.substitution_re.fullmatch(variant)
-        or rna.deletion_re.fullmatch(variant)
-        or rna.insertion_re.fullmatch(variant)
-        or rna.delins_re.fullmatch(variant)
-    ):
-        variant = variant.replace(r"x", "n")
-    return variant.strip()
-
-
-def format_variant(variant, normalize=False):
-    """
-    Returns None for null variants and strips trailing whitespace.
-
-    Parameters
-    ----------
-    variant : str, optional.
-        HGVS_ formatted string.
-
-    normalize : bool, optional.
-        Run variant normalization. Mainly for formatting enrich2/enrich input.
-        Off by default.
-
-    Returns
-    -------
-    str
-    """
-    if is_null(variant):
-        return None
-
-    variant = variant.strip()
-    if normalize:
-        return normalize_variant(variant)
-    return variant
 
 
 def convert_df_to_variant_records(scores, counts=None, index=None):
@@ -143,10 +10,10 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
     Given two `defaultdict`s `score_map` and `count_map`, create an
     `OrderedDict` indexed by `hgvs_nt` where the keys are the attribute
     fields required to instantiate a `variant.models.Variant` instance.
-    
+
     NOTE: Assumes that the dataframes are indexed by their primary columns,
     and that they define the same variants in both hgvs columns.
-    
+
     Parameters
     ----------
     scores : Union[`pd.DataFrame`, str]
@@ -200,10 +67,10 @@ def convert_df_to_variant_records(scores, counts=None, index=None):
 
     variants = []
     for (primary_hgvs, group) in scores.groupby(by=scores.index, sort=False):
-        score_records = group.to_dict("record")
+        score_records = group.to_dict(orient="records")
         if has_count_data:
             count_records = counts[counts.index == primary_hgvs].to_dict(
-                "record"
+                orient="records"
             )
             assert len(score_records) == len(count_records)
         else:
