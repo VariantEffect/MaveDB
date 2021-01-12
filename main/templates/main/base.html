@@ -98,6 +98,11 @@
           <a class="nav-link text-muted" href="{% url 'main:documentation' %}">Documentation</a>
         </li>
         {% if user.is_authenticated %}
+          {% if user.is_superuser %}
+            <li class="nav-item">
+              <a class="nav-link text-muted" href="{% url 'manager:manage' %}">Manage</a>
+            </li>
+          {% endif %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle text-muted" href="#" id="profile-dd" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

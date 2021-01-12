@@ -34,6 +34,7 @@ urlpatterns = [
     url(r"^api/", include("api.urls", namespace="api"), name="api"),
     url(r"^", include("accounts.urls", namespace="accounts"), name="accounts"),
     url(r"^", include("dataset.urls", namespace="dataset"), name="dataset"),
+    url(r"^manage/", include("manager.urls", namespace="manager"), name="manage"),
     url(
         r"^search/", include("search.urls", namespace="search"), name="search"
     ),

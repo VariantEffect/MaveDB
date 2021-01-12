@@ -1,0 +1,54 @@
+{% extends "manager/manage.html" %}
+
+{% block command_content %}
+  <hr>
+  {% if result %}
+    <br>
+    {% if result.error %}
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>{{ result.result_message }}</strong> {{ result.result_message_details }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% else %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>{{ result.result_message }}</strong> {{ result.result_message_details }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endif %}
+  {% endif %}
+  
+  <h2>Create News</h2>
+
+  <div class="container">
+    <form action={% url 'manager:manage_createnews' %} method="POST">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-6">
+          <h6>Message</h6>
+          <textarea class="form-control" name="message" rows="3"></textarea>
+        </div>
+
+        <div class="col-4">
+          <h6>Select Level</h6>
+          <select class="form-control" name="level">
+            <option value="" selected="">-- Select a Level --</option>
+            {% for level in levels %}
+              <option class="form-control" value="{{ level }}">{{ level }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="col-3">
+          <input type="submit" value="Submit">
+        </div>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}

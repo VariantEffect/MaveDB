@@ -1,0 +1,19 @@
+{% if selected_urn %}
+  <div id="table-wrapper" class="styled-table mt-4">
+    <div class="table-responsive">
+      <table class="styled-table table table-hover display"
+             style="width: 100%">
+        <thead>
+        <tr>
+          <th scope="row">Selected Urn</th>
+          <th scope="row">Current PMIDs</th>
+        </tr>
+        <tr>
+          <td>{{ selected_urn }}</td>
+          <td>{{ pmids }}</td>
+        </tr>
+        </thead>
+      </table>
+    </div>
+  </div>
+{% endif %}
