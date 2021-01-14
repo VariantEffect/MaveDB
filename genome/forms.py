@@ -7,6 +7,7 @@ from django.db import transaction
 from django.forms.models import BaseModelFormSet
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
+from django.utils.safestring import mark_safe
 
 from fqfa.fasta.fasta import parse_fasta_records
 
@@ -55,15 +56,16 @@ class TargetGeneForm(forms.ModelForm):
         },
     )
     sequence_fasta = forms.FileField(
-        label="Target reference sequence",
+        label="FASTA file",
         required=False,
     )
     sequence_type = forms.CharField(
         label="Sequence type",
         required=True,
-        help_text=(
-            "Select 'DNA' for nucleotide sequence, 'Protein' for amino acid "
-            "sequence, or 'Infer' to automatically infer sequence type."
+        help_text=mark_safe(
+            "Select <b>DNA</b> for a nucleotide sequence, "
+            "<b>Protein</b> for an amino acid sequence, "
+            "or <b>Infer</b> to automatically infer a sequence type."
         ),
         widget=forms.Select(choices=WildTypeSequence.SequenceType.choices()),
         initial=WildTypeSequence.SequenceType.INFER,
@@ -102,7 +104,6 @@ class TargetGeneForm(forms.ModelForm):
                 sequence=sequence,
                 sequence_type=sequence_type,
             )
-
             self.fields["sequence_text"].initial = sequence
             self.fields["sequence_type"].initial = sequence_type
 
