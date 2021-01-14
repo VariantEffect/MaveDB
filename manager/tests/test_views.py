@@ -15,8 +15,31 @@ class TestManagerView(TestCase):
         self.client = Client()
         self.manage_url = reverse('manager:manage')
         self.subcommand_keys = ['addpmid', 'adduser', 'createnews']
+        self.user = User(username='user', is_superuser=False)
+        self.user.set_password('password')
+        self.user.save()
+        self.superuser = User(username='superuser', is_superuser=True)
+        self.superuser.set_password('password')
+        self.superuser.save()
+
+    def test_correct_authorization(self):
+        # First, test that it redirects to login page (302)
+        response = self.client.get(self.manage_url)
+        self.assertEqual(response.status_code, 302)
+
+        # Then, that it raises a permissions error (403)
+        self.client.login(username='user', password='password')
+        response = self.client.get(self.manage_url)
+        self.assertEqual(response.status_code, 403)
+
+        # And finally, that it succeeds
+        self.client.logout()
+        self.client.login(username='superuser', password='password')
+        response = self.client.get(self.manage_url)
+        self.assertEqual(response.status_code, 200)
 
     def test_has_subcommands(self):
+        self.client.login(username='superuser', password='password')
         response = self.client.get(self.manage_url)
         self.assertEqual(response.status_code, 200)
         for key in response.context['subcommands'].keys():
@@ -27,7 +50,11 @@ class TestManagerView(TestCase):
 
 class TestAddPmidView(TestCase):
     def setUp(self):
+        self.superuser = User(username='superuser', is_superuser=True)
+        self.superuser.set_password('password')
+        self.superuser.save()
         self.client = Client()
+        self.client.login(username='superuser', password='password')
         self.addpmid_url = reverse('manager:manage_addpmid')
         self.pmid = '29103961'
         _ = ScoreSetFactory()
@@ -57,7 +84,11 @@ class TestAddPmidView(TestCase):
 
 class TestAddUserView(TestCase):
     def setUp(self):
+        self.superuser = User(username='superuser', is_superuser=True)
+        self.superuser.set_password('password')
+        self.superuser.save()
         self.client = Client()
+        self.client.login(username='superuser', password='password')
         self.adduser_url = reverse('manager:manage_adduser')
         self.orcid_id = '0000-0002-2781-7390'
         u = User.objects.create(username=self.orcid_id)
@@ -136,7 +167,11 @@ class TestAddUserView(TestCase):
 
 class TestCreateNewsView(TestCase):
     def setUp(self):
+        self.superuser = User(username='superuser', is_superuser=True)
+        self.superuser.set_password('password')
+        self.superuser.save()
         self.client = Client()
+        self.client.login(username='superuser', password='password')
         self.createnews_url = reverse('manager:manage_createnews')
         self.levels = [status_choice[0] for status_choice in News.STATUS_CHOICES]
 
