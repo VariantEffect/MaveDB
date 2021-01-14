@@ -1,3 +1,5 @@
+from typing import Optional, Any
+
 from django.db import models
 
 from core.models import TimeStampedModel
@@ -139,10 +141,10 @@ class TargetGene(TimeStampedModel):
         self.wt_sequence.delete()
         return retval
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
-    def get_unique_name(self):
+    def get_unique_name(self) -> str:
         """Target name appended to its scoreset urn."""
         return "{} | {}".format(self.name, self.get_scoreset_urn())
 
@@ -151,20 +153,22 @@ class TargetGene(TimeStampedModel):
             return self.scoreset
         return None
 
-    def get_scoreset_urn(self):
+    def get_scoreset_urn(self) -> Optional[str]:
         if self.get_scoreset():
             return self.scoreset.urn
         return None
 
-    def get_wt_sequence_string(self):
+    def get_wt_sequence_string(self) -> Optional[str]:
         if self.wt_sequence:
             return self.wt_sequence.get_sequence()
+        return None
 
-    def get_wt_sequence(self):
+    def get_wt_sequence(self) -> Optional["WildTypeSequence"]:
         if hasattr(self, "wt_sequence"):
             return self.wt_sequence
+        return None
 
-    def set_wt_sequence(self, sequence):
+    def set_wt_sequence(self, sequence: "WildTypeSequence"):
         if not isinstance(sequence, WildTypeSequence):
             raise TypeError(
                 "Found {}, expected {} or str.".format(
@@ -173,10 +177,16 @@ class TargetGene(TimeStampedModel):
             )
         self.wt_sequence = sequence
 
-    def get_offset_annotation(self, related_field):
+    def match_sequence(self, sequence: Optional[str]) -> bool:
+        this = (self.get_wt_sequence_string() or "").lower()
+        other = (sequence or "").lower()
+        return this == other
+
+    def get_offset_annotation(self, related_field) -> Optional[Any]:
         value = getattr(self, related_field, None)
         if value is not None:
             return value.first()
+        return None
 
     def get_uniprot_offset_annotation(self):
         return self.get_offset_annotation("uniprotoffset")
@@ -343,7 +353,7 @@ class ReferenceGenome(TimeStampedModel):
         The short name description of the genome. Example: 'hg38'.
 
     organism_name : `CharField`
-        The organism of the genome. Example: 'Homo spaiens'
+        The organism of the genome. Example: 'Homo sapiens'
 
     ensembl_id : `ForeignKey`
         An :class:`EnsemblIdentifier` instance to relating to this genome.
