@@ -1,17 +1,18 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-from functools import partial
+from typing import Dict, Any, Optional
 
+from django.contrib import messages
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 
 from reversion import create_revision
 
 from accounts.permissions import PermissionTypes
 
-from core.mixins import AjaxView
+from genome.models import TargetGene
 
 from metadata.forms import (
     UniprotOffsetForm,
@@ -24,6 +25,7 @@ from dataset.tasks import create_variants
 from dataset import constants
 
 from genome.forms import PrimaryReferenceMapForm, TargetGeneForm
+from variant.validators import MaveDataset
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
@@ -32,34 +34,15 @@ from ..mixins import ScoreSetAjaxMixin
 
 from .base import (
     DatasetModelView,
-    CreateDatasetModelView,
-    UpdateDatasetModelView,
+    CreateDatasetView,
+    UpdateDatasetView,
 )
 
 logger = logging.getLogger("django")
 User = get_user_model()
 
 
-def fire_task(request, scoreset, task_kwargs):
-    logger.info(
-        "Submitting task from {} for {} to Celery.".format(
-            request.user, scoreset.urn
-        )
-    )
-    success, _ = create_variants.submit_task(
-        kwargs=task_kwargs, request=request
-    )
-    logger.info(
-        "Submission to celery from {} for {}: {}".format(
-            request.user, scoreset.urn, success
-        )
-    )
-    if not success:
-        scoreset.processing_state = constants.failed
-        scoreset.save()
-
-
-class ScoreSetDetailView(AjaxView, DatasetModelView):
+class ScoreSetDetailView(DatasetModelView):
     """
     Simple detail view. See `scoreset/scoreset.html` for the template
     layout.
@@ -69,6 +52,8 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
     # -------
     model = ScoreSet
     template_name = "dataset/scoreset/scoreset.html"
+    slug_url_kwarg = "urn"
+    slug_field = "urn"
     # -------
 
     def get_context_data(self, **kwargs):
@@ -97,9 +82,10 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         context["meta_analysis_for"] = instance.meta_analysis_for.all()
         context["is_meta_analysis"] = instance.is_meta_analysis
         context["is_meta_analysed"] = instance.is_meta_analysed
+
         return context
 
-    def get_ajax(self):
+    def get_ajax(self, *args, **kwargs):
         type_ = self.request.GET.get("type", False)
         instance = self.get_object()
 
@@ -146,315 +132,540 @@ class ScoreSetDetailView(AjaxView, DatasetModelView):
         return JsonResponse(response, safe=False)
 
 
-class ScoreSetCreateView(ScoreSetAjaxMixin, CreateDatasetModelView):
+class BaseScoreSetFormView(ScoreSetAjaxMixin):
+    # Override these in update/create
+    model = None
+    form_class = None
+
+    def get(self, *args, **kwargs) -> HttpResponse:
+        download_errors = "download_errors" in self.request.GET
+        if download_errors:
+            f_type = self.request.GET.get("download_errors")
+            file = self.request.COOKIES.get(f"{f_type}_errors", "")
+            if file:
+                file_data = open(file, "rt").read()
+                response = HttpResponse(file_data, content_type="text/plain")
+                response[
+                    "Content-Disposition"
+                ] = f'attachment; filename="errors_{f_type}.txt"'
+                return response
+
+        return super().get(*args, **kwargs)
+
+    def form_valid(self, form: Dict[str, Any]) -> HttpResponseRedirect:
+        try:
+            self.save_forms(form)
+            messages.success(self.request, self.get_success_message())
+        except Exception as error:
+            logger.exception(
+                f"The following error occurred during "
+                f"{self.model.__name__} creation:\n{str(error)}"
+            )
+            messages.error(
+                self.request,
+                "There was a server side error while saving your submission. "
+                "Please contact support if this issue persists.",
+            )
+            return self.render_to_response(self.get_context_data(**form))
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form: Dict[str, Any]):
+        messages.error(
+            self.request,
+            "Your submission contains errors. Please address each one before"
+            "re-submitting.",
+        )
+        return self.render_to_response(self.get_context_data(**form))
+
+    def get_success_message(self) -> str:
+        raise NotImplementedError()
+
+    # --------------- Helpers ------------------------------------------- #
+    @transaction.atomic()
+    def save_forms(self, forms: Dict[str, Any]) -> Dict[str, Any]:
+        scoreset_form: ScoreSetForm = forms["scoreset_form"]
+
+        with create_revision():
+            scoreset: ScoreSet = scoreset_form.save(commit=True)
+            self.object: ScoreSet = scoreset
+
+        # Creating a new scoreset or editing a private scoreset, otherwise only
+        # the score set form will be served.
+        if self.object.private:
+            target_form: TargetGeneForm = forms["target_gene_form"]
+            reference_map_form: PrimaryReferenceMapForm = forms[
+                "reference_map_form"
+            ]
+            uniprot_offset_form: UniprotOffsetForm = forms[
+                "uniprot_offset_form"
+            ]
+            refseq_offset_form: RefseqOffsetForm = forms["refseq_offset_form"]
+            ensembl_offset_form: EnsemblOffsetForm = forms[
+                "ensembl_offset_form"
+            ]
+
+            target: TargetGene = target_form.save(
+                commit=True, scoreset=scoreset
+            )
+
+            reference_map_form.instance.target = target
+            reference_map_form.save(commit=True)
+
+            uniprot_offset = uniprot_offset_form.save(
+                target=target,
+                commit=True,
+            )
+            refseq_offset = refseq_offset_form.save(
+                target=target,
+                commit=True,
+            )
+            ensembl_offset = ensembl_offset_form.save(
+                target=target,
+                commit=True,
+            )
+
+            if uniprot_offset:
+                target.uniprot_id = uniprot_offset.identifier
+            else:
+                target.uniprot_id = None
+
+            if refseq_offset:
+                target.refseq_id = refseq_offset.identifier
+            else:
+                target.refseq_id = None
+
+            if ensembl_offset:
+                target.ensembl_id = ensembl_offset.identifier
+            else:
+                target.ensembl_id = None
+
+            target.save()
+
+        return forms
+
+    def submit_job(self, form: ScoreSetForm):
+        if form.has_variants() and self.object.private:
+            logger.info(
+                "Submitting task from {} for {} to Celery.".format(
+                    self.request.user, self.object.urn
+                )
+            )
+
+            self.object.processing_state = constants.processing
+            self.object.save()
+
+            scores_rs, counts_rs, index = form.serialize_variants()
+            task_kwargs = {
+                "user_pk": self.request.user.pk,
+                "scoreset_urn": self.object.urn,
+                "dataset_columns": form.dataset_columns.copy(),
+                "index": index,
+                "scores_records": scores_rs,
+                "counts_records": counts_rs,
+            }
+
+            success, _ = create_variants.submit_task(
+                request=self.request,
+                kwargs=task_kwargs,
+            )
+
+            logger.info(
+                "Submission to celery from {} for {}: {}".format(
+                    self.request.user, self.object.urn, success
+                )
+            )
+
+            if not success:
+                self.object.processing_state = constants.failed
+                self.object.save()
+
+
+class ScoreSetCreateView(BaseScoreSetFormView, CreateDatasetView):
+    """
+    This view serves the forms:
+        - `ScoreSetForm`
+        - `TargetGeneForm`
+        - `PrimaryReferenceMapForm`
+        - `UniprotOffsetForm`
+        - `RefseqOffsetForm`
+        - `EnsemblOffsetForm`
+
+    Raises
+    ------
+    Http404
+    PermissionDenied
+    """
+
     # Overridden from `CreateDatasetModelView`
     # -------
+    model = ScoreSet
     form_class = ScoreSetForm
     template_name = "dataset/scoreset/new_scoreset.html"
-    model_class_name = "Score set"
     # -------
 
-    prefixes = {
-        "uniprot_offset": "uniprot-offset",
-        "refseq_offset": "refseq-offset",
-        "ensembl_offset": "ensembl-offset",
-    }
-    forms = {
-        "scoreset": ScoreSetForm,
-        "target_gene": TargetGeneForm,
-        "reference_map": PrimaryReferenceMapForm,
-        "uniprot_offset": UniprotOffsetForm,
-        "refseq_offset": RefseqOffsetForm,
-        "ensembl_offset": EnsemblOffsetForm,
-    }
+    def dispatch(self, request, *args, **kwargs) -> HttpResponseRedirect:
+        self.parent: Optional[Experiment] = None
 
-    success_message = (
-        "Successfully created a new Scoreset with temporary accession number "
-        "{urn}. Uploaded files are being processed and further "
-        "editing has been "
-        "temporarily disabled. Please check back later."
-    )
-
-    def dispatch(self, request, *args, **kwargs):
         if self.request.GET.get("experiment", ""):
             urn = self.request.GET.get("experiment")
             if Experiment.objects.filter(urn=urn).count():
                 # TODO: allow if public
                 experiment = Experiment.objects.get(urn=urn)
-                has_permission = self.request.user.has_perm(
-                    PermissionTypes.CAN_EDIT, experiment
+                has_permission = (
+                    self.request.user.has_perm(
+                        PermissionTypes.CAN_EDIT, experiment
+                    )
+                    or not experiment.private
                 )
                 if has_permission:
-                    self.kwargs["experiment"] = experiment
+                    self.parent: Optional[Experiment] = experiment
+
         return super().dispatch(request, *args, **kwargs)
 
-    def forms_valid(self):
-        all_are_valid, form_dict = super().forms_valid()
-        if not all_are_valid:
-            return all_are_valid, form_dict
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance with the passed
+        POST variables and then checked for validity.
+        """
+        # Store reference to object that will be created later
+        self.object = None
+
+        forms = self.get_form()
+        valid = True
+
+        target_form: TargetGeneForm = forms.pop("target_gene_form")
+        valid &= target_form.is_valid()
+
+        scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
+        valid &= scoreset_form.is_valid(targetseq=target_form.get_targetseq())
 
         # Check that if AA sequence, dataset defined pro variants only.
         if (
-            not form_dict["scoreset"].allow_aa_sequence
-            and form_dict["target_gene"].sequence_is_protein
+            target_form.sequence_is_protein
+            and not scoreset_form.allow_aa_sequence
         ):
-            form_dict["target_gene"].add_error(
+            valid = False
+            target_form.add_error(
                 "sequence_text",
-                "Protein sequences are allowed if your data set only defines "
-                "protein variants.",
+                "Protein sequences are allowed if your data set exclusively  "
+                "defines protein variants.",
             )
-            return False, form_dict
 
-        return all_are_valid, form_dict
+        # Check remaining forms which do not need special treatment
+        valid &= all(form.is_valid() for _, form in forms.items())
 
-    @transaction.atomic
-    def save_forms(self, forms):
-        scoreset_form = forms["scoreset"]
-        target_gene_form = forms["target_gene"]
+        # Put forms back into forms dictionary.
+        forms["scoreset_form"] = scoreset_form
+        forms["target_gene_form"] = target_form
 
-        reference_map_form = forms["reference_map"]
-        uniprot_offset_form = forms["uniprot_offset"]
-        refseq_offset_form = forms["refseq_offset"]
-        ensembl_offset_form = forms["ensembl_offset"]
+        if valid:
+            return self.form_valid(forms)
+        else:
+            return self.form_invalid(forms)
 
-        scoreset = scoreset_form.save(commit=True)
-        scoreset.set_created_by(self.request.user)
-        scoreset.set_modified_by(self.request.user)
-        scoreset.save()
-
-        targetgene = target_gene_form.save(commit=True, scoreset=scoreset)
-
-        reference_map_form.instance.target = targetgene
-        reference_map_form.save(commit=True)
-
-        uniprot_offset = uniprot_offset_form.save(
-            target=targetgene, commit=True
-        )
-        refseq_offset = refseq_offset_form.save(target=targetgene, commit=True)
-        ensembl_offset = ensembl_offset_form.save(
-            target=targetgene, commit=True
-        )
-
-        if uniprot_offset:
-            targetgene.uniprot_id = uniprot_offset.identifier
-        if refseq_offset:
-            targetgene.refseq_id = refseq_offset.identifier
-        if ensembl_offset:
-            targetgene.ensembl_id = ensembl_offset.identifier
-        targetgene.save()
-
-        # Call celery task after all the above has successfully completed
-        if scoreset_form.has_variants():
-            scoreset.processing_state = constants.processing
-            scores_rs, counts_rs, index = scoreset_form.serialize_variants()
-            task_kwargs = {
-                "user_pk": self.request.user.pk,
-                "scoreset_urn": scoreset.urn,
-                "dataset_columns": scoreset_form.dataset_columns.copy(),
-                "index": index,
-                "scores_records": scores_rs,
-                "counts_records": counts_rs,
-            }
-
-            call_create = partial(
-                fire_task,
-                request=self.request,
-                scoreset=scoreset,
-                task_kwargs=task_kwargs,
-            )
-            transaction.on_commit(call_create)
-
-        with create_revision():
-            scoreset.save()
-
-        scoreset.add_administrators(self.request.user)
-        # assign_superusers_as_admin(scoreset)
-        self.kwargs["urn"] = scoreset.urn
-        return forms
+    def get_form(self, form_class=None) -> Dict[str, Any]:
+        return {
+            "scoreset_form": self.get_scoreset_form(),
+            "target_gene_form": self.get_target_form(),
+            "reference_map_form": self.get_reference_map_form(),
+            "uniprot_offset_form": self.get_uniprot_offset_form(),
+            "refseq_offset_form": self.get_refseq_offset_form(),
+            "ensembl_offset_form": self.get_ensembl_offset_form(),
+        }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        experiment = self.kwargs.get("experiment", None)
-        if experiment:
-            context["experiment_urn"] = experiment.urn
+
+        # Unpack all the individual forms into the context dictionary
+        # but don't override if the form is already in there.
+        for name, form in context.pop("form", {}).items():
+            if name not in context:
+                context[name] = form
+
+        if self.parent is not None:
+            context["experiment_urn"] = self.parent.urn
+
         return context
 
-    def get_scoreset_form_kwargs(self, key):
-        return {
-            "user": self.request.user,
-            "experiment": self.kwargs.get("experiment", None),
-        }
+    @transaction.atomic()
+    def save_forms(self, forms: Dict[str, Any]) -> Dict[str, Any]:
+        """Called by form_valid when all forms are ready to be saved."""
+        forms = super().save_forms(forms=forms)
+        ss_form: ScoreSetForm = forms["scoreset_form"]
 
-    def get_target_gene_form_kwargs(self, key):
-        return {"user": self.request.user}
+        self.object.add_administrators(self.request.user)
+        # assign_superusers_as_admin(scoreset)
+        self.kwargs["urn"] = self.object.urn
 
-    def format_success_message(self):
-        return self.success_message.format(urn=self.kwargs.get("urn", None))
+        transaction.on_commit(lambda: self.submit_job(form=ss_form))
 
-
-class ScoreSetEditView(ScoreSetAjaxMixin, UpdateDatasetModelView):
-    # Overridden from `CreateDatasetModelView`
-    # -------
-    form_class = ScoreSetForm
-    template_name = "dataset/scoreset/update_scoreset.html"
-    model_class_name = "Scoreset"
-    model_class = ScoreSet
-    # -------
-
-    prefixes = {
-        "uniprot_offset": "uniprot",
-        "refseq_offset": "refseq",
-        "ensembl_offset": "ensembl",
-    }
-    forms = {
-        "scoreset": ScoreSetForm,
-        "target_gene": TargetGeneForm,
-        "reference_map": PrimaryReferenceMapForm,
-        "uniprot_offset": UniprotOffsetForm,
-        "refseq_offset": RefseqOffsetForm,
-        "ensembl_offset": EnsemblOffsetForm,
-    }
-    restricted_forms = {"scoreset": ScoreSetEditForm}
-
-    # Dispatch/Post/Get
-    # ---------------------------------------------------------------------- #
-    @transaction.atomic
-    def save_forms(self, forms):
-        scoreset_form = forms["scoreset"]
-        scoreset = scoreset_form.save(commit=True)
-        scoreset.set_modified_by(self.request.user)
-        scoreset.save()
-
-        if self.instance.private:
-            target_gene_form = forms["target_gene"]
-            reference_map_form = forms["reference_map"]
-            uniprot_offset_form = forms["uniprot_offset"]
-            refseq_offset_form = forms["refseq_offset"]
-            ensembl_offset_form = forms["ensembl_offset"]
-
-            targetgene = target_gene_form.save(commit=True, scoreset=scoreset)
-
-            reference_map_form.instance.target = targetgene
-            reference_map_form.save(commit=True)
-
-            uniprot_offset = uniprot_offset_form.save(
-                target=targetgene, commit=True
-            )
-            refseq_offset = refseq_offset_form.save(
-                target=targetgene, commit=True
-            )
-            ensembl_offset = ensembl_offset_form.save(
-                target=targetgene, commit=True
-            )
-
-            if uniprot_offset:
-                targetgene.uniprot_id = uniprot_offset.identifier
-            else:
-                targetgene.uniprot_id = None
-
-            if refseq_offset:
-                targetgene.refseq_id = refseq_offset.identifier
-            else:
-                targetgene.refseq_id = None
-
-            if ensembl_offset:
-                targetgene.ensembl_id = ensembl_offset.identifier
-            else:
-                targetgene.ensembl_id = None
-
-            targetgene.save()
-
-        # Call celery task after all the above has successfully completed
-        if scoreset_form.has_variants():
-            scoreset.processing_state = constants.processing
-            scores_rs, counts_rs, index = scoreset_form.serialize_variants()
-            task_kwargs = {
-                "user_pk": self.request.user.pk,
-                "scoreset_urn": scoreset.urn,
-                "dataset_columns": scoreset_form.dataset_columns.copy(),
-                "index": index,
-                "scores_records": scores_rs,
-                "counts_records": counts_rs,
-            }
-            call_create = partial(
-                fire_task,
-                request=self.request,
-                scoreset=scoreset,
-                task_kwargs=task_kwargs,
-            )
-            transaction.on_commit(call_create)
-
-        with create_revision():
-            scoreset.save()
         return forms
 
-    def get_instance_for_form(self, form_key):
+    def get_success_message(self) -> str:
+        return (
+            f"Successfully created a new Score set with temporary accession "
+            f"number {self.object.urn}. Uploaded files are being processed "
+            f"and further editing has been temporarily disabled. Please check "
+            f"back later."
+        )
+
+    def get_scoreset_form(self) -> ScoreSetForm:
+        kwargs = {"user": self.request.user, "experiment": self.parent}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+            kwargs["files"] = self.request.FILES
+        return ScoreSetForm(**kwargs)
+
+    def get_target_form(self) -> TargetGeneForm:
+        kwargs = {"user": self.request.user}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+            kwargs["files"] = self.request.FILES
+        return TargetGeneForm(**kwargs)
+
+    def get_uniprot_offset_form(self) -> UniprotOffsetForm:
+        kwargs = {"prefix": "uniprot-offset"}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+        return UniprotOffsetForm(**kwargs)
+
+    def get_ensembl_offset_form(self) -> EnsemblOffsetForm:
+        kwargs = {"prefix": "ensembl-offset"}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+        return EnsemblOffsetForm(**kwargs)
+
+    def get_refseq_offset_form(self) -> RefseqOffsetForm:
+        kwargs = {"prefix": "refseq-offset"}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+        return RefseqOffsetForm(**kwargs)
+
+    def get_reference_map_form(self):
+        kwargs = {}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+        return PrimaryReferenceMapForm(**kwargs)
+
+
+class ScoreSetEditView(BaseScoreSetFormView, UpdateDatasetView):
+    """
+    This view serves the forms:
+        - `ScoreSetForm`
+        - `TargetGeneForm`
+        - `PrimaryReferenceMapForm`
+        - `UniprotOffsetForm`
+        - `RefseqOffsetForm`
+        - `EnsemblOffsetForm`
+
+    Unless the instance is already public, then it will only serve:
+        -   ScoreSetForm`
+
+    Raises
+    ------
+    Http404
+    PermissionDenied
+    """
+
+    # Overridden from `UpdateDatasetView`
+    # -------
+    model = ScoreSet
+    template_name = "dataset/scoreset/update_scoreset.html"
+    slug_field = "urn"
+    slug_url_kwarg = "urn"
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance with the passed
+        POST variables and then checked for validity.
+        """
+        # Store reference to object that will be created later
+        self.object: ScoreSet = self.get_object()
+
+        forms = self.get_form()
+        valid = True
+
+        if self.object.private:
+            target_form: TargetGeneForm = forms.pop("target_gene_form")
+            scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
+
+            valid &= target_form.is_valid()
+
+            if not self.object.get_target().match_sequence(
+                sequence=target_form.get_targetseq()
+            ):
+                # Changed sequence. Request new files.
+                if not self.request.FILES.get("score_data"):
+                    target_form.add_error(
+                        None,
+                        "Please re-upload your scores and counts files if you "
+                        "are altering the target sequence.",
+                    )
+                    valid = False
+
+            valid &= scoreset_form.is_valid(
+                targetseq=target_form.get_targetseq()
+            )
+
+            # Check that if AA sequence, dataset defined pro variants only,
+            # but only if new files have been uploaded.
+            if (
+                target_form.sequence_is_protein
+                and scoreset_form.has_variants()
+                and not scoreset_form.allow_aa_sequence
+            ):
+                valid = False
+                target_form.add_error(
+                    "sequence_text",
+                    "Protein sequences are allowed if your data set "
+                    "exclusively defines protein variants.",
+                )
+
+            # Check remaining forms which do not need special treatment
+            valid &= all(form.is_valid() for _, form in forms.items())
+
+            # Put forms back into forms dictionary just in case
+            forms["scoreset_form"] = scoreset_form
+            forms["target_gene_form"] = target_form
+        else:
+            scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
+            valid &= scoreset_form.is_valid()
+
+        if valid:
+            return self.form_valid(forms)
+        else:
+            return self.form_invalid(forms)
+
+    @transaction.atomic()
+    def save_forms(self, forms: Dict[str, Any]) -> Dict[str, Any]:
+        """Called by form_valid when all forms are ready to be saved."""
+        forms = super().save_forms(forms=forms)
+        ss_form: ScoreSetForm = forms["scoreset_form"]
+
+        # Call celery task after all the above has successfully completed
+        transaction.on_commit(lambda: self.submit_job(form=ss_form))
+
+        return forms
+
+    def get_form(self, form_class=None) -> Dict[str, Any]:
+        if self.object.private:
+            return {
+                "scoreset_form": self.get_scoreset_form(),
+                "target_gene_form": self.get_target_form(),
+                "reference_map_form": self.get_reference_map_form(),
+                "uniprot_offset_form": self.get_uniprot_offset_form(),
+                "refseq_offset_form": self.get_refseq_offset_form(),
+                "ensembl_offset_form": self.get_ensembl_offset_form(),
+            }
+        else:
+            return {"scoreset_form": self.get_scoreset_form()}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Unpack all the individual forms into the context dictionary
+        # but don't override if the form is already in there.
+        for name, form in context.pop("form", {}).items():
+            if name not in context:
+                context[name] = form
+
+        return context
+
+    def get_success_message(self) -> str:
+        if self.object.processing_state == constants.processing:
+            return (
+                f"Successfully updated {self.object.urn}. Uploaded files are "
+                f"being processed and further editing has been temporarily "
+                f"disabled. Please check back later."
+            )
+        else:
+            return f"Successfully updated {self.object.urn}."
+
+    def get_scoreset_form(self) -> ScoreSetForm:
+        kwargs = {"user": self.request.user, "instance": self.object}
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+            kwargs["files"] = self.request.FILES
+
+        if self.object.private:
+            form_class = ScoreSetForm
+        else:
+            form_class = ScoreSetEditForm
+
+        return form_class(**kwargs)
+
+    def get_target_form(self) -> TargetGeneForm:
+        kwargs = {
+            "instance": self._get_instance_for_form("target_gene_form"),
+            "user": self.request.user,
+        }
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+            kwargs["files"] = self.request.FILES
+
+        return TargetGeneForm(**kwargs)
+
+    def get_uniprot_offset_form(self) -> UniprotOffsetForm:
+        kwargs = {
+            "instance": self._get_instance_for_form("uniprot_offset_form"),
+            "prefix": "uniprot-offset",
+        }
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+
+        return UniprotOffsetForm(**kwargs)
+
+    def get_ensembl_offset_form(self) -> EnsemblOffsetForm:
+        kwargs = {
+            "instance": self._get_instance_for_form("ensembl_offset_form"),
+            "prefix": "ensembl-offset",
+        }
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+
+        return EnsemblOffsetForm(**kwargs)
+
+    def get_refseq_offset_form(self) -> RefseqOffsetForm:
+        kwargs = {
+            "instance": self._get_instance_for_form("refseq_offset_form"),
+            "prefix": "refseq-offset",
+        }
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+
+        return RefseqOffsetForm(**kwargs)
+
+    def get_reference_map_form(self) -> PrimaryReferenceMapForm:
+        kwargs = {
+            "instance": self._get_instance_for_form("reference_map_form")
+        }
+        if self.request.method == "POST":
+            kwargs["data"] = self.request.POST
+
+        return PrimaryReferenceMapForm(**kwargs)
+
+    def _get_instance_for_form(self, form_key):
         ref_map = None
         uniprot_offset = None
         ensembl_offset = None
         refseq_offset = None
-        targetgene = None
-        if self.instance.private:
-            targetgene = self.instance.get_target()
-            if targetgene:
-                ref_map = targetgene.get_reference_maps().first()
-                uniprot_offset = targetgene.get_uniprot_offset_annotation()
-                ensembl_offset = targetgene.get_ensembl_offset_annotation()
-                refseq_offset = targetgene.get_refseq_offset_annotation()
+        target = None
+
+        if self.object and self.object.private:
+            target = self.object.get_target()
+            if target:
+                ref_map = target.get_reference_maps().first()
+                uniprot_offset = target.get_uniprot_offset_annotation()
+                ensembl_offset = target.get_ensembl_offset_annotation()
+                refseq_offset = target.get_refseq_offset_annotation()
+
         dict_ = {
-            "reference_map": ref_map,
-            "uniprot_offset": uniprot_offset,
-            "ensembl_offset": ensembl_offset,
-            "refseq_offset": refseq_offset,
-            "target_gene": targetgene,
+            "reference_map_form": ref_map,
+            "uniprot_offset_form": uniprot_offset,
+            "ensembl_offset_form": ensembl_offset,
+            "refseq_offset_form": refseq_offset,
+            "target_gene_form": target,
         }
+
         return dict_.get(form_key, None)
-
-    def get_scoreset_form(self, form_class, **form_kwargs):
-        if self.request.method == "POST":
-            if self.instance.private:
-                return ScoreSetForm.from_request(
-                    self.request,
-                    self.instance,
-                    initial=None,
-                    prefix=self.prefixes.get("scoreset", None),
-                )
-            else:
-                return ScoreSetEditForm.from_request(
-                    self.request,
-                    self.instance,
-                    initial=None,
-                    prefix=self.prefixes.get("scoreset", None),
-                )
-        else:
-            if "user" not in form_kwargs:
-                form_kwargs.update({"user": self.request.user})
-            return form_class(**form_kwargs)
-
-    def get_uniprot_offset_form_kwargs(self, key):
-        return {"instance": self.get_instance_for_form(key)}
-
-    def get_ensembl_offset_form_kwargs(self, key):
-        return {"instance": self.get_instance_for_form(key)}
-
-    def get_refseq_offset_form_kwargs(self, key):
-        return {"instance": self.get_instance_for_form(key)}
-
-    def get_reference_map_form_kwargs(self, key):
-        return {"instance": self.get_instance_for_form(key)}
-
-    def get_target_gene_form_kwargs(self, key):
-        return {
-            "instance": self.get_instance_for_form(key),
-            "user": self.request.user,
-        }
-
-    def format_success_message(self):
-        if self.instance.processing_state == constants.processing:
-            return (
-                "Successfully updated {urn}. Uploaded files are being "
-                "processed and further editing has been temporarily disabled. "
-                "Please check back later."
-            ).format(urn=self.instance.urn)
-        else:
-            return super().format_success_message()
