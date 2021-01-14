@@ -149,6 +149,13 @@ class DatasetFormViewContextMixin:
             context["repop_ensembl_identifier"] = ",".join(ensembl_id)
             context["repop_refseq_identifier"] = ",".join(refseq_id)
 
+        context["clearable_fields"] = [
+            "Variant score data",
+            "Variant count data",
+            "Metadata",
+            "FASTA file",
+        ]
+
         return context
 
 
