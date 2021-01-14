@@ -9,14 +9,16 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
 from django.conf import settings
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext
 
 from core.mixins import NestedEnumMixin
-from core.utilities import readable_null_values
+from core.utilities import humanized_null_values
 from dataset import constants as constants
 from main.models import Licence
-from variant.validators import validate_variant_rows
+from variant.validators import MaveDataset
 from ..forms.base import DatasetModelForm
+from ..models import ExperimentSet
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..validators import (
@@ -25,7 +27,6 @@ from ..validators import (
     validate_json_extension,
     validate_scoreset_count_data_input,
     validate_scoreset_json,
-    validate_datasets_define_same_variants,
 )
 
 
@@ -113,9 +114,9 @@ class ErrorMessages(NestedEnumMixin, Enum):
             "if the two files do not define the same variants across rows."
         )
         different_variants = ugettext(
-            "Scores and counts files must define the same variants. "
-            "Check that the hgvs columns in both files match "
-            "(order insensitive)."
+            "Scores and counts files must define the same variants. Check that "
+            "the hgvs columns in both files match and are presented in the "
+            "same order."
         )
 
 
@@ -142,49 +143,53 @@ class ScoreSetForm(DatasetModelForm):
     score_data = forms.FileField(
         required=False,
         label="Variant score data",
-        help_text=(
-            "A valid CSV file containing variant score information. The file "
-            "must at least specify the columns 'hgvs_nt' or 'hgvs_pro' (or "
-            "both) and 'score'. There are no constraints on other column "
-            "names. Apart from the hgvs columns, all data must be numeric. "
-            "You may additionally specify a 'hgvs_tx' column containing "
-            "transcript variants with a 'n.' or 'c.' prefix. If a 'hgvs_tx' "
-            "column is present, the 'hgvs_nt' column must only contain "
-            "variants with a 'g.' prefix. Conversely, if your 'hgvs_nt' "
-            "column only specifies 'g.' variants, a 'hgvs_nt' column must "
-            "also be supplied as described above."
-            "\n\n"
-            "Row scores that are empty, whitespace or the strings {} "
-            "(case-insensitive) will be converted to a null score. The "
-            "columns hgvs_nt', 'hgvs_tx' and 'hgvs_pro' must define the same "
-            "variants as those in the count file below."
-        ).format(", ".join(readable_null_values)),
+        help_text=mark_safe(
+            f"A valid CSV file containing variant score information. The file "
+            f"must at least specify the columns <b>hgvs_nt</b> or "
+            f"<b>hgvs_pro</b> (or both) and <b>score</b>. There are no "
+            f"constraints on other column names. Apart from the hgvs columns, "
+            f"all data must be numeric. You may additionally specify a "
+            f"<b>hgvs_tx</b> column containing transcript variants with a "
+            f"<b>n.</b> or <b>c.</b> prefix. If a <b>hgvs_tx</b> "
+            f"column is present, the <b>hgvs_nt</b> column must only contain "
+            f"genomic variants with a <b>g.</b> prefix. Conversely, if your "
+            f"<b>hgvs_nt</b> column only specifies genomic variants, a "
+            f"<b>hgvs_tx</b> column must also be supplied as described above."
+            f"<br><br>"
+            f"Row scores that are empty, whitespace or the strings "
+            f"{humanized_null_values} (case-insensitive) will be converted to "
+            f"a null score. The columns <b>hgvs_nt</b>, <b>hgvs_tx</b> and "
+            f"<b>hgvs_pro</b> must define the same variants as those in the "
+            f"count file below."
+        ),
         validators=[
             validate_scoreset_score_data_input,
             validate_csv_extension,
         ],
-        widget=forms.widgets.FileInput(attrs={"accept": "csv"}),
+        widget=forms.widgets.ClearableFileInput(attrs={"accept": "csv"}),
     )
     count_data = forms.FileField(
         required=False,
         label="Variant count data",
-        help_text=(
-            "A valid CSV file containing variant count information. The hgvs"
-            "columns in this file must adhere to the same requirements as the"
-            "scores file. Non-hgvs columns must contain numeric count data, "
-            "and there are no name requirements for these columns."
-            "\n\n"
-            "Row counts that are empty, whitespace or any of the strings {} "
-            "(case-insensitive) will be converted to a null score. The "
-            "columns 'hgvs_nt', 'hgvs_tx' and 'hgvs_pro' must define the same "
-            "variants as those in the score file above."
-        ).format(", ".join(readable_null_values)),
+        help_text=mark_safe(
+            f"A valid CSV file containing variant count information. The "
+            f"hgvs columns in this file must adhere to the same requirements "
+            f"as the scores file. Non-hgvs columns must contain numeric count "
+            f"data, and there are no name requirements for these columns. "
+            f"<br><br>"
+            f"Row counts that are empty, whitespace or any of the strings "
+            f"{humanized_null_values} (case-insensitive) will be converted to "
+            f"a null score. The columns <b>hgvs_nt</b>, <b>hgvs_tx</b> and "
+            f"<b>hgvs_pro</b> must define the same variants as those in the "
+            f"score file above."
+        ),
         validators=[
             validate_scoreset_count_data_input,
             validate_csv_extension,
         ],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"}),
     )
+
     meta_data = forms.FileField(
         required=False,
         label="Metadata",
@@ -205,11 +210,18 @@ class ScoreSetForm(DatasetModelForm):
                 "licence",
             )
             + self.FIELD_ORDER
-            + ("score_data", "count_data", "meta_data", "data_usage_policy")
+            + (
+                "score_data",
+                "count_data",
+                "relaxed_ordering",
+                "meta_data",
+                "data_usage_policy",
+            )
         )
         # If an experiment is passed in we can used to it to seed initial
         # replaces and m2m field selections.
         self.experiment = None
+        self.targetseq = None
         self.allow_aa_sequence = False
         if "experiment" in kwargs:
             self.experiment = kwargs.pop("experiment")
@@ -519,28 +531,44 @@ class ScoreSetForm(DatasetModelForm):
             licence = Licence.get_default()
         return licence
 
-    def clean_score_data(self):
+    def clean_score_data(self) -> MaveDataset:
         score_file = self.cleaned_data.get("score_data", None)
         if not score_file:
-            return pd.DataFrame(), None
-        (
-            non_hgvs_columns,
-            primary_hgvs_column,
-            score_df,
-        ) = validate_variant_rows(score_file)
-        self.dataset_columns[constants.score_columns] = non_hgvs_columns
-        return score_df, primary_hgvs_column
+            return MaveDataset()
 
-    def clean_count_data(self):
+        v = MaveDataset.for_scores(file=score_file)
+        v.validate(targetseq=self.targetseq, relaxed_ordering=True)
+
+        if v.is_valid:
+            self.dataset_columns[constants.score_columns] = v.non_hgvs_columns
+            return v
+        else:
+            # for error in v.errors:
+            #     self.add_error("score_data", mark_safe(error))
+            raise ValidationError(
+                "Scores file contains errors. Download the errors file to see "
+                "details."
+            )
+
+    def clean_count_data(self) -> MaveDataset:
         count_file = self.cleaned_data.get("count_data", None)
         if not count_file:
             self.dataset_columns[constants.count_columns] = []
-            return pd.DataFrame(), None
-        non_hgvs_columns, primary_column, counts_df = validate_variant_rows(
-            count_file
-        )
-        self.dataset_columns[constants.count_columns] = non_hgvs_columns
-        return counts_df, primary_column
+            return MaveDataset()
+
+        v = MaveDataset.for_counts(file=count_file)
+        v.validate(targetseq=self.targetseq, relaxed_ordering=True)
+
+        if v.is_valid:
+            self.dataset_columns[constants.count_columns] = v.non_hgvs_columns
+            return v
+        else:
+            # for error in v.errors:
+            #     self.add_error("count_data", mark_safe(error))
+            raise ValidationError(
+                "Counts file contains errors. Download the errors file to see "
+                "details."
+            )
 
     def clean_meta_data(self):
         meta_file = self.cleaned_data.get("meta_data", None)
@@ -588,21 +616,20 @@ class ScoreSetForm(DatasetModelForm):
                 or self.instance.processing_state == constants.failed
             )
 
-        score_data, primary_hgvs_scores = cleaned_data.get(
-            "score_data", (pd.DataFrame(), None)
-        )
-        count_data, primary_hgvs_counts = cleaned_data.get(
-            "count_data", (pd.DataFrame(), None)
-        )
-        self.allow_aa_sequence = (
-            primary_hgvs_counts == constants.hgvs_pro_column
-            and primary_hgvs_scores == constants.hgvs_pro_column
-        )
+        score_data: MaveDataset = cleaned_data.get("score_data")
+        count_data: MaveDataset = cleaned_data.get("count_data")
+
+        if score_data and count_data:
+            self.allow_aa_sequence = (
+                score_data.index_column == constants.hgvs_pro_column
+                and count_data.index_column == constants.hgvs_pro_column
+            )
+
         meta_data = cleaned_data.get("meta_data", {})
 
-        has_score_data = len(score_data) > 0
-        has_count_data = len(count_data) > 0
-        has_meta_data = len(meta_data) > 0
+        has_score_data = (score_data is not None) and (not score_data.is_empty)
+        has_count_data = (count_data is not None) and (not count_data.is_empty)
+        has_meta_data = (meta_data is not None) and len(meta_data) > 0
 
         if has_meta_data:
             self.instance.extra_metadata = meta_data
@@ -627,33 +654,37 @@ class ScoreSetForm(DatasetModelForm):
             )
             return cleaned_data
 
-        if has_count_data:
-            try:
-                validate_datasets_define_same_variants(
-                    scores=score_data, counts=count_data
-                )
-            except ValidationError:
-                self.add_error(
-                    None if "count_data" not in self.fields else "count_data",
-                    ErrorMessages.CountData.different_variants,
-                )
-                return cleaned_data
+        if has_count_data and not score_data.match_other(count_data):
+            self.add_error(
+                None if "count_data" not in self.fields else "count_data",
+                ErrorMessages.CountData.different_variants,
+            )
+            return cleaned_data
 
         # Re-build the variants if any new files have been processed.
-        # If has_count_data is true then has_score_data should also be true.
-        # The reverse is not always true.
+        # If has_count_data is true then has_score_data is also be true because
+        # uploading counts alone is not allowed. The reverse is not always true.
         if has_score_data:
             validate_scoreset_json(self.dataset_columns)
             if not has_count_data:
-                count_data = pd.DataFrame()
+                count_data = MaveDataset()
             variants = {
-                "scores_df": score_data,
-                "counts_df": count_data,
-                "index": primary_hgvs_scores,
+                "scores_df": score_data.data(serializable=True),
+                "counts_df": count_data.data(serializable=True),
+                "index": score_data.index_column,
             }
             cleaned_data["variants"] = variants
 
         return cleaned_data
+
+    def is_valid(self, targetseq: Optional[str] = None):
+        # Set as instance variables so full clean will be called every time
+        # a new sequence or other settings are passed in.
+        self.targetseq = targetseq
+
+        # Clear previous errors to trigger full_clean call in base class.
+        self._errors = None
+        return super().is_valid()
 
     # --------------- SAVING ------------------------------------ #
     @transaction.atomic
@@ -664,10 +695,26 @@ class ScoreSetForm(DatasetModelForm):
     def save(self, commit=True):
         if self.is_meta_analysis and commit:
             if not (self.editing_public or self.editing_existing):
-                experiment = self.cleaned_data["experiment"]
+                experiment: Experiment = self.cleaned_data["experiment"]
+
+                if experiment.created_by is None:
+                    experiment.set_created_by(self.user, propagate=False)
+                if experiment.modified_by is None:
+                    experiment.set_modified_by(self.user, propagate=False)
+
                 experiment.save()
+
+                experiment_set: ExperimentSet = experiment.experimentset
+                if experiment_set.created_by is None:
+                    experiment_set.set_created_by(self.user, propagate=False)
+                if experiment_set.modified_by is None:
+                    experiment_set.set_modified_by(self.user, propagate=False)
+
+                experiment_set.save()
+
                 self.instance.experiment = experiment
                 self.instance.experiment_id = experiment.id
+
         return super().save(commit=commit)
 
     # ---------------------- PUBLIC ----------------------------- #
@@ -751,14 +798,6 @@ class ScoreSetForm(DatasetModelForm):
         if isinstance(children, (int, str)):
             children = [children]
         return children
-
-    # --------------- FACTORY ----------------------------------- #
-    @classmethod
-    def from_request(cls, request, instance=None, prefix=None, initial=None):
-        form = super().from_request(request, instance, prefix, initial)
-        form.set_replaces_options()
-        form.set_experiment_options()
-        return form
 
 
 class ScoreSetEditForm(ScoreSetForm):
