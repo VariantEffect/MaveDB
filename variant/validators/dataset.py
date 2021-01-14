@@ -8,6 +8,8 @@ from typing import Union, Optional, Tuple, List, TextIO, BinaryIO, Set, Dict
 import pandas as pd
 import numpy as np
 from mavehgvs import MaveHgvsParseError, Variant
+from fqfa.util.translate import translate_dna
+from fqfa.util.infer import infer_sequence_type
 
 import dataset.constants
 from core.utilities import (
@@ -111,6 +113,12 @@ class MaveDataset:
         return len(self._errors) == 0
 
     @property
+    def n_errors(self) -> Optional[int]:
+        if self._errors is None:
+            return None
+        return len(self._errors)
+
+    @property
     def errors(self) -> Optional[List[str]]:
         return self._errors
 
@@ -166,20 +174,14 @@ class MaveDataset:
             )
         return self._df.copy(deep=True)
 
-    def match_other(
-        self, other: "MaveDataset", check_index_order: bool = False
-    ) -> Optional[bool]:
+    def match_other(self, other: "MaveDataset") -> Optional[bool]:
         """
-        Check indices on dataframes match. Returns `None` if either validator
-        instance has errors and is not valid.
+        Check that each dataset defined the same variants in each column.
 
         Parameters
         ----------
         other: MaveDataset
             Validator instance to match against.
-
-        check_index_order: bool
-            If `True`, index item order must match `other`.
 
         Returns
         -------
@@ -192,10 +194,10 @@ class MaveDataset:
         if self.index_column != other.index_column:
             return False
 
-        if check_index_order:
-            return self.index.equals(other.index)
-        else:
-            return self.index.sort_values().equals(other.index.sort_values())
+        return all(
+            self._df[column].equals(other._df[column])
+            for column in self.HGVSColumns.options()
+        )
 
     def to_dict(self) -> Dict[str, Dict]:
         """
@@ -400,9 +402,11 @@ class MaveDataset:
         if not defines_tx:
             return self
 
+        # Don't validate transcript variants against sequence. Might come
+        # back to this later with research into implementing gene models.
         validated_variants, _, errors = self._validate_variants(
             column=self.HGVSColumns.TRANSCRIPT,
-            targetseq=targetseq,
+            targetseq=None,
             relaxed_ordering=relaxed_ordering,
         )
 
@@ -420,9 +424,20 @@ class MaveDataset:
             return self
 
         defines_nt = not self._column_is_null(self.HGVSColumns.NUCLEOTIDE)
+
+        protein_seq = targetseq
+        if targetseq and "dna" in infer_sequence_type(targetseq).lower():
+            protein_seq, remainder = translate_dna(targetseq)
+            if remainder:
+                self._errors.insert(
+                    0,
+                    "Protein variants could not be validated because the "
+                    "length of your target sequence is not a multiple of 3",
+                )
+
         validated_variants, _, errors = self._validate_variants(
             column=self.HGVSColumns.PROTEIN,
-            targetseq=targetseq,
+            targetseq=protein_seq,
             relaxed_ordering=relaxed_ordering,
         )
 
