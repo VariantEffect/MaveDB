@@ -29,7 +29,7 @@ class ErrorMessages(NestedEnumMixin, Enum):
 
 class ExperimentForm(DatasetModelForm):
     """
-    Docstring
+    TODO: Docstring
     """
 
     class Meta(DatasetModel.Meta):
@@ -52,7 +52,6 @@ class ExperimentForm(DatasetModelForm):
                 widget=forms.Select(attrs={"class": "form-control"}),
             )
             self.fields["experimentset"].label = "Experiment set"
-            self.set_experimentset_options()
         else:
             self.fields.pop("experimentset", None)
 
@@ -73,25 +72,9 @@ class ExperimentForm(DatasetModelForm):
             if field in self.fields:
                 self.fields[field].widget.attrs.update(**{"class": "select2"})
 
-    def clean_experimentset(self):
-        experimentset = self.cleaned_data.get("experimentset", None)
-        existing_experimentset = self.instance.parent
-        if existing_experimentset is not None and self.instance.pk is not None:
-            if experimentset is not None:
-                if (
-                    existing_experimentset.urn != experimentset
-                    and not self.instance.private
-                ):
-                    raise ValidationError(
-                        "Changing the parent Experiment Set of "
-                        "a public Experiment is not supported."
-                    )
-        return experimentset
+        self.set_experimentset_options()
 
-    @transaction.atomic
-    def save(self, commit=True):
-        return super().save(commit=commit)
-
+    # -------------- Setup ------------------------------------------------ #
     def set_experimentset_options(self):
         if "experimentset" in self.fields:
             admin_instances = self.user.profile.administrator_experimentsets()
@@ -125,11 +108,36 @@ class ExperimentForm(DatasetModelForm):
                 )
                 self.fields["experimentset"].initial = self.experimentset
 
-    @classmethod
-    def from_request(cls, request, instance=None, prefix=None, initial=None):
-        form = super().from_request(request, instance, prefix, initial)
-        form.set_experimentset_options()
-        return form
+    # -------------- Data cleaning ---------------------------------------- #
+    def clean_experimentset(self):
+        experimentset = self.cleaned_data.get("experimentset", None)
+        existing_experimentset = self.instance.parent
+        if existing_experimentset is not None and self.instance.pk is not None:
+            if experimentset is not None:
+                if (
+                    existing_experimentset.urn != experimentset
+                    and not self.instance.private
+                ):
+                    raise ValidationError(
+                        "Changing the parent Experiment Set of "
+                        "a public Experiment is not supported."
+                    )
+        return experimentset
+
+    # -------------- Saving ------------------------------------------------ #
+    @transaction.atomic
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+
+        if not self.data.get("experimentset"):
+            parent = instance.experimentset
+            parent.set_created_by(self.user, propagate=False)
+            parent.set_modified_by(self.user, propagate=False)
+
+            if commit:
+                parent.save()
+
+        return instance
 
 
 class ExperimentEditForm(ExperimentForm):
