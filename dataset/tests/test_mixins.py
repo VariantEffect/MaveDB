@@ -1,5 +1,8 @@
 import json
+from ctypes import Union
+from typing import Dict
 
+from django.http import HttpResponse
 from django.test import TestCase, RequestFactory
 
 from core.utilities.pandoc import convert_md_to_html
@@ -65,6 +68,10 @@ class TestPrivateDatasetFilterMixin(TestCase):
 class TestDataSetAjaxMixin(TestCase):
     """Testing pandoc conversion of abstract and method blobs."""
 
+    class Driver(DataSetAjaxMixin):
+        def __init__(self, request):
+            self.request = request
+
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -74,8 +81,8 @@ class TestDataSetAjaxMixin(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             data={"abstractText": "# Hello world"},
         )
-        driver = DataSetAjaxMixin()
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
         self.assertEqual(
             response["abstractText"], convert_md_to_html("# Hello world")
         )
@@ -86,8 +93,8 @@ class TestDataSetAjaxMixin(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             data={"methodText": "# Hello world"},
         )
-        driver = DataSetAjaxMixin()
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
         self.assertEqual(
             response["methodText"], convert_md_to_html("# Hello world")
         )
@@ -96,8 +103,8 @@ class TestDataSetAjaxMixin(TestCase):
         request = self.factory.get(
             path="/", HTTP_X_REQUESTED_WITH="XMLHttpRequest", data={}
         )
-        driver = DataSetAjaxMixin()
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
         self.assertEqual(response, {})
 
 
@@ -107,18 +114,23 @@ class TestScoreSetAjaxMixin(TestCase):
     experiment scoresets.
     """
 
+    class Driver(ScoreSetAjaxMixin):
+        def __init__(self, request):
+            self.request = request
+
     def setUp(self):
         self.factory = RequestFactory()
 
     def test_can_get_target(self):
-        driver = ScoreSetAjaxMixin()
         scoreset = ScoreSetWithTargetFactory()
         request = self.factory.get(
             path="/",
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             data={"targetId": scoreset.target.pk},
         )
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
+
         self.assertEqual(response["name"], scoreset.target.name)
         self.assertEqual(
             response["genome"],
@@ -126,8 +138,6 @@ class TestScoreSetAjaxMixin(TestCase):
         )
 
     def test_lists_editable_scoresets(self):
-        driver = ScoreSetAjaxMixin()
-
         user = UserFactory()
         experiment = ExperimentWithScoresetFactory()
         sc1 = experiment.scoresets.first()  # type: ScoreSet
@@ -159,7 +169,10 @@ class TestScoreSetAjaxMixin(TestCase):
             data={"experiment": experiment.pk},
         )
         request.user = user
-        response = json.loads(driver.get_ajax(request).content.decode())
+
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
+
         self.assertIn([sc1.pk, sc1.urn, sc1.title], response["scoresets"])
         self.assertNotIn([sc2.pk, sc2.urn, sc2.title], response["scoresets"])
         self.assertNotIn([sc3.pk, sc3.urn, sc3.title], response["scoresets"])

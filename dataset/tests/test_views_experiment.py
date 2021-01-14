@@ -473,4 +473,4 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
 
         self.assertEqual(Version.objects.count(), 0)
         ExperimentEditView.as_view()(request, urn=exp.urn)
-        self.assertEqual(Version.objects.count(), 1)
+        self.assertEqual(Version.objects.count(), 2)
