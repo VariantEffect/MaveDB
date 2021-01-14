@@ -62,14 +62,16 @@ class TestHGVSValidator(TestCase):
         with self.assertRaises(ValidationError):
             validate_hgvs_string([])
 
-    def test_passes_wt_hgvs(self):
-        validate_hgvs_string("_wt")
+    def test_does_not_pass_enrich_wt_hgvs(self):
+        with self.assertRaises(ValidationError):
+            validate_hgvs_string("_wt")
 
-    def test_passes_sy_hgvs(self):
-        validate_hgvs_string("_sy")
+    def test_does_not_pass_enrich_sy_hgvs(self):
+        with self.assertRaises(ValidationError):
+            validate_hgvs_string("_sy")
 
     def test_passes_multi(self):
-        validate_hgvs_string("p.[Lys4Gly;C34_G35insTGC]", column="p")
+        validate_hgvs_string("p.[Lys4Gly;Lys5Phe]", column="p")
         validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="nt")
         validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="tx")
 
@@ -657,69 +659,57 @@ class TestMaveDataset(TestCase):
         df = dataset.data()
         self.assertEqual(df[self.SCORE_COL].values[0], 5.6e-15)
 
-    def test_index_match(self):
-        a = generate_hgvs(prefix="c")
-        b = generate_hgvs(prefix="c")
-
+    def test_defines_same_variants(self):
         tests = [
             (
-                "{},{}\n{},0.0".format(self.HGVS_NT_COL, self.SCORE_COL, a),
-                "{},count\n{},0.0".format(self.HGVS_NT_COL, a),
-                {"check_index_order": False},
+                "{},{}\nc.1A>G,0.0".format(self.HGVS_NT_COL, self.SCORE_COL),
+                "{},count\nc.1A>G,0.0".format(self.HGVS_NT_COL),
                 True,
             ),
             (
-                "{},{}\n{},0.0".format(self.HGVS_NT_COL, self.SCORE_COL, a),
-                "{},count\n{},0.0".format(self.HGVS_NT_COL, b),
-                {"check_index_order": False},
+                "{},{}\nc.1A>G,0.0".format(self.HGVS_NT_COL, self.SCORE_COL),
+                "{},count\nc.2A>G,0.0".format(self.HGVS_NT_COL),
                 False,
             ),
             (
-                "{},{}\n{},0.0".format(self.HGVS_NT_COL, self.SCORE_COL, a),
-                "{},count\n{},0.0".format(
-                    self.HGVS_PRO_COL, generate_hgvs("p")
+                "{},{},{}\nc.1A>G,p.Ile1Val,0.0".format(
+                    self.HGVS_NT_COL,
+                    self.HGVS_PRO_COL,
+                    self.SCORE_COL,
                 ),
-                {"check_index_order": False},
+                "{},{},count\nc.1A>G,p.Ile1Val,0.0".format(
+                    self.HGVS_NT_COL,
+                    self.HGVS_PRO_COL,
+                ),
+                True,
+            ),
+            (
+                "{},{},{}\nc.1A>G,p.Ile1Val,0.0".format(
+                    self.HGVS_NT_COL,
+                    self.HGVS_PRO_COL,
+                    self.SCORE_COL,
+                ),
+                "{},{},count\nc.1A>G,p.Ile1Phe,0.0".format(
+                    self.HGVS_NT_COL,
+                    self.HGVS_PRO_COL,
+                ),
                 False,
             ),
             # Check returns None if either dataset invalid
             (
-                "{},{}\n{},0.0".format(
-                    self.HGVS_NT_COL, self.SCORE_COL, generate_hgvs("p")
-                ),
-                "{},count\n{},0.0".format(self.HGVS_NT_COL, a),
-                {"check_index_order": False},
+                "wrong_columns,{}\nc.1A>G,0.0".format(self.SCORE_COL),
+                "{},count\nc.1A>G,0.0".format(self.HGVS_NT_COL),
                 None,
             ),
             (
-                "{},{}\n{},0.0".format(self.HGVS_NT_COL, self.SCORE_COL, a),
-                "{},count\n{},0.0".format(
-                    self.HGVS_NT_COL, generate_hgvs("p")
-                ),
-                {"check_index_order": False},
+                "{},{}\nc.1A>G,0.0".format(self.HGVS_NT_COL, self.SCORE_COL),
+                "wrong_column,count\nc.1A>G,0.0".format(),
                 None,
-            ),
-            # Check ordering
-            (
-                "{},{}\n{},0.0\n{},1.0".format(
-                    self.HGVS_NT_COL, self.SCORE_COL, a, b
-                ),
-                "{},count\n{},0.0\n{},1.0".format(self.HGVS_NT_COL, b, a),
-                {"check_index_order": False},
-                True,
-            ),
-            (
-                "{},{}\n{},0.0\n{},1.0".format(
-                    self.HGVS_NT_COL, self.SCORE_COL, a, b
-                ),
-                "{},count\n{},0.0\n{},1.0".format(self.HGVS_NT_COL, b, a),
-                {"check_index_order": True},
-                False,
             ),
         ]
 
-        for (scores, counts, kwargs, expected) in tests:
-            with self.subTest(msg=(scores, counts, kwargs, expected)):
+        for (scores, counts, expected) in tests:
+            with self.subTest(msg=(scores, counts, expected)):
                 scores_dataset = MaveDataset.for_scores(StringIO(scores))
                 scores_dataset.validate()
 
@@ -727,7 +717,7 @@ class TestMaveDataset(TestCase):
                 counts_dataset.validate()
 
                 self.assertEqual(
-                    scores_dataset.match_other(counts_dataset, **kwargs),
+                    scores_dataset.match_other(counts_dataset),
                     expected,
                 )
 
@@ -765,8 +755,49 @@ class TestMaveDataset(TestCase):
             },
         )
 
+    def test_valid_targetseq_validation_fails(self):
+        data = "{},{},{}\nc.1A>G,p.Ile1Val,0.5".format(
+            self.HGVS_NT_COL,
+            self.HGVS_PRO_COL,
+            self.SCORE_COL,
+        )
+
+        dataset = MaveDataset.for_scores(StringIO(data))
+        dataset.validate(targetseq="ATC")
+
+        self.assertTrue(dataset.is_valid)
+
     def test_invalid_targetseq_validation_fails(self):
-        self.fail("Test is pending")
+        data = "{},{},{}\nc.1A>G,p.Val1Phe,0.5".format(
+            self.HGVS_NT_COL,
+            self.HGVS_PRO_COL,
+            self.SCORE_COL,
+        )
+
+        dataset = MaveDataset.for_scores(StringIO(data))
+        dataset.validate(targetseq="ATC")
+
+        self.assertFalse(dataset.is_valid)
+        print(dataset.errors)
+
+        self.assertEqual(dataset.n_errors, 1)
+        self.assertIn("p.Val1Phe", dataset.errors[0])
+
+    def test_invalid_target_sequence_not_a_multiple_of_3(self):
+        data = "{},{},{}\nc.1A>G,p.Ile1Val,0.5".format(
+            self.HGVS_NT_COL,
+            self.HGVS_PRO_COL,
+            self.SCORE_COL,
+        )
+
+        dataset = MaveDataset.for_scores(StringIO(data))
+        dataset.validate(targetseq="ATCG")
+
+        self.assertFalse(dataset.is_valid)
+        print(dataset.errors)
+
+        self.assertEqual(dataset.n_errors, 1)
+        self.assertIn("multiple of 3", dataset.errors[0])
 
     def test_invalid_relaxed_ordering_check_fails(self):
         self.fail("Test is pending")

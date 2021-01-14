@@ -44,7 +44,7 @@ body {
    background-color: #f7f7f7;
     line-height: 1.75;
     font-size: 16px;
-    
+
    /*display: flex;*/
    /*!*min-height: 85vh;*!*/
    /*flex-direction: column;*/
@@ -702,4 +702,15 @@ span.select2-selection.select2-selection--multiple ul.select2-selection__rendere
 .two-columns {
     margin-top: 1rem;
     /*column-count: 2;*/
+}
+
+.clearable-file-input {
+    cursor: pointer;
+    color: #987cb8;
+    -webkit-transition: 0.1s;
+    -moz-transition: 0.1s;
+    transition: color 0.1s ease-in-out;;
+}
+.clearable-file-input:hover {
+    color: rebeccapurple;
 }

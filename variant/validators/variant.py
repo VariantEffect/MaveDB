@@ -26,7 +26,7 @@ def validate_columns_match(variant, scoreset) -> None:
                 f"but parent defines columns '{scoreset.count_columns}. "
             )
     except KeyError as error:
-        raise ValidationError(error)
+        raise ValidationError(f"Missing key {str(error)}")
 
 
 def validate_variant_json(data: Dict[str, Dict]) -> None:

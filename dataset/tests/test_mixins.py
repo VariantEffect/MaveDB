@@ -1,7 +1,9 @@
 import json
+from ctypes import Union
+from typing import Dict
 
-from django.test import TestCase, RequestFactory, mock
-from django.http import Http404
+from django.http import HttpResponse
+from django.test import TestCase, RequestFactory
 
 from core.utilities.pandoc import convert_md_to_html
 
@@ -9,20 +11,15 @@ from accounts.factories import UserFactory, AnonymousUserFactory
 
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
-from ..forms.scoreset import ScoreSetForm
-from ..forms.experiment import ExperimentForm
 from ..factories import (
     ExperimentWithScoresetFactory,
     ScoreSetWithTargetFactory,
     ExperimentFactory,
     ScoreSetFactory,
-    ExperimentSetFactory,
 )
 from ..mixins import (
     PrivateDatasetFilterMixin,
     ScoreSetAjaxMixin,
-    MultiFormMixin,
-    DatasetUrnMixin,
     DatasetPermissionMixin,
     DataSetAjaxMixin,
 )
@@ -71,6 +68,10 @@ class TestPrivateDatasetFilterMixin(TestCase):
 class TestDataSetAjaxMixin(TestCase):
     """Testing pandoc conversion of abstract and method blobs."""
 
+    class Driver(DataSetAjaxMixin):
+        def __init__(self, request):
+            self.request = request
+
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -80,8 +81,8 @@ class TestDataSetAjaxMixin(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             data={"abstractText": "# Hello world"},
         )
-        driver = DataSetAjaxMixin()
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
         self.assertEqual(
             response["abstractText"], convert_md_to_html("# Hello world")
         )
@@ -92,8 +93,8 @@ class TestDataSetAjaxMixin(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             data={"methodText": "# Hello world"},
         )
-        driver = DataSetAjaxMixin()
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
         self.assertEqual(
             response["methodText"], convert_md_to_html("# Hello world")
         )
@@ -102,8 +103,8 @@ class TestDataSetAjaxMixin(TestCase):
         request = self.factory.get(
             path="/", HTTP_X_REQUESTED_WITH="XMLHttpRequest", data={}
         )
-        driver = DataSetAjaxMixin()
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
         self.assertEqual(response, {})
 
 
@@ -113,18 +114,23 @@ class TestScoreSetAjaxMixin(TestCase):
     experiment scoresets.
     """
 
+    class Driver(ScoreSetAjaxMixin):
+        def __init__(self, request):
+            self.request = request
+
     def setUp(self):
         self.factory = RequestFactory()
 
     def test_can_get_target(self):
-        driver = ScoreSetAjaxMixin()
         scoreset = ScoreSetWithTargetFactory()
         request = self.factory.get(
             path="/",
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             data={"targetId": scoreset.target.pk},
         )
-        response = json.loads(driver.get_ajax(request).content.decode())
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
+
         self.assertEqual(response["name"], scoreset.target.name)
         self.assertEqual(
             response["genome"],
@@ -132,8 +138,6 @@ class TestScoreSetAjaxMixin(TestCase):
         )
 
     def test_lists_editable_scoresets(self):
-        driver = ScoreSetAjaxMixin()
-
         user = UserFactory()
         experiment = ExperimentWithScoresetFactory()
         sc1 = experiment.scoresets.first()  # type: ScoreSet
@@ -165,7 +169,10 @@ class TestScoreSetAjaxMixin(TestCase):
             data={"experiment": experiment.pk},
         )
         request.user = user
-        response = json.loads(driver.get_ajax(request).content.decode())
+
+        driver = self.Driver(request)
+        response = json.loads(driver.get_ajax().content.decode())
+
         self.assertIn([sc1.pk, sc1.urn, sc1.title], response["scoresets"])
         self.assertNotIn([sc2.pk, sc2.urn, sc2.title], response["scoresets"])
         self.assertNotIn([sc3.pk, sc3.urn, sc3.title], response["scoresets"])
@@ -391,141 +398,3 @@ class TestDatasetPermissionMixin(TestCase):
         for perm, answer in perms:
             driver.permission_required = f"dataset.{perm}"
             self.assertEqual(driver.has_permission(), answer)
-
-
-class TestDatasetUrnMixin(TestCase):
-    """Tests the `get_object` method overridden by `DatasetUrnMixin"""
-
-    class Driver(DatasetUrnMixin):
-        def __init__(self, kwargs):
-            self.kwargs = kwargs
-            self.model = None
-            self.model_class = None
-
-    def test_404_not_found(self):
-        driver = self.Driver(kwargs={"urn": None})
-        driver.model = ScoreSet
-        with self.assertRaises(Http404):
-            driver.get_object()
-
-    def test_can_get_object(self):
-        scoreset = ScoreSetWithTargetFactory()
-        driver = self.Driver(kwargs={"urn": scoreset.urn})
-        driver.model = ScoreSet
-        self.assertEqual(scoreset, driver.get_object())
-
-    def test_falls_back_to_model_class(self):
-        scoreset = ScoreSetWithTargetFactory()
-        driver = self.Driver(kwargs={"urn": scoreset.urn})
-        driver.model_class = ScoreSet
-        driver.__delattr__("model")
-        driver.model_class = ScoreSet
-        self.assertEqual(scoreset, driver.get_object())
-
-
-class TestMultiFormMixin(TestCase):
-    """Tests that custom form and kwarg methods are called as expected."""
-
-    class Driver(MultiFormMixin):
-        def __init__(self, request, user):
-            self.request = request
-            self.user = user
-
-        def get_scoreset_form(self, form_class, **kwargs):
-            return form_class(**kwargs)
-
-        def get_scoreset_form_kwargs(self, key):
-            return {"user": self.user, "data": {}}
-
-    def setUp(self):
-        self.factory = RequestFactory()
-
-    @mock.patch.object(Driver, "get_scoreset_form_kwargs")
-    @mock.patch.object(Driver, "get_scoreset_form")
-    def test_calls_scoreset_form_method(self, form_patch, kwarg_patch):
-        user = UserFactory()
-        request = self.factory.post("/", data={})
-        request.user = user
-        driver = self.Driver(request=request, user=user)
-        driver.forms = {"scoreset": ScoreSetForm}
-        driver.get_forms()
-        form_patch.assert_called()
-        kwarg_patch.assert_called()
-
-    @mock.patch.object(Driver, "get_scoreset_form")
-    def test_does_not_overwrite_user_in_kwargs(self, form_patch):
-        request = self.factory.post("/")
-        user1 = UserFactory()
-        user2 = UserFactory()
-        request.user = user2
-        driver = self.Driver(request=request, user=user1)
-        driver.forms = {"scoreset": ScoreSetForm}
-
-        driver.get_forms()
-        self.assertEqual(form_patch.call_args[1]["user"], driver.user)
-
-    @mock.patch.object(Driver, "get_generic_form")
-    def test_adds_missing_kwargs(self, form_patch):
-        user = UserFactory()
-        request = self.factory.post("/")
-        request.user = user
-        driver = self.Driver(request=request, user=user)
-        driver.forms = {"experiment": ExperimentForm}
-
-        driver.get_forms()
-        self.assertIn("files", form_patch.call_args[1])
-        self.assertIn("data", form_patch.call_args[1])
-        self.assertIn("instance", form_patch.call_args[1])
-        self.assertIn("prefix", form_patch.call_args[1])
-        self.assertIn("user", form_patch.call_args[1])
-
-    @mock.patch.object(Driver, "get_scoreset_form")
-    def test_adds_form_prefix(self, form_patch):
-        user = UserFactory()
-        request = self.factory.post("/")
-        request.user = user
-        driver = self.Driver(request=request, user=user)
-        driver.forms = {"scoreset": ScoreSetForm}
-        driver.prefixes = {"scoreset": "foobar"}
-
-        driver.get_forms()
-        self.assertEqual(form_patch.call_args[1]["prefix"], "foobar")
-
-    @mock.patch.object(Driver, "get_scoreset_form")
-    def test_adds_form_instance(self, form_patch):
-        user = UserFactory()
-        request = self.factory.post("/")
-        request.user = user
-        driver = self.Driver(request=request, user=user)
-        driver.forms = {"scoreset": ScoreSetForm}
-
-        scoreset = ScoreSetWithTargetFactory()
-        setattr(driver, "instance", scoreset)
-
-        driver.get_forms()
-        self.assertEqual(form_patch.call_args[1]["instance"], scoreset)
-
-    @mock.patch.object(Driver, "get_scoreset_form")
-    def test_adds_user_instance(self, form_patch):
-        user = UserFactory()
-        request = self.factory.post("/")
-        request.user = user
-        driver = self.Driver(request=request, user=user)
-        driver.forms = {"scoreset": ScoreSetForm}
-
-        driver.get_forms()
-        self.assertEqual(form_patch.call_args[1]["user"], request.user)
-
-    @mock.patch.object(Driver, "get_generic_kwargs")
-    @mock.patch.object(Driver, "get_generic_form")
-    def test_calls_generic_when_no_method_defined(
-        self, form_patch, kwarg_patch
-    ):
-        user = UserFactory()
-        request = self.factory.post("/")
-        request.user = user
-        driver = self.Driver(request=request, user=user)
-        driver.forms = {"experiment": ExperimentForm}
-        driver.get_forms()
-        form_patch.assert_called()
-        kwarg_patch.assert_called()

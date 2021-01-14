@@ -21,10 +21,10 @@ coverage==4.5.1
 idutils==1.1.8
 urllib3==1.24.3
 metapub==0.5.5
-lxml==4.3.5
+lxml==4.6.2
 psycopg2-binary==2.8.6
 pandas==1.1.2
 numpy==1.19.1
 sphinx==3.2.1
-fqfa==1.2.0
-mavehgvs>=0.1.0
+fqfa>=1.2.1
+mavehgvs>=0.2.1

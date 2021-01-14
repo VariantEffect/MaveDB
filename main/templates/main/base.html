@@ -228,7 +228,7 @@
       <div class="row justify-content-center">
         <img class="mb-2" src="{% static 'core/mavedb/dna.png' %}" alt="" width="15" height="24">
         <span>MaveDB</span>
-        <small class="d-block mb-3 text-muted"> &copy; 2018-2019</small>
+        <small class="d-block mb-3 text-muted"> &copy; 2018-{% now "Y" %}</small>
       </div>
 
       {% if site_information.release_version %}

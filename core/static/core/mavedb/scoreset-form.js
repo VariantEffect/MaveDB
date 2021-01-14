@@ -131,7 +131,7 @@ function metadata_is_empty() {
  */
 function display_warnings() {
     $("#sge-warning")
-        .removeAttr('hidden')
+        .show()
         .text(
             'It looks like you are trying to upload an SGE dataset. We strongly encourage you to ' +
             'provide the relevant sequence metadata.'
@@ -170,6 +170,17 @@ function parse_file(inputId) {
  */
 function initializeScoresetForm({newForm = true, privateDateset = true}) {
     init_select2();
+
+    $('.clearable-file-input').click(function () {
+        const input = $(this).parent().find('input')[0];
+        if (!input) return;
+
+        $(input).val("");
+        if (input.id === 'id_score_data' || input.id === 'id_count_data') {
+            const warning = $("#sge-warning")
+            if (warning) warning.hide();
+        }
+    });
 
     // Only new datasets will have experiment/metadata fields available
     if (newForm) {
@@ -234,10 +245,12 @@ function initializeScoresetForm({newForm = true, privateDateset = true}) {
     if (newForm || privateDateset) {
         // -------------- Show warning when SGE dataset detected
         $("#id_score_data").change(function () {
+            $("#sge-warning").hide()
             parse_file('#id_score_data');
         });
 
         $("#id_count_data").change(function () {
+            $("#sge-warning").hide();
             parse_file('#id_count_data');
         });
 

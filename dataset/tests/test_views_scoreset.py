@@ -23,7 +23,11 @@ from accounts.permissions import (
 
 from core.utilities.tests import TestMessageMixin
 
-from genome.factories import ReferenceGenomeFactory
+from genome.factories import (
+    ReferenceGenomeFactory,
+    TargetGeneFactory,
+    WildTypeSequenceFactory,
+)
 
 from metadata.factories import (
     KeywordFactory,
@@ -126,7 +130,11 @@ class TestScoreSetSetDetailView(TestCase, TestMessageMixin):
         }
         scs.save()
         var = VariantFactory(
-            scoreset=scs, data={constants.variant_score_data: {"score": 0}}
+            scoreset=scs,
+            data={
+                constants.variant_score_data: {"score": 0},
+                constants.variant_count_data: {},
+            },
         )
         request = self.factory.get(
             "/scoreset/{}/".format(scs.urn),
@@ -349,7 +357,13 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         self.template = "dataset/scoreset/new_scoreset.html"
         self.ref = ReferenceGenomeFactory()
 
-        score_file, count_file, meta_file = make_files()
+        # Make sure mutations match sequence ATCG, for example 1A>G implies
+        # ATC > GTC which implies Ile > Val
+        score_file, count_file, meta_file = make_files(
+            score_data="hgvs_nt,hgvs_pro,score,se\nc.1A>G,p.Ile1Val,0.5,0.4\n",
+            count_data="hgvs_nt,hgvs_pro,count\nc.1A>G,p.Ile1Val,1.0\n",
+        )
+
         self.post_data = {
             "experiment": [""],
             "replaces": [""],
@@ -363,6 +377,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             "doi_ids": [""],
             "pubmed_ids": [""],
             "keywords": [""],
+            "relaxed_ordering": [""],
             # Identifier fields
             "uniprot-identifier": [""],
             "uniprot-offset": [""],
@@ -374,7 +389,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
             "genome": [self.ref.pk],
             # Target related fields
             "name": ["BRCA1"],
-            "sequence_text": ["atcg"],
+            "sequence_text": ["atc"],
             "sequence_type": ["infer"],
             "category": ["Protein coding"],
             # Submit
@@ -383,6 +398,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         self.files = {
             constants.variant_score_data: score_file,
+            constants.variant_count_data: count_file,
             "sequence_fasta": None,
         }
 
@@ -395,7 +411,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
     def test_redirect_to_login_not_logged_in(self):
         response = self.client.get(self.path)
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_correct_template_when_logged_in(self):
         self.client.login(
@@ -561,7 +577,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertEqual(scoreset.method_text, "foo bar")
         self.assertEqual(scoreset.method_text, "foo bar")
         self.assertEqual(scoreset.target.name, "BRCA1")
-        self.assertEqual(scoreset.target.wt_sequence.sequence, "ATCG")
+        self.assertEqual(scoreset.target.wt_sequence.sequence, "ATC")
 
     def test_calls_create_variants(self):
         data = self.post_data.copy()
@@ -575,10 +591,11 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         form_data = {k: v[0] for k, v in data.items()}
         form = ScoreSetForm(files=self.files, data=form_data, user=self.user)
-        self.assertTrue(form.is_valid())
+        self.assertTrue(form.is_valid(targetseq="ATC"))
 
         with mock.patch(
-            "dataset.views.scoreset.create_variants.submit_task"
+            "dataset.views.scoreset.create_variants.submit_task",
+            return_value=(True, None),
         ) as create_mock:
             ScoreSetCreateView.as_view()(request)
             create_mock.assert_called_once()
@@ -936,7 +953,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         data["sequence_text"] = ""
 
-        fasta_handle = StringIO(">sequence_1\nAAAA\n>sequence_2\nCCCC")
+        fasta_handle = StringIO(">sequence_1\nATC\n>sequence_2\nCCCC")
         fasta_size = fasta_handle.seek(0, os.SEEK_END)
         fasta_handle.seek(0)
         files["sequence_fasta"] = InMemoryUploadedFile(
@@ -958,7 +975,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
         # Redirects to profile
         self.assertEqual(response.status_code, 302)
         scoreset = ScoreSet.objects.all().first()
-        self.assertEqual(scoreset.target.get_wt_sequence_string(), "AAAA")
+        self.assertEqual(scoreset.target.get_wt_sequence_string(), "ATC")
 
     @mock.patch(
         "dataset.tasks.create_variants.submit_task", return_value=(True, None)
@@ -979,11 +996,7 @@ class TestCreateNewScoreSetView(TransactionTestCase, TestMessageMixin):
 
         # Redirects to profile
         self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response,
-            "Protein sequences are allowed if your data set only defines "
-            "protein variants.",
-        )
+        self.assertContains(response, "Protein sequences are allowed")
 
 
 class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
@@ -998,7 +1011,16 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.template = "dataset/scoreset/update_scoreset.html"
         self.ref = ReferenceGenomeFactory()
 
-        score_file, count_file, meta_file = make_files()
+        # Make sure mutations match sequence ATC
+        score_file, count_file, meta_file = make_files(
+            score_data="hgvs_nt,hgvs_pro,score,se\nc.1A>G,p.Ile1Val,0.5,0.4\n",
+            count_data="hgvs_nt,hgvs_pro,count\nc.1A>G,p.Ile1Val,1.0\n",
+        )
+
+        self.target = TargetGeneFactory(
+            wt_sequence=WildTypeSequenceFactory(sequence="ATC")
+        )
+
         self.post_data = {
             "experiment": [""],
             "replaces": [""],
@@ -1012,6 +1034,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             "doi_ids": [""],
             "pubmed_ids": [""],
             "keywords": [""],
+            "relaxed_ordering": [""],
             # Identifier fields
             "uniprot-identifier": [""],
             "uniprot-offset": [""],
@@ -1023,15 +1046,17 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
             "genome": [self.ref.pk],
             # Target gene fields
             "name": "BRCA1",
-            "sequence_text": "atcg",
             "sequence_type": "infer",
+            "sequence_text": self.target.get_wt_sequence_string(),
             "category": ["Protein coding"],
             # Submit fields
             "publish": [""],
             "submit": ["submit"],
         }
+
         self.files = {
             constants.variant_score_data: score_file,
+            constants.variant_count_data: count_file,
             "sequence_fasta": None,
         }
 
@@ -1044,7 +1069,10 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
 
     def test_correct_template_when_logged_in(self):
         scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
         assign_user_as_instance_admin(self.user, scs)
+
         self.client.login(
             username=self.username, password=self.unencrypted_password
         )
@@ -1055,7 +1083,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.client.logout()
         obj = ScoreSetFactory()
         response = self.client.get(self.path.format(obj.urn))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_404_object_not_found(self):
         obj = ScoreSetFactory()
@@ -1068,14 +1096,16 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
 
     def test_redirect_to_profile_if_no_permission(self):
         scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
         assign_user_as_instance_viewer(self.user, scs)
 
         path = self.path.format(scs.urn)
         request = self.create_request(method="get", path=path)
         request.user = self.user
 
-        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
-        self.assertEqual(response.status_code, 302)
+        with self.assertRaises(PermissionDenied):
+            ScoreSetEditView.as_view()(request, urn=scs.urn)
 
     def test_calls_create_variants_and_notifies_user(self):
         # Catch admin patch and prevent it being called
@@ -1085,6 +1115,8 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         user.save()
 
         scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
         assign_user_as_instance_admin(self.user, scs)
         assign_user_as_instance_admin(self.user, scs.parent)
         data["publish"] = ["publish"]
@@ -1096,7 +1128,8 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         request.FILES.update(self.files)
 
         with mock.patch(
-            "dataset.views.scoreset.create_variants.submit_task"
+            "dataset.views.scoreset.create_variants.submit_task",
+            return_value=(True, None),
         ) as create_mock:
             ScoreSetEditView.as_view()(request, urn=scs.urn)
             create_mock.assert_called_once()
@@ -1105,6 +1138,8 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
 
     def test_published_instance_returns_edit_only_mode_form(self):
         scs = ScoreSetFactory(private=False)
+        self.target.scoreset = scs
+        self.target.save()
         assign_user_as_instance_admin(self.user, scs)
         assign_user_as_instance_admin(self.user, scs.parent)
 
@@ -1117,13 +1152,20 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertNotContains(response, "id_score_data")
         self.assertNotContains(response, "id_count_data")
         self.assertNotContains(response, "id_meta_data")
+        self.assertNotContains(response, "id_experiment")
+        self.assertNotContains(response, "id_meta_analysis_for")
+        self.assertNotContains(response, "id_replaces")
 
     @mock.patch(
         "dataset.tasks.create_variants.submit_task", return_value=(True, None)
     )
     def test_resubmit_blank_uniprot_id_deletes_offset_instance(self, patch):
         data = self.post_data.copy()
-        scs = ScoreSetWithTargetFactory()
+
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
+
         UniprotOffsetFactory(
             target=scs.target, identifier=scs.target.uniprot_id
         )
@@ -1146,7 +1188,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertIsNotNone(scs.target.uniprot_id, 1)
         self.assertEqual(UniprotOffset.objects.count(), 0)
 
-        scs = ScoreSet.objects.first()
+        scs.refresh_from_db()
         self.assertIsNone(scs.target.get_uniprot_offset_annotation())
 
     @mock.patch(
@@ -1154,7 +1196,11 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
     )
     def test_resubmit_blank_refseq_id_deletes_offset_instance(self, patch):
         data = self.post_data.copy()
-        scs = ScoreSetWithTargetFactory()
+
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
+
         RefseqOffsetFactory(target=scs.target, identifier=scs.target.refseq_id)
         self.assertIsNotNone(scs.target.refseq_id)
         self.assertIsNotNone(scs.target.get_refseq_offset_annotation())
@@ -1175,7 +1221,7 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertIsNotNone(scs.target.refseq_id, 1)
         self.assertEqual(RefseqOffset.objects.count(), 0)
 
-        scs = ScoreSet.objects.first()
+        scs.refresh_from_db()
         self.assertIsNone(scs.target.get_refseq_offset_annotation())
 
     @mock.patch(
@@ -1183,17 +1229,21 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
     )
     def test_resubmit_blank_ensembl_id_deletes_offset_instance(self, patch):
         data = self.post_data.copy()
-        scs = ScoreSetWithTargetFactory()
+
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
+
         EnsemblOffsetFactory(
             target=scs.target, identifier=scs.target.ensembl_id
         )
-
         self.assertIsNotNone(scs.target.ensembl_id)
         self.assertIsNotNone(scs.target.get_ensembl_offset_annotation())
 
         assign_user_as_instance_admin(self.user, scs)
         assign_user_as_instance_admin(self.user, scs.parent)
         data["experiment"] = [scs.parent.pk]
+        data["sequence_text"] = scs.get_target().get_wt_sequence_string()
 
         path = self.path.format(scs.urn)
         request = self.create_request(method="post", path=path, data=data)
@@ -1207,14 +1257,99 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         self.assertIsNotNone(scs.target.ensembl_id, 1)
         self.assertEqual(EnsemblOffset.objects.count(), 0)
 
-        scs = ScoreSet.objects.first()
+        scs.refresh_from_db()
         self.assertIsNone(scs.target.get_ensembl_offset_annotation())
 
     @mock.patch(
         "dataset.tasks.create_variants.submit_task", return_value=(True, None)
     )
+    def test_error_cannot_edit_target_without_uploading_variants(self, patch):
+        data = self.post_data.copy()
+
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data["experiment"] = [scs.parent.pk]
+        data["sequence_text"] = "atc"
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method="post", path=path, data=data)
+        request.user = self.user
+        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        patch.assert_not_called()
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 200)
+
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_error_cannot_send_protein_sequence_with_nucleotide_variants(
+        self, patch
+    ):
+        data = self.post_data.copy()
+
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data["experiment"] = [scs.parent.pk]
+        data["sequence_text"] = "ATP"
+
+        # Make sure mutations match sequence ATC
+        score_file, count_file, _ = make_files(
+            score_data="hgvs_nt,hgvs_pro,score,se\nc.1A>G,p.Ala1Val,0.5,0.4\n",
+            count_data="hgvs_nt,hgvs_pro,count\nc.1A>G,p.Ala1Val,1.0\n",
+        )
+        files = {
+            constants.variant_score_data: score_file,
+            constants.variant_count_data: count_file,
+        }
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method="post", path=path, data=data)
+        request.user = self.user
+        request.FILES.update(files)
+        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+
+        patch.assert_not_called()
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Protein sequences are allowed if")
+
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    def test_can_edit_target_when_uploading_variants(self, patch):
+        data = self.post_data.copy()
+
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
+        assign_user_as_instance_admin(self.user, scs)
+        assign_user_as_instance_admin(self.user, scs.parent)
+        data["experiment"] = [scs.parent.pk]
+        data["sequence_text"] = "atc"
+
+        path = self.path.format(scs.urn)
+        request = self.create_request(method="post", path=path, data=data)
+        request.user = self.user
+        request.FILES.update(self.files)
+        response = ScoreSetEditView.as_view()(request, urn=scs.urn)
+        patch.assert_called()
+
+        # Redirects to profile
+        self.assertEqual(response.status_code, 302)
+
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
     def test_cannot_edit_processing_scoreset(self, patch):
-        scs = ScoreSetWithTargetFactory()
+        scs = ScoreSetFactory()
+        self.target.scoreset = scs
+        self.target.save()
         scs.processing_state = constants.processing
         scs.save()
         path = self.path.format(scs.urn)
@@ -1230,9 +1365,12 @@ class TestEditScoreSetView(TransactionTestCase, TestMessageMixin):
         "dataset.tasks.create_variants.submit_task", return_value=(True, None)
     )
     def test_creates_new_reversion_instance(self, patch):
-        instance = ScoreSetWithTargetFactory()
+        instance = ScoreSetFactory()
+        self.target.scoreset = instance
+        self.target.save()
         data = self.post_data.copy()
         data["experiment"] = [instance.parent.pk]
+        data["sequence_text"] = instance.get_target().get_wt_sequence_string()
 
         assign_user_as_instance_admin(self.user, instance)
         assign_user_as_instance_admin(self.user, instance.parent)

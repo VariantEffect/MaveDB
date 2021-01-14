@@ -529,8 +529,11 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(score_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.ScoreData.no_variants, form.errors["score_data"][0]
+
+        print(form.errors)
+        self.assertIn(
+            "please upload a non-empty file",
+            form.errors["score_data"][0].lower(),
         )
 
     def test_serialize_variants_returns_empty_frames_and_index(self):
@@ -680,7 +683,7 @@ class TestScoreSetForm(TestCase):
         i = form.save(commit=True)
         self.assertEqual(i.experiment.pk, existing_parent)
 
-    def test_from_request_modifies_existing_instance(self):
+    def test_modifies_existing_instance(self):
         scs = ScoreSetFactory()
         scs.add_administrators(self.user)
         scs.parent.add_administrators(self.user)
@@ -689,10 +692,10 @@ class TestScoreSetForm(TestCase):
         )  # Create variant to bypass the file upload
 
         data, files = self.make_post_data(make_exp=True)
-        request = self.factory.post("/path/", data=data, files=files)
-        request.user = self.user
 
-        form = ScoreSetForm.from_request(request, scs)
+        form = ScoreSetForm(
+            user=self.user, data=data, files=files, instance=scs
+        )
         instance = form.save(commit=True)
 
         # Should ignore these

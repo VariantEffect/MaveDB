@@ -56,6 +56,18 @@ def generate_hgvs(prefix: str = "c") -> str:
         return f"{prefix}.{choice(range(1, 100))}{ref}>{alt}"
 
 
+def create_score_set(instance):
+    dataset_columns = {
+        constants.score_columns: list(
+            instance.data.get(constants.variant_score_data, {}).keys()
+        ),
+        constants.count_columns: list(
+            instance.data.get(constants.variant_count_data, {}).keys()
+        ),
+    }
+    return ScoreSetFactory(dataset_columns=dataset_columns)
+
+
 class VariantFactory(DjangoModelFactory):
     """
     Factory for producing test instances for :class:`Variant`.
@@ -65,8 +77,10 @@ class VariantFactory(DjangoModelFactory):
         model = Variant
 
     urn = None
-    scoreset = factory.SubFactory(ScoreSetFactory)
     hgvs_nt = factory.LazyFunction(lambda: generate_hgvs("g"))
     hgvs_pro = factory.LazyFunction(lambda: generate_hgvs("p"))
     hgvs_tx = factory.LazyFunction(lambda: generate_hgvs("c"))
     data = factory.LazyFunction(make_data)
+
+    # Make sure always after data so that data columns are present on instance
+    scoreset = factory.LazyAttribute(create_score_set)

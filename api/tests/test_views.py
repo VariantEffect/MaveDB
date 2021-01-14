@@ -338,7 +338,10 @@ class TestFormatCSVRows(TestCase):
     def test_dicts_include_data_columns_as_strings(self):
         vs = [
             VariantFactory(
-                data={constants.variant_score_data: {"score": 1, "se": 2.12}}
+                data={
+                    constants.variant_score_data: {"score": 1, "se": 2.12},
+                    constants.variant_count_data: {},
+                }
             )
             for _ in range(5)
         ]
@@ -393,18 +396,22 @@ class TestFormatResponse(TestCase):
             "# Licence URL: {}".format(self.instance.licence.link), content
         )
 
-    def test_raises_valueerror_unknown_dtype(self):
+    def test_raises_value_error_unknown_dtype(self):
         with self.assertRaises(ValueError):
             views.format_response(self.response, self.instance, dtype="---")
 
     @mock.patch("api.views.format_csv_rows")
     def test_calls_format_csv_correct_call_dtype_is_scores(self, patch):
         self.instance.dataset_columns = {
-            constants.score_columns: ["score", "se"]
+            constants.score_columns: ["score", "se"],
+            constants.count_columns: [],
         }
         self.instance.save()
         for i in range(5):
-            data = {constants.variant_score_data: {"score": i, "se": 2 * i}}
+            data = {
+                constants.variant_score_data: {"score": i, "se": 2 * i},
+                constants.variant_count_data: {},
+            }
             VariantFactory(scoreset=self.instance, data=data)
 
         _ = views.format_response(self.response, self.instance, dtype="scores")
@@ -425,11 +432,15 @@ class TestFormatResponse(TestCase):
     @mock.patch("api.views.format_csv_rows")
     def test_calls_format_csv_correct_call_dtype_is_counts(self, patch):
         self.instance.dataset_columns = {
-            constants.count_columns: ["count", "se"]
+            constants.score_columns: ["score"],
+            constants.count_columns: ["count", "se"],
         }
         self.instance.save()
         for i in range(5):
-            data = {constants.variant_count_data: {"count": i, "se": 2 * i}}
+            data = {
+                constants.variant_score_data: {"score": i * 2},
+                constants.variant_count_data: {"count": i, "se": 2 * i},
+            }
             VariantFactory(scoreset=self.instance, data=data)
 
         _ = views.format_response(self.response, self.instance, dtype="counts")
@@ -454,11 +465,15 @@ class TestFormatResponse(TestCase):
 
     def test_double_quotes_column_values_containing_commas(self):
         self.instance.dataset_columns = {
-            constants.score_columns: ["hello,world"]
+            constants.score_columns: ["hello,world"],
+            constants.count_columns: [],
         }
 
         for i in range(5):
-            data = {constants.variant_score_data: {"hello,world": i}}
+            data = {
+                constants.variant_score_data: {"hello,world": i},
+                constants.variant_count_data: {},
+            }
             VariantFactory(scoreset=self.instance, data=data)
 
         response = views.format_response(
@@ -473,11 +488,15 @@ class TestFormatResponse(TestCase):
             self.instance.variants.all().delete()
             self.assertFalse(self.instance.variants.count())
             self.instance.dataset_columns = {
-                constants.score_columns: ["score"]
+                constants.score_columns: ["score"],
+                constants.count_columns: [],
             }
             variant_count = 5
             for i in range(variant_count):
-                data = {constants.variant_score_data: {"score": null}}
+                data = {
+                    constants.variant_score_data: {"score": null},
+                    constants.variant_count_data: {},
+                }
                 VariantFactory(scoreset=self.instance, data=data)
             response = views.format_response(
                 response, self.instance, dtype="scores"
