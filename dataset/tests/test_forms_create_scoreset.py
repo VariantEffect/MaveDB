@@ -529,6 +529,8 @@ class TestScoreSetForm(TestCase):
         data, files = self.make_post_data(score_data)
         form = ScoreSetForm(data=data, files=files, user=self.user)
         self.assertFalse(form.is_valid())
+
+        print(form.errors)
         self.assertIn(
             "please upload a non-empty file",
             form.errors["score_data"][0].lower(),
