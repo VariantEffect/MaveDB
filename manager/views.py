@@ -1,5 +1,8 @@
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.core.urlresolvers import reverse_lazy
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -48,6 +51,14 @@ def get_urn_info(request):
     return render(request, 'manager/manage_addpmid_table.html', context)
 
 
+def user_is_super(user):
+    if not user.is_superuser:
+        raise PermissionDenied('Must be an admin to view this page.')
+    return True
+
+
+@login_required(login_url=reverse_lazy('accounts:login'))
+@user_passes_test(user_is_super, redirect_field_name=None)
 def manage_view(request):
     return render(
         request,
@@ -56,6 +67,8 @@ def manage_view(request):
     )
 
 
+@login_required(login_url=reverse_lazy('accounts:login'))
+@user_passes_test(user_is_super, redirect_field_name=None)
 def manage_addpmid_view(request):
     context = _default_context()
     scoresets = ScoreSet.objects.all()
@@ -81,6 +94,8 @@ def manage_addpmid_view(request):
     return render(request, 'manager/manage_addpmid.html', context)
 
 
+@login_required(login_url=reverse_lazy('accounts:login'))
+@user_passes_test(user_is_super, redirect_field_name=None)
 def manage_adduser_view(request):
     context = _default_context()
     valid_states = (
@@ -113,6 +128,8 @@ def manage_adduser_view(request):
     return render(request, 'manager/manage_adduser.html', context)
 
 
+@login_required(login_url=reverse_lazy('accounts:login'))
+@user_passes_test(user_is_super, redirect_field_name=None)
 def manage_createnews_view(request):
     context = _default_context()
     context['levels'] = [i[0] for i in News.STATUS_CHOICES]
