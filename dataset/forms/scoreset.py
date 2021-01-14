@@ -130,6 +130,8 @@ class ScoreSetForm(DatasetModelForm):
     `ScoreSet` is a member of the selected `Experiment` instance.
     """
 
+    MAX_ERRORS = 20
+
     class Meta(DatasetModelForm.Meta):
         model = ScoreSet
         fields = DatasetModelForm.Meta.fields + (
@@ -543,12 +545,16 @@ class ScoreSetForm(DatasetModelForm):
             self.dataset_columns[constants.score_columns] = v.non_hgvs_columns
             return v
         else:
-            # for error in v.errors:
-            #     self.add_error("score_data", mark_safe(error))
-            raise ValidationError(
-                "Scores file contains errors. Download the errors file to see "
-                "details."
-            )
+            if v.n_errors <= self.MAX_ERRORS:
+                for error in v.errors:
+                    self.add_error("score_data", mark_safe(error))
+            else:
+                self.add_error(
+                    "score_data",
+                    "Scores file contains errors. Download the errors file to "
+                    "see details.",
+                )
+            return v
 
     def clean_count_data(self) -> MaveDataset:
         count_file = self.cleaned_data.get("count_data", None)
@@ -563,12 +569,16 @@ class ScoreSetForm(DatasetModelForm):
             self.dataset_columns[constants.count_columns] = v.non_hgvs_columns
             return v
         else:
-            # for error in v.errors:
-            #     self.add_error("count_data", mark_safe(error))
-            raise ValidationError(
-                "Counts file contains errors. Download the errors file to see "
-                "details."
-            )
+            if v.n_errors <= self.MAX_ERRORS:
+                for error in v.errors:
+                    self.add_error("count_data", mark_safe(error))
+            else:
+                self.add_error(
+                    "count_data",
+                    "Counts file contains errors. Download the errors file to "
+                    "see details.",
+                )
+            return v
 
     def clean_meta_data(self):
         meta_file = self.cleaned_data.get("meta_data", None)
@@ -728,6 +738,16 @@ class ScoreSetForm(DatasetModelForm):
 
     def has_variants(self):
         return bool(self.cleaned_data.get("variants", {}))
+
+    @property
+    def should_write_scores_error_file(self):
+        validator = self.cleaned_data.get("score_data", MaveDataset())
+        return validator and validator.n_errors > self.MAX_ERRORS
+
+    @property
+    def should_write_counts_error_file(self):
+        validator = self.cleaned_data.get("count_data", MaveDataset())
+        return validator and validator.n_errors > self.MAX_ERRORS
 
     @property
     def is_meta_analysis(self):
