@@ -39,6 +39,13 @@ readable_null_values = [
     if v.strip()
 ] + ["whitespace"]
 
+html_null_values = [
+    f"<b>{v.strip().lower() or 'whitespace'}</b>" for v in null_values_list
+]
+humanized_null_values = (
+    f'{", ".join(html_null_values[:-1])} ' f"and " f"{html_null_values[-1]}"
+)
+
 
 def is_null(value):
     """Returns True if a stripped/lowercase value in in `nan_col_values`."""
