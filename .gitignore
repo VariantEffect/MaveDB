@@ -4,6 +4,7 @@ sphinx-venv/
 *.pyc
 staticfiles/
 /static/
+/media/
 .env
 debug.log
 .pytest_cache/*
