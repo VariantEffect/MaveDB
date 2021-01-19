@@ -10,6 +10,7 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 
 from reversion import create_revision
 
+from accounts.models import Profile
 from accounts.permissions import PermissionTypes
 
 from genome.models import TargetGene
@@ -25,7 +26,6 @@ from dataset.tasks import create_variants
 from dataset import constants
 
 from genome.forms import PrimaryReferenceMapForm, TargetGeneForm
-from variant.validators import MaveDataset
 
 from ..models.scoreset import ScoreSet
 from ..models.experiment import Experiment
@@ -138,22 +138,35 @@ class BaseScoreSetFormView(ScoreSetAjaxMixin):
     form_class = None
 
     def get(self, *args, **kwargs) -> HttpResponse:
-        download_errors = "download_errors" in self.request.GET
+        download_errors = "errors_for" in self.request.GET
         if download_errors:
-            f_type = self.request.GET.get("download_errors")
-            file = self.request.COOKIES.get(f"{f_type}_errors", "")
-            if file:
-                file_data = open(file, "rt").read()
-                response = HttpResponse(file_data, content_type="text/plain")
+            e_type = self.request.GET.get("errors_for")
+            errors = None
+            profile: Profile = self.request.user.profile
+            if e_type == "score_data":
+                errors = profile.get_submission_scores_errors()
+            elif e_type == "count_data":
+                errors = profile.get_submission_counts_errors()
+            else:
+                logger.warning(f"Unknown error type '{e_type}'")
+
+            if errors:
+                response = HttpResponse(
+                    content="\n".join(errors), content_type="plain/text"
+                )
                 response[
                     "Content-Disposition"
-                ] = f'attachment; filename="errors_{f_type}.txt"'
+                ] = f'attachment; filename="{e_type}_errors.txt"'
                 return response
 
         return super().get(*args, **kwargs)
 
     def form_valid(self, form: Dict[str, Any]) -> HttpResponseRedirect:
         try:
+            profile = self.request.user.profile
+            profile.clear_submission_errors()
+            profile.save()
+
             self.save_forms(form)
             messages.success(self.request, self.get_success_message())
         except Exception as error:
@@ -171,11 +184,30 @@ class BaseScoreSetFormView(ScoreSetAjaxMixin):
         return HttpResponseRedirect(self.get_success_url())
 
     def form_invalid(self, form: Dict[str, Any]):
+        ss_form: ScoreSetForm = form.get("scoreset_form")
+        profile: Profile = self.request.user.profile
+        if ss_form.should_write_scores_error_file and ss_form.scores_dataset:
+            profile.set_submission_scores_errors(
+                data=ss_form.scores_dataset.errors
+            )
+        else:
+            profile.set_submission_scores_errors(data=None)
+
+        if ss_form.should_write_counts_error_file and ss_form.counts_dataset:
+            profile.set_submission_counts_errors(
+                data=ss_form.counts_dataset.errors
+            )
+        else:
+            profile.set_submission_counts_errors(data=None)
+
+        profile.save()
+
         messages.error(
             self.request,
             "Your submission contains errors. Please address each one before"
             "re-submitting.",
         )
+
         return self.render_to_response(self.get_context_data(**form))
 
     def get_success_message(self) -> str:
