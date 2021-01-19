@@ -16,7 +16,11 @@ from core.mixins import NestedEnumMixin
 from core.utilities import humanized_null_values
 from dataset import constants as constants
 from main.models import Licence
-from variant.validators import MaveDataset
+from variant.validators import (
+    MaveDataset,
+    MaveScoresDataset,
+    MaveCountsDataset,
+)
 from ..forms.base import DatasetModelForm
 from ..models import ExperimentSet
 from ..models.experiment import Experiment
@@ -551,8 +555,11 @@ class ScoreSetForm(DatasetModelForm):
             else:
                 self.add_error(
                     "score_data",
-                    "Scores file contains errors. Download the errors file to "
-                    "see details.",
+                    mark_safe(
+                        "Score data contains errors. "
+                        '<a href="#" id="dl-score-data-errors">Download</a> '
+                        "the errors file to see details.",
+                    ),
                 )
             return v
 
@@ -575,8 +582,11 @@ class ScoreSetForm(DatasetModelForm):
             else:
                 self.add_error(
                     "count_data",
-                    "Counts file contains errors. Download the errors file to "
-                    "see details.",
+                    mark_safe(
+                        "Count data contains errors. "
+                        '<a href="#" id="dl-count-data-errors">Download</a> '
+                        "the errors file to see details.",
+                    ),
                 )
             return v
 
@@ -740,14 +750,30 @@ class ScoreSetForm(DatasetModelForm):
         return bool(self.cleaned_data.get("variants", {}))
 
     @property
+    def scores_dataset(self) -> Optional[MaveScoresDataset]:
+        return self.cleaned_data.get("score_data", None)
+
+    @property
+    def counts_dataset(self) -> Optional[MaveCountsDataset]:
+        return self.cleaned_data.get("count_data", None)
+
+    @property
     def should_write_scores_error_file(self):
-        validator = self.cleaned_data.get("score_data", MaveDataset())
-        return validator and validator.n_errors > self.MAX_ERRORS
+        validator = self.cleaned_data.get("score_data", None)
+        return (
+            validator
+            and validator.errors
+            and validator.n_errors > self.MAX_ERRORS
+        )
 
     @property
     def should_write_counts_error_file(self):
-        validator = self.cleaned_data.get("count_data", MaveDataset())
-        return validator and validator.n_errors > self.MAX_ERRORS
+        validator = self.cleaned_data.get("count_data", None)
+        return (
+            validator
+            and validator.errors
+            and validator.n_errors > self.MAX_ERRORS
+        )
 
     @property
     def is_meta_analysis(self):
