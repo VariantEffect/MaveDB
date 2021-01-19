@@ -101,7 +101,7 @@
           <a class="nav-link text-muted" href="{% url 'api:api-root' %}">API</a>
         </li>
         {% if user.is_authenticated %}
-          {% if user.is_superuser %}
+          {% if user.userrole.is_poweruser %}
             <li class="nav-item">
               <a class="nav-link text-muted" href="{% url 'manager:manage' %}">Manage</a>
             </li>
