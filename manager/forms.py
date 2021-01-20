@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 
 from dataset import constants
 from main.models import News
+from manager.models import Role
 from metadata.validators import validate_pubmed_identifier
 from urn.validators import validate_mavedb_urn
 
@@ -31,7 +32,7 @@ class AddPmidForm(forms.Form):
 
 class AddUserForm(forms.Form):
     urn = forms.CharField(max_length=100)
-    orcid_id = forms.CharField(max_length=100)
+    user_id = forms.CharField(max_length=100)
     role = forms.CharField(max_length=100)
 
     def clean_urn(self):
@@ -43,10 +44,10 @@ class AddUserForm(forms.Form):
             self.add_error(field_name, e)
         return urn
 
-    def clean_orcid_id(self):
-        field_name = 'orcid_id'
-        orcid_id = self.cleaned_data[field_name]
-        return orcid_id
+    def clean_user_id(self):
+        field_name = 'user_id'
+        user_id = self.cleaned_data[field_name]
+        return user_id
 
     def clean_role(self):
         field_name = 'role'
@@ -61,7 +62,6 @@ class AddUserForm(forms.Form):
         return role
 
 
-
 class CreateNewsForm(forms.Form):
     message = forms.CharField(max_length=100)
     level = forms.CharField(max_length=100)
@@ -73,3 +73,16 @@ class CreateNewsForm(forms.Form):
         if level not in valid_levels:
             self.add_error(field_name, ValueError(f"Invalid level {level}."))
         return level
+
+
+class SetUserRoleForm(forms.Form):
+    user_id = forms.CharField(max_length=100)
+    role = forms.CharField(max_length=100)
+
+    def clean_role(self):
+        field_name = 'role'
+        role = self.cleaned_data[field_name]
+        valid_roles = {r[0] for r in Role.choices()}
+        if role not in valid_roles:
+            self.add_error(field_name, ValueError(f"Invalid role {role}."))
+        return role

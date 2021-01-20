@@ -7,9 +7,10 @@ from django.dispatch import receiver
 
 
 class Role(Enum):
-    GENERAL = "GENERAL"
-    POWERUSER = "POWERUSER"
+    GENERAL = 'GENERAL'
+    POWERUSER = 'POWERUSER'
 
+    # TODO: if we upgrade to Django 3, we won't have to do this
     @classmethod
     def choices(cls):
         return tuple((role.name, role.value) for role in cls)
@@ -27,18 +28,9 @@ class UserRole(models.Model):
         choices=Role.choices()
     )
 
-    def __str__(self):
-        return f"{self.role}"
-
     @property
     def is_poweruser(self):
-        # So because it's an enum, this comparison is a little weird.
-        # self.role is a string that looks like 'Role.POWERUSER'
-        # and Role.POWERUSER is an enum value type.
-        # To compare the strings, we have to use Role.POWERUSER.name or .value
-        # but these evaluate to simply strings similar to 'POWERUSER'.
-        # So, let's just see if one is a substring of the other.
-        return Role.POWERUSER.value in self.role
+        return self.role == f"{Role.POWERUSER}"
 
 
 @receiver(post_save, sender=User)

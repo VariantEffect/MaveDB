@@ -7,16 +7,18 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
+from accounts.models import User
 from dataset import constants
 from dataset.models.scoreset import ScoreSet
 from main.models import News
+from manager.models import Role
 from urn.models import get_model_by_urn
 
-from .forms import AddPmidForm, AddUserForm, CreateNewsForm
+from .forms import AddPmidForm, AddUserForm, CreateNewsForm, SetUserRoleForm
 
 
 def _default_context():
-    subcommand_keys = ['addpmid', 'adduser', 'createnews']
+    subcommand_keys = ['addpmid', 'adduser', 'createnews', 'setuserrole']
     return {
         'subcommands':
             {s_k: reverse(f"manager:manage_{s_k}") for s_k in subcommand_keys}
@@ -106,14 +108,20 @@ def manage_adduser_view(request):
     scoresets = ScoreSet.objects.all()
     context['urns'] = [s.urn for s in scoresets]
     context['roles'] = [r for r in valid_states]
+    users = User.objects.all()
+    context['users'] = sorted([
+        (user.profile.get_short_name(), user.username)
+        for user in users
+        if not user.profile.is_anon()
+    ])
     if request.method == 'POST':
         form = AddUserForm(data=request.POST)
         if form.is_valid():
-            orcid_id = form.cleaned_data['orcid_id']
+            user_id = form.cleaned_data['user_id']
             urn = form.cleaned_data['urn']
             role = form.cleaned_data['role']
             try:
-                call_command('adduser', user=orcid_id, urn=urn, role=role)
+                call_command('adduser', user=user_id, urn=urn, role=role)
                 context['result'] = {
                     'result_message': 'Successfully added user.'
                 }
@@ -139,7 +147,6 @@ def manage_createnews_view(request):
             message = form.cleaned_data['message']
             level = form.cleaned_data['level']
             try:
-                print(level)
                 call_command('createnews', message=message, level=level)
                 context['result'] = {
                     'result_message': 'Successfully created news post.'
@@ -154,3 +161,36 @@ def manage_createnews_view(request):
             context = _update_context_with_invalid_errors(context, form.errors)
 
     return render(request, 'manager/manage_createnews.html', context)
+
+
+@login_required(login_url=reverse_lazy('accounts:login'))
+@user_passes_test(user_is_power, redirect_field_name=None)
+def manage_setuserrole_view(request):
+    context = _default_context()
+    context['roles'] = [i[0] for i in Role.choices()]
+    users = User.objects.all()
+    context['users'] = sorted([
+        (user.profile.get_short_name(), user.username)
+        for user in users
+        if not user.profile.is_anon()
+    ])
+    if request.method == 'POST':
+        form = SetUserRoleForm(data=request.POST)
+        if form.is_valid():
+            user_id = form.cleaned_data['user_id']
+            role = form.cleaned_data['role']
+            try:
+                call_command('setuserrole', user=user_id, role=role)
+                context['result'] = {
+                    'result_message': f"Successfully set user role to {role} for user {user_id}."
+                }
+            except CommandError as e:
+                context['result'] = {
+                    'result_message': 'Error setting user role.',
+                    'result_message_details': e,
+                    'error': e
+                }
+        else:
+            context = _update_context_with_invalid_errors(context, form.errors)
+
+    return render(request, 'manager/manage_setuserrole.html', context)

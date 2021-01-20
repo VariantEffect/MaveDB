@@ -21,21 +21,12 @@
     {% endif %}
   {% endif %}
 
-  <h2>Add User</h2>
+  <h2>Set User Role</h2>
 
   <div class="container">
-    <form action={% url 'manager:manage_adduser' %} method="POST">
+    <form action={% url 'manager:manage_setuserrole' %} method="POST">
       {% csrf_token %}
       <div class="row">
-        <div class="col-4">
-          <h6>Select Dataset URN</h6>
-          <select class="form-control" name="urn">
-            <option value="" selected="">-- Select a URN --</option>
-            {% for urn in urns %}
-              <option class="form-control" value="{{ urn }}">{{ urn }}</option>
-            {% endfor %}
-          </select>
-        </div>
         <div class="col-4">
           <h6>User</h6>
           <select class="form-control" name="user_id">
@@ -45,9 +36,6 @@
             {% endfor %}
           </select>
         </div>
-      </div>
-      <br>
-      <div class="row">
         <div class="col-4">
           <h6>User Role</h6>
           <select class="form-control" name="role">
@@ -57,6 +45,9 @@
             {% endfor %}
           </select>
         </div>
+      </div>
+      <br>
+      <div class="row">
         <div class="col-3">
           <br>
           <input type="submit" value="Submit">

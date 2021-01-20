@@ -15,7 +15,7 @@ class TestManagerView(TestCase):
     def setUp(self):
         self.client = Client()
         self.manage_url = reverse('manager:manage')
-        self.subcommand_keys = ['addpmid', 'adduser', 'createnews']
+        self.subcommand_keys = ['addpmid', 'adduser', 'createnews', 'setuserrole']
         self.user = User(username='user')
         self.user.set_password('password')
         self.user.save()
@@ -97,10 +97,10 @@ class TestAddUserView(TestCase):
         self.poweruser.save()
         self.client.login(username='poweruser', password='password')
         self.adduser_url = reverse('manager:manage_adduser')
-        self.orcid_id = '0000-0002-2781-7390'
-        u = User.objects.create(username=self.orcid_id)
+        self.user_id = '0000-0002-2781-7390'
+        u = User.objects.create(username=self.user_id)
         u.save()
-        self.user = User.objects.get(username=self.orcid_id)
+        self.user = User.objects.get(username=self.user_id)
         _ = ScoreSetFactory()
 
     def test_adduser_view_loads(self):
@@ -119,7 +119,7 @@ class TestAddUserView(TestCase):
 
         data = {
             'urn': urn,
-            'orcid_id': self.orcid_id,
+            'user_id': self.user_id,
             'role': role
         }
         response = self.client.post(self.adduser_url, data)
@@ -141,7 +141,7 @@ class TestAddUserView(TestCase):
 
         data = {
             'urn': urn,
-            'orcid_id': self.orcid_id,
+            'user_id': self.user_id,
             'role': role
         }
         response = self.client.post(self.adduser_url, data)
@@ -162,7 +162,7 @@ class TestAddUserView(TestCase):
 
         data = {
             'urn': urn,
-            'orcid_id': self.orcid_id,
+            'user_id': self.user_id,
             'role': role
         }
         response = self.client.post(self.adduser_url, data)
