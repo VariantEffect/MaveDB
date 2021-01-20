@@ -2,6 +2,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, RequestFactory
 
 from .. import forms
+from .. import models
+from accounts.models import User
 from dataset import constants
 from main.models import News
 from urn.models import generate_tmp_urn
@@ -45,37 +47,37 @@ class TestAddPmidForm(TestCase):
 class TestAddUserForm(TestCase):
     def test_field_validation(self):
         urn_field_name = 'urn'
-        orcid_field_name = 'orcid_id'
+        user_id_field_name = 'user_id'
         role_field_name = 'role'
 
         # Fields are empty
         urn = ''
-        orcid_id = ''
+        user_id = ''
         role = ''
         form = forms.AddUserForm(data={
             urn_field_name: urn,
-            orcid_field_name: orcid_id,
+            user_id_field_name: user_id,
             role_field_name: role
         })
         self.assertTrue('This field is required.' in form.errors[urn_field_name])
-        self.assertTrue('This field is required.' in form.errors[orcid_field_name])
+        self.assertTrue('This field is required.' in form.errors[user_id_field_name])
         self.assertTrue('This field is required.' in form.errors[role_field_name])
 
         # Fields are invalid
         max_length = 100
         extra_length = max_length+1
         urn = 'invalid_urn'
-        orcid_id = 'a' * extra_length
+        user_id = 'fake_user_id'
         role = 'invalid_role'
         form = forms.AddUserForm(data={
             urn_field_name: urn,
-            orcid_field_name: orcid_id,
+            user_id_field_name: user_id,
             role_field_name: role
         })
         self.assertTrue(f"{urn} is not a valid urn." in form.errors[urn_field_name])
         self.assertTrue(
-            f"Ensure this value has at most 100 characters (it has {extra_length})."
-            in form.errors[orcid_field_name]
+            f"User with id {user_id} does not exist."
+            in form.errors[user_id_field_name]
         )
         self.assertTrue(f"Invalid user role {role}." in form.errors[role_field_name])
 
@@ -86,18 +88,21 @@ class TestAddUserForm(TestCase):
             constants.viewer,
         )
         urn = generate_tmp_urn()
-        orcid_id = 'a' * max_length
+        user_id = 'real_user_id'
+        user = User(username=user_id)
+        user.set_password('password')
+        user.save()
         for valid_role in valid_roles:
             role = valid_role
             form = forms.AddUserForm(data={
                 urn_field_name: urn,
-                orcid_field_name: orcid_id,
+                user_id_field_name: user_id,
                 role_field_name: role
             })
             self.assertTrue(form.is_valid())
 
 
-class TestAddUserForm(TestCase):
+class TestCreateNewsForm(TestCase):
     def test_field_validation(self):
         message_field_name = 'message'
         level_field_name = 'level'
@@ -134,5 +139,47 @@ class TestAddUserForm(TestCase):
             form = forms.CreateNewsForm(data={
                 message_field_name: message,
                 level_field_name: level,
+            })
+            self.assertTrue(form.is_valid())
+
+
+class TestSetUserRoleForm(TestCase):
+    def test_field_validation(self):
+        user_id_field_name = 'user_id'
+        role_field_name = 'role'
+
+        # Fields are empty
+        user_id = ''
+        role = ''
+        form = forms.SetUserRoleForm(data={
+            user_id_field_name: user_id,
+            role_field_name: role,
+        })
+        self.assertTrue('This field is required.' in form.errors[user_id_field_name])
+        self.assertTrue('This field is required.' in form.errors[role_field_name])
+
+        # Fields are invalid
+        user_id = 'fake_user_id'
+        role = 'invalid_role'
+        form = forms.SetUserRoleForm(data={
+            user_id_field_name: user_id,
+            role_field_name: role,
+        })
+        self.assertTrue(
+            f"User with id {user_id} does not exist."
+            in form.errors[user_id_field_name]
+        )
+        self.assertTrue(f"Invalid role {role}." in form.errors[role_field_name])
+
+        # Fields are valid
+        user_id = 'real_user_id'
+        user = User(username=user_id)
+        user.set_password('password')
+        user.save()
+        for role_choice in models.Role.choices():
+            role = role_choice[0]
+            form = forms.SetUserRoleForm(data={
+                user_id_field_name: user_id,
+                role_field_name: role,
             })
             self.assertTrue(form.is_valid())

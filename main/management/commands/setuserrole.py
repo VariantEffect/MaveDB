@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
@@ -26,7 +27,7 @@ class Command(BaseCommand):
 
         try:
             user = User.objects.get(username=user_id)
-        except user.DoesNotExist as e:
+        except ObjectDoesNotExist:
             raise ValueError(f"User with id {user_id} does not exist.")
 
         user.userrole.role = Role(role)

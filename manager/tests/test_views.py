@@ -201,3 +201,48 @@ class TestCreateNewsView(TestCase):
             self.assertEqual(response.status_code, 200)
             num_published = num_published + 1
             self.assertEqual(len(News.objects.all()), num_published)
+
+
+class TestSetUserRoleView(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.password = 'password'
+        self.poweruser_id = 'poweruser'
+        self.poweruser = User(username=self.poweruser_id)
+        self.poweruser.set_password(self.password)
+        self.poweruser.save()
+        self.poweruser.userrole.role = models.Role.POWERUSER
+        self.poweruser.save()
+        self.general_user_id = 'general'
+        self.general_user = User(username=self.general_user_id)
+        self.general_user.set_password(self.password)
+        self.general_user.save()
+        self.setuserrole_url = reverse('manager:manage_setuserrole')
+
+    def test_setuserrole_view_loads(self):
+        self.client.login(username=self.poweruser_id, password=self.password)
+        response = self.client.get(self.setuserrole_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_set_user_to_poweruser(self):
+        # Confirm that the general user cannot view this page
+        self.client.login(username=self.general_user_id, password=self.password)
+        response = self.client.get(self.setuserrole_url)
+        self.assertEqual(response.status_code, 403)
+
+        # Logout, and use the poweruser to change the role of the general user
+        self.client.logout()
+        self.client.login(username=self.poweruser_id, password=self.password)
+
+        data = {
+            'user_id': self.general_user_id,
+            'role': 'POWERUSER'
+        }
+        response = self.client.post(self.setuserrole_url, data)
+        self.assertEqual(response.status_code, 200)
+
+        # Then logout again, and confirm the general user can now view
+        self.client.logout()
+        self.client.login(username=self.general_user_id, password=self.password)
+        response = self.client.get(self.setuserrole_url)
+        self.assertEqual(response.status_code, 200)

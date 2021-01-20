@@ -1,6 +1,7 @@
 from django import forms
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
+from accounts.models import User
 from dataset import constants
 from main.models import News
 from manager.models import Role
@@ -47,6 +48,10 @@ class AddUserForm(forms.Form):
     def clean_user_id(self):
         field_name = 'user_id'
         user_id = self.cleaned_data[field_name]
+        try:
+            user = User.objects.get(username=user_id)
+        except ObjectDoesNotExist:
+            self.add_error(field_name, ValueError(f"User with id {user_id} does not exist."))
         return user_id
 
     def clean_role(self):
@@ -78,6 +83,15 @@ class CreateNewsForm(forms.Form):
 class SetUserRoleForm(forms.Form):
     user_id = forms.CharField(max_length=100)
     role = forms.CharField(max_length=100)
+
+    def clean_user_id(self):
+        field_name = 'user_id'
+        user_id = self.cleaned_data[field_name]
+        try:
+            user = User.objects.get(username=user_id)
+        except ObjectDoesNotExist:
+            self.add_error(field_name, ValueError(f"User with id {user_id} does not exist."))
+        return user_id
 
     def clean_role(self):
         field_name = 'role'
