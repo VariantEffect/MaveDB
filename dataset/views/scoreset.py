@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.urls import reverse
 
 from reversion import create_revision
 
@@ -181,7 +182,9 @@ class BaseScoreSetFormView(ScoreSetAjaxMixin):
             )
             return self.render_to_response(self.get_context_data(**form))
 
-        return HttpResponseRedirect(self.get_success_url())
+        return HttpResponseRedirect(
+            reverse("dataset:scoreset_detail", kwargs={"urn": self.object.urn})
+        )
 
     def form_invalid(self, form: Dict[str, Any]):
         ss_form: ScoreSetForm = form.get("scoreset_form")
