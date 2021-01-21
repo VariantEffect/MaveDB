@@ -6,7 +6,7 @@ from typing import Optional, Type, Union
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.db import transaction
 
 from reversion import create_revision
@@ -96,11 +96,17 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetView):
     def form_valid(self, form: DatasetModelForm) -> HttpResponseRedirect:
         try:
             with create_revision():
-                response = super().form_valid(form)
+                super().form_valid(form)
                 self.object.parent.save()
 
             self.post_save()
 
+            response = HttpResponseRedirect(
+                reverse(
+                    "dataset:experiment_detail",
+                    kwargs={"urn": self.object.urn},
+                )
+            )
             messages.success(
                 self.request,
                 f"Successfully created a new {self.model.__name__}, which "
@@ -181,10 +187,16 @@ class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetView):
     def form_valid(self, form: DatasetModelForm) -> HttpResponseRedirect:
         try:
             with create_revision():
-                response = super().form_valid(form)
+                super().form_valid(form)
 
             self.post_save()
 
+            response = HttpResponseRedirect(
+                reverse(
+                    "dataset:experiment_detail",
+                    kwargs={"urn": self.object.urn},
+                )
+            )
             messages.success(
                 self.request, f"Experiment {self.object.urn} has been updated."
             )
