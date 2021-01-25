@@ -47,7 +47,9 @@ class TimeStampedModel(models.Model):
         return format_delta(self.modification_date)
 
     @classmethod
-    def filter_in_order(cls, values: Iterable, field: str = "id"):
+    def filter_in_order(
+        cls, values: Iterable, field: str = "id", expression: str = "in"
+    ):
         """
         Filter based on a list of values maintaining the ordering present
         in the list.
@@ -56,7 +58,7 @@ class TimeStampedModel(models.Model):
             [f"WHEN {field}={v} THEN {i}" for i, v in enumerate(values)]
         )
         ordering = "CASE %s END" % clauses
-        return cls.objects.filter(**{f"{field}__in": values}).extra(
+        return cls.objects.filter(**{f"{field}__{expression}": values}).extra(
             select={"ordering": ordering}, order_by=("ordering",)
         )
 
