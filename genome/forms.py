@@ -450,7 +450,9 @@ class ReferenceMapForm(forms.ModelForm):
                 genomes, key=lambda x: ordering.get(x.short_name, 0)
             )
         ]
-        return ReferenceGenome.filter_in_order(ids, field="id")
+        return ReferenceGenome.filter_in_order(
+            ids, field="id", expression="in"
+        )
 
     def dummy_instance(self):
         if not self.is_bound or self.errors:
