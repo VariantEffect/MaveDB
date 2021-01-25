@@ -345,7 +345,6 @@ class ScoreSetCreateView(BaseScoreSetFormView, CreateDatasetView):
         if self.request.GET.get("experiment", ""):
             urn = self.request.GET.get("experiment")
             if Experiment.objects.filter(urn=urn).count():
-                # TODO: allow if public
                 experiment = Experiment.objects.get(urn=urn)
                 has_permission = (
                     self.request.user.has_perm(

@@ -142,15 +142,6 @@ class TestVariantJsonValidator(TestCase):
 
 
 class TestMaveDataset(TestCase):
-    SCORE_COL = constants.required_score_column
-    HGVS_NT_COL = constants.hgvs_nt_column
-    HGVS_TX_COL = constants.hgvs_tx_column
-    HGVS_PRO_COL = constants.hgvs_pro_column
-
-    # TODO: Add new tests for:
-    #   - Validation against targetseq
-    #   - Validation with relaxed ordering
-
     """
     Tests the validator :func:`validate_variant_rows` to check if the correct
     errors are thrown when invalid rows are encountered in a
@@ -162,6 +153,11 @@ class TestMaveDataset(TestCase):
     Tests also check to see if the correct header and hgvs data information
     is parsed and returned.
     """
+
+    SCORE_COL = constants.required_score_column
+    HGVS_NT_COL = constants.hgvs_nt_column
+    HGVS_TX_COL = constants.hgvs_tx_column
+    HGVS_PRO_COL = constants.hgvs_pro_column
 
     @staticmethod
     def mock_return_value(data, index=None):
