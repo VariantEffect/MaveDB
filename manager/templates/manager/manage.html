@@ -1,0 +1,36 @@
+{% extends "main/base.html" %}
+
+
+{% block body %}
+  <h2>Manage</h2>
+  
+  <div class="row">
+    <div class="col-4">
+      <select id="commands" class="form-control">
+      	<option value="" data-url="#">-- Select Manage Command --</option>
+        {% for s, u in subcommands.items %}
+          <option value={{ s }} data-url={{ u }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <br>
+  <div class="row">
+    <div class="col-3">
+      <input type="submit" value="Submit" id="submit">
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("submit").onclick = function () {
+      var e = document.getElementById("commands");
+      var result = e.options[e.selectedIndex].value;
+      url = e.options[e.selectedIndex].dataset.url
+      location.href = url;
+    };
+  </script>
+
+  {% block command_content %}
+  {% endblock %}
+
+{% endblock %}

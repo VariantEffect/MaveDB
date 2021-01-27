@@ -101,6 +101,11 @@
           <a class="nav-link text-muted" href="{% url 'api:api-root' %}">API</a>
         </li>
         {% if user.is_authenticated %}
+          {% if user.userrole.is_poweruser %}
+            <li class="nav-item">
+              <a class="nav-link text-muted" href="{% url 'manager:manage' %}">Manage</a>
+            </li>
+          {% endif %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle text-muted" href="#" id="profile-dd" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

@@ -65,6 +65,7 @@ SOCIAL_AUTH_PIPELINE = [
 
 # Application definition
 INSTALLED_APPS = [
+    "manager",
     "metadata",
     "main",
     "genome",
