@@ -51,3 +51,13 @@ class Migration(migrations.Migration):
             ],
         ),
     ]
+
+    def apply(self, project_state, schema_editor, collect_sql=False):
+        retval = super().apply(project_state, schema_editor, collect_sql)
+
+        from manager.models import User
+
+        for u in User.objects.all():
+            u.save()  # trigger post_save signal to create default userrole
+
+        return retval
