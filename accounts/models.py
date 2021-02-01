@@ -2,7 +2,6 @@ import re
 import logging
 import datetime
 from datetime import timedelta
-from plistlib import Dict
 from typing import Optional, List
 
 from social_django.models import UserSocialAuth
