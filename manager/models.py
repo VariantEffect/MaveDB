@@ -37,4 +37,6 @@ def create_user_userrole(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_userrole(sender, instance, **kwargs):
+    if not hasattr(instance, "userrole"):
+        UserRole.objects.create(user=instance)
     instance.userrole.save()
