@@ -8,7 +8,7 @@ if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
 set SOURCEDIR=source
-set BUILDDIR=build/docs/
+set BUILDDIR=build/docs/mavedb/
 
 if "%1" == "" goto help
 
