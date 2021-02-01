@@ -16,9 +16,7 @@ class Command(BaseCommand):
         role = kwargs.get("role", None)
         valid_roles = {r[0] for r in Role.choices()}
         if not role or role.upper() not in valid_roles:
-            raise ValueError(
-                f"Valid roles are {valid_roles}."
-            )
+            raise ValueError(f"Valid roles are {valid_roles}.")
         role = role.upper()
 
         user_id = kwargs.get("user", None)

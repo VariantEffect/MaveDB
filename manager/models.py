@@ -7,8 +7,8 @@ from django.dispatch import receiver
 
 
 class Role(Enum):
-    GENERAL = 'GENERAL'
-    POWERUSER = 'POWERUSER'
+    GENERAL = "GENERAL"
+    POWERUSER = "POWERUSER"
 
     # TODO: if we upgrade to Django 3, we won't have to do this
     @classmethod
@@ -18,14 +18,10 @@ class Role(Enum):
 
 class UserRole(models.Model):
     user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name='userrole'
+        User, on_delete=models.CASCADE, related_name="userrole"
     )
     role = models.CharField(
-        max_length=255,
-        default=Role.GENERAL,
-        choices=Role.choices()
+        max_length=255, default=Role.GENERAL, choices=Role.choices()
     )
 
     @property
