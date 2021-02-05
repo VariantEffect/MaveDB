@@ -9,6 +9,8 @@ staticfiles/
 debug.log
 .pytest_cache/*
 docs/build
+docs/mavehgvs
+
 
 geckodriver.log
 *.pyc
