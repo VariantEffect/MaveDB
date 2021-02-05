@@ -842,7 +842,11 @@ class ScoreSetForm(DatasetModelForm):
 
     @property
     def meta_analysis_form_field_data(self) -> List[str]:
-        children = self.data.getlist("meta_analysis_for", [])
+        if hasattr(self.data, "getlist"):
+            children = self.data.getlist("meta_analysis_for", [])
+        else:
+            children = self.data.get("meta_analysis_for", [])
+
         if isinstance(children, (int, str)):
             children = [children]
         return children
