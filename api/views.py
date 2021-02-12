@@ -1,28 +1,45 @@
 import csv
+import json
+import logging
 import re
 from datetime import datetime
+from reversion import create_revision
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
-from rest_framework import viewsets, exceptions
+from rest_framework import exceptions, parsers, status, views, viewsets
+from rest_framework.response import Response
 
 from accounts.filters import UserFilter
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.serializers import UserSerializer
 from core.utilities import is_null
 from dataset import models, filters, constants
+from dataset.forms.scoreset import ScoreSetForm
 from dataset.mixins import DatasetPermissionMixin
+from dataset.models.experiment import Experiment
 from dataset.serializers import (
     ExperimentSetSerializer,
     ExperimentSerializer,
     ScoreSetSerializer,
 )
+from dataset.tasks import create_variants
 from dataset.templatetags.dataset_tags import filter_visible
 from genome import models as genome_models, serializers as genome_serializers
+from genome.forms import PrimaryReferenceMapForm, TargetGeneForm
+from main.models import Licence
 from metadata import models as meta_models, serializers as meta_serializers
+from metadata.forms import (
+    UniprotOffsetForm,
+    EnsemblOffsetForm,
+    RefseqOffsetForm,
+)
 
 User = get_user_model()
 ScoreSet = models.scoreset.ScoreSet
+logger = logging.getLogger("django")
 
 words_re = re.compile(r"\w+|[^\w\s]", flags=re.IGNORECASE)
 
@@ -130,14 +147,357 @@ class ExperimentViewset(DatasetListViewSet):
     queryset = models.experiment.Experiment.objects.all()
     lookup_field = "urn"
 
-
 class ScoreSetViewset(DatasetListViewSet):
-    http_method_names = ("get",)
+    http_method_names = ("get", 'post',)
     serializer_class = ScoreSetSerializer
     filter_class = filters.ScoreSetFilter
     model_class = models.scoreset.ScoreSet
     queryset = models.scoreset.ScoreSet.objects.all()
     lookup_field = "urn"
+
+    parser_classes = (parsers.MultiPartParser, parsers.FormParser,)
+
+    def create(self, request, format=None):
+        """
+        Format request.data into ScoreSetForm
+
+        request.data : QueryDict
+            request: JSON encoded as a string
+                short_description : str
+                title : str
+                experiment : dataset.models.experiment.Experiment.pk (str?)
+
+                score_data : InMemoryUploadedFile
+                count_data : InMemoryUploadedFile
+                meta_data : InMemoryUploadedFile
+        """
+        ### COPIED (then modified) FROM dataset/views/scoreset.py
+        # TODO: move all copied logic into serializers and out of both views
+        def submit_job(form: ScoreSetForm, object: ScoreSet, user):
+            if form.has_variants() and object.private:
+                logger.info(
+                    f"Submitting task from {user} for {object.urn} to Celery."
+                )
+
+                object.processing_state = constants.processing
+                object.save()
+
+                scores_rs, counts_rs, index = form.serialize_variants()
+                task_kwargs = {
+                    "user_pk": user.pk,
+                    "scoreset_urn": object.urn,
+                    "scores_records": scores_rs,
+                    "counts_records": counts_rs,
+                    "dataset_columns": form.dataset_columns.copy(),
+                    "index": index,
+                }
+
+                success, _ = create_variants.submit_task(
+                    kwargs=task_kwargs,
+                )
+
+                logger.info(
+                    "Submission to celery from {} for {}: {}".format(
+                        user, object.urn, success
+                    )
+                )
+
+                if not success:
+                    object.processing_state = constants.failed
+                    object.save()
+
+        @transaction.atomic()
+        def save_forms(forms, user):
+            scoreset_form: ScoreSetForm = forms['scoreset_form']
+
+            with create_revision():
+                scoreset: ScoreSet = scoreset_form.save(commit=True)
+                object: ScoreSet = scoreset
+
+            target_form: TargetGeneForm = forms['target_gene_form']
+            reference_map_form: PrimaryReferenceMapForm = forms[
+                'reference_map_form'
+            ]
+            uniprot_offset_form: UniprotOffsetForm = forms[
+                'uniprot_offset_form'
+            ]
+            refseq_offset_form: RefseqOffsetForm = forms['refseq_offset_form']
+            ensembl_offset_form: EnsemblOffsetForm = forms[
+                'ensembl_offset_form'
+            ]
+
+            target: TargetGene = target_form.save(
+                commit=True, scoreset=scoreset
+            )
+
+            reference_map_form.instance.target = target
+            reference_map_form.save(commit=True)
+
+            uniprot_offset = uniprot_offset_form.save(
+                target=target,
+                commit=True,
+            )
+            refseq_offset = refseq_offset_form.save(
+                target=target,
+                commit=True,
+            )
+            ensembl_offset = ensembl_offset_form.save(
+                target=target,
+                commit=True,
+            )
+
+            if uniprot_offset:
+                target.uniprot_id = uniprot_offset.identifier
+            else:
+                target.uniprot_id = None
+
+            if refseq_offset:
+                target.refseq_id = refseq_offset.identifier
+            else:
+                target.refseq_id = None
+
+            if ensembl_offset:
+                target.ensembl_id = ensembl_offset.identifier
+            else:
+                target.ensembl_id = None
+
+            target.save()
+
+            object.add_administrators(user)
+            transaction.on_commit(lambda: submit_job(
+                form=scoreset_form, object=object, user=user
+            ))
+        ### END COPY
+
+        def _fetch(needs_fetching, fetch_info):
+            new_dict = {}
+            for key in fetch_info.keys():
+                if key not in needs_fetching:
+                    raise ValueError(f"Payload did not contain needed key {key}.")
+                if needs_fetching[key] is None:
+                    continue
+                # Make a case-insensitive match by formatting the get key as
+                # KEY__iexact when fetching
+                get_field = fetch_info[key]['get_field']
+                fetch_iexact_key = f"{get_field}__iexact"
+                get_dict = {fetch_iexact_key: needs_fetching[key][get_field]}
+                new_dict[key] = fetch_info[key]['class'].objects.get(**get_dict).pk
+            return new_dict
+
+        def _parse_data(data, flat_keys, needs_fetching, fetch_info):
+            to_return = {}
+            for key in flat_keys:
+                data_value = data.get(key, None)
+                if not data_value:
+                    continue
+                to_return[key] = data_value
+            to_return.update(_fetch(needs_fetching, fetch_info))
+            return to_return
+
+        def _parse_scoreset_data(data):
+            flat_keys = [
+                'title',
+                'short_description',
+                'abstract_text',
+                'method_text',
+                'keywords',
+                'doi_ids',
+                'sra_ids',
+                'pubmed_ids',
+                'meta_analysis_for',
+                'data_usage_policy'
+            ]
+            needs_fetching = {
+                'experiment': {
+                    'urn': data.get('experiment', None)
+                },
+                'licence': data.get('licence', None),
+                'replaces': data.get('replaces', None)
+            }
+            fetch_info = {
+                'experiment': {
+                    'class': Experiment,
+                    'get_field': 'urn'
+                },
+                'licence': {
+                    'class': Licence,
+                    'get_field': 'short_name'
+                },
+                'replaces': {
+                    'class': ScoreSet,
+                    'get_field': 'urn'
+                }
+            }
+            return _parse_data(data, flat_keys, needs_fetching, fetch_info)
+
+        def _parse_target_data(data):
+            # 'type' needs to transform to 'category'
+            if 'type' in data:
+                data['category'] = data['type']
+            flat_keys = ['name', 'category', 'sequence_type', 'reference_sequence']
+            return _parse_data(data, flat_keys, {}, {})
+
+        def _parse_uniprot_data(data):
+            needs_fetching = {
+                'uniprot': data
+            }
+            fetch_info = {
+                'uniprot': {
+                    'class': meta_models.UniprotIdentifier,
+                    'get_field': 'identifier'
+                },
+            }
+            return _parse_data(data, [], needs_fetching, fetch_info)
+
+        def _parse_ensembl_data(data):
+            needs_fetching = {
+                'ensembl': data
+            }
+            fetch_info = {
+                'ensembl': {
+                    'class': meta_models.EnsemblIdentifier,
+                    'get_field': 'identifier'
+                },
+            }
+            return _parse_data(data, [], needs_fetching, fetch_info)
+
+        def _parse_refseq_data(data):
+            needs_fetching = {
+                'refseq': data
+            }
+            fetch_info = {
+                'refseq': {
+                    'class': meta_models.RefseqIdentifier,
+                    'get_field': 'identifier'
+                },
+            }
+            return _parse_data(data, [], needs_fetching, fetch_info)
+
+        def _parse_reference_maps_data(data):
+            needs_fetching = {}
+            reference_maps = data if data else []
+            for i in range(len(reference_maps)):
+                '''
+                'reference_maps': [
+                    {
+                        'KEY': {    # <- always only one key here, e.g. 'genome'
+                            'short_name': 'VALUE'
+                        }
+                    }, ...
+                ]
+                '''
+                # Right now, it looks like the only available key is 'genome'
+                key = list(reference_maps[i].keys())[0] # <- this is the above key, 'genome'
+                needs_fetching[key] = reference_maps[i][key]
+            fetch_info = {
+                'genome': {
+                    'class': genome_models.ReferenceGenome,
+                    'get_field': 'short_name'
+                },
+            }
+            return _parse_data(data, [], needs_fetching, fetch_info)
+
+        # Breakdown of the original request monolith
+        user, _ = authenticate(request)
+        request_data = json.loads(request.POST['request'])
+        scoreset_request_data = request_data['scoreset']
+        target_request_data = request_data['target']
+        uniprot_request_data = request_data['uniprot']
+        ensembl_request_data = request_data['ensembl']
+        refseq_request_data = request_data['refseq']
+        reference_maps_request_data = request_data['reference_maps']
+        files = {
+            constants.variant_score_data: request.FILES['score_data'],
+            constants.variant_count_data: request.FILES['count_data'],
+            constants.meta_data: request.FILES['meta_data'],
+        }
+        if 'fasta_file' in request.FILES:
+            files['sequence_fasta'] = request.FILES['fasta_file']
+
+        try:
+            scoreset_data = _parse_scoreset_data(scoreset_request_data)
+            target_data = _parse_target_data(target_request_data)
+            uniprot_data = _parse_uniprot_data(uniprot_request_data)
+            ensembl_data = _parse_ensembl_data(ensembl_request_data)
+            refseq_data = _parse_refseq_data(refseq_request_data)
+            reference_maps_data = _parse_reference_maps_data(reference_maps_request_data)
+        except Exception as e:
+            response_data = {
+                'status': 'Bad request.',
+                'message': 'Could not parse data correctly.',
+                'parse_error': repr(e)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Change this to be something where we get the user by the token request or something
+            scoreset_form = ScoreSetForm(data=scoreset_data, files=files, user=user)
+            target_form = TargetGeneForm(data=target_data, files=files, user=user)
+            uniprot_form = UniprotOffsetForm(data=uniprot_data)
+            ensembl_form = EnsemblOffsetForm(data=ensembl_data)
+            refseq_form = RefseqOffsetForm(data=refseq_data)
+            reference_map_form = PrimaryReferenceMapForm(data=reference_maps_data)
+            # These keys need to match what lives in the save_forms logic above
+            # which in turn was copied from dataset/views/scoreset, so let's
+            # make it backwards compatible
+            forms = {
+                'scoreset_form': scoreset_form,
+                'target_gene_form': target_form,
+                'uniprot_offset_form': uniprot_form,
+                'ensembl_offset_form': ensembl_form,
+                'refseq_offset_form': refseq_form,
+                'reference_map_form': reference_map_form,
+            }
+        except Exception as e:
+            response_data = {
+                'status': 'Bad request',
+                'message': 'Could not create forms correctly with the given data.',
+                'form_creation_error': repr(e)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+        ### COPIED (then modified) FROM dataset/views/scoreset.py
+        # TODO: move all copied logic into serializers and out of both views
+        valid = True
+        valid &= target_form.is_valid()
+        valid &= scoreset_form.is_valid(targetseq=target_form.get_targetseq())
+        # Check that if AA sequence, dataset defined pro variants only.
+        if (
+            target_form.sequence_is_protein
+            and not scoreset_form.allow_aa_sequence
+        ):
+            valid = False
+            target_form.add_error(
+                "sequence_text",
+                "Protein sequences are allowed if your data set exclusively "
+                "defines protein variants.",
+            )
+        ### END COPY
+
+        form_errors = {}
+        for key in forms.keys():
+            if forms[key].errors:
+                form_errors[f"{key}_errors"] = forms[key].errors.as_json()
+        if form_errors:
+            response_data = {
+                'status': 'Bad request',
+                'message': 'One or more forms were invalid.',
+                'forms_invalid_error': form_errors
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            save_forms(forms=forms, user=user)
+        except Exception as e:
+            response_data = {
+                'status': 'Bad request',
+                'message': 'ScoreSet could not be created with the given data.',
+                'scoreset_creation_error': repr(e)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        return HttpResponse(status=204)
 
 
 class UserViewset(AuthenticatedViewSet):
