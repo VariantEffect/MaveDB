@@ -585,8 +585,6 @@ class WildTypeSequence(TimeStampedModel):
 
         @classmethod
         def detect_sequence_type(cls, sequence):
-            # fixme: Prioritise DNA over protein in the rare case of a ATCG only
-            #   protein sequence. Fix this later if the need arises.
             if sequence_is_dna(sequence):
                 return cls.DNA
             elif sequence_is_protein(sequence):
@@ -644,7 +642,6 @@ class WildTypeSequence(TimeStampedModel):
         return self.__class__.SequenceType.is_protein(self.sequence_type)
 
     def save(self, *args, **kwargs):
-        # Fixme: Upper case all sequences?
         if self.sequence is not None:
             self.sequence = self.sequence.upper()
             self.sequence_type = (

@@ -163,7 +163,15 @@ class TestTargetGeneForm(TestCase):
         )
         form = TargetGeneForm(user=self.user, data=data, files=files)
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.sequence_params["sequence"], "AAAA")
+        self.assertEqual(form.get_targetseq(), "AAAA")
+
+    def test_strips_fasta_header(self):
+        data, files = self.mock_form_data(
+            sequence_text=">sequence_1\nAAAA\n ",
+        )
+        form = TargetGeneForm(user=self.user, data=data, files=files)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.get_targetseq(), "AAAA")
 
     def test_must_have_either_sequence_or_fasta(self):
         data, files = self.mock_form_data(
@@ -194,7 +202,7 @@ class TestTargetGeneForm(TestCase):
         data, _ = self.mock_form_data(sequence_text=" atcg ")
         form = TargetGeneForm(user=self.user, data=data)
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.sequence_params["sequence"], "atcg")
+        self.assertEqual(form.get_targetseq(), "ATCG")
 
     def test_strips_line_breaks_tabs_ws_from_wt_seq(self):
         data, _ = self.mock_form_data(
@@ -202,7 +210,7 @@ class TestTargetGeneForm(TestCase):
         )
         form = TargetGeneForm(user=self.user, data=data)
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.sequence_params["sequence"], "atcggtacggggaaaa")
+        self.assertEqual(form.get_targetseq(), "ATCGGTACGGGGAAAA")
 
     def test_private_targets_hidden_if_user_has_no_permissions(self):
         instance = TargetGeneFactory()

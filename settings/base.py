@@ -65,6 +65,7 @@ SOCIAL_AUTH_PIPELINE = [
 
 # Application definition
 INSTALLED_APPS = [
+    "manager",
     "metadata",
     "main",
     "genome",
@@ -164,7 +165,8 @@ DOCS_STATIC_DIR = BASE_DIR + "/docs/build/"
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [DOCS_STATIC_DIR]
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
-DOCS_ROOT = STATIC_ROOT + "/docs/html"
+MAVEDB_DOCS_ROOT = STATIC_ROOT + "/docs/mavedb/html"
+MAVEHGVS_DOCS_ROOT = STATIC_ROOT + "/docs/mavehgvs/html"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
 
 # Redirect to home URL after login (Default redirects to /profile/)

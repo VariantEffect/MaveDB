@@ -156,7 +156,6 @@ class MaveDataset:
     def index(self) -> Optional[pd.Index]:
         if self._errors:
             return None
-        # TODO: return index or column?
         return self._df.index.copy(deep=True)
 
     def data(self, serializable=False) -> pd.DataFrame:

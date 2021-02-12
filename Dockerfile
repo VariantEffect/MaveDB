@@ -5,8 +5,8 @@ ARG DJANGO_REQUIREMENTS=production
 RUN echo "Requirements: ${DJANGO_REQUIREMENTS}.txt"
 
 ENV PYTHONUNBUFFERED 1
-ENV COMMIT_HASH $MAVEDB_COMMIT_HASH
-ENV DJANGO_REQUIREMENTS $DJANGO_REQUIREMENTS
+ENV COMMIT_HASH ${MAVEDB_COMMIT_HASH}
+ENV DJANGO_REQUIREMENTS ${DJANGO_REQUIREMENTS}
 
 ###############################################################################
 # Base configuration stage
@@ -73,6 +73,15 @@ FROM builder as app
 WORKDIR ${APP_SOURCE}
 
 COPY ${HOST_SRC} .
+
+# Build the Sphinx documentation
+WORKDIR ${APP_SOURCE}/docs
+RUN make html
+
+WORKDIR ${APP_SOURCE}/docs/mavehgvs
+RUN make html
+
+WORKDIR ${APP_SOURCE}
 
 RUN chown -R ${APP_USER}:${APP_USER} ${APP_SOURCE}
 RUN chown -R ${APP_USER}:${APP_USER} ${APP_MEDIA}

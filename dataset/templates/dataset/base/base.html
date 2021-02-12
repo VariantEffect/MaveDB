@@ -30,18 +30,52 @@
                   <a href="{% url 'accounts:edit_scoreset' instance.urn %}">
                      <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
                         title="Edit this score set."
-                        style="font-size: 32px; padding-bottom: 6px"></i>
+                        style="font-size: 2rem; padding-bottom: 6px"></i>
                    </a>
                 {% endif %}
                 {% if is_experiment %}
                   <a href="{% url 'accounts:edit_experiment' instance.urn %}">
                      <i class="icon far fa-edit pl-1" data-toggle="tooltip" data-placement="top"
                         title="Edit this experiment."
-                        style="font-size: 32px; padding-bottom: 6px"></i>
+                        style="font-size: 2rem; padding-bottom: 6px"></i>
                    </a>
                 {% endif %}
               {% endif %}
             {% endif %}
+
+            {% if instance.private and is_score_set %}
+              {% if instance.processing_state == 'processing' %}
+                <span
+                    class="processing-icon"
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title="Your submission is currently being processed."
+                >
+                    <i class="state-icon help-icon far fa-clock" style="font-size: 1.7rem"></i>
+                </span>
+              {% endif %}
+              {% if instance.processing_state == 'failed' %}
+                <span
+                    class="error-icon"
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title="Error: {{ instance.get_error_message }}"
+                >
+                    <i class="state-icon help-icon fas fa-exclamation-triangle" style="font-size: 1.7rem"></i>
+                </span>
+              {% endif %}
+              {% if instance.processing_state == 'success' %}
+                <span
+                    class="success-icon"
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title="Your submission has been successfully processed."
+                >
+                    <i class="state-icon help-icon far fa-smile" style="font-size: 1.7rem"></i>
+                </span>
+              {% endif %}
+            {% endif %}
+
           </span>
           </h2>
           <div class="urn-buttons">
@@ -218,7 +252,6 @@
                   {% if not forloop.last %}&middot;{% endif %}
                 {% endfor %}
               {% endif %}
-
             {% endif %}
           </p>
         </div>

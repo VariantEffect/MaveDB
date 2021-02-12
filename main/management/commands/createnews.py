@@ -14,7 +14,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--message",
             type=str,
-            help="Announcemnet message string or file (markdown supported)",
+            help="Announcement message string or file (markdown supported)",
         )
         parser.add_argument(
             "--level",

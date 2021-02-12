@@ -4,10 +4,13 @@ sphinx-venv/
 *.pyc
 staticfiles/
 /static/
+/media/
 .env
 debug.log
 .pytest_cache/*
 docs/build
+docs/mavehgvs
+
 
 geckodriver.log
 *.pyc

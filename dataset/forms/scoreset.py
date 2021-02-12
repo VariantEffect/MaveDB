@@ -1,7 +1,7 @@
 import io
 import json
 from enum import Enum
-from typing import Optional
+from typing import Optional, List, Tuple
 
 import pandas as pd
 from django import forms as forms
@@ -16,7 +16,11 @@ from core.mixins import NestedEnumMixin
 from core.utilities import humanized_null_values
 from dataset import constants as constants
 from main.models import Licence
-from variant.validators import MaveDataset
+from variant.validators import (
+    MaveDataset,
+    MaveScoresDataset,
+    MaveCountsDataset,
+)
 from ..forms.base import DatasetModelForm
 from ..models import ExperimentSet
 from ..models.experiment import Experiment
@@ -551,8 +555,11 @@ class ScoreSetForm(DatasetModelForm):
             else:
                 self.add_error(
                     "score_data",
-                    "Scores file contains errors. Download the errors file to "
-                    "see details.",
+                    mark_safe(
+                        "Score data contains errors. "
+                        '<a href="#" id="dl-score-data-errors">Download</a> '
+                        "the errors file to see details.",
+                    ),
                 )
             return v
 
@@ -575,8 +582,11 @@ class ScoreSetForm(DatasetModelForm):
             else:
                 self.add_error(
                     "count_data",
-                    "Counts file contains errors. Download the errors file to "
-                    "see details.",
+                    mark_safe(
+                        "Count data contains errors. "
+                        '<a href="#" id="dl-count-data-errors">Download</a> '
+                        "the errors file to see details.",
+                    ),
                 )
             return v
 
@@ -728,7 +738,9 @@ class ScoreSetForm(DatasetModelForm):
         return super().save(commit=commit)
 
     # ---------------------- PUBLIC ----------------------------- #
-    def serialize_variants(self):
+    def serialize_variants(
+        self,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[str]]:
         """Serializes variants in JSON format."""
         variants = self.cleaned_data.get("variants", {})
         scores_df = variants.get("scores_df", pd.DataFrame())
@@ -740,17 +752,33 @@ class ScoreSetForm(DatasetModelForm):
         return bool(self.cleaned_data.get("variants", {}))
 
     @property
-    def should_write_scores_error_file(self):
-        validator = self.cleaned_data.get("score_data", MaveDataset())
-        return validator and validator.n_errors > self.MAX_ERRORS
+    def scores_dataset(self) -> Optional[MaveScoresDataset]:
+        return self.cleaned_data.get("score_data", None)
 
     @property
-    def should_write_counts_error_file(self):
-        validator = self.cleaned_data.get("count_data", MaveDataset())
-        return validator and validator.n_errors > self.MAX_ERRORS
+    def counts_dataset(self) -> Optional[MaveCountsDataset]:
+        return self.cleaned_data.get("count_data", None)
 
     @property
-    def is_meta_analysis(self):
+    def should_write_scores_error_file(self) -> bool:
+        validator = self.cleaned_data.get("score_data", None)
+        return (
+            validator
+            and validator.errors
+            and validator.n_errors > self.MAX_ERRORS
+        )
+
+    @property
+    def should_write_counts_error_file(self) -> bool:
+        validator = self.cleaned_data.get("count_data", None)
+        return (
+            validator
+            and validator.errors
+            and validator.n_errors > self.MAX_ERRORS
+        )
+
+    @property
+    def is_meta_analysis(self) -> bool:
         if "meta_analysis_for" not in self.fields:
             return self.instance.is_meta_analysis
         else:
@@ -765,22 +793,22 @@ class ScoreSetForm(DatasetModelForm):
         # Keep all meta-analysis score sets which contain exactly the number
         # of child score sets the user is trying to link to.
         meta_analyses = objects.filter(**{f"{field_name}": len(children)})
-        for id_ in children:
+        for pk in children:
             # Filter out any meta-analyses which do not have the exact same
             # child score sets. Ordering is not important.
-            meta_analyses = meta_analyses.filter(meta_analysis_for=id_)
+            meta_analyses = meta_analyses.filter(meta_analysis_for=pk)
+
         return meta_analyses.first()
 
     def get_meta_analysis_experiment(self) -> Experiment:
         existing = self.get_existing_meta_analysis()
         children = ScoreSet.objects.filter(
-            id__in=self.meta_analysis_form_field_data
+            pk__in=self.meta_analysis_form_field_data
         )
 
         if children.count() == 0:
             raise ValueError(
-                "Form data indicates non-meta-analysis, "
-                "but caller implies form is for a meta-analysis."
+                "Cannot create a meta-analysis without any child score sets"
             )
 
         # Create a new experiment but linked to the child's experimentset
@@ -805,16 +833,20 @@ class ScoreSetForm(DatasetModelForm):
         return existing.experiment
 
     @property
-    def editing_existing(self):
+    def editing_existing(self) -> bool:
         return self.instance.pk is not None
 
     @property
-    def editing_public(self):
+    def editing_public(self) -> bool:
         return not self.instance.private
 
     @property
-    def meta_analysis_form_field_data(self):
-        children = self.data.get("meta_analysis_for", [])
+    def meta_analysis_form_field_data(self) -> List[str]:
+        if hasattr(self.data, "getlist"):
+            children = self.data.getlist("meta_analysis_for", [])
+        else:
+            children = self.data.get("meta_analysis_for", [])
+
         if isinstance(children, (int, str)):
             children = [children]
         return children

@@ -111,6 +111,7 @@ CELERY_TASK_COMPRESSION = "gzip"
 
 # Celery needs this for autodiscover to work
 INSTALLED_APPS = [
+    "manager",
     "metadata",
     "main",
     "genome",

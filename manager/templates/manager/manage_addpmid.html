@@ -1,0 +1,72 @@
+{% extends "manager/manage.html" %}
+
+{% block command_content %}
+  <hr>
+  {% if result %}
+    <br>
+    {% if result.error %}
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>{{ result.result_message }}</strong> {{ result.result_message_details }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% else %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>{{ result.result_message }}</strong> {{ result.result_message_details }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <h4>Add PubMed ID</h4>
+
+  <div class="container">
+    <form action={% url 'manager:manage_addpmid' %} method="POST">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-4">
+          <h6>Select URN</h6>
+          <select class="form-control" id="urn" name="urn">
+            <option value="">-- Select a URN --</option>
+            {% for u in urns %}
+              <option class="form-control" value="{{ u }}">{{ u }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-4">
+          <h6>PubMed ID</h6>
+          <input class="form-control" name="pmid" type="text">
+        </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="col-3">
+          <input type="submit" value="Add PMID">
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div id="selected_urn_info">
+    {% include 'manager/manage_addpmid_table.html' %}
+  </div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+  <!-- Get existing PMIDs for selected URN -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $("#urn").change(function () {
+        var urn = $("#urn option:selected").val()
+        $("#selected_urn_info").load(
+          `/manage/get_urn_info/?urn=${urn}`
+        );
+      });
+    });
+  </script>
+{% endblock %}

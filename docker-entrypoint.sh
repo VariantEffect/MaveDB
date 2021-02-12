@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-echo "Spinning up ${APP_VERSION}"
+echo "Spinning up image with release tag '${APP_VERSION}'"
+echo "Version based on commit '${COMMIT_HASH}'"
 
 ###############################################################################
-# Function defns
+# Function definitions
 ###############################################################################
 function database_ready() {
 python3 << END
@@ -132,12 +133,12 @@ fi
 ###############################################################################
 # Web project init
 ###############################################################################
-echo "Running managment commands."
+echo "Running management commands."
 python3 manage.py migrate
 python3 manage.py updatesiteinfo
 python3 manage.py createlicences
 python3 manage.py createreferences
-python3 manage.py collectstatic --noinput
+python3 manage.py collectstatic --noinput --clear
 
 if [ "$ENVIRONMENT" = "production" ]; then
   gunicorn mavedb.wsgi:application \

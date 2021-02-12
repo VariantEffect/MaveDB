@@ -171,6 +171,15 @@ function parse_file(inputId) {
 function initializeScoresetForm({newForm = true, privateDateset = true}) {
     init_select2();
 
+    $('#dl-count-data-errors').click(function () {
+        window.open("?errors_for=count_data", '_blank')
+        return false;
+    });
+    $('#dl-score-data-errors').click(function () {
+        window.open("?errors_for=score_data", '_blank')
+        return false;
+    });
+
     $('.clearable-file-input').click(function () {
         const input = $(this).parent().find('input')[0];
         if (!input) return;

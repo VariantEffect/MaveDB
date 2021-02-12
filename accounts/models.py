@@ -2,6 +2,7 @@ import re
 import logging
 import datetime
 from datetime import timedelta
+from typing import Optional, List
 
 from social_django.models import UserSocialAuth
 
@@ -10,6 +11,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import QuerySet
 from django.db.models.signals import post_save
+from django.contrib.postgres.fields import JSONField
 from django.dispatch import receiver
 from django.utils.html import format_html
 from django.utils.crypto import get_random_string
@@ -55,9 +57,40 @@ class Profile(TimeStampedModel):
         max_length=TOKEN_LENGTH, null=True, default=None
     )
     auth_token_expiry = models.DateField(null=True, default=None)
+    submission_errors = JSONField(null=True, blank=True, default=None)
 
     def __str__(self):
         return "{}_profile".format(self.user.username)
+
+    def get_submission_scores_errors(self) -> Optional[List[str]]:
+        if self.submission_errors is None:
+            return None
+        return self.submission_errors.get("score_data", None)
+
+    def get_submission_counts_errors(self) -> Optional[List[str]]:
+        if self.submission_errors is None:
+            return None
+        return self.submission_errors.get("count_data", None)
+
+    def set_submission_scores_errors(
+        self, data: Optional[List[str]] = None
+    ) -> "Profile":
+        if not self.submission_errors:
+            self.submission_errors = {}
+        self.submission_errors["score_data"] = data
+        return self
+
+    def set_submission_counts_errors(
+        self, data: Optional[List[str]] = None
+    ) -> "Profile":
+        if not self.submission_errors:
+            self.submission_errors = {}
+        self.submission_errors["count_data"] = data
+        return self
+
+    def clear_submission_errors(self) -> "Profile":
+        self.submission_errors = {}
+        return self
 
     def generate_token(self):
         self.auth_token = get_random_string(length=self.TOKEN_LENGTH)

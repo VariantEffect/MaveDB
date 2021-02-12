@@ -172,6 +172,14 @@ class TargetGeneForm(forms.ModelForm):
             sequence = sequence.strip()
 
         if sequence:
+            # Ignore FASTA header
+            sequence = "\n".join(
+                [
+                    line
+                    for line in sequence.split("\n")
+                    if not line.strip().startswith(">")
+                ]
+            )
             sequence = re.sub(r"\\r|\\n|\\t|\s+", "", sequence)
             validate_wildtype_sequence(sequence, as_type=sequence_type)
 
@@ -246,6 +254,11 @@ class TargetGeneForm(forms.ModelForm):
         if self.errors:
             return None
         return self.sequence_params.get("sequence").upper()
+
+    def get_targetseq_type(self) -> Optional[str]:
+        if self.errors:
+            return None
+        return self.sequence_params.get("sequence_type")
 
 
 # GenomicInterval
@@ -415,7 +428,7 @@ class ReferenceMapForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.field_order = ("is_primary", "genome")
         super().__init__(*args, **kwargs)
-        genomes = ReferenceGenome.objects.all()
+        genomes = self._display_ordered_genomes()
         genome_field = self.fields["genome"]
         genome_field.requried = True
         genome_field.queryset = genomes
@@ -426,6 +439,20 @@ class ReferenceMapForm(forms.ModelForm):
         for field in ("genome",):
             if field in self.fields:
                 self.fields[field].widget.attrs.update(**{"class": "select2"})
+
+    @staticmethod
+    def _display_ordered_genomes():
+        genomes = ReferenceGenome.objects.all()
+        ordering = {"sacCer3/R64": 1, "Synthetic": 2, "Other": 3}
+        ids = [
+            g.id
+            for g in sorted(
+                genomes, key=lambda x: ordering.get(x.short_name, 0)
+            )
+        ]
+        return ReferenceGenome.filter_in_order(
+            ids, field="id", expression="in"
+        )
 
     def dummy_instance(self):
         if not self.is_bound or self.errors:
