@@ -73,7 +73,7 @@ class TestHGVSValidator(TestCase):
     def test_passes_multi(self):
         validate_hgvs_string("p.[Lys4Gly;Lys5Phe]", column="p")
         validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="nt")
-        validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="tx")
+        validate_hgvs_string("c.[1A>G;127_128delinsAGC]", column="splice")
 
     def test_error_invalid_hgvs(self):
         with self.assertRaises(ValidationError):
@@ -84,18 +84,18 @@ class TestHGVSValidator(TestCase):
             validate_hgvs_string("r.1a>g", column="nt")
 
         with self.assertRaises(ValidationError):
-            validate_hgvs_string("c.1A>G", column="nt", tx_present=True)
+            validate_hgvs_string("c.1A>G", column="nt", splice_present=True)
 
-    def test_error_invalid_tx_prefix(self):
+    def test_error_invalid_splice_prefix(self):
         with self.assertRaises(ValidationError):
-            validate_hgvs_string("r.1a>g", column="tx")
+            validate_hgvs_string("r.1a>g", column="splice")
 
     def test_error_invalid_pro_prefix(self):
         with self.assertRaises(ValidationError):
             validate_hgvs_string("r.1a>g", column="p")
 
     def test_converts_bytes_to_string_before_validation(self):
-        validate_hgvs_string(b"c.427A>G", column="tx")
+        validate_hgvs_string(b"c.427A>G", column="splice")
 
     def test_return_none_for_null(self):
         for c in null_values_list:
@@ -156,7 +156,7 @@ class TestMaveDataset(TestCase):
 
     SCORE_COL = constants.required_score_column
     HGVS_NT_COL = constants.hgvs_nt_column
-    HGVS_TX_COL = constants.hgvs_tx_column
+    HGVS_SPLICE_COL = constants.hgvs_splice_column
     HGVS_PRO_COL = constants.hgvs_pro_column
 
     @staticmethod
@@ -246,7 +246,7 @@ class TestMaveDataset(TestCase):
     def test_invalid_no_additional_columns_outside_hgvs_ones(self):
         data = "{},{},{}\n{},{},{}".format(
             self.HGVS_NT_COL,
-            self.HGVS_TX_COL,
+            self.HGVS_SPLICE_COL,
             self.HGVS_PRO_COL,
             generate_hgvs(prefix="g"),
             generate_hgvs(prefix="c"),
@@ -277,7 +277,10 @@ class TestMaveDataset(TestCase):
 
     def test_invalid_missing_either_required_hgvs_column(self):
         data = "{},{}\n{},{}".format(
-            self.HGVS_TX_COL, self.SCORE_COL, generate_hgvs(prefix="c"), 1.0
+            self.HGVS_SPLICE_COL,
+            self.SCORE_COL,
+            generate_hgvs(prefix="c"),
+            1.0,
         )
 
         dataset = MaveDataset.for_scores(StringIO(data))
@@ -355,18 +358,18 @@ class TestMaveDataset(TestCase):
     def test_sorts_header(self):
         hgvs_nt = generate_hgvs(prefix="g")
         hgvs_pro = generate_hgvs(prefix="p")
-        hgvs_tx = generate_hgvs(prefix="c")
+        hgvs_splice = generate_hgvs(prefix="c")
         data = "{},{},{},{},{}\n{},{},{},{},{}".format(
             self.HGVS_PRO_COL,
             self.HGVS_NT_COL,
             "colA",
             self.SCORE_COL,
-            self.HGVS_TX_COL,
+            self.HGVS_SPLICE_COL,
             hgvs_pro,
             hgvs_nt,
             "hello",
             1.0,
-            hgvs_tx,
+            hgvs_splice,
         )
 
         dataset = MaveDataset.for_scores(StringIO(data))
@@ -377,7 +380,7 @@ class TestMaveDataset(TestCase):
             dataset.columns,
             [
                 self.HGVS_NT_COL,
-                self.HGVS_TX_COL,
+                self.HGVS_SPLICE_COL,
                 self.HGVS_PRO_COL,
                 self.SCORE_COL,
                 "colA",
@@ -389,7 +392,7 @@ class TestMaveDataset(TestCase):
         sy = "_sy"
         data = "{},{},{},{}\n{},{},{},1.0".format(
             self.HGVS_NT_COL,
-            self.HGVS_TX_COL,
+            self.HGVS_SPLICE_COL,
             self.HGVS_PRO_COL,
             self.SCORE_COL,
             wt,
@@ -540,12 +543,12 @@ class TestMaveDataset(TestCase):
     def test_invalid_hgvs_in_column(self):
         tests = [
             (self.HGVS_PRO_COL, generate_hgvs(prefix="c")),
-            (self.HGVS_TX_COL, generate_hgvs(prefix="g")),
+            (self.HGVS_SPLICE_COL, generate_hgvs(prefix="g")),
             (self.HGVS_NT_COL, generate_hgvs(prefix="p")),
         ]
         for (column, variant) in tests:
             with self.subTest(msg=f"{column}: {variant}"):
-                if column == self.HGVS_TX_COL:
+                if column == self.HGVS_SPLICE_COL:
                     data = "{},{},{}\n{},{},1.0".format(
                         self.HGVS_NT_COL,
                         column,
@@ -580,10 +583,10 @@ class TestMaveDataset(TestCase):
         self.assertEqual(len(dataset.errors), 2)
         print(dataset.errors)
 
-    def test_invalid_nt_not_genomic_when_tx_present(self):
+    def test_invalid_nt_not_genomic_when_splice_present(self):
         data = "{},{},{}\n{},{},1.0".format(
             self.HGVS_NT_COL,
-            self.HGVS_TX_COL,
+            self.HGVS_SPLICE_COL,
             self.SCORE_COL,
             generate_hgvs(prefix="c"),
             generate_hgvs(prefix="c"),
@@ -596,10 +599,10 @@ class TestMaveDataset(TestCase):
         self.assertEqual(len(dataset.errors), 1)
         print(dataset.errors)
 
-    def test_invalid_tx_defined_when_nt_is_not(self):
+    def test_invalid_splice_defined_when_nt_is_not(self):
         data = "{},{},{}\n,{},1.0".format(
             self.HGVS_NT_COL,
-            self.HGVS_TX_COL,
+            self.HGVS_SPLICE_COL,
             self.SCORE_COL,
             generate_hgvs(prefix="c"),
         )
@@ -611,7 +614,7 @@ class TestMaveDataset(TestCase):
         self.assertEqual(len(dataset.errors), 1)
         print(dataset.errors)
 
-    def test_invalid_tx_not_defined_when_nt_is_genomic(self):
+    def test_invalid_splice_not_defined_when_nt_is_genomic(self):
         data = "{},{}\n{},1.0".format(
             self.HGVS_NT_COL,
             self.SCORE_COL,
@@ -723,7 +726,7 @@ class TestMaveDataset(TestCase):
         data = "{},{},{},{}\n{},,,\n{},,,1.0".format(
             self.HGVS_NT_COL,
             self.HGVS_PRO_COL,
-            self.HGVS_TX_COL,
+            self.HGVS_SPLICE_COL,
             self.SCORE_COL,
             hgvs_1,
             hgvs_2,
@@ -738,13 +741,13 @@ class TestMaveDataset(TestCase):
             {
                 hgvs_1: {
                     self.HGVS_NT_COL: hgvs_1,
-                    self.HGVS_TX_COL: None,
+                    self.HGVS_SPLICE_COL: None,
                     self.HGVS_PRO_COL: None,
                     self.SCORE_COL: None,
                 },
                 hgvs_2: {
                     self.HGVS_NT_COL: hgvs_2,
-                    self.HGVS_TX_COL: None,
+                    self.HGVS_SPLICE_COL: None,
                     self.HGVS_PRO_COL: None,
                     self.SCORE_COL: 1.0,
                 },

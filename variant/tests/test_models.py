@@ -109,7 +109,7 @@ class TestVariant(TestCase):
             {
                 constants.hgvs_nt_column: "g.1A>G",
                 constants.hgvs_pro_column: "p.G4Y",
-                constants.hgvs_tx_column: "c.1A>G",
+                constants.hgvs_splice_column: "c.1A>G",
                 "data": dict(
                     {
                         constants.variant_score_data: {column: 1},
@@ -120,7 +120,7 @@ class TestVariant(TestCase):
             {
                 constants.hgvs_nt_column: "g.2A>G",
                 constants.hgvs_pro_column: "p.G5Y",
-                constants.hgvs_tx_column: "c.2A>G",
+                constants.hgvs_splice_column: "c.2A>G",
                 "data": dict(
                     {
                         constants.variant_score_data: {column: 2},
@@ -144,7 +144,7 @@ class TestVariant(TestCase):
             {
                 constants.hgvs_nt_column: "g.1A>G",
                 constants.hgvs_pro_column: "p.G4Y",
-                constants.hgvs_tx_column: "c.1A>G",
+                constants.hgvs_splice_column: "c.1A>G",
                 "data": dict(
                     {
                         constants.variant_score_data: {column: 0.5},
@@ -155,7 +155,7 @@ class TestVariant(TestCase):
             {
                 constants.hgvs_nt_column: "g.2A>G",
                 constants.hgvs_pro_column: "p.G5Y",
-                constants.hgvs_tx_column: "c.2A>G",
+                constants.hgvs_splice_column: "c.2A>G",
                 "data": dict(
                     {
                         constants.variant_score_data: {column: 1.0},

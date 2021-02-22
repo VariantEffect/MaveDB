@@ -180,31 +180,31 @@ class TestValidateScoreCountsDefineSameVariants(TestCase):
             {
                 constants.hgvs_nt_column: ["c.1A>G"],
                 constants.hgvs_pro_column: [None],
-                constants.hgvs_tx_column: [None],
+                constants.hgvs_splice_column: [None],
             }
         )
         counts = pd.DataFrame(
             {
                 constants.hgvs_nt_column: ["c.2A>G"],
                 constants.hgvs_pro_column: [None],
-                constants.hgvs_tx_column: [None],
+                constants.hgvs_splice_column: [None],
             }
         )
         with self.assertRaises(ValidationError):
             validate_datasets_define_same_variants(scores, counts)
 
-    def test_ve_counts_defines_different_tx_variants(self):
+    def test_ve_counts_defines_different_splice_variants(self):
         scores = pd.DataFrame(
             {
                 constants.hgvs_nt_column: [None],
-                constants.hgvs_tx_column: ["c.1A>G"],
+                constants.hgvs_splice_column: ["c.1A>G"],
                 constants.hgvs_pro_column: [None],
             }
         )
         counts = pd.DataFrame(
             {
                 constants.hgvs_nt_column: [None],
-                constants.hgvs_tx_column: ["c.2A>G"],
+                constants.hgvs_splice_column: ["c.2A>G"],
                 constants.hgvs_pro_column: [None],
             }
         )
@@ -215,14 +215,14 @@ class TestValidateScoreCountsDefineSameVariants(TestCase):
         scores = pd.DataFrame(
             {
                 constants.hgvs_nt_column: [None],
-                constants.hgvs_tx_column: [None],
+                constants.hgvs_splice_column: [None],
                 constants.hgvs_pro_column: ["p.Leu5Glu"],
             }
         )
         counts = pd.DataFrame(
             {
                 constants.hgvs_nt_column: [None],
-                constants.hgvs_tx_column: [None],
+                constants.hgvs_splice_column: [None],
                 constants.hgvs_pro_column: ["p.Leu75Glu"],
             }
         )
@@ -234,14 +234,14 @@ class TestValidateScoreCountsDefineSameVariants(TestCase):
             {
                 constants.hgvs_nt_column: ["c.1A>G"],
                 constants.hgvs_pro_column: ["p.Leu5Glu"],
-                constants.hgvs_tx_column: ["c.1A>G"],
+                constants.hgvs_splice_column: ["c.1A>G"],
             }
         )
         counts = pd.DataFrame(
             {
                 constants.hgvs_nt_column: ["c.1A>G"],
                 constants.hgvs_pro_column: ["p.Leu5Glu"],
-                constants.hgvs_tx_column: ["c.1A>G"],
+                constants.hgvs_splice_column: ["c.1A>G"],
             }
         )
         validate_datasets_define_same_variants(scores, counts)
