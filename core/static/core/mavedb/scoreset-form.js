@@ -19,7 +19,7 @@ function maybe_toggle_experiment_input(element) {
  * A row parsed from a scores file. These are the named fields that the server expects, although other user defined
  * fields may exist.
  *
- * @typedef {{hgvs_nt: String?, hgvs_tx: String?, hgvs_pro: String?, score: Number?}} ScoreRow
+ * @typedef {{hgvs_nt: String?, hgvs_splice: String?, hgvs_pro: String?, score: Number?}} ScoreRow
  */
 
 
@@ -27,7 +27,7 @@ function maybe_toggle_experiment_input(element) {
  * A row parsed from a counts file. These are the named fields that the server expects, although other user defined
  * fields may exist.
  *
- * @typedef {{hgvs_nt: String?, hgvs_tx: String?, hgvs_pro: String?, count: Number?}} CountRow
+ * @typedef {{hgvs_nt: String?, hgvs_splice: String?, hgvs_pro: String?, count: Number?}} CountRow
  */
 
 
@@ -39,7 +39,7 @@ function maybe_toggle_experiment_input(element) {
  */
 function warn_sge_missing_metadata(results) {
     if (
-        (has_tx_variants(results.data) || has_genomic_variants(results.data)) &&
+        (has_splice_variants(results.data) || has_genomic_variants(results.data)) &&
         metadata_is_empty()
     ) {
         display_warnings();
@@ -48,31 +48,31 @@ function warn_sge_missing_metadata(results) {
 
 
 /**
- * Checks if any hgvs_tx transcript variants (n. or c. prefix) have been defined.
+ * Checks if any hgvs_splice transcript variants (n. or c. prefix) have been defined.
  *
  * @param data {Array<Array<String, Number>>}
  *
  * @returns {boolean}
  */
-function has_tx_variants(data) {
-    let tx_column_index = data[0].indexOf('hgvs_tx');
-    if (tx_column_index < 0) return false;
+function has_splice_variants(data) {
+    let splice_column_index = data[0].indexOf('hgvs_splice');
+    if (splice_column_index < 0) return false;
 
-    let tx_variants = new Set()
+    let splice_variants = new Set()
     data.slice(1).forEach(function (row) {
-        if (row[tx_column_index] != null) {
-            tx_variants.add(row[tx_column_index]);
+        if (row[splice_column_index] != null) {
+            splice_variants.add(row[splice_column_index]);
         }
     });
 
     // Check if any tx variants are supplied. If not, return since we don't need to then do a
     // further check for metadata presence.
-    let has_tx_variants = Array.from(tx_variants).some(function (variant) {
+    let has_splice_variants = Array.from(splice_variants).some(function (variant) {
         return variant.toString().startsWith('n.') || variant.toString().startsWith('c.')
     })
 
-    if (tx_variants.size === 0 || !has_tx_variants) {
-        console.log('There are no transcript variants.');
+    if (splice_variants.size === 0 || !has_splice_variants) {
+        console.log('There are no splice variants.');
         return false;
     }
     return true;
