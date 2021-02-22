@@ -324,7 +324,7 @@ class ScoreSet(DatasetModel):
     def score_columns(self):
         return [
             constants.hgvs_nt_column,
-            constants.hgvs_tx_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
         ] + self.dataset_columns[constants.score_columns]
 
@@ -332,7 +332,7 @@ class ScoreSet(DatasetModel):
     def count_columns(self):
         return [
             constants.hgvs_nt_column,
-            constants.hgvs_tx_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
         ] + self.dataset_columns[constants.count_columns]
 
