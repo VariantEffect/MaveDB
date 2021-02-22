@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             field=models.TextField(
                 default=None,
                 null=True,
-                validators=[variant.validators.hgvs.validate_tx_variant],
+                validators=[variant.validators.hgvs.validate_splice_variant],
             ),
         ),
     ]
