@@ -1,9 +1,11 @@
 import json
 import logging
+from typing import Optional
 
 from django import template
+from django.contrib.auth import get_user_model
 from django.utils.safestring import mark_safe
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from dataset import models
 from dataset.models.base import DatasetModel
@@ -15,6 +17,7 @@ from accounts.permissions import user_is_anonymous
 
 register = template.Library()
 logger = logging.getLogger("django")
+User = get_user_model()
 
 
 def get_ref_map(gene):
@@ -262,7 +265,9 @@ def current_versions(instances, user=None):
 
 
 @register.assignment_tag
-def filter_visible(instances, user=None):
+def filter_visible(
+    instances: QuerySet, user: Optional[User] = None, distinct: bool = True
+):
     """
     Filter the visible instances for user. This means including instances which
     are not private, and private instances which the user is a contributor for.
@@ -273,6 +278,8 @@ def filter_visible(instances, user=None):
         QuerySet of instances to filter.
     user : accounts.models.User
         User instance.
+    distinct : bool
+        Return distinct queryset
 
     Returns
     -------
@@ -287,24 +294,11 @@ def filter_visible(instances, user=None):
     if user is None or user_is_anonymous(user):
         return instances.exclude(private=True)
 
-    # def fetch_primary_keys(queryset):
-    #     perm_groups = user.groups.filter(
-    #         name__iregex=r"{}:\d+-\w+".format(
-    #             queryset.model.__class__.__name__
-    #         )
-    #     )
-    #     return set(
-    #         int(g.name.split(":")[-1].split("-")[0]) for g in perm_groups
-    #     )
-
     if instances.model is ExperimentSet:
-        private_visible = user.profile.contributor_experimentsets(
-            instances.filter(private=True)
-        )
         visible_meta = (
             ExperimentSet.meta_analyses()
-            .intersection(instances)
             .filter(private=True)
+            .intersection(instances.filter(private=True))
             .filter(
                 experiments__scoresets__in=(
                     ScoreSet.meta_analyses().intersection(
@@ -313,14 +307,16 @@ def filter_visible(instances, user=None):
                 )
             )
         )
-    elif instances.model is Experiment:
-        private_visible = user.profile.contributor_experiments(
-            instances.filter(private=True)
+
+        private_visible = user.profile.contributor_experimentsets(
+            instances.filter(private=True).difference(visible_meta)
         )
+
+    elif instances.model is Experiment:
         visible_meta = (
             Experiment.meta_analyses()
-            .intersection(instances)
             .filter(private=True)
+            .intersection(instances.filter(private=True))
             .filter(
                 scoresets__in=(
                     user.profile.contributor_scoresets().intersection(
@@ -329,27 +325,27 @@ def filter_visible(instances, user=None):
                 )
             )
         )
+
+        private_visible = user.profile.contributor_experiments(
+            instances.filter(private=True).difference(visible_meta)
+        )
+
     elif instances.model is ScoreSet:
         private_visible = user.profile.contributor_scoresets(
             instances.filter(private=True)
         )
         visible_meta = instances.none()
+
     else:
         raise TypeError(
             f"Cannot filter non dataset class {instances.model.__name__}"
         )
 
     public = instances.exclude(private=True)
-    return (
-        (
-            public.distinct()
-            | private_visible.distinct()
-            | visible_meta.distinct()
-        )
-        .distinct()
-        .order_by("urn")
-        .all()
-    )
+    result = (public | private_visible | visible_meta).order_by("urn")
+    if distinct:
+        return result.distinct()
+    return result
 
 
 @register.assignment_tag
