@@ -27,7 +27,6 @@ ScoreSetQuerySet = Union[QuerySet, List[ScoreSet]]
 
 
 def search_view(request):
-    print(request.POST)
     if request.is_ajax():
         try:
             data = process_search_request(request)
@@ -120,6 +119,10 @@ def combine_scoresets(
 ) -> ScoreSetQuerySet:
     for experiment in filter_visible(experiments, user=user, distinct=True):
         scoresets |= experiment.children
+
+    scoresets = scoresets.filter(
+        pk__in=set(i.get_current_version(user).pk for i in scoresets)
+    )
     return filter_visible(scoresets, user=user, distinct=True)
 
 
@@ -174,12 +177,13 @@ def format_datatables_response(
     # Apply ordering using data-tables POST parameters
     scoresets = order_scoresets(
         scoresets=scoresets, column=order_by, direction=order_dir
-    )
+    ).distinct()
 
     paginator = Paginator(object_list=scoresets, per_page=per_page)
     if page_num > paginator.num_pages:
         page_num = paginator.num_pages
     page: Page = paginator.page(page_num)
+    print(page.object_list.count())
 
     # JSON record data for data-tables
     data = []
