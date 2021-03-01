@@ -106,13 +106,14 @@
         },
       });
 
-      // console.log(table);
+      console.log(table);
 
       // Disable default search panes click handler and add own to also clear search input.
       var clearSearchButton = $(".dtsp-clearAll");
       clearSearchButton.off();
-      $(".dtsp-clearAll").on().click(function () {
-        table.searchPanes().search('').draw();
+      clearSearchButton.on().click(function () {
+        table.searchPanes().search('');
+        table.searchPanes.clearSelections();
       });
 
       var searchAfterLoad = setTimeout(function () {
