@@ -47,9 +47,18 @@ def process_search_request(request) -> Dict:
     experiments = filter_visible(
         Experiment.objects.all(), user=user, distinct=False
     )
+    # Map to unique latest versions so deprecated versions won't shown in
+    # search results.
     scoresets = filter_visible(
-        ScoreSet.objects.all(), user=user, distinct=False
+        ScoreSet.objects.filter(
+            pk__in=set(
+                i.get_current_version(user).pk for i in ScoreSet.objects.all()
+            )
+        ),
+        user=user,
+        distinct=False,
     )
+
     total_count = scoresets.distinct().count()
 
     # Filter based on advanced search first because it's quicker and
@@ -120,6 +129,8 @@ def combine_scoresets(
     for experiment in filter_visible(experiments, user=user, distinct=True):
         scoresets |= experiment.children
 
+    # Map to new versions again in case any deprecated versions have been
+    # introduced from combining all the experiment children above.
     scoresets = scoresets.filter(
         pk__in=set(i.get_current_version(user).pk for i in scoresets)
     )
