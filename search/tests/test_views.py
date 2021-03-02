@@ -1,3 +1,6 @@
+from typing import Dict, Optional
+import json
+
 from django.test import TestCase, RequestFactory, mock
 from django.contrib.auth import get_user_model
 
@@ -12,68 +15,10 @@ from .. import views
 User = get_user_model()
 
 
-class TestUtilities(TestCase):
-    def test_group_groups_scoresets_under_parent(self):
-        exp = factories.ExperimentFactory()
-        scs1 = factories.ScoreSetFactory(experiment=exp)
-        scs2 = factories.ScoreSetFactory(experiment=exp)
-        user = UserFactory()
-        results = views.group_children([exp], [scs1, scs2], user=user)
-        expected = {exp: list(sorted({scs1, scs2}, key=lambda i: i.urn))}
-        self.assertDictEqual(results, expected)
-
-    def test_group_adds_parents_to_keys_if_missing(self):
-        scs = factories.ScoreSetFactory()
-        user = UserFactory()
-        results = views.group_children([], [scs], user=user)
-        expected = {scs.parent: [scs]}
-        self.assertDictEqual(results, expected)
-
-    def test_replaces_child_with_most_recent_for_user(self):
-        scs1 = factories.ScoreSetFactory()
-        scs2 = factories.ScoreSetFactory(
-            replaces=scs1, experiment=scs1.experiment
-        )
-        user = UserFactory()
-        scs2.add_viewers(user)
-
-        results = views.group_children([], [scs1], user=user)
-        expected = {scs2.parent: [scs2]}
-        self.assertDictEqual(results, expected)
-
-    def test_replaces_child_with_most_recent(self):
-        scs1 = factories.ScoreSetFactory(private=False)
-        _ = factories.ScoreSetFactory(
-            replaces=scs1, experiment=scs1.experiment
-        )
-        user = UserFactory()
-        results = views.group_children([], [scs1], user=user)
-        expected = {scs1.parent: [scs1]}
-        self.assertDictEqual(results, expected)
-
-
-class TestToJson(TestCase):
-    def setUp(self):
-        self.exp = factories.ExperimentWithScoresetFactory()
-        self.user = UserFactory()
-
-    @mock.patch("search.views.display_targets", return_value=("", "", ""))
-    def test_calls_display_targets(self, patch):
-        grouped = {self.exp: self.exp.children}
-        views.to_json(grouped, user=self.user)
-        patch.assert_called()
-
-    @mock.patch("search.views.format_urn_name_for_user", return_value="")
-    def test_calls_format_urn_name_for_user_with_user(self, patch):
-        grouped = {self.exp: self.exp.children}
-        views.to_json(grouped, user=self.user)
-        patch.assert_called_with(*(self.exp, self.user))
-
-
 class TestSearchView(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
-        self.path = "/search/?json=true"
+        self.path = "/search/"
         self.exp1 = factories.ExperimentWithScoresetFactory()
         self.exp2 = factories.ExperimentWithScoresetFactory()
         self.exp3 = factories.ExperimentWithScoresetFactory()
@@ -89,32 +34,38 @@ class TestSearchView(TestCase):
         self.exp2.refresh_from_db()
         self.exp3.refresh_from_db()
 
-    @mock.patch("search.views.filter_visible", return_value=[])
-    def test_calls_filter_visible(self, patch):
-        request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        request.user = UserFactory()
-        views.search_view(request)
-        patch.assert_called()
+    @staticmethod
+    def mock_data(options: Optional[Dict] = None) -> Dict:
+        data = {
+            "draw": 1,
+            "start": 0,
+            "length": 10,
+            "order[0][column]": "0",
+            "order[0][dir]": "asc",
+            "search[value]": "",
+        }
+        data.update(options or {})
+        return data
 
-    @mock.patch("search.views.group_children", return_value={})
-    def test_calls_group_children(self, patch):
-        request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+    def test_search_returns_public_scoresets_when_not_logged_in(self):
+        request = self.factory.post(
+            self.path,
+            data=self.mock_data(),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         request.user = UserFactory()
-        views.search_view(request)
-        patch.assert_called()
+        response = views.search_view(request)
+        self.assertEqual(response.status_code, 200)
 
-    @mock.patch("search.views.to_json", return_value={})
-    def test_calls_to_json(self, patch):
-        request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        data = json.loads(response.content)
+        self.assertEqual(
+            [record["urn"] for record in data.get("data")],
+            [self.scs1.urn, self.scs2.urn, self.scs3.urn],
         )
-        request.user = UserFactory()
-        views.search_view(request)
-        patch.assert_called()
+        self.assertEqual(
+            [record["parent_urn"] for record in data.get("data")],
+            [self.exp1.urn, self.exp2.urn, self.exp3.urn],
+        )
 
     def test_private_entries_for_user_have_private_in_name(self):
         user = UserFactory()
@@ -127,72 +78,131 @@ class TestSearchView(TestCase):
         self.exp1.save()
         self.scs1.save()
 
-        request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        request = self.factory.post(
+            self.path,
+            data=self.mock_data(),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         request.user = user
 
         response = views.search_view(request)
-        self.assertContains(response, "{} [Private]".format(self.exp1.urn))
-        self.assertContains(response, "{} [Private]".format(self.scs1.urn))
+        self.assertEqual(response.status_code, 200)
 
-    def test_search_empty_returns_all_public(self):
-        request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        data = json.loads(response.content)
+        self.assertEqual(
+            [record["urn_display"] for record in data.get("data")],
+            [f"{self.scs1.urn} [Private]", self.scs2.urn, self.scs3.urn],
         )
-        request.user = UserFactory()
-        response = views.search_view(request)
-
-        self.assertContains(response, self.exp1.urn)
-        self.assertContains(response, self.exp2.urn)
-        self.assertContains(response, self.exp3.urn)
-
-        self.assertContains(response, self.scs1.urn)
-        self.assertContains(response, self.scs2.urn)
-        self.assertContains(response, self.scs3.urn)
-
-    def test_search_shows_tmp_parent_if_user_not_contributor(self):
-        request = self.factory.get(
-            self.path, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        self.assertEqual(
+            [record["parent_urn_display"] for record in data.get("data")],
+            [f"{self.exp1.urn} [Private]", self.exp2.urn, self.exp3.urn],
         )
-        user = UserFactory()
-        request.user = user
-        response = views.search_view(request)
 
-        self.exp1.private = True
-
-        self.scs1.add_administrators(user)
-        self.scs1.private = True
-
-        self.assertContains(response, self.exp1.urn)
-        self.assertContains(response, self.scs1.urn)
-
-    def test_basic_search_delegates_to_basic_form(self):
-        request = self.factory.get(
-            self.path + "&search={}".format(self.exp1.urn),
+    def test_uses_search_panes_options(self):
+        data = self.mock_data(
+            {"searchPanes[target]": self.scs1.get_target().name}
+        )
+        request = self.factory.post(
+            self.path,
+            data=data,
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
+        request.user = None
 
-        request.user = UserFactory()
         response = views.search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertNotContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
+        self.assertEqual(response.status_code, 200)
 
-        self.assertContains(response, self.scs1.urn)
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        data = json.loads(response.content)
+        self.assertEqual(
+            [record["urn"] for record in data.get("data")],
+            [self.scs1.urn],
+        )
 
-    def test_adv_search_delegates_to_adv_form(self):
-        request = self.factory.get(
-            self.path + "&title={}".format(self.exp1.title),
+    def test_uses_datatables_search_options(self):
+        data = self.mock_data({"search[value]": self.scs1.urn})
+        request = self.factory.post(
+            self.path,
+            data=data,
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
-        request.user = UserFactory()
+        request.user = None
+
         response = views.search_view(request)
-        self.assertContains(response, self.exp1.urn)
-        self.assertNotContains(response, self.exp2.urn)
-        self.assertNotContains(response, self.exp3.urn)
-        self.assertNotContains(response, self.scs1.urn)
-        self.assertNotContains(response, self.scs2.urn)
-        self.assertNotContains(response, self.scs3.urn)
+        self.assertEqual(response.status_code, 200)
+
+        data = json.loads(response.content)
+        self.assertEqual(
+            [record["urn"] for record in data.get("data")],
+            [self.scs1.urn],
+        )
+
+    def test_pagination(self):
+        data = self.mock_data({"start": 1, "length": 1})
+        request = self.factory.post(
+            self.path,
+            data=data,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        request.user = None
+
+        response = views.search_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        data = json.loads(response.content)
+        self.assertEqual(
+            [record["urn"] for record in data.get("data")],
+            [self.scs2.urn],
+        )
+
+    def test_ordering(self):
+        data = self.mock_data(
+            {
+                "order[0][column]": "0",
+                "order[0][dir]": "desc",
+            }
+        )
+        request = self.factory.post(
+            self.path,
+            data=data,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        request.user = None
+
+        response = views.search_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        data = json.loads(response.content)
+        self.assertEqual(
+            [record["urn"] for record in data.get("data")],
+            [self.scs3.urn, self.scs2.urn, self.scs1.urn],
+        )
+
+    def test_formats_search_panes_options(self):
+        request = self.factory.post(
+            self.path,
+            data=self.mock_data(),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        request.user = None
+
+        response = views.search_view(request)
+        self.assertEqual(response.status_code, 200)
+
+        data = json.loads(response.content)
+        search_panes_data = data.get("searchPanes")["options"]
+
+        for scoreset in [self.scs1, self.scs2, self.scs3]:
+            self.assertTrue(
+                scoreset.get_target().name
+                in [r["value"] for r in search_panes_data["target"]]
+            )
+            self.assertTrue(
+                scoreset.get_target().category
+                in [r["value"] for r in search_panes_data["type"]]
+            )
+            self.assertTrue(
+                scoreset.get_target()
+                .get_primary_reference_map()
+                .format_reference_genome_organism_html()
+                in [r["value"] for r in search_panes_data["organism"]]
+            )

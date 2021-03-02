@@ -26,7 +26,7 @@ ExperimentQuerySet = Union[QuerySet, List[Experiment]]
 ScoreSetQuerySet = Union[QuerySet, List[ScoreSet]]
 
 
-def search_view(request):
+def search_view(request) -> JsonResponse:
     if request.is_ajax():
         try:
             data = process_search_request(request)
@@ -143,20 +143,20 @@ def format_datatables_search(request) -> Tuple[Form, Optional[Form]]:
 
     data = {}
     targets = [
-        target
+        str(target)
         for key, target in request.POST.items()
-        if "searchPanes[target]" in key
+        if ("searchPanes[target]" in key) and target
     ]
     target_types = [
-        target_type
+        str(target_type)
         for key, target_type in request.POST.items()
-        if "searchPanes[type]" in key
+        if ("searchPanes[type]" in key) and target_type
     ]
 
     organisms = [
-        organism.replace("<i>", "").replace("</i>", "")
+        str(organism).replace("<i>", "").replace("</i>", "")
         for key, organism in request.POST.items()
-        if "searchPanes[organism]" in key
+        if ("searchPanes[organism]" in key) and organism
     ]
 
     if targets:
@@ -194,7 +194,6 @@ def format_datatables_response(
     if page_num > paginator.num_pages:
         page_num = paginator.num_pages
     page: Page = paginator.page(page_num)
-    print(page.object_list.count())
 
     # JSON record data for data-tables
     data = []
