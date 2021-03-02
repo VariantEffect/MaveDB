@@ -11,7 +11,7 @@ from urn.validators import validate_mavedb_urn_variant
 from variant.validators import (
     validate_nt_variant,
     validate_pro_variant,
-    validate_tx_variant,
+    validate_splice_variant,
     validate_variant_json,
     validate_columns_match,
 )
@@ -94,9 +94,9 @@ class Variant(UrnModel):
 
     hgvs_nt : `str`, required.
         The nucleotide HGVS string belonging to the variant. Should be
-        'g' if hgvs_tx is also present.
+        'g' if hgvs_splice is also present.
 
-    hgvs_tx : `str`, required.
+    hgvs_splice : `str`, required.
         The transcript HGVS string belonging to the variant. Should use the
         'c/n' prefix.
 
@@ -130,8 +130,8 @@ class Variant(UrnModel):
         null=True, default=None, validators=[validate_nt_variant]
     )
 
-    hgvs_tx = models.TextField(
-        null=True, default=None, validators=[validate_tx_variant]
+    hgvs_splice = models.TextField(
+        null=True, default=None, validators=[validate_splice_variant]
     )
 
     hgvs_pro = models.TextField(
@@ -228,7 +228,7 @@ class Variant(UrnModel):
 
         return [
             constants.hgvs_nt_column,
-            constants.hgvs_tx_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
         ] + list(
             sorted(
@@ -254,8 +254,8 @@ class Variant(UrnModel):
         for column in columns:
             if column == constants.hgvs_nt_column:
                 result.append(self.hgvs_nt)
-            elif column == constants.hgvs_tx_column:
-                result.append(self.hgvs_tx)
+            elif column == constants.hgvs_splice_column:
+                result.append(self.hgvs_splice)
             elif column == constants.hgvs_pro_column:
                 result.append(self.hgvs_pro)
             else:

@@ -79,7 +79,7 @@ class VariantFactory(DjangoModelFactory):
     urn = None
     hgvs_nt = factory.LazyFunction(lambda: generate_hgvs("g"))
     hgvs_pro = factory.LazyFunction(lambda: generate_hgvs("p"))
-    hgvs_tx = factory.LazyFunction(lambda: generate_hgvs("c"))
+    hgvs_splice = factory.LazyFunction(lambda: generate_hgvs("c"))
     data = factory.LazyFunction(make_data)
 
     # Make sure always after data so that data columns are present on instance

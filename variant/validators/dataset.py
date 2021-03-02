@@ -27,7 +27,7 @@ class MaveDataset:
 
     class HGVSColumns:
         NUCLEOTIDE: str = dataset.constants.hgvs_nt_column
-        TRANSCRIPT: str = dataset.constants.hgvs_tx_column
+        TRANSCRIPT: str = dataset.constants.hgvs_splice_column
         PROTEIN: str = dataset.constants.hgvs_pro_column
 
         @classmethod
@@ -355,10 +355,12 @@ class MaveDataset:
         if self._column_is_null(self.HGVSColumns.NUCLEOTIDE):
             return self
 
-        defines_tx_hgvs = not self._column_is_null(self.HGVSColumns.TRANSCRIPT)
+        defines_transcript_variants = not self._column_is_null(
+            self.HGVSColumns.TRANSCRIPT
+        )
         validated_variants, prefixes, errors = self._validate_variants(
             column=self.HGVSColumns.NUCLEOTIDE,
-            tx_defined=defines_tx_hgvs,
+            splice_defined=defines_transcript_variants,
             targetseq=targetseq,
             relaxed_ordering=relaxed_ordering,
         )
@@ -370,7 +372,7 @@ class MaveDataset:
                 f"(prefix 'c.' or 'n.')"
             )
 
-        if prefixes == {"g"} and not defines_tx_hgvs:
+        if prefixes == {"g"} and not defines_transcript_variants:
             self._errors.append(
                 f"Transcript variants ('{self.HGVSColumns.TRANSCRIPT}' column) "
                 f"are required when specifying genomic variants "
@@ -487,7 +489,7 @@ class MaveDataset:
     def _validate_variants(
         self,
         column: str,
-        tx_defined: Optional[bool] = None,
+        splice_defined: Optional[bool] = None,
         targetseq: Optional[str] = None,
         relaxed_ordering: bool = False,
     ) -> Tuple[pd.Series, Set[str], List[str]]:
@@ -529,7 +531,7 @@ class MaveDataset:
                         variant=validated,
                         prefix=validated.prefix,
                         column=column,
-                        tx_defined=tx_defined,
+                        splice_defined=splice_defined,
                     )
                     if prefix_error:
                         errors.append(prefix_error)
@@ -554,12 +556,12 @@ class MaveDataset:
         return len(self._df[self._df[column].isna()]) == 0
 
     def _validate_variant_prefix_for_column(
-        self, variant: Variant, prefix: str, column: str, tx_defined: bool
+        self, variant: Variant, prefix: str, column: str, splice_defined: bool
     ) -> Optional[str]:
         prefix = prefix.lower()
 
         if column == self.HGVSColumns.NUCLEOTIDE:
-            if tx_defined:
+            if splice_defined:
                 if prefix not in "g":
                     return (
                         f"{column}: "

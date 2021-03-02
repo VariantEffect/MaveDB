@@ -19,14 +19,16 @@ class TestValidateHgvsString(TestCase):
         with self.assertRaises(ValueError):
             hgvs.validate_hgvs_string("c.1A>G", column="random")
 
-    def test_error_does_not_match_tx(self):
+    def test_error_does_not_match_splice(self):
         with self.assertRaises(ValidationError):
-            hgvs.validate_hgvs_string("g.G4L", column="tx")
+            hgvs.validate_hgvs_string("g.G4L", column="splice")
 
-    def test_error_nt_is_not_g_when_tx_present(self):
-        hgvs.validate_hgvs_string("c.1A>G", column="nt", tx_present=False)
+    def test_error_nt_is_not_g_when_splice_present(self):
+        hgvs.validate_hgvs_string("c.1A>G", column="nt", splice_present=False)
         with self.assertRaises(ValidationError):
-            hgvs.validate_hgvs_string("c.1A>G", column="nt", tx_present=True)
+            hgvs.validate_hgvs_string(
+                "c.1A>G", column="nt", splice_present=True
+            )
 
     def test_error_does_not_match_nt(self):
         with self.assertRaises(ValidationError):
@@ -43,7 +45,7 @@ class TestValidateHgvsString(TestCase):
             hgvs.validate_hgvs_string("_sy")
 
     def test_validates_valid_hgvs(self):
-        hgvs.validate_hgvs_string("c.1A>G", column="nt", tx_present=False)
-        hgvs.validate_hgvs_string("g.1A>G", column="nt", tx_present=True)
-        hgvs.validate_hgvs_string("c.1A>G", column="tx")
+        hgvs.validate_hgvs_string("c.1A>G", column="nt", splice_present=False)
+        hgvs.validate_hgvs_string("g.1A>G", column="nt", splice_present=True)
+        hgvs.validate_hgvs_string("c.1A>G", column="splice")
         hgvs.validate_hgvs_string("p.(=)", column="p")

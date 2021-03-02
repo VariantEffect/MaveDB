@@ -315,15 +315,15 @@ class TestFormatCSVRows(TestCase):
         for v, row in zip(vs, rows):
             self.assertEqual(v.hgvs_nt, row[constants.hgvs_nt_column])
 
-    def test_dicts_include_tx_hgvs(self):
+    def test_dicts_include_splice_hgvs(self):
         vs = [VariantFactory() for _ in range(5)]
         rows = views.format_csv_rows(
             vs,
-            columns=["score", constants.hgvs_tx_column],
+            columns=["score", constants.hgvs_splice_column],
             dtype=constants.variant_score_data,
         )
         for v, row in zip(vs, rows):
-            self.assertEqual(v.hgvs_tx, row[constants.hgvs_tx_column])
+            self.assertEqual(v.hgvs_splice, row[constants.hgvs_splice_column])
 
     def test_dicts_include_pro_hgvs(self):
         vs = [VariantFactory() for _ in range(5)]
@@ -421,7 +421,7 @@ class TestFormatResponse(TestCase):
         expected_columns = [
             "accession",
             constants.hgvs_nt_column,
-            constants.hgvs_tx_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
             "score",
             "se",
@@ -450,7 +450,7 @@ class TestFormatResponse(TestCase):
         expected_columns = [
             "accession",
             constants.hgvs_nt_column,
-            constants.hgvs_tx_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
             "count",
             "se",

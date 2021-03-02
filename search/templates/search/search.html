@@ -6,67 +6,26 @@
 {% block body %}
 
   <div id="search-content">
-    <div id="search-control">
-      <form class="mb-2" action="{% url 'search:search' %}" method="get">
-        <div class="input-group">
-          <input class="form-control" name="search" placeholder="BRCA1, Protein coding, Homo sapiens, ...">
-          <button class="btn btn-outline-dark white-button ml-1">
-            <i class="fa fa-search"></i>
-          </button>
-          <button id='adv-search'
-                  class="btn btn-outline-dark white-button ml-1"
-                  data-toggle="collapse"
-                  data-target="#search-options"
-                  type="button">
-            <i class="fas fa-cog"></i>
-          </button>
-        </div>
-      </form>
+    <div id="search-loading" class="text-center">
+      <p class="text-center">Loading search results...</p>
+      <i class="fas fa-spinner" style="font-size: 20px"></i>
     </div>
 
-    <div id="search-options" class="collapse fade mt-2" aria-hidden="true">
-      <div class="container card">
-        <div class="card-body">
-          <div class="card-header bg-white mb-2">
-            <h4 class="form-title"> Advanced search </h4>
-          </div>
+    <div id="search-error" class="text-center" style="display: none">
+      <p class="text-danger"></p>
+      <i class="far fa-frown" style="font-size: 32px"></i>
+    </div>
 
-          <div id="form-loading" class="text-center pt-3">
-            <p class="text-muted text-center">Populating form fields...</p>
-            <i class="fas fa-spinner"></i>
-          </div>
-
-          <form action="{% url 'search:search' %}" method="GET" id="adv-search-form">
-            {% include 'core/bs_neutral_form.html' with form=adv_search_form %}
-            <div class="card-footer bg-white">
-              <button class="btn btn-outline-dark float-right white-button"
-                      style="width: 150px;" type="submit">Search
-              </button>
-            </div>
-          </form>
-
-        </div> <!-- End card body -->
-      </div> <!-- End card -->
-    </div> <!-- end row -->
-    <hr>
-
-    <div id="table-wrapper" class="styled-table mt-4">
+    <div id="table-wrapper" class="styled-table" style="display: none">
       <div id="search-table-container" class="table-responsive">
-        <div id="search-loading" class="text-center">
-          <p class="text-muted text-center">Loading search results...</p>
-          <i class="fas fa-spinner" style="font-size: 20px"></i>
-          <i class="far fa-frown" style="display: none; font-size: 32px"></i>
-        </div>
-        <table id="search-table" class="styled-table table table-hover display"
-               style="width: 100%; display: none">
+        <table id="search-table" class="styled-table table table-hover display" style="width: 100%">
           <thead>
           <tr>
-            <th style="max-width: 15px !important;"></th>
-            <th class="clickable-row">Urn</th>
-            <th class="clickable-row">Short description</th>
-            <th class="clickable-row">Target name</th>
-            <th class="clickable-row">Target type</th>
-            <th class="clickable-row">Target organisms</th>
+            <th>URN</th>
+            <th>Short description</th>
+            <th>Target name</th>
+            <th>Target type</th>
+            <th>Target organism</th>
           </tr>
           </thead>
         </table>
@@ -77,132 +36,185 @@
 
 {% block extra_scripts %}
   <script type="text/javascript">
-      $(document).ready(function () {
-          let select2_init = false;
-          $("#adv-search-form").hide();
-          $("#form-loading").show();
+    $(document).ready(function () {
+      $('#form-loading').show();
 
-          $("#adv-search").click(function (event) {
-              if (!select2_init) {
-                  setTimeout(function () {
-                      $("#form-loading").hide();
-                      $("#adv-search-form").show();
-                  }, 2000);
-                  setTimeout(function () {
-                      init_select2();
-                  }, 1000);
-                  select2_init = true;
-              }
-          });
+      var loading = true;
+      var table = $('#search-table').DataTable({
+        dom: 'Plfrtip',
+        fixedHeader: true,
+        displayLength: 10,
+        deferLoading: 0,
+        searchDelay: 500,
+        bAutoWidth: true,
+        order: [[0, 'asc']],
+        columns: [
+          {
+            data: 'urn',
+            width: '17.5%',
+            render: function (data, type, row) {
+              var urn = data;
+              var urn_display = row['urn_display'];
+              return ('<a href="' + '/' + urn + '">' + urn_display + '</a>');
+            },
+          },
+          { data: 'description', width: '40%' },
+          { data: 'target' },
+          { data: 'type' },
+          { data: 'organism' },
+        ],
+        columnDefs: [
+          { searchPanes: { show: false }, targets: [0] },
+          { searchPanes: { show: false }, targets: [1] },
+          { searchPanes: { show: true, cascadePanes: true }, targets: [2, 3, 4] },
+        ],
+        processing: true,
+        serverSide: true,
+        ajax: {
+          url: '/search/',
+          dataType: 'JSON',
+          type: 'POST',
+          error: function (xhr) {
+            console.error(xhr);
+            $('#search-loading').hide();
+            $('#table-wrapper').hide();
+            $('#search-error').show();
 
-          let path = window.location.href;
-          if (window.location.href.includes('/?')) {
-              path = path.concat('&json=true')
-          } else {
-              path = path.concat('?json=true');
-          }
-          $.get(path, function (response) {
-              let table = $("#search-table").DataTable({
-                  data: response,
-                  bAutoWidth: true,
-                  deferRender: true,
-                  columns: [
-                      {
-                          className: 'details-control',
-                          orderable: false,
-                          data: null,
-                          defaultContent: "",
-                          render: function () {
-                              return "<i class=\"fa fa-plus-square\" aria-hidden=\"true\"></i>";
-                          },
-                          width: "15px"
-                      },
-                      {data: "urn", width: "15%"},
-                      {data: "description", width: "40%"},
-                      {data: "target"},
-                      {data: "type"},
-                      {data: "organism"},
-                  ],
-                  order: [[1, 'asc']]
-              });
+            console.error(xhr.responseJSON.message);
+            $('#search-error p').text(xhr.responseJSON.message);
+          },
+        },
+        rowGroup: {
+          dataSrc: 'parent_urn',
+          startRender: function (rows, group) {
+            var experiment_urn = group;
+            var experiment_urn_display = rows.data()[0]['parent_urn_display'];
+            var experiment_description = rows.data()[0]['parent_description'];
 
-              // Add event listener for opening and closing details
-              $('#search-table tbody').on('click', 'td.details-control', function () {
-                  let tr = $(this).closest('tr');
-                  let row = table.row(tr);
-                  if (row.child.isShown()) {
-                      // This row is already open - close it
-                      row.child.hide();
-                      tr.removeClass('shown');
-                      var tdi = tr.find(".fa-minus-square");
-                      tdi.first().removeClass('fa-minus-square');
-                      tdi.first().addClass('fa-plus-square');
-                      row.child().removeClass("no-hover");
-                  } else {
-                      // Open this row
-                      row.child(format(row.data())).show();
-                      tr.addClass('shown');
-                      let tdi = tr.find(".fa-plus-square");
-                      tdi.first().removeClass('fa-plus-square');
-                      tdi.first().addClass('fa-minus-square');
-                      row.child().addClass("no-hover");
-                  }
-              });
-          }).done(function () {
-              $("#search-loading").hide();
-              $("#search-table").show().resize();
-          })
-              .fail(function (jqXHR, textStatus, errorThrown) {
-                  console.log(jqXHR.status);
-                  console.log(textStatus);
-                  console.log(errorThrown);
+            var link = ('<a href="' + '/' + experiment_urn + '">' + experiment_urn_display + '</a>');
 
-                  if (jqXHR.status === 500) {
-                      $("#search-loading p").text(
-                          "An internal server error has occurred during your search request."
-                      );
-                  } else {
-                      $("#search-loading p").text(
-                          "Your search request has failed with status " + jqXHR.status
-                      );
-                  }
-
-                  $("#search-loading .fa-spinner").remove();
-                  $("#search-loading .fa-frown").show()
-              });
-
-          $(".no-hover").parent().parent().addClass("no-hover");
+            return $('<tr/>').append(
+              '<td colSpan="1">' + link + '</td>').append('<td colSpan="4">' + experiment_description + '</td>',
+            );
+          },
+        },
+        initComplete: function () {
+          loading = false;
+          $('#search-loading').hide();
+          $('#table-wrapper').show().resize();
+          $('.btn.dtsp-clearAll').removeClass('btn-light').addClass('btn-danger');
+        },
       });
 
-      function format(rowData) {
-          let html = "";
-          for (let i = 0; i < rowData.children.length; i++) {
-              html += (
-                  "<tr>" +
-                  {#"<td></td>" +#}
-                  "<td>" + rowData.children[i].urn + "</td>" +
-                  "<td style=\"width: 40%\">" + rowData.children[i].description + "</td>" +
-                  "<td>" + rowData.children[i].target + "</td>" +
-                  "<td>" + rowData.children[i].type + "</td>" +
-                  "<td>" + rowData.children[i].organism + "</td>" +
-                  "</tr>"
-              );
+      console.log(table);
+
+      // Disable default search panes click handler and add own to also clear search input.
+      var clearSearchButton = $(".dtsp-clearAll");
+      clearSearchButton.off();
+      clearSearchButton.on().click(function () {
+        table.searchPanes().search('');
+        table.searchPanes.clearSelections();
+      });
+
+      var searchAfterLoad = setTimeout(function () {
+        var query = document.location.search.toString().
+          replaceAll('?', '').
+          replaceAll('+', ' ').
+          split('&').
+          map(function (item) { return item.split('=')[1]; }).
+          join(',');
+
+        if (!loading) {
+          table.search(unescape(query)).draw();
+          clearTimeout(searchAfterLoad);
+        }
+      }, 250);
+
+      // Configure search input delay to 750ms by setting a timeout. Turn datatables search off first and control
+      // searching manually below.
+      var searchInput = $('div.dataTables_filter input');
+      searchInput.off('keyup.DT input.DT');
+
+      var searchDelay = null;
+      searchInput.on('keyup', function () {
+        var search = $('div.dataTables_filter input').val();
+        clearTimeout(searchDelay);
+        searchDelay = setTimeout(function () {
+          if (search != null) {
+            table.search(search).draw();
           }
-          return html;
-      }
+        }, 750);
+      });
+
+    });
   </script>
 {% endblock %}
 
 {% block inline_styles %}
-    <style type="text/css">
-      .page-item.active .page-link {
-          background-color: #f7f7f7 !important;
-          color: rebeccapurple !important;
-          border-color: rebeccapurple !important;
-      }
+  <style type="text/css">
+    #search-table_length {
+      float: left;
+    }
 
-      .page-link {
-          color: rebeccapurple;
-      }
+    #search-table_filter {
+      float: right;
+    }
+
+    #search-table_processing {
+      position: fixed;
+    }
+
+    {# searchPanes overrides #}
+    div.dtsp-panes div.dtsp-title {
+      font-weight: bold;
+      left: 37px
+    }
+
+    .dtsp-panes {
+      margin: unset !important;
+      margin-bottom: 2rem !important;
+      border: unset !important;
+    }
+
+    .dtsp-nameCont {
+      cursor: pointer !important;
+    }
+
+    table.dataTable tr.dtrg-group td {
+      background-color: #eeeeee !important;
+    }
+
+    .btn.dtsp-clearAll {
+      right: 37px
+    }
+
+    {# DataTables overrides #}
+    tr.odd td:first-child,
+    tr.even td:first-child {
+      padding-left: 4em;
+    }
+
+    #search-table_processing {
+      z-index: 99;
+    }
+
+    #search-table_filter input {
+      width: 500px !important;
+    }
+
+
+    .table-responsive {
+      overflow-x: unset;
+    }
+
+    .page-item.active .page-link {
+      background-color: #f7f7f7 !important;
+      color: rebeccapurple !important;
+      border-color: rebeccapurple !important;
+    }
+
+    .page-link {
+      color: rebeccapurple;
+    }
   </style>
 {% endblock %}

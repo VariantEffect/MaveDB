@@ -7,7 +7,7 @@ from .dataset import (
 from .hgvs import (
     validate_nt_variant,
     validate_pro_variant,
-    validate_tx_variant,
+    validate_splice_variant,
     validate_hgvs_string,
 )
 
@@ -21,7 +21,7 @@ __all__ = [
     "variant",
     "hgvs",
     "validate_nt_variant",
-    "validate_tx_variant",
+    "validate_splice_variant",
     "validate_pro_variant",
     "validate_hgvs_string",
     "validate_columns_match",

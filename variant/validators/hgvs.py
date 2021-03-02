@@ -6,13 +6,17 @@ from django.core.exceptions import ValidationError
 from mavehgvs import Variant, MaveHgvsParseError
 
 from core.utilities import is_null
-from dataset.constants import hgvs_nt_column, hgvs_tx_column, hgvs_pro_column
+from dataset.constants import (
+    hgvs_nt_column,
+    hgvs_splice_column,
+    hgvs_pro_column,
+)
 
 
 def validate_hgvs_string(
     value: Union[str, bytes],
     column: Optional[str] = None,
-    tx_present: bool = False,
+    splice_present: bool = False,
     targetseq: Optional[str] = None,
     relaxed_ordering: bool = False,
 ) -> Optional[str]:
@@ -45,7 +49,7 @@ def validate_hgvs_string(
 
     prefix = variant.prefix.lower()
     if column in ("nt", hgvs_nt_column):
-        if tx_present:
+        if splice_present:
             if prefix not in "g":
                 raise ValidationError(
                     f"'{value}' is not a genomic variant (prefix 'g.'). "
@@ -58,7 +62,7 @@ def validate_hgvs_string(
                     f"'{value}' is not a transcript variant. The accepted "
                     f"transcript variant prefixes are 'c.', 'n.'."
                 )
-    elif column in ("tx", hgvs_tx_column):
+    elif column in ("splice", hgvs_splice_column):
         if prefix not in "cn":
             raise ValidationError(
                 f"'{value}' is not a transcript variant. The accepted "
@@ -72,12 +76,12 @@ def validate_hgvs_string(
             )
     else:
         raise ValueError(
-            "Unknown column '{}'. Expected nt, tx or p".format(column)
+            "Unknown column '{}'. Expected nt, splice or p".format(column)
         )
 
     return str(variant)
 
 
 validate_nt_variant = partial(validate_hgvs_string, **{"column": "nt"})
-validate_tx_variant = partial(validate_hgvs_string, **{"column": "tx"})
+validate_splice_variant = partial(validate_hgvs_string, **{"column": "splice"})
 validate_pro_variant = partial(validate_hgvs_string, **{"column": "p"})
