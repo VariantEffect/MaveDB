@@ -1,5 +1,7 @@
 import datetime
+from typing import Union, Optional
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from dataset import models
@@ -9,6 +11,8 @@ from urn.models import get_model_by_urn
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
 from .models.scoreset import ScoreSet
+
+User = get_user_model()
 
 
 @transaction.atomic
@@ -90,7 +94,10 @@ def delete_scoreset(scoreset):
 
 
 @transaction.atomic
-def publish_dataset(dataset, user=None):
+def publish_dataset(
+    dataset: Union[ExperimentSet, Experiment, ScoreSet],
+    user: Optional[User] = None,
+) -> Union[ExperimentSet, Experiment, ScoreSet]:
     """
     Publishes a dataset by traversing the parent tree. Assigns a public
     urn of the format <urn:mavedb:X>, sets the private bit and associated
@@ -100,25 +107,20 @@ def publish_dataset(dataset, user=None):
 
     Parameters
     ----------
-    dataset : `models.base.DatasetModel`
+    dataset : ExperimentSet | Experiment | ScoreSet
         The dataset to publish.
-    user :
+
+    user : User
         The user requesting the publish.
 
     Raises
     ------
     TypeError : Not a dataset
-
-    Returns
-    -------
-    `models.base.DatasetModel`
-        The published dataset.
     """
-    if not isinstance(dataset, models.base.DatasetModel):
+    if not isinstance(dataset, (ExperimentSet, Experiment, ScoreSet)):
         raise TypeError(
-            "Expected a DatasetModel instance. Found {}".format(
-                dataset.__class__.__name__
-            )
+            "Expected a ExperimentSet, Experiment or ScoreSet instance. "
+            "Found {}".format(dataset.__class__.__name__)
         )
 
     if not dataset.private or dataset.has_public_urn:
