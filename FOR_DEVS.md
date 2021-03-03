@@ -2,18 +2,14 @@
 Welcome to MaveDB; a place where all your wildest dreams will come true. This is a short guide on
 how to set up your development environment. Windows is not supported due to the Celery package not
 supporting Windows, but you could potentially use WSL2 to host your development environment and then
-develop from within Windows. However, at the time of writing this guide, my PC is apparently 'Not 
-yet ready for the Windows 10 2004 update', which contains the WSL2 update. Therefore, if you
-would like to proceed with a WSL2 development environment so you can play Origin games while 
-running the test suite, good luck.
+develop from within Windows. 
 
 ## Requirements
-Docker is great: you can run all sorts of software without cataclysmically destroying all your
-system package version dependencies. So, please install the following software:
+Please install the following software:
 
 - Docker
 - Docker Compose
-- geckodriver (required for tests)
+- geckodriver (optional, but required for running webtests)
 
 Consult the official documentation on how to do this. These may require the installation of 
 additional system packages on Linux/MacOS.
@@ -62,6 +58,10 @@ so you may ignore these.
 
 ## Docker
 
+To develop with a copy of the production database place you `*.dump` file under `docker/postgres/dumps/`, then in the 
+docker-compose file set the `MAVEDB_DUMP_FILE` environment variable to the name of your dump file. Postgres will restore 
+this dump file when the image is first created.
+
 Docker expects a few environment variables when running the database and broker services. The file
 `host_env.sh` contains a template for you to use with [direnv](https://direnv.net/) or copy into your
 profile directly. Do not modify this file since it is tracked by version control. The environment
@@ -81,26 +81,13 @@ Refresh your shell environment as these are referenced by the docker compose fil
 which, to run the development server and test suite, you'll need to start the services with:
 
 ```shell script
-docker-compose -f docker-compose-dev.yml up database broker
+docker-compose -f docker-compose-dev.yml up 
 ```
 
-Do this everytime you want to start working on the project, but only once per system login.
+## Local development 
 
-## Seeding the database
-Developing with a copy of the production database is not a half bad idea, since we can test on
-real data. Once you've done your initial database migrations for a fresh project run:
-
-```shell script
-docker exec -i \
-  "your docker-compose database container name" \
-  pg_restore -Fc \ 
-  -U ${MAVEDB_DB_USER} \
-  -d ${MAVEDB_DB_NAME} \
-  < "path to your database dump"
-```
-You can find your docker-compose database container name by typing `docker ps` in the terminal and
-looking for your postgres service. It should follow the format `<root folder>_database_1`. This should be run before 
-making migrations, otherwise the restore operation will not work. If you do not want to restore from a dump file, ignore this step.
+You can ignore this section if you are doing remote development within a docker container. This section is for those
+who are running the database and broker from Docker but are developing on the host system using a virtual environment.
 
 The following commands will initialize the database and set up the website. You will need to
 either add the option `--settings=settings.development` to each `manage.py` command so that
