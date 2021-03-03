@@ -17,9 +17,11 @@ from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.serializers import UserSerializer
 from core.utilities import is_null
 from dataset import models, filters, constants
+from dataset.forms.experiment import ExperimentForm
 from dataset.forms.scoreset import ScoreSetForm
 from dataset.mixins import DatasetPermissionMixin
 from dataset.models.experiment import Experiment
+from dataset.models.experimentset import ExperimentSet
 from dataset.serializers import (
     ExperimentSetSerializer,
     ExperimentSerializer,
@@ -140,15 +142,121 @@ class ExperimentSetViewset(DatasetListViewSet):
 
 
 class ExperimentViewset(DatasetListViewSet):
-    http_method_names = ("get",)
+    http_method_names = ("get", "post",)
     serializer_class = ExperimentSerializer
     filter_class = filters.ExperimentFilter
     model_class = models.experiment.Experiment
     queryset = models.experiment.Experiment.objects.all()
     lookup_field = "urn"
 
+    def create(self, request, format=None):
+        """
+        Format request.data into ScoreSetForm
+
+        request.data : QueryDict
+            request: JSON encoded as a string
+        """
+        @transaction.atomic
+        def post_save(experiment, user) -> None:
+            experiment.add_administrators(user)
+            experiment.parent.add_administrators(user)
+
+        def _fetch(needs_fetching, fetch_info):
+            new_dict = {}
+            for key in fetch_info.keys():
+                if key not in needs_fetching:
+                    raise ValueError(f"Payload did not contain needed key {key}.")
+                if needs_fetching[key] is None:
+                    continue
+                # Make a case-insensitive match by formatting the get key as
+                # KEY__iexact when fetching
+                get_field = fetch_info[key]['get_field']
+                fetch_iexact_key = f"{get_field}__iexact"
+                get_dict = {fetch_iexact_key: needs_fetching[key][get_field]}
+                new_dict[key] = fetch_info[key]['class'].objects.get(**get_dict).pk
+            return new_dict
+
+        def _parse_data(data, flat_keys, needs_fetching, fetch_info):
+            to_return = {}
+            for key in flat_keys:
+                data_value = data.get(key, None)
+                if not data_value:
+                    continue
+                to_return[key] = data_value
+            to_return.update(_fetch(needs_fetching, fetch_info))
+            return to_return
+
+        def _parse_experiment_data(data):
+            flat_keys = [
+                'title',
+                'short_description',
+                'abstract_text',
+                'method_text',
+                'keywords',
+                'doi_ids',
+                'sra_ids',
+                'pubmed_ids',
+            ]
+            experimentset = {
+                'urn': data.get('experimentset', None)
+            } if data.get('experimentset', None) else None
+            needs_fetching = {
+                'experimentset': experimentset
+            }
+            fetch_info = {
+                'experimentset': {
+                    'class': ExperimentSet,
+                    'get_field': 'urn'
+                },
+            }
+            return _parse_data(data, flat_keys, needs_fetching, fetch_info)
+
+        user, _ = authenticate(request)
+        experiment_request_data = json.loads(request.POST['request'])
+
+        try:
+            experiment_data = _parse_experiment_data(experiment_request_data)
+        except Exception as e:
+            response_data = {
+                'status': 'Bad request.',
+                'message': 'Could not parse data correctly.',
+                'parse_error': repr(e)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            experiment_form = ExperimentForm(data=experiment_data, user=user)
+        except Exception as e:
+            response_data = {
+                'status': 'Bad request',
+                'message': 'Could not create forms correctly with the given data.',
+                'form_creation_error': repr(e)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        if experiment_form.errors:
+            response_data = {
+                'status': 'Bad request',
+                'message': 'Experiment form was invalid.',
+                'forms_invalid_error': experiment_form.errors.as_json()
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            experiment: Experiment = experiment_form.save(commit=True)
+            post_save(experiment, user)
+        except Exception as e:
+            response_data = {
+                'status': 'Bad request',
+                'message': 'Experiment could not be created with the given data.',
+                'scoreset_creation_error': repr(e)
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        return HttpResponse(status=204)
+
 class ScoreSetViewset(DatasetListViewSet):
-    http_method_names = ("get", 'post',)
+    http_method_names = ("get", "post",)
     serializer_class = ScoreSetSerializer
     filter_class = filters.ScoreSetFilter
     model_class = models.scoreset.ScoreSet
@@ -301,18 +409,19 @@ class ScoreSetViewset(DatasetListViewSet):
                 'abstract_text',
                 'method_text',
                 'keywords',
+                'meta_analysis_for',
+                'data_usage_policy',
                 'doi_ids',
                 'sra_ids',
                 'pubmed_ids',
-                'meta_analysis_for',
-                'data_usage_policy'
             ]
+            experiment = {
+                'urn': data.get('experiment', None)
+            } if data.get('experiment', None) else None
             needs_fetching = {
-                'experiment': {
-                    'urn': data.get('experiment', None)
-                },
+                'experiment': experiment,
                 'licence': data.get('licence', None),
-                'replaces': data.get('replaces', None)
+                'replaces': data.get('replaces', None),
             }
             fetch_info = {
                 'experiment': {
@@ -326,7 +435,7 @@ class ScoreSetViewset(DatasetListViewSet):
                 'replaces': {
                     'class': ScoreSet,
                     'get_field': 'urn'
-                }
+                },
             }
             return _parse_data(data, flat_keys, needs_fetching, fetch_info)
 
