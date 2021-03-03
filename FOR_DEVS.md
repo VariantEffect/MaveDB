@@ -63,7 +63,7 @@ docker-compose file set the `MAVEDB_DUMP_FILE` environment variable to the name 
 this dump file when the image is first created.
 
 Docker expects a few environment variables when running the database and broker services. The file
-`host_env.sh` contains a template for you to use with [direnv](https://direnv.net/) or copy into your
+`template.envrc` contains a template for you to use with [direnv](https://direnv.net/) or copy into your
 profile directly. Do not modify this file since it is tracked by version control. The environment
 variables needed by the development environment are:
 
