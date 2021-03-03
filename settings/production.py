@@ -11,10 +11,7 @@ ALLOWED_HOSTS += ["www.mavedb.org", "mavedb.org"]
 
 # Email these users whenever an exception is raised causing a 500 error.
 # This will email the stack trace.
-ADMINS = [
-    ("Alan", "alan.rubin@wehi.edu.au"),
-    ("Daniel", "esposito.d@wehi.edu.au"),
-]
+ADMINS = [("Alan", "alan.rubin@wehi.edu.au")]
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
