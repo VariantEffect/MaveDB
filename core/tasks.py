@@ -84,7 +84,12 @@ class BaseTask(Task):
         )
 
     def delay(self, *args, **kwargs):
-        django_logger.info(f"Applying delayed celery function '{self.name}'")
+        if hasattr(self, "name"):
+            django_logger.info(
+                f"Applying delayed celery function '{self.name}'"
+            )
+        else:
+            django_logger.info(f"Applying delayed celery function '{self}'")
         return super().delay(*args, **kwargs)
 
     @staticmethod
