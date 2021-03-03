@@ -5,7 +5,6 @@ ARG DJANGO_REQUIREMENTS=production
 RUN echo "Requirements: ${DJANGO_REQUIREMENTS}.txt"
 
 ENV PYTHONUNBUFFERED 1
-ENV COMMIT_HASH ${MAVEDB_COMMIT_HASH}
 ENV DJANGO_REQUIREMENTS ${DJANGO_REQUIREMENTS}
 
 ###############################################################################

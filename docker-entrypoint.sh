@@ -2,8 +2,6 @@
 set -e
 
 echo "Spinning up image with release tag '${APP_VERSION}'"
-echo "Version based on commit '${COMMIT_HASH}'"
-
 ###############################################################################
 # Function definitions
 ###############################################################################
