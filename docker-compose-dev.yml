@@ -18,15 +18,18 @@ services:
       - "8000:8000"
 
   database:
-    image: postgres:9.6
+    build:
+      context: docker/postgres
     ports:
       - $MAVEDB_DB_PORT:5432
     volumes:
-      - dev-database-data:/var/lib/postgresql/data
+      - database-data:/var/lib/postgresql/data
+      - ./docker/postgres/dumps:/home/dumps:ro
     environment:
       POSTGRES_USER: $MAVEDB_DB_USER
       POSTGRES_PASSWORD: $MAVEDB_DB_PASSWORD
       POSTGRES_DB: $MAVEDB_DB_NAME
+      MAVEDB_DUMP_FILE: "mavedb_2020_07_28.dump"
 
   broker:
     image: rabbitmq:3.8.3
@@ -34,4 +37,4 @@ services:
       - $MAVEDB_BROKER_PORT:5672
 
 volumes:
-  dev-database-data:
+  database-data:

@@ -2,11 +2,10 @@ version: "3"
 
 services:
   app:
-    image: mavedb/production:${MAVEDB_RELEASE_TAG}
+    image: mavedb/mavedb:${MAVEDB_RELEASE_TAG}
     volumes:
       - celery-logs:/var/log/celery/
       - app-logs:/srv/app/logs/
-      - media-files:/srv/app/media/
       - static-files:/srv/app/static
     env_file:
       - settings/.settings-production.env
@@ -16,15 +15,18 @@ services:
       - DJANGO_SETTINGS_MODULE=settings.production
 
   database:
-    image: postgres:9.6
+    build:
+      context: docker/postgres
     ports:
       - $MAVEDB_DB_PORT:5432
     volumes:
       - database-data:/var/lib/postgresql/data
+      - ./docker/postgres/dumps:/home/dumps:ro
     environment:
       POSTGRES_USER: $MAVEDB_DB_USER
       POSTGRES_PASSWORD: $MAVEDB_DB_PASSWORD
       POSTGRES_DB: $MAVEDB_DB_NAME
+      MAVEDB_DUMP_FILE: "/home/dumps/mavedb_2020_07_28.dump""
 
   broker:
     image: rabbitmq:3.8.3
@@ -33,19 +35,17 @@ services:
 
   server:
     build:
-      context: ./nginx
+      context: docker/nginx
     ports:
-      - 8080:80
-      - 8443:443
+      - 8001:80
+      - 8002:443
     volumes:
       - static-files:/srv/app/static/
-      - media-files:/srv/app/media/
       - server-logs:/var/log/nginx/
 
 volumes:
   celery-logs:
   app-logs:
   static-files:
-  media-files:
   server-logs:
   database-data:
