@@ -6,7 +6,6 @@ export MAVEDB_BROKER_PORT=5673
 
 # Production only settings
 export MAVEDB_RELEASE_TAG=
-export MAVEDB_RUN_TESTS=
 
 # Shell
 export DJANGO_SETTINGS_MODULE=settings.development
