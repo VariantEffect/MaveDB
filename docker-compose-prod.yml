@@ -26,7 +26,7 @@ services:
       POSTGRES_USER: $MAVEDB_DB_USER
       POSTGRES_PASSWORD: $MAVEDB_DB_PASSWORD
       POSTGRES_DB: $MAVEDB_DB_NAME
-      MAVEDB_DUMP_FILE: "/home/dumps/mavedb_2020_07_28.dump""
+      MAVEDB_DUMP_FILE: "/home/dumps/mavedb_2020_07_28.dump"
 
   broker:
     image: rabbitmq:3.8.3
