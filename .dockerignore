@@ -1,0 +1,91 @@
+venv/
+sphinx-venv/
+.envrc
+.env
+*.pyc
+debug.log
+.pytest_cache/*
+docs/build
+*.env
+*.envrc
+geckodriver.log
+*.pyc
+.sql
+
+# GitHub
+.gitignore
+.git/
+
+# Docker
+.dockeringore
+docker-compose-dev.yml
+docker-compose-prod.yml
+Dockerfile
+docker/
+
+# vscode
+.vscode/
+.idea/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+bin/
+docs/docs/build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# mypy
+.mypy_cache/*
+
+# postgres
+*.dump
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Django stuff:
+*.log
+*.pot
+staticfiles/
+/static/
+/media/
+
+# Sphinx documentation
+docs/_build/
+
+# Ignore secrets
+secrets.json
+.settings-*.env
+
+/.ipynb_checkpoints/regex-test-checkpoint.ipynb
+*-checkpoint.ipynb
+.ipynb_checkpoints/
+/uml.pdf
+/uml.dot
+/cprofile/
+cprofile/*
+logs/
+default/
