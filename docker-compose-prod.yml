@@ -37,8 +37,8 @@ services:
     build:
       context: docker/nginx
     ports:
-      - 8001:80
-      - 8002:443
+      - 80:80
+      - 443:443
     volumes:
       - static-files:/srv/app/static/
       - server-logs:/var/log/nginx/
