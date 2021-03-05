@@ -14,6 +14,13 @@ FROM base as builder
 
 ENV APP_USER=mavedb
 
+# Update the default application repository sources list and install
+# required dependencies
+RUN useradd -m ${APP_USER}
+RUN apt-get update && apt-get -y upgrade
+RUN apt-get install -y build-essential
+RUN apt-get install -y git wget curl pandoc
+
 # Local directory with project source
 ENV HOST_SRC=.
 # Directory in container where web app will live
@@ -42,17 +49,10 @@ ENV APP_STATIC=${APP_SOURCE}/static
 RUN mkdir -p ${APP_STATIC}
 
 # Set up celery logging locations
-ENV CELERY_LOG_DIR /var/log/celery/
-ENV CELERY_PID_DIR /var/run/celery/
+ENV CELERY_LOG_DIR /var/log/celery
+ENV CELERY_PID_DIR /var/run/celery
 RUN mkdir -p ${CELERY_LOG_DIR}
 RUN mkdir -p ${CELERY_PID_DIR}
-
-# Update the default application repository sources list and install
-# required dependencies
-RUN useradd -m ${APP_USER}
-RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y build-essential
-RUN apt-get install -y git wget curl pandoc
 
 # Create application subdirectories
 WORKDIR ${APP_SOURCE}
