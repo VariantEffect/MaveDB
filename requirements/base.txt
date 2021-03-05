@@ -1,4 +1,4 @@
-django==1.11.23
+django==1.11
 dj-database-url==0.5.0
 django-braces==1.13.0
 django-extensions==2.0.7
@@ -14,7 +14,7 @@ django-tracking2==0.5.0
 social-auth-app-django==2.1.0
 tablib==0.13.0
 factory-boy==2.11.1
-celery==4.1.1
+celery==4.4.6
 pypandoc==1.4
 Faker==0.8.15
 coverage==4.5.1
