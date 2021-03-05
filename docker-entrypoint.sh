@@ -29,7 +29,7 @@ except psycopg2.OperationalError as e:
     sys.stderr.write(str(e))
     raise e
 
-sys.stdout.write("Connection successful")
+sys.stdout.write("Connection successful\n")
 END
 }
 
@@ -76,7 +76,7 @@ while attempt < 3:
   try:
     inspection = celery_app.control.inspect().registered_tasks()
     if inspection is None:
-      sys.stdout.write("No response. Sleeping.")
+      sys.stdout.write("No response. Sleeping\n")
       time.sleep(5)
     else:
       tasks = list(inspection.items())[0][1]
@@ -93,7 +93,7 @@ from core.tasks import health_check
 result = health_check.delay(1, 2).get()
 assert result == 3, "Expected 3 as the result but '{}' was returned".format(result)
 
-sys.stdout.write("Celery has correctly initialized!")
+sys.stdout.write("Celery has correctly initialized!\n")
 END
 }
 
@@ -102,19 +102,22 @@ END
 ###############################################################################
 sleep 10
 
+echo "Checking database"
 until database_ready; do
-  >&2 echo "MaveDB database is unavailable - sleeping"
+  >&2 echo "Database is unavailable - sleeping"
   sleep 1
 done
->&2 echo "MaveDB database is up - checking broker"
+>&2 echo "Database is ready"
 
+echo "Checking broker"
 until broker_ready; do
-  >&2 echo "Broker connection is unavailable - sleeping"
+  >&2 echo "Broker is unavailable - sleeping"
   sleep 1
 done
->&2 echo "Broker is up"
+>&2 echo "Broker is ready"
 
 echo "Starting Celery worker."
+find "${CELERY_PID_DIR}" -name '*.pid' -delete
 celery multi start "${CELERY_NODES}" \
   -A "${CELERY_PROJECT}" \
   --concurrency="${CELERY_CONCURRENCY}" \
@@ -122,11 +125,12 @@ celery multi start "${CELERY_NODES}" \
   --pidfile="${CELERY_PID_DIR}/%n.pid" \
   --logfile="${CELERY_LOG_DIR}/%n%I.log"
 
-echo "Checking if Celery worker has been initialized correctly."
-if [ ! "$(celery_has_initialized)" ]; then
-    echo "Failed to inspect registered tasks or run debug tasks. See Celery logs for details."
-    exit 1
-fi
+echo "Checking Celery"
+until celery_has_initialized; do
+  >&2 echo "Could not check registered Celery tasks - sleeping"
+  sleep 1
+done
+>&2 echo "Celery is ready"
 
 ###############################################################################
 # Web project init
