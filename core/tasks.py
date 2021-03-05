@@ -71,7 +71,7 @@ class BaseTask(Task):
         shadow=None,
         **options,
     ):
-        django_logger.info(f"Applying async celery function '{self.name}'")
+        django_logger.info(f"Applying async celery function '{self}'")
         return super().apply_async(
             args=args,
             kwargs=kwargs,
@@ -84,13 +84,18 @@ class BaseTask(Task):
         )
 
     def delay(self, *args, **kwargs):
-        if hasattr(self, "name"):
-            django_logger.info(
-                f"Applying delayed celery function '{self.name}'"
-            )
-        else:
-            django_logger.info(f"Applying delayed celery function '{self}'")
-        return super().delay(*args, **kwargs)
+        """Star argument version of :meth:`apply_async`.
+
+        Does not support the extra options enabled by :meth:`apply_async`.
+
+        Arguments:
+            *args (Any): Positional arguments passed on to the task.
+            **kwargs (Any): Keyword arguments passed on to the task.
+        Returns:
+            celery.result.AsyncResult: Future promise.
+        """
+        django_logger.info(f"Applying delayed celery function '{self}'")
+        return self.apply_async(args, kwargs)
 
     @staticmethod
     def get_user(user):
