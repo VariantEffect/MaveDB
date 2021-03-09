@@ -23,7 +23,7 @@ services:
       - $MAVEDB_DB_PORT:5432
     volumes:
       - database-data:/var/lib/postgresql/data
-      - ./docker/postgres/dumps:/home/dumps:ro
+      - $PWD/docker/postgres/dumps:/home/dumps
     environment:
       POSTGRES_USER: $MAVEDB_DB_USER
       POSTGRES_PASSWORD: $MAVEDB_DB_PASSWORD
@@ -45,7 +45,7 @@ services:
     volumes:
       - static-files:/srv/app/static/
       - server-logs:/var/log/nginx/
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - $PWD/nginx.conf:/etc/nginx/conf.d/default.conf
       - $MAVEDB_SSL_CERTS_DIR:/etc/nginx/certs
 
 volumes:
