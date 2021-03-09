@@ -30,11 +30,12 @@ export MAVEDB_SSL_CERTS_DIR="absolute directory to SSL certificates for MaveDB"
 ```
 
 ### Nginx
-If you have SSL certificates available for MaveDB, name them `mavedb.crt` and `mavedb.key`. Place these in a safe 
-directory and set the environment variable `MAVEDB_SSL_CERTS_DIR` in your `.envrc`. A template conf file has been placed
-under `docker/nginx/nginx.conf`. Copy this file into the root directory and customise as needed, such as specifying 
-additional SSL options. It has been pre-configured to proxy pass incoming requests to the nginx container to the Django 
-application running via the `app` container. This file will be mounted into the nginx container upon starting up.
+If you have SSL certificates available for MaveDB, name them `mavedb.cert` and `mavedb.key`. Place these in any directory 
+(default is `docker/nginx/ssl`) and set the environment variable `MAVEDB_SSL_CERTS_DIR` in your `.envrc`. A template 
+conf file has been placed under `docker/nginx/nginx.conf`. Copy this file into the root directory and customise as 
+needed, such as specifying additional SSL options. It has been pre-configured to proxy pass incoming requests to the 
+nginx container to the Django application running via the `app` container. This file will be mounted into the nginx 
+container upon starting up.
 
 ### Postgres
 You can restore a previous database dump file when creating the Postgres container for the first time (or the first time
