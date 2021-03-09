@@ -26,12 +26,12 @@ export MAVEDB_RELEASE_TAG=latest
 export MAVEDB_DUMP_FILE="mavedb_2020_07_28.dump"
 
 # Nginx SSL certs
-export MAVEDB_SSL_CERTS_DIR="absolute directory to SSL certificates for MaveDB"
+export MAVEDB_SSL_CERTS_DIR=docker/nginx/ssl
 ```
 
 ### Nginx
 If you have SSL certificates available for MaveDB, name them `mavedb.cert` and `mavedb.key`. Place these in any directory 
-(default is `docker/nginx/ssl`) and set the environment variable `MAVEDB_SSL_CERTS_DIR` in your `.envrc`. A template 
+(default is `docker/nginx/ssl/`) and set the environment variable `MAVEDB_SSL_CERTS_DIR` in your `.envrc`. A template 
 conf file has been placed under `docker/nginx/nginx.conf`. Copy this file into the root directory and customise as 
 needed, such as specifying additional SSL options. It has been pre-configured to proxy pass incoming requests to the 
 nginx container to the Django application running via the `app` container. This file will be mounted into the nginx 
@@ -71,7 +71,7 @@ APP_ORCID_KEY="<ORCID app key from your ORCID developer account>"
 APP_NCBI_API_KEY="<NCBI api key from your NCBI account, leave blank if you don't have one>"
 APP_API_BASE_URL="https://mavedb.org/api"
 APP_BASE_URL="https://mavedb.org"
-APP_ALLOWED_HOSTS="localhost 127.0.0.1 https://mavedb.org"
+APP_ALLOWED_HOSTS="localhost 127.0.0.1 mavedb.org www.mavedb.org"
 
 # Celery settings
 CELERY_CONCURRENCY=4
