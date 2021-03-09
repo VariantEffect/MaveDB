@@ -12,6 +12,8 @@ geckodriver.log
 *.pyc
 .sql
 nginx.conf
+.cert
+.key
 
 # GitHub
 .gitignore

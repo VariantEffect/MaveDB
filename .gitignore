@@ -11,6 +11,8 @@ debug.log
 docs/build
 docs/mavehgvs
 nginx.conf
+*.cert
+*.key
 
 
 geckodriver.log
