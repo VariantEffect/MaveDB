@@ -48,6 +48,12 @@ Copy this file to a new file called `.envrc` which will be sourced by `direnv` o
 docker-compose service. Manually source it if you are not using `direnv`.
 
 
+## MaveHGVS docs
+Place the `mavehgvs` sphinx documentation files into `/docs/mavehgvs/`. The build path in `Makefile` and `make.bat`
+must be `../build/docs/mavehgvs/`. Once the application starts, this documentation will be collected in the static file
+directory and served at `https://mavedb.org/docs/mavehgvs`.
+
+
 ## Settings file
 The settings file is loaded by the docker-compose service into the application container. The database and broker 
 connection information must match those set above.
