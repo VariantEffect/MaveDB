@@ -1,0 +1,8 @@
+TAG=$1
+if [ -z $TAG ]; then
+  TAG=latest
+fi
+
+echo "Building and publishing tag $TAG"
+docker build . -t mavedb/mavedb:$TAG --no-cache \
+  && docker push mavedb/mavedb:$TAG
