@@ -292,7 +292,11 @@ def filter_visible(
         return instances
 
     if user is None or user_is_anonymous(user):
-        return instances.exclude(private=True)
+        result = instances.exclude(private=True)
+        if distinct:
+            return result.distinct()
+        else:
+            return result
 
     if instances.model is ExperimentSet:
         visible_meta = (
