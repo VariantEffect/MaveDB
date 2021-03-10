@@ -1,11 +1,11 @@
-TAG=$1
-if [ -z $TAG ]; then
-  TAG=latest
-fi
-
-NAME=$2
+NAME=$1
 if [ -z $NAME ]; then
   NAME=mavedb
+fi
+
+TAG=$2
+if [ -z $TAG ]; then
+  TAG=latest
 fi
 
 REPO=$3
