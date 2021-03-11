@@ -425,16 +425,20 @@ class MaveDataset:
             return self
 
         defines_nt = not self._column_is_null(self.HGVSColumns.NUCLEOTIDE)
+        defines_splice = not self._column_is_null(self.HGVSColumns.TRANSCRIPT)
 
-        protein_seq = targetseq
-        if targetseq and "dna" in infer_sequence_type(targetseq).lower():
-            protein_seq, remainder = translate_dna(targetseq)
-            if remainder:
-                self._errors.insert(
-                    0,
-                    "Protein variants could not be validated because the "
-                    "length of your target sequence is not a multiple of 3",
-                )
+        if defines_splice:
+            protein_seq = None
+        else:
+            protein_seq = targetseq
+            if targetseq and "dna" in infer_sequence_type(targetseq).lower():
+                protein_seq, remainder = translate_dna(targetseq)
+                if remainder:
+                    self._errors.insert(
+                        0,
+                        "Protein variants could not be validated because the "
+                        "length of your target sequence is not a multiple of 3",
+                    )
 
         validated_variants, _, errors = self._validate_variants(
             column=self.HGVSColumns.PROTEIN,
