@@ -64,11 +64,11 @@ APP_DB_PASSWORD="<your secure password from above>"
 APP_DB_USER=mave_admin
 APP_DB_NAME=mavedb
 APP_DB_HOST=database
-APP_DB_PORT="<PostgreSQL host port from above>"
+APP_DB_PORT=5432 # Internal port database container listens on, NOT the host port.
 
 # Rabbit MQ connection information
 APP_BROKER_HOST=broker
-APP_BROKER_PORT="<RabbitMQ host port from above>"
+APP_BROKER_PORT=5672 # Internal port broker container listens on, NOT the host port.
 
 # Django settings
 APP_SECRET_KEY="<a randomly generated secure secret key>"
@@ -77,7 +77,7 @@ APP_ORCID_KEY="<ORCID app key from your ORCID developer account>"
 APP_NCBI_API_KEY="<NCBI api key from your NCBI account, leave blank if you don't have one>"
 APP_API_BASE_URL="https://mavedb.org/api"
 APP_BASE_URL="https://mavedb.org"
-APP_ALLOWED_HOSTS="localhost 127.0.0.1 mavedb.org www.mavedb.org"
+APP_ALLOWED_HOSTS="localhost 127.0.0.1" # Allowed hosts in addition to www.mavedb.org and mavedb.org
 
 # Celery settings
 CELERY_CONCURRENCY=4
@@ -103,7 +103,13 @@ docker-compose -f docker-compose-prod.yml up -d
 
 Before the MaveDB web application service starts, it will wait for the database and broker services to first 
 successfully start, then it will perform basic checks to see if the Celery service within the `app` container has 
-initialised correctly. 
+initialised correctly. It might look like the container entrypoint is hanging, but these checks are normal. The entrypoint
+script will continuously poll the broker and database container until they are ready to accept connections before moving 
+on to running migrations and starting the server and celery daemon. If the script hangs for more than a few minutes, 
+check that:
+
+- Your connection environment variables and settings are correct
+- The broker/database container have not exited due to an error
 
 
 ## Tests
