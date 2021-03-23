@@ -19,8 +19,6 @@ services:
     build:
       context: docker/postgres
     restart: unless-stopped
-    ports:
-      - $MAVEDB_DB_PORT:5432
     volumes:
       - database-data:/var/lib/postgresql/data
       - $PWD/docker/postgres/dumps:/home/dumps
@@ -33,8 +31,6 @@ services:
   broker:
     image: rabbitmq:3.8.3
     restart: unless-stopped
-    ports:
-      - $MAVEDB_BROKER_PORT:5672
 
   server:
     image: nginx:latest
