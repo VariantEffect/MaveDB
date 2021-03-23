@@ -3,8 +3,11 @@ venv/
 sphinx-venv/
 *.pyc
 staticfiles/
-/static/
-/media/
+static/*
+!static/.gitkeep
+logs/*
+!logs/.gitkeep
+media/*
 .env
 debug.log
 .pytest_cache/*
@@ -13,7 +16,6 @@ docs/mavehgvs
 nginx.conf
 *.cert
 *.key
-
 
 geckodriver.log
 *.pyc
@@ -91,5 +93,4 @@ secrets.json
 /uml.dot
 /cprofile/
 cprofile/*
-logs/
 default/
