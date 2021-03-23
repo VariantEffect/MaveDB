@@ -11,11 +11,12 @@ services:
     env_file:
       - settings/.settings-production.env
     environment:
-      - APP_VERSION=$MAVEDB_RELEASE_TAG
+      - APP_VERSION=${MAVEDB_RELEASE_TAG}
       - ENVIRONMENT=production
       - DJANGO_SETTINGS_MODULE=settings.production
 
   database:
+    image: mavedb/postgres:prod
     build:
       context: docker/postgres
     restart: unless-stopped
