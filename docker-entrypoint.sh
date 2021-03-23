@@ -149,5 +149,5 @@ if [ "$ENVIRONMENT" = "production" ]; then
     --threads="${GUNICORN_THREADS}" \
     --worker-class=gthread
 else
-  python3 manage.py runserver 0.0.0.0:8000
+  tail -f /dev/null
 fi
