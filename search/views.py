@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django.http.response import JsonResponse
 from django.core.paginator import Paginator, Page
+from django.views.decorators.csrf import requires_csrf_token
 
 from dataset.models.experiment import Experiment
 from dataset.models.scoreset import ScoreSet
@@ -26,6 +27,7 @@ ExperimentQuerySet = Union[QuerySet, List[Experiment]]
 ScoreSetQuerySet = Union[QuerySet, List[ScoreSet]]
 
 
+@requires_csrf_token
 def search_view(request) -> JsonResponse:
     if request.is_ajax():
         try:
