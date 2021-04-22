@@ -80,8 +80,14 @@
             $('#table-wrapper').hide();
             $('#search-error').show();
 
-            console.error(xhr.responseJSON.message);
-            $('#search-error p').text(xhr.responseJSON.message);
+            if (xhr.responseJSON != null) {
+              console.error(xhr.responseJSON.message);
+              $('#search-error p').text(xhr.responseJSON.message);
+            } else {
+              console.error("SERVER ERROR: " +  xhr.responseText);
+              $('#search-error p').text("An internal server error has occurred.");
+            }
+
           },
         },
         rowGroup: {
