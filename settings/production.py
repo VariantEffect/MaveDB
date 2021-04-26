@@ -20,9 +20,12 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# See https://docs.djangoproject.com/en/0.11/ref/settings/#secure-proxy-ssl-header
+# for security risks related to SSL headers. Set these only if you are using the
+# NGINX proxy.
 # Enable use of forwarded scheme, host and port from nginx/apache when proxying
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Set up logging
 LOGGING = {
