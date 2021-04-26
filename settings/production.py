@@ -20,8 +20,9 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# Enable use of forwarded host and port from nginx/apache when proxying
+# Enable use of forwarded scheme, host and port from nginx/apache when proxying
 USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Set up logging
 LOGGING = {
