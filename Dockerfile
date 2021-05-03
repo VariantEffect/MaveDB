@@ -77,8 +77,8 @@ COPY ${HOST_SRC} .
 WORKDIR ${APP_SOURCE}/docs
 RUN make html
 
-WORKDIR ${APP_SOURCE}/docs/mavehgvs
-RUN make html
+#WORKDIR ${APP_SOURCE}/docs/mavehgvs
+#RUN make html; exit 0
 
 WORKDIR ${APP_SOURCE}
 
