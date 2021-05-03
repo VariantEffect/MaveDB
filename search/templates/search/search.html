@@ -76,6 +76,7 @@
           type: 'POST',
           error: function (xhr) {
             console.error(xhr);
+
             $('#search-loading').hide();
             $('#table-wrapper').hide();
             $('#search-error').show();
@@ -85,7 +86,14 @@
               $('#search-error p').text(xhr.responseJSON.message);
             } else {
               console.error("SERVER ERROR: " +  xhr.responseText);
-              $('#search-error p').text("An internal server error has occurred.");
+              if (xhr.status === 403) {
+                $('#search-error p').text("A security related error has occurred");
+              } else if (xhr.status === 500) {
+                $('#search-error p').text("An internal server error has occurred");
+              } else {
+                $('#search-error p').text("A error has occurred (code " + xhr.status + " )");
+              }
+
             }
 
           },
