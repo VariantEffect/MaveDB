@@ -33,8 +33,6 @@ ScoreSetQuerySet = Union[QuerySet, List[ScoreSet]]
 @ensure_csrf_cookie
 @requires_csrf_token
 def search_view(request) -> JsonResponse:
-    x = "double quote this"
-
     if request.is_ajax():
         try:
             data = process_search_request(request)
