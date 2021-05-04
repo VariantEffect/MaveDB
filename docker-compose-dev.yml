@@ -10,13 +10,14 @@ services:
     volumes:
       - $PWD:/srv/app
       - $PWD/logs:/var/log/celery
+      - /srv/app/docs
     env_file:
       - settings/.settings-development.env
     ports:
       - 8000:8000
     environment:
       - APP_VERSION=development
-      - ENVIRONMENT=development
+      - ENVIRONMENTdd=development
       - DJANGO_SETTINGS_MODULE=settings.development
 
   database:
