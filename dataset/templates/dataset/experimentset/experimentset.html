@@ -15,7 +15,7 @@
   </span>
   {% if visible_experiments|length %}
     <ul>
-      {% for child in visible_experiments %}
+      {% for child in visible_experiments|dictsort:"urn" %}
         <li class="child-list-item">
           <a style="display:block;" href="{% url 'dataset:experiment_detail' child.urn %}">
             <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
