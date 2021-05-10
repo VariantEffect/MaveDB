@@ -59,8 +59,8 @@ APP_NCBI_API_KEY="<NCBI api key from your NCBI account, leave blank if you don't
 Make sure to substitute in your database connection settings as specified in your environment variables in the previous
 step, Django application [secret key](https://docs.djangoproject.com/en/1.11/ref/settings/#secret-key), ORCID 
 developer information and NCBI api key (if you have one). To generate a new secret key you will need to run a python 
-in a MaveDB docker image, for example: `docker run -it --entrypoint python mavedb/mavedb:latest`, then
-copy the value output by:
+in a MaveDB docker image, for example: `docker run -it --entrypoint python mavedb/mavedb:latest`, then set `APP_SECRET_KEY`
+with the value output by:
 
 ```python
 from django.core.management.utils import get_random_secret_key  
