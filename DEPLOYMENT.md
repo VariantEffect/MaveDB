@@ -6,7 +6,7 @@ served on ports 80/443.
 ## Requirements
 - Docker
 - Docker-compose
-- direnv
+- direnv (optional)
 
 
 ## Environment variables
@@ -16,34 +16,26 @@ A template file called `template.envrc` exists in the root directory. For deploy
 export MAVEDB_DB_USER=mave_admin
 export MAVEDB_DB_PASSWORD="<a secure password>"
 export MAVEDB_DB_NAME=mavedb
-
-# Production only settings
 export MAVEDB_RELEASE_TAG=latest
-
-# Database restore
 export MAVEDB_DUMP_FILE="mavedb_2020_07_28.dump"
-
-# Nginx SSL certs (absolute path)
-export MAVEDB_SSL_CERTS_DIR="$PWD/docker/nginx/ssl"
 ```
 
+You can use `direnv` to automatically export these when you `cd` into the git repository, or place them in your 
+`~/.bash_profile`. If using `direnv`, copy and rename this file to `.envrc`. Make the appropriate changes to your
+password, release tag and database backup file variables.
+
 ### Nginx
-If you have SSL certificates available for MaveDB, name them `mavedb.cert` and `mavedb.key`. Place these in any directory 
-(default is `docker/nginx/ssl/`) and set the environment variable `MAVEDB_SSL_CERTS_DIR` in your `.envrc`. A template 
-conf file has been placed under `docker/nginx/nginx.conf`. Copy this file into the root directory and customise as 
-needed, such as specifying additional SSL options. It has been pre-configured to proxy pass incoming requests to the 
-nginx container to the Django application running via the `app` container. This file will be mounted into the nginx 
-container upon starting up.
+If you have SSL certificates available for MaveDB, name them `mavedb.cert` and `mavedb.key`. Place these in 
+`docker/nginx/ssl/`. A default conf file has been placed under `docker/nginx/nginx-default.conf`. Copy this file into 
+the same directory and rename it to `nginx.conf` and customise as needed, such as specifying additional SSL options. It 
+has been pre-configured to proxy pass incoming requests to the nginx container to the Django application running via 
+the `app` container. This file will be mounted into the nginx container upon starting up.
 
 ### Postgres
 You can restore a previous database dump file when creating the Postgres container for the first time (or the first time
 that docker-compose up is called.). If you do have one, copy it to `docker/postgres/dumps/`, then set the `MAVEDB_DUMP_FILE`
-environment variable in your `.envrc` file to this file name (just the file name, not path). If you want to perform another 
-restore, you will have to delete the container, image and database volume.
-
-### Conclusion
-Copy this file to a new file called `.envrc` which will be sourced by `direnv` on entering the directory to start the
-docker-compose service. Manually source it if you are not using `direnv`.
+environment variable in your shell profile or `.envrc` file to point to this file name (just the file name, not path). 
+If you want to perform another restore, you will have to delete the container, image and database volume.
 
 
 ## Settings file
