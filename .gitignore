@@ -13,7 +13,7 @@ debug.log
 .pytest_cache/*
 docs/build
 docs/mavehgvs
-nginx.conf
+docker/nginx/nginx.conf
 *.cert
 *.key
 
