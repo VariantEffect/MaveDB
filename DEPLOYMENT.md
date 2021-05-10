@@ -23,8 +23,8 @@ export MAVEDB_RELEASE_TAG=latest
 # Database restore
 export MAVEDB_DUMP_FILE="mavedb_2020_07_28.dump"
 
-# Nginx SSL certs
-export MAVEDB_SSL_CERTS_DIR=docker/nginx/ssl
+# Nginx SSL certs (absolute path)
+export MAVEDB_SSL_CERTS_DIR="$PWD/docker/nginx/ssl"
 ```
 
 ### Nginx
@@ -46,15 +46,10 @@ Copy this file to a new file called `.envrc` which will be sourced by `direnv` o
 docker-compose service. Manually source it if you are not using `direnv`.
 
 
-## MaveHGVS docs
-Place the `mavehgvs` sphinx documentation files into `/docs/mavehgvs/`. The build path in `Makefile` and `make.bat`
-must be `../build/docs/mavehgvs/`. Once the application starts, this documentation will be collected in the static file
-directory and served at `https://mavedb.org/docs/mavehgvs`.
-
-
 ## Settings file
 The settings file is loaded by the docker-compose service into the application container. The database and broker 
-connection information must match those set above.
+connection information must match those set above. Copy the template `settings-template.env` to `.settings-production.env`
+and in as below:
 
 ```dotenv
 # Database settings for postgres using internal docker port NOT host port
@@ -92,6 +87,8 @@ GUNICORN_BIND_HOST=0.0.0.0
 GUNICORN_BIND_PORT=8000
 ```
 
+Make sure to substitute in your database connection settings as specified in your environment variables in the previous
+step, Django application secret key, ORCID developer information and NCBI api key (if you have one)
 
 ## Docker-compose
 After the above steps are complete, you should be ready to deploy the production system. At the command line invoke:
