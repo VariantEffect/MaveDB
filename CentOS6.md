@@ -1,4 +1,4 @@
-# MAVEDB installation notes
+# MAVEDB installation notes [DEPRECATED]
 MAVEDB is Django website with Postgres as the backend. Its purpose is to allow 
 researchers to deposit and retrieve deep mutational scanning datasets. This file 
 provides step-by-step instructions for installing MAVEDB starting with the 
