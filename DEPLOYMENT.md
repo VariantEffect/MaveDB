@@ -41,46 +41,32 @@ If you want to perform another restore, you will have to delete the container, i
 ## Settings file
 The settings file is loaded by the docker-compose service into the application container. The database and broker 
 connection information must match those set above. Copy the template `settings/settings-template.env` to 
-`settings/.settings-production.env` and in as below:
+`settings/.settings-production.env`. Values you will need to modify:
 
 ```dotenv
-# Database settings for postgres using internal docker port NOT host port
-APP_DB_PASSWORD="<your secure password from above>"
+# Docker postgres settings matching previous step
+APP_DB_PASSWORD="abc123"
 APP_DB_USER=mave_admin
 APP_DB_NAME=mavedb
-APP_DB_HOST=database
-APP_DB_PORT=5432 
 
-# Rabbit MQ connection information using internal docker port NOT host port
-APP_BROKER_HOST=broker
-APP_BROKER_PORT=5672 
-
-# Django settings
+# Django encryption key, ORCID developer credentials, NCBI API key
 APP_SECRET_KEY="<a randomly generated secure secret key>"
 APP_ORCID_SECRET="<ORCID secret key from your ORCID developer account>"
 APP_ORCID_KEY="<ORCID app key from your ORCID developer account>"
 APP_NCBI_API_KEY="<NCBI api key from your NCBI account, leave blank if you don't have one>"
-APP_API_BASE_URL="https://mavedb.org/api"
-APP_BASE_URL="https://mavedb.org"
-# Allowed hosts in addition to hosts [www.mavedb.org, mavedb.org] specified in settings/production.py
-APP_ALLOWED_HOSTS="localhost 127.0.0.1" 
-
-# Celery settings
-CELERY_CONCURRENCY=4
-CELERY_LOG_LEVEL=INFO
-CELERY_NODES=worker1
-CELERY_PROJECT=mavedb
-
-# Gunicorn settings - ignored in development
-GUNICORN_FORWARDED_ALLOW_IPS=
-GUNICORN_WORKERS=2
-GUNICORN_THREADS=4
-GUNICORN_BIND_HOST=0.0.0.0
-GUNICORN_BIND_PORT=8000
 ```
 
 Make sure to substitute in your database connection settings as specified in your environment variables in the previous
-step, Django application secret key, ORCID developer information and NCBI api key (if you have one)
+step, Django application [secret key](https://docs.djangoproject.com/en/1.11/ref/settings/#secret-key), ORCID 
+developer information and NCBI api key (if you have one). To generate a new secret key you will need to run a python 
+in a MaveDB docker image, for example: `docker run -it --entrypoint python mavedb/mavedb:latest`, then
+copy the value output by:
+
+```python
+from django.core.management.utils import get_random_secret_key  
+
+get_random_secret_key()
+```
 
 ## Docker-compose
 After the above steps are complete, you should be ready to deploy the production system. At the command line invoke:
