@@ -40,8 +40,8 @@ If you want to perform another restore, you will have to delete the container, i
 
 ## Settings file
 The settings file is loaded by the docker-compose service into the application container. The database and broker 
-connection information must match those set above. Copy the template `settings-template.env` to `.settings-production.env`
-and in as below:
+connection information must match those set above. Copy the template `settings/settings-template.env` to 
+`settings/.settings-production.env` and in as below:
 
 ```dotenv
 # Database settings for postgres using internal docker port NOT host port
