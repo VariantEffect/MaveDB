@@ -1,5 +1,5 @@
-This guide will walk through deploying a dockerized version of MaveDB. Please clone the latest tag from the 
-[MaveDB](https://github.com/VariantEffect/mavedb/tags) github repository. This guide assumes that the website will be 
+This guide will walk through deploying a dockerized version of MaveDB. Please clone the latest tag from the
+[MaveDB](https://github.com/VariantEffect/mavedb/tags) github repository. This guide assumes that the website will be
 served on ports 80/443.
 
 
@@ -20,27 +20,27 @@ export MAVEDB_RELEASE_TAG=latest
 export MAVEDB_DUMP_FILE="mavedb_2020_07_28.dump"
 ```
 
-You can use `direnv` to automatically export these when you `cd` into the git repository, or place them in your 
+You can use `direnv` to automatically export these when you `cd` into the git repository, or place them in your
 `~/.bash_profile`. If using `direnv`, copy and rename this file to `.envrc`. Make the appropriate changes to your
 password, release tag and database backup file variables.
 
 ### Nginx
-If you have SSL certificates available for MaveDB, name them `mavedb.cert` and `mavedb.key`. Place these in 
-`docker/nginx/ssl/`. A default conf file has been placed under `docker/nginx/nginx-default.conf`. Copy this file into 
-the same directory and rename it to `nginx.conf` and customise as needed, such as specifying additional SSL options. It 
-has been pre-configured to proxy pass incoming requests to the nginx container to the Django application running via 
+If you have SSL certificates available for MaveDB, name them `mavedb.cert` and `mavedb.key`. Place these in
+`docker/nginx/ssl/`. A default conf file has been placed under `docker/nginx/nginx-default.conf`. Copy this file into
+the same directory and rename it to `nginx.conf` and customise as needed, such as specifying additional SSL options. It
+has been pre-configured to proxy pass incoming requests to the nginx container to the Django application running via
 the `app` container. This file will be mounted into the nginx container upon starting up.
 
 ### Postgres
 You can restore a previous database dump file when creating the Postgres container for the first time (or the first time
 that docker-compose up is called.). If you do have one, copy it to `docker/postgres/dumps/`, then set the `MAVEDB_DUMP_FILE`
-environment variable in your shell profile or `.envrc` file to point to this file name (just the file name, not path). 
+environment variable in your shell profile or `.envrc` file to point to this file name (just the file name, not path).
 If you want to perform another restore, you will have to delete the container, image and database volume.
 
 
 ## Settings file
-The settings file is loaded by the docker-compose service into the application container. The database and broker 
-connection information must match those set above. Copy the template `settings/settings-template.env` to 
+The settings file is loaded by the docker-compose service into the application container. The database and broker
+connection information must match those set above. Copy the template `settings/settings-template.env` to
 `settings/.settings-production.env`. Values you will need to modify:
 
 ```dotenv
@@ -57,13 +57,13 @@ APP_NCBI_API_KEY="<NCBI api key from your NCBI account, leave blank if you don't
 ```
 
 Make sure to substitute in your database connection settings as specified in your environment variables in the previous
-step, Django application [secret key](https://docs.djangoproject.com/en/1.11/ref/settings/#secret-key), ORCID 
-developer information and NCBI api key (if you have one). To generate a new secret key you will need to run a python 
+step, Django application [secret key](https://docs.djangoproject.com/en/1.11/ref/settings/#secret-key), ORCID
+developer information and NCBI api key (if you have one). To generate a new secret key you will need to run a python
 in a MaveDB docker image, for example: `docker run -it --entrypoint python mavedb/mavedb:latest`, then set `APP_SECRET_KEY`
 with the value output by:
 
 ```python
-from django.core.management.utils import get_random_secret_key  
+from django.core.management.utils import get_random_secret_key
 
 get_random_secret_key()
 ```
@@ -75,11 +75,11 @@ After the above steps are complete, you should be ready to deploy the production
 docker-compose -f docker-compose-prod.yml up -d
 ```
 
-Before the MaveDB web application service starts, it will wait for the database and broker services to first 
-successfully start, then it will perform basic checks to see if the Celery service within the `app` container has 
+Before the MaveDB web application service starts, it will wait for the database and broker services to first
+successfully start, then it will perform basic checks to see if the Celery service within the `app` container has
 initialised correctly. It might look like the container entrypoint is hanging, but these checks are normal. The entrypoint
-script will continuously poll the broker and database container until they are ready to accept connections before moving 
-on to running migrations and starting the server and celery daemon. If the script hangs for more than a few minutes, 
+script will continuously poll the broker and database container until they are ready to accept connections before moving
+on to running migrations and starting the server and celery daemon. If the script hangs for more than a few minutes,
 check that:
 
 - Your connection environment variables and settings are correct
@@ -106,13 +106,13 @@ docker exec -it <database-container-name> /bin/bash -c "pg_dump -U mave_admin -F
 ```
 
 This will write a new database dump file to the `docker/postgres/dumps` directory which is mounted into this container.
-You may need to adjust permissions on this file from your host machine since the container's user will have ownership 
+You may need to adjust permissions on this file from your host machine since the container's user will have ownership
 over this file.
 
 
 ## Troubleshooting
-If the web application has not started after a few minutes check the docker-compose logs in the `app` container. If you 
-see messages regarding the database or broker not being ready then check the logs in those containers. If you see a 
+If the web application has not started after a few minutes check the docker-compose logs in the `app` container. If you
+see messages regarding the database or broker not being ready then check the logs in those containers. If you see a
 message about the Celery service not being ready, there might have been an error during Celery's initialization. You can
 see the logs of a container using:
 
