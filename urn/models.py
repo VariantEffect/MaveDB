@@ -112,4 +112,4 @@ class UrnModel(TimeStampedModel):
 
     @property
     def has_public_urn(self):
-        return str(self.urn).startswith('urn:')
+        return str(self.urn).startswith("urn:")

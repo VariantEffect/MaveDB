@@ -25,7 +25,10 @@ class Command(BaseCommand):
                 if not ReferenceGenome.objects.filter(short_name=name).count():
                     genome_identifier = None
                     if accession:
-                        genome_identifier, _ = GenomeIdentifier.objects.get_or_create(
+                        (
+                            genome_identifier,
+                            _,
+                        ) = GenomeIdentifier.objects.get_or_create(
                             identifier=accession
                         )
                     params = {

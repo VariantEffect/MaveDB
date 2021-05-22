@@ -18,7 +18,7 @@ class SingletonMixin:
 
 
 class NestedEnumMixin:
-    """ Nested `Enum` of error messages relating to specific fields."""
+    """Nested `Enum` of error messages relating to specific fields."""
 
     def __getattr__(self, item):
         """Allows this `Enum` to be nested by customising attribute lookup."""

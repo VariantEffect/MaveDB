@@ -1,5 +1,5 @@
 """
-This module contains the definition for the forms used for registration and 
+This module contains the definition for the forms used for registration and
 account editing.
 """
 

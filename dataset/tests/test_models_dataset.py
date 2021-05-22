@@ -158,7 +158,7 @@ class TestDatasetModel(TestCase):
         self.assertIs(parent, instance.parent_for_user())
 
     def test_parent_for_user_returns_none_if_private_and_user_not_contributor(
-        self
+        self,
     ):
         parent = ExperimentSetFactory(private=True)
         instance = ExperimentFactory(experimentset=parent)

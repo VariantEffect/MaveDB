@@ -147,7 +147,7 @@ class TestScoreSet(TestCase):
         self.assertEqual(scs_2.previous_public_version, None)
 
     def test_previous_public_version_returns_previous_if_previous_is_public(
-        self
+        self,
     ):
         scs_1 = ScoreSetFactory(private=False)
         scs_2 = ScoreSetFactory(
@@ -212,7 +212,7 @@ class TestScoreSet(TestCase):
         )
 
     def test_get_version_returns_public_when_user_not_contributor_on_private_version(
-        self
+        self,
     ):
         instance1 = ScoreSetFactory(private=False)
         instance2 = ScoreSetFactory(replaces=instance1, private=True)
