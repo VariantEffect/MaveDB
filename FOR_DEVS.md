@@ -1,138 +1,137 @@
 # Quick start
-Welcome to MaveDB; a place where all your wildest dreams will come true. This is a short guide on
-how to set up your development environment. Windows is not supported due to the Celery package not
-supporting Windows, but you could potentially use WSL2 to host your development environment and then
-develop from within Windows. 
 
-## Requirements
+This is a short guide on how to set up your development environment using docker. This guide assumes you will be using
+PyCharm. If you are using another IDE/editor you will need to find a way to set up remote debugging and a remote
+interpreter. To start off, clone the repository and open it up in PyCharm. PyCharm can also clone repositories for you
+if you supply your login credentials/access token. Please make sure you switch to your feature branch, or the
+**develop** branch.
+
+# Requirements
+
 Please install the following software:
 
 - Docker
 - Docker Compose
-- geckodriver (optional, but required for running webtests)
+- Python 3
+- Git
 
-Consult the official documentation on how to do this. These may require the installation of 
-additional system packages on Linux/MacOS.
+# Pre-commit hooks
+Firstly create a virtual environment in root directory of the project (where `manage.py` is):
 
-## PyCharm
-This guide assumes you will be using PyCharm. If you are using another IDE/editor, good luck. To 
-start off, clone the repository and open it up in PyCharm. PyCharm can also clone repositories for
-you if you supply your login credentials. Please make sure you switch to your feature branch or
-the **develop** branch, unless you enjoy pushing updates right into production, you monster.
-
-If you're eager to start developing new features, you may notice a red bloodbath of squiggly lines 
-and PyCharm having a fit about uninstalled packages; not so fast, you'll need to setup up your 
-project interpreter first. Go to `File > Settings > Project: <branch> > Project Interpreter` and 
-click the gear icon at the top right, then click `Add`. Create a new virtual environment pointing to 
-Python 3.6> You can install additional python versions using 
-[pyenv](https://github.com/pyenv/pyenv-installer) or, if you're running Ubuntu, from the 
-[deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa).
-
-Done! Now open up a terminal within PyCharm and run `pip install -r requirements/development.txt`.
-Your environment is now ready to roll. 
-
-### Auto-formatting
-
-I recommend using a file watcher to format your code on save. Follow 
-[these instructions](https://black.readthedocs.io/en/stable/editor_integration.html) to get set up.
-The only addition is using the argument -l 79 to limit your line length to 79 characters.
-
-## Django setup
-
-If you plan on running the tests (which you should...) then you'll need to point PyCharm to the 
-correct settings file. Go to `File > Settings > Language & Frameworks > Django` and point the
-settings input box to `settings/development.py`.
-
-## Settings file
-
-This project now uses `.env` files to configure project settings like database connections, 
-allowed hosts, celery configuration etc. There is a template file waiting for you in the `settings`
-directory. Create a new file in the same directory called `.settings-development.env` and then copy 
-and paste the template into this file. The most important ones are the database and broker connection 
-settings. Please choose your favourite database password and username; they can be anything, so let 
-your wildest dreams become a reality! However, the database name must be `mavedb`. As for the broker 
-and database ports, I've used 5763 and 5433 respectively. You can change these to whatever your like, 
-as long as your remain consistent in the next step. The remaining settings can be adjusted to 
-whatever you like, except for `CELERY_PROJECT`. Gunicorn settings are not required for development 
-so you may ignore these.
-
-## Docker
-
-To develop with a copy of the production database place you `*.dump` file under `docker/postgres/dumps/`, then in the 
-docker-compose file set the `MAVEDB_DUMP_FILE` environment variable to the name of your dump file. Postgres will restore 
-this dump file when the image is first created.
-
-Docker expects a few environment variables when running the database and broker services. The file
-`template.envrc` contains a template for you to use with [direnv](https://direnv.net/) or copy into your
-profile directly. Do not modify this file since it is tracked by version control. The environment
-variables needed by the development environment are:
-
-```shell script
-export MAVEDB_DB_USER=whatever_you_set_from_last_step
-export MAVEDB_DB_PASSWORD=whatever_you_set_from_last_step
-export MAVEDB_DB_PORT=whatever_you_set_from_last_step
-export MAVEDB_DB_NAME=mavedb
-export MAVEDB_BROKER_PORT=whatever_you_set_from_last_step
+```shell
+virtualenv ./venv
 ```
 
-The remaining entries in this file are for the production database and can be ignored.
+If you're using ZSH as your shell, in your `~/.zshrc` file  add `virtualenv` to your plugins and insert 
+`export VIRTUAL_ENV_DISABLE_PROMPT=` as the last line. This is a magic trick that fixes issues with activating virtual 
+environments using ZSH. Activate the virtual environment and install the [pre-commit](https://pre-commit.com/) package:
 
-Refresh your shell environment as these are referenced by the docker compose file. Speaking of 
-which, to run the development server and test suite, you'll need to start the services with:
-
-```shell script
-docker-compose -f docker-compose-dev.yml up 
+```shell
+source ./venv/bin/activate && pip install pre-commit
 ```
 
-## Local development 
+Now run the `install` command via pre-commit to integrate into the git hook cycle and install the required hooks:
 
-You can ignore this section if you are doing remote development within a docker container. This section is for those
-who are running the database and broker from Docker but are developing on the host system using a virtual environment.
-
-The following commands will initialize the database and set up the website. You will need to
-either add the option `--settings=settings.development` to each `manage.py` command so that
-Django uses the right settings file, or add `export DJANGO_SETTINGS_MODULE=settings.development`
-to your .envrc (if you're using direnv) or bash profile.
-
-```shell script
-python manage.py migrate \
-  && python manage.py updatesiteinfo \
-  && python manage.py createlicences \
-  && python manage.py createreferences \
-  && python manage.py collectstatic
+```shell
+pre-commit install
 ```
 
-The following command will run the tests. Note that the Selenium tests may fail unexpectedly
-if the test browser is interacted with.
+To make sure it is running correctly, execute `pre-commit run` in your virtual environment. **IMPORTANT: make sure
+to activate your virtual environment before committing code.** The hooks will now run on every commit performing checks
+and formatting your code using [Black](https://github.com/psf/black). (TODO: Add pylint checks to the hooks config.)
 
-```shell script
+# Database dump
+We will restore a copy of the production database into your local development Postgres instance. Copy your database dump
+file to `./docker/postgres/dumps`.
+
+# Setting up docker-compose
+In the menu bar, go to `Run > Edit Configurations`. In the top left click the '+' button and look for 
+`Docker > Docker-compose` in the drop-down menu. In the `Name` input type in `MaveDB Development`. In the `Compose files`
+select input the `docker-compose-dev.yml` file. In the `Environment variables` input field click the far right `page` icon 
+and paste in the following block:
+
+```text
+MAVEDB_DB_USER=mave_admin;
+MAVEDB_DB_PASSWORD=abc123;
+MAVEDB_DB_NAME=mavedb;
+MAVEDB_DUMP_FILE=name_of_your_file_or_keep_this_field_blank.dump;
+COMPOSE_PROJECT_NAME=mavedb_dev
+```
+
+In the `Services` input box tick all the services using the small '+' button on the far right of the input box. Click
+`Apply` then `Ok`.
+
+# Settings file
+Copy `settings/.settings-template.env` to `settings/.settings-development.env`. Change the following values:
+
+```dotenv
+APP_DB_PASSWORD=abc123
+APP_DB_USER=mave_admin
+APP_DB_NAME=mavedb
+
+APP_SECRET_KEY="a-super-secret-key"
+APP_ORCID_SECRET=
+APP_ORCID_KEY=
+APP_NCBI_API_KEY=
+APP_API_BASE_URL=localhost:8000/api
+APP_BASE_URL=localhost:8000/
+APP_ALLOWED_HOSTS="localhost 127.0.0.1"
+```
+
+Make sure the `APP_DB_*` settings match your `MAVEDB_DB_*` settings from the previous docker-compose set-up step.
+
+# Remote interpreter
+Before setting up the remote interpreter via Docker-Compose, we will need to start the development compose service that
+we have set up. In the top menu bar, go to `Run > Run > MaveDB Development`. Look at the output in the `Services` tab
+at the bottom of the PyCharm window in the task bar. If you don't see it, in the top menu bar go to 
+`View > Tool Windows > Services`. If you are running this process for the first time, the images will need to be 
+built and this may take a few minutes. 
+
+Before the MaveDB web application service starts, it will wait for the database and broker services to first
+successfully start, then it will perform basic checks to see if the Celery service within the `app` container has
+initialised correctly. It might look like the container entrypoint is hanging (messages about sleeping), but these checks 
+are normal. The entrypoint script will continuously poll the broker and database container until they are ready to 
+accept connections before moving on to running migrations and starting the server and celery daemon. If the script 
+hangs for more than a few minutes, check that:
+
+- Your connection environment variables and settings are correct
+- The broker/database container have not exited due to an error
+
+Once the static files have been collected, the Docker-Compose service is ready. You can check the logs by clicking
+the side arrow next to `mavedb_dev` in the `Services` tab we just opened. Then click the arrow next to `app`. Now click
+on `mavedb_dev_app_1` and click at the `Log` tab in the window that just appeared to the right. It should say *I am ready!*.
+
+In the top menu bar, click `File > Settings` and search for 'Python Interpreter' in the search box. Click the gear icon
+to the far right and then click `Add`. Click the `Docker` menu item, and next to `Image name` select `mavedb/mavedb:dev`.
+This will take a few minutes to initialize, but once you're done PyCharm should recognise django imports and imports
+from other packages living in the docker image.
+
+## Tests and local server
+In your terminal, start a new remote shell session in the `app` container with:
+
+```shell
+docker exec -it mavedb_dev_app_1 /bin/bash
+```
+
+In this terminal, to run the unit tests:
+
+```shell
 python manage.py test --exclude-tags=webtest
 ```
 
-## Celery
-If you want to tes the upload functionality and offline task handling, you'll need to start a Celery process. In a 
-separate terminal run:
+To start a local development server run:
 
-```shell
-celery -A mavedb worker -l debug --concurrency=2
+```shell script
+python manage.py runserver 0.0.0.0:8000
 ```
 
-You should see output indicating registered tasks similar to:
+# Building a new image
 
-```shell
-[tasks]
-  . core.tasks.BaseTask
-  . core.tasks.health_check
-  . core.tasks.send_mail
-  . dataset.tasks.BaseCreateVariantsTask
-  . dataset.tasks.BaseDatasetTask
-  . dataset.tasks.BaseDeleteTask
-  . dataset.tasks.BasePublishTask
-  . dataset.tasks.create_variants
-  . dataset.tasks.delete_instance
-  . dataset.tasks.publish_scoreset
-```
+## MaveHGVS docs
+Place the `mavehgvs` sphinx documentation files into `/docs/mavehgvs/`. The build path in `Makefile` and `make.bat`
+must be `../build/docs/mavehgvs/`. Once the application starts, this documentation will be collected in the static file
+directory and served at `https://mavedb.org/docs/mavehgvs`.
 
-## Conclusion
-
-You're all set up and ready to go! Happy hacking!
+You can use the `./publish` script to build a new image and push it to the MaveDB [Docker Hub repository](https://hub.docker.com/). 
+The script takes the following arguments in the following order `IMAGE_NAME`, `TAG`, `REPOSITORY`', where `IMAGE_NAME` and `REPOSITORY`
+are both `mavedb` for now.
