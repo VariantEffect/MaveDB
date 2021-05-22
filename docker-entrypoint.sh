@@ -149,5 +149,6 @@ if [ "$ENVIRONMENT" = "production" ]; then
     --threads="${GUNICORN_THREADS}" \
     --worker-class=gthread
 else
+  echo "I am ready!"
   tail -f /dev/null
 fi
