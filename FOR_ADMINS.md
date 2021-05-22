@@ -9,8 +9,28 @@ python manage.py <command name> --settings=settings.<your settings module>
 You can omit the settings argument to use the default settings module (the
 module imported in `mavedb/settings.py`).
 
+## Django-reversion
+[Django-reversion](https://django-reversion.readthedocs.io/en/stable/) has been
+integrated with the site. This is a well maintained model versioning application
+that keeps a history of each instance in the database for models that have been
+registered. There are two key commands to run when deploying:
 
-# createlicences
+```python manage.py migrate
+python manage.py createinitialrevisions
+```
+
+To delete the recorded history for a particular model:
+
+```bash
+python manage.py deleterevisions <appname.modelname> --keep=[int] --days=[int]
+```
+
+This will keep anything from last *n* `days` or `keep` at least *n* history
+items.
+
+# Custom Commands
+
+## createlicences
 This command expects the file `data/main/licenes.json` and folder
 `data/main/licence_legal_code` containing the licence text for your licences.
 The `licences.json` file should follow the format below:
@@ -49,7 +69,7 @@ arguments. Existing licences matching `short_name` in the json file will be
 updated.
 
 
-# createreferences
+## createreferences
 This command expects the file `data/genome/reference_genomes.json` The
 `reference_genomes.json` file should follow the format below:
 
@@ -78,14 +98,12 @@ has no arguments. Only entries with a `short_name` that does not exist will be
 created. Existing instances will not be updated since other models rely on the
 `ReferenceGenome` table.
 
-
-# savereferences
+## savereferences
 This command will serialize the `ReferenceGenome` models into
 `data/genome/reference_genomes.json`. It will overwrite any existing file. This
 command accepts no arguments.
 
-
-# updatesiteinfo
+## updatesiteinfo
 Invoke this command to updat the `SiteInformation` singleton row. It expects
 the file `data/main/site_info.json` to exist with the following format:
 
@@ -106,14 +124,12 @@ You can specify markdown files on fields with the `md_` prefix (must be saved
 in the same directory as the JSON file) to set as the field text. This command
 accepts no arguments.
 
-
-# savesiteinfo
+## savesiteinfo
 This command will serialize the `SiteInformation` singleton into
 `data/main/site_info.json`. It will overwrite any existing file. This command
 accepts no arguments.
 
-
-# geterror
+## geterror
 This command displays a detailed celery error for a given `task_id` and `username`.
 The `username` specifies the submitting user's ORCID. This command must be
 invoked as:
@@ -122,14 +138,12 @@ invoked as:
 python manage.py geterror --task_id=<task-uuid> --username=<ORCID>
 ```
 
-
-# renamegroups
+## renamegroups
 This command renames the contributor groups for all `ScoreSets`, `ExperimentSets`
 and `Experiments`. It was used to correct a naming bug in production so it should
 not be necessary to run this again. This command accepts no arguments.
 
-
-# renumber
+## renumber
 This command renumbers the `Variants` in a `ScoreSet` starting from 1. It was
 used to correct a numbering bug in production so it should not be necessary to
 run this again. This command must be invoked as:
@@ -141,13 +155,11 @@ python manage.py renumber --urns=<space separated urns> --all
 Specify a list of space-separated urns to correct, or alternatively set the
 boolean flag `--all` to correct all `ScoreSets`.
 
-
-# savesitestats
+## savesitestats
 Export a gzipped tarball containing site page view statistics. Specify an
 absolute save path with the `--path` argument.
 
-
-# setprivate
+## setprivate
 Set a `ScoreSet`, `Experiment` or `ExperimentSet` as private. It is recommended
 that it is used only on `ScoreSet` models. Settings parent models as private
 will not alter child models. This could create strange behaviour such as not
@@ -157,7 +169,7 @@ being able to view the parent of a public child. Invoke the command as:
 python manage.py setprivate --urn=<model-urn>
 ```
 
-# setstate
+## setstate
 Set a the celery state of a `ScoreSet`. Invoke the command as:
 
 ```shell script
@@ -166,8 +178,7 @@ python manage.py setprivate --urn=<model-urn> --state=<state text>
 
 The `state` argument will accept the values `processing`, `failed` or `success`.
 
-
-# createnews
+## createnews
 Create a news item for the landing page. Invoke the command as:
 
 ```shell script
@@ -178,19 +189,16 @@ The `message` argument can specify a string message or a markdown file. The
 `level` argument can take the values `Critical`, `Important`, `Information`,
 `Happy holidays` or `April fools`.
 
-
-# createtestentries
+## createtestentries
 For development purposes to seed the database with test entries. Also creates
 test users with the password `1234qwer` and username `user-<number>` where
 number ranges from 1 to 40.
 
-
-# createdefaultsecrets
+## createdefaultsecrets
 Creates a default secrets json file. Used by settings module to create a secrets
 file if one does not exist. This should not be called directly.
 
-
-# cleanusers
+## cleanusers
 Deletes accounts with malicious looking usernames. Pass `--commit` to commit changes, otherwise
 it is run in dry mode and will only list accounts that will be deleted. Pass a list of comma separated
 usernames via `--exclude` to ignore these associated accounts.
