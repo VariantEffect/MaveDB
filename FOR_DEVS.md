@@ -116,7 +116,7 @@ docker exec -it mavedb_dev_app_1 /bin/bash
 In this terminal, to run the unit tests:
 
 ```shell
-python manage.py test --exclude-tags=webtest
+python manage.py test --exclude-tag=webtest
 ```
 
 To start a local development server run:
