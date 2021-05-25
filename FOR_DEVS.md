@@ -19,7 +19,7 @@ Please install the following software:
 Firstly create a virtual environment in root directory of the project (where `manage.py` is):
 
 ```shell
-virtualenv ./venv
+python3 -m venv ./venv
 ```
 
 If you're using ZSH as your shell, in your `~/.zshrc` file  add `virtualenv` to your plugins and insert 
