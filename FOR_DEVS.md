@@ -62,7 +62,7 @@ In the `Services` input box tick all the services using the small '+' button on 
 `Apply` then `Ok`.
 
 # Settings file
-Copy `settings/.settings-template.env` to `settings/.settings-development.env`. Change the following values:
+Copy `settings/settings-template.env` to `settings/.settings-development.env`. Change the following values:
 
 ```dotenv
 APP_DB_PASSWORD=abc123
