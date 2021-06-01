@@ -1,0 +1,21 @@
+NAME=$1
+if [ -z $NAME ]; then
+  NAME=mavedb
+fi
+
+TAG=$2
+if [ -z $TAG ]; then
+  TAG=latest
+fi
+
+REPO=$3
+if [ -z $REPO ]; then
+  REPO=mavedb
+fi
+
+
+echo "Building $NAME:$TAG and publishing to repository $REPO"
+docker build . -t $REPO/$NAME:$TAG --no-cache \
+  && docker push $REPO/$NAME:$TAG \
+  && echo "Published image $NAME:$TAG to repository $REPO" \
+  && exit

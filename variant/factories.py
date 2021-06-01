@@ -14,28 +14,13 @@ import factory.fuzzy
 from factory.django import DjangoModelFactory
 
 import dataset.constants as constants
-from dataset.models.scoreset import default_dataset
 from dataset.factories import ScoreSetFactory
-
+from dataset.models.scoreset import default_dataset
 from .models import Variant
 
 
-dna_to_rna = "ATCGXN".maketrans(
-    {"A": "a", "T": "u", "G": "g", "C": "c", "X": "x", "N": "n", "H": "h"}
-)
-dna_hgvs = ["c.101G>C", "c.10C>A", "c.41G>A", "c.53G>T", "c.17C>G"]
-rna_hgvs = [x.replace("c", "r").translate(dna_to_rna) for x in dna_hgvs]
-protein_hgvs = [
-    "p.Ala4Leu",
-    "p.G78L",
-    "p.(Ala32*)",
-    "p.C28_L29delinsTGL",
-    "p.(Ala32_Leu33ins(5))",
-]
-
-
-# Instance is passed in by default by factory_boy
-def make_data(instance=None):
+def make_data():
+    """Creates the variant score/count data json object"""
     return {
         constants.variant_score_data: {
             default_dataset()[constants.score_columns][
@@ -46,16 +31,41 @@ def make_data(instance=None):
     }
 
 
-def generate_hgvs(prefix="c", comma_in_rna=False):
+def generate_hgvs(prefix: str = "c") -> str:
     """Generates a random hgvs string from a small sample."""
-    if prefix == "r":
-        if comma_in_rna:
-            return "r.[897u>g,832_960del]"
-        return choice(rna_hgvs)
-    elif prefix == "p":
-        return choice(protein_hgvs)
+    if prefix == "p":
+        # Subset of 3-letter codes, chosen at random.
+        amino_acids = [
+            "Ala",
+            "Leu",
+            "Gly",
+            "Val",
+            "Tyr",
+            "Met",
+            "Cys",
+            "His",
+            "Glu",
+            "Phe",
+        ]
+        ref = choice(amino_acids)
+        alt = choice(amino_acids)
+        return f"{prefix}.{ref}{choice(range(1, 100))}{alt}"
     else:
-        return choice(dna_hgvs)
+        alt = choice("ATCG")
+        ref = choice("ATCG")
+        return f"{prefix}.{choice(range(1, 100))}{ref}>{alt}"
+
+
+def create_score_set(instance):
+    dataset_columns = {
+        constants.score_columns: list(
+            instance.data.get(constants.variant_score_data, {}).keys()
+        ),
+        constants.count_columns: list(
+            instance.data.get(constants.variant_count_data, {}).keys()
+        ),
+    }
+    return ScoreSetFactory(dataset_columns=dataset_columns)
 
 
 class VariantFactory(DjangoModelFactory):
@@ -67,7 +77,10 @@ class VariantFactory(DjangoModelFactory):
         model = Variant
 
     urn = None
-    scoreset = factory.SubFactory(ScoreSetFactory)
-    hgvs_nt = factory.fuzzy.FuzzyChoice(dna_hgvs)
-    hgvs_pro = factory.fuzzy.FuzzyChoice(protein_hgvs)
-    data = factory.lazy_attribute(make_data)
+    hgvs_nt = factory.LazyFunction(lambda: generate_hgvs("g"))
+    hgvs_pro = factory.LazyFunction(lambda: generate_hgvs("p"))
+    hgvs_splice = factory.LazyFunction(lambda: generate_hgvs("c"))
+    data = factory.LazyFunction(make_data)
+
+    # Make sure always after data so that data columns are present on instance
+    scoreset = factory.LazyAttribute(create_score_set)

@@ -18,22 +18,23 @@ class Command(BaseCommand):
             for reference_attrs in references:
                 name = reference_attrs["short_name"]
                 organism_name = reference_attrs["organism_name"]
-                assembly = reference_attrs["assembly_identifier"]
-                if assembly is not None:
-                    identifier = assembly["identifier"]
-                else:
-                    identifier = None
+                assembly_params = reference_attrs["assembly_identifier"] or {}
+                accession = assembly_params.get("identifier", None)
 
+                # Only create ReferenceGenome instance if it does not exist.
                 if not ReferenceGenome.objects.filter(short_name=name).count():
-                    genome_id = None
-                    if identifier:
-                        genome_id, _ = GenomeIdentifier.objects.get_or_create(
-                            identifier=identifier
+                    genome_identifier = None
+                    if accession:
+                        (
+                            genome_identifier,
+                            _,
+                        ) = GenomeIdentifier.objects.get_or_create(
+                            identifier=accession
                         )
                     params = {
                         "short_name": name,
                         "organism_name": organism_name,
-                        "genome_id": genome_id,
+                        "genome_id": genome_identifier,
                     }
                     sys.stdout.write("Created reference '%s'\n" % name)
                     ReferenceGenome.objects.create(**params)

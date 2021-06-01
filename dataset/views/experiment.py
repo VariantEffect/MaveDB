@@ -1,14 +1,18 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+from typing import Optional, Type, Union
 
-from django.http import HttpRequest
-from django.urls import reverse_lazy
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
+from django.urls import reverse_lazy, reverse
 from django.db import transaction
 
 from reversion import create_revision
 
 from accounts.permissions import PermissionTypes
+from ..forms.base import DatasetModelForm
 
 from ..forms.experiment import ExperimentForm, ExperimentEditForm
 from ..models.experiment import Experiment
@@ -17,8 +21,8 @@ from ..mixins import ExperimentAjaxMixin
 
 from .base import (
     DatasetModelView,
-    CreateDatasetModelView,
-    UpdateDatasetModelView,
+    CreateDatasetView,
+    UpdateDatasetView,
 )
 
 logger = logging.getLogger("django")
@@ -29,11 +33,6 @@ class ExperimentDetailView(DatasetModelView):
     object in question and render a simple template for public viewing, or
     Simple class-based detail view for an `Experiment`. Will either find the
     404.
-
-    Parameters
-    ----------
-    urn : :class:`HttpRequest`
-        The urn of the `Experiment` to render.
     """
 
     # Overriding from `DatasetModelView`.
@@ -41,6 +40,13 @@ class ExperimentDetailView(DatasetModelView):
     model = Experiment
     template_name = "dataset/experiment/experiment.html"
     # -------
+
+    def dispatch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_meta_analysis:
+            kwargs["urn"] = instance.parent.urn
+            return redirect("dataset:experimentset_detail", *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -53,31 +59,28 @@ class ExperimentDetailView(DatasetModelView):
         return context
 
 
-class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
+class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetView):
     """
     This view serves up the form:
-        - `ExperimentForm` for the instantiation of an Experiment instnace.
+        - `ExperimentForm` for the instantiation of an Experiment instance.
 
     A new experiment instance will only be created if all forms pass validation
     otherwise the forms with the appropriate errors will be served back. Upon
     success, the user is redirected to the newly created experiment page.
-
-    Parameters
-    ----------
-    request : :class:`HttpRequest`
-        The request object that django passes into all views.
     """
 
     # Overridden from `CreateDatasetModelView`
     # -------
+    model = Experiment
     form_class = ExperimentForm
     template_name = "dataset/experiment/new_experiment.html"
-    model_class_name = "Experiment"
     # -------
 
-    forms = {"experiment": ExperimentForm}
-
     def dispatch(self, request, *args, **kwargs):
+        self.parent: Optional[ExperimentSet] = None
+
+        # User has requested to prefill experimentset dropdown, form logic
+        # will handle this during creation of a new form.
         if self.request.GET.get("experimentset", ""):
             urn = self.request.GET.get("experimentset")
             if ExperimentSet.objects.filter(urn=urn).count():
@@ -86,104 +89,157 @@ class ExperimentCreateView(ExperimentAjaxMixin, CreateDatasetModelView):
                     PermissionTypes.CAN_EDIT, experimentset
                 )
                 if has_permission:
-                    self.kwargs["experimentset"] = experimentset
+                    self.parent = experimentset
+
         return super().dispatch(request, *args, **kwargs)
 
+    def form_valid(self, form: DatasetModelForm) -> HttpResponseRedirect:
+        try:
+            with create_revision():
+                super().form_valid(form)
+                self.object.parent.save()
+
+            self.post_save()
+
+            response = HttpResponseRedirect(
+                reverse(
+                    "dataset:experiment_detail",
+                    kwargs={"urn": self.object.urn},
+                )
+            )
+            messages.success(
+                self.request,
+                f"Successfully created a new {self.model.__name__}, which "
+                f"has been assigned a temporary accession number "
+                f"{self.object.urn}.",
+            )
+
+            return response
+        except Exception as error:
+            logger.exception(
+                f"The following error occurred during "
+                f"{self.model.__name__} creation:\n{str(error)}"
+            )
+            messages.error(
+                self.request,
+                "There was a server side error while saving your submission. "
+                "Please contact support if this issue persists.",
+            )
+            return super().form_invalid(form)
+
+    def form_invalid(self, form: DatasetModelForm):
+        messages.error(
+            self.request,
+            "Your submission contains errors. Please address each one before"
+            "re-submitting.",
+        )
+        return super().form_invalid(form)
+
     @transaction.atomic
-    def save_forms(self, forms):
-        experiment_form = forms["experiment"]
-        experiment = experiment_form.save(commit=True)
+    def post_save(self) -> None:
+        experiment: Experiment = self.object
+
         # Save and update permissions. If no experimentset was selected,
         # by default a new experimentset is created with the current user
         # as it's administrator.
         experiment.add_administrators(self.request.user)
+        if not self.request.POST["experimentset"]:
+            experiment.parent.add_administrators(self.request.user)
+
         # assign_superusers_as_admin(experiment)
 
-        experiment.set_created_by(self.request.user, propagate=False)
-        experiment.set_modified_by(self.request.user, propagate=False)
-        experiment.save(save_parents=False)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        kwargs["experimentset"] = self.parent
+        return kwargs
 
-        if not self.request.POST["experimentset"]:
-            experiment.experimentset.add_administrators(self.request.user)
-            propagate = True
-            save_parents = True
-        else:
-            propagate = False
-            save_parents = False
-
-        experiment.set_created_by(self.request.user, propagate=propagate)
-        experiment.set_modified_by(self.request.user, propagate=propagate)
-        with create_revision():
-            experiment.save(save_parents=save_parents)
-        self.kwargs["urn"] = experiment.urn
-        return forms
-
-    def get_experiment_form_kwargs(self, key):
-        return {
-            "user": self.request.user,
-            "experimentset": self.kwargs.get("experimentset", None),
-        }
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context["experiment_form"] = context.pop("form")
+        return context
 
     def get_success_url(self):
         return "{}{}".format(
             reverse_lazy("dataset:scoreset_new"),
-            "?experiment={}".format(self.kwargs["urn"]),
+            "?experiment={}".format(self.object.urn),
         )
 
 
-class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetModelView):
+class ExperimentEditView(ExperimentAjaxMixin, UpdateDatasetView):
     """
     This view serves up the form:
-        - `ExperimentForm` for the instantiation of an Experiment instnace.
+        - `ExperimentForm` for the instantiation of an Experiment instance.
 
     A new experiment instance will only be created if all forms pass validation
     otherwise the forms with the appropriate errors will be served back. Upon
     success, the user is redirected to the newly created experiment page.
-
-    Parameters
-    ----------
-    request : :class:`HttpRequest`
-        The request object that django passes into all views.
     """
 
     # Overridden from `CreateDatasetModelView`
     # -------
-    form_class = ExperimentForm
+    model = Experiment
+    # More than one type of form might be served so override get_form completely
+    form_class = None
     template_name = "dataset/experiment/update_experiment.html"
-    model_class_name = "Experiment"
-    model_class = Experiment
     # -------
 
-    forms = {"experiment": ExperimentForm}
-    restricted_forms = {"experiment": ExperimentEditForm}
+    def form_valid(self, form: DatasetModelForm) -> HttpResponseRedirect:
+        try:
+            with create_revision():
+                super().form_valid(form)
+
+            self.post_save()
+
+            response = HttpResponseRedirect(
+                reverse(
+                    "dataset:experiment_detail",
+                    kwargs={"urn": self.object.urn},
+                )
+            )
+            messages.success(
+                self.request, f"Experiment {self.object.urn} has been updated."
+            )
+
+            return response
+        except Exception as error:
+            logger.exception(
+                f"The following error occurred during "
+                f"{self.model.__name__} creation:\n{str(error)}"
+            )
+            messages.error(
+                self.request,
+                "There was a server side error while saving your submission. "
+                "Please contact support if this issue persists.",
+            )
+            return super().form_invalid(form)
+
+    def form_invalid(self, form: DatasetModelForm):
+        messages.error(
+            self.request,
+            "Your submission contains errors. Please address each one before"
+            "re-submitting.",
+        )
+        return super().form_invalid(form)
+
+    def get_form_class(
+        self,
+    ) -> Type[Union[ExperimentForm, ExperimentEditForm]]:
+        if self.object.private:
+            return ExperimentForm
+        else:
+            return ExperimentEditForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context["experiment_form"] = context.pop("form")
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
     @transaction.atomic
-    def save_forms(self, forms):
-        experiment_form = forms["experiment"]
-        experiment = experiment_form.save(commit=True)
-        experiment.set_modified_by(self.request.user, propagate=False)
-        with create_revision():
-            experiment.save()
-        self.kwargs["urn"] = experiment.urn
-        return forms
-
-    def get_experiment_form(self, form_class, **form_kwargs):
-        if self.request.method == "POST":
-            if self.instance.private:
-                return ExperimentForm.from_request(
-                    self.request,
-                    self.instance,
-                    initial=None,
-                    prefix=self.prefixes.get("experiment", None),
-                )
-            else:
-                return ExperimentEditForm.from_request(
-                    self.request,
-                    self.instance,
-                    initial=None,
-                    prefix=self.prefixes.get("experiment", None),
-                )
-        else:
-            if "user" not in form_kwargs:
-                form_kwargs.update({"user": self.request.user})
-            return form_class(**form_kwargs)
+    def post_save(self) -> None:
+        return

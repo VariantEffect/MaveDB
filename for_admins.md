@@ -1,1 +1,0 @@
-This guide details how to use the custom `manage.py` shell commands.

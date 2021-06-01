@@ -1,4 +1,8 @@
 from django.contrib.messages.storage.fallback import FallbackStorage
+from django.test import TestCase
+
+from celery.contrib.testing.worker import start_worker
+from mavedb import celery_app
 
 
 class TestMessageMixin:
@@ -14,3 +18,23 @@ class TestMessageMixin:
         messages = FallbackStorage(request)
         setattr(request, "_messages", messages)
         return request
+
+
+class CeleryTestCase(TestCase):
+    allow_database_queries = True
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        # Start up celery worker
+        celery_app.loader.import_module("celery.contrib.testing.tasks")
+        cls.celery_worker = start_worker(celery_app, perform_ping_check=False)
+        cls.celery_worker.__enter__()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        # Close worker
+        cls.celery_worker.__exit__(None, None, None)

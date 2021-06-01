@@ -11,8 +11,8 @@ from .. import models
 class TestFailedTaskModel(TestCase):
     def test_instantiate_task_converts_args_to_str(self):
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[1, 2],
             kwargs={},
             exc=Exception("This is a test"),
@@ -25,8 +25,8 @@ class TestFailedTaskModel(TestCase):
     def test_instantiate_task_converts_kwargs_to_str(self):
         kwargs = {"a": 1, "b": 2}
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs=kwargs,
             exc=Exception("This is a test"),
@@ -38,8 +38,8 @@ class TestFailedTaskModel(TestCase):
 
     def test_false_args_kwargs_initialised_as_none(self):
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs={},
             exc=Exception("This is a test"),
@@ -53,8 +53,8 @@ class TestFailedTaskModel(TestCase):
     def test_instantiate_supports_dataframes_in_kwargs_and_args(self):
         df = pd.DataFrame({"x": [1, 2, 3], "y": [3, 4, 5]})
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[df],
             kwargs={"count_records": df},
             exc=Exception("This is a test"),
@@ -76,8 +76,8 @@ class TestFailedTaskModel(TestCase):
 
     def test_update_or_create_creates_new_task(self):
         task, created = models.FailedTask.update_or_create(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs={},
             exc=Exception("This is a test"),
@@ -90,8 +90,8 @@ class TestFailedTaskModel(TestCase):
 
     def test_update_or_create_creates_updates_existing_task(self):
         models.FailedTask.update_or_create(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs={},
             exc=Exception("This is a test"),
@@ -102,8 +102,8 @@ class TestFailedTaskModel(TestCase):
 
         # Creates the task twice, updating the original.
         task, created = models.FailedTask.update_or_create(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs={},
             exc=Exception("This is a test"),
@@ -114,12 +114,12 @@ class TestFailedTaskModel(TestCase):
         self.assertFalse(created)
         self.assertEqual(task.failures, 2)
 
-    @mock.patch("core.tasks.add.apply_async")
+    @mock.patch("core.tasks.health_check.submit_task")
     def test_can_retry_task(self, patch):
         kwargs = {"a": 1, "b": 2}
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs=kwargs,
             exc=Exception("This is a test"),
@@ -131,16 +131,14 @@ class TestFailedTaskModel(TestCase):
 
         task.retry_and_delete()
         patch.assert_called()
-        self.assertEqual(
-            patch.call_args[1], {"args": (), "kwargs": kwargs, "countdown": 10}
-        )
+        self.assertEqual(patch.call_args[1], {"args": (), "kwargs": kwargs})
         self.assertEqual(models.FailedTask.objects.count(), 0)
 
     def test_inline_retry_does_not_delete_if_failure(self):
-        kwargs = {"a": 1, "b": "1"}  # type error
+        kwargs = {"a": 1, "b": 2, "raise_": True}  # type error
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs=kwargs,
             exc=Exception("This is a test"),
@@ -150,15 +148,15 @@ class TestFailedTaskModel(TestCase):
         )
         task.save()
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             task.retry_and_delete(inline=True)
             self.assertEqual(models.FailedTask.objects.count(), 1)
 
     def test_can_find_existing_task(self):
         kwargs = {"a": 1, "b": 2}
         existing = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs=kwargs,
             exc=Exception("This is a test"),
@@ -169,8 +167,8 @@ class TestFailedTaskModel(TestCase):
         existing.save()
 
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[],
             kwargs=kwargs,
             exc=Exception("This is a test"),
@@ -184,8 +182,8 @@ class TestFailedTaskModel(TestCase):
         df = pd.DataFrame({"x": [1, 2, 3], "y": [3, 4, 5]})
         kwargs = {"a": 1, "b": 2, "df": df}
         existing = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[df],
             kwargs=kwargs,
             exc=Exception("This is a test"),
@@ -196,8 +194,8 @@ class TestFailedTaskModel(TestCase):
         existing.save()
 
         task = models.FailedTask.instantiate_task(
-            name="add",
-            full_name="core.tasks.add",
+            name="health_check",
+            full_name="core.tasks.health_check",
             args=[df],
             kwargs=kwargs,
             exc=Exception("This is a test"),

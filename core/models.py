@@ -3,6 +3,7 @@ import io
 import pandas as pd
 import datetime
 import importlib
+from typing import Iterable
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -44,6 +45,22 @@ class TimeStampedModel(models.Model):
 
     def format_last_edit_date(self):
         return format_delta(self.modification_date)
+
+    @classmethod
+    def filter_in_order(
+        cls, values: Iterable, field: str = "id", expression: str = "in"
+    ):
+        """
+        Filter based on a list of values maintaining the ordering present
+        in the list.
+        """
+        clauses = " ".join(
+            [f"WHEN {field}={v} THEN {i}" for i, v in enumerate(values)]
+        )
+        ordering = "CASE %s END" % clauses
+        return cls.objects.filter(**{f"{field}__{expression}": values}).extra(
+            select={"ordering": ordering}, order_by=("ordering",)
+        )
 
 
 class FailedTask(models.Model):
@@ -154,7 +171,7 @@ class FailedTask(models.Model):
             The exception raised at runtime.
         task_id : str
             Character task id given by celery.
-        args : tuple
+        args : tuple | list
             Task arguments
         kwargs : dict
             Task kwargs
@@ -225,7 +242,7 @@ class FailedTask(models.Model):
         """
         Re-loads the task parameters and tries again. Executes task
         synchronously when inline is `False`.
-        
+
         Parameters
         ----------
         inline : `bool`
@@ -254,7 +271,7 @@ class FailedTask(models.Model):
         Setting `inline` to true will call the task synchronously without
         celery in a try/except block and only delete on success. A new task
         will be created on additional failures when `inline` is False.
-        
+
         Parameters
         ----------
         inline : `bool`

@@ -1,9 +1,11 @@
 import datetime
+from typing import Optional
 
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
+from django.db.models import QuerySet
 
 from core.mixins import SingletonMixin
 from core.models import TimeStampedModel
@@ -294,20 +296,28 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     def clear_m2m(self, field_name):
         getattr(self, field_name).clear()
 
-    def parent_for_user(self, user=None):
+    def parent_for_user(self, user=None) -> Optional["DatasetModel"]:
         if self.parent is None:
             return None
         elif not self.parent.private:
             return self.parent
-        elif user and self.parent.private and user in self.parent.contributors:
-            return self.parent
+        elif user and self.parent.private:
+            if self.is_meta_analysis:
+                return self.parent
+            elif user in self.parent.contributors:
+                return self.parent
+            return None
         else:
             return None
 
     @property
-    def parent(self):
+    def is_meta_analysis(self):
+        raise NotImplementedError()
+
+    @property
+    def parent(self) -> Optional["DatasetModel"]:
         return None
 
     @property
-    def children(self):
+    def children(self) -> Optional[QuerySet]:
         return None

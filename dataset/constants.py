@@ -10,8 +10,9 @@ from urn.validators import (
 
 
 hgvs_nt_column = "hgvs_nt"
+hgvs_splice_column = "hgvs_splice"
 hgvs_pro_column = "hgvs_pro"
-hgvs_columns = sorted([hgvs_nt_column, hgvs_pro_column])
+hgvs_columns = sorted([hgvs_nt_column, hgvs_pro_column, hgvs_splice_column])
 meta_data = "meta_data"
 score_columns = "score_columns"
 count_columns = "count_columns"

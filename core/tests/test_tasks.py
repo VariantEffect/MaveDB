@@ -8,8 +8,8 @@ from django.contrib.auth import get_user_model
 from accounts.factories import UserFactory
 
 from core import models
-from core.utilities.tests import TestMessageMixin
-from core.tasks import send_mail, BaseTask
+from core.utilities.tests import TestMessageMixin, CeleryTestCase
+from core.tasks import send_mail, BaseTask, health_check
 
 
 User = get_user_model()
@@ -80,6 +80,34 @@ class TestBaseTask(TestCase, TestMessageMixin):
         self.assertIsInstance(BaseTask.get_user(user.pk), User)
         self.assertIsInstance(BaseTask.get_user(user.username), User)
         self.assertIsNone(BaseTask.get_user(user.get_full_name()), User)
+
+
+class TestCeleryIntegration(CeleryTestCase):
+    def test_can_async_task(self):
+        ok, result = health_check.submit_task(
+            kwargs={
+                "a": 1,
+                "b": 2,
+                "raise_": False,
+                "wait": 3,
+                "allow_prod_db": True,
+            }
+        )
+        self.assertTrue(ok)
+        self.assertEqual(result.get(), 3)
+
+    def test_async_check_quits_when_allow_prod_db_is_false(self):
+        ok, result = health_check.submit_task(
+            kwargs={
+                "a": 1,
+                "b": 2,
+                "raise_": False,
+                "wait": 3,
+                "allow_prod_db": False,
+            }
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(result.get(), None)
 
 
 class TestSendMailTask(TestCase):

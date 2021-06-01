@@ -1,7 +1,5 @@
-from django.test import TestCase, mock, RequestFactory
+from django.test import TestCase
 
-from accounts.factories import UserFactory
-from core.utilities.tests import TestMessageMixin
 from dataset.factories import ScoreSetWithTargetFactory
 
 from .. import views
@@ -16,7 +14,7 @@ class TestGetTopN(TestCase):
 
 class HomePageTest(TestCase):
     """
-    This class tests that the home page is rendered correcly,
+    This class tests that the home page is rendered correctly,
     and that site-wide information such as News, About and Citations
     can be created/updated/rendered correctly.
     """
@@ -64,7 +62,7 @@ class HomePageTest(TestCase):
         self.assertNotContains(response, "Version:")
 
     def test_version_shown_when_not_empty(self):
-        site_info = SiteInformationFactory()
+        SiteInformationFactory()
         response = self.client.get("/")
         self.assertContains(response, "Version:")
 
@@ -79,40 +77,3 @@ class HomePageTest(TestCase):
         instance.save()
         response = self.client.get("/")
         self.assertContains(response, instance.target.name)
-
-
-class TestContactView(TestCase, TestMessageMixin):
-    @staticmethod
-    def mock_data():
-        return {
-            "name": "John Smith",
-            "email": "John@smith.com",
-            "message": "This is a test",
-            "subject": "Hello, world!",
-        }
-
-    def setUp(self):
-        self.factory = RequestFactory()
-
-    @mock.patch("core.tasks.send_mail.apply_async")
-    def test_calls_email_admin_task(self, mock_patch):
-        data = self.mock_data()
-        admin = UserFactory(is_superuser=True)
-        admin.save()
-
-        request = self.create_request("post", data=data, path="/contact/")
-        response = views.help_contact_view(request)
-        mock_patch.assert_called()
-        self.assertEqual(
-            mock_patch.call_args_list[0][1]["kwargs"]["recipient_list"],
-            [admin.profile.email],
-        )
-        self.assertEqual(response.status_code, 302)
-
-    @mock.patch("core.tasks.send_mail.apply_async")
-    def test_calls_send_to_email_reply_task(self, mock_patch):
-        data = self.mock_data()
-        request = self.create_request("post", data=data, path="/contact/")
-        response = views.help_contact_view(request)
-        mock_patch.assert_called()
-        self.assertEqual(response.status_code, 302)

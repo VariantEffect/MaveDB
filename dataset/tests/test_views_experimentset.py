@@ -71,6 +71,7 @@ class TestExperimentSetDetailView(TestCase):
     def test_user_with_edit_permission_can_see_add_and_edit_button(self):
         user = UserFactory()
         obj = ExperimentSetFactory(private=True)
+
         assign_user_as_instance_editor(user, obj)
         request = self.factory.get("/experimentset/{}/".format(obj.urn))
         request.user = user

@@ -1,31 +1,26 @@
-from django.contrib.postgres.fields import JSONField
+from billiard.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
 from django.db import models, transaction
+from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.shortcuts import reverse
-
-from billiard.exceptions import SoftTimeLimitExceeded
 
 from accounts.permissions import (
     PermissionTypes,
     create_all_groups_for_instance,
     delete_all_groups_for_instance,
 )
-
 from core.models import FailedTask
 from core.utilities import base_url
-
+from dataset import constants as constants
 from main.models import Licence
-
 from urn.models import UrnModel
 from urn.validators import validate_mavedb_urn_scoreset
-
-from dataset import constants as constants
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json, WordLimitValidator
-
 
 User = get_user_model()
 
@@ -52,7 +47,7 @@ def assign_public_urn(scoreset):
     ----------
     scoreset : `ScoreSet`
         The scoreset instance to assign a public urn to.
-        
+
     Raises
     ------
     `AttributeError` : Parent does not have a public urn.
@@ -101,8 +96,8 @@ class ScoreSet(DatasetModel):
     This is the class representing a set of scores for an experiment.
     The ScoreSet object houses all information relating to a particular
     method of variant scoring. This class assumes that all validation
-    was handled at the form level, and as such performs no additonal
-    validation and will raise IntegreityError if there's bad input.
+    was handled at the form level, and as such performs no additional
+    validation and will raise IntegrityError if there's bad input.
 
     Parameters
     ----------
@@ -146,16 +141,29 @@ class ScoreSet(DatasetModel):
     # ---------------------------------------------------------------------- #
     urn = models.CharField(
         validators=[validate_mavedb_urn_scoreset],
-        **UrnModel.default_urn_kwargs
+        **UrnModel.default_urn_kwargs,
     )
 
     experiment = models.ForeignKey(
         to=Experiment,
         on_delete=models.PROTECT,
         null=False,
+        blank=True,
         default=None,
         verbose_name="Experiment",
         related_name="scoresets",
+    )
+
+    meta_analysis_for = models.ManyToManyField(
+        to="dataset.ScoreSet",
+        verbose_name="Meta-analysis for",
+        related_name="meta_analysed_by",
+        blank=True,
+        help_text=(
+            "Select one or more score sets that this score set will create a "
+            "meta-analysis for. Please leave the experiment field blank if "
+            "this score set is a meta-analysis."
+        ),
     )
 
     licence = models.ForeignKey(
@@ -211,8 +219,33 @@ class ScoreSet(DatasetModel):
     def tracked_fields(cls):
         return super().tracked_fields() + ("licence", "data_usage_policy")
 
-    # Variant related methods
-    # ---------------------------------------------------------------------- #
+    # todo: add tests for below methods
+    @classmethod
+    def annotate_meta_children_count(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        field_name = "meta_analysis_child_count"
+        return field_name, queryset.annotate(
+            **{field_name: Count("meta_analysis_for")}
+        )
+
+    @classmethod
+    def meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        field, objects = cls.annotate_meta_children_count(queryset)
+        # Return un-annotated queryset
+        return queryset.filter(pk__in=objects.filter(**{f"{field}__gt": 0}))
+
+    @classmethod
+    def non_meta_analyses(cls, queryset=None):
+        if queryset is None:
+            queryset = cls.objects
+
+        return queryset.exclude(pk__in=cls.meta_analyses(queryset))
+
     @property
     def parent(self):
         return getattr(self, "experiment", None)
@@ -220,6 +253,14 @@ class ScoreSet(DatasetModel):
     @property
     def children(self):
         return self.variants.all()
+
+    @property
+    def is_meta_analysis(self):
+        return self.meta_analysis_for.count() > 0
+
+    @property
+    def is_meta_analysed(self):
+        return self.meta_analysed_by.count() > 0
 
     @property
     def has_variants(self):
@@ -283,6 +324,7 @@ class ScoreSet(DatasetModel):
     def score_columns(self):
         return [
             constants.hgvs_nt_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
         ] + self.dataset_columns[constants.score_columns]
 
@@ -290,6 +332,7 @@ class ScoreSet(DatasetModel):
     def count_columns(self):
         return [
             constants.hgvs_nt_column,
+            constants.hgvs_splice_column,
             constants.hgvs_pro_column,
         ] + self.dataset_columns[constants.count_columns]
 
@@ -455,7 +498,7 @@ class ScoreSet(DatasetModel):
                 return str(failedtask.exception_class)
             return msg
 
-        return "An error occured during processing. Please contact support."
+        return "An error occurred during processing. Please contact support."
 
 
 # --------------------------------------------------------------------------- #

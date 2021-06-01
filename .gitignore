@@ -1,11 +1,21 @@
 venv/
+.envrc
 sphinx-venv/
 *.pyc
 staticfiles/
-/static/
+static/*
+!static/.gitkeep
+logs/*
+!logs/.gitkeep
+media/*
 .env
 debug.log
 .pytest_cache/*
+docs/build
+docs/mavehgvs
+docker/nginx/nginx.conf
+*.cert
+*.key
 
 geckodriver.log
 *.pyc
@@ -24,7 +34,7 @@ __pycache__/
 
 # Distribution / packaging
 bin/
-build/
+docs/docs/build/
 develop-eggs/
 dist/
 eggs/
@@ -74,6 +84,8 @@ docs/_build/
 
 # Ignore secrets
 secrets.json
+.settings-*.env
+
 /.ipynb_checkpoints/regex-test-checkpoint.ipynb
 *-checkpoint.ipynb
 .ipynb_checkpoints/
@@ -81,5 +93,4 @@ secrets.json
 /uml.dot
 /cprofile/
 cprofile/*
-logs/
-.settings-*.env
+default/

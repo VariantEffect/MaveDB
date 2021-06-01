@@ -28,13 +28,15 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
-    def test_can_set_email(self):
+    @mock.patch("core.tasks.send_mail.submit_task")
+    def test_can_set_email(self, patch):
         user = UserFactory()
         request = self.create_request(
             method="post", path="/profile/", data={"email": "email@email.com"}
         )
         request.user = user
         response = profile_settings(request)
+        patch.assert_called()
         self.assertEqual(response.status_code, 302)
 
     def test_cannot_set_invalid_email(self):
@@ -46,7 +48,7 @@ class TestProfileSettings(TestCase, TestMessageMixin):
         response = profile_settings(request)
         self.assertContains(response, "valid email")
 
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_setting_email_emails_user(self, patch):
         user = UserFactory()
         request = self.create_request(
@@ -157,6 +159,9 @@ class TestPublish(TestCase, TestMessageMixin):
     def setUp(self):
         self.user = UserFactory()
         self.scoreset = ds_factories.ScoreSetWithTargetFactory()
+        self.scoreset.parent.add_administrators(self.user)
+        self.scoreset.parent.parent.add_administrators(self.user)
+
         self.path = "/profile/"
         self.factory = RequestFactory()
         self.post_data = {"publish": [self.scoreset.urn]}
@@ -174,19 +179,27 @@ class TestPublish(TestCase, TestMessageMixin):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
-    @mock.patch("dataset.tasks.publish_scoreset.apply_async")
+    @mock.patch(
+        "dataset.tasks.publish_scoreset.submit_task", return_value=(True, None)
+    )
     def test_successful_publish_calls_publish_utility(self, patch):
         profile_view(self.make_request())
         patch.assert_called()
 
-    def test_redirects_on_success(self):
+    @mock.patch(
+        "dataset.tasks.publish_scoreset.submit_task", return_value=(True, None)
+    )
+    def test_redirects_on_success(self, patch):
         response = profile_view(self.make_request())
+        patch.assert_called()
         self.assertEqual(response.status_code, 302)
 
-    def test_does_not_redirect_if_cannot_publish(self):
+    @mock.patch("dataset.tasks.publish_scoreset.submit_task")
+    def test_does_not_redirect_if_cannot_publish(self, patch):
         request = self.make_request()
         self.scoreset.remove_administrators(self.user)
         response = profile_view(request)
+        patch.assert_not_called()
         self.assertEqual(response.status_code, 200)
 
 
@@ -214,17 +227,25 @@ class TestProfileDeleteInstance(TestCase, TestMessageMixin):
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 302)
 
-    @mock.patch("dataset.tasks.delete_instance.apply_async")
+    @mock.patch(
+        "dataset.tasks.delete_instance.submit_task", return_value=(True, None)
+    )
     def test_successful_publish_calls_delete_utility(self, patch):
         profile_view(self.make_request())
         patch.assert_called()
 
-    def test_redirects_on_job_submission(self):
+    @mock.patch(
+        "dataset.tasks.delete_instance.submit_task", return_value=(True, None)
+    )
+    def test_redirects_on_job_submission(self, patch):
         response = profile_view(self.make_request())
+        patch.assert_called()
         self.assertEqual(response.status_code, 302)
 
-    def test_does_not_redirect_if_cannot_delete(self):
+    @mock.patch("dataset.tasks.delete_instance.submit_task")
+    def test_does_not_redirect_if_cannot_delete(self, patch):
         request = self.make_request()
         self.instance.remove_administrators(self.user)
         response = profile_view(request)
+        patch.assert_not_called()
         self.assertEqual(response.status_code, 200)

@@ -152,11 +152,11 @@ class TestCreateNewExperimentView(TestCase, TestMessageMixin):
     def tearDown(self):
         Version.objects.all().delete()
 
-    def test_redirect_to_login_not_logged_in(self):
+    def test_forbidden_not_logged_in(self):
         response = self.client.get(self.path)
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
-    def test_correct_tamplate_when_logged_in(self):
+    def test_correct_template_when_logged_in(self):
         self.client.login(
             username=self.user.username, password=self.unencrypted_password
         )
@@ -401,7 +401,7 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
     def tearDown(self):
         Version.objects.all().delete()
 
-    def test_correct_tamplate_when_logged_in(self):
+    def test_correct_template_when_logged_in(self):
         scs = ExperimentFactory()
         assign_user_as_instance_admin(self.user, scs)
         self.client.login(
@@ -414,7 +414,7 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         self.client.logout()
         obj = ExperimentFactory()
         response = self.client.get(self.path.format(obj.urn))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_404_object_not_found(self):
         obj = ExperimentFactory()
@@ -433,8 +433,8 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         request = self.create_request(method="get", path=path)
         request.user = self.user
 
-        response = ExperimentEditView.as_view()(request, urn=exp.urn)
-        self.assertEqual(response.status_code, 302)
+        with self.assertRaises(PermissionDenied):
+            ExperimentEditView.as_view()(request, urn=exp.urn)
 
     def test_published_instance_returns_edit_only_mode_form(self):
         exp = ExperimentFactory(private=False)
@@ -462,42 +462,6 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
         experiment = Experiment.objects.first()
         self.assertEqual(experiment.modified_by, self.user)
 
-    def test_experimentset_options_are_restricted_to_editor_instances(self):
-        exp1 = ExperimentFactory()
-        exp2 = ExperimentFactory()
-        assign_user_as_instance_admin(self.user, exp1)
-        assign_user_as_instance_editor(self.user, exp1.parent)
-        assign_user_as_instance_viewer(self.user, exp2.parent)
-
-        request = self.create_request(method="get", path=self.path)
-        request.user = self.user
-        response = ExperimentEditView.as_view()(request, urn=exp1.urn)
-
-        self.assertContains(
-            response, "{}".format(exp1.parent.urn, exp1.parent.title)
-        )
-        self.assertNotContains(
-            response, "{}".format(exp2.parent.urn, exp2.parent.title)
-        )
-
-    def test_experimentset_options_are_restricted_to_admin_instances(self):
-        exp1 = ExperimentFactory()
-        exp2 = ExperimentFactory()
-        assign_user_as_instance_admin(self.user, exp1)
-        assign_user_as_instance_admin(self.user, exp1.parent)
-        assign_user_as_instance_viewer(self.user, exp2.parent)
-
-        request = self.create_request(method="get", path=self.path)
-        request.user = self.user
-        response = ExperimentEditView.as_view()(request, urn=exp1.urn)
-
-        self.assertContains(
-            response, "{}".format(exp1.parent.urn, exp1.parent.title)
-        )
-        self.assertNotContains(
-            response, "{}".format(exp2.parent.urn, exp2.parent.title)
-        )
-
     def test_creates_new_reversion_instances_for_exp_and_exps(self):
         data = self.post_data
         exp = ExperimentFactory(private=False)
@@ -509,4 +473,4 @@ class TestEditExperimentView(TestCase, TestMessageMixin):
 
         self.assertEqual(Version.objects.count(), 0)
         ExperimentEditView.as_view()(request, urn=exp.urn)
-        self.assertEqual(Version.objects.count(), 1)
+        self.assertEqual(Version.objects.count(), 2)

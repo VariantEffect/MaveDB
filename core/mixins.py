@@ -3,7 +3,7 @@ from django.http import JsonResponse
 
 class SingletonMixin:
     """
-    A singleton abtract model which allows only once instance(row) to exist.
+    A singleton abstract model which allows only once instance(row) to exist.
     Must be the first class inherited to work.
     """
 
@@ -18,7 +18,7 @@ class SingletonMixin:
 
 
 class NestedEnumMixin:
-    """ Nested `Enum` of error messages relating to specific fields."""
+    """Nested `Enum` of error messages relating to specific fields."""
 
     def __getattr__(self, item):
         """Allows this `Enum` to be nested by customising attribute lookup."""
@@ -40,17 +40,11 @@ class AjaxView:
         return response
 
     def get(self, request, *args, **kwargs):
-        if request.is_ajax():
-            return self.get_ajax()
+        if request.is_ajax() and hasattr(self, "get_ajax"):
+            return self.get_ajax(*args, **kwargs)
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        if request.is_ajax():
-            return self.post_ajax()
+        if request.is_ajax() and hasattr(self, "post_ajax"):
+            return self.post_ajax(*args, **kwargs)
         return super().post(request, *args, **kwargs)
-
-    def get_ajax(self):
-        raise NotImplementedError()
-
-    def post_ajax(self):
-        raise NotImplementedError()

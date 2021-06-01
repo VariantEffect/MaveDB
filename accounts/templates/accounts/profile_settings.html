@@ -16,13 +16,13 @@
           <hr>
           <div class="mb-2">
             <button id='submit-form' class="btn btn-outline-dark white-button" type="submit" value="Submit"
-                   name="save" data-toggle="tooltip" data-placement="top|right|bottom|left"
+                    name="save" data-toggle="tooltip" data-placement="top|right|bottom|left"
                     title="Save and update your profile information.">
               <i class="fa fa-check accept"></i>
             </button>
             <button class="btn btn-outline-dark white-button" type="button" value="Cancel" name="cancel"
-                   data-toggle="tooltip" data-placement="top|right|bottom|left" onclick="cancelSubmission()"
-                   title="Cancel changes and return to your profile.">
+                    data-toggle="tooltip" data-placement="top|right|bottom|left" onclick="cancelSubmission()"
+                    title="Cancel changes and return to your profile.">
               <i class="fa fa-ban cancel"></i>
             </button>
           </div>
@@ -41,8 +41,10 @@
     <div class="row">
       <div class="col-12 col-xs-12">
         <label for="auth-token-area" style="display: none;"></label>
-        <small class="form-text text-muted">Provide this token in your request's 'Authorization' header field to access private data.</small>
-        <textarea class="form-control" id="auth-token-area" rows="2">{{ request.user.profile.auth_token|default:"Click to generate a new token." }}</textarea>
+        <small class="form-text text-muted">Provide this token in your request's 'Authorization' header field to access
+          private data.</small>
+        <textarea class="form-control" id="auth-token-area"
+                  rows="2">{{ request.user.profile.auth_token|default:"Click to generate a new token." }}</textarea>
         <hr>
         <div class="mt-2">
           <button id="generate-auth-token"
@@ -59,3 +61,31 @@
   </div>
 
 {% endblock profile_body %}
+
+{% block extra_scripts %}
+  <script type="text/javascript">
+      $(document).ready(function () {
+          $("#generate-auth-token").on("click", function () {
+              $.ajax({
+                  url: window.location.pathname,
+                  type: "GET",
+                  dataType: "json",
+                  success: function (data) {
+                      $("#auth-token-area").val(data.token);
+                      console.log(data.expiry);
+                  },
+                  error: function (xhr, errmsg, err) {
+                      console.log(xhr.status + ": " + xhr + errmsg + err);
+                  }
+              })
+          });
+
+          $("#copy-to-clipboard").on("click", function () {
+              var el = $("#auth-token-area");
+              $(el).focus();
+              $(el).select();
+              document.execCommand('copy');
+          });
+      });
+  </script>
+{% endblock %}

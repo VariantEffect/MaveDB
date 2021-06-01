@@ -11,9 +11,18 @@ def validate_sra_identifier(identifier):
 
     if isinstance(identifier, ExternalIdentifier):
         identifier = identifier.identifier
-    if not (idutils.is_sra(identifier) or idutils.is_bioproject(identifier)):
+    if not (
+        idutils.is_sra(identifier)
+        or idutils.is_bioproject(identifier)
+        or idutils.is_geo(identifier)
+        or idutils.is_arrayexpress_array(identifier)
+        or idutils.is_arrayexpress_experiment(identifier)
+    ):
         raise ValidationError(
-            "%(id)s is not a valid SRA or BioProject accession.",
+            (
+                "%(id)s is not a valid SRA, GEO, ArrayExpress or BioProject "
+                "accession."
+            ),
             params={"id": identifier},
         )
 

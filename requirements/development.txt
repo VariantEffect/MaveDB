@@ -1,0 +1,8 @@
+-r base.txt
+
+selenium>=3.4.3
+black
+mypy
+flake8
+pylint
+python-dotenv

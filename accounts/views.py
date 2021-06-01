@@ -103,7 +103,7 @@ def profile_view(request):
             deleted = delete(delete_urn, request)
             if deleted:
                 return HttpResponseRedirect(reverse_lazy("accounts:profile"))
-        if publish_urn:
+        elif publish_urn:
             published = publish(publish_urn, request)
             if published:
                 return HttpResponseRedirect(reverse_lazy("accounts:profile"))
@@ -122,7 +122,7 @@ class ManageDatasetUsersView(DatasetPermissionMixin, SessionWizardView):
         ("manage_users", SelectUsersForm),
         ("confirm_changes", ConfirmationForm),
     )
-    permission_required = "dataset.can_manage"
+    permission_required = DatasetPermissionMixin.MANAGE_PERMISSION
     templates = {
         "manage_users": "accounts/profile_manage.html",
         "confirm_changes": "accounts/contributor_summary.html",

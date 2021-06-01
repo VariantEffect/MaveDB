@@ -218,13 +218,8 @@ class ExternalIdentifier(TimeStampedModel):
 
 class SraIdentifier(ExternalIdentifier):
     """
-    An SRA or BioProject accession number.
-
-    See Also
-    --------
-    Details of the SRA accession formats can be found
-    `here <https://www.ncbi.nlm.nih.gov/books/NBK56913/#search.what_do_the_different_sra_accessi>`_
-
+    An SRA, BioProject, GEO or ArrayExpress accession number to document
+    access to raw reads.
     """
 
     DATABASE_NAME = "SRA"
@@ -235,21 +230,25 @@ class SraIdentifier(ExternalIdentifier):
 
     def format_url(self):
         if idutils.is_sra(self.identifier):
-            return idutils.to_url(self.identifier, "sra")
+            return idutils.to_url(self.identifier, scheme="sra")
         elif idutils.is_bioproject(self.identifier):
-            return idutils.to_url(self.identifier, "bioproject")
+            return idutils.to_url(self.identifier, scheme="bioproject")
+        elif idutils.is_geo(self.identifier):
+            return idutils.to_url(self.identifier, scheme="geo")
+        elif idutils.is_arrayexpress_array(self.identifier):
+            return idutils.to_url(self.identifier, scheme="arrayexpress_array")
+        elif idutils.is_arrayexpress_experiment(self.identifier):
+            return idutils.to_url(
+                self.identifier, scheme="arrayexpress_experiment"
+            )
         else:
             raise AttributeError(
-                "Invalid SRA or BioProject accession "
+                "Invalid SRA, BioProject, GEO or ArrayExpress accession "
                 "'{}'".format(self.identifier)
             )
 
 
 class DoiIdentifier(ExternalIdentifier):
-    """
-    A DOI identifier.
-    """
-
     DATABASE_NAME = "DOI"
     IDUTILS_SCHEME = "doi"
 
@@ -259,10 +258,6 @@ class DoiIdentifier(ExternalIdentifier):
 
 
 class PubmedIdentifier(ExternalIdentifier):
-    """
-    A PubMed identifier.
-    """
-
     DATABASE_NAME = "PubMed"
     IDUTILS_SCHEME = "pmid"
 
@@ -311,10 +306,6 @@ class GenomeIdentifier(ExternalIdentifier):
 
 
 class RefseqIdentifier(ExternalIdentifier):
-    """
-    An NCBI RefSeq accession number.
-    """
-
     DATABASE_NAME = "RefSeq"
     IDUTILS_SCHEME = "refseq"
 
@@ -324,10 +315,6 @@ class RefseqIdentifier(ExternalIdentifier):
 
 
 class EnsemblIdentifier(ExternalIdentifier):
-    """
-    An Ensembl accession number.
-    """
-
     DATABASE_NAME = "Ensembl"
     IDUTILS_SCHEME = "ensembl"
 
@@ -337,10 +324,6 @@ class EnsemblIdentifier(ExternalIdentifier):
 
 
 class UniprotIdentifier(ExternalIdentifier):
-    """
-    A UniProt accession number.
-    """
-
     DATABASE_NAME = "UniProt"
     IDUTILS_SCHEME = "uniprot"
 

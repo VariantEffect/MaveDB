@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
-from django.test import LiveServerTestCase, mock
+from django.test import LiveServerTestCase, mock, tag
 
 from mavedb import celery_app
 
@@ -53,8 +53,11 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
             self.user.username, self.user._password, self, "browser"
         )
 
-    @mock.patch("dataset.tasks.create_variants.apply_async")
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch(
+        "dataset.tasks.create_variants.submit_task", return_value=(True, None)
+    )
+    @mock.patch("core.tasks.send_mail.submit_task", return_value=(True, None))
+    @tag("webtest")
     def test_create_experiment_flow(self, notify_patch, variants_patch):
         # Create some experimentsets that the user should not be able to see
         exps1 = data_factories.ExperimentSetFactory(private=False)
@@ -141,7 +144,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         self.perform_action(submit, "click")
 
         # ------ CHECK EXPERIMENT IS CONFIGURED CORRECTLY ------ #
-        # Delete uneccessary objects
+        # Delete unnecessary objects
         exps1.delete()
         exps2.delete()
         exps3.delete()
@@ -154,7 +157,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         experiment = data_models.experiment.Experiment.objects.first()
         messages = self.browser.find_elements_by_class_name("alert")
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertIsNotNone(experiment)
         self.assertFalse(experiment.has_public_urn)
         self.assertEqual(list(experiment.keywords.all()), [kw])
@@ -232,7 +235,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         target_name = self.browser.find_element_by_id("id_name")
         self.perform_action(target_name, "send_keys", "BRCA1")
-        target_seq = self.browser.find_element_by_id("id_wt_sequence")
+        target_seq = self.browser.find_element_by_id("id_sequence_text")
         self.perform_action(target_seq, "send_keys", "atcg")
 
         # Upload a local file.
@@ -251,7 +254,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         # Add an extra keyword
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[0]
+        )[1]
         self.perform_action(field, "send_keys", "new kw")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"
@@ -273,6 +276,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         uniprot_offset = self.browser.find_element_by_id(
             "id_uniprot-offset-offset"
         )
+        uniprot_offset.clear()
         self.perform_action(uniprot_offset, "send_keys", 10)
 
         id_input = self.browser.find_element_by_id(
@@ -290,6 +294,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         refseq_offset = self.browser.find_element_by_id(
             "id_refseq-offset-offset"
         )
+        refseq_offset.clear()
         self.perform_action(refseq_offset, "send_keys", 20)
 
         id_input = self.browser.find_element_by_id(
@@ -307,6 +312,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
         ensembl_offset = self.browser.find_element_by_id(
             "id_ensembl-offset-offset"
         )
+        ensembl_offset.clear()
         self.perform_action(ensembl_offset, "send_keys", 30)
 
         # select target type
@@ -348,7 +354,7 @@ class TestCreateExperimentAndScoreSet(LiveServerTestCase, ActionMixin):
 
         scoreset = data_models.scoreset.ScoreSet.objects.first()
         self.assertEqual(scoreset.processing_state, constants.success)
-        self.assertEqual(scoreset.variants.count(), 7)
+        self.assertEqual(scoreset.variants.count(), 6)
         self.assertEqual(
             scoreset.dataset_columns[constants.score_columns],
             ["score", "SE", "epsilon"],
@@ -405,6 +411,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
             self.user.username, self.user._password, self, "browser"
         )
 
+    @tag("webtest")
     def test_failed_experiment_submission_repops_m2m_fields(self):
         self.authenticate()
         self.browser.get(self.live_server_url + "/experiment/new/")
@@ -480,6 +487,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
             [o.text for o in select.all_selected_options], ["bad pm"]
         )
 
+    @tag("webtest")
     def test_failed_scoreset_submission_repops_m2m_fields(self):
         # Create a genome to select as this is a required field
         genome_factories.ReferenceGenomeFactory()
@@ -503,7 +511,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
 
         target_name = self.browser.find_element_by_id("id_name")
         self.perform_action(target_name, "send_keys", "BRCA1")
-        target_seq = self.browser.find_element_by_id("id_wt_sequence")
+        target_seq = self.browser.find_element_by_id("id_sequence_text")
         self.perform_action(target_seq, "send_keys", "atcg")
 
         # select target type
@@ -550,7 +558,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
         # in `DatasetModelForm`
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[0]
+        )[1]
         self.perform_action(field, "send_keys", "new keyword")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"
@@ -559,7 +567,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
 
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[1]
+        )[2]
         self.perform_action(field, "send_keys", "invalid doi")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"
@@ -568,7 +576,7 @@ class TestJavaScriptOnCreatePage(LiveServerTestCase, ActionMixin):
 
         field = self.browser.find_elements_by_class_name(
             "select2-search__field"
-        )[2]
+        )[3]
         self.perform_action(field, "send_keys", "invalid sra")
         item = self.browser.find_elements_by_class_name(
             "select2-results__option"

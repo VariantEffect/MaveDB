@@ -3,7 +3,11 @@ from django.test import TestCase, RequestFactory
 from accounts.factories import UserFactory
 
 from ..utilities import publish_dataset
-from ..factories import ExperimentFactory, ExperimentSetFactory
+from ..factories import (
+    ExperimentFactory,
+    ExperimentSetFactory,
+    ScoreSetFactory,
+)
 from ..forms.experiment import ExperimentForm, ErrorMessages
 from ..models.experiment import Experiment
 from ..models.experimentset import ExperimentSet
@@ -73,35 +77,36 @@ class TestExperimentForm(TestCase):
         self.assertEqual(form.fields["experimentset"].queryset.count(), 1)
         self.assertIn(obj1, form.fields["experimentset"].queryset)
 
-    def test_from_request_modifies_existing_instance(self):
+    def test_meta_experiment_sets_not_in_options(self):
+        meta = publish_dataset(ScoreSetFactory())
+        meta.meta_analysis_for.add(
+            publish_dataset(ScoreSetFactory()),
+            publish_dataset(ScoreSetFactory()),
+        )
+
+        exps = meta.parent.parent
+        exps.add_editors(self.user)
+
+        data = self.make_form_data()
+        data["experimentset"] = exps.pk
+
+        form = ExperimentForm(user=self.user, data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn("select a valid choice", str(form.errors).lower())
+        self.assertIn("experimentset", str(form.errors).lower())
+
+    def test_modifies_existing_instance(self):
         exp = ExperimentFactory()
         exp.add_administrators(self.user)
         exp.parent.add_administrators(self.user)
 
         data = self.make_form_data(create_experimentset=True)
-        request = self.factory.post("/path/", data=data)
-        request.user = self.user
 
-        form = ExperimentForm.from_request(request, exp)
+        form = ExperimentForm(user=self.user, data=data, instance=exp)
         instance = form.save(commit=True)
-        self.assertEqual(instance.experimentset.pk, data["experimentset"])
+        self.assertNotEqual(instance.experimentset.pk, data["experimentset"])
         self.assertEqual(instance.get_title(), data["title"])
         self.assertEqual(instance.get_description(), data["short_description"])
-
-    def test_invalid_change_experimentset_public_experiment(self):
-        obj = ExperimentFactory()
-        obj.parent.add_administrators(self.user)
-        obj.add_administrators(self.user)
-        obj = publish_dataset(obj)
-
-        # Make the data, which also sets the selected experiment
-        data = self.make_form_data(create_experimentset=True)
-        form = ExperimentForm(data=data, user=self.user, instance=obj)
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            ErrorMessages.ExperimentSet.public_experiment,
-            form.errors["experimentset"][0],
-        )
 
     def test_experimentset_options_frozen_when_passing_instance(self):
         data = self.make_form_data(create_experimentset=False)

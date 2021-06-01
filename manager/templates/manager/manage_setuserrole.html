@@ -1,0 +1,58 @@
+{% extends "manager/manage.html" %}
+
+{% block command_content %}
+  <hr>
+  {% if result %}
+    <br>
+    {% if result.error %}
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>{{ result.result_message }}</strong> {{ result.result_message_details }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% else %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>{{ result.result_message }}</strong> {{ result.result_message_details }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <h2>Set User Role</h2>
+
+  <div class="container">
+    <form action={% url 'manager:manage_setuserrole' %} method="POST">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-4">
+          <h6>User</h6>
+          <select class="form-control" name="user_id">
+            <option value="" selected="">-- Select a User --</option>
+            {% for shortname, username in users %}
+              <option class="form-control" value="{{ username }}">{{ shortname }} ({{ username }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-4">
+          <h6>User Role</h6>
+          <select class="form-control" name="role">
+            <option value="" selected="">-- Select a User Role --</option>
+            {% for role in roles %}
+              <option class="form-control" value="{{ role }}">{{ role }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="col-3">
+          <br>
+          <input type="submit" value="Submit">
+        </div>
+      </div>
+    </form>
+   </div>
+{% endblock %}

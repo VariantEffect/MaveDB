@@ -1,5 +1,7 @@
 import datetime
+from typing import Union, Optional
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from dataset import models
@@ -9,6 +11,8 @@ from urn.models import get_model_by_urn
 from .models.experimentset import ExperimentSet
 from .models.experiment import Experiment
 from .models.scoreset import ScoreSet
+
+User = get_user_model()
 
 
 @transaction.atomic
@@ -58,39 +62,65 @@ def delete_scoreset(scoreset):
         )
     for variant in scoreset.children:
         variant.delete()
-    scoreset.delete()
+
+    should_delete_exp = False
+    should_delete_exp_set = False
+    experiment = None
+    experimentset = None
+
+    if scoreset.is_meta_analysis:
+        experiment = scoreset.experiment
+        experimentset = experiment.experimentset
+
+        # Clean up private dummy experiment and meta-analysis experiment
+        # set if deleting the only child.
+        should_delete_exp = (
+            experiment.private and experiment.children.count() == 1
+        )
+        should_delete_exp_set = (
+            experimentset.private
+            and not experimentset.is_mixed_meta_analysis
+            and experimentset.meta_analysis_scoresets.count() == 1
+        )
+
+    result = scoreset.delete()
+
+    if should_delete_exp and experiment is not None:
+        delete_experiment(experiment)
+    if should_delete_exp_set and experimentset is not None:
+        delete_experimentset(experimentset)
+
+    return result
 
 
 @transaction.atomic
-def publish_dataset(dataset, user=None):
+def publish_dataset(
+    dataset: Union[ExperimentSet, Experiment, ScoreSet],
+    user: Optional[User] = None,
+) -> Union[ExperimentSet, Experiment, ScoreSet]:
     """
     Publishes a dataset by traversing the parent tree. Assigns a public
     urn of the format <urn:mavedb:X>, sets the private bit and associated
     publish metadata.
-    
+
     Does nothing if the dataset already has a public urn or is not private.
-    
+
     Parameters
     ----------
-    dataset : `models.base.DatasetModel`
+    dataset : ExperimentSet | Experiment | ScoreSet
         The dataset to publish.
-    user :
+
+    user : User
         The user requesting the publish.
-        
+
     Raises
     ------
     TypeError : Not a dataset
-
-    Returns
-    -------
-    `models.base.DatasetModel`
-        The published dataset.
     """
-    if not isinstance(dataset, models.base.DatasetModel):
+    if not isinstance(dataset, (ExperimentSet, Experiment, ScoreSet)):
         raise TypeError(
-            "Expected a DatasetModel instance. Found {}".format(
-                dataset.__class__.__name__
-            )
+            "Expected a ExperimentSet, Experiment or ScoreSet instance. "
+            "Found {}".format(dataset.__class__.__name__)
         )
 
     if not dataset.private or dataset.has_public_urn:

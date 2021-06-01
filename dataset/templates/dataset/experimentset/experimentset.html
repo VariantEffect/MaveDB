@@ -15,7 +15,7 @@
   </span>
   {% if visible_experiments|length %}
     <ul>
-      {% for child in visible_experiments %}
+      {% for child in visible_experiments|dictsort:"urn" %}
         <li class="child-list-item">
           <a style="display:block;" href="{% url 'dataset:experiment_detail' child.urn %}">
             <p class="urn-item-link">{{ child.urn }} {% if child.private %}[Private]{% endif %}</p>
@@ -27,5 +27,23 @@
     </ul>
   {% else %}
     <p class="text-muted">No experiments have been associated with this set.</p>
+  {% endif %}
+
+  {% filter_visible instance.meta_analysis_scoresets user as visible_meta_analsyses %}
+  {% if visible_meta_analsyses.count >= 1 %}
+    <div style="display: inline-block">
+      <h2 id='scoresets' class="underline left-align section-heading">Meta-analyses</h2>
+      <ul>
+        {% for meta in visible_meta_analsyses %}
+          <li class="child-list-item">
+            <a style="display:block;" href="{% url 'dataset:scoreset_detail' meta.urn %}">
+              <p class="urn-item-link">{{ meta.urn }} {% if meta.private %}[Private]{% endif %}</p>
+            </a>
+            <p class="child-list-description"><b>{{ meta.get_title }}</b></p>
+            <p class="child-list-description">{{ meta.get_description }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
   {% endif %}
 {% endblock %}

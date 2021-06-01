@@ -2,35 +2,27 @@ import csv
 import re
 from datetime import datetime
 
-from rest_framework import viewsets, exceptions
-
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
+from rest_framework import viewsets, exceptions
 
-from core.utilities import is_null
-
-from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.filters import UserFilter
+from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.serializers import UserSerializer
-
-from metadata import models as meta_models
-from metadata import serializers as meta_serializers
-
-from genome import models as genome_models
-from genome import serializers as genome_serializers
-
-from dataset.templatetags.dataset_tags import filter_visible
-
+from core.utilities import is_null
 from dataset import models, filters, constants
+from dataset.mixins import DatasetPermissionMixin
 from dataset.serializers import (
     ExperimentSetSerializer,
     ExperimentSerializer,
     ScoreSetSerializer,
 )
+from dataset.templatetags.dataset_tags import filter_visible
+from genome import models as genome_models, serializers as genome_serializers
+from metadata import models as meta_models, serializers as meta_serializers
 
 User = get_user_model()
 ScoreSet = models.scoreset.ScoreSet
-
 
 words_re = re.compile(r"\w+|[^\w\s]", flags=re.IGNORECASE)
 
@@ -63,9 +55,19 @@ def check_permission(instance, user=None):
     if instance.private and user is None:
         raise exceptions.PermissionDenied()
     elif instance.private and user is not None:
-        has_perm = user in instance.contributors
-        if not has_perm:
-            raise exceptions.PermissionDenied()
+        if instance.is_meta_analysis:
+            metas = getattr(
+                instance, "meta_analysis_scoresets", ScoreSet.objects.none()
+            )
+            can_access_at_least_one_meta_scoreset = any(
+                user.has_perm(DatasetPermissionMixin.VIEW_PERMISSION, s)
+                for s in metas
+            )
+            return can_access_at_least_one_meta_scoreset
+        else:
+            has_perm = user in instance.contributors
+            if not has_perm:
+                raise exceptions.PermissionDenied()
     return instance
 
 
@@ -210,6 +212,8 @@ def format_csv_rows(variants, columns, dtype, na_rep="NA"):
                 value = str(variant.hgvs_nt)
             elif column_key == constants.hgvs_pro_column:
                 value = str(variant.hgvs_pro)
+            elif column_key == constants.hgvs_splice_column:
+                value = str(variant.hgvs_splice)
             elif column_key == "accession":
                 value = str(variant.urn)
             else:
@@ -303,8 +307,8 @@ def format_response(response, scoreset, dtype):
             "either 'scores' or 'counts'.".format(dtype)
         )
 
-    # 'hgvs_nt', 'hgvs_pro', 'urn' are present by default, hence <= 2
-    if not variants or len(columns) <= 3:
+    # 'hgvs_nt', 'hgvs_splice', 'hgvs_pro', 'urn' are present by default
+    if not variants or len(columns) <= 4:
         return response
 
     rows = format_csv_rows(variants, columns=columns, dtype=type_column)

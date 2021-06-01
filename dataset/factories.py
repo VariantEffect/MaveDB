@@ -113,11 +113,24 @@ class ScoreSetFactory(DatasetModelFactory):
     licence = None
 
     @factory.post_generation
-    def licence(self, created, extracted, **kwargs):
-        if not created:
+    def licence(self, create, extracted, **kwargs):
+        if not create:
             return self
         self.licence = Licence.get_default()
         self.licence.save()
+        return self
+
+    @factory.post_generation
+    def meta_analyses(self, create, extracted, **kwargs):
+        if not create:
+            return self
+
+        if extracted:
+            if isinstance(extracted, int):
+                for i in range(extracted):
+                    self.meta_analysis_for.add(ScoreSetFactory())
+            else:
+                self.meta_analysis_for.add(*extracted)
         return self
 
 

@@ -60,6 +60,43 @@ class BaseTask(Task):
     def run(self, *args, **kwargs):
         raise NotImplementedError()
 
+    def apply_async(
+        self,
+        args=None,
+        kwargs=None,
+        task_id=None,
+        producer=None,
+        link=None,
+        link_error=None,
+        shadow=None,
+        **options,
+    ):
+        django_logger.info(f"Applying async celery function '{self}'")
+        return super().apply_async(
+            args=args,
+            kwargs=kwargs,
+            task_id=task_id,
+            producer=producer,
+            link=link,
+            link_error=link_error,
+            shadow=shadow,
+            **options,
+        )
+
+    def delay(self, *args, **kwargs):
+        """Star argument version of :meth:`apply_async`.
+
+        Does not support the extra options enabled by :meth:`apply_async`.
+
+        Arguments:
+            *args (Any): Positional arguments passed on to the task.
+            **kwargs (Any): Keyword arguments passed on to the task.
+        Returns:
+            celery.result.AsyncResult: Future promise.
+        """
+        django_logger.info(f"Applying delayed celery function '{self}'")
+        return self.apply_async(args, kwargs)
+
     @staticmethod
     def get_user(user):
         if isinstance(user, User):
@@ -161,7 +198,7 @@ class BaseTask(Task):
         Parameters
         ----------
         args : tuple, optional, Default: None
-            Unamed task arguments.
+            Un-named task arguments.
         kwargs : dict, optional. Default: None
             Task keyword arguments.
         async_options : dict, optional, Default: None
@@ -185,7 +222,7 @@ class BaseTask(Task):
                     args=args,
                     kwargs=kwargs,
                     countdown=countdown,
-                    **async_options
+                    **async_options,
                 ),
             )
         except kombu_errors as e:
@@ -217,15 +254,34 @@ def send_mail(subject, message, from_email, recipient_list, **kwargs):
         message=message,
         from_email=from_email,
         recipient_list=recipient_list,
-        **kwargs
+        **kwargs,
     )
 
 
-@celery_app.task(ignore_result=True, base=BaseTask)
-def add(a, b, raise_=False, wait=False):
+@celery_app.task(ignore_result=False, base=BaseTask)
+def health_check(a, b, raise_=False, wait=False, allow_prod_db=True):
     """Debug test task."""
+    # Specifically requested task failure
     if raise_:
-        raise AttributeError("Test Error")
-    if wait:
-        time.sleep(wait)
-    return a + b
+        raise ValueError("Requested test error")
+
+    try:
+        from django.db import connection
+
+        db_name = connection.get_connection_params()["database"]
+        message = f"'{db_name}' is not the test database"
+        if not db_name.startswith("test_") and not allow_prod_db:
+            raise ValueError(message)
+        if not db_name.startswith("test_") and allow_prod_db:
+            logger.info(message)
+
+        if wait:
+            time.sleep(wait)
+
+        return a + b
+
+    except Exception as error:
+        # Catch any exception to make sure failed task is not saved to
+        # prod database.
+        logger.exception(error)
+        return None

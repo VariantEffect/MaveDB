@@ -41,7 +41,8 @@ class WordLimitValidator:
 
 def read_header_from_io(file, label=None, msg=None):
     if label is None:
-        label = "Uploaded"
+        label = "uploaded"
+
     try:
         header_line = file.readline()
         if isinstance(header_line, bytes):
@@ -87,8 +88,10 @@ def validate_at_least_one_additional_column(header, label=None, msg=None):
             msg = (
                 "Your %(label)s file must define at "
                 "least one additional column different "
-                "from '{}' and '{}'.".format(
-                    constants.hgvs_nt_column, constants.hgvs_pro_column
+                "from '{}', '{}' and '{}'.".format(
+                    constants.hgvs_nt_column,
+                    constants.hgvs_splice_column,
+                    constants.hgvs_pro_column,
                 )
             )
             params = {"label": label}
@@ -104,7 +107,7 @@ def validate_header_contains_no_null_columns(header, label=None, msg=None):
             msg = (
                 "%(label)s file header cannot contain blank/empty/whitespace "
                 "only columns or the following case-insensitive null "
-                "values: [{}].".format(label, ", ".join(readable_null_values))
+                "values: {}.".format(label, ", ".join(readable_null_values))
             )
         raise ValidationError(msg)
 
@@ -113,7 +116,7 @@ def validate_datasets_define_same_variants(scores, counts):
     """
     Checks if two `pd.DataFrame` objects parsed from uploaded files
     define the same variants.
-    
+
     Parameters
     ----------
     scores : `pd.DataFrame`
@@ -125,6 +128,10 @@ def validate_datasets_define_same_variants(scores, counts):
         assert_array_equal(
             scores[constants.hgvs_nt_column].sort_values().values,
             counts[constants.hgvs_nt_column].sort_values().values,
+        )
+        assert_array_equal(
+            scores[constants.hgvs_splice_column].sort_values().values,
+            counts[constants.hgvs_splice_column].sort_values().values,
         )
         assert_array_equal(
             scores[constants.hgvs_pro_column].sort_values().values,

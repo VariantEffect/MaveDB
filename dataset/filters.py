@@ -62,7 +62,7 @@ class DatasetModelFilter(FilterSet):
             "display_name",
         )
 
-    urn = CSVCharFilter(field_name="urn", lookup_expr="iexact")
+    urn = CSVCharFilter(field_name="urn", lookup_expr="icontains")
     title = filters.CharFilter(field_name="title", lookup_expr="icontains")
     description = filters.CharFilter(
         field_name="short_description", lookup_expr="icontains"

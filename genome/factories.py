@@ -44,7 +44,8 @@ class WildTypeSequenceFactory(DjangoModelFactory):
     class Meta:
         model = WildTypeSequence
 
-    sequence = factory.fuzzy.FuzzyText(length=50, chars="ATCG")
+    sequence = factory.fuzzy.FuzzyText(length=30, chars="ATCG")
+    sequence_type = WildTypeSequence.SequenceType.INFER
 
 
 class ReferenceGenomeFactory(DjangoModelFactory):

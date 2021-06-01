@@ -134,3 +134,17 @@ class TestAssignPublicUrn(TestCase):
         i1 = assign_public_urn(instance)
         i2 = assign_public_urn(instance)
         self.assertEqual(i1.urn, i2.urn)
+
+    def test_publish_scoreset_creates_meta_analysis_parent(self):
+        meta, child1, child2 = (
+            ScoreSetFactory(),
+            ScoreSetFactory(),
+            ScoreSetFactory(),
+        )
+        meta.parent.experimentset = self.public_parent
+        meta.save(save_parents=True)
+        meta.meta_analysis_for.add(child1, child2)
+
+        obj = assign_public_urn(meta.experiment)
+        self.assertEqual(obj.urn, "urn:mavedb:00000001-0")
+        self.assertEqual(obj.parent.last_child_value, 0)

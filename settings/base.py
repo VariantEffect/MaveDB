@@ -1,58 +1,48 @@
 # settings/base.py
 import os
-import json
 
-from django.core.exceptions import ImproperlyConfigured
-from main.management.commands.createdefaultsecrets import (
-    Command as SecretsCommand,
-)
+# Set path for pypandoc
+os.environ.setdefault("PYPANDOC_PANDOC", "/usr/bin/pandoc")
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETTINGS_DIR = BASE_DIR + "/settings/"
 
-# Read the secrets file
-try:
-    with open(SETTINGS_DIR + "/secrets.json", "rt") as handle:
-        secrets = json.load(handle)
-except FileNotFoundError:
-    command = SecretsCommand()
-    command.handle(*[], **{})
-    with open(SETTINGS_DIR + "/secrets.json", "rt") as handle:
-        secrets = json.load(handle)
-    print("|----------------<WARNING>----------------|")
-    print(
-        "IMPORTANT: No secrets file found. Creating from default template. "
-        "Fill this template in with your specific details "
-        "before running tests/server."
-    )
-    print("|----------------</WARNING>---------------|")
+ALLOWED_HOSTS = os.getenv("APP_ALLOWED_HOSTS", "127.0.0.1 localhost").split(
+    " "
+)
 
+# Security settings
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
 
-def get_secret(setting, secrets=secrets):
-    """
-    Retrieve a named setting from the secrets dictionary read from the JSON.
+# MaveDB APP behaviour settings
+META_ANALYSIS_ALLOW_DAISY_CHAIN = False
 
-    Adapted from Two Scoops of Django, Example 5.21
-    """
-    try:
-        return secrets[setting]
-    except KeyError:
-        error_message = "Unable to retrieve setting: '{}'".format(setting)
-        raise ImproperlyConfigured(error_message)
-
-
-BASE_URL = get_secret("base_url")
-SECRET_KEY = get_secret("secret_key")
+BASE_URL = os.getenv("APP_BASE_URL", "localhost:8000")
+API_BASE_URL = os.getenv("APP_API_BASE_URL", "localhost:8000/api")
+SECRET_KEY = os.getenv("APP_SECRET_KEY", "very_secret_key")
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 MAIN_DIR = BASE_DIR + "/data/main/"
 GENOME_DIR = BASE_DIR + "/data/genome/"
 
+# Database
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.getenv("APP_DB_NAME", "mavedb"),
+        "USER": os.getenv("APP_DB_USER", "mave_admin"),
+        "PASSWORD": os.getenv("APP_DB_PASSWORD", "abc123"),
+        "HOST": os.getenv("APP_DB_HOST", "localhost"),
+        "PORT": os.getenv("APP_DB_PORT", "5432"),
+    }
+}
+
 # Social auth settings for ORCID authentication
 SOCIAL_AUTH_ORCID_PROFILE_EXTRA_PARAMS = {"credit-name": "credit_name"}
-SOCIAL_AUTH_ORCID_KEY = get_secret("orcid_key")
-SOCIAL_AUTH_ORCID_SECRET = get_secret("orcid_secret")
+SOCIAL_AUTH_ORCID_KEY = os.getenv("APP_ORCID_KEY", None)
+SOCIAL_AUTH_ORCID_SECRET = os.getenv("APP_ORCID_SECRET", None)
 SOCIAL_AUTH_USER_MODEL = "auth.User"
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/profile/"
 SOCIAL_AUTH_LOGIN_ERROR_URL = "/profile/error/"
@@ -75,6 +65,7 @@ SOCIAL_AUTH_PIPELINE = [
 
 # Application definition
 INSTALLED_APPS = [
+    "manager",
     "metadata",
     "main",
     "genome",
@@ -168,9 +159,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
+DOCS_STATIC_DIR = BASE_DIR + "/docs/build/"
+
 STATIC_URL = "/static/"
+STATICFILES_DIRS = [DOCS_STATIC_DIR]
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
-DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400
+MAVEDB_DOCS_ROOT = STATIC_ROOT + "/docs/mavedb/html"
+MAVEHGVS_DOCS_ROOT = STATIC_ROOT + "/docs/mavehgvs/html"
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
 
 # Redirect to home URL after login (Default redirects to /profile/)
 LOGIN_REDIRECT_URL = "/profile/"
@@ -197,7 +193,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ),
-    "DEFAULT_THROTTLE_RATES": {"anon": "10000/day", "user": "10000/day"},
+    "DEFAULT_THROTTLE_RATES": {"anon": "1000/day", "user": "1000/day"},
 }
 
 

@@ -17,7 +17,7 @@
       This entry will remain fully editable until you publish a child score set.
       Should you choose to publish, your entry will go live and some fields
       will become permanently frozen. See our
-      <a href="{% url 'main:documentation' %}"> documentation </a>
+      <a href="{% url 'main:mavedb-documentation' %}"> documentation </a>
       for further information.
     </p>
     {% else %}
@@ -81,6 +81,7 @@
         in amino acids for protein identifiers.
       </p>
     </div>
+    <div id="sge-warning" class="alert alert-warning" role="alert" style="display: none"></div>
     <div class="uniprot-offset-form-group">
       {% include 'core/bs_inline_form.html' with form=uniprot_offset_form %}
     </div>
@@ -106,4 +107,13 @@
       </div>
     </div>
   {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+  <script type="text/javascript">
+      $(document).ready(function () {
+          const isPrivate = '{{ instance.private }}'.toLowerCase() === 'true';
+          initializeScoresetForm({newForm: false, privateDateset: isPrivate});
+      });
+  </script>
 {% endblock %}

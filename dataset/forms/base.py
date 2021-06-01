@@ -144,11 +144,14 @@ class DatasetModelForm(forms.ModelForm):
     @transaction.atomic
     def save(self, commit=True):
         instance = super().save(commit=commit)
+
+        instance.set_modified_by(self.user, propagate=False)
+        if not hasattr(self, "edit_mode") and not instance.created_by:
+            instance.set_created_by(self.user, propagate=False)
+
         if commit:
-            instance.set_modified_by(self.user)
-            if not hasattr(self, "edit_mode") and not instance.created_by:
-                instance.set_created_by(self.user)
             instance.save()
+
         return instance
 
     def m2m_instances_for_field(self, field_name, return_new=True):
@@ -162,23 +165,3 @@ class DatasetModelForm(forms.ModelForm):
             new_entries = [i for i in entries if i.pk is None]
             return existing_entries + new_entries
         return existing_entries
-
-    @classmethod
-    def from_request(cls, request, instance, prefix=None, initial=None):
-        if request.method == "POST":
-            form = cls(
-                user=request.user,
-                data=request.POST,
-                files=request.FILES,
-                instance=instance,
-                prefix=prefix,
-                initial=initial,
-            )
-        else:
-            form = cls(
-                user=request.user,
-                instance=instance,
-                prefix=prefix,
-                initial=initial,
-            )
-        return form

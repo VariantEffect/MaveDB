@@ -25,11 +25,11 @@
 
     <div class="col-md-6">
       <div id="news-items">
-        <h1> News <i class="far fa-newspaper" style="font-size: 32px"></i> </h1>
+        <h1> News <i class="far fa-newspaper" style="font-size: 32px"></i></h1>
         <div class="news hover-card" style="min-height: 208px; max-height: 350px; overflow-y: scroll;">
           {% if news_items %}
             {% for news_item in news_items %}
-              <div id="news-item-{{forloop.counter}}">
+              <div id="news-item-{{ forloop.counter }}">
                 <div class="row">
                   <div class="col-1 align-self-center">
                     {% if news_item.level == 'Critical' %}
@@ -53,7 +53,7 @@
       </div>
 
       <div id="top-search" class="pt-1">
-        <h1> Highlights <i class="fas fa-search" style="font-size: 32px"></i> </h1>
+        <h1> Highlights <i class="fas fa-search" style="font-size: 32px"></i></h1>
         <div class="container highlights hover-card">
           <div class="row">
             <div class="col">
@@ -93,54 +93,53 @@
         <hr>
       </div>
 
-    <div class="pt-1" id="quick-search">
-      <span><h1> Quick search <i class="fas fa-search" style="font-size: 32px"></i> </h1></span>
-      <div class="container hover-card quick-search">
-        <div class="row">
-          <div class="col">
-            <h5>All organisms</h5>
-            <form action="/search/" method="GET">
-              <select onchange="this.form.submit()" class="form-control" name="organism" title="organism">
-                <option value="" selected="">-- Select an organism --</option>
-                <optgroup label="Top organisms" class="form-control">
-                  {% for top in top_organisms %}
-                    <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
-                  {% endfor %}
-                </optgroup>
-                <optgroup label="All organism" class="form-control">
-                  {% for s in all_organisms %}
-                    <option class="form-control" value="{{ s }}">{{ s }}</option>
-                  {% endfor %}
-                </optgroup>
-              </select>
-              <input type="submit" name="search" value="Search" class="invisible"/>
-            </form>
-          </div>
+      <div class="pt-1" id="quick-search">
+        <span><h1> Quick search <i class="fas fa-search" style="font-size: 32px"></i> </h1></span>
+        <div class="container hover-card quick-search">
+          <div class="row">
+            <div class="col">
+              <h5>All organisms</h5>
+              <form action="/search/" method="GET">
+                <select onchange="this.form.submit()" class="form-control" name="organism" title="organism">
+                  <option value="" selected="">-- Select an organism --</option>
+                  <optgroup label="Top organisms" class="form-control">
+                    {% for top in top_organisms %}
+                      <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
+                    {% endfor %}
+                  </optgroup>
+                  <optgroup label="All organism" class="form-control">
+                    {% for s in all_organisms %}
+                      <option class="form-control" value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                  </optgroup>
+                </select>
+                <input type="submit" name="search" value="Search" class="invisible"/>
+              </form>
+            </div>
 
-          <div class="col">
-            <h5>All genes</h5>
-            <form action="/search/" method="GET">
-              <select onchange="this.form.submit()" class="form-control" name="target" title="target">
-                <option value="" selected="">-- Select a target gene --</option>
-                <optgroup label="Top genes" class="form-control">
-                  {% for top in top_targets %}
-                    <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
-                  {% endfor %}
-                </optgroup>
-                <optgroup label="All genes" class="form-control">
-                  {% for s in all_targets %}
-                    <option class="form-control" value="{{ s }}">{{ s }}</option>
-                  {% endfor %}
-                </optgroup>
-              </select>
-              <input type="submit" name="search" value="Search" class="invisible"/>
-            </form>
+            <div class="col">
+              <h5>All genes</h5>
+              <form action="/search/" method="GET">
+                <select onchange="this.form.submit()" class="form-control" name="target" title="target">
+                  <option value="" selected="">-- Select a target gene --</option>
+                  <optgroup label="Top genes" class="form-control">
+                    {% for top in top_targets %}
+                      <option class="form-control" value="{{ top|first }}">{{ top|first }}</option>
+                    {% endfor %}
+                  </optgroup>
+                  <optgroup label="All genes" class="form-control">
+                    {% for s in all_targets %}
+                      <option class="form-control" value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                  </optgroup>
+                </select>
+                <input type="submit" name="search" value="Search" class="invisible"/>
+              </form>
+            </div>
           </div>
-
         </div>
-      </div>
 
-    </div>
+      </div>
     </div> <!-- end right side content -->
 
   </div>

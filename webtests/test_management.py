@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.firefox.options import FirefoxBinary, Options
 
-from django.test import LiveServerTestCase
+from django.test import LiveServerTestCase, tag
 from django.shortcuts import reverse
 
 from mavedb import celery_app
@@ -43,6 +43,7 @@ class TestPublishScoreSet(LiveServerTestCase, ActionMixin):
             self.user.username, self.user._password, self, "browser"
         )
 
+    @tag("webtest")
     def test_shows_alert_removing_self_as_admin(self):
         second_admin = UserFactory()
         instance = data_factories.ScoreSetFactory()

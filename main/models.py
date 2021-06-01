@@ -123,7 +123,7 @@ class SiteInformation(TimeStampedModel):
     @staticmethod
     def get_instance():
         """
-        Tries to get the current instance. If it does not exist, a new one 
+        Tries to get the current instance. If it does not exist, a new one
         is created.
         """
         if SiteInformation.objects.first():
@@ -173,7 +173,7 @@ class SiteInformation(TimeStampedModel):
     def can_save(self):
         """
         Checks to see if the current instance can be saved. It will
-        return `True` if the instance primary key matches that in the 
+        return `True` if the instance primary key matches that in the
         database, or if no `SiteInformation` instances have yet been created.
 
         Returns
@@ -278,6 +278,7 @@ class Licence(TimeStampedModel):
                 "version": version,
             },
         )
+        # Update existing.
         if not created:
             instance.short_name = short_name
             instance.long_name = long_name

@@ -11,8 +11,6 @@ from django.shortcuts import reverse
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 
-from dataset import models
-
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -28,10 +26,11 @@ null_values_list = (
     "undefined",
     "n/a",
     "null",
+    "nil",
     NA_value,
 )
 null_values_re = re.compile(
-    r"\s+|none|nan|na|undefined|n/a|null|{}".format(NA_value),
+    r"\s+|none|nan|na|undefined|n/a|null|nil|{}".format(NA_value),
     flags=re.IGNORECASE,
 )
 readable_null_values = [
@@ -39,6 +38,13 @@ readable_null_values = [
     for v in set([v.lower() for v in null_values_list])
     if v.strip()
 ] + ["whitespace"]
+
+html_null_values = [
+    f"<b>{v.strip().lower() or 'whitespace'}</b>" for v in null_values_list
+]
+humanized_null_values = (
+    f'{", ".join(html_null_values[:-1])} ' f"and " f"{html_null_values[-1]}"
+)
 
 
 def is_null(value):
@@ -81,6 +87,7 @@ def notify_admins(user, instance):
     instance : `DatasetModel`
         instance that was published
     """
+    from dataset import models
     from main.context_processors import baseurl
 
     url = baseurl(request=None)["base_url"]

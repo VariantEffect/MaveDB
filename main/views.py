@@ -7,7 +7,6 @@ from dataset.models.scoreset import ScoreSet
 from dataset.models.experiment import Experiment
 
 from .models import News, SiteInformation
-from .forms import ContactForm
 
 
 def get_top_n(n, ls):
@@ -64,24 +63,11 @@ def documentation_view(request):
 
 
 def help_contact_view(request):
-    contact_form = ContactForm()
-    if request.method == "POST":
-        contact_form = ContactForm(data=request.POST)
-        if contact_form.is_valid():
-            contact_form.send_mail()
-            messages.success(
-                request,
-                "Thank you for contacting us. We'll get back to you as soon"
-                " as possible.",
-            )
-            return redirect("main:contact")
-
     return render(
         request,
         "main/help_contact.html",
         {
             "site_information": SiteInformation.get_instance(),
-            "contact_form": contact_form,
         },
     )
 

@@ -7,7 +7,7 @@ from ..serializers import UniprotOffsetSerializer
 
 class TestAnnotationOffsetSerializer(TestCase):
     def test_representation_combines_both_offset_and_identifier_representations(
-        self
+        self,
     ):
         offset = UniprotOffsetFactory(offset=10)
         data = UniprotOffsetSerializer(offset).data

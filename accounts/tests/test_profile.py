@@ -43,10 +43,10 @@ class TestUserProfile(TestCase):
         self.assertIsNone(user.profile.auth_token)
         user.profile.generate_token()
         self.assertIsNotNone(user.profile.auth_token)
-        self.assertEqual(len(user.profile.auth_token), Profile.TOKEN_LEGNTH)
+        self.assertEqual(len(user.profile.auth_token), Profile.TOKEN_LENGTH)
 
     def test_generate_token_creates_new_token_expiry_date_days_from_today(
-        self
+        self,
     ):
         user = User.objects.create(username="bob", password="secretkey")
         self.assertIsNone(user.profile.auth_token_expiry)
@@ -65,7 +65,7 @@ class TestUserProfile(TestCase):
             user.profile.auth_token_is_valid(user.profile.auth_token)
         )
 
-    def test_validate_token_false_expriy_date_has_passed(self):
+    def test_validate_token_false_expiry_date_has_passed(self):
         user = User.objects.create(username="bob", password="secretkey")
         user.profile.generate_token()
         self.assertTrue(
@@ -120,7 +120,7 @@ class TestUserProfile(TestCase):
         )
         self.assertEqual(bob.profile.get_short_name(), "Smith, D")
 
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_send_email_uses_profile_by_email_by_default(self, patch):
         bob = User.objects.create(
             username="bob",
@@ -138,7 +138,7 @@ class TestUserProfile(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [bob.profile.email])
 
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_send_email_uses_user_email_as_backup(self, patch):
         bob = User.objects.create(
             username="bob",
@@ -158,7 +158,7 @@ class TestUserProfile(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [bob.email])
 
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_email_user_sends_no_email_if_no_email_present(self, patch):
         bob = User.objects.create(
             username="bob",
@@ -323,8 +323,8 @@ class TestUserProfile(TestCase):
         remove_user_as_instance_viewer(bob, self.exps_1)
         self.assertEqual(len(bob.profile.viewer_experimentsets()), 0)
 
-    @mock.patch("core.tasks.send_mail.apply_async")
-    def test_notify_group_change_full_url_rendererd_in_template(self, patch):
+    @mock.patch("core.tasks.send_mail.submit_task")
+    def test_notify_group_change_full_url_rendered_in_template(self, patch):
         user = UserFactory()
         instance = factories.ExperimentFactory()
         user.profile.notify_user_group_change(
@@ -335,7 +335,7 @@ class TestUserProfile(TestCase):
             instance.get_url(), patch.call_args[1]["kwargs"]["message"]
         )
 
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_delegates_correct_template_fail(self, patch):
         user = UserFactory()
         user.profile.notify_user_submission_status(
@@ -345,7 +345,7 @@ class TestUserProfile(TestCase):
         message = patch.call_args[1]["kwargs"]["message"]
         self.assertIn("could not be processed", message)
 
-    @mock.patch("core.tasks.send_mail.apply_async")
+    @mock.patch("core.tasks.send_mail.submit_task")
     def test_delegates_correct_template_success(self, patch):
         user = UserFactory()
         user.profile.notify_user_submission_status(

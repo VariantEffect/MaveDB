@@ -1,24 +1,28 @@
-import json
 import io
+import json
 from enum import Enum
+from typing import Optional, List, Tuple
 
 import pandas as pd
-
 from django import forms as forms
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
+from django.conf import settings
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext
 
 from core.mixins import NestedEnumMixin
-from core.utilities import readable_null_values
-
-from main.models import Licence
-
-from variant.validators import validate_variant_rows
-
+from core.utilities import humanized_null_values
 from dataset import constants as constants
+from main.models import Licence
+from variant.validators import (
+    MaveDataset,
+    MaveScoresDataset,
+    MaveCountsDataset,
+)
 from ..forms.base import DatasetModelForm
+from ..models import ExperimentSet
 from ..models.experiment import Experiment
 from ..models.scoreset import ScoreSet
 from ..validators import (
@@ -27,7 +31,6 @@ from ..validators import (
     validate_json_extension,
     validate_scoreset_count_data_input,
     validate_scoreset_json,
-    validate_datasets_define_same_variants,
 )
 
 
@@ -41,18 +44,51 @@ class ErrorMessages(NestedEnumMixin, Enum):
 
     class Experiment(Enum):
         public_scoreset = ugettext(
-            "Changing the parent Experiment of "
-            "a public score set is not supported."
+            "Changing the parent experiment of a public score set is not "
+            "supported."
+        )
+        changing_experiment = ugettext(
+            "The parent experiment cannot be changed."
+        )
+
+    class MetaAnalysis(Enum):
+        experiment_present = ugettext(
+            "When submitting a meta-analysis, please leave the experiment "
+            "field blank.",
+        )
+        too_few = ugettext(
+            "Please select more than {0} score set(s) to include in this "
+            "meta-analysis."
+        )
+        linking_other_meta = ugettext(
+            "A meta-analysis cannot include other meta-analyses score sets."
+        )
+        linking_private = ugettext(
+            "Please select public score sets to use in this meta-analysis."
+        )
+        changing_children = ugettext(
+            "Child score sets of a meta-analysis cannot be changed after "
+            "creation. Please delete this score set and create a new one."
         )
 
     class Replaces(Enum):
+        changing_replaces = ugettext(
+            "Replaced score set cannot be changed after creation."
+        )
         different_experiment = ugettext(
-            "Replaces field selection must be a member of the "
-            "selected experiment."
+            "A score set can only replace other score sets with the "
+            "same experiment."
         )
         already_replaced = ugettext("{} has already been replaced.")
         is_not_public = ugettext("Only public entries can be replaced.")
         replacing_self = ugettext("A score set cannot replace itself.")
+        meta_replacing_non_meta = ugettext(
+            "A meta-analysis can only replace other meta-analysis score sets."
+        )
+        non_meta_replacing_meta = ugettext(
+            "A non meta-analysis score set can only replace other "
+            "non meta-analyses"
+        )
 
     class MetaData(Enum):
         incorrect_format = ugettext("Incorrectly formatted json file: {}")
@@ -82,9 +118,9 @@ class ErrorMessages(NestedEnumMixin, Enum):
             "if the two files do not define the same variants across rows."
         )
         different_variants = ugettext(
-            "Scores and counts files must define the same variants. "
-            "Check that the hgvs columns in both files match "
-            "(order insensitive)."
+            "Scores and counts files must define the same variants. Check that "
+            "the hgvs columns in both files match and are presented in the "
+            "same order."
         )
 
 
@@ -98,10 +134,13 @@ class ScoreSetForm(DatasetModelForm):
     `ScoreSet` is a member of the selected `Experiment` instance.
     """
 
+    MAX_ERRORS = 20
+
     class Meta(DatasetModelForm.Meta):
         model = ScoreSet
         fields = DatasetModelForm.Meta.fields + (
             "experiment",
+            "meta_analysis_for",
             "licence",
             "data_usage_policy",
             "replaces",
@@ -110,41 +149,53 @@ class ScoreSetForm(DatasetModelForm):
     score_data = forms.FileField(
         required=False,
         label="Variant score data",
-        help_text=(
-            "A valid CSV file containing variant score information. "
-            "The file must at least specify the columns 'hgvs_nt' or 'hgvs_pro' "
-            "(or both) and 'score'. There are no constraints on other column "
-            "names. Apart from the 'hgvs' column, all data must be numeric.\n\n"
-            "Row scores that are empty, whitespace or the strings {} "
-            "(case-insensitive) will be converted to a null score. The columns "
-            "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
-            "the count file below."
-        ).format(", ".join(readable_null_values)),
+        help_text=mark_safe(
+            f"A valid CSV file containing variant score information. The file "
+            f"must at least specify the columns <b>hgvs_nt</b> or "
+            f"<b>hgvs_pro</b> (or both) and <b>score</b>. There are no "
+            f"constraints on other column names. Apart from the hgvs columns, "
+            f"all data must be numeric. You may additionally specify a "
+            f"<b>hgvs_splice</b> column containing transcript variants with a "
+            f"<b>n.</b> or <b>c.</b> prefix. If a <b>hgvs_splice</b> "
+            f"column is present, the <b>hgvs_nt</b> column must only contain "
+            f"genomic variants with a <b>g.</b> prefix. Conversely, if your "
+            f"<b>hgvs_nt</b> column only specifies genomic variants, a "
+            f"<b>hgvs_splice</b> column must also be supplied as described above."
+            f"<br><br>"
+            f"Row scores that are empty, whitespace or the strings "
+            f"{humanized_null_values} (case-insensitive) will be converted to "
+            f"a null score. The columns <b>hgvs_nt</b>, <b>hgvs_splice</b> and "
+            f"<b>hgvs_pro</b> must define the same variants as those in the "
+            f"count file below."
+        ),
         validators=[
             validate_scoreset_score_data_input,
             validate_csv_extension,
         ],
-        widget=forms.widgets.FileInput(attrs={"accept": "csv"}),
+        widget=forms.widgets.ClearableFileInput(attrs={"accept": "csv"}),
     )
     count_data = forms.FileField(
         required=False,
         label="Variant count data",
-        help_text=(
-            "A valid CSV file containing variant count information. "
-            "The file must at least specify the column 'hgvs_nt' or 'hgvs_pro' "
-            "(or both) and one additional column containing numeric count data. "
-            "There are no constraints on the other column names.\n\n"
-            "Row counts that are empty, whitepace or any of the strings {} "
-            "(case-insensitive) will be converted to a null score. The columns "
-            "'hgvs_nt' and 'hgvs_pro' must define the same variants as those in "
-            "the score file above."
-        ).format(", ".join(readable_null_values)),
+        help_text=mark_safe(
+            f"A valid CSV file containing variant count information. The "
+            f"hgvs columns in this file must adhere to the same requirements "
+            f"as the scores file. Non-hgvs columns must contain numeric count "
+            f"data, and there are no name requirements for these columns. "
+            f"<br><br>"
+            f"Row counts that are empty, whitespace or any of the strings "
+            f"{humanized_null_values} (case-insensitive) will be converted to "
+            f"a null score. The columns <b>hgvs_nt</b>, <b>hgvs_splice</b> and "
+            f"<b>hgvs_pro</b> must define the same variants as those in the "
+            f"score file above."
+        ),
         validators=[
             validate_scoreset_count_data_input,
             validate_csv_extension,
         ],
         widget=forms.widgets.FileInput(attrs={"accept": "csv"}),
     )
+
     meta_data = forms.FileField(
         required=False,
         label="Metadata",
@@ -158,13 +209,26 @@ class ScoreSetForm(DatasetModelForm):
 
     def __init__(self, *args, **kwargs):
         self.field_order = (
-            ("experiment", "replaces", "licence", "data_usage_policy")
+            (
+                "experiment",
+                "meta_analysis_for",
+                "replaces",
+                "licence",
+            )
             + self.FIELD_ORDER
-            + ("score_data", "count_data", "meta_data")
+            + (
+                "score_data",
+                "count_data",
+                "relaxed_ordering",
+                "meta_data",
+                "data_usage_policy",
+            )
         )
         # If an experiment is passed in we can used to it to seed initial
         # replaces and m2m field selections.
         self.experiment = None
+        self.targetseq = None
+        self.allow_aa_sequence = False
         if "experiment" in kwargs:
             self.experiment = kwargs.pop("experiment")
         super().__init__(*args, **kwargs)
@@ -207,88 +271,243 @@ class ScoreSetForm(DatasetModelForm):
         )
 
         self.fields["short_description"].max_length = 500
-        self.fields["experiment"] = forms.ModelChoiceField(
-            queryset=None,
-            required=True,
-            widget=forms.Select(attrs={"class": "form-control"}),
-        )
-        self.fields["replaces"] = forms.ModelChoiceField(
-            queryset=ScoreSet.objects.none(),
-            required=False,
-            widget=forms.Select(attrs={"class": "form-control"}),
-        )
+
+        if not self.editing_existing:
+            self.fields["meta_analysis_for"] = forms.ModelMultipleChoiceField(
+                queryset=ScoreSet.objects.none(),
+                required=False,
+                widget=forms.SelectMultiple(
+                    attrs={"class": "form-control select2"},
+                ),
+            )
+            self.fields["experiment"] = forms.ModelChoiceField(
+                queryset=Experiment.objects.none(),
+                required=False,
+                empty_label="--------",
+                widget=forms.Select(attrs={"class": "form-control select2"}),
+            )
+            self.fields["replaces"] = forms.ModelChoiceField(
+                queryset=ScoreSet.objects.none(),
+                required=False,
+                empty_label="--------",
+                widget=forms.Select(attrs={"class": "form-control select2"}),
+            )
+
+            self.fields["experiment"].required = False
+            self.fields["meta_analysis_for"].required = False
+            self.fields["replaces"].required = False
+
+            self.set_replaces_options()
+            self.set_experiment_options()
+            self.set_meta_analysis_options()
+        else:
+            # Do not allow editing after the fact. Makes tracking parent
+            # changes difficult, especially for meta-analyses.
+            self.fields.pop("experiment", None)
+            self.fields.pop("meta_analysis_for", None)
+            self.fields.pop("replaces", None)
+
         self.fields["licence"] = forms.ModelChoiceField(
             queryset=Licence.objects.all(),
+            initial=Licence.get_default(),
             required=False,
-            widget=forms.Select(attrs={"class": "form-control "}),
+            empty_label="--------",
+            widget=forms.Select(
+                attrs={"class": "form-control select2"},
+                choices=self.__class__.format_licence_options(),
+            ),
         )
-
-        self.fields["replaces"].required = False
-        self.set_replaces_options()
-        self.set_experiment_options()
 
         self.set_initial_keywords()
         self.set_initial_dois()
         self.set_initial_pmids()
 
-        self.fields["licence"].required = False
-        if not self.fields["licence"].initial:
-            self.fields["licence"].initial = Licence.get_default()
-
+    # ----------------------- SETUP CONFIG ------------------------- #
+    @staticmethod
+    def format_licence_options():
         choices = [("", "--------")]
         for licence in Licence.objects.all():
             name = licence.get_long_name()
             if licence == Licence.get_default():
                 name += " [Default]"
             choices.append((licence.pk, name))
-        self.fields["licence"].widget.choices = choices
+        return choices
 
-        for field in ("licence", "replaces", "experiment"):
-            if field in self.fields:
-                self.fields[field].widget.attrs.update(**{"class": "select2"})
+    def set_initial_keywords(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields["keywords"].initial = self.experiment.keywords.all()
+
+    def set_initial_dois(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields["doi_ids"].initial = self.experiment.doi_ids.all()
+
+    def set_initial_pmids(self):
+        if self.experiment is not None and self.instance.pk is None:
+            self.fields[
+                "pubmed_ids"
+            ].initial = self.experiment.pubmed_ids.all()
+
+    def set_meta_analysis_options(self):
+        if "meta_analysis_for" in self.fields:
+            # Remove scoreset options which are already a meta analysis
+            options = (
+                (
+                    ScoreSet.objects.all()
+                    if settings.META_ANALYSIS_ALLOW_DAISY_CHAIN
+                    else ScoreSet.non_meta_analyses()
+                )
+                .exclude(private=True)
+                .exclude(pk=self.instance.pk)
+                .exclude(urn=self.instance.urn)
+                .order_by("urn")
+            )
+
+            self.fields["meta_analysis_for"].queryset = options
+            choices = [
+                (
+                    s.pk,
+                    "{} | {} (meta)".format(s.urn, s.title)
+                    if s.is_meta_analysis
+                    else "{} | {}".format(s.urn, s.title),
+                )
+                for s in options.all()
+            ]
+            self.fields["meta_analysis_for"].widget.choices = choices
+
+    def set_replaces_options(self):
+        if "replaces" in self.fields:
+            admin_instances = self.user.profile.administrator_scoresets()
+            editor_instances = self.user.profile.editor_scoresets()
+            choices = set(
+                [i.pk for i in admin_instances.union(editor_instances)]
+            )
+            if self.experiment is not None:
+                choices &= set([i.pk for i in self.experiment.scoresets.all()])
+            elif self.instance.parent is not None:
+                choices &= set(
+                    [i.pk for i in self.instance.parent.scoresets.all()]
+                )
+            scoresets_qs = (
+                ScoreSet.objects.filter(pk__in=choices)
+                .exclude(private=True)
+                .exclude(pk=self.instance.pk)
+                .exclude(urn=self.instance.urn)
+                .order_by("urn")
+            )
+            self.fields["replaces"].queryset = scoresets_qs
+
+            fmt_options = [("", self.fields["replaces"].empty_label)] + [
+                (s.pk, "{} | {}".format(s.urn, s.title))
+                for s in scoresets_qs.all()
+            ]
+            self.fields["replaces"].widget.choices = fmt_options
+
+    def set_experiment_options(self):
+        if "experiment" in self.fields:
+            admin_instances = self.user.profile.administrator_experiments()
+            editor_instances = self.user.profile.editor_experiments()
+            public_instances = Experiment.objects.filter(private=False)
+            choices = set(
+                [
+                    i.pk
+                    for i in (
+                        admin_instances | editor_instances | public_instances
+                    ).distinct()
+                ]
+            )
+
+            # Prevent attaching a regular score set to a meta-analysis
+            # experiment
+            experiment_qs = (
+                Experiment.non_meta_analyses()
+                .filter(pk__in=choices)
+                .order_by("urn")
+            )
+            self.fields["experiment"].queryset = experiment_qs
+
+            fmt_options = [("", self.fields["experiment"].empty_label)] + [
+                (e.pk, "{} | {}".format(e.urn, e.title))
+                for e in experiment_qs.all()
+            ]
+            self.fields["experiment"].widget.choices = fmt_options
+
+            if self.experiment is not None:
+                choices_qs = Experiment.objects.filter(
+                    pk__in=[self.experiment.pk]
+                ).order_by("urn")
+                self.fields["experiment"].queryset = choices_qs
+                self.fields["experiment"].widget.choices = (
+                    (
+                        self.experiment.pk,
+                        "{} | {}".format(
+                            self.experiment.urn, self.experiment.title
+                        ),
+                    ),
+                )
+                self.fields["experiment"].initial = self.experiment
+
+    # -------------------- CLEANING ---------------------- #
+    def clean_meta_analysis_for(self):
+        if self.editing_existing:
+            raise ValidationError(ErrorMessages.MetaAnalysis.changing_children)
+
+        children = (
+            self.cleaned_data.get("meta_analysis_for", ScoreSet.objects.none())
+            or ScoreSet.objects.none()
+        )
+
+        if children.count() == 0:
+            return children
+
+        if (
+            children.count() > 0
+            and self.data.get("experiment", None) is not None
+        ):
+            raise ValidationError(
+                ErrorMessages.MetaAnalysis.experiment_present
+            )
+
+        for child in children:
+            if child.private:
+                raise ValidationError(
+                    ErrorMessages.MetaAnalysis.linking_private
+                )
+            if (
+                child.is_meta_analysis
+                and not settings.META_ANALYSIS_ALLOW_DAISY_CHAIN
+            ):
+                raise ValidationError(
+                    ErrorMessages.MetaAnalysis.linking_other_meta
+                )
+
+        return children
 
     def clean_experiment(self):
-        experiment = self.cleaned_data["experiment"]
-        existing_experiment = self.instance.parent
-        if self.instance.pk is not None and existing_experiment is not None:
-            if experiment is not None:
-                if (
-                    existing_experiment.urn != experiment.urn
-                    and not self.instance.private
-                ):
-                    raise ValidationError(
-                        ErrorMessages.Experiment.public_scoreset
-                    )
-                if (
-                    existing_experiment.urn != experiment.urn
-                    and self.instance.private
-                ):
-                    # Replaces will need to be reset if changing experiments
-                    # because a scoreset being replaces must be a member
-                    # of the same experiment.
-                    self.instance.replaces = None
-                    # Re-trigger clean replaces to make sure the selected
-                    # replaces is a member of the same experiment.
-                    self.cleaned_data["replaces"] = self.clean_replaces()
-        return experiment
-
-    def clean_licence(self):
-        licence = self.cleaned_data.get("licence", None)
-        if not licence:
-            licence = Licence.get_default()
-        return licence
+        if self.editing_existing:
+            raise ValidationError(ErrorMessages.Experiment.changing_experiment)
+        if self.is_meta_analysis:
+            return self.get_meta_analysis_experiment()
+        return self.cleaned_data.get("experiment", None)
 
     def clean_replaces(self):
         replaces = self.cleaned_data.get("replaces", None)
-        experiment = self.cleaned_data.get("experiment", None)
+        experiment = self.data.get("experiment", None)
+        if experiment is not None and str(experiment).strip() != "":
+            experiment = int(experiment)
+
+        if self.editing_existing:
+            raise ValidationError(ErrorMessages.Replaces.changing_replaces)
+
         if replaces is not None:
-            if (
-                experiment is not None
-                and replaces not in experiment.scoresets.all()
-            ):
+            if self.is_meta_analysis and (not replaces.is_meta_analysis):
                 raise ValidationError(
-                    ErrorMessages.Replaces.different_experiment
+                    ErrorMessages.Replaces.meta_replacing_non_meta
                 )
+            if (not self.is_meta_analysis) and replaces.is_meta_analysis:
+                raise ValidationError(
+                    ErrorMessages.Replaces.non_meta_replacing_meta
+                )
+
             if (
                 replaces.next_version is not None
                 and replaces.next_version != self.instance
@@ -298,32 +517,78 @@ class ScoreSetForm(DatasetModelForm):
                         replaces.urn
                     )
                 )
+
             if replaces.private:
                 raise ValidationError(ErrorMessages.Replaces.is_not_public)
+
             if replaces.pk == self.instance.pk:
                 raise ValidationError(ErrorMessages.Replaces.replacing_self)
+
+            if experiment != replaces.experiment.pk:
+                raise ValidationError(
+                    ErrorMessages.Replaces.different_experiment
+                )
+
         return replaces
 
-    def clean_score_data(self):
+    def clean_licence(self):
+        licence = self.cleaned_data.get("licence", None)
+        if not licence:
+            licence = Licence.get_default()
+        return licence
+
+    def clean_score_data(self) -> MaveDataset:
         score_file = self.cleaned_data.get("score_data", None)
         if not score_file:
-            return pd.DataFrame(), None
-        non_hgvs_columns, primary_hgvs_column, score_df = validate_variant_rows(
-            score_file
-        )
-        self.dataset_columns[constants.score_columns] = non_hgvs_columns
-        return score_df, primary_hgvs_column
+            return MaveDataset()
 
-    def clean_count_data(self):
+        v = MaveDataset.for_scores(file=score_file)
+        v.validate(targetseq=self.targetseq, relaxed_ordering=True)
+
+        if v.is_valid:
+            self.dataset_columns[constants.score_columns] = v.non_hgvs_columns
+            return v
+        else:
+            if v.n_errors <= self.MAX_ERRORS:
+                for error in v.errors:
+                    self.add_error("score_data", mark_safe(error))
+            else:
+                self.add_error(
+                    "score_data",
+                    mark_safe(
+                        "Score data contains errors. "
+                        '<a href="#" id="dl-score-data-errors">Download</a> '
+                        "the errors file to see details.",
+                    ),
+                )
+            return v
+
+    def clean_count_data(self) -> MaveDataset:
         count_file = self.cleaned_data.get("count_data", None)
         if not count_file:
             self.dataset_columns[constants.count_columns] = []
-            return pd.DataFrame(), None
-        non_hgvs_columns, primary_column, counts_df = validate_variant_rows(
-            count_file
-        )
-        self.dataset_columns[constants.count_columns] = non_hgvs_columns
-        return counts_df, primary_column
+            return MaveDataset()
+
+        v = MaveDataset.for_counts(file=count_file)
+        v.validate(targetseq=self.targetseq, relaxed_ordering=True)
+
+        if v.is_valid:
+            self.dataset_columns[constants.count_columns] = v.non_hgvs_columns
+            return v
+        else:
+            if v.n_errors <= self.MAX_ERRORS:
+                for error in v.errors:
+                    self.add_error("count_data", mark_safe(error))
+            else:
+                self.add_error(
+                    "count_data",
+                    mark_safe(
+                        "Count data contains errors. "
+                        '<a href="#" id="dl-count-data-errors">Download</a> '
+                        "the errors file to see details.",
+                    ),
+                )
+            return v
 
     def clean_meta_data(self):
         meta_file = self.cleaned_data.get("meta_data", None)
@@ -351,8 +616,17 @@ class ScoreSetForm(DatasetModelForm):
             # End here and run the parent method to quickly return the form.
             return cleaned_data
 
+        if not self.editing_existing:
+            if not (
+                self.is_meta_analysis or cleaned_data.get("experiment", None)
+            ):
+                self.add_error(
+                    None,
+                    "Please select an Experiment or create a meta-analysis.",
+                )
+
         # Indicates that a new scoreset is being created or a failed scoreset
-        # is being edited. Failed scoresets have not variants.
+        # is being edited. Failed scoresets have no variants.
         if getattr(self, "edit_mode", False):
             scores_required = False
         else:
@@ -362,17 +636,20 @@ class ScoreSetForm(DatasetModelForm):
                 or self.instance.processing_state == constants.failed
             )
 
-        score_data, primary_hgvs_scores = cleaned_data.get(
-            "score_data", (pd.DataFrame(), None)
-        )
-        count_data, primary_hgvs_counts = cleaned_data.get(
-            "count_data", (pd.DataFrame(), None)
-        )
+        score_data: MaveDataset = cleaned_data.get("score_data")
+        count_data: MaveDataset = cleaned_data.get("count_data")
+
+        if score_data and count_data:
+            self.allow_aa_sequence = (
+                score_data.index_column == constants.hgvs_pro_column
+                and count_data.index_column == constants.hgvs_pro_column
+            )
+
         meta_data = cleaned_data.get("meta_data", {})
 
-        has_score_data = len(score_data) > 0
-        has_count_data = len(count_data) > 0
-        has_meta_data = len(meta_data) > 0
+        has_score_data = (score_data is not None) and (not score_data.is_empty)
+        has_count_data = (count_data is not None) and (not count_data.is_empty)
+        has_meta_data = (meta_data is not None) and len(meta_data) > 0
 
         if has_meta_data:
             self.instance.extra_metadata = meta_data
@@ -397,43 +674,73 @@ class ScoreSetForm(DatasetModelForm):
             )
             return cleaned_data
 
-        if has_count_data:
-            try:
-                validate_datasets_define_same_variants(
-                    scores=score_data, counts=count_data
-                )
-            except ValidationError:
-                self.add_error(
-                    None if "count_data" not in self.fields else "count_data",
-                    ErrorMessages.CountData.different_variants,
-                )
-                return cleaned_data
+        if has_count_data and not score_data.match_other(count_data):
+            self.add_error(
+                None if "count_data" not in self.fields else "count_data",
+                ErrorMessages.CountData.different_variants,
+            )
+            return cleaned_data
 
         # Re-build the variants if any new files have been processed.
-        # If has_count_data is true then has_score_data should also be true.
-        # The reverse is not always true.
+        # If has_count_data is true then has_score_data is also be true because
+        # uploading counts alone is not allowed. The reverse is not always true.
         if has_score_data:
             validate_scoreset_json(self.dataset_columns)
             if not has_count_data:
-                count_data = pd.DataFrame()
+                count_data = MaveDataset()
             variants = {
-                "scores_df": score_data,
-                "counts_df": count_data,
-                "index": primary_hgvs_scores,
+                "scores_df": score_data.data(serializable=True),
+                "counts_df": count_data.data(serializable=True),
+                "index": score_data.index_column,
             }
             cleaned_data["variants"] = variants
 
         return cleaned_data
 
+    def is_valid(self, targetseq: Optional[str] = None):
+        # Set as instance variables so full clean will be called every time
+        # a new sequence or other settings are passed in.
+        self.targetseq = targetseq
+
+        # Clear previous errors to trigger full_clean call in base class.
+        self._errors = None
+        return super().is_valid()
+
+    # --------------- SAVING ------------------------------------ #
     @transaction.atomic
     def _save_m2m(self):
         return super()._save_m2m()
 
     @transaction.atomic
     def save(self, commit=True):
+        if self.is_meta_analysis and commit:
+            if not (self.editing_public or self.editing_existing):
+                experiment: Experiment = self.cleaned_data["experiment"]
+
+                if experiment.created_by is None:
+                    experiment.set_created_by(self.user, propagate=False)
+                if experiment.modified_by is None:
+                    experiment.set_modified_by(self.user, propagate=False)
+
+                experiment.save()
+
+                experiment_set: ExperimentSet = experiment.experimentset
+                if experiment_set.created_by is None:
+                    experiment_set.set_created_by(self.user, propagate=False)
+                if experiment_set.modified_by is None:
+                    experiment_set.set_modified_by(self.user, propagate=False)
+
+                experiment_set.save()
+
+                self.instance.experiment = experiment
+                self.instance.experiment_id = experiment.id
+
         return super().save(commit=commit)
 
-    def serialize_variants(self):
+    # ---------------------- PUBLIC ----------------------------- #
+    def serialize_variants(
+        self,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[str]]:
         """Serializes variants in JSON format."""
         variants = self.cleaned_data.get("variants", {})
         scores_df = variants.get("scores_df", pd.DataFrame())
@@ -444,87 +751,105 @@ class ScoreSetForm(DatasetModelForm):
     def has_variants(self):
         return bool(self.cleaned_data.get("variants", {}))
 
-    def set_initial_keywords(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields["keywords"].initial = self.experiment.keywords.all()
+    @property
+    def scores_dataset(self) -> Optional[MaveScoresDataset]:
+        return self.cleaned_data.get("score_data", None)
 
-    def set_initial_dois(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields["doi_ids"].initial = self.experiment.doi_ids.all()
+    @property
+    def counts_dataset(self) -> Optional[MaveCountsDataset]:
+        return self.cleaned_data.get("count_data", None)
 
-    def set_initial_pmids(self):
-        if self.experiment is not None and self.instance.pk is None:
-            self.fields[
-                "pubmed_ids"
-            ].initial = self.experiment.pubmed_ids.all()
+    @property
+    def should_write_scores_error_file(self) -> bool:
+        validator = self.cleaned_data.get("score_data", None)
+        return (
+            validator
+            and validator.errors
+            and validator.n_errors > self.MAX_ERRORS
+        )
 
-    def set_replaces_options(self):
-        if "replaces" in self.fields:
-            admin_instances = self.user.profile.administrator_scoresets()
-            editor_instances = self.user.profile.editor_scoresets()
-            choices = set(
-                [i.pk for i in admin_instances.union(editor_instances)]
+    @property
+    def should_write_counts_error_file(self) -> bool:
+        validator = self.cleaned_data.get("count_data", None)
+        return (
+            validator
+            and validator.errors
+            and validator.n_errors > self.MAX_ERRORS
+        )
+
+    @property
+    def is_meta_analysis(self) -> bool:
+        if "meta_analysis_for" not in self.fields:
+            return self.instance.is_meta_analysis
+        else:
+            return len(self.meta_analysis_form_field_data) > 0
+
+    def get_existing_meta_analysis(self) -> Optional[ScoreSet]:
+        children = self.meta_analysis_form_field_data
+        if len(children) < 1:
+            return None
+
+        field_name, objects = ScoreSet.annotate_meta_children_count()
+        # Keep all meta-analysis score sets which contain exactly the number
+        # of child score sets the user is trying to link to.
+        meta_analyses = objects.filter(**{f"{field_name}": len(children)})
+        for pk in children:
+            # Filter out any meta-analyses which do not have the exact same
+            # child score sets. Ordering is not important.
+            meta_analyses = meta_analyses.filter(meta_analysis_for=pk)
+
+        return meta_analyses.first()
+
+    def get_meta_analysis_experiment(self) -> Experiment:
+        existing = self.get_existing_meta_analysis()
+        children = ScoreSet.objects.filter(
+            pk__in=self.meta_analysis_form_field_data
+        )
+
+        if children.count() == 0:
+            raise ValueError(
+                "Cannot create a meta-analysis without any child score sets"
             )
-            if self.experiment is not None:
-                choices &= set([i.pk for i in self.experiment.scoresets.all()])
-            elif self.instance.parent is not None:
-                choices &= set(
-                    [i.pk for i in self.instance.parent.scoresets.all()]
-                )
-            scoresets_qs = (
-                ScoreSet.objects.filter(pk__in=choices)
-                .exclude(private=True)
-                .exclude(pk=self.instance.pk)
-                .exclude(urn=self.instance.urn)
-                .order_by("urn")
-            )
-            self.fields["replaces"].queryset = scoresets_qs
-            self.fields["replaces"].widget.choices = [
-                ("", self.fields["replaces"].empty_label)
-            ] + [
-                (s.pk, "{} | {}".format(s.urn, s.title))
-                for s in scoresets_qs.all()
-            ]
 
-    def set_experiment_options(self):
-        if "experiment" in self.fields:
-            admin_instances = self.user.profile.administrator_experiments()
-            editor_instances = self.user.profile.editor_experiments()
-            choices = set(
-                [i.pk for i in admin_instances.union(editor_instances)]
-            )
-            experiment_qs = Experiment.objects.filter(pk__in=choices).order_by(
-                "urn"
-            )
-            self.fields["experiment"].queryset = experiment_qs
-            self.fields["experiment"].widget.choices = [
-                ("", self.fields["experiment"].empty_label)
-            ] + [
-                (e.pk, "{} | {}".format(e.urn, e.title))
-                for e in experiment_qs.all()
-            ]
+        # Create a new experiment but linked to the child's experimentset
+        # if this is a novel meta-analysis
+        experimentset = None
+        all_from_same_experiment_set = (
+            len(set([c.experiment.experimentset.urn for c in children.all()]))
+            == 1
+        )
+        if all_from_same_experiment_set:
+            experimentset = children.first().experiment.experimentset
 
-            if self.experiment is not None:
-                choices_qs = Experiment.objects.filter(
-                    pk__in=[self.experiment.pk]
-                ).order_by("urn")
-                self.fields["experiment"].queryset = choices_qs
-                self.fields["experiment"].widget.choices = (
-                    (
-                        self.experiment.pk,
-                        "{} | {}".format(
-                            self.experiment.urn, self.experiment.title
-                        ),
-                    ),
-                )
-                self.fields["experiment"].initial = self.experiment
+        # Create new parent tree if this is a completely novel meta-analysis
+        description = ", ".join([s.urn for s in children.order_by("urn")])
+        if existing is None:
+            return Experiment(
+                title=f"Meta-analysis of {description}",
+                short_description=f"Meta-analysis of {description}",
+                experimentset=experimentset,
+            )
 
-    @classmethod
-    def from_request(cls, request, instance=None, prefix=None, initial=None):
-        form = super().from_request(request, instance, prefix, initial)
-        form.set_replaces_options()
-        form.set_experiment_options()
-        return form
+        return existing.experiment
+
+    @property
+    def editing_existing(self) -> bool:
+        return self.instance.pk is not None
+
+    @property
+    def editing_public(self) -> bool:
+        return not self.instance.private
+
+    @property
+    def meta_analysis_form_field_data(self) -> List[str]:
+        if hasattr(self.data, "getlist"):
+            children = self.data.getlist("meta_analysis_for", [])
+        else:
+            children = self.data.get("meta_analysis_for", [])
+
+        if isinstance(children, (int, str)):
+            children = [children]
+        return children
 
 
 class ScoreSetEditForm(ScoreSetForm):
@@ -540,11 +865,15 @@ class ScoreSetEditForm(ScoreSetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.edit_mode = True
-        self.fields.pop("experiment")
+
+        # Might already be popped if passing in instance
+        self.fields.pop("experiment", None)
+        self.fields.pop("meta_analysis_for", None)
+        self.fields.pop("replaces", None)
+
         self.fields.pop("score_data")
         self.fields.pop("count_data")
         self.fields.pop("meta_data")
-        self.fields.pop("replaces")
 
         if self.instance is not None:
             if self.user not in self.instance.administrators:

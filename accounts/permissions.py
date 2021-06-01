@@ -28,7 +28,7 @@ class PermissionTypes:
 
 class GroupTypes:
     """
-    A static utility class for defining permission groups for instances such 
+    A static utility class for defining permission groups for instances such
     as `ExperimentSet`, `Experiment` and `ScoreSet`.
     """
 
@@ -102,7 +102,7 @@ def get_viewer_group_name_for_instance(instance):
         return "{}:{}-{}".format(klass, instance.pk, GroupTypes.VIEWER)
 
 
-def instances_for_user_with_group_permission(user, model, group_type):
+def instances_for_user_with_group_permission(user, queryset, group_type):
     """
     Return all instances that the user is in `group_type` for.
 
@@ -110,22 +110,28 @@ def instances_for_user_with_group_permission(user, model, group_type):
     ----------
     user : `User`
         The user to retrieve instances for.
-    model : `DatasetModel`
+    queryset : `django.db.models.QuerySet`
         The instance model class.
     group_type : `str`
-        The group, which is either admins, editors or viewers.
+        The group, which is either admins, editors or viewers. Pass 'any'
+        to get instances with any permission type (view, edit, admin).
 
     Returns
     -------
     `QuerySet`
     """
     if user_is_anonymous(user):
-        return model.objects.none()
-    groups = user.groups.filter(
-        name__iregex=r"{}:\d+-{}".format(model.__name__, group_type)
-    )
+        return queryset.none()
+
+    class_name = queryset.model.__name__
+    if group_type == "any":
+        pattern = r"{0}:\d+-\w+".format(class_name)
+    else:
+        pattern = r"{0}:\d+-{1}".format(class_name, group_type)
+
+    groups = user.groups.filter(name__iregex=pattern)
     pks = set(g.name.split(":")[-1].split("-")[0] for g in groups)
-    return model.objects.filter(pk__in=pks)
+    return queryset.filter(pk__in=pks)
 
 
 # Group construction

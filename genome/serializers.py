@@ -50,7 +50,7 @@ class WildTypeSequenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WildTypeSequence
-        fields = ("sequence",)
+        fields = ("sequence", "sequence_type")
         read_only_fields = fields
 
 

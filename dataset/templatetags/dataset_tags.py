@@ -1,16 +1,23 @@
 import json
 import logging
+from typing import Optional
 
 from django import template
+from django.contrib.auth import get_user_model
 from django.utils.safestring import mark_safe
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from dataset import models
+from dataset.models.base import DatasetModel
+from dataset.models.experiment import Experiment
+from dataset.models.experimentset import ExperimentSet
+from dataset.models.scoreset import ScoreSet
 from metadata.models import PubmedIdentifier
 from accounts.permissions import user_is_anonymous
 
 register = template.Library()
 logger = logging.getLogger("django")
+User = get_user_model()
 
 
 def get_ref_map(gene):
@@ -36,6 +43,35 @@ def get_ref_map(gene):
         )
         return None
     return reference_map
+
+
+@register.simple_tag
+def is_score_set(instance):
+    return isinstance(instance, ScoreSet)
+
+
+@register.simple_tag
+def is_experiment(instance):
+    return isinstance(instance, Experiment)
+
+
+@register.simple_tag
+def is_experiment_set(instance):
+    return isinstance(instance, ExperimentSet)
+
+
+@register.simple_tag
+def is_meta_analysis(instance):
+    if isinstance(instance, DatasetModel):
+        return instance.is_meta_analysis
+    return False
+
+
+@register.simple_tag
+def is_meta_analysed(instance):
+    if isinstance(instance, ScoreSet):
+        return instance.meta_analysed_by.count() > 0
+    return False
 
 
 @register.assignment_tag
@@ -82,12 +118,12 @@ def display_targets(
 ):
     """
     Used by the search table. For a given experiment or score set, will collect
-    list of target attributes to display in the table columns. For example, target
-    categories, organisms and names.
+    list of target attributes to display in the table columns. For example,
+    target categories, organisms and names.
 
     Parameters
     ----------
-    instance : `dataset.models.experiment.Experiment` | `dataset.models.scoreset.ScoreSet`
+    instance : dataset.models.experiment.Experiment | dataset.models.scoreset.ScoreSet
     user : User
     javascript : bool, optional.
         Return a safe JSON string dump.
@@ -183,7 +219,7 @@ def organise_by_target(scoresets):
 @register.assignment_tag
 def visible_children(instance, user=None):
     """
-    Returns the current versions of an experiment or experimentset's children.
+    Returns the current versions of an experiment or experiment set's children.
     Returns the latest instances viewable by the user (public,
     or private contributor).
 
@@ -196,6 +232,10 @@ def visible_children(instance, user=None):
     -------
     Iterable[ScoreSet]
     """
+    if is_experiment_set(instance):
+        return Experiment.non_meta_analyses().intersection(
+            filter_visible(instance.children, user=user)
+        )
     return filter_visible(instance.children, user=user)
 
 
@@ -225,17 +265,21 @@ def current_versions(instances, user=None):
 
 
 @register.assignment_tag
-def filter_visible(instances, user=None):
+def filter_visible(
+    instances: QuerySet, user: Optional[User] = None, distinct: bool = True
+):
     """
-    Filter the visiable instances for user. This means including instances which
+    Filter the visible instances for user. This means including instances which
     are not private, and private instances which the user is a contributor for.
 
     Parameters
     ----------
-    instances : QuerySet<ExperimentSet | Experiment | ScoreSet>
+    instances : django.db.models.QuerySet
         QuerySet of instances to filter.
-    user : User
+    user : accounts.models.User
         User instance.
+    distinct : bool
+        Return distinct queryset
 
     Returns
     -------
@@ -248,14 +292,64 @@ def filter_visible(instances, user=None):
         return instances
 
     if user is None or user_is_anonymous(user):
-        return instances.exclude(private=True)
+        result = instances.exclude(private=True)
+        if distinct:
+            return result.distinct()
+        else:
+            return result
 
-    klass = instances.first().__class__.__name__
-    groups = user.groups.filter(name__iregex=r"{}:\d+-\w+".format(klass))
-    pks = set(int(g.name.split(":")[-1].split("-")[0]) for g in groups)
+    if instances.model is ExperimentSet:
+        visible_meta = (
+            ExperimentSet.meta_analyses()
+            .filter(private=True)
+            .intersection(instances.filter(private=True))
+            .filter(
+                experiments__scoresets__in=(
+                    ScoreSet.meta_analyses().intersection(
+                        user.profile.contributor_scoresets()
+                    )
+                )
+            )
+        )
+
+        private_visible = user.profile.contributor_experimentsets(
+            instances.filter(private=True).difference(visible_meta)
+        )
+
+    elif instances.model is Experiment:
+        visible_meta = (
+            Experiment.meta_analyses()
+            .filter(private=True)
+            .intersection(instances.filter(private=True))
+            .filter(
+                scoresets__in=(
+                    user.profile.contributor_scoresets().intersection(
+                        ScoreSet.meta_analyses()
+                    )
+                )
+            )
+        )
+
+        private_visible = user.profile.contributor_experiments(
+            instances.filter(private=True).difference(visible_meta)
+        )
+
+    elif instances.model is ScoreSet:
+        private_visible = user.profile.contributor_scoresets(
+            instances.filter(private=True)
+        )
+        visible_meta = instances.none()
+
+    else:
+        raise TypeError(
+            f"Cannot filter non dataset class {instances.model.__name__}"
+        )
+
     public = instances.exclude(private=True)
-    private_visiable = instances.exclude(private=False).filter(pk__in=set(pks))
-    return (public | private_visiable).distinct().order_by("urn")
+    result = (public | private_visible | visible_meta).order_by("urn")
+    if distinct:
+        return result.distinct()
+    return result
 
 
 @register.assignment_tag
@@ -282,8 +376,9 @@ def lex_sorted_references(instance):
     elif isinstance(
         instance, (models.experiment.Experiment, models.scoreset.ScoreSet)
     ):
-        references = instance.pubmed_ids.all().distinct() | unique_parent_references(
-            instance
+        references = (
+            instance.pubmed_ids.all().distinct()
+            | unique_parent_references(instance)
         )
     else:
         references = PubmedIdentifier.objects.none()

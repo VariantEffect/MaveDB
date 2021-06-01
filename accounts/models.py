@@ -2,6 +2,7 @@ import re
 import logging
 import datetime
 from datetime import timedelta
+from typing import Optional, List
 
 from social_django.models import UserSocialAuth
 
@@ -10,6 +11,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import QuerySet
 from django.db.models.signals import post_save
+from django.contrib.postgres.fields import JSONField
 from django.dispatch import receiver
 from django.utils.html import format_html
 from django.utils.crypto import get_random_string
@@ -46,21 +48,52 @@ class Profile(TimeStampedModel):
         The foreign key relationship associating a profile with a user.
     """
 
-    TOKEN_LEGNTH = 64
+    TOKEN_LENGTH = 64
     TOKEN_EXPIRY = 14
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(default=None, blank=True, null=True)
     auth_token = models.CharField(
-        max_length=TOKEN_LEGNTH, null=True, default=None
+        max_length=TOKEN_LENGTH, null=True, default=None
     )
     auth_token_expiry = models.DateField(null=True, default=None)
+    submission_errors = JSONField(null=True, blank=True, default=None)
 
     def __str__(self):
         return "{}_profile".format(self.user.username)
 
+    def get_submission_scores_errors(self) -> Optional[List[str]]:
+        if self.submission_errors is None:
+            return None
+        return self.submission_errors.get("score_data", None)
+
+    def get_submission_counts_errors(self) -> Optional[List[str]]:
+        if self.submission_errors is None:
+            return None
+        return self.submission_errors.get("count_data", None)
+
+    def set_submission_scores_errors(
+        self, data: Optional[List[str]] = None
+    ) -> "Profile":
+        if not self.submission_errors:
+            self.submission_errors = {}
+        self.submission_errors["score_data"] = data
+        return self
+
+    def set_submission_counts_errors(
+        self, data: Optional[List[str]] = None
+    ) -> "Profile":
+        if not self.submission_errors:
+            self.submission_errors = {}
+        self.submission_errors["count_data"] = data
+        return self
+
+    def clear_submission_errors(self) -> "Profile":
+        self.submission_errors = {}
+        return self
+
     def generate_token(self):
-        self.auth_token = get_random_string(length=self.TOKEN_LEGNTH)
+        self.auth_token = get_random_string(length=self.TOKEN_LENGTH)
         self.auth_token_expiry = datetime.date.today() + timedelta(
             days=self.TOKEN_EXPIRY
         )
@@ -296,7 +329,12 @@ class Profile(TimeStampedModel):
 
     # Contributor
     # ----------------------------------------------------------------------- #
-    def contributor_instances(self):
+    def contributor_instances(
+        self,
+        experimentset_queryset=None,
+        experiment_queryset=None,
+        scoreset_queryset=None,
+    ):
         """
         Return a list of :class:`DatasetModel` instances the user is a
         contributor for (view, edit, or admin).
@@ -306,13 +344,13 @@ class Profile(TimeStampedModel):
         `list`
         """
         instances = (
-            list(self.contributor_experimentsets())
-            + list(self.contributor_experiments())
-            + list(self.contributor_scoresets())
+            list(self.contributor_experimentsets(experimentset_queryset))
+            + list(self.contributor_experiments(experiment_queryset))
+            + list(self.contributor_scoresets(scoreset_queryset))
         )
         return instances
 
-    def contributor_experimentsets(self):
+    def contributor_experimentsets(self, queryset=None):
         """
         Return a list of :class:`ExperimentSet` instances the user
         contributes to.
@@ -321,14 +359,14 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = (
-            self.administrator_experimentsets()
-            | self.editor_experimentsets()
-            | self.viewer_experimentsets()
-        )
-        return instances.order_by("urn")
+        if queryset is None:
+            queryset = ExperimentSet.objects.all()
 
-    def contributor_experiments(self):
+        return instances_for_user_with_group_permission(
+            user=self.user, queryset=queryset, group_type="any"
+        ).order_by("urn")
+
+    def contributor_experiments(self, queryset=None):
         """
         Return a list of :class:`Experiment` instances the user
         contributes to.
@@ -337,14 +375,14 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = (
-            self.administrator_experiments()
-            | self.editor_experiments()
-            | self.viewer_experiments()
-        )
-        return instances.order_by("urn")
+        if queryset is None:
+            queryset = Experiment.objects.all()
 
-    def contributor_scoresets(self):
+        return instances_for_user_with_group_permission(
+            user=self.user, queryset=queryset, group_type="any"
+        ).order_by("urn")
+
+    def contributor_scoresets(self, queryset=None):
         """
         Return a list of :class:`ScoreSet` instances the user
         contributes to.
@@ -353,31 +391,35 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
-        instances = (
-            self.administrator_scoresets()
-            | self.editor_scoresets()
-            | self.viewer_scoresets()
+        if queryset is None:
+            queryset = ScoreSet.objects.all()
+
+        return instances_for_user_with_group_permission(
+            user=self.user, queryset=queryset, group_type="any"
+        ).order_by("urn")
+
+    def public_contributor_experimentsets(self, queryset=None):
+        """Filters out private experimentsets"""
+        instances = self.contributor_experimentsets(queryset).exclude(
+            private=True
         )
         return instances.order_by("urn")
 
-    def public_contributor_experimentsets(self):
-        """Filters out private experimentsets"""
-        instances = self.contributor_experimentsets().exclude(private=True)
-        return instances.order_by("urn")
-
-    def public_contributor_experiments(self):
+    def public_contributor_experiments(self, queryset=None):
         """Filters out private experiments"""
-        instances = self.contributor_experiments().exclude(private=True)
+        instances = self.contributor_experiments(queryset).exclude(
+            private=True
+        )
         return instances.order_by("urn")
 
-    def public_contributor_scoresets(self):
+    def public_contributor_scoresets(self, queryset=None):
         """Filters out private scoresets"""
-        instances = self.contributor_scoresets().exclude(private=True)
+        instances = self.contributor_scoresets(queryset).exclude(private=True)
         return instances.order_by("urn")
 
     # Administrator
     # ----------------------------------------------------------------------- #
-    def administrator_instances(self):
+    def administrator_instances(self, queryset=None):
         """
         Return a list of :class:`DatasetModel` instances the user is an admin
         for.
@@ -387,13 +429,13 @@ class Profile(TimeStampedModel):
         `list`
         """
         instances = (
-            list(self.administrator_experimentsets())
-            + list(self.administrator_experiments())
-            + list(self.administrator_scoresets())
+            list(self.administrator_experimentsets(queryset))
+            + list(self.administrator_experiments(queryset))
+            + list(self.administrator_scoresets(queryset))
         )
         return instances
 
-    def administrator_experimentsets(self):
+    def administrator_experimentsets(self, queryset=None):
         """
         Return a list of :class:`ExperimentSet` instances the user
         administrates.
@@ -402,11 +444,13 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = ExperimentSet.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=ExperimentSet, group_type=GroupTypes.ADMIN
+            user=self.user, queryset=queryset, group_type=GroupTypes.ADMIN
         )
 
-    def administrator_experiments(self):
+    def administrator_experiments(self, queryset=None):
         """
         Return a list of :class:`Experiment` instances the user
         administrates.
@@ -415,11 +459,13 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = Experiment.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=Experiment, group_type=GroupTypes.ADMIN
+            user=self.user, queryset=queryset, group_type=GroupTypes.ADMIN
         )
 
-    def administrator_scoresets(self):
+    def administrator_scoresets(self, queryset=None):
         """
         Return a list of :class:`Experiment` instances the user
         administrates.
@@ -428,13 +474,15 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = ScoreSet.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=ScoreSet, group_type=GroupTypes.ADMIN
+            user=self.user, queryset=queryset, group_type=GroupTypes.ADMIN
         )
 
     # Editor
     # ---------------------------------------------------------------------- #
-    def editor_instances(self):
+    def editor_instances(self, queryset=None):
         """
         Return a list of :class:`DatasetModel` instances the user is a viewer
         for.
@@ -444,13 +492,13 @@ class Profile(TimeStampedModel):
         `QuerySet`
         """
         instances = (
-            list(self.editor_experimentsets())
-            + list(self.editor_experiments())
-            + list(self.editor_scoresets())
+            list(self.editor_experimentsets(queryset))
+            + list(self.editor_experiments(queryset))
+            + list(self.editor_scoresets(queryset))
         )
         return instances
 
-    def editor_experimentsets(self):
+    def editor_experimentsets(self, queryset=None):
         """
         Return a list of :class:`ExperimentSet` instances the user
         can only view.
@@ -459,11 +507,13 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = ExperimentSet.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=ExperimentSet, group_type=GroupTypes.EDITOR
+            user=self.user, queryset=queryset, group_type=GroupTypes.EDITOR
         )
 
-    def editor_experiments(self):
+    def editor_experiments(self, queryset=None):
         """
         Return a list of :class:`Experiment` instances the user
         can only view.
@@ -472,11 +522,13 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = Experiment.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=Experiment, group_type=GroupTypes.EDITOR
+            user=self.user, queryset=queryset, group_type=GroupTypes.EDITOR
         )
 
-    def editor_scoresets(self):
+    def editor_scoresets(self, queryset=None):
         """
         Return a list of :class:`ScoreSet` instances the user
         can only view.
@@ -485,13 +537,15 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = ScoreSet.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=ScoreSet, group_type=GroupTypes.EDITOR
+            user=self.user, queryset=queryset, group_type=GroupTypes.EDITOR
         )
 
     # Viewer
     # ---------------------------------------------------------------------- #
-    def viewer_instances(self):
+    def viewer_instances(self, queryset=None):
         """
         Return a list of :class:`DatasetModel` instances the user is a viewer
         for.
@@ -501,13 +555,13 @@ class Profile(TimeStampedModel):
         `list`
         """
         instances = (
-            list(self.viewer_experimentsets())
-            + list(self.viewer_experiments())
-            + list(self.viewer_scoresets())
+            list(self.viewer_experimentsets(queryset))
+            + list(self.viewer_experiments(queryset))
+            + list(self.viewer_scoresets(queryset))
         )
         return instances
 
-    def viewer_experimentsets(self):
+    def viewer_experimentsets(self, queryset=None):
         """
         Return a list of :class:`ExperimentSet` instances the user
         can only view.
@@ -516,11 +570,13 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = ExperimentSet.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=ExperimentSet, group_type=GroupTypes.VIEWER
+            user=self.user, queryset=queryset, group_type=GroupTypes.VIEWER
         )
 
-    def viewer_experiments(self):
+    def viewer_experiments(self, queryset=None):
         """
         Return a list of :class:`Experiment` instances the user
         can only view.
@@ -529,11 +585,13 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = Experiment.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=Experiment, group_type=GroupTypes.VIEWER
+            user=self.user, queryset=queryset, group_type=GroupTypes.VIEWER
         )
 
-    def viewer_scoresets(self):
+    def viewer_scoresets(self, queryset=None):
         """
         Return a list of :class:`ScoreSet` instances the user
         can only view.
@@ -542,8 +600,10 @@ class Profile(TimeStampedModel):
         -------
         `QuerySet`
         """
+        if queryset is None:
+            queryset = ScoreSet.objects.all()
         return instances_for_user_with_group_permission(
-            user=self.user, model=ScoreSet, group_type=GroupTypes.VIEWER
+            user=self.user, queryset=queryset, group_type=GroupTypes.VIEWER
         )
 
 

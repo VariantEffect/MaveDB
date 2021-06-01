@@ -340,20 +340,47 @@ class TestFilterVisible(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
+        ScoreSet.objects.all().delete()
         Experiment.objects.all().delete()
         ExperimentSet.objects.all().delete()
         User.objects.all().delete()
 
     def tearDown(self):
+        ScoreSet.objects.all().delete()
         Experiment.objects.all().delete()
         ExperimentSet.objects.all().delete()
         User.objects.all().delete()
+
+    def test_returns_experiments_with_meta_scoresets_user_is_contributor_on(
+        self,
+    ):
+        user = UserFactory()
+        meta = ScoreSetFactory()
+        meta.meta_analysis_for.add(ScoreSetFactory(), ScoreSetFactory())
+        meta.add_editors(user)
+        result = dataset_tags.filter_visible(
+            Experiment.objects.filter(id=meta.experiment.id), user=user
+        )
+        self.assertIn(meta.experiment, result)
+
+    def test_returns_experiments_sets_with_meta_scoresets_user_is_contributor_on(
+        self,
+    ):
+        user = UserFactory()
+        meta = ScoreSetFactory()
+        meta.meta_analysis_for.add(ScoreSetFactory(), ScoreSetFactory())
+        meta.add_editors(user)
+        result = dataset_tags.filter_visible(
+            ExperimentSet.objects.filter(id=meta.experiment.experimentset.id),
+            user=user,
+        )
+        self.assertIn(meta.experiment.experimentset, result)
 
     def test_returns_empty_list_none_passed(self):
         result = dataset_tags.filter_visible(None)
         self.assertEqual(result, [])
 
-    def test_filters_out_private_if_not_in_contrubtor_list(self):
+    def test_filters_out_private_if_not_in_contributor_list(self):
         user = UserFactory()
         ExperimentFactory(private=True)
         result = dataset_tags.filter_visible(Experiment.objects.all(), user)
