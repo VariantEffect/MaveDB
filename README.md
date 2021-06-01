@@ -20,10 +20,10 @@ please refer to the
  [ORCID API documentation](https://members.orcid.org/api/oauth) for a 
  description of OAuth and detailed instructions.
 
-See [MaveDB Development](./FOR_DEVS.md) for a detailed guide on getting up and 
+See [MaveDB Development](./DEVELOPERS.md) for a detailed guide on getting up and 
 running locally.
 
 See [MaveDB Deployment](./DEPLOYMENT.md) for a detailed production deployment 
 guide.
 
-See [MaveDB Admin](./FOR_ADMINS.md) for a guide on custom management commands.
+See [MaveDB Admin](./ADMINISTRATORS.md) for a guide on custom management commands.
