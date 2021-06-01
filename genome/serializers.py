@@ -91,6 +91,7 @@ class TargetGeneSerializer(serializers.ModelSerializer):
     )
     type = serializers.CharField(source="category")
 
+    # TODO: change 'type' to 'category' for consistency
     class Meta:
         model = TargetGene
         depth = 2
