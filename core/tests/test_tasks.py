@@ -90,11 +90,24 @@ class TestCeleryIntegration(CeleryTestCase):
                 "b": 2,
                 "raise_": False,
                 "wait": 3,
-                "allow_prod_db": False,
+                "allow_prod_db": True,
             }
         )
         self.assertTrue(ok)
         self.assertEqual(result.get(), 3)
+
+    def test_async_check_quits_when_allow_prod_db_is_false(self):
+        ok, result = health_check.submit_task(
+            kwargs={
+                "a": 1,
+                "b": 2,
+                "raise_": False,
+                "wait": 3,
+                "allow_prod_db": False,
+            }
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(result.get(), None)
 
 
 class TestSendMailTask(TestCase):
