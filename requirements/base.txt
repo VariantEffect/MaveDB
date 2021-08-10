@@ -27,4 +27,4 @@ pandas==1.1.2
 numpy==1.19.1
 sphinx==3.2.1
 fqfa>=1.2.1
-mavehgvs>=0.2.1
+mavehgvs>=0.4.0
