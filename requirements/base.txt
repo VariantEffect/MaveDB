@@ -19,7 +19,7 @@ pypandoc==1.4
 Faker==0.8.15
 coverage==4.5.1
 idutils==1.1.8
-urllib3==1.24.3
+urllib3==1.26.5
 metapub==0.5.5
 lxml==4.6.3
 psycopg2-binary==2.8.6
