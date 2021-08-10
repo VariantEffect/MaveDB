@@ -20,7 +20,7 @@ import json
 # -- Project information -----------------------------------------------------
 
 project = "MaveDB"
-copyright = "2017-2020, Alan F Rubin and Daniel C Esposito"
+copyright = "2017-2021, Alan F Rubin and Daniel C Esposito"
 author = "Alan F Rubin and Daniel C Esposito"
 
 # The full version, including alpha/beta/rc tags
