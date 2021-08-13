@@ -54,3 +54,9 @@ html_theme = "nature"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []
+
+
+# -- General substitutions and link targets ----------------------------------
+rst_epilog = """
+.. _MaveDB issue tracker: https://github.com/VariantEffect/mavedb/issues
+"""
