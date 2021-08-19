@@ -11,6 +11,7 @@ Welcome to MaveDB's documentation!
    :caption: Contents:
 
    upload_guide
+   contributor_roles
 
 
 Indices and tables

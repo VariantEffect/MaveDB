@@ -172,13 +172,6 @@ The intended use cases for meta-analysis score sets are combining the results of
 or (for a meta-analysis of a single score set) describing a complex score recalibration, normalization, or imputation
 process while reporting the "original" scores as a standard score set.
 
-Contributor roles and permissions
-###################################
-
-As the uploader, you will automatically be added as an administrator for any experiments or score sets that you upload.
-
-TODO: add information about editor and viewer and examples of their use
-
 Required information checklist
 ###################################
 
@@ -191,7 +184,7 @@ For each experiment and score set:
 * Abstract
 * Methods
 * Keywords
-* ORCID iDs for other people you want to add as contributors
+* ORCID iDs for other people you want to add as :ref:`contributors<Contributor roles>`.
 * PubMed IDs for the study reference(s) or DOIs for references not listed in PubMed (such as on bioRxiv)
 
 For each experiment you will also want:
