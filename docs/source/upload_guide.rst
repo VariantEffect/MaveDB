@@ -26,6 +26,10 @@ Library construction, assay design, and sequencing strategy are all described in
 Data analysis steps including read filtering, read counting, and score calculation are described in a
 :ref:`score set<Score sets>`.
 
+Each functional assay should be described in a unique experiment.
+Publications that perform more than one functional assay should be represented as multiple experiments organized under
+a single experiment set.
+
 Experiments have several fields for descriptive, free-text metadata, as well as additional structured metadata fields.
 Each experiment and score set in MaveDB should have a title, short description, abstract, and methods.
 The title and short description are required, and the abstract and methods are strongly recommended.
@@ -124,8 +128,6 @@ Score set targets
 
 TODO: add information about the target, including offset terms and sequence.
 
-TODO: describe columns for score set data.
-
 .. note::
     When entering target information for a new score set, you will have the
     option to use an existing target. Before using an existing target, make
@@ -136,6 +138,7 @@ TODO: describe columns for score set data.
 Score set data table format
 --------------------------------------
 
+TODO: describe columns for score set data.
 TODO: describe the format requirements, including linking to MAVE-HGVS
 TODO: describe required columns (hgvs_* and score)
 TODO: describe JSON-format "bonus metadata"
