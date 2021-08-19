@@ -12,7 +12,7 @@ Experiment sets
 
 Experiment sets do not have their own metadata and are used to group related experiments, such as when different
 functional assays are performed on the same target and typically described in the same publication
-(`example <https://www.mavedb.org/experimentset/urn:mavedb:00000003/>`_).
+(`example experiment set <https://www.mavedb.org/experimentset/urn:mavedb:00000003/>`_).
 
 Experiment sets are automatically created when the first associated experiment is saved.
 
@@ -22,7 +22,7 @@ Experiments
 Experiments are records that describe the data generated from performing a MAVE on a target.
 This includes all steps of the experimental procedure up to and including high-throughput sequencing.
 Library construction, assay design, and sequencing strategy are all described in the experiment
-(`example <https://www.mavedb.org/experiment/urn:mavedb:00000003-a/>`_).
+(`example experiment <https://www.mavedb.org/experiment/urn:mavedb:00000003-a/>`_).
 Data analysis steps including read filtering, read counting, and score calculation are described in a
 :ref:`score set<Score sets>`.
 
@@ -83,7 +83,7 @@ Score sets
 
 Score sets are records that describe the scores generated from the raw data described in their associated experiment.
 This includes all steps following the high-throughput sequencing step, including read filtering, read counting, and
-score calculations (`example <https://www.mavedb.org/experiment/urn:mavedb:00000003-a-1/>`_).
+score calculations (`example score set <https://www.mavedb.org/scoreset/urn:mavedb:00000003-a-1/>`_).
 
 Like experiments, score sets have several fields for descriptive, free-text metadata, as well as additional structured
 metadata fields.
