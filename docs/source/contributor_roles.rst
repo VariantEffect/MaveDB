@@ -1,7 +1,7 @@
 Contributor roles
 ====================================
 
-MaveDB supports three different user roles that can be assigned for each experiment and score set record:
+MaveDB supports three different roles that can be assigned to contributors for each experiment and score set record:
 administrators, editors, or viewers.
 
 .. note::
