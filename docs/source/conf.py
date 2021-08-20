@@ -61,4 +61,5 @@ html_static_path = []
 # -- General substitutions and link targets ----------------------------------
 rst_epilog = """
 .. _MaveDB issue tracker: https://github.com/VariantEffect/mavedb/issues
+.. _MaveDB GitHub: https://github.com/VariantEffect/mavedb
 """
