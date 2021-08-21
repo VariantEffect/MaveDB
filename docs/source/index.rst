@@ -15,3 +15,4 @@ To report issues or request new features, please use the `MaveDB issue tracker`_
    data_organization
    upload_guide
    contributor_roles
+   data_licensing
