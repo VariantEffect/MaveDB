@@ -235,8 +235,6 @@ class SraIdentifier(ExternalIdentifier):
             return idutils.to_url(self.identifier, scheme="bioproject")
         elif idutils.is_geo(self.identifier):
             return idutils.to_url(self.identifier, scheme="geo")
-        elif idutils.is_arrayexpress_array(self.identifier):
-            return idutils.to_url(self.identifier, scheme="arrayexpress_array")
         elif idutils.is_arrayexpress_experiment(self.identifier):
             return idutils.to_url(
                 self.identifier, scheme="arrayexpress_experiment"

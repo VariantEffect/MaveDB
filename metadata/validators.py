@@ -15,7 +15,6 @@ def validate_sra_identifier(identifier):
         idutils.is_sra(identifier)
         or idutils.is_bioproject(identifier)
         or idutils.is_geo(identifier)
-        or idutils.is_arrayexpress_array(identifier)
         or idutils.is_arrayexpress_experiment(identifier)
     ):
         raise ValidationError(
