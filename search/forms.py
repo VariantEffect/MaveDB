@@ -93,7 +93,7 @@ class AdvancedSearchForm(forms.Form):
     # )
 
     pubmed = fields.CSVCharField(
-        label="PubMed identifiers",
+        label="PubMed IDs",
         required=False,
         help_text="Search datasets by associated PubMed accessions.",
     )

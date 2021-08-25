@@ -260,8 +260,8 @@ class PubmedIdentifier(ExternalIdentifier):
     IDUTILS_SCHEME = "pmid"
 
     class Meta:
-        verbose_name = "PubMed identifier"
-        verbose_name_plural = "PubMed identifiers"
+        verbose_name = "PubMed ID"
+        verbose_name_plural = "PubMed IDs"
         ordering = ("reference_html",)
 
     reference_html = models.TextField(

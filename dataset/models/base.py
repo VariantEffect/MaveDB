@@ -220,7 +220,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     pubmed_ids = models.ManyToManyField(
         PubmedIdentifier,
         blank=True,
-        verbose_name="PubMed identifiers",
+        verbose_name="PubMed IDs",
         related_name="associated_%(class)ss",
     )
 

@@ -45,7 +45,7 @@ def validate_pubmed_identifier(identifier):
         identifier = identifier.identifier
     if not idutils.is_pmid(identifier):
         raise ValidationError(
-            "%(id)s is not a valid PubMed identifier.",
+            "%(id)s is not a valid PubMed ID.",
             params={"id": identifier},
         )
 

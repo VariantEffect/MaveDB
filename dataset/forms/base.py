@@ -106,7 +106,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields["pubmed_ids"] = FlexibleModelMultipleChoiceField(
             klass=PubmedIdentifier,
             to_field_name="identifier",
-            label="PubMed identifiers",
+            label="PubMed IDs",
             required=False,
             queryset=PubmedIdentifier.objects.all(),
             widget=forms.SelectMultiple(
