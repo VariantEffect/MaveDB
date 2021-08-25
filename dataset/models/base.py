@@ -208,7 +208,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     sra_ids = models.ManyToManyField(
         SraIdentifier,
         blank=True,
-        verbose_name="SRA identifiers",
+        verbose_name="Raw reads accessions",
         related_name="associated_%(class)ss",
     )
     doi_ids = models.ManyToManyField(

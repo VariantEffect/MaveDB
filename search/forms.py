@@ -98,9 +98,9 @@ class AdvancedSearchForm(forms.Form):
         help_text="Search datasets by associated PubMed accessions.",
     )
     sra = fields.CSVCharField(
-        label="SRA accessions",
+        label="Raw reads accessions",
         required=False,
-        help_text="Search datasets by associated SRA accessions.",
+        help_text="Search datasets by associated raw reads accessions.",
     )
     doi = fields.CSVCharField(
         label="DOIs",

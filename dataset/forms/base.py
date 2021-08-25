@@ -86,7 +86,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields["sra_ids"] = FlexibleModelMultipleChoiceField(
             klass=SraIdentifier,
             to_field_name="identifier",
-            label="SRA identifiers",
+            label="Raw reads accessions",
             required=False,
             queryset=SraIdentifier.objects.all(),
             widget=forms.SelectMultiple(

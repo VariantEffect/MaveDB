@@ -225,8 +225,8 @@ class SraIdentifier(ExternalIdentifier):
     DATABASE_NAME = "SRA"
 
     class Meta:
-        verbose_name = "SRA accession"
-        verbose_name_plural = "SRA accessions"
+        verbose_name = "Raw reads accession"
+        verbose_name_plural = "Raw reads accessions"
 
     def format_url(self):
         if idutils.is_sra(self.identifier):
