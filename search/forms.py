@@ -103,9 +103,9 @@ class AdvancedSearchForm(forms.Form):
         help_text="Search datasets by associated SRA accessions.",
     )
     doi = fields.CSVCharField(
-        label="DOI accessions",
+        label="DOIs",
         required=False,
-        help_text="Search datasets by associated DOI accessions.",
+        help_text="Search datasets by associated DOIs.",
     )
     keyword = fields.CSVCharField(
         label="Keywords",

@@ -214,7 +214,7 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     doi_ids = models.ManyToManyField(
         DoiIdentifier,
         blank=True,
-        verbose_name="DOI identifiers",
+        verbose_name="DOIs",
         related_name="associated_%(class)ss",
     )
     pubmed_ids = models.ManyToManyField(

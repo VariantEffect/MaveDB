@@ -96,7 +96,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields["doi_ids"] = FlexibleModelMultipleChoiceField(
             klass=DoiIdentifier,
             to_field_name="identifier",
-            label="DOI identifiers",
+            label="DOIs",
             required=False,
             queryset=DoiIdentifier.objects.all(),
             widget=forms.SelectMultiple(
