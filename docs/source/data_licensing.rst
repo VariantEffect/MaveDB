@@ -14,4 +14,5 @@ The license is listed in the header of downloaded CSV files and also in the API.
 
 Users also have the option of adding a free-text data usage policy to a score set, such as terms that dictate use of
 pre-publication data.
+For example, data producers may wish to assert their right to publish the results of certain analyses first.
 The data usage policy will be added to the header of any downloaded data files if one is present.
