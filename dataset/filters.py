@@ -168,8 +168,16 @@ class DatasetModelFilter(FilterSet):
         if not queryset.count():
             return queryset
         model = queryset.first().__class__
+        # value is the input searching value
+        newV = value.lower()
         for instance in queryset.all():
+            for c in instance.contributors:
+                if newV == c.profile.get_display_name().lower():
+                    instances_pks.append(instance.pk)
+
+            """
             for v in self.split(value):
+                #mathes have True and False values
                 matches = any(
                     [
                         v.lower() in c.profile.get_display_name().lower()
@@ -178,6 +186,7 @@ class DatasetModelFilter(FilterSet):
                 )
                 if matches:
                     instances_pks.append(instance.pk)
+                """
         return model.objects.filter(pk__in=set(instances_pks))
 
 
