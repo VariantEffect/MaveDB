@@ -1,3 +1,5 @@
+import datetime
+
 from billiard.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
@@ -21,6 +23,8 @@ from urn.validators import validate_mavedb_urn_scoreset
 from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json, WordLimitValidator
+
+from datetime import date
 
 User = get_user_model()
 
@@ -205,19 +209,52 @@ class ScoreSet(DatasetModel):
         verbose_name="Data usage policy",
         validators=[WordLimitValidator(250)],
     )
+    #######
+    # date of variant tag update
+    date_variant_update = models.DateField(
+        default=datetime.date(2020, 6, 1),
+        editable=False,
+    )
 
+    # version tags as TextField attribute
+    variant_format = models.BooleanField(
+        default=False,  # add conditional statement here
+        # default=DatasetModel.publish_date,
+        verbose_name="Variant format is Mave 2.0 compatible",
+    )
+
+    test_format = models.BooleanField(
+        default=False,
+        verbose_name="Test",
+    )
+    #######
     # ---------------------------------------------------------------------- #
     #                       Methods
     # ---------------------------------------------------------------------- #
     @transaction.atomic
     def save(self, *args, **kwargs):
+        #######
+        # if self.date_variant_update < datetime.date.today():
+        # if date.today() > self.date_variant_update:
+        # all new uploads should have the new variant tag
+        # the date is just a check, all uploads after the update is pushed should have the tag
+        if date.today() > date(2021, 8, 1):
+            self.variant_format = True
+        # if DatasetModel.publish_date < date.today():
+        # self.variant_format = True
+        #######
         if self.licence is None:
             self.licence = Licence.get_default()
         return super().save(*args, **kwargs)
 
     @classmethod
     def tracked_fields(cls):
-        return super().tracked_fields() + ("licence", "data_usage_policy")
+        return super().tracked_fields() + (
+            "licence",
+            "data_usage_policy",
+            #######
+            "variant_format",
+        )
 
     # todo: add tests for below methods
     @classmethod
