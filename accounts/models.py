@@ -187,6 +187,10 @@ class Profile(TimeStampedModel):
         """
         return user_is_anonymous(self.user)
 
+    # The previous get_display_name_hyperlink is not suitable for clicking the image then jump to external link
+    def get_username(self):
+        return self.user.username
+
     def get_orcid_url(self):
         """
         Returns the ORCID url for the owner of this profile, which is

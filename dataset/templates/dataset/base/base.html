@@ -312,21 +312,27 @@
         <ul>
           {% for contributor in instance.administrators %}
             <li>
-              {{ contributor.profile.get_display_name_hyperlink }}
+                <a href="/search/?display_name={{ contributor.profile.get_display_name }}">{{ contributor.profile.get_display_name }}</a>
+                <a href="https://orcid.org/{{ contributor.profile.get_username }}" target="_blank">
+                    <img src="{% static 'core/mavedb/ORCID-icon16x16.png' %}" alt="ORCID logo"></a>
               <i class="external-link fas fa-external-link-alt"></i>
             </li>
           {% endfor %}
 
           {% for contributor in instance.editors %}
             <li>
-              {{ contributor.profile.get_display_name_hyperlink }}
+              <a href="/search/?display_name={{ contributor.profile.get_display_name }}">{{ contributor.profile.get_display_name }}</a>
+                <a href="https://orcid.org/{{ contributor.profile.get_username }}" target="_blank">
+                    <img src="{% static 'core/mavedb/ORCID-icon16x16.png' %}" alt="ORCID logo"></a>
               <i class="external-link fas fa-external-link-alt"></i>
             </li>
           {% endfor %}
 
           {% for contributor in instance.viewers %}
             <li>
-              {{ contributor.profile.get_display_name_hyperlink }}
+              <a href="/search/?display_name={{ contributor.profile.get_display_name }}">{{ contributor.profile.get_display_name }}</a>
+                <a href="https://orcid.org/{{ contributor.profile.get_username }}" target="_blank">
+                    <img src="{% static 'core/mavedb/ORCID-icon16x16.png' %}" alt="ORCID logo"></a>
               <i class="external-link fas fa-external-link-alt"></i>
             </li>
           {% endfor %}

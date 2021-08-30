@@ -174,7 +174,6 @@ class DatasetModelFilter(FilterSet):
             for c in instance.contributors:
                 if newV == c.profile.get_display_name().lower():
                     instances_pks.append(instance.pk)
-
             """
             for v in self.split(value):
                 #mathes have True and False values
