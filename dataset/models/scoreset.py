@@ -1,5 +1,3 @@
-import datetime
-
 from billiard.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
@@ -24,7 +22,6 @@ from ..models.base import DatasetModel
 from ..models.experiment import Experiment
 from ..validators import validate_scoreset_json, WordLimitValidator
 
-from datetime import date
 
 User = get_user_model()
 
