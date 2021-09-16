@@ -210,7 +210,7 @@ class ScoreSet(DatasetModel):
     # version tags as TextField attribute
     variant_format = models.TextField(
         default="MaveDB v1.x",  # add conditional statement here
-        verbose_name="Variant format is Mave 2.0 compatible",
+        verbose_name="Variant Format",
     )
 
     # ---------------------------------------------------------------------- #
