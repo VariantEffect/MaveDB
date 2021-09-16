@@ -208,8 +208,8 @@ class ScoreSet(DatasetModel):
     )
 
     # version tags as TextField attribute
-    variant_format = models.BooleanField(
-        default=False,  # add conditional statement here
+    variant_format = models.TextField(
+        default="MaveDB v1.x",  # add conditional statement here
         verbose_name="Variant format is Mave 2.0 compatible",
     )
 
@@ -219,7 +219,7 @@ class ScoreSet(DatasetModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
         # all new uploads should have the new variant tag
-        self.variant_format = True
+        self.variant_format = "MaveDB v2.x"
 
         if self.licence is None:
             self.licence = Licence.get_default()
