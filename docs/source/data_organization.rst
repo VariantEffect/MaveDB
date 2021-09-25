@@ -43,7 +43,8 @@ The title and short description are required, and the abstract and methods are s
 
 The title is displayed at the top of the experiment page, and should be quite brief.
 
-The short description is displayed in the search results table and should summarize the entry at a high level.
+The short description is displayed in the search results table and should summarize the entry at a high level in one
+or two sentences.
 
 The abstract should describe the motivation and approach for the dataset.
 Some MaveDB abstracts include a summary of the results of the related publications but many do not.
