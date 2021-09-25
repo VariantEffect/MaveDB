@@ -1,10 +1,10 @@
 {
-    "branch": "",
-    "md_about": "about.md",
-    "md_citation": "citation_genomebiology.md",
-    "md_documentation": "userdocs.md",
-    "md_privacy": "",
-    "md_terms": "",
-    "md_usage_guide": "",
-    "version": "2.0.1"
+  "branch": "",
+  "md_about": "about.md",
+  "md_citation": "citation_genomebiology.md",
+  "md_documentation": "userdocs.md",
+  "md_privacy": "",
+  "md_terms": "",
+  "md_usage_guide": "",
+  "version": "2.0.2"
 }
