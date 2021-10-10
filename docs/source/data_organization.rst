@@ -7,7 +7,15 @@ Each experiment set can contain multiple experiments and each experiment can con
 MaveDB also supports meta-analysis score sets, which are based on one or more existing score sets.
 Each of these record types are described in more detail below.
 
+.. graphviz::
+   :caption: MaveDB record hierarchy.
+
+   digraph foo {
+      "bar" -> "baz";
+   }
+
 TODO: Figure (with caption) showing hierarchy of records in .svg format
+
 TODO: describe use cases for multiple experiments, multiple score sets (see userdocs.md)
 
 Experiment sets
