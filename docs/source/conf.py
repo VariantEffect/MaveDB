@@ -34,6 +34,7 @@ release = json.load(open("../../data/main/site_info.json", "rt"))["version"]
 # ones.
 extensions = [
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.graphviz",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
