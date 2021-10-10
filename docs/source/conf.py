@@ -51,16 +51,19 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "nature"
+html_theme = "pyramid"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
-
+html_static_path = ["static"]
 
 # -- General substitutions and link targets ----------------------------------
 rst_epilog = """
 .. _MaveDB issue tracker: https://github.com/VariantEffect/mavedb/issues
 .. _MaveDB GitHub: https://github.com/VariantEffect/mavedb
 """
+
+
+def setup(app):
+    app.add_css_file("styles.css")
