@@ -13,6 +13,7 @@ To report issues or request new features, please use the `MaveDB issue tracker`_
 
    citation
    data_organization
+   accession_numbers
    upload_guide
    contributor_roles
    data_licensing
