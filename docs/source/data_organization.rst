@@ -8,7 +8,7 @@ MaveDB also supports meta-analysis score sets, which are based on one or more ex
 Each of these record types are described in more detail below.
 
 .. graphviz::
-   :caption: MaveDB record hierarchy.
+   :caption: MaveDB record organization.
 
    digraph foo {
       "bar" -> "baz";
@@ -16,7 +16,28 @@ Each of these record types are described in more detail below.
 
 TODO: Figure (with caption) showing hierarchy of records in .svg format
 
-TODO: describe use cases for multiple experiments, multiple score sets (see userdocs.md)
+Each assay condition should be reported as its own experiment with its own score sets.
+Multiple experiments should be organized under a single experiment set include when multiple assays were performed on a
+single target, particularly when presented as part of a single publication.
+This still applies to experimental designs where the differences between assays were relatively minor,
+such as varying the temperature or the concentration of a small molecule.
+
+In general, an experiment set should contain data for a single target.
+It is not necessary to include all data from a single publication or research project under one experiment set.
+
+Replicate assays should not be reported as separate experiments,
+instead the number and nature of replicates should be clearly stated in the experiment's methods section.
+The approach used to combine replicates when calculating variant scores should be clearly stated in the score set's
+methods section.
+
+Multiple score sets should be used when distinct methods were used to calculate scores for raw data described by the
+experiment.
+The most common use case for multiple score sets is when scores are calculated at nucleotide resolution and amino
+acid resolution for deep mutational scanning data.
+
+When uploading results based on imputation or complex normalization,
+it's recommended to upload a more raw form of the scores (e.g. enrichment ratios) as a score set,
+and then use meta-analysis score sets to describe the imputed or normalized results.
 
 Experiment sets
 ############################
@@ -139,6 +160,14 @@ Improved support for preprints (including displaying them as formatted reference
 Score set data are covered by a license specified by the uploader,
 and can also include an optional free-text data usage policy intended for unpublished data.
 For more information and a description of each licensing option, see :ref:`data licensing<Data licensing>`.
+
+Meta-analysis score sets
+-----------------------------------
+Meta-analysis score sets have all the same attributes as a regular score set,
+but they are linked to existing score sets rather than an existing experiment.
+
+The methods should describe the process that was used to convert the linked scores or counts into the scores presented
+in the meta-analysis score set record.
 
 Score set targets
 -----------------------------------
