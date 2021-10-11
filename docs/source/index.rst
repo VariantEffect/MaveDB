@@ -11,6 +11,7 @@ To report issues or request new features, please use the `MaveDB issue tracker`_
 .. toctree::
    :maxdepth: 2
 
+   accounts
    upload_guide
    citation
    accession_numbers
