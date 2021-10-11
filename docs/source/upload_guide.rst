@@ -178,15 +178,19 @@ Data formatting
 ###################################
 
 TODO: include link to data licensing page
+
 TODO: describe columns for score set data.
+
 TODO: describe the format requirements, including linking to MAVE-HGVS
+
 TODO: describe required columns (hgvs_* and score)
+
 TODO: describe JSON-format "bonus metadata"
 
 Required information checklist
 ###################################
 
-## TODO: many of these items should have links
+TODO: many of these items should have links
 
 For each experiment and score set:
 
