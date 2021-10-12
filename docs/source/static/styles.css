@@ -28,3 +28,8 @@ div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
     font-family: "Raleway", sans-serif;
 }
+
+table caption {
+    margin-bottom: 10px;
+    font-family: "Raleway", sans-serif;
+}
