@@ -1,4 +1,4 @@
-Data formats
+Data table formats
 ============================
 
 TODO: link out to mave-hgvs
