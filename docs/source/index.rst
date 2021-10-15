@@ -14,7 +14,9 @@ To report issues or request new features, please use the `MaveDB issue tracker`_
    accounts
    upload_guide
    publishing
+   record_types
    data_formats
+   target_sequences
    accession_numbers
    contributor_roles
    data_licensing

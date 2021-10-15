@@ -2,85 +2,7 @@ Depositing your data into MaveDB
 =======================================
 
 Creating a complete entry in MaveDB requires several pieces of data and metadata.
-This document includes a high-level description of MaveDB's organizational model,
-descriptions of the data and metadata included in MaveDB,
-and checklist of what is required to deposit a study.
-
-Record types
-###################################
-
-MaveDB has three kinds of records: experiment set, experiment, and score set.
-These records are organized hierarchically.
-Each experiment set can contain multiple experiments and each experiment can contain multiple score sets.
-MaveDB also supports meta-analysis score sets, which are based on one or more existing score sets.
-Each of these record types are described in more detail below.
-
-.. graphviz::
-   :caption: MaveDB record organization.
-
-   digraph foo {
-      "bar" -> "baz";
-   }
-
-TODO: Figure (with caption) showing hierarchy of records in .svg format
-
-Experiment sets
------------------------------------
-
-Experiment sets do not have their own data or metadata and are used to group related experiments,
-such as when different functional assays are performed on the same target and described in the same publication
-(`example experiment set <https://www.mavedb.org/experimentset/urn:mavedb:00000003/>`_).
-
-In general, an experiment set should contain data for a single target.
-It is not necessary to include all data from a single publication or research project under one experiment set.
-
-Experiment sets are automatically created when the first associated experiment is saved.
-
-Experiments
------------------------------------
-
-Experiments describe the data generated from performing a MAVE on a target.
-This includes all steps of the experimental procedure up to and including high-throughput sequencing.
-Library construction, assay design, and sequencing strategy are all described in the experiment
-(`example experiment <https://www.mavedb.org/experiment/urn:mavedb:00000003-a/>`_).
-
-.. seealso::
-   Data analysis steps including read filtering, read counting, and score calculation are described in a
-   :ref:`score set<Score sets>`.
-
-Publications that perform more than one functional assay should be represented as multiple experiments organized under
-a single experiment set, and each functional assay should be described in its own experiment record.
-This still applies to experimental designs where the differences between assays were relatively minor,
-such as varying the temperature or the concentration of a small molecule.
-
-To assign a new experiment to an existing experiment set, use the dropdown at the top of the experiment form.
-
-Replicate assays should not be reported as separate experiments,
-instead the number and nature of the replicates should be clearly stated in the experiment's methods section.
-
-Score sets
------------------------------------
-
-Score sets are records that describe the scores generated from the raw data described in their associated experiment.
-This includes all steps following the high-throughput sequencing step, including read filtering, read counting, and
-score calculations (`example score set <https://www.mavedb.org/scoreset/urn:mavedb:00000003-a-1/>`_).
-
-Multiple score sets should be used when distinct methods were used to calculate scores for raw data described by the
-experiment.
-The most common use case for multiple score sets is when scores are calculated at nucleotide resolution and amino
-acid resolution for deep mutational scanning data.
-
-To assign a new score set to an existing experiment, use the dropdown at the top of the score set form.
-
-When uploading results based on imputation or complex normalization,
-it's recommended to upload a more raw form of the scores (e.g. enrichment ratios) as a normal score set,
-and then use :ref:`meta-analysis score sets<Meta-analysis score sets>` to describe the imputed or normalized results.
-
-Meta-analysis score sets
-+++++++++++++++++++++++++++++++++++
-Meta-analysis score sets have all the same attributes as a regular score set,
-but they are linked to existing score sets rather than an existing experiment
-(`example meta-analysis score set <https://www.mavedb.org/scoreset/urn:mavedb:00000055-0-1/>`_).
+This document includes a checklist of what is required to deposit a study and a description of the required metadata.
 
 Metadata formatting
 ###################################
@@ -175,55 +97,11 @@ Data formatting
 Score sets require detailed information about the target sequence, including the sequence,
 as well as a CSV-formatted file containing the variant scores
 (and optionally a second CSV-formatted file containing the variant counts).
-These elements are described in this section.
 
-Target information
------------------------------------
+For more information including how to prepare your data for submission,
+see :ref:`Target sequence information` and :ref:`Data table formats`.
 
-All variants in a score set are described relative to a target sequence.
-This target sequence should be the sequence that was mutagenized to create the variant library.
-
-For datasets that target a single functional domain, only that part of the gene should be included as the target.
-If multiple discontinuous functional domains were included in a single experiment,
-the target sequence should be given with the intervening sequence so that coordinates can be mapped back to a
-full-length reference.
-
-While some target sequences match those that appear in sequence databases, others have important differences.
-Examples include codon optimized sequences or non-reference backgrounds.
-Other sequences may not appear in any database, such as synthetic or designed proteins.
-
-When uploading a dataset to MaveDB, it is required that the uploader provide the target sequence.
-If the target is protein coding and variants are only described by their protein changes,
-the target sequence can be an amino acid sequence.
-If variants describing nucleotide changes are present, the target sequence must be a DNA sequence.
-
-.. note::
-   When entering target information for a new score set, you will have the option to use an existing target.
-   Before using an existing target, make sure that the sequence is the same as for your dataset!
-   Typically you will only want to use an existing target that you created yourself.
-
-Targets can also be linked to accession numbers in other databases, including `UniProt <https://www.uniprot.org/>`_,
-`RefSeq <https://www.ncbi.nlm.nih.gov/refseq/>`_, and `Ensembl <https://www.ensembl.org/>`_.
-If the target sequence provided to MaveDB starts partway through the linked sequence
-(such as an assay targeting a single functional domain), uploaders can provide an "offset" term.
-The offset is the integer value that should be added to the MaveDB coordinates
-(which are relative to the target sequence) in order to match the coordinates in the linked sequence.
-
-For example, the target sequence for `urn:mavedb:00000002-a-1 <https://mavedb.org/scoreset/urn:mavedb:00000002-a-1/>`_
-is a codon optimized version of the WW domain of YAP1.
-This corresponds to UniProt identifier `P46937 <https://www.uniprot.org/uniprot/P46937>`_ with offset 169,
-meaning that position 1 in the MaveDB score set is position 170 in the UniProt sequence.
-
-Score and count tables
------------------------------------
-
-TODO: include link to data licensing page
-
-TODO: describe columns for score set data.
-
-TODO: describe the format requirements, including linking to MAVE-HGVS
-
-TODO: describe required columns (hgvs_* and score)
+Score set data must be given a license chosen from those listed on the :ref:`Data licensing` page.
 
 Optional structured metadata
 -----------------------------------
