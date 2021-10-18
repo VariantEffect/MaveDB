@@ -62,10 +62,10 @@ class ScoreSetDetailView(DatasetModelView):
         instance = self.get_object()
         order_by = "id"  # instance.primary_hgvs_column
         variants = instance.children.order_by("{}".format(order_by))[:10]
+        context["variants"] = variants
         # instance get the count_column from dataset, while instance.children get the count_column from variant.
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
-        context["variants"] = variants
 
         current_version = instance.get_current_version(self.request.user)
         previous_version = instance.get_previous_version(self.request.user)
