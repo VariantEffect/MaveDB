@@ -8,7 +8,9 @@ from dataset.constants import (
     required_score_column,
 )
 
+from collections import Counter
 
+# Only compare the columns name
 def validate_columns_match(variant, scoreset) -> None:
     """
     Validate that a child matches parents defined columns to keep
@@ -21,10 +23,14 @@ def validate_columns_match(variant, scoreset) -> None:
                 f"but parent defines columns '{scoreset.score_columns}. "
             )
         if variant.count_columns != scoreset.count_columns:
-            raise ValidationError(
-                f"Variant defines count columns '{variant.count_columns}' "
-                f"but parent defines columns '{scoreset.count_columns}. "
-            )
+            # Ignore the column order but comparing the contents. If they have same contents, pass.
+            if Counter(variant.count_columns) != Counter(
+                scoreset.count_columns
+            ):
+                raise ValidationError(
+                    f"Variant defines count columns '{variant.count_columns}' "
+                    f"but parent defines columns '{scoreset.count_columns}. "
+                )
     except KeyError as error:
         raise ValidationError(f"Missing key {str(error)}")
 
@@ -52,7 +58,6 @@ def validate_variant_json(data: Dict[str, Dict]) -> None:
             "Missing required column '%(col)s' in variant's score data.",
             params={"col": required_score_column},
         )
-
     extras = [k for k in data.keys() if k not in set(expected_keys)]
     if len(extras) > 0:
         extras = [k for k in data.keys() if k not in expected_keys]
