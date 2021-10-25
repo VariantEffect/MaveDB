@@ -63,6 +63,7 @@ class ScoreSetDetailView(DatasetModelView):
         order_by = "id"  # instance.primary_hgvs_column
         variants = instance.children.order_by("{}".format(order_by))[:10]
         context["variants"] = variants
+        # instance get the count_column from dataset, while instance.children get the count_column from variant.
         context["score_columns"] = instance.score_columns
         context["count_columns"] = instance.count_columns
 
@@ -107,10 +108,18 @@ class ScoreSetDetailView(DatasetModelView):
         for variant in variants:
             row = {}
             if type_ == "counts":
-                v_data = variant.count_data
+                # Reorder the columns cause variants have different order from score set.
+                variant_dict = variant.data["count_data"]
+                correct_order = instance.count_columns[3:]
+                ordered_dict_items = [
+                    (k, variant_dict[k]) for k in correct_order
+                ]
+                v_data = variant.count_data[:3]
+                for o in ordered_dict_items:
+                    v_data.append(o[1])
+                # v_data = variant.count_data
             else:
                 v_data = variant.score_data
-
             for i, data in enumerate(v_data):
                 if isinstance(data, float):
                     data = "{:.3f}".format(data)
@@ -357,6 +366,7 @@ class ScoreSetCreateView(BaseScoreSetFormView, CreateDatasetView):
 
         return super().dispatch(request, *args, **kwargs)
 
+    # Create a new scoreset will call this method
     def post(self, request, *args, **kwargs):
         """
         Handles POST requests, instantiating a form instance with the passed
@@ -373,7 +383,6 @@ class ScoreSetCreateView(BaseScoreSetFormView, CreateDatasetView):
 
         scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
         valid &= scoreset_form.is_valid(targetseq=target_form.get_targetseq())
-
         # Check that if AA sequence, dataset defined pro variants only.
         if (
             target_form.sequence_is_protein
@@ -392,7 +401,6 @@ class ScoreSetCreateView(BaseScoreSetFormView, CreateDatasetView):
         # Put forms back into forms dictionary.
         forms["scoreset_form"] = scoreset_form
         forms["target_gene_form"] = target_form
-
         if valid:
             return self.form_valid(forms)
         else:
@@ -423,6 +431,7 @@ class ScoreSetCreateView(BaseScoreSetFormView, CreateDatasetView):
         return context
 
     @transaction.atomic()
+    # Saving a new scoreset calls this method.
     def save_forms(self, forms: Dict[str, Any]) -> Dict[str, Any]:
         """Called by form_valid when all forms are ready to be saved."""
         forms = super().save_forms(forms=forms)
@@ -516,14 +525,11 @@ class ScoreSetEditView(BaseScoreSetFormView, UpdateDatasetView):
         """
         # Store reference to object that will be created later
         self.object: ScoreSet = self.get_object()
-
         forms = self.get_form()
         valid = True
-
         if self.object.private:
             target_form: TargetGeneForm = forms.pop("target_gene_form")
             scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
-
             valid &= target_form.is_valid()
 
             if not self.object.get_target().match_sequence(
@@ -572,6 +578,7 @@ class ScoreSetEditView(BaseScoreSetFormView, UpdateDatasetView):
             return self.form_invalid(forms)
 
     @transaction.atomic()
+    # Save editing result calls this method. ss_form links to scoreset count_data.
     def save_forms(self, forms: Dict[str, Any]) -> Dict[str, Any]:
         """Called by form_valid when all forms are ready to be saved."""
         forms = super().save_forms(forms=forms)
