@@ -86,7 +86,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields["sra_ids"] = FlexibleModelMultipleChoiceField(
             klass=SraIdentifier,
             to_field_name="identifier",
-            label="SRA identifiers",
+            label="Raw reads accessions",
             required=False,
             queryset=SraIdentifier.objects.all(),
             widget=forms.SelectMultiple(
@@ -96,7 +96,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields["doi_ids"] = FlexibleModelMultipleChoiceField(
             klass=DoiIdentifier,
             to_field_name="identifier",
-            label="DOI identifiers",
+            label="DOIs",
             required=False,
             queryset=DoiIdentifier.objects.all(),
             widget=forms.SelectMultiple(
@@ -106,7 +106,7 @@ class DatasetModelForm(forms.ModelForm):
         self.fields["pubmed_ids"] = FlexibleModelMultipleChoiceField(
             klass=PubmedIdentifier,
             to_field_name="identifier",
-            label="PubMed identifiers",
+            label="PubMed IDs",
             required=False,
             queryset=PubmedIdentifier.objects.all(),
             widget=forms.SelectMultiple(
