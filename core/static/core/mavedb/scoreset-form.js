@@ -269,14 +269,14 @@ function initializeScoresetForm ({ newForm = true, privateDateset = true }) {
       }
 
       let id = this.value;
-      let uniprotSelect = $('#id_uniprot-identifier');
-      let uniprotOffsetElem = $('#id_uniprot-offset');
+      let uniprotSelect = $('#id_uniprot-offset-identifier');
+      let uniprotOffsetElem = $('#id_uniprot-offset-offset');
 
-      let refseqSelect = $('#id_refseq-identifier');
-      let refseqOffsetElem = $('#id_refseq-offset');
+      let refseqSelect = $('#id_refseq-offset-identifier');
+      let refseqOffsetElem = $('#id_refseq-offset-offset');
 
-      let ensemblSelect = $('#id_ensembl-identifier');
-      let ensemblOffsetElem = $('#id_ensembl-offset');
+      let ensemblSelect = $('#id_ensembl-offset-identifier');
+      let ensemblOffsetElem = $('#id_ensembl-offset-offset');
 
       let nameElem = document.getElementById('id_name');
       let categoryElem = document.getElementById('id_category');
@@ -322,7 +322,6 @@ function initializeScoresetForm ({ newForm = true, privateDateset = true }) {
               $(uniprotSelect).val('').trigger('change');
               $(uniprotOffsetElem).val(0);
             }
-
             // Change RefSeq
             if (refseq_id) {
               $(refseqSelect).val(refseq_id).trigger('change');
