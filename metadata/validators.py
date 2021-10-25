@@ -15,7 +15,6 @@ def validate_sra_identifier(identifier):
         idutils.is_sra(identifier)
         or idutils.is_bioproject(identifier)
         or idutils.is_geo(identifier)
-        or idutils.is_arrayexpress_array(identifier)
         or idutils.is_arrayexpress_experiment(identifier)
     ):
         raise ValidationError(
@@ -46,7 +45,7 @@ def validate_pubmed_identifier(identifier):
         identifier = identifier.identifier
     if not idutils.is_pmid(identifier):
         raise ValidationError(
-            "%(id)s is not a valid PubMed identifier.",
+            "%(id)s is not a valid PubMed ID.",
             params={"id": identifier},
         )
 

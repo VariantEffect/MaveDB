@@ -225,8 +225,8 @@ class SraIdentifier(ExternalIdentifier):
     DATABASE_NAME = "SRA"
 
     class Meta:
-        verbose_name = "SRA accession"
-        verbose_name_plural = "SRA accessions"
+        verbose_name = "Raw reads accession"
+        verbose_name_plural = "Raw reads accessions"
 
     def format_url(self):
         if idutils.is_sra(self.identifier):
@@ -235,8 +235,6 @@ class SraIdentifier(ExternalIdentifier):
             return idutils.to_url(self.identifier, scheme="bioproject")
         elif idutils.is_geo(self.identifier):
             return idutils.to_url(self.identifier, scheme="geo")
-        elif idutils.is_arrayexpress_array(self.identifier):
-            return idutils.to_url(self.identifier, scheme="arrayexpress_array")
         elif idutils.is_arrayexpress_experiment(self.identifier):
             return idutils.to_url(
                 self.identifier, scheme="arrayexpress_experiment"
@@ -262,8 +260,8 @@ class PubmedIdentifier(ExternalIdentifier):
     IDUTILS_SCHEME = "pmid"
 
     class Meta:
-        verbose_name = "PubMed identifier"
-        verbose_name_plural = "PubMed identifiers"
+        verbose_name = "PubMed ID"
+        verbose_name_plural = "PubMed IDs"
         ordering = ("reference_html",)
 
     reference_html = models.TextField(
