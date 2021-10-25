@@ -109,7 +109,15 @@ class ScoreSetDetailView(DatasetModelView):
             if type_ == "counts":
                 v_data = variant.count_data
             else:
-                v_data = variant.score_data
+                # Reorder the columns because variants have different order from score set table.
+                variant_dict = variant.data["score_data"]
+                correct_order = instance.score_columns[3:]
+                ordered_dict_items = [
+                    (k, variant_dict[k]) for k in correct_order
+                ]
+                v_data = variant.score_data[:3]
+                for o in ordered_dict_items:
+                    v_data.append(o[1])
 
             for i, data in enumerate(v_data):
                 if isinstance(data, float):

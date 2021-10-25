@@ -7,6 +7,7 @@ from dataset.constants import (
     variant_count_data,
     required_score_column,
 )
+from collections import Counter
 
 
 def validate_columns_match(variant, scoreset) -> None:
@@ -16,10 +17,13 @@ def validate_columns_match(variant, scoreset) -> None:
     """
     try:
         if variant.score_columns != scoreset.score_columns:
-            raise ValidationError(
-                f"Variant defines score columns '{variant.score_columns}' "
-                f"but parent defines columns '{scoreset.score_columns}. "
-            )
+            if Counter(variant.score_columns) != Counter(
+                scoreset.score_columns
+            ):
+                raise ValidationError(
+                    f"Variant defines score columns '{variant.score_columns}' "
+                    f"but parent defines columns '{scoreset.score_columns}. "
+                )
         if variant.count_columns != scoreset.count_columns:
             raise ValidationError(
                 f"Variant defines count columns '{variant.count_columns}' "
