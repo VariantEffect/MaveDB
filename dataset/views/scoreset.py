@@ -185,7 +185,6 @@ class BaseScoreSetFormView(ScoreSetAjaxMixin):
             profile = self.request.user.profile
             profile.clear_submission_errors()
             profile.save()
-
             self.save_forms(form)
             messages.success(self.request, self.get_success_message())
         except Exception as error:
@@ -238,7 +237,6 @@ class BaseScoreSetFormView(ScoreSetAjaxMixin):
     @transaction.atomic()
     def save_forms(self, forms: Dict[str, Any]) -> Dict[str, Any]:
         scoreset_form: ScoreSetForm = forms["scoreset_form"]
-
         with create_revision():
             scoreset: ScoreSet = scoreset_form.save(commit=True)
             self.object: ScoreSet = scoreset
@@ -540,7 +538,6 @@ class ScoreSetEditView(BaseScoreSetFormView, UpdateDatasetView):
             target_form: TargetGeneForm = forms.pop("target_gene_form")
             scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
             valid &= target_form.is_valid()
-
             if not self.object.get_target().match_sequence(
                 sequence=target_form.get_targetseq()
             ):
@@ -556,7 +553,6 @@ class ScoreSetEditView(BaseScoreSetFormView, UpdateDatasetView):
             valid &= scoreset_form.is_valid(
                 targetseq=target_form.get_targetseq()
             )
-
             # Check that if AA sequence, dataset defined pro variants only,
             # but only if new files have been uploaded.
             if (
@@ -573,13 +569,14 @@ class ScoreSetEditView(BaseScoreSetFormView, UpdateDatasetView):
 
             # Check remaining forms which do not need special treatment
             valid &= all(form.is_valid() for _, form in forms.items())
-
             # Put forms back into forms dictionary just in case
             forms["scoreset_form"] = scoreset_form
             forms["target_gene_form"] = target_form
         else:
             scoreset_form: ScoreSetForm = forms.pop("scoreset_form")
             valid &= scoreset_form.is_valid()
+            # Without this one, the forms will be empty so that users can't edit public score set.
+            forms["scoreset_form"] = scoreset_form
 
         if valid:
             return self.form_valid(forms)
