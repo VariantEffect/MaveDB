@@ -37,8 +37,7 @@ class TestAddPmidForm(TestCase):
             f"{urn} is not a valid urn." in form.errors[urn_field_name]
         )
         self.assertTrue(
-            f"{pmid} is not a valid PubMed identifier."
-            in form.errors[pmid_field_name]
+            f"{pmid} is not a valid PubMed ID." in form.errors[pmid_field_name]
         )
 
         # Fields are valid

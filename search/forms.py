@@ -93,19 +93,19 @@ class AdvancedSearchForm(forms.Form):
     # )
 
     pubmed = fields.CSVCharField(
-        label="PubMed identifiers",
+        label="PubMed IDs",
         required=False,
         help_text="Search datasets by associated PubMed accessions.",
     )
     sra = fields.CSVCharField(
-        label="SRA accessions",
+        label="Raw reads accessions",
         required=False,
-        help_text="Search datasets by associated SRA accessions.",
+        help_text="Search datasets by associated raw reads accessions.",
     )
     doi = fields.CSVCharField(
-        label="DOI accessions",
+        label="DOIs",
         required=False,
-        help_text="Search datasets by associated DOI accessions.",
+        help_text="Search datasets by associated DOIs.",
     )
     keyword = fields.CSVCharField(
         label="Keywords",
