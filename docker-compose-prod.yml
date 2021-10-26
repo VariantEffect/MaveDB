@@ -16,7 +16,7 @@ services:
       - DJANGO_SETTINGS_MODULE=settings.production
 
   database:
-    image: mavedb/postgres:prod
+    image: postgres:9.6
     build:
       context: docker/postgres
     restart: unless-stopped
