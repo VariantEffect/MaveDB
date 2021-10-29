@@ -88,7 +88,8 @@ class MaveDataset:
             keep_default_na=True,
             dtype={
                 **{c: str for c in cls.HGVSColumns.options()},
-                MaveScoresDataset.AdditionalColumns.SCORES: float,
+                # Original type is float. However, it'll throw error if file contains string in it.
+                MaveScoresDataset.AdditionalColumns.SCORES: str,
             },
         ).replace(null_values_re, np.NaN)
 
