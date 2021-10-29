@@ -56,14 +56,14 @@ class MaveDataset:
     def _for_type(
         cls, file: Union[str, TextIO, BinaryIO], dataset_type: str
     ) -> Union["MaveScoresDataset", "MaveCountsDataset"]:
-
         if isinstance(file, str):
             handle = file
         elif hasattr(file, "read"):
             file_contents = file.read()
             if hasattr(file_contents, "decode"):
                 file_contents = file_contents.decode("utf-8")
-            file_contents = file_contents.strip()
+            # Original codes strip() only works for removing leading and trailing whitespaces.
+            file_contents = file_contents.replace(" ", "")
             handle = StringIO(file_contents)
         else:
             raise TypeError(
