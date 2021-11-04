@@ -309,8 +309,78 @@ class TestMaveDataset(TestCase):
             "I am not a number",
         )
 
-        with self.assertRaises(ValueError):
-            MaveDataset.for_scores(StringIO(data))
+        # The original codes don't work
+        dataset = MaveDataset.for_scores(StringIO(data))
+        dataset.validate()
+        self.assertFalse(dataset.is_valid)
+        print(dataset.errors)
+
+    def test_only_space_can_be_converted_to_none_in_score_column(self):
+        data = "{},{}\n{},{}".format(
+            self.HGVS_NT_COL,
+            self.SCORE_COL,
+            generate_hgvs(prefix="c"),
+            "  ",
+        )
+
+        dataset = MaveDataset.for_scores(StringIO(data))
+        dataset.validate()
+        self.assertTrue(dataset.is_valid)
+
+    def test_space_with_letter_can_be_detected_as_string_in_score_column(self):
+        data = "{},{}\n{},{}".format(
+            self.HGVS_NT_COL,
+            self.SCORE_COL,
+            generate_hgvs(prefix="c"),
+            "  a",
+        )
+
+        dataset = MaveDataset.for_scores(StringIO(data))
+        dataset.validate()
+        self.assertFalse(dataset.is_valid)
+        print(dataset.errors)
+
+    def test_count_column_has_string(self):
+        data = "{},{}\n{},{}".format(
+            self.HGVS_NT_COL,
+            "count",
+            generate_hgvs(prefix="c"),
+            "a",
+        )
+
+        dataset = MaveDataset.for_counts(StringIO(data))
+        dataset.validate()
+        dataset.validate_count_file()
+        self.assertFalse(dataset.is_valid)
+        print(dataset.errors)
+
+    def test_count_columns_only_have_numbers(self):
+        data = "{},{},{}\n{},{},{}".format(
+            self.HGVS_NT_COL,
+            "count1",
+            "count2",
+            generate_hgvs(prefix="c"),
+            "1",
+            "2",
+        )
+
+        dataset = MaveDataset.for_counts(StringIO(data))
+        dataset.validate()
+        dataset.validate_count_file()
+        self.assertTrue(dataset.is_valid)
+
+    def test_count_column_has_space(self):
+        data = "{},{}\n{},{}".format(
+            self.HGVS_NT_COL,
+            "count",
+            generate_hgvs(prefix="c"),
+            "  ",
+        )
+
+        dataset = MaveDataset.for_counts(StringIO(data))
+        dataset.validate()
+        dataset.validate_count_file()
+        self.assertTrue(dataset.is_valid)
 
     def test_invalid_same_hgvs_nt_defined_in_two_rows(self):
         hgvs = generate_hgvs(prefix="c")

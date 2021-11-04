@@ -571,6 +571,8 @@ class ScoreSetForm(DatasetModelForm):
 
         v = MaveDataset.for_counts(file=count_file)
         v.validate(targetseq=self.targetseq, relaxed_ordering=True)
+        # Validate whether count columns have string.
+        v.validate_count_file()
 
         if v.is_valid:
             self.dataset_columns[constants.count_columns] = v.non_hgvs_columns

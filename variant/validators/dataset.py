@@ -62,8 +62,7 @@ class MaveDataset:
             file_contents = file.read()
             if hasattr(file_contents, "decode"):
                 file_contents = file_contents.decode("utf-8")
-            # Original codes strip() only works for removing leading and trailing whitespaces.
-            file_contents = file_contents.replace(" ", "")
+            file_contents = file_contents.strip()
             handle = StringIO(file_contents)
         else:
             raise TypeError(
@@ -218,7 +217,6 @@ class MaveDataset:
         relaxed_ordering: bool = False,
         allow_index_duplicates: bool = False,
     ) -> "MaveDataset":
-
         self._errors = []
         self._df.index = pd.RangeIndex(start=0, stop=self.n_rows, step=1)
         self._index_column = None
@@ -249,6 +247,12 @@ class MaveDataset:
             # either hgvs_nt when present or hgvs_pro when hgvs_nt is absent).
             self._df.index = pd.Index(self._df[self.index_column])
 
+        return self
+
+    # Validate whether all count columns have numbers.
+    def validate_count_file(self):
+        if not self._errors:
+            self._validate_count_column()
         return self
 
     # ---------------------- Private ---------------------------------------- #
@@ -633,7 +637,6 @@ class MaveScoresDataset(MaveDataset):
 
     def _normalize_data(self) -> "MaveDataset":
         super()._normalize_data()
-
         should_be_numeric = [self.AdditionalColumns.SCORES]
         for c in should_be_numeric:
             if c in self.columns:
@@ -651,3 +654,13 @@ class MaveCountsDataset(MaveDataset):
     @property
     def label(self) -> str:
         return "counts"
+
+    # Validate whether any of the count columns have string.
+    def _validate_count_column(self) -> "MaveDataset":
+        for c in self.non_hgvs_columns:
+            try:
+                self._df[c] = self._df[c].astype(dtype=float, errors="raise")
+            except ValueError as e:
+                self._errors.append(f"{c}: {str(e)}")
+
+        return self

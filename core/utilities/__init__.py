@@ -30,7 +30,8 @@ null_values_list = (
     NA_value,
 )
 null_values_re = re.compile(
-    r"\s+|none|nan|na|undefined|n/a|null|nil|{}".format(NA_value),
+    # ^\s+$ means start and end with space. \s+ means any string contains space.
+    r"^\s+$|none|nan|na|undefined|n/a|null|nil|{}".format(NA_value),
     flags=re.IGNORECASE,
 )
 readable_null_values = [
