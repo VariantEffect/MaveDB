@@ -313,7 +313,6 @@ class TestMaveDataset(TestCase):
         dataset = MaveDataset.for_scores(StringIO(data))
         dataset.validate()
         self.assertFalse(dataset.is_valid)
-        print(dataset.errors)
 
     def test_only_space_can_be_converted_to_none_in_score_column(self):
         data = "{},{}\n{},{}".format(
@@ -338,7 +337,6 @@ class TestMaveDataset(TestCase):
         dataset = MaveDataset.for_scores(StringIO(data))
         dataset.validate()
         self.assertFalse(dataset.is_valid)
-        print(dataset.errors)
 
     def test_count_column_has_string(self):
         data = "{},{}\n{},{}".format(
@@ -350,9 +348,7 @@ class TestMaveDataset(TestCase):
 
         dataset = MaveDataset.for_counts(StringIO(data))
         dataset.validate()
-        dataset.validate_count_file()
         self.assertFalse(dataset.is_valid)
-        print(dataset.errors)
 
     def test_count_columns_only_have_numbers(self):
         data = "{},{},{}\n{},{},{}".format(
@@ -366,7 +362,6 @@ class TestMaveDataset(TestCase):
 
         dataset = MaveDataset.for_counts(StringIO(data))
         dataset.validate()
-        dataset.validate_count_file()
         self.assertTrue(dataset.is_valid)
 
     def test_count_column_has_space(self):
@@ -379,8 +374,21 @@ class TestMaveDataset(TestCase):
 
         dataset = MaveDataset.for_counts(StringIO(data))
         dataset.validate()
-        dataset.validate_count_file()
         self.assertTrue(dataset.is_valid)
+
+    def test_count_file_has_score_column(self):
+        data = "{},{},{}\n{},{},{}".format(
+            self.HGVS_NT_COL,
+            "score",
+            "count",
+            generate_hgvs(prefix="c"),
+            1,
+            2,
+        )
+
+        dataset = MaveDataset.for_counts(StringIO(data))
+        dataset.validate()
+        self.assertFalse(dataset.is_valid)
 
     def test_invalid_same_hgvs_nt_defined_in_two_rows(self):
         hgvs = generate_hgvs(prefix="c")

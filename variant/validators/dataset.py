@@ -19,6 +19,8 @@ from core.utilities import (
     readable_null_values,
 )
 
+from genome.models import TargetGene
+
 
 class MaveDataset:
     class DatasetType:
@@ -247,12 +249,6 @@ class MaveDataset:
             # either hgvs_nt when present or hgvs_pro when hgvs_nt is absent).
             self._df.index = pd.Index(self._df[self.index_column])
 
-        return self
-
-    # Validate whether all count columns have numbers.
-    def validate_count_file(self):
-        if not self._errors:
-            self._validate_count_column()
         return self
 
     # ---------------------- Private ---------------------------------------- #
@@ -535,7 +531,6 @@ class MaveDataset:
                     )
                     prefix = validated.prefix.lower()
                     prefixes.add(prefix)
-
                     prefix_error = self._validate_variant_prefix_for_column(
                         variant=validated,
                         prefix=validated.prefix,
@@ -568,7 +563,6 @@ class MaveDataset:
         self, variant: Variant, prefix: str, column: str, splice_defined: bool
     ) -> Optional[str]:
         prefix = prefix.lower()
-
         if column == self.HGVSColumns.NUCLEOTIDE:
             if splice_defined:
                 if prefix not in "g":
@@ -625,7 +619,6 @@ class MaveScoresDataset(MaveDataset):
 
     def _validate_columns(self) -> "MaveDataset":
         super()._validate_columns()
-
         if self.AdditionalColumns.SCORES not in self.columns:
             self._errors.append(
                 f"Your scores dataset is missing the "
@@ -655,8 +648,14 @@ class MaveCountsDataset(MaveDataset):
     def label(self) -> str:
         return "counts"
 
-    # Validate whether any of the count columns have string.
-    def _validate_count_column(self) -> "MaveDataset":
+    def _validate_columns(self) -> "MaveDataset":
+        super()._validate_columns()
+        if "score" in self.columns:
+            self._errors.append(f"Your count dataset has a score column. ")
+        return self
+
+    def _normalize_data(self) -> "MaveDataset":
+        super()._normalize_data()
         for c in self.non_hgvs_columns:
             try:
                 self._df[c] = self._df[c].astype(dtype=float, errors="raise")
