@@ -19,8 +19,6 @@ from core.utilities import (
     readable_null_values,
 )
 
-from genome.models import TargetGene
-
 
 class MaveDataset:
     class DatasetType:
