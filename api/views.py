@@ -45,6 +45,7 @@ from metadata.forms import (
     EnsemblOffsetForm,
     RefseqOffsetForm,
 )
+from variant.models import Variant
 
 User = get_user_model()
 ScoreSet = models.scoreset.ScoreSet
@@ -927,10 +928,19 @@ class VariantView(views.APIView):
         if variant_id_key not in request.query_params:
             response_data = {
                 'status': 'Bad request.',
-                'message': f'Need to include query parameter {variant_id_key} in your request.',
+                'message': f'Need to include query parameter {variant_id_key} \
+                in your request.',
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
         variant_urn = urn + '#' +  request.query_params.get(variant_id_key, '0')
+        try:
+            variant = Variant.objects.get(urn=variant_urn)
+        except Variant.DoesNotExist:
+            return JsonResponse({
+                'status': 'Variant not found.',
+                'message': f'Could not find a variant with urn {variant_urn}.',
+            }, status=status.HTTP_404_NOT_FOUND)
 
         offset = request.query_params.get('offset', '0')
         limit = request.query_params.get('limit', 20)
@@ -940,7 +950,8 @@ class VariantView(views.APIView):
         except ValueError:
             response_data = {
                 'status': 'Bad request.',
-                'message': 'If providing query parameters offset or limit, they must be integers.',
+                'message': 'If providing query parameters offset or limit,  \
+                    they must be integers.',
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -949,16 +960,16 @@ class VariantView(views.APIView):
             format_variant_large_get_response(results_uuid, variant_urn, offset, limit)
             return JsonResponse({
                 'status': 'Large response.',
-                'message': f'When ready, your results will be available for download at /api/results/{results_uuid} .',
+                'message': f'When ready, your results will be available for \
+                    download at /api/results/{results_uuid} .',
                 'results_uuid': results_uuid
-            })
+            }, status=status.HTTP_202_ACCEPTED)
 
         response_data = format_variant_get_response(variant_urn, offset, limit)
         if not response_data:
             return JsonResponse({
-                'status': 'Bad request.',
-                'message': 'Could not find requested variant data.',
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'Something went wrong. Please try again.',
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return JsonResponse(response_data)
 
 class ResultsView(views.APIView):
@@ -988,5 +999,5 @@ class ResultsView(views.APIView):
             return JsonResponse({
                 'status': 'Bad request.',
                 'message': 'File not found. Either check later or make your request again.',
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_404_NOT_FOUND)
         return FileResponse(open(filepath, 'rb'))

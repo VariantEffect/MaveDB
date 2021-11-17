@@ -684,3 +684,131 @@ class TestScoreSetAPIViews(TestCase):
             ).content.decode()
         )
         self.assertEqual(response, scs.extra_metadata)
+
+class TestVariantAPIViews(TestCase):
+    factory = VariantFactory
+    url = "variants"
+    variants_base_url = "/api/variants"
+
+    def setUp(self):
+        Variant.objects.all().delete()
+
+    def tearDown(self):
+        Variant.objects.all().delete()
+
+    def test_raises_400_error_missing_params(self):
+        response = self.client.get(f"{self.variants_base_url}/NOT_A_REAL_URN")
+        self.assertEqual(response.status_code, 400)
+        variant = self.factory()
+        variant.save()
+        response = self.client.get(f"{self.variants_base_url}/{variant.urn}")
+        self.assertEqual(response.status_code, 400)
+
+    def test_raises_404_error_missing_variant(self):
+        variant_id = 1
+        response = self.client.get(
+            f"{self.variants_base_url}/NOT_A_REAL_URN?variant_id={variant_id}"
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_can_get_response_for_variant(self):
+        variant = self.factory()
+        variant_urn = variant.urn
+        variant_id = 1
+        variant.urn = variant_urn + f'#{variant_id}'
+        variant.save()
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_urn}?variant_id={variant_id}"
+        )
+        self.assertEqual(response.status_code, 200)
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(
+            len(response_json['experiment']['scoreset']['variants']), 1
+        )
+
+    def test_can_use_offset(self):
+        variant_fake_base_urn = 'tmp:abcdef123456'
+        variants_count = 5
+        offset = 3
+        vs = [self.factory() for _ in range(variants_count)]
+        for i in range(len(vs)):
+            # Overwrite the variant's urn so they all share a urn_prefix
+            v = vs[i]
+            v.urn = variant_fake_base_urn + f'#{i}'
+            v.save()
+        v = Variant.objects.get(urn=f'{variant_fake_base_urn}#0')
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_fake_base_urn}?variant_id=0" \
+            f"&offset={offset}"
+        )
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(
+            len(response_json['experiment']['scoreset']['variants']),
+            variants_count-offset
+        )
+
+    def test_can_use_limit(self):
+        variant_fake_base_urn = 'tmp:abcdef123456'
+        variants_count = 5
+        limit = 3
+        vs = [self.factory() for _ in range(variants_count)]
+        for i in range(len(vs)):
+            v = vs[i]
+            v.urn = variant_fake_base_urn + f'#{i}'
+            v.save()
+
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_fake_base_urn}?variant_id=0" \
+            f"&limit={limit}"
+        )
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(
+            len(response_json['experiment']['scoreset']['variants']), limit
+        )
+
+    def test_can_get_large_response_for_variant(self):
+        variant = self.factory()
+        variant_urn = variant.urn
+        variant_id = 1
+        variant.urn = variant_urn + f'#{variant_id}'
+        variant.save()
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_urn}?variant_id={variant_id}" \
+            "&limit=51"
+        )
+        self.assertEqual(response.status_code, 202)
+
+
+class TestResultsAPIViews(TestCase):
+    factory = VariantFactory
+    url = "results"
+    variants_base_url = "/api/variants"
+    results_base_url = "/api/results"
+
+    def setUp(self):
+        Variant.objects.all().delete()
+
+    def tearDown(self):
+        Variant.objects.all().delete()
+
+    def test_raises_404_missing_results_uuid(self):
+        response = self.client.get(
+            f"{self.results_base_url}/NOT_A_REAL_UUID"
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_can_get_zipfile(self):
+        variant = self.factory()
+        variant_urn = variant.urn
+        variant_id = 1
+        variant.urn = variant_urn + f'#{variant_id}'
+        variant.save()
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_urn}?variant_id={variant_id} \
+            limit=51"
+        )
+        response_json = json.loads(response.content.decode())
+        results_uuid = response_json['results_uuid']
+
+        response = self.client.get(f"{self.results_base_url}/{results_uuid}")
+        self.assertEqual(response.status_code, 200)

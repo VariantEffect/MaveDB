@@ -8,7 +8,11 @@ from variant.serializers import VariantSerializer
 
 def format_variant_get_response(variant_urn, offset, limit):
     '''
-    Format the response data so it looks like:
+    This function assumes a check has already been done on the existence of a
+    Variant object with the urn of variant_urn exists in the database with a
+    corresponding ScoreSet and, in turn, Experiment object.
+
+    Format the variant response data so it looks like:
     {
         'experiment': {
             ...RELEVANT_EXPERIMENT_KEYS
@@ -25,10 +29,7 @@ def format_variant_get_response(variant_urn, offset, limit):
     }
     '''
     # Fetch the original variant object
-    try:
-        variant = Variant.objects.get(urn=variant_urn)
-    except Variant.DoesNotExist:
-        return None
+    variant = Variant.objects.get(urn=variant_urn)
     variant_dict = VariantSerializer(variant).data
 
     # If only asking for one variant, only provide the exact match.
