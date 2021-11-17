@@ -413,7 +413,7 @@
 
         {% if is_experiment %}
           {% if instance.sra_ids.count %}
-            <strong>SRA:</strong>
+            <strong>Raw reads:</strong>
             <ul>
               {% for sra in instance.sra_ids.all %}
                 <li>
@@ -423,7 +423,7 @@
               {% endfor %}
             </ul>
           {% else %}
-            <p><strong>SRA:</strong> No associated SRAs </p>
+            <p><strong>Raw reads:</strong> No associated raw reads </p>
           {% endif %}
         {% endif %}
       {% endif %}

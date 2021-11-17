@@ -639,17 +639,21 @@ class ScoreSetForm(DatasetModelForm):
         score_data: MaveDataset = cleaned_data.get("score_data")
         count_data: MaveDataset = cleaned_data.get("count_data")
 
-        if score_data and count_data:
-            self.allow_aa_sequence = (
-                score_data.index_column == constants.hgvs_pro_column
-                and count_data.index_column == constants.hgvs_pro_column
-            )
-
         meta_data = cleaned_data.get("meta_data", {})
 
         has_score_data = (score_data is not None) and (not score_data.is_empty)
         has_count_data = (count_data is not None) and (not count_data.is_empty)
         has_meta_data = (meta_data is not None) and len(meta_data) > 0
+
+        if has_score_data and has_count_data:
+            self.allow_aa_sequence = (
+                score_data.index_column == constants.hgvs_pro_column
+                and count_data.index_column == constants.hgvs_pro_column
+            )
+        elif has_score_data:
+            self.allow_aa_sequence = (
+                score_data.index_column == constants.hgvs_pro_column
+            )
 
         if has_meta_data:
             self.instance.extra_metadata = meta_data

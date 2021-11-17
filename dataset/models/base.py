@@ -208,19 +208,19 @@ class DatasetModel(UrnModel, GroupPermissionMixin):
     sra_ids = models.ManyToManyField(
         SraIdentifier,
         blank=True,
-        verbose_name="SRA identifiers",
+        verbose_name="Raw reads accessions",
         related_name="associated_%(class)ss",
     )
     doi_ids = models.ManyToManyField(
         DoiIdentifier,
         blank=True,
-        verbose_name="DOI identifiers",
+        verbose_name="DOIs",
         related_name="associated_%(class)ss",
     )
     pubmed_ids = models.ManyToManyField(
         PubmedIdentifier,
         blank=True,
-        verbose_name="PubMed identifiers",
+        verbose_name="PubMed IDs",
         related_name="associated_%(class)ss",
     )
 

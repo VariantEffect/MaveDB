@@ -9,7 +9,7 @@ from metadata.validators import validate_pubmed_identifier
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--urn", type=str, help="Dataset URN")
-        parser.add_argument("--pmid", type=str, help="PubMed identifier")
+        parser.add_argument("--pmid", type=str, help="PubMed ID")
 
     def handle(self, *args, **kwargs):
         urn = kwargs.get("urn", None)
