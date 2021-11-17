@@ -19,7 +19,7 @@ ENV APP_USER=mavedb
 RUN useradd -m ${APP_USER}
 RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y build-essential
-RUN apt-get install -y git wget curl pandoc
+RUN apt-get install -y git wget curl pandoc vim less
 
 # Local directory with project source
 ENV HOST_SRC=.

@@ -1,17 +1,23 @@
 import csv
 import json
 import logging
+import os
 import re
+import uuid
 from datetime import datetime
 from reversion import create_revision
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.serializers import serialize
 from django.db import transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from rest_framework import exceptions, parsers, status, views, viewsets
 from rest_framework.response import Response
 
+from .constants import BASE_RESULTS_DIR
+from .tasks import format_variant_large_get_response
+from .utilities import format_variant_get_response
 from accounts.filters import UserFilter
 from accounts.models import AUTH_TOKEN_RE, Profile
 from accounts.serializers import UserSerializer
@@ -32,6 +38,7 @@ from dataset.templatetags.dataset_tags import filter_visible
 from genome import models as genome_models, serializers as genome_serializers
 from genome.forms import PrimaryReferenceMapForm, TargetGeneForm
 from main.models import Licence
+from mavedb import celery_app
 from metadata import models as meta_models, serializers as meta_serializers
 from metadata.forms import (
     UniprotOffsetForm,
@@ -610,6 +617,9 @@ class ScoreSetViewset(DatasetListViewSet):
 
 
 class UserViewset(AuthenticatedViewSet):
+    """
+    Return a list of all the existing users.
+    """
     http_method_names = ("get",)
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -878,3 +888,105 @@ class ReferenceGenomeViewSet(viewsets.ModelViewSet):
     http_method_names = ("get",)
     queryset = genome_models.ReferenceGenome.objects.all()
     serializer_class = genome_serializers.ReferenceGenomeSerializer
+
+
+# ----- Custom API endpoints
+class VariantView(views.APIView):
+    '''
+    This view can serve as an example of formatting a response for an API request
+    where the query uses the identifier for a particular Django model (Variant)
+    but the response is a custom one that doesn't fit any single Django model
+    so we can give the user info that we think they will want (i.e. information
+    about the experiment and scoreset where the variant was identified as well
+    as other variants). This will still live behind /api/variants even though
+    this doesn't exactly line up with normal REST API principles. The route
+    can change though, in urls.py .
+    '''
+    def get(self, request, urn):
+        '''
+        Get the experiment, scoreset, and related variants of a given variant.
+
+        Parameters
+        ----------
+        request : `rest_framework.request.Request`
+            Django HttpRequest object wrapped in Request.
+            Accepted request.query_params:
+                'variant_ids' : `List[str]`
+                'offset' : `int`
+                'limit' : `int`
+        urn : `str`
+            The base of the urn requested
+
+        Returns
+        -------
+        `HttpResponse`
+        '''
+        MAX_VARIANTS_TO_RETURN = 50
+
+        variant_id_key = 'variant_id'
+        if variant_id_key not in request.query_params:
+            response_data = {
+                'status': 'Bad request.',
+                'message': f'Need to include query parameter {variant_id_key} in your request.',
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+        variant_urn = urn + '#' +  request.query_params.get(variant_id_key, '0')
+
+        offset = request.query_params.get('offset', '0')
+        limit = request.query_params.get('limit', 20)
+        try:
+            offset = int(offset)
+            limit = int(limit)
+        except ValueError:
+            response_data = {
+                'status': 'Bad request.',
+                'message': 'If providing query parameters offset or limit, they must be integers.',
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        if limit < 0 or limit > MAX_VARIANTS_TO_RETURN:
+            results_uuid = str(uuid.uuid4())
+            format_variant_large_get_response(results_uuid, variant_urn, offset, limit)
+            return JsonResponse({
+                'status': 'Large response.',
+                'message': f'When ready, your results will be available for download at /api/results/{results_uuid} .',
+                'results_uuid': results_uuid
+            })
+
+        response_data = format_variant_get_response(variant_urn, offset, limit)
+        if not response_data:
+            return JsonResponse({
+                'status': 'Bad request.',
+                'message': 'Could not find requested variant data.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse(response_data)
+
+class ResultsView(views.APIView):
+    '''
+    This view is how to retrieve any asynchronously generated results from
+    something like the get() method from the VariantView above.
+    '''
+    def get(self, request, results_uuid):
+        '''
+        Get the experiment, scoreset, and related variants of a given variant.
+
+        Parameters
+        ----------
+        request : `rest_framework.request.Request`
+            Django HttpRequest object wrapped in Request.
+        results_uuid : `str`
+            The UUID of the results.
+
+        Returns
+        -------
+        `FileResponse`
+            The zipped file that contains the response generated from
+            VariantView.get()
+        '''
+        filepath = f'{BASE_RESULTS_DIR}/{results_uuid}.zip'
+        if not os.path.exists(filepath):
+            return JsonResponse({
+                'status': 'Bad request.',
+                'message': 'File not found. Either check later or make your request again.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        return FileResponse(open(filepath, 'rb'))

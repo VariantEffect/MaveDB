@@ -25,6 +25,6 @@ lxml==4.6.3
 psycopg2-binary==2.8.6
 pandas==1.1.2
 numpy==1.19.1
-sphinx==3.2.1
+sphinx==4.3.0
 fqfa>=1.2.1
 mavehgvs>=0.2.1
