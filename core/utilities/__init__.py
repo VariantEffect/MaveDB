@@ -30,7 +30,7 @@ null_values_list = (
     NA_value,
 )
 null_values_re = re.compile(
-    # ^\s+$ means start and end with space. \s+ means any string contains space.
+    # ^\s+$ means the string is all whitespace. "start and end with space" implies that something like " 123 " would also count
     r"^\s+$|none|nan|na|undefined|n/a|null|nil|{}".format(NA_value),
     flags=re.IGNORECASE,
 )
