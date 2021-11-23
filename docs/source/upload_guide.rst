@@ -4,6 +4,10 @@ Depositing your data into MaveDB
 Creating a complete entry in MaveDB requires several pieces of data and metadata.
 This document includes a checklist of what is required to deposit a study and a description of the required metadata.
 
+For more information on how a dataset in MaveDB is structured,
+including descriptions of experiment sets, experiments, and score sets,
+please see :ref:`Record types`.
+
 Metadata formatting
 ###################################
 
