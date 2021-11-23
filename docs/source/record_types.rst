@@ -7,14 +7,22 @@ Each experiment set can contain multiple experiments and each experiment can con
 MaveDB also supports meta-analysis score sets, which are based on one or more existing score sets.
 Each of these record types are described in more detail below.
 
-.. graphviz::
-   :caption: MaveDB record organization.
+.. figure:: images/brca1_mavedb_cartoon.svg
+   :name: experiment-set-cartoon
+   :alt: cartoon schematic of an experiment set with multiple experiments and score sets in MaveDB
+   :align: left
 
-   digraph foo {
-      "bar" -> "baz";
-   }
+   Schematic of an experiment set.
 
-TODO: Figure (with caption) showing hierarchy of records in .svg format
+   This cartoon shows the experiment set for
+   `urn:mavedb:00000003 <https://www.mavedb.org/experimentset/urn:mavedb:00000003/>`_,
+   which describes two distinct assays performed on a single *BRCA1* variant library,
+   each with two associated score sets.
+   This nested structure is typical of a MaveDB record describing a complex study with multiple elements.
+   Note that each assay (symbolized by the yeast and bacteriophage and their associated sequencing instruments)
+   is described in its own experiment record,
+   and that each experiment has its own score set records that describe the analysis and results
+   (symbolized by the computer and data table).
 
 Experiment sets
 ###################################

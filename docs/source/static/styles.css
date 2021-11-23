@@ -33,3 +33,9 @@ table caption {
     margin-bottom: 10px;
     font-family: "Raleway", sans-serif;
 }
+
+figcaption span.caption-text, figcaption span.caption-number {
+    font-family: "Raleway", sans-serif;
+    font-style: normal;
+    font-weight: bold;
+}
