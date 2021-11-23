@@ -777,7 +777,16 @@ class TestVariantAPIViews(TestCase):
             "&limit=51"
         )
         self.assertEqual(response.status_code, 202)
+        response_json = json.loads(response.content.decode())
+        self.assertTrue('results_uuid' in response_json)
 
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_urn}?variant_id={variant_id}" \
+            "&limit=-1"
+        )
+        self.assertEqual(response.status_code, 202)
+        response_json = json.loads(response.content.decode())
+        self.assertTrue('results_uuid' in response_json)
 
 class TestResultsAPIViews(TestCase):
     factory = VariantFactory
@@ -804,8 +813,8 @@ class TestResultsAPIViews(TestCase):
         variant.urn = variant_urn + f'#{variant_id}'
         variant.save()
         response = self.client.get(
-            f"{self.variants_base_url}/{variant_urn}?variant_id={variant_id} \
-            limit=51"
+            f"{self.variants_base_url}/{variant_urn}?variant_id={variant_id}" \
+            "&limit=51"
         )
         response_json = json.loads(response.content.decode())
         results_uuid = response_json['results_uuid']
