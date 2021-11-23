@@ -36,6 +36,7 @@ def format_variant_get_response(variant_urn, offset, limit):
     if limit == 1:
         all_variants = [variant]
     elif limit < 0:
+        variant_urn_prefix = variant_urn.split('#')[0]
         all_variants = Variant.objects.order_by('urn') \
             .filter(urn__startswith=variant_urn_prefix)
     # Else, get the rest of the variants, which are the ones with a matching

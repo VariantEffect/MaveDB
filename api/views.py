@@ -906,6 +906,11 @@ class VariantView(views.APIView):
     def get(self, request, urn):
         '''
         Get the experiment, scoreset, and related variants of a given variant.
+        By default, it will return up to the first 20 related variants. You
+        can use the 'limit' and 'offset' query parameters to paginate through
+        responses.
+        To get more, please specify a higher 'limit' query parameter. To get
+        *all* variants, you can specify a negative 'limit' query parameter.
 
         Parameters
         ----------
@@ -928,8 +933,8 @@ class VariantView(views.APIView):
         if variant_id_key not in request.query_params:
             response_data = {
                 'status': 'Bad request.',
-                'message': f'Need to include query parameter {variant_id_key} \
-                in your request.',
+                'message': f'Need to include query parameter {variant_id_key} ' \
+                    'in your request.',
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -950,8 +955,8 @@ class VariantView(views.APIView):
         except ValueError:
             response_data = {
                 'status': 'Bad request.',
-                'message': 'If providing query parameters offset or limit,  \
-                    they must be integers.',
+                'message': 'If providing query parameters offset or limit, ' \
+                    'they must be integers.',
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -960,8 +965,8 @@ class VariantView(views.APIView):
             format_variant_large_get_response(results_uuid, variant_urn, offset, limit)
             return JsonResponse({
                 'status': 'Large response.',
-                'message': f'When ready, your results will be available for \
-                    download at /api/results/{results_uuid} .',
+                'message': f'When ready, your results will be available for ' \
+                    f'download at /api/results/{results_uuid} .',
                 'results_uuid': results_uuid
             }, status=status.HTTP_202_ACCEPTED)
 
@@ -998,6 +1003,7 @@ class ResultsView(views.APIView):
         if not os.path.exists(filepath):
             return JsonResponse({
                 'status': 'Bad request.',
-                'message': 'File not found. Either check later or make your request again.',
+                'message': 'File not found. Either check later or make your ' \
+                    'request again.',
             }, status=status.HTTP_404_NOT_FOUND)
         return FileResponse(open(filepath, 'rb'))
