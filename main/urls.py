@@ -42,6 +42,22 @@ urlpatterns = [
         {"document_root": settings.MAVEHGVS_DOCS_ROOT},
         name="mavehgvs-documentation-with-path",
     ),
+    # ------------ MaveTools documentation ---------------------- #
+    url(
+        r"^docs/mavetools/$",
+        serve,
+        {
+            "document_root": settings.MAVETOOLS_DOCS_ROOT,
+            "path": "index.html",
+        },
+        name="mavetools-documentation",
+    ),
+    url(
+        r"^docs/mavetools/(?P<path>.*)$",
+        serve,
+        {"document_root": settings.MAVETOOLS_DOCS_ROOT},
+        name="mavetools-documentation-with-path",
+    ),
     url(r"^contact/$", views.help_contact_view, name="contact"),
     url(r"^terms_privacy/$", views.terms_privacy_view, name="terms_privacy"),
     url(r"^robots.txt/$", views.robots, name="robots"),

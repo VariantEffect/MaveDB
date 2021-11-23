@@ -88,6 +88,14 @@ RUN make html
 RUN mv _build ${APP_SOURCE}/docs/build/docs/mavehgvs
 RUN rm -rf /tmp/mavehgvs
 
+# Build the Sphinx documentation for MaveTools
+WORKDIR /tmp
+RUN git clone --depth 1 https://github.com/VariantEffect/mavetools.git
+WORKDIR /tmp/mavetools/docs/
+RUN make html
+RUN mv _build ${APP_SOURCE}/docs/build/docs/mavetools
+RUN rm -rf /tmp/mavetools
+
 WORKDIR ${APP_SOURCE}
 
 RUN chown -R ${APP_USER}:${APP_USER} ${APP_SOURCE}
@@ -113,4 +121,3 @@ USER ${APP_USER}
 WORKDIR ${APP_SOURCE}
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-RUN cat file | while read pkg do  sudo apt-get install -qy  done
