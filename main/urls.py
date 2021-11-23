@@ -10,7 +10,7 @@ from . import views
 
 urlpatterns = [
     url(r"^$", views.home_view, name="home"),
-    # ------------ MaveHGVS documentation ---------------------- #
+    # ------------ MaveDB documentation ---------------------- #
     url(
         r"^docs/mavedb/$",
         serve,

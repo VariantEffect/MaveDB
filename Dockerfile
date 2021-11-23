@@ -73,12 +73,20 @@ WORKDIR ${APP_SOURCE}
 
 COPY ${HOST_SRC} .
 
-# Build the Sphinx documentation
+# Build the Sphinx documentation for MaveDB
 WORKDIR ${APP_SOURCE}/docs
 RUN make html
 
-#WORKDIR ${APP_SOURCE}/docs/mavehgvs
-#RUN make html; exit 0
+# Build the Sphinx documentation for mavehgvs
+WORKDIR /tmp
+# get the correct mavehgvs version by tag
+RUN RAW_MAVE_HGVS_VERSION=`pip3 show mavehgvs | grep Version`; \
+    MAVE_HGVS_VERSION="v${RAW_MAVE_HGVS_VERSION##* }"; \
+    git clone --depth 1 --branch ${MAVE_HGVS_VERSION} https://github.com/VariantEffect/mavehgvs.git
+WORKDIR /tmp/mavehgvs/docs/
+RUN make html
+RUN mv _build ${APP_SOURCE}/docs/build/docs/mavehgvs
+RUN rm -rf /tmp/mavehgvs
 
 WORKDIR ${APP_SOURCE}
 
@@ -105,3 +113,4 @@ USER ${APP_USER}
 WORKDIR ${APP_SOURCE}
 
 ENTRYPOINT ["docker-entrypoint.sh"]
+RUN cat file | while read pkg do  sudo apt-get install -qy  done
