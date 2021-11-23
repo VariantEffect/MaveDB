@@ -648,7 +648,7 @@ class MaveCountsDataset(MaveDataset):
 
     def _validate_columns(self) -> "MaveDataset":
         super()._validate_columns()
-        if "score" in self.columns:
+        if dataset.constants.required_score_column in self.columns:
             self._errors.append(f"Your count dataset has a score column. ")
         return self
 

@@ -379,7 +379,7 @@ class TestMaveDataset(TestCase):
     def test_count_file_has_score_column(self):
         data = "{},{},{}\n{},{},{}".format(
             self.HGVS_NT_COL,
-            "score",
+            constants.required_score_column,
             "count",
             generate_hgvs(prefix="c"),
             1,
