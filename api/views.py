@@ -342,7 +342,7 @@ class ScoreSetViewset(DatasetListViewSet):
                 'ensembl_offset_form'
             ]
 
-            target: TargetGene = target_form.save(
+            target: genome_models.TargetGene = target_form.save(
                 commit=True, scoreset=scoreset
             )
 
