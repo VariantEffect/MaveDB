@@ -32,19 +32,20 @@ def format_variant_get_response(variant_urn, offset, limit):
     variant = Variant.objects.get(urn=variant_urn)
     variant_dict = VariantSerializer(variant).data
 
-    # If only asking for one variant, only provide the exact match.
-    if limit == 1:
-        all_variants = [variant]
-    elif limit < 0:
-        variant_urn_prefix = variant_urn.split('#')[0]
-        all_variants = Variant.objects.order_by('urn') \
-            .filter(urn__startswith=variant_urn_prefix)
-    # Else, get the rest of the variants, which are the ones with a matching
-    # urn prefix.
-    else:
-        variant_urn_prefix = variant_urn.split('#')[0]
-        all_variants = Variant.objects.order_by('urn') \
-            .filter(urn__startswith=variant_urn_prefix)[offset:limit]
+    variant_urn_prefix = variant_urn.split('#')[0]
+    # When getting related variants, exclude the requested one; it'll be first.
+    # If limit is zero, only return the requested variant.
+    other_variants = []
+    if limit < 0:
+        other_variants = Variant.objects.order_by('urn') \
+            .filter(urn__startswith=variant_urn_prefix) \
+            .exclude(urn=variant_urn)
+    elif limit > 0:
+        other_variants = Variant.objects.order_by('urn') \
+            .filter(urn__startswith=variant_urn_prefix) \
+            .exclude(urn=variant_urn)[offset:limit-1]
+    # Always return the requested variant first
+    all_variants = [variant] + list(other_variants)
     variants_response_list = []
     for v in all_variants:
         v_dict = VariantSerializer(v).data
@@ -60,7 +61,9 @@ def format_variant_get_response(variant_urn, offset, limit):
     scoreset = ScoreSet.objects.get(urn=scoreset_urn)
     scoreset_dict = ScoreSetSerializer(scoreset).data
     scoreset_response_dict = {}
-    scoreset_response_keys = ['urn', 'pmid', 'keywords', 'score_ranges', 'license', 'variants']
+    scoreset_response_keys = [
+        'urn', 'pmid', 'keywords', 'score_ranges', 'license', 'variants'
+    ]
     for key in scoreset_response_keys:
         if key in scoreset_dict:
             scoreset_response_dict[key] = scoreset_dict[key]

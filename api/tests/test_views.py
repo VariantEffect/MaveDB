@@ -766,6 +766,49 @@ class TestVariantAPIViews(TestCase):
             len(response_json['experiment']['scoreset']['variants']), limit
         )
 
+    def test_requested_variant_is_always_first(self):
+        """
+        The desired behavior is that the requested variant is always
+        returned, and is always returned first.
+        """
+        variant_fake_base_urn = 'tmp:abcdef123456'
+        variants_count = 5
+        vs = [self.factory() for _ in range(variants_count)]
+        for i in range(len(vs)):
+            v = vs[i]
+            v.urn = variant_fake_base_urn + f'#{i}'
+            v.save()
+
+        requested_variant_id = 1
+        # Make sure by default (no limit, no offset), the requested variant
+        # is returned first.
+        response = self.client.get(
+            f"{self.variants_base_url}/{variant_fake_base_urn}" \
+            f"?variant_id={requested_variant_id}"
+        )
+        response_json = json.loads(response.content.decode())
+        self.assertEqual(
+            response_json['experiment']['scoreset']['variants'][0]['urn'],
+            f'{variant_fake_base_urn}#{requested_variant_id}'
+        )
+
+        # For some representative combinations of limits and offsets, make sure
+        # the requested variant is still the first returned.
+        limits_and_offsets = [(0, 0), (0, 3), (2, 0), (5, 0), (5, 3)]
+        for limit_and_offset in limits_and_offsets:
+            limit = limit_and_offset[0]
+            offset = limit_and_offset[1]
+            response = self.client.get(
+                f"{self.variants_base_url}/{variant_fake_base_urn}" \
+                f"?variant_id={requested_variant_id}" \
+                f"&limit={limit}&offset={offset}"
+            )
+            response_json = json.loads(response.content.decode())
+            self.assertEqual(
+                response_json['experiment']['scoreset']['variants'][0]['urn'],
+                f'{variant_fake_base_urn}#{requested_variant_id}'
+            )
+
     def test_can_get_large_response_for_variant(self):
         variant = self.factory()
         variant_urn = variant.urn
