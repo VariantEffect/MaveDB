@@ -103,6 +103,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "tracking.middleware.VisitorTrackingMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "middleware.cors.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
