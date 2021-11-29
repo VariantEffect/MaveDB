@@ -19,7 +19,7 @@ ENV APP_USER=mavedb
 RUN useradd -m ${APP_USER}
 RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y build-essential
-RUN apt-get install -y git wget curl pandoc
+RUN apt-get install -y git wget curl pandoc graphviz
 
 # Local directory with project source
 ENV HOST_SRC=.
@@ -73,12 +73,28 @@ WORKDIR ${APP_SOURCE}
 
 COPY ${HOST_SRC} .
 
-# Build the Sphinx documentation
+# Build the Sphinx documentation for MaveDB
 WORKDIR ${APP_SOURCE}/docs
 RUN make html
 
-#WORKDIR ${APP_SOURCE}/docs/mavehgvs
-#RUN make html; exit 0
+# Build the Sphinx documentation for mavehgvs
+WORKDIR /tmp
+# get the correct mavehgvs version by tag
+RUN RAW_MAVE_HGVS_VERSION=`pip3 show mavehgvs | grep Version`; \
+    MAVE_HGVS_VERSION="v${RAW_MAVE_HGVS_VERSION##* }"; \
+    git clone --depth 1 --branch ${MAVE_HGVS_VERSION} https://github.com/VariantEffect/mavehgvs.git
+WORKDIR /tmp/mavehgvs/docs/
+RUN make html
+RUN mv _build ${APP_SOURCE}/docs/build/docs/mavehgvs
+RUN rm -rf /tmp/mavehgvs
+
+# Build the Sphinx documentation for MaveTools
+WORKDIR /tmp
+RUN git clone --depth 1 https://github.com/VariantEffect/mavetools.git
+WORKDIR /tmp/mavetools/docs/
+RUN make html
+RUN mv _build ${APP_SOURCE}/docs/build/docs/mavetools
+RUN rm -rf /tmp/mavetools
 
 WORKDIR ${APP_SOURCE}
 

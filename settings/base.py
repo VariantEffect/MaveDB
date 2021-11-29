@@ -167,6 +167,7 @@ STATICFILES_DIRS = [DOCS_STATIC_DIR]
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
 MAVEDB_DOCS_ROOT = STATIC_ROOT + "/docs/mavedb/html"
 MAVEHGVS_DOCS_ROOT = STATIC_ROOT + "/docs/mavehgvs/html"
+MAVETOOLS_DOCS_ROOT = STATIC_ROOT + "/docs/mavetools/html"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
 
 # Redirect to home URL after login (Default redirects to /profile/)
