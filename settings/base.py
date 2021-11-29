@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "widget_tweaks",
     "rest_framework",
+    "rest_framework.authtoken",
     "django_filters",
     "tracking",
     "import_export",

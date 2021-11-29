@@ -80,7 +80,7 @@ while attempt < 3:
       time.sleep(5)
     else:
       tasks = list(inspection.items())[0][1]
-      assert len(tasks) == 10, "Expected 10 tasks. {} tasks were registered.".format(len(tasks))
+      assert len(tasks) == 11, "Expected 11 tasks. {} tasks were registered.".format(len(tasks))
   except Exception as e:
     raise e
 
