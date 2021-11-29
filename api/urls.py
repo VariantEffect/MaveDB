@@ -22,7 +22,12 @@ router.register("genome", views.GenomeIdentifierViewSet)
 router.register("target", views.TargetGeneViewSet)
 router.register("reference", views.ReferenceGenomeViewSet)
 
-scoreset_urls = [
+urlpatterns = [
+    url(
+        r"^results/(?P<results_uuid>.*)$",
+        views.ResultsView.as_view(),
+        name="results",
+    ),
     url(
         r"^scoresets/(?P<urn>{})/scores/$".format(scoreset_url_pattern),
         views.scoreset_score_data,
@@ -38,7 +43,11 @@ scoreset_urls = [
         views.scoreset_metadata,
         name="api_download_metadata",
     ),
+    url(
+        r"^variants/(?P<urn>.*)$",
+        views.VariantView.as_view(),
+        name="variant",
+    ),
 ]
 
-
-urlpatterns = router.urls + scoreset_urls
+urlpatterns += router.urls

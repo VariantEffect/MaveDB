@@ -20,7 +20,7 @@ import json
 # -- Project information -----------------------------------------------------
 
 project = "MaveDB"
-copyright = "2017-2020, Alan F Rubin and Daniel C Esposito"
+copyright = "2017-2021, Alan F Rubin and Daniel C Esposito"
 author = "Alan F Rubin and Daniel C Esposito"
 
 # The full version, including alpha/beta/rc tags
@@ -32,7 +32,13 @@ release = json.load(open("../../data/main/site_info.json", "rt"))["version"]
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.graphviz",
+]
+
+graphviz_output_format = "svg"
+numfig = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -48,9 +54,20 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "pyramid"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = ["static"]
+
+# -- General substitutions and link targets ----------------------------------
+rst_epilog = """
+.. _MaveDB issue tracker: https://github.com/VariantEffect/mavedb/issues
+.. _MaveDB GitHub: https://github.com/VariantEffect/mavedb
+.. _MAVE-HGVS: https://www.mavedb.org/docs/mavehgvs
+"""
+
+
+def setup(app):
+    app.add_css_file("styles.css")

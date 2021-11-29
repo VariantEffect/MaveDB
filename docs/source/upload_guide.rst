@@ -1,164 +1,152 @@
 Depositing your data into MaveDB
 =======================================
 
-Understanding experiments and score sets
--------------------------------------------
+Creating a complete entry in MaveDB requires several pieces of data and metadata.
+This document includes a checklist of what is required to deposit a study and a description of the required metadata.
 
-MaveDB datasets are organized into experiment sets, experiments, and score sets.
+For more information on how a dataset in MaveDB is structured,
+including descriptions of experiment sets, experiments, and score sets,
+please see :ref:`Record types`.
 
-Experiment sets
+Metadata formatting
 ###################################
 
-Experiment sets do not have their own metadata and are used to group related
-experiments, such as when different functional assays are performed on the
-same target and typically described in the same publication
-(`example <https://www.mavedb.org/experimentset/urn:mavedb:00000003/>`_).
-New experiment sets are automatically created when their first experiment is
-saved.
+Experiment and score set records contain several different types of required and optional metadata,
+either free text or accession numbers for other databases.
+These elements are described in this section.
 
-Experiments
+Free text metadata
+-----------------------------------
+
+Experiments and score sets both have descriptive free text fields.
+These are the title, short description, abstract, and methods.
+
+The title and short description are plain text.
+The abstract and methods support `Markdown <https://daringfireball.net/projects/markdown/>`_
+formatting with embedded equations using `MathML <https://www.w3.org/Math/>`_,
+converted using `Pandoc <https://pandoc.org/>`_.
+
+The title is displayed at the top of the record page, and should be quite brief.
+
+The short description is displayed in the search results table and should summarize the entry at a high level in one
+or two sentences.
+
+The abstract should describe the motivation and approach for the dataset.
+Some MaveDB abstracts include a summary of the results of the related publications but many do not.
+The entry describes the MAVE data rather than a full study so the submitter should use their judgement when deciding
+what details are most relevant.
+It is common that experiments and score sets share the same abstract text if they are from the same study.
+
+The methods section should describe the approach in a condensed form,
+suitable for a specialist audience of MAVE researchers.
+
+For an experiment the methods section should include:
+
+* Variant library construction methods
+* Description of the functional assay, including model system and selection type
+* Sequencing strategy and sequencing technology
+* Structure of biological or technical replicates (if applicable)
+
+For a score set the methods section should include:
+
+* Sequence read filtering approach
+* Description of the statistical model for converting counts to scores, including normalization
+* Description of additional data columns included in the score or count tables, including column naming conventions
+* Details of how replicates were combined (if applicable)
+
+For a meta-analysis score set the methods section should include:
+
+* Description of the statistical model for converting the linked scores or counts into the scores presented
+* Description of additional data columns included in the score or count tables, including column naming conventions
+
+Score sets can also include an optional free-text data usage policy intended for unpublished data.
+For example, data producers may wish to assert their right to publish the results of certain analyses first.
+
+Publication details
+-----------------------------------
+
+Publications can be included by entering their `PubMed ID <https://pubmed.ncbi.nlm.nih.gov/>`_ and they will appear
+as formatted references.
+Publications included in an experiment will also be displayed on their associated score set pages.
+
+Preprints or publications that are not indexed by PubMed can be included via the DOI field.
+Improved support for preprints (including displaying them as formatted references) is planned for a future release.
+
+Raw data accessions
+-----------------------------------
+
+Experimenters are encouraged to deposit their raw sequence data in a public repository and link it to the relevant
+experiment record(s).
+
+MaveDB currently supports accession numbers for:
+
+* `ArrayExpress <https://www.ebi.ac.uk/arrayexpress/>`_
+* `BioProject <https://www.ncbi.nlm.nih.gov/bioproject/>`_
+* `Gene Expression Omnibus <https://www.ncbi.nlm.nih.gov/geo/>`_
+* `Sequence Read Archive <https://www.ncbi.nlm.nih.gov/sra>`_
+
+Raw data that is stored elsewhere can be included via the DOI field.
+
+Keywords
+-----------------------------------
+
+Experiments and score sets can be tagged with optional, user-specified keywords.
+
+In a future release, the keyword vocabulary will become restricted and keyword selection will be mandatory.
+This will improve the ability for data modellers to select appropriate MAVE datasets for their studies,
+and also facilitate more sophisticated tracking of the kind of data being generated by researchers.
+
+Data formatting
 ###################################
 
-Experiments are records that describe the data generated from performing a MAVE
-on a target. The descriptions and other metadata in an experiment describe the
-experimental procedure, including library construction, assay design, and
-sequencing strategy. Links to the raw data in an external resource such as the
-`Sequence Read Archive <https://www.ncbi.nlm.nih.gov/sra>`_ can be provided.
-Importantly, experiments do not have scores directly. Instead, each experiment
-can have one or more linked score sets.
+Score sets require detailed information about the target sequence, including the sequence,
+as well as a CSV-formatted file containing the variant scores
+(and optionally a second CSV-formatted file containing the variant counts).
 
-Score sets
-###################################
+For more information including how to prepare your data for submission,
+see :ref:`Target sequence information` and :ref:`Data table formats`.
 
-Score sets are records that describe the process of calculating scores from raw
-data (sequencing data) and contain the variant scores and (optionally) counts.
-Importantly, score sets contain the target information that describes the sequence
-used in the experiment.
+Score set data must be given a license chosen from those listed on the :ref:`Data licensing` page.
 
-Meta-analysis score sets
-###################################
+Optional structured metadata
+-----------------------------------
 
-Meta-analysis score sets are a new feature in MaveDB version 1.8.0. While a normal score
-set is based on data from a single experiment, a meta-analysis score set is instead based
-on multiple existing score sets. These score sets can be from one or more experiments
-or experiment sets.
+Score sets also support the inclusion of optional `JSON <https://www.json.org/>`_-formatted metadata.
+This can be used to describe features like genomic coordinates for a target sequence or score cutoff ranges that the
+uploader would like to be more easily machine-readable than if this information was included in free text.
 
-Like a regular score set, a meta-analysis score set reports scores for a single target.
-The primary use case for meta-analysis score sets is combining the results from two different
-MAVEs on the same target (example TBA - *NUDT15*? *VKOR*?). This allows the uploader to
-combine multiple score sets across existing experiments or experiment sets.
-
-Another use case for meta-analysis score sets reporting scores that have been substantially
-altered by imputation or score recalibration. In this case, the meta-analysis score set
-would be based on a single existing score set and be part of that experiment.
+If optional metadata is included, the uploader should describe it in the score set methods.
 
 Required information checklist
---------------------------------------
-
-## TODO: many of these items should have links
+###################################
 
 For each experiment and score set:
 
-* Short description (1-3 brief sentences)
-* Title
-* Abstract
-* Methods
-* Keywords
-* ORCID iDs for other people you want to add as contributors
-* PubMed IDs for the study reference(s) or DOIs for references not listed in PubMed (such as on bioRxiv)
+* `Free text metadata`_
+    * Title
+    * Short description (1-3 brief sentences)
+    * Abstract
+    * Methods
+* `Keywords`_
+* `ORCID iDs <https://www.orcid.org/>`_ for other people you want to add as :ref:`contributors<Contributor roles>`.
+* `PubMed IDs <https://pubmed.ncbi.nlm.nih.gov/>`_ for the study reference(s) or `DOIs <https://www.doi.org/>`_
+  for references not listed in PubMed (such as on `bioRxiv <https://www.biorxiv.org/>`_)
 
 For each experiment you will also want:
 
-* SRA accessions or DOIs for raw sequence data (if available)
+* `Raw data accessions`_
 
 For each score set you will also want:
 
 * Target information
-    * Nucleotide sequence for the target region
-    * Type (coding, non-coding)
+    * Nucleotide sequence for the target
+    * The sequence type (coding, regulatory, other non-coding)
     * Organism the sequence is derived from (if applicable)
-    * Sequence reference genome and assembly version (if applicable)
-    * UniProt ID (if applicable)
-    * RefSeq ID (if applicable)
-    * Ensembl ID (if applicable)
-* DOIs for additional data specific to the score set (and not the experiment)
+    * `UniProt ID <https://www.uniprot.org/>`_ (if applicable)
+    * `RefSeq ID <https://www.ncbi.nlm.nih.gov/refseq/>`_ (if applicable)
+    * `Ensembl ID <https://www.ensembl.org>`_ (if applicable)
+
 * Variant score table
 * Variant count table (if available)
-* Choice of data license
+* Choice of data license (see :ref:`Data licensing`)
 * Data usage policy text (if needed)
-
-Descriptive information
-###################################
-
-Each experiment and score set in MaveDB should have a short description, title, abstract,
-and methods section. The title and short descriptions are required for submission, and
-the abstract and methods are strongly recommended.
-
-The short description will be displayed in the search table and should summarize the
-experimental design at a high level.
-
-The title is typically an abbreviated version of the short description, and is displayed
-at the top of the experiment or score set page.
-
-The abstract should describe the motivation and approach for the dataset at a high level.
-Some MaveDB abstracts include a summary of the results of the related publications but
-many do not. The entry describes the MAVE data rather than a full study so the submitter
-should use their judgement when deciding what details to include. When a dataset is first
-uploaded, the experiment and score set typically have the same abstract.
-
-The methods section should describe the approach in a condensed form, suitable for a
-specialist audience of MAVE researchers. Because
-
-For an experiment the methods section should include:
-
-* Variant and library construction methods
-* Description of the functional assay, including model and selection type
-* Sequencing strategy
-
-For a score set the methods section should include:
-
-* High-level description of the statistical model for converting counts to scores
-* Read filtering used
-* Normalization used, including any cutoffs applied
-* Description of any additional data columns included in the score or count table, including column naming conventions
-
-Additional metadata fields
-###################################
-
-* Publications by PMID
-* bioRxiv by DOI as external identifier (improvements TBA)
-* JSON-format "bonus metadata" (score set only)
-* User-specified keywords
-* SRA, etc. raw data accessions (experiment only)
-* Data usage policy (score set only)
-* ???
-
-Score set targets
-###################################
-
-.. note::
-    When entering target information for a new score set, you will have the
-    option to use an existing target. Before using an existing target, make
-    sure that the full-length nucleotide sequence is the same as for your
-    dataset! Typically you will only want to use an existing target that you
-    created yourself.
-
-Data license
-###################################
-
-Suggestions for writing the abstract and methods
---------------------------------------------------------
-
-Preparing scores and counts using :code:`mavedbconvert`
---------------------------------------------------------
-
-Starting the upload process
---------------------------------------------------------
-
-Temporary accession numbers
-###################################
-
-
-Adding multiple score sets
-###################################
-
