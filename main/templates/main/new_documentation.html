@@ -1,0 +1,9 @@
+{% extends "main/base.html" %}
+
+{% block body %}
+    <ul>
+        <li>MaveDB <a href="{% url 'main:mavedb-documentation' %}">https://www.mavedb.org/docs/mavedb</a></li>
+        <li>Mavehgvs <a href="{% url 'main:mavehgvs-documentation' %}">https://www.mavedb.org/docs/mavehgvs</a></li>
+        <li>MaveTools <a href="{% url 'main:mavetools-documentation' %}">https://www.mavedb.org/docs/mavetools</a></li>
+    </ul>
+{% endblock %}
