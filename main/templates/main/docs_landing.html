@@ -1,9 +1,22 @@
 {% extends "main/base.html" %}
 
 {% block body %}
+    <h1>Documentation Home</h1>
+    <p>Welcome to the documentation page for MaveDB and its associated packages.</p>
     <ul>
-        <li>MaveDB <a href="{% url 'main:mavedb-documentation' %}">https://www.mavedb.org/docs/mavedb</a></li>
-        <li>Mavehgvs <a href="{% url 'main:mavehgvs-documentation' %}">https://www.mavedb.org/docs/mavehgvs</a></li>
-        <li>MaveTools <a href="{% url 'main:mavetools-documentation' %}">https://www.mavedb.org/docs/mavetools</a></li>
+        <li><a href="{% url 'main:mavedb-documentation' %}">MaveDB documentation homepage</a></li>
+        <ul>
+            <li>View project on <a href="https://github.com/VariantEffect/MaveDB">GitHub</a></li>
+        </ul>
+        <li><a href="{% url 'main:mavehgvs-documentation' %}">MAVE-HGVS documentation homepage</a></li>
+        <ul>
+            <li>View project on <a href="https://github.com/VariantEffect/mavehgvs">GitHub</a></li>
+            <li>View project on <a href="https://pypi.org/project/mavehgvs/">PyPI</a></li>
+        </ul>
+        <li><a href="{% url 'main:mavetools-documentation' %}">MaveTools documentation homepage</a></li>
+        <ul>
+            <li>View project on <a href="https://github.com/VariantEffect/MaveTools">GitHub</a></li>
+            <li>View project on <a href="https://pypi.org/project/mavetools/">PyPI</a></li>
+        </ul>
     </ul>
 {% endblock %}
