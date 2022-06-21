@@ -10,8 +10,8 @@ from . import views
 
 urlpatterns = [
     url(r"^$", views.home_view, name="home"),
-    # ------------ Parent documentation ---------------------- #
-    url(r"^docs", views.documentation_view, name="all-documentations-link"),
+    # ------------ Documentation landing page ---------------------- #
+    url(r"^docs", views.documentation_view, name="docs-landing"),
     # ------------ MaveDB documentation ---------------------- #
     url(
         r"^docs/mavedb/$",
