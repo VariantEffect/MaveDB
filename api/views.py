@@ -150,7 +150,10 @@ class ExperimentSetViewset(DatasetListViewSet):
 
 
 class ExperimentViewset(DatasetListViewSet):
-    http_method_names = ("get", "post",)
+    http_method_names = (
+        "get",
+        "post",
+    )
     serializer_class = ExperimentSerializer
     filter_class = filters.ExperimentFilter
     model_class = models.experiment.Experiment
@@ -159,11 +162,12 @@ class ExperimentViewset(DatasetListViewSet):
 
     def create(self, request, format=None):
         """
-        Format request.data into ScoreSetForm
+        Format request.data into ExperimentForm
 
         request.data : QueryDict
             request: JSON encoded as a string
         """
+
         @transaction.atomic
         def post_save(experiment, user) -> None:
             experiment.add_administrators(user)
@@ -173,15 +177,19 @@ class ExperimentViewset(DatasetListViewSet):
             new_dict = {}
             for key in fetch_info.keys():
                 if key not in needs_fetching:
-                    raise ValueError(f"Payload did not contain needed key {key}.")
+                    raise ValueError(
+                        f"Payload did not contain needed key {key}."
+                    )
                 if needs_fetching[key] is None:
                     continue
                 # Make a case-insensitive match by formatting the get key as
                 # KEY__iexact when fetching
-                get_field = fetch_info[key]['get_field']
+                get_field = fetch_info[key]["get_field"]
                 fetch_iexact_key = f"{get_field}__iexact"
                 get_dict = {fetch_iexact_key: needs_fetching[key][get_field]}
-                new_dict[key] = fetch_info[key]['class'].objects.get(**get_dict).pk
+                new_dict[key] = (
+                    fetch_info[key]["class"].objects.get(**get_dict).pk
+                )
             return new_dict
 
         def _parse_data(data, flat_keys, needs_fetching, fetch_info):
@@ -196,39 +204,36 @@ class ExperimentViewset(DatasetListViewSet):
 
         def _parse_experiment_data(data):
             flat_keys = [
-                'title',
-                'short_description',
-                'abstract_text',
-                'method_text',
-                'keywords',
-                'doi_ids',
-                'sra_ids',
-                'pubmed_ids',
+                "title",
+                "short_description",
+                "abstract_text",
+                "method_text",
+                "keywords",
+                "doi_ids",
+                "sra_ids",
+                "pubmed_ids",
             ]
-            experimentset = {
-                'urn': data.get('experimentset', None)
-            } if data.get('experimentset', None) else None
-            needs_fetching = {
-                'experimentset': experimentset
-            }
+            experimentset = (
+                {"urn": data.get("experimentset", None)}
+                if data.get("experimentset", None)
+                else None
+            )
+            needs_fetching = {"experimentset": experimentset}
             fetch_info = {
-                'experimentset': {
-                    'class': ExperimentSet,
-                    'get_field': 'urn'
-                },
+                "experimentset": {"class": ExperimentSet, "get_field": "urn"},
             }
             return _parse_data(data, flat_keys, needs_fetching, fetch_info)
 
         user, _ = authenticate(request)
-        experiment_request_data = json.loads(request.POST['request'])
+        experiment_request_data = json.loads(request.POST["request"])
 
         try:
             experiment_data = _parse_experiment_data(experiment_request_data)
         except Exception as e:
             response_data = {
-                'status': 'Bad request.',
-                'message': 'Could not parse data correctly.',
-                'parse_error': repr(e)
+                "status": "Bad request.",
+                "message": "Could not parse data correctly.",
+                "parse_error": repr(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -236,17 +241,17 @@ class ExperimentViewset(DatasetListViewSet):
             experiment_form = ExperimentForm(data=experiment_data, user=user)
         except Exception as e:
             response_data = {
-                'status': 'Bad request',
-                'message': 'Could not create forms correctly with the given data.',
-                'form_creation_error': repr(e)
+                "status": "Bad request",
+                "message": "Could not create forms correctly with the given data.",
+                "form_creation_error": repr(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         if experiment_form.errors:
             response_data = {
-                'status': 'Bad request',
-                'message': 'Experiment form was invalid.',
-                'forms_invalid_error': experiment_form.errors.as_json()
+                "status": "Bad request",
+                "message": "Experiment form was invalid.",
+                "forms_invalid_error": experiment_form.errors.as_json(),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
@@ -255,23 +260,30 @@ class ExperimentViewset(DatasetListViewSet):
             post_save(experiment, user)
         except Exception as e:
             response_data = {
-                'status': 'Bad request',
-                'message': 'Experiment could not be created with the given data.',
-                'scoreset_creation_error': repr(e)
+                "status": "Bad request",
+                "message": "Experiment could not be created with the given data.",
+                "scoreset_creation_error": repr(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        return HttpResponse(status=204)
+        return HttpResponse(experiment.urn, status=201)
+
 
 class ScoreSetViewset(DatasetListViewSet):
-    http_method_names = ("get", "post",)
+    http_method_names = (
+        "get",
+        "post",
+    )
     serializer_class = ScoreSetSerializer
     filter_class = filters.ScoreSetFilter
     model_class = models.scoreset.ScoreSet
     queryset = models.scoreset.ScoreSet.objects.all()
     lookup_field = "urn"
 
-    parser_classes = (parsers.MultiPartParser, parsers.FormParser,)
+    parser_classes = (
+        parsers.MultiPartParser,
+        parsers.FormParser,
+    )
 
     def create(self, request, format=None):
         """
@@ -324,22 +336,22 @@ class ScoreSetViewset(DatasetListViewSet):
 
         @transaction.atomic()
         def save_forms(forms, user):
-            scoreset_form: ScoreSetForm = forms['scoreset_form']
+            scoreset_form: ScoreSetForm = forms["scoreset_form"]
 
             with create_revision():
                 scoreset: ScoreSet = scoreset_form.save(commit=True)
                 object: ScoreSet = scoreset
 
-            target_form: TargetGeneForm = forms['target_gene_form']
+            target_form: TargetGeneForm = forms["target_gene_form"]
             reference_map_form: PrimaryReferenceMapForm = forms[
-                'reference_map_form'
+                "reference_map_form"
             ]
             uniprot_offset_form: UniprotOffsetForm = forms[
-                'uniprot_offset_form'
+                "uniprot_offset_form"
             ]
-            refseq_offset_form: RefseqOffsetForm = forms['refseq_offset_form']
+            refseq_offset_form: RefseqOffsetForm = forms["refseq_offset_form"]
             ensembl_offset_form: EnsemblOffsetForm = forms[
-                'ensembl_offset_form'
+                "ensembl_offset_form"
             ]
 
             target: genome_models.TargetGene = target_form.save(
@@ -380,24 +392,33 @@ class ScoreSetViewset(DatasetListViewSet):
             target.save()
 
             object.add_administrators(user)
-            transaction.on_commit(lambda: submit_job(
-                form=scoreset_form, object=object, user=user
-            ))
+            transaction.on_commit(
+                lambda: submit_job(
+                    form=scoreset_form, object=object, user=user
+                )
+            )
+
+            return scoreset
+
         ### END COPY
 
         def _fetch(needs_fetching, fetch_info):
             new_dict = {}
             for key in fetch_info.keys():
                 if key not in needs_fetching:
-                    raise ValueError(f"Payload did not contain needed key {key}.")
+                    raise ValueError(
+                        f"Payload did not contain needed key {key}."
+                    )
                 if needs_fetching[key] is None:
                     continue
                 # Make a case-insensitive match by formatting the get key as
                 # KEY__iexact when fetching
-                get_field = fetch_info[key]['get_field']
+                get_field = fetch_info[key]["get_field"]
                 fetch_iexact_key = f"{get_field}__iexact"
                 get_dict = {fetch_iexact_key: needs_fetching[key][get_field]}
-                new_dict[key] = fetch_info[key]['class'].objects.get(**get_dict).pk
+                new_dict[key] = (
+                    fetch_info[key]["class"].objects.get(**get_dict).pk
+                )
             return new_dict
 
         def _parse_data(data, flat_keys, needs_fetching, fetch_info):
@@ -412,80 +433,72 @@ class ScoreSetViewset(DatasetListViewSet):
 
         def _parse_scoreset_data(data):
             flat_keys = [
-                'title',
-                'short_description',
-                'abstract_text',
-                'method_text',
-                'keywords',
-                'meta_analysis_for',
-                'data_usage_policy',
-                'doi_ids',
-                'sra_ids',
-                'pubmed_ids',
+                "title",
+                "short_description",
+                "abstract_text",
+                "method_text",
+                "keywords",
+                "meta_analysis_for",
+                "data_usage_policy",
+                "doi_ids",
+                "sra_ids",
+                "pubmed_ids",
             ]
-            experiment = {
-                'urn': data.get('experiment', None)
-            } if data.get('experiment', None) else None
+            experiment = (
+                {"urn": data.get("experiment", None)}
+                if data.get("experiment", None)
+                else None
+            )
             needs_fetching = {
-                'experiment': experiment,
-                'licence': data.get('licence', None),
-                'replaces': data.get('replaces', None),
+                "experiment": experiment,
+                "licence": data.get("licence", None),
+                "replaces": data.get("replaces", None),
             }
             fetch_info = {
-                'experiment': {
-                    'class': Experiment,
-                    'get_field': 'urn'
-                },
-                'licence': {
-                    'class': Licence,
-                    'get_field': 'short_name'
-                },
-                'replaces': {
-                    'class': ScoreSet,
-                    'get_field': 'urn'
-                },
+                "experiment": {"class": Experiment, "get_field": "urn"},
+                "licence": {"class": Licence, "get_field": "short_name"},
+                "replaces": {"class": ScoreSet, "get_field": "urn"},
             }
             return _parse_data(data, flat_keys, needs_fetching, fetch_info)
 
         def _parse_target_data(data):
             # 'type' needs to transform to 'category'
-            if 'type' in data:
-                data['category'] = data['type']
-            flat_keys = ['name', 'category', 'sequence_type', 'reference_sequence']
+            if "type" in data:
+                data["category"] = data["type"]
+            flat_keys = [
+                "name",
+                "category",
+                "sequence_type",
+                "reference_sequence",
+            ]
             return _parse_data(data, flat_keys, {}, {})
 
         def _parse_uniprot_data(data):
-            needs_fetching = {
-                'uniprot': data
-            }
+            needs_fetching = {"uniprot": data}
             fetch_info = {
-                'uniprot': {
-                    'class': meta_models.UniprotIdentifier,
-                    'get_field': 'identifier'
+                "uniprot": {
+                    "class": meta_models.UniprotIdentifier,
+                    "get_field": "identifier",
                 },
             }
             return _parse_data(data, [], needs_fetching, fetch_info)
 
         def _parse_ensembl_data(data):
-            needs_fetching = {
-                'ensembl': data
-            }
+            needs_fetching = {"ensembl": data}
             fetch_info = {
-                'ensembl': {
-                    'class': meta_models.EnsemblIdentifier,
-                    'get_field': 'identifier'
+                "ensembl": {
+                    "class": meta_models.EnsemblIdentifier,
+                    "get_field": "identifier",
                 },
             }
             return _parse_data(data, [], needs_fetching, fetch_info)
 
         def _parse_refseq_data(data):
-            needs_fetching = {
-                'refseq': data
-            }
+            needs_fetching = {"refseq": data}
             fetch_info = {
-                'refseq': {
-                    'class': meta_models.RefseqIdentifier,
-                    'get_field': 'identifier'
+                "refseq": {
+                    "class": meta_models.RefseqIdentifier,
+                    "get_field": "identifier",
                 },
             }
             return _parse_data(data, [], needs_fetching, fetch_info)
@@ -494,7 +507,7 @@ class ScoreSetViewset(DatasetListViewSet):
             needs_fetching = {}
             reference_maps = data if data else []
             for i in range(len(reference_maps)):
-                '''
+                """
                 'reference_maps': [
                     {
                         'KEY': {    # <- always only one key here, e.g. 'genome'
@@ -502,34 +515,36 @@ class ScoreSetViewset(DatasetListViewSet):
                         }
                     }, ...
                 ]
-                '''
+                """
                 # Right now, it looks like the only available key is 'genome'
-                key = list(reference_maps[i].keys())[0] # <- this is the above key, 'genome'
+                key = list(reference_maps[i].keys())[
+                    0
+                ]  # <- this is the above key, 'genome'
                 needs_fetching[key] = reference_maps[i][key]
             fetch_info = {
-                'genome': {
-                    'class': genome_models.ReferenceGenome,
-                    'get_field': 'short_name'
+                "genome": {
+                    "class": genome_models.ReferenceGenome,
+                    "get_field": "short_name",
                 },
             }
             return _parse_data(data, [], needs_fetching, fetch_info)
 
         # Breakdown of the original request monolith
         user, _ = authenticate(request)
-        request_data = json.loads(request.POST['request'])
-        scoreset_request_data = request_data['scoreset']
-        target_request_data = request_data['target']
-        uniprot_request_data = request_data['uniprot']
-        ensembl_request_data = request_data['ensembl']
-        refseq_request_data = request_data['refseq']
-        reference_maps_request_data = request_data['reference_maps']
+        request_data = json.loads(request.POST["request"])
+        scoreset_request_data = request_data["scoreset"]
+        target_request_data = request_data["target"]
+        uniprot_request_data = request_data["uniprot"]
+        ensembl_request_data = request_data["ensembl"]
+        refseq_request_data = request_data["refseq"]
+        reference_maps_request_data = request_data["reference_maps"]
         files = {
-            constants.variant_score_data: request.FILES['score_data'],
-            constants.variant_count_data: request.FILES['count_data'],
-            constants.meta_data: request.FILES['meta_data'],
+            constants.variant_score_data: request.FILES["score_data"],
+            constants.variant_count_data: request.FILES["count_data"],
+            constants.meta_data: request.FILES["meta_data"],
         }
-        if 'fasta_file' in request.FILES:
-            files['sequence_fasta'] = request.FILES['fasta_file']
+        if "fasta_file" in request.FILES:
+            files["sequence_fasta"] = request.FILES["fasta_file"]
 
         try:
             scoreset_data = _parse_scoreset_data(scoreset_request_data)
@@ -537,42 +552,49 @@ class ScoreSetViewset(DatasetListViewSet):
             uniprot_data = _parse_uniprot_data(uniprot_request_data)
             ensembl_data = _parse_ensembl_data(ensembl_request_data)
             refseq_data = _parse_refseq_data(refseq_request_data)
-            reference_maps_data = _parse_reference_maps_data(reference_maps_request_data)
+            reference_maps_data = _parse_reference_maps_data(
+                reference_maps_request_data
+            )
         except Exception as e:
             response_data = {
-                'status': 'Bad request.',
-                'message': 'Could not parse data correctly.',
-                'parse_error': repr(e)
+                "status": "Bad request.",
+                "message": "Could not parse data correctly.",
+                "parse_error": repr(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Change this to be something where we get the user by the token request or something
-            scoreset_form = ScoreSetForm(data=scoreset_data, files=files, user=user)
-            target_form = TargetGeneForm(data=target_data, files=files, user=user)
+            scoreset_form = ScoreSetForm(
+                data=scoreset_data, files=files, user=user
+            )
+            target_form = TargetGeneForm(
+                data=target_data, files=files, user=user
+            )
             uniprot_form = UniprotOffsetForm(data=uniprot_data)
             ensembl_form = EnsemblOffsetForm(data=ensembl_data)
             refseq_form = RefseqOffsetForm(data=refseq_data)
-            reference_map_form = PrimaryReferenceMapForm(data=reference_maps_data)
+            reference_map_form = PrimaryReferenceMapForm(
+                data=reference_maps_data
+            )
             # These keys need to match what lives in the save_forms logic above
             # which in turn was copied from dataset/views/scoreset, so let's
             # make it backwards compatible
             forms = {
-                'scoreset_form': scoreset_form,
-                'target_gene_form': target_form,
-                'uniprot_offset_form': uniprot_form,
-                'ensembl_offset_form': ensembl_form,
-                'refseq_offset_form': refseq_form,
-                'reference_map_form': reference_map_form,
+                "scoreset_form": scoreset_form,
+                "target_gene_form": target_form,
+                "uniprot_offset_form": uniprot_form,
+                "ensembl_offset_form": ensembl_form,
+                "refseq_offset_form": refseq_form,
+                "reference_map_form": reference_map_form,
             }
         except Exception as e:
             response_data = {
-                'status': 'Bad request',
-                'message': 'Could not create forms correctly with the given data.',
-                'form_creation_error': repr(e)
+                "status": "Bad request",
+                "message": "Could not create forms correctly with the given data.",
+                "form_creation_error": repr(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-
 
         ### COPIED (then modified) FROM dataset/views/scoreset.py
         # TODO: move all copied logic into serializers and out of both views
@@ -598,29 +620,30 @@ class ScoreSetViewset(DatasetListViewSet):
                 form_errors[f"{key}_errors"] = forms[key].errors.as_json()
         if form_errors:
             response_data = {
-                'status': 'Bad request',
-                'message': 'One or more forms were invalid.',
-                'forms_invalid_error': form_errors
+                "status": "Bad request",
+                "message": "One or more forms were invalid.",
+                "forms_invalid_error": form_errors,
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            save_forms(forms=forms, user=user)
+            scoreset = save_forms(forms=forms, user=user)
         except Exception as e:
             response_data = {
-                'status': 'Bad request',
-                'message': 'ScoreSet could not be created with the given data.',
-                'scoreset_creation_error': repr(e)
+                "status": "Bad request",
+                "message": "ScoreSet could not be created with the given data.",
+                "scoreset_creation_error": repr(e),
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        return HttpResponse(status=204)
+        return HttpResponse(scoreset.urn, status=201)
 
 
 class UserViewset(AuthenticatedViewSet):
     """
     Return a list of all the existing users.
     """
+
     http_method_names = ("get",)
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -893,7 +916,7 @@ class ReferenceGenomeViewSet(viewsets.ModelViewSet):
 
 # ----- Custom API endpoints
 class VariantView(views.APIView):
-    '''
+    """
     This view can serve as an example of formatting a response for an API request
     where the query uses the identifier for a particular Django model (Variant)
     but the response is a custom one that doesn't fit any single Django model
@@ -902,9 +925,10 @@ class VariantView(views.APIView):
     as other variants). This will still live behind /api/variants even though
     this doesn't exactly line up with normal REST API principles. The route
     can change though, in urls.py .
-    '''
+    """
+
     def get(self, request, urn):
-        '''
+        """
         Get the experiment, scoreset, and related variants of a given variant.
         By default, it will return up to the first 20 related variants. You
         can use the 'limit' and 'offset' query parameters to paginate through
@@ -926,64 +950,77 @@ class VariantView(views.APIView):
         Returns
         -------
         `HttpResponse`
-        '''
+        """
         MAX_VARIANTS_TO_RETURN = 50
 
-        variant_id_key = 'variant_id'
+        variant_id_key = "variant_id"
         if variant_id_key not in request.query_params:
             response_data = {
-                'status': 'Bad request.',
-                'message': f'Need to include query parameter {variant_id_key} ' \
-                    'in your request.',
+                "status": "Bad request.",
+                "message": f"Need to include query parameter {variant_id_key} "
+                "in your request.",
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        variant_urn = urn + '#' +  request.query_params.get(variant_id_key, '0')
+        variant_urn = urn + "#" + request.query_params.get(variant_id_key, "0")
         try:
             variant = Variant.objects.get(urn=variant_urn)
         except Variant.DoesNotExist:
-            return JsonResponse({
-                'status': 'Variant not found.',
-                'message': f'Could not find a variant with urn {variant_urn}.',
-            }, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse(
+                {
+                    "status": "Variant not found.",
+                    "message": f"Could not find a variant with urn {variant_urn}.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        offset = request.query_params.get('offset', '0')
-        limit = request.query_params.get('limit', 20)
+        offset = request.query_params.get("offset", "0")
+        limit = request.query_params.get("limit", 20)
         try:
             offset = int(offset)
             limit = int(limit)
         except ValueError:
             response_data = {
-                'status': 'Bad request.',
-                'message': 'If providing query parameters offset or limit, ' \
-                    'they must be integers.',
+                "status": "Bad request.",
+                "message": "If providing query parameters offset or limit, "
+                "they must be integers.",
             }
             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         if limit < 0 or limit > MAX_VARIANTS_TO_RETURN:
             results_uuid = str(uuid.uuid4())
-            format_variant_large_get_response(results_uuid, variant_urn, offset, limit)
-            return JsonResponse({
-                'status': 'Large response.',
-                'message': f'When ready, your results will be available for ' \
-                    f'download at /api/results/{results_uuid} .',
-                'results_uuid': results_uuid
-            }, status=status.HTTP_202_ACCEPTED)
+            format_variant_large_get_response(
+                results_uuid, variant_urn, offset, limit
+            )
+            return JsonResponse(
+                {
+                    "status": "Large response.",
+                    "message": f"When ready, your results will be available for "
+                    f"download at /api/results/{results_uuid} .",
+                    "results_uuid": results_uuid,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
 
         response_data = format_variant_get_response(variant_urn, offset, limit)
         if not response_data:
-            return JsonResponse({
-                'message': 'Something went wrong. Please try again.',
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse(
+                {
+                    "message": "Something went wrong. Please try again.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return JsonResponse(response_data)
 
+
 class ResultsView(views.APIView):
-    '''
+    """
     This view is how to retrieve any asynchronously generated results from
     something like the get() method from the VariantView above.
-    '''
+    """
+
     def get(self, request, results_uuid):
-        '''
+        """
         Get the experiment, scoreset, and related variants of a given variant.
 
         Parameters
@@ -998,12 +1035,15 @@ class ResultsView(views.APIView):
         `FileResponse`
             The zipped file that contains the response generated from
             VariantView.get()
-        '''
-        filepath = f'{BASE_RESULTS_DIR}/{results_uuid}.zip'
+        """
+        filepath = f"{BASE_RESULTS_DIR}/{results_uuid}.zip"
         if not os.path.exists(filepath):
-            return JsonResponse({
-                'status': 'Bad request.',
-                'message': 'File not found. Either check later or make your ' \
-                    'request again.',
-            }, status=status.HTTP_404_NOT_FOUND)
-        return FileResponse(open(filepath, 'rb'))
+            return JsonResponse(
+                {
+                    "status": "Bad request.",
+                    "message": "File not found. Either check later or make your "
+                    "request again.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return FileResponse(open(filepath, "rb"))
