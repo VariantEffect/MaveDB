@@ -57,7 +57,7 @@ def home_view(request):
 def documentation_view(request):
     return render(
         request,
-        "main/documentation.html",
+        "main/docs_landing.html",
         {"site_information": SiteInformation.get_instance()},
     )
 
