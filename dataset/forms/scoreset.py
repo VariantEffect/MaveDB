@@ -826,7 +826,20 @@ class ScoreSetForm(DatasetModelForm):
             experimentset = children.first().experiment.experimentset
 
         # Create new parent tree if this is a completely novel meta-analysis
-        description = ", ".join([s.urn for s in children.order_by("urn")])
+        MAX_DESCRIPTION_CHILDREN = 5
+        if children.count() > MAX_DESCRIPTION_CHILDREN:
+            description = ", ".join(
+                [
+                    s.urn
+                    for s in children.order_by("urn")[
+                        :MAX_DESCRIPTION_CHILDREN
+                    ]
+                ]
+            ) + " and {} others".format(
+                children.count() - MAX_DESCRIPTION_CHILDREN
+            )
+        else:
+            description = ", ".join([s.urn for s in children.order_by("urn")])
         if existing is None:
             return Experiment(
                 title=f"Meta-analysis of {description}",
