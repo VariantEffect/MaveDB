@@ -534,14 +534,19 @@ class ScoreSetViewset(DatasetListViewSet):
         request_data = json.loads(request.POST["request"])
         scoreset_request_data = request_data["scoreset"]
         target_request_data = request_data["target"]
-        uniprot_request_data = request_data["uniprot"]
-        ensembl_request_data = request_data["ensembl"]
-        refseq_request_data = request_data["refseq"]
+        # Accept none value for uniprot, ensemb and refseq.
+        uniprot_request_data = request_data.get("uniprot", None)
+        ensembl_request_data = request_data.get("ensembl", None)
+        refseq_request_data = request_data.get("refseq", None)
         reference_maps_request_data = request_data["reference_maps"]
         files = {
-            constants.variant_score_data: request.FILES["score_data"],
-            constants.variant_count_data: request.FILES["count_data"],
-            constants.meta_data: request.FILES["meta_data"],
+            constants.variant_score_data: request.FILES.get(
+                "score_data", None
+            ),
+            constants.variant_count_data: request.FILES.get(
+                "count_data", None
+            ),
+            constants.meta_data: request.FILES.get("meta_data", None),
         }
         if "fasta_file" in request.FILES:
             files["sequence_fasta"] = request.FILES["fasta_file"]
