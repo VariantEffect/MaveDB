@@ -127,11 +127,15 @@ python manage.py runserver 0.0.0.0:8000
 
 # Building a new image
 
-## MaveHGVS docs
-Place the `mavehgvs` sphinx documentation files into `/docs/mavehgvs/`. The build path in `Makefile` and `make.bat`
-must be `../build/docs/mavehgvs/`. Once the application starts, this documentation will be collected in the static file
-directory and served at `https://mavedb.org/docs/mavehgvs`.
+The `mavehgvs` and MaveTools documentation will be automatically built and placed in the correct location as specified
+in the Dockerfile.
 
-You can use the `./publish` script to build a new image and push it to the MaveDB [Docker Hub repository](https://hub.docker.com/). 
-The script takes the following arguments in the following order `IMAGE_NAME`, `TAG`, `REPOSITORY`', where `IMAGE_NAME` and `REPOSITORY`
-are both `mavedb` for now.
+To create the new image, follow these steps:
+```shell script
+MAVEDB_VERSION="2.2.2"  # update to the version being built
+
+docker build . -t mavedb/mavedb:$MAVEDB_VERSION --no-cache
+docker tag mavedb/mavedb:$MAVEDB_VERSION mavedb/mavedb:latest
+docker push mavedb/mavedb:$MAVEDB_VERSION
+docker push mavedb/mavedb:latest
+```
